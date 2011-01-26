@@ -1,0 +1,24 @@
+{
+  final Class<? extends CodeList> codeType=getClass();
+  final Collection<? extends CodeList> values;
+synchronized (VALUES) {
+    values=VALUES.get(codeType);
+  }
+  if (values != null) {
+synchronized (values) {
+      for (      final CodeList code : values) {
+        if (!codeType.isInstance(code)) {
+          return this;
+        }
+        if (code.matches(name)) {
+          return code;
+        }
+      }
+      @SuppressWarnings("unchecked") final Collection<CodeList> unsafe=(Collection)values;
+      if (!unsafe.add(this)) {
+        throw new InvalidObjectException(name);
+      }
+    }
+  }
+  return this;
+}

@@ -1,0 +1,61 @@
+{
+  SchemaIndex schemaIndex;
+  try {
+    String schemaLocation=schemaBase + "commonSchemas_new/awdip.xsd";
+    URL location=getClass().getResource(schemaLocation);
+    assertNotNull(location);
+    schemaIndex=loadSchema(location);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+  final FeatureTypeRegistry typeRegistry=new FeatureTypeRegistry();
+  typeRegistry.addSchemas(schemaIndex);
+  final Name typeName=Types.typeName(AWNS,"SiteSinglePhenomTimeSeriesType");
+  final ComplexType testType=(ComplexType)typeRegistry.getAttributeType(typeName);
+  assertNotNull(testType);
+  assertTrue(testType instanceof FeatureType);
+  AttributeType superType=testType.getSuper();
+  assertNotNull(superType);
+  Name superTypeName=Types.typeName(AWNS,"SamplingSitePurposeType");
+  assertEquals(superTypeName,superType.getName());
+  Map samplingProperties=new HashMap();
+  samplingProperties.put(name(GMLNS,"metaDataProperty"),typeName(GMLNS,"MetaDataPropertyType"));
+  samplingProperties.put(name(GMLNS,"description"),typeName(GMLNS,"StringOrRefType"));
+  samplingProperties.put(name(GMLNS,"name"),typeName(GMLNS,"CodeType"));
+  samplingProperties.put(name(GMLNS,"boundedBy"),typeName(GMLNS,"BoundingShapeType"));
+  samplingProperties.put(name(GMLNS,"location"),typeName(GMLNS,"LocationPropertyType"));
+  samplingProperties.put(name(AWNS,"samplingRegimeType"),Types.toTypeName(GML.CodeType));
+  samplingProperties.put(name(AWNS,"waterBodyType"),Types.toTypeName(GML.CodeType));
+  samplingProperties.put(name(AWNS,"accessTypeCode"),Types.toTypeName(GML.CodeType));
+  samplingProperties.put(name(SANS,"position"),typeName(GMLNS,"PointPropertyType"));
+  samplingProperties.put(name(SANS,"relatedObservation"),typeName(OMNS,"ObservationPropertyType"));
+  samplingProperties.put(name(SANS,"relatedSamplingFeature"),typeName(SANS,"SamplingFeatureRelationPropertyType"));
+  samplingProperties.put(name(SANS,"sampledFeature"),typeName(GMLNS,"FeaturePropertyType"));
+  samplingProperties.put(name(SANS,"surveyDetails"),typeName(SANS,"SurveyProcedurePropertyType"));
+  samplingProperties.put(name(AWNS,"relatedObservation"),typeName(AWNS,"PhenomenonTimeSeriesPropertyType"));
+  assertPropertyNamesAndTypeNames(testType,samplingProperties);
+  AttributeDescriptor relatedObservation=(AttributeDescriptor)Types.descriptor(testType,name(AWNS,"relatedObservation"));
+  Map relatedObsProps=new HashMap();
+  relatedObsProps.put(name(AWNS,"PhenomenonTimeSeries"),typeName(AWNS,"PhenomenonTimeSeriesType"));
+  ComplexType phenomenonTimeSeriesPropertyType=(ComplexType)relatedObservation.getType();
+  assertPropertyNamesAndTypeNames(phenomenonTimeSeriesPropertyType,relatedObsProps);
+  AttributeDescriptor phenomenonTimeSeries=(AttributeDescriptor)Types.descriptor(phenomenonTimeSeriesPropertyType,name(AWNS,"PhenomenonTimeSeries"));
+  ComplexType phenomenonTimeSeriesType=(ComplexType)phenomenonTimeSeries.getType();
+  Map phenomenonTimeSeriesProps=new HashMap();
+  phenomenonTimeSeriesProps.put(name(AWNS,"result"),typeName(CVNS,"CompactDiscreteTimeCoveragePropertyType"));
+  assertPropertyNamesAndTypeNames(phenomenonTimeSeriesType,phenomenonTimeSeriesProps);
+  AttributeDescriptor observedProperty=(AttributeDescriptor)Types.descriptor(phenomenonTimeSeriesType,name(OMNS,"observedProperty"));
+  ComplexType phenomenonPropertyType=(ComplexType)observedProperty.getType();
+  assertPropertyNamesAndTypeNames(phenomenonPropertyType,Collections.singletonMap(name(SWENS,"Phenomenon"),typeName(SWENS,"PhenomenonType")));
+  AttributeDescriptor phenomenon=(AttributeDescriptor)Types.descriptor(phenomenonPropertyType,name(SWENS,"Phenomenon"));
+  ComplexType phenomenonType=(ComplexType)phenomenon.getType();
+  assertNotNull(phenomenonType.getSuper());
+  assertEquals(typeName(GMLNS,"DefinitionType"),phenomenonType.getSuper().getName());
+  Map phenomenonProps=new HashMap();
+  phenomenonProps.put(name(GMLNS,"metaDataProperty"),null);
+  phenomenonProps.put(name(GMLNS,"description"),null);
+  phenomenonProps.put(name(GMLNS,"name"),null);
+  assertPropertyNamesAndTypeNames(phenomenonType,phenomenonProps);
+}

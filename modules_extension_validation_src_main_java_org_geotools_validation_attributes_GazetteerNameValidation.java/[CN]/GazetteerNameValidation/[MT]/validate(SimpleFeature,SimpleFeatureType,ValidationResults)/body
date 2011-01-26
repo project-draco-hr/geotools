@@ -1,0 +1,46 @@
+{
+  String place=(String)feature.getAttribute(attributeName);
+  URL gazetteerURL=null;
+  try {
+    gazetteerURL=new URL(gazetteer.toString() + "&placename=" + place);
+  }
+ catch (  MalformedURLException e) {
+    results.error(feature,e.toString());
+    return false;
+  }
+  InputStream gazetteerInputStream=null;
+  try {
+    HttpURLConnection gazetteerConnection=(HttpURLConnection)gazetteerURL.openConnection();
+    if (!("OK".equals(gazetteerConnection.getResponseMessage()))) {
+      results.error(feature,"An error occured creating the connection to the Gazetteer.");
+    }
+    gazetteerInputStream=gazetteerConnection.getInputStream();
+  }
+ catch (  IOException e) {
+    results.error(feature,e.toString());
+    return false;
+  }
+  InputStreamReader gazetteerInputStreamReader=new InputStreamReader(gazetteerInputStream);
+  BufferedReader gazetteerBufferedReader=new BufferedReader(gazetteerInputStreamReader);
+  InputSource gazetteerInputSource=new InputSource(gazetteerBufferedReader);
+  DocumentBuilderFactory dfactory=DocumentBuilderFactory.newInstance();
+  dfactory.setNamespaceAware(true);
+  dfactory.setValidating(false);
+  dfactory.setIgnoringComments(true);
+  dfactory.setCoalescing(true);
+  dfactory.setIgnoringElementContentWhitespace(true);
+  Document serviceDoc=null;
+  try {
+    serviceDoc=dfactory.newDocumentBuilder().parse(gazetteerInputSource);
+  }
+ catch (  Exception e) {
+    results.error(feature,e.toString());
+  }
+  Element elem=serviceDoc.getDocumentElement();
+  elem=getChildElement(elem,"queryInfo");
+  if (elem == null) {
+    results.error(feature,"Invalid DOM tree returned by gazetteer.");
+  }
+  int number=Integer.parseInt(getChildText(elem,"numberOfResults"));
+  return number > 0;
+}

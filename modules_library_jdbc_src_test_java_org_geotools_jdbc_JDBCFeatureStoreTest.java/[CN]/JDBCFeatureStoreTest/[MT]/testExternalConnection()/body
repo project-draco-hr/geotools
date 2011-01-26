@@ -1,0 +1,27 @@
+{
+  SimpleFeatureBuilder b=new SimpleFeatureBuilder(featureStore.getSchema());
+  DefaultFeatureCollection collection=new DefaultFeatureCollection(null,featureStore.getSchema());
+  b.set(aname("intProperty"),new Integer(3));
+  b.set(aname("geometry"),new GeometryFactory().createPoint(new Coordinate(3,3)));
+  collection.add(b.buildFeature(null));
+  FeatureEventWatcher watcher=new FeatureEventWatcher();
+  Connection conn=setup.getDataSource().getConnection();
+  conn.setAutoCommit(false);
+  Transaction t=dataStore.buildTransaction(conn);
+  featureStore.setTransaction(t);
+  featureStore.addFeatureListener(watcher);
+  JDBCFeatureStore featureStore2=(JDBCFeatureStore)dataStore.getFeatureSource(featureStore.getName().getLocalPart());
+  List<FeatureId> fids=featureStore.addFeatures(collection);
+  assertEquals(1,fids.size());
+  assertEquals(4,featureStore.getFeatures().size());
+  assertEquals(3,featureStore2.getFeatures().size());
+  t.commit();
+  assertEquals(4,featureStore.getFeatures().size());
+  assertEquals(3,featureStore2.getFeatures().size());
+  conn.commit();
+  assertEquals(4,featureStore.getFeatures().size());
+  assertEquals(4,featureStore2.getFeatures().size());
+  t.close();
+  assertFalse(conn.isClosed());
+  conn.close();
+}

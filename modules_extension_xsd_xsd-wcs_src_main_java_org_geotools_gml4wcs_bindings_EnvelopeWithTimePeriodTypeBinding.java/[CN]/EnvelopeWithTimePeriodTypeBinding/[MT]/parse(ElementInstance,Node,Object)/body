@@ -1,0 +1,28 @@
+{
+  GeneralEnvelope envelope=(GeneralEnvelope)value;
+  List<Node> timePositions=(List<Node>)node.getChildren("timePosition");
+  if (timePositions != null && !timePositions.isEmpty()) {
+    final Map<String,Object> properties=new HashMap<String,Object>(4);
+    properties.put(CoordinateReferenceSystem.NAME_KEY,"Compound");
+    properties.put(CoordinateReferenceSystem.DOMAIN_OF_VALIDITY_KEY,ExtentImpl.WORLD);
+    CoordinateReferenceSystem crs=new DefaultCompoundCRS(properties,new CoordinateReferenceSystem[]{envelope.getCoordinateReferenceSystem(),DefaultTemporalCRS.TRUNCATED_JULIAN});
+    double[] minCP=new double[envelope.getDimension() + 1];
+    double[] maxCP=new double[envelope.getDimension() + 1];
+    for (int i=0; i < envelope.getDimension(); i++) {
+      minCP[i]=envelope.getLowerCorner().getOrdinate(i);
+      maxCP[i]=envelope.getUpperCorner().getOrdinate(i);
+    }
+    DefaultTemporalCRS TCRS=(DefaultTemporalCRS)((CompoundCRS)crs).getCoordinateReferenceSystems().get(1);
+    Node timePositionNodeBegin=timePositions.get(0);
+    Node timePositionNodeEnd=timePositions.get(1);
+    minCP[minCP.length - 1]=TCRS.toValue(((DefaultPosition)timePositionNodeBegin.getValue()).getDate());
+    maxCP[maxCP.length - 1]=TCRS.toValue(((DefaultPosition)timePositionNodeEnd.getValue()).getDate());
+    GeneralDirectPosition minDP=new GeneralDirectPosition(minCP);
+    minDP.setCoordinateReferenceSystem(crs);
+    GeneralDirectPosition maxDP=new GeneralDirectPosition(maxCP);
+    maxDP.setCoordinateReferenceSystem(crs);
+    GeneralEnvelope envelopeWithTime=new GeneralEnvelope(minDP,maxDP);
+    return envelopeWithTime;
+  }
+  return envelope;
+}

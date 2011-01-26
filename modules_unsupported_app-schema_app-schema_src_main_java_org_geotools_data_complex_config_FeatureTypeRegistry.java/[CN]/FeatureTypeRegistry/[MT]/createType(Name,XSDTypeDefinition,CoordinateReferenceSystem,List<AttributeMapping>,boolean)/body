@@ -1,0 +1,57 @@
+{
+  AttributeType attType;
+  if (processingTypes.contains(assignedName)) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Recursion found for type " + assignedName + ". Proxying it.");
+    }
+    attType=createProxiedType(assignedName,typeDefinition,anonymous ? anonTypeRegistry : typeRegistry);
+    return attType;
+  }
+  processingTypes.push(assignedName);
+  final XSDTypeDefinition baseType=typeDefinition.getBaseType();
+  AttributeType superType=null;
+  if (baseType != null) {
+    String targetNamespace=baseType.getTargetNamespace();
+    String name=baseType.getName();
+    superType=getType(targetNamespace,name);
+    if (superType == null) {
+      superType=createType(baseType,crs,attMappings);
+    }
+  }
+ else {
+    LOGGER.warning(assignedName + " has no super type");
+  }
+  if (typeDefinition instanceof XSDComplexTypeDefinition) {
+    XSDComplexTypeDefinition complexTypeDef;
+    complexTypeDef=(XSDComplexTypeDefinition)typeDefinition;
+    boolean includeParents=true;
+    List children=Schemas.getChildElementDeclarations(typeDefinition,includeParents);
+    final Collection<PropertyDescriptor> schema=new ArrayList<PropertyDescriptor>(children.size());
+    XSDElementDeclaration childDecl;
+    AttributeDescriptor descriptor;
+    for (Iterator it=children.iterator(); it.hasNext(); ) {
+      childDecl=(XSDElementDeclaration)it.next();
+      try {
+        descriptor=createAttributeDescriptor(complexTypeDef,childDecl,crs,attMappings);
+        schema.add(descriptor);
+      }
+ catch (      NoSuchElementException e) {
+        LOGGER.log(Level.WARNING,e.getMessage());
+        throw e;
+      }
+    }
+    attType=createComplexAttributeType(assignedName,schema,complexTypeDef,superType);
+  }
+ else {
+    Class<?> binding=String.class;
+    boolean isIdentifiable=false;
+    boolean isAbstract=false;
+    List<Filter> restrictions=Collections.emptyList();
+    InternationalString description=null;
+    attType=typeFactory.createAttributeType(assignedName,binding,isIdentifiable,isAbstract,restrictions,superType,description);
+  }
+  attType.getUserData().put(XSDTypeDefinition.class,typeDefinition);
+  processingTypes.pop();
+  register(attType,anonymous);
+  return attType;
+}

@@ -1,0 +1,29 @@
+{
+  final Set<AuthorityFactory> done=new HashSet<AuthorityFactory>();
+  done.add(this);
+  FactoryException failure=null;
+  for (int type=0; type < FACTORY_TYPES.length; type++) {
+    final AuthorityFactory factory;
+    try {
+      factory=getAuthorityFactory(FACTORY_TYPES[type],code);
+    }
+ catch (    NoSuchAuthorityCodeException exception) {
+      if (failure == null) {
+        failure=exception;
+      }
+      continue;
+    }
+    if (done.add(factory))     try {
+      return factory.getDescriptionText(code);
+    }
+ catch (    FactoryException exception) {
+      if (failure == null || failure.getCause() instanceof FactoryRegistryException) {
+        failure=exception;
+      }
+    }
+  }
+  if (failure == null) {
+    failure=noSuchAuthorityCode(IdentifiedObject.class,code);
+  }
+  throw failure;
+}

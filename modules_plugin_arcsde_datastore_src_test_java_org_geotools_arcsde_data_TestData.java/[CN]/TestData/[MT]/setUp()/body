@@ -1,0 +1,22 @@
+{
+  if (ArcSDEDataStoreFactory.getSdeClientVersion() == ArcSDEDataStoreFactory.JSDE_VERSION_DUMMY) {
+    throw new RuntimeException("Don't run the test-suite with the dummy jar.  " + "Make sure the real ArcSDE jars are on your classpath.");
+  }
+  Properties conProps=new Properties();
+  String propsFile="testparams.properties";
+  InputStream in=org.geotools.test.TestData.openStream(null,propsFile);
+  conProps.load(in);
+  in.close();
+  this.temp_table=conProps.getProperty("temp_table");
+  this.configKeyword=conProps.getProperty("configKeyword");
+  if (this.configKeyword == null) {
+    this.configKeyword="DEFAULTS";
+  }
+  if (this.temp_table == null) {
+    throw new IllegalArgumentException("temp_table not defined in " + propsFile);
+  }
+  this.conProps=new HashMap<String,Serializable>();
+  for (  Map.Entry<Object,Object> e : conProps.entrySet()) {
+    this.conProps.put(String.valueOf(e.getKey()),(Serializable)e.getValue());
+  }
+}

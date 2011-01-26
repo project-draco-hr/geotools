@@ -1,0 +1,30 @@
+{
+  if (degree < 0 || degree >= WarpTransform2D.MAX_DEGREE + 1) {
+    throw new IllegalArgumentException();
+  }
+  if (transforms == null) {
+    transforms=new MathTransform2D[WarpTransform2D.MAX_DEGREE + 1];
+  }
+  if (transforms[degree] == null) {
+    final MathTransform2D tr;
+switch (degree) {
+case 0:
+{
+        tr=new LocalizationGridTransform2D(width,height,grid,getAffineTransform());
+        break;
+      }
+case 1:
+{
+      tr=(MathTransform2D)ProjectiveTransform.create(getAffineTransform());
+      break;
+    }
+default :
+{
+    tr=fitWarps(degree);
+    break;
+  }
+}
+transforms[degree]=tr;
+}
+return transforms[degree];
+}

@@ -1,0 +1,46 @@
+{
+  final GridCoverage2D source=(GridCoverage2D)parameters.parameter("Source").getValue();
+  final GridCoverage2D visual=source.view(ViewType.RENDERED);
+  final RenderedImage image=visual.getRenderedImage();
+  final GridSampleDimension[] bands=visual.getSampleDimensions();
+  final int visibleBand=CoverageUtilities.getVisibleBand(image);
+  ColorModel model=image.getColorModel();
+  boolean colorChanged=false;
+  for (int i=0; i < bands.length; i++) {
+    GridSampleDimension band=bands[i];
+    final ColorModel candidate=(i == visibleBand) ? image.getColorModel() : band.getColorModel();
+    if (!(candidate instanceof IndexColorModel)) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,Classes.getClass(candidate),IndexColorModel.class));
+    }
+    final IndexColorModel colors=(IndexColorModel)candidate;
+    final int mapSize=colors.getMapSize();
+    final int[] ARGB=new int[mapSize];
+    colors.getRGBs(ARGB);
+    band=transformColormap(ARGB,i,band,parameters);
+    if (!bands[i].equals(band)) {
+      bands[i]=band;
+      colorChanged=true;
+    }
+ else     if (!colorChanged) {
+      for (int j=0; j < mapSize; j++) {
+        if (ARGB[j] != colors.getRGB(j)) {
+          colorChanged=true;
+          break;
+        }
+      }
+    }
+    if (colorChanged && (i == visibleBand)) {
+      model=ColorUtilities.getIndexColorModel(ARGB,bands.length,visibleBand);
+    }
+  }
+  if (!colorChanged) {
+    return source;
+  }
+  final ImageLayout layout=new ImageLayout().setColorModel(model);
+  final RenderedImage newImage=new NullOpImage(image,layout,null,OpImage.OP_COMPUTE_BOUND);
+  final GridCoverage2D target=CoverageFactoryFinder.getGridCoverageFactory(null).create(visual.getName(),newImage,visual.getCoordinateReferenceSystem2D(),visual.getGridGeometry().getGridToCRS(),bands,new GridCoverage[]{visual},null);
+  if (source != visual) {
+    return target.geophysics(true);
+  }
+  return target;
+}

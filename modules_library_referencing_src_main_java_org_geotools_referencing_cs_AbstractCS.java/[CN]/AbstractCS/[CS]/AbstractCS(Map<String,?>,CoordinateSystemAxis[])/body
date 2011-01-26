@@ -1,0 +1,41 @@
+{
+  super(properties);
+  ensureNonNull("axis",axis);
+  this.axis=axis.clone();
+  for (int i=0; i < axis.length; i++) {
+    ensureNonNull("axis",axis,i);
+    final AxisDirection direction=axis[i].getDirection();
+    ensureNonNull("direction",direction);
+    if (!isCompatibleDirection(direction)) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_AXIS_ORIENTATION_$2,direction.name(),getClass()));
+    }
+    final Unit<?> unit=axis[i].getUnit();
+    ensureNonNull("unit",unit);
+    if (!isCompatibleUnit(direction,unit)) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.INCOMPATIBLE_UNIT_$1,unit));
+    }
+    final AxisDirection check=direction.absolute();
+    if (!check.equals(AxisDirection.OTHER)) {
+      for (int j=i; --j >= 0; ) {
+        if (check.equals(axis[j].getDirection().absolute())) {
+          final String nameI=axis[i].getDirection().name();
+          final String nameJ=axis[j].getDirection().name();
+          throw new IllegalArgumentException(Errors.format(ErrorKeys.COLINEAR_AXIS_$2,nameI,nameJ));
+        }
+      }
+    }
+    final String name=axis[i].getName().getCode();
+    for (int j=0; j < DIRECTION_CHECKS.length; j++) {
+      final DefaultCoordinateSystemAxis candidate=DIRECTION_CHECKS[j];
+      if (candidate.nameMatches(name)) {
+        final AxisDirection expected=candidate.getDirection();
+        if (!direction.equals(expected)) {
+          DirectionAlongMeridian m=DirectionAlongMeridian.parse(direction);
+          if (m == null) {
+            throw new IllegalArgumentException(Errors.format(ErrorKeys.INCONSISTENT_AXIS_ORIENTATION_$2,name,direction.name()));
+          }
+        }
+      }
+    }
+  }
+}

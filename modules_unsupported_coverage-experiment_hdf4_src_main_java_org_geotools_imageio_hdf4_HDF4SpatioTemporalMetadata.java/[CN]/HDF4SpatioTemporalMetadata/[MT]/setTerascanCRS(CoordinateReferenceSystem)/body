@@ -1,0 +1,29 @@
+{
+  final String centralMeridianS=attributesMap.get(HDF4TeraScanProperties.ProjAttribs.PROJECT_ORIGIN_LONGITUDE);
+  final String natOriginLatS=attributesMap.get(HDF4TeraScanProperties.ProjAttribs.PROJECT_ORIGIN_LATITUDE);
+  final String standardParallelS=attributesMap.get(HDF4TeraScanProperties.ProjAttribs.STANDARD_PARALLEL_1);
+  final String equatorialRadiusS=attributesMap.get(HDF4TeraScanProperties.ProjAttribs.EQUATORIAL_RADIUS);
+  final String flatteningS=attributesMap.get(HDF4TeraScanProperties.ProjAttribs.EARTH_FLATTENING);
+  if (Utilities.ensureValidString(standardParallelS,centralMeridianS,equatorialRadiusS,natOriginLatS,flatteningS)) {
+    final double standardParallel=Double.parseDouble(standardParallelS);
+    final double centralMeridian=Double.parseDouble(centralMeridianS);
+    final double equatorialRadius=1000 * Double.parseDouble(equatorialRadiusS);
+    final double natOriginLat=Double.parseDouble(natOriginLatS);
+    final double inverseFlattening=1 / Double.parseDouble(flatteningS);
+    GeographicCRS sourceCRS=CRSUtilities.getBaseCRS(equatorialRadius,inverseFlattening,true);
+    nativeCrs=CRSUtilities.getMercator2SPProjectedCRS(standardParallel,centralMeridian,natOriginLat,sourceCRS,null);
+    String projectionNameS="Mercator_2SP";
+    crs.setDefinedByConversion(new Identification(projectionNameS),null,null,null);
+    crs.setIdentification(new Identification(projectionNameS));
+    crs.addParameterValue(new Identification("standard_parallel_1"),standardParallelS);
+    crs.addParameterValue(new Identification("central_meridian"),centralMeridianS);
+    crs.addParameterValue(new Identification("latitude_of_origin"),natOriginLatS);
+    crs.addParameterValue(new Identification("false_northing"),"0.0");
+    crs.addParameterValue(new Identification("false_easting"),"0.0");
+    crs.setDatum(Datum.GEODETIC_DATUM,new Identification("WGS_1984","World Geodetic System 1984",null,"EPSG:6326"));
+    crs.addPrimeMeridian("0.0",new Identification("Greenwich",null,null,"EPSG:8901"));
+    crs.addEllipsoid(Double.toString(Double.parseDouble(equatorialRadiusS) * 1000),null,Double.toString(inverseFlattening),"meter",new Identification("WGS 84",null,null,"EPSG:7030"));
+    crs.addAxis(new Identification("Easting"),"East","metre",null);
+    crs.addAxis(new Identification("Northing"),"North","metre",null);
+  }
+}

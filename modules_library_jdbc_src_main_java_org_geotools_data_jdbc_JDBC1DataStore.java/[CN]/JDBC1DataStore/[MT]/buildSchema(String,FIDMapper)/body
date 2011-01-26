@@ -1,0 +1,63 @@
+{
+  final int NAME_COLUMN=4;
+  final int TYPE_NAME=6;
+  Connection conn=null;
+  ResultSet tableInfo=null;
+  try {
+    conn=getConnection(Transaction.AUTO_COMMIT);
+    DatabaseMetaData dbMetaData=conn.getMetaData();
+    List attributeTypes=new ArrayList();
+    tableInfo=dbMetaData.getColumns(null,config.getDatabaseSchemaName(),typeName,"%");
+    boolean tableInfoFound=false;
+    while (tableInfo.next()) {
+      tableInfoFound=true;
+      try {
+        String columnName=tableInfo.getString(NAME_COLUMN);
+        if (!mapper.returnFIDColumnsAsAttributes()) {
+          boolean isPresent=false;
+          for (int i=0; i < mapper.getColumnCount(); i++) {
+            if (columnName.equalsIgnoreCase(mapper.getColumnName(i))) {
+              isPresent=true;
+              break;
+            }
+          }
+          if (isPresent) {
+            continue;
+          }
+        }
+        AttributeDescriptor attributeType=buildAttributeType(tableInfo);
+        if (attributeType != null) {
+          attributeTypes.add(attributeType);
+        }
+ else {
+          LOGGER.finest("Unknown SQL Type: " + tableInfo.getString(TYPE_NAME));
+        }
+      }
+ catch (      DataSourceException dse) {
+        String msg="Error building attribute type. The column will be ignored";
+        LOGGER.log(Level.WARNING,msg,dse);
+      }
+    }
+    if (!tableInfoFound) {
+      throw new SchemaNotFoundException(typeName);
+    }
+    AttributeDescriptor[] types=(AttributeDescriptor[])attributeTypes.toArray(new AttributeDescriptor[0]);
+    SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+    ftb.setName(typeName);
+    ftb.addAll(types);
+    ftb.setNamespaceURI(getNameSpace());
+    return ftb.buildFeatureType();
+  }
+ catch (  SQLException sqlException) {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,sqlException);
+    conn=null;
+    throw new DataSourceException("SQL Error building FeatureType for " + typeName + " "+ sqlException.getMessage(),sqlException);
+  }
+catch (  FactoryRegistryException e) {
+    throw new DataSourceException("Error creating FeatureType " + typeName,e);
+  }
+ finally {
+    JDBCUtils.close(tableInfo);
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+}

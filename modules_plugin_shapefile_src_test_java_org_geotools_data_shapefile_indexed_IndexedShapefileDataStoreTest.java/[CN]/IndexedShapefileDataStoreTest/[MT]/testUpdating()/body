@@ -1,0 +1,29 @@
+{
+  IndexedShapefileDataStore sds=createDataStore();
+  loadFeatures(sds);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=null;
+  try {
+    writer=sds.getFeatureWriter(sds.getTypeNames()[0],Filter.INCLUDE,Transaction.AUTO_COMMIT);
+    while (writer.hasNext()) {
+      SimpleFeature feat=writer.next();
+      Byte b=(Byte)feat.getAttribute(1);
+      if ((b.byteValue() % 2) == 0) {
+        writer.remove();
+      }
+ else {
+        feat.setAttribute(1,new Byte((byte)-1));
+      }
+    }
+  }
+  finally {
+    if (writer != null) {
+      writer.close();
+    }
+  }
+  SimpleFeatureCollection fc=loadFeatures(sds);
+  assertEquals(10,fc.size());
+  for (SimpleFeatureIterator i=fc.features(); i.hasNext(); ) {
+    assertEquals(-1,((Byte)i.next().getAttribute(1)).byteValue());
+  }
+  sds.dispose();
+}

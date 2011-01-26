@@ -1,0 +1,66 @@
+{
+  if (src == null) {
+    return null;
+  }
+  if (src instanceof String || src instanceof Integer || src instanceof Double|| src instanceof Float|| src instanceof Byte|| src instanceof Boolean|| src instanceof Short|| src instanceof Long|| src instanceof Character|| src instanceof Number) {
+    return src;
+  }
+  if (src instanceof Date) {
+    return new Date(((Date)src).getTime());
+  }
+  if (src instanceof URL || src instanceof URI) {
+    return src;
+  }
+  if (src instanceof Object[]) {
+    Object[] array=(Object[])src;
+    Object[] copy=new Object[array.length];
+    for (int i=0; i < array.length; i++) {
+      copy[i]=duplicate(array[i]);
+    }
+    return copy;
+  }
+  if (src instanceof Geometry) {
+    Geometry geometry=(Geometry)src;
+    return geometry.clone();
+  }
+  if (src instanceof SimpleFeature) {
+    SimpleFeature feature=(SimpleFeature)src;
+    return SimpleFeatureBuilder.copy(feature);
+  }
+  Class<? extends Object> type=src.getClass();
+  if (type.isArray() && type.getComponentType().isPrimitive()) {
+    int length=Array.getLength(src);
+    Object copy=Array.newInstance(type.getComponentType(),length);
+    System.arraycopy(src,0,copy,0,length);
+    return copy;
+  }
+  if (type.isArray()) {
+    int length=Array.getLength(src);
+    Object copy=Array.newInstance(type.getComponentType(),length);
+    for (int i=0; i < length; i++) {
+      Array.set(copy,i,duplicate(Array.get(src,i)));
+    }
+    return copy;
+  }
+  if (src instanceof List) {
+    List list=(List)src;
+    List<Object> copy=new ArrayList<Object>(list.size());
+    for (Iterator i=list.iterator(); i.hasNext(); ) {
+      copy.add(duplicate(i.next()));
+    }
+    return Collections.unmodifiableList(copy);
+  }
+  if (src instanceof Map) {
+    Map map=(Map)src;
+    Map copy=new HashMap(map.size());
+    for (Iterator i=map.entrySet().iterator(); i.hasNext(); ) {
+      Map.Entry entry=(Map.Entry)i.next();
+      copy.put(entry.getKey(),duplicate(entry.getValue()));
+    }
+    return Collections.unmodifiableMap(copy);
+  }
+  if (src instanceof GridCoverage) {
+    return src;
+  }
+  throw new IllegalAttributeException(null,"Do not know how to deep copy " + type.getName());
+}

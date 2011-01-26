@@ -1,0 +1,40 @@
+{
+  BasicDataSource dataSource=new BasicDataSource();
+  dataSource.setDriverClassName(driverName);
+  dataSource.setUrl(url);
+  dataSource.setUsername(username);
+  dataSource.setPassword(password);
+  dataSource.setAccessToUnderlyingConnectionAllowed(true);
+  dataSource.setMaxActive(maxActive);
+  dataSource.setMinIdle(minIdle);
+  dataSource.setMinEvictableIdleTimeMillis(1000 * 20);
+  dataSource.setTimeBetweenEvictionRunsMillis(1000 * 10);
+  if (validationQuery != null) {
+    dataSource.setTestOnBorrow(true);
+    dataSource.setValidationQuery(validationQuery);
+  }
+  if (cachePreparedStatements) {
+    dataSource.setPoolPreparedStatements(true);
+    dataSource.setMaxOpenPreparedStatements(10);
+  }
+  if (removeAbandonedTimeout > 0) {
+    dataSource.setRemoveAbandoned(true);
+    dataSource.setRemoveAbandonedTimeout(removeAbandonedTimeout);
+    dataSource.setLogAbandoned(true);
+  }
+  Connection conn=null;
+  try {
+    conn=dataSource.getConnection();
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Connection test failed ",e);
+  }
+ finally {
+    if (conn != null)     try {
+      conn.close();
+    }
+ catch (    SQLException e) {
+    }
+  }
+  return new DBCPDataSource(dataSource);
+}

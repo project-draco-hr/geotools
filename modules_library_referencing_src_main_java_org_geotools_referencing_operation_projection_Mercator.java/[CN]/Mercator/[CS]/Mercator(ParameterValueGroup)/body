@@ -1,0 +1,20 @@
+{
+  super(parameters);
+  final Collection<GeneralParameterDescriptor> expected=getParameterDescriptors().descriptors();
+  if (expected.contains(AbstractProvider.STANDARD_PARALLEL_1)) {
+    standardParallel=abs(doubleValue(expected,AbstractProvider.STANDARD_PARALLEL_1,parameters));
+    ensureLatitudeInRange(AbstractProvider.STANDARD_PARALLEL_1,standardParallel,false);
+    if (isSpherical) {
+      scaleFactor*=cos(standardParallel);
+    }
+ else {
+      scaleFactor*=msfn(sin(standardParallel),cos(standardParallel));
+    }
+    globalScale=scaleFactor * semiMajor;
+  }
+ else {
+    standardParallel=Double.NaN;
+  }
+  final double sinPhi=sin(latitudeOfOrigin);
+  globalScale*=(cos(latitudeOfOrigin) / (sqrt(1 - excentricitySquared * sinPhi * sinPhi)));
+}

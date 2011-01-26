@@ -1,0 +1,21 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  buildRiverHistory();
+  Transaction t=createTransaction("Lamb","Trout, what did you do? " + "Now I have to rollback your changes!");
+  VersionedPostgisFeatureStore fs=(VersionedPostgisFeatureStore)ds.getFeatureSource("river");
+  fs.setTransaction(t);
+  fs.rollback("1",Filter.INCLUDE,new String[]{"trout"});
+  t.commit();
+  SimpleFeatureCollection fc=fs.getFeatures();
+  assertEquals(riverFeatures.length + 1,fc.size());
+  assertTrue(fc.contains(riverFeatures[1]));
+  SimpleFeatureIterator fi=fc.features();
+  while (fi.hasNext()) {
+    SimpleFeature f=fi.next();
+    if (f.getID().equals("river.rv1"))     assertFalse(f.equals(riverFeatures[1]));
+ else     if (f.getID().equals("river.rv2"))     assertEquals(riverFeatures[1],f);
+ else     assertEquals(new Integer(3),f.getAttribute("id"));
+  }
+  fi.close();
+  t.close();
+}

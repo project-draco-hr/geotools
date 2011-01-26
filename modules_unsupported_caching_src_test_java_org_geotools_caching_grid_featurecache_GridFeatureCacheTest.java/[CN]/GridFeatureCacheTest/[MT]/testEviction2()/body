@@ -1,0 +1,81 @@
+{
+  SimpleFeatureTypeBuilder bb=new SimpleFeatureTypeBuilder();
+  bb.add("ID",Integer.class);
+  bb.add("the_geom",Geometry.class,DefaultEngineeringCRS.CARTESIAN_2D);
+  bb.setDefaultGeometry("the_geom");
+  bb.setName("My Feature Type");
+  SimpleFeatureType featureType=bb.buildFeatureType();
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(featureType);
+  GeometryFactory gf=new GeometryFactory();
+  LineString[] geoms=new LineString[8];
+  int feature1[]=new int[]{1,1,1,2,2,2,2,1,1,1};
+  int feature2[]=new int[]{3,3,3,4,4,4,4,3,3,3};
+  int feature3[]=new int[]{5,1,5,2,6,2,6,1,5,1};
+  int feature4[]=new int[]{7,3,7,4,8,4,8,3,7,3};
+  int feature5[]=new int[]{1,5,1,6,2,6,2,5,1,5};
+  int feature6[]=new int[]{3,7,3,8,4,8,4,7,3,7};
+  int feature7[]=new int[]{5,5,5,6,6,6,6,5,5,5};
+  int feature8[]=new int[]{7,7,7,8,8,8,8,7,7,7};
+  Object featurescoords[]=new Object[]{feature1,feature2,feature3,feature4,feature5,feature6,feature7,feature8};
+  for (int i=0; i < featurescoords.length; i++) {
+    int[] values=(int[])featurescoords[i];
+    Coordinate c[]=new Coordinate[5];
+    for (int j=0; j < values.length; j=j + 2) {
+      int x=values[j];
+      int y=values[j + 1];
+      c[j / 2]=new Coordinate(x,y);
+    }
+    geoms[i]=gf.createLineString(c);
+  }
+  SimpleFeature features[]=new SimpleFeature[geoms.length];
+  MemoryFeatureCollection mm=new MemoryFeatureCollection(featureType);
+  for (int i=0; i < geoms.length; i++) {
+    features[i]=fb.buildFeature(i + "",new Object[]{new Integer(i),geoms[i]});
+    mm.add(features[i]);
+  }
+  DataStore ds=new MemoryDataStore(mm);
+  FeatureCache cache=new GridFeatureCache(ds.getFeatureSource(featureType.getTypeName()),4,4,MemoryStorage.createInstance());
+  FilterFactory ff=new FilterFactoryImpl();
+  Filter f1=ff.bbox("the_geom",0,0,4.4,4.4,DefaultEngineeringCRS.CARTESIAN_2D.toString());
+  Envelope e1=new Envelope(0,4.4,0,4.4);
+  Filter f2=ff.bbox("the_geom",0,4.6,4.4,8.5,DefaultEngineeringCRS.CARTESIAN_2D.toString());
+  Envelope e2=new Envelope(0,4.4,4.6,8.5);
+  Filter f3=ff.bbox("the_geom",4.6,0,8.5,4.4,DefaultEngineeringCRS.CARTESIAN_2D.toString());
+  Envelope e3=new Envelope(4.6,8.5,0,4.4);
+  Filter f4=ff.bbox("the_geom",4.6,4.6,8.5,8.5,DefaultEngineeringCRS.CARTESIAN_2D.toString());
+  Envelope e4=new Envelope(4.6,8.5,4.6,8.5);
+  FeatureCollection fc=cache.getFeatures(f1);
+  assertEquals(2,fc.size());
+  fc=cache.getFeatures(f2);
+  assertEquals(2,fc.size());
+  fc=cache.getFeatures(f3);
+  assertEquals(2,fc.size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e4).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e1).size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e2).size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e3).size());
+  fc=cache.getFeatures(f4);
+  assertEquals(2,fc.size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e3).size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e4).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e2).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e1).size());
+  fc=cache.getFeatures(f4);
+  assertEquals(2,fc.size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e3).size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e4).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e2).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e1).size());
+  fc=cache.getFeatures(f1);
+  assertEquals(2,fc.size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e4).size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e1).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e2).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e3).size());
+  fc=((GridFeatureCache)cache).peek(e4);
+  fc=cache.getFeatures(f2);
+  assertEquals(2,((GridFeatureCache)cache).peek(e4).size());
+  assertEquals(2,((GridFeatureCache)cache).peek(e2).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e1).size());
+  assertEquals(0,((GridFeatureCache)cache).peek(e3).size());
+}

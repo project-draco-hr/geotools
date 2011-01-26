@@ -1,0 +1,31 @@
+{
+  String source=scanExpression(token);
+  final String ENVELOPE_TYPE="ENVELOPE";
+  int cur=source.indexOf(ENVELOPE_TYPE);
+  double minX, minY, maxX, maxY;
+  cur=cur + ENVELOPE_TYPE.length() + 1;
+  String argument=source.substring(cur,source.length() - 1);
+  final String comma=",";
+  cur=0;
+  int end=argument.indexOf(comma,cur);
+  String west=argument.substring(cur,end);
+  minX=Double.parseDouble(west);
+  cur=end + 1;
+  end=argument.indexOf(comma,cur);
+  String east=argument.substring(cur,end);
+  maxX=Double.parseDouble(east);
+  cur=end + 1;
+  end=argument.indexOf(comma,cur);
+  String north=argument.substring(cur,end);
+  maxY=Double.parseDouble(north);
+  cur=end + 1;
+  String south=argument.substring(cur);
+  minY=Double.parseDouble(south);
+  GeometryFactory gf=new GeometryFactory();
+  Coordinate[] coords={new Coordinate(minX,minY),new Coordinate(minX,maxY),new Coordinate(maxX,maxY),new Coordinate(maxX,minY),new Coordinate(minX,minY)};
+  LinearRing shell=gf.createLinearRing(coords);
+  Polygon bbox=gf.createPolygon(shell,null);
+  bbox.setUserData(DefaultGeographicCRS.WGS84);
+  Literal literal=filterFactory.literal(bbox);
+  return literal;
+}

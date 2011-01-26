@@ -1,0 +1,48 @@
+{
+  Rule[] rule=fts.getRules();
+  Rule thisRule=rule[ruleIndex];
+  Filter filter=thisRule.getFilter();
+  if (filter instanceof And) {
+    String[] newValue=styleExpression.split("\\.\\.");
+    if (newValue.length != 2) {
+      throw new IllegalArgumentException("StyleExpression has incorrect syntax; min..max expected.");
+    }
+    List<Filter> children=((BinaryLogicOperator)filter).getChildren();
+    if (children.size() > 2) {
+      throw new IllegalArgumentException("This method currently only supports logical filters with exactly 2 children.");
+    }
+    PropertyIsGreaterThanOrEqualTo filter1=(PropertyIsGreaterThanOrEqualTo)children.get(0);
+    BinaryComparisonOperator filter2=(BinaryComparisonOperator)children.get(1);
+    if (!(filter1.getExpression2().equals(filter2.getExpression1()))) {
+      throw new IllegalArgumentException("Subfilters or subExpressions in incorrect order");
+    }
+    if (filter1.getExpression1().toString() != newValue[0]) {
+      filter1=ff.greaterOrEqual(filter1.getExpression1(),ff.literal(newValue[0]));
+    }
+    if (filter2.getExpression2().toString() != newValue[1]) {
+      if (filter2 instanceof PropertyIsLessThan) {
+        filter2=ff.less(filter1.getExpression1(),ff.literal(newValue[1]));
+      }
+ else       if (filter2 instanceof PropertyIsLessThanOrEqualTo) {
+        filter2=ff.lessOrEqual(filter1.getExpression1(),ff.literal(newValue[1]));
+      }
+ else {
+        throw new IllegalArgumentException("Filter 2 in the comparison is not less or less or equal??");
+      }
+    }
+    thisRule.setFilter(filter);
+  }
+ else   if (filter instanceof Or || filter instanceof PropertyIsEqualTo) {
+    Expression attrExpression;
+    if (filter instanceof Or) {
+      attrExpression=((BinaryComparisonOperator)((Or)filter).getChildren().get(0)).getExpression1();
+    }
+ else {
+      attrExpression=((PropertyIsEqualTo)filter).getExpression1();
+    }
+    rule[ruleIndex].setFilter(toExplicitFilter(styleExpression,attrExpression));
+  }
+ else {
+    throw new IllegalArgumentException("Unrecognized filter type.");
+  }
+}

@@ -1,0 +1,39 @@
+{
+  final String pc=runConfiguration.getPropertyCollectors();
+  if (pc != null && pc.length() > 0) {
+    final Set<PropertiesCollectorSPI> pcSPIs=PropertiesCollectorFinder.getPropertiesCollectorSPI();
+    final List<PropertiesCollector> pcs=new ArrayList<PropertiesCollector>();
+    final String[] pcsDefs=pc.split(",");
+    for (    String pcDef : pcsDefs) {
+      final int squareLPos=pcDef.indexOf("[");
+      final int squareRPos=pcDef.indexOf("]");
+      final int squareRPosLast=pcDef.lastIndexOf("]");
+      final int roundLPos=pcDef.indexOf("(");
+      final int roundRPos=pcDef.indexOf(")");
+      final int roundRPosLast=pcDef.lastIndexOf(")");
+      if (squareRPos != squareRPosLast)       continue;
+      if (squareLPos == -1 || squareRPos == -1)       continue;
+      if (squareLPos == 0)       continue;
+      if (roundRPos != roundRPosLast)       continue;
+      if (roundLPos == -1 || roundRPos == -1)       continue;
+      if (roundLPos == 0)       continue;
+      if (roundLPos != squareRPos + 1)       continue;
+      if (roundRPos != (pcDef.length() - 1))       continue;
+      final String name=pcDef.substring(0,squareLPos);
+      PropertiesCollectorSPI selectedSPI=null;
+      for (      PropertiesCollectorSPI spi : pcSPIs) {
+        if (spi.isAvailable() && spi.getName().equalsIgnoreCase(name)) {
+          selectedSPI=spi;
+          break;
+        }
+      }
+      if (selectedSPI == null)       continue;
+      final String config=squareLPos < squareRPos ? pcDef.substring(squareLPos + 1,squareRPos) : "";
+      final File configFile=new File(runConfiguration.getRootMosaicDirectory(),config + ".properties");
+      if (!Utils.checkFileReadable(configFile))       continue;
+      final String propertyNames[]=pcDef.substring(roundLPos + 1,roundRPos).split(",");
+      pcs.add(selectedSPI.create(configFile,Arrays.asList(propertyNames)));
+    }
+    this.propertiesCollectors=pcs;
+  }
+}

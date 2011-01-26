@@ -1,0 +1,35 @@
+{
+  if (sortByAttributes == null || sortByAttributes.length == 0) {
+    return null;
+  }
+  StringBuilder byClause=new StringBuilder("ORDER BY ");
+  for (int i=0; i < sortByAttributes.length; i++) {
+    SortBy sortAtt=sortByAttributes[i];
+    if (sortAtt == NATURAL_ORDER || sortAtt == REVERSE_ORDER) {
+      if (fidReader instanceof SdeManagedFidReader || fidReader instanceof UserManagedFidReader) {
+        byClause.append(fidReader.getFidColumn()).append(" ");
+        byClause.append(sortAtt == NATURAL_ORDER ? "ASC" : "DESC");
+      }
+ else {
+        throw new IllegalArgumentException(sortAtt + " sorting is not supported for featureclasses" + " with no primary key");
+      }
+    }
+ else {
+      final PropertyName propertyName=sortAtt.getPropertyName();
+      final String attName=propertyName.getPropertyName();
+      final AttributeDescriptor descriptor=fullSchema.getDescriptor(attName);
+      if (descriptor == null) {
+        throw new IllegalArgumentException(attName + " does not exist. Can't sort by it");
+      }
+      if (descriptor instanceof GeometryDescriptor) {
+        throw new IllegalArgumentException(attName + " is a geometry attribute. Can't sort by it");
+      }
+      byClause.append(attName).append(" ");
+      byClause.append(sortAtt.getSortOrder() == SortOrder.ASCENDING ? "ASC" : "DESC");
+    }
+    if (i < sortByAttributes.length - 1) {
+      byClause.append(", ");
+    }
+  }
+  return byClause.toString();
+}

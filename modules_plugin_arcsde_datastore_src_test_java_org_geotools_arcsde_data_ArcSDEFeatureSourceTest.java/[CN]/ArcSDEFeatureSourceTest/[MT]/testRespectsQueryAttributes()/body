@@ -1,0 +1,21 @@
+{
+  final String typeName=testData.getTempTableName();
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureSource fs=ds.getFeatureSource(typeName);
+  final String[] queryAtts={"SHAPE"};
+  final Filter filter=CQL.toFilter("INT32_COL = 1");
+  final Query query=new Query(typeName,filter,queryAtts);
+  SimpleFeatureCollection features=fs.getFeatures(query);
+  SimpleFeatureType resultSchema=features.getSchema();
+  assertEquals(1,resultSchema.getAttributeCount());
+  assertEquals("SHAPE",resultSchema.getDescriptor(0).getLocalName());
+  Feature feature=null;
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    feature=iterator.next();
+  }
+  finally {
+    iterator.close();
+  }
+  assertEquals(resultSchema,feature.getType());
+}

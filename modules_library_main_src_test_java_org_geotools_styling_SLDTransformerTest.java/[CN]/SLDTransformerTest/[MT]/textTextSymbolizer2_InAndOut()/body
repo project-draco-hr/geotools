@@ -1,0 +1,32 @@
+{
+  StyleBuilder sb=new StyleBuilder();
+  TextSymbolizer2 ts2=(TextSymbolizer2)sf.createTextSymbolizer();
+  GraphicImpl gr=new GraphicImpl(ff);
+  gr.setOpacity(ff.literal(0.77));
+  gr.setSize(ff.literal(77));
+  ts2.setGraphic(gr);
+  Literal snippet=ff.literal("no idea what a snipet is good for");
+  ts2.setSnippet(snippet);
+  Literal fD=ff.literal("some description");
+  ts2.setFeatureDescription(fD);
+  OtherTextImpl otherText=new OtherTextImpl();
+  otherText.setTarget("otherTextTarget");
+  otherText.setText(ff.literal("otherTextText"));
+  ts2.setOtherText(otherText);
+  Document doc=buildTestDocument(transformer.transform(ts2));
+  assertXpathEvaluatesTo("1","count(/sld:TextSymbolizer/sld:Graphic)",doc);
+  assertXpathEvaluatesTo("1","count(/sld:TextSymbolizer/sld:Snippet)",doc);
+  assertXpathEvaluatesTo("1","count(/sld:TextSymbolizer/sld:OtherText)",doc);
+  assertXpathEvaluatesTo("1","count(/sld:TextSymbolizer/sld:FeatureDescription)",doc);
+  String xml=transformer.transform(sb.createStyle(ts2));
+  SLDParser sldParser=new SLDParser(sf);
+  sldParser.setInput(new StringReader(xml));
+  Style importedStyle=(Style)sldParser.readXML()[0];
+  TextSymbolizer2 copy=(TextSymbolizer2)importedStyle.featureTypeStyles().get(0).rules().get(0).symbolizers().get(0);
+  assertEquals("Graphic of TextSymbolizer2 has not been correctly ex- and reimported",gr.getOpacity(),copy.getGraphic().getOpacity());
+  assertEquals("Graphic of TextSymbolizer2 has not been correctly ex- and reimported",gr.getSize(),copy.getGraphic().getSize());
+  assertEquals("Snippet of TextSymbolizer2 has not been correctly ex- and reimported",snippet,copy.getSnippet());
+  assertEquals("FeatureDescription of TextSymbolizer2 has not been correctly ex- and reimported",fD,copy.getFeatureDescription());
+  assertEquals("OtherText of TextSymbolizer2 has not been correctly ex- and reimported",otherText.getTarget(),copy.getOtherText().getTarget());
+  assertEquals("OtherText of TextSymbolizer2 has not been correctly ex- and reimported",otherText.getText(),copy.getOtherText().getText());
+}

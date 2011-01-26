@@ -1,0 +1,36 @@
+{
+  AxisSubsetType axis=Wcs10Factory.eINSTANCE.createAxisSubsetType();
+  AttributeInstance[] atts=instance.getAttributes();
+  for (  AttributeInstance attType : atts) {
+    if (attType.getName().equals("name"))     axis.setName(attType.getText());
+  }
+  Node singleValue=node.getChild("singleValue");
+  if (singleValue != null) {
+    TypedLiteralType theValue=Wcs10Factory.eINSTANCE.createTypedLiteralType();
+    theValue.setValue((String)singleValue.getValue());
+    axis.getSingleValue().add(theValue);
+  }
+  Node interval=node.getChild("interval");
+  if (interval != null) {
+    IntervalType range=Wcs10Factory.eINSTANCE.createIntervalType();
+    if (interval.getChild("min") != null) {
+      TypedLiteralType theValue=Wcs10Factory.eINSTANCE.createTypedLiteralType();
+      theValue.setValue((String)interval.getChildValue("min"));
+      range.setMin(theValue);
+    }
+    if (interval.getChild("max") != null) {
+      TypedLiteralType theValue=Wcs10Factory.eINSTANCE.createTypedLiteralType();
+      theValue.setValue((String)interval.getChildValue("max"));
+      range.setMax(theValue);
+    }
+    if (interval.getChild("res") != null) {
+      TypedLiteralType theValue=Wcs10Factory.eINSTANCE.createTypedLiteralType();
+      theValue.setValue((String)interval.getChildValue("res"));
+      range.setRes(theValue);
+    }
+    if (interval.getAttribute("atomic") != null)     range.setAtomic((Boolean)interval.getAttributeValue("atomic"));
+ else     range.setAtomic(false);
+    axis.getInterval().add(range);
+  }
+  return axis;
+}

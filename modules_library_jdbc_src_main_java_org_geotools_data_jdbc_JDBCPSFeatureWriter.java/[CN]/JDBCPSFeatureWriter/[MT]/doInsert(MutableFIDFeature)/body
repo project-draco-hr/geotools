@@ -1,0 +1,20 @@
+{
+  LOGGER.fine("inserting into database feature " + current);
+  final Connection connection=queryData.getConnection();
+  if (insertStatement == null) {
+    final SimpleFeatureType featureType=queryData.getFeatureType();
+    insertStatement=createInsertStatement(connection,featureType);
+  }
+  try {
+    fillInsertParameters(insertStatement,current);
+  }
+ catch (  SQLException sqle) {
+    String msg="SQL Exception writing column values";
+    LOGGER.log(Level.SEVERE,msg,sqle);
+    queryData.close(sqle);
+    throw new DataSourceException(msg,sqle);
+  }
+  executeInsert(insertStatement);
+  final String fid=mapper.createID(connection,current,insertStatement);
+  current.setID(fid);
+}

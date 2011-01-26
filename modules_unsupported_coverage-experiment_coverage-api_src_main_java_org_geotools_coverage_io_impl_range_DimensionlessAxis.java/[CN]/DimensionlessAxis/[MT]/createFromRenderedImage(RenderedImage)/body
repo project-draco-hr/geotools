@@ -1,0 +1,39 @@
+{
+  if (raster == null)   throw new IllegalArgumentException("Provided null input image");
+  final ColorModel cm=raster.getColorModel();
+  if (cm == null)   throw new IllegalArgumentException("Provided input image with null color model");
+  final SampleModel sm=raster.getSampleModel();
+  if (sm == null)   throw new IllegalArgumentException("Provided input image with null SampleModel");
+  final ColorInterpretation firstBandCI=TypeMap.getColorInterpretation(cm,0);
+  if (firstBandCI == ColorInterpretation.CYAN_BAND) {
+    if (sm.getNumBands() == 3)     return new DimensionlessAxis(Arrays.asList("CYAN","MAGENTA","YELLOW"),new NameImpl("CMY-AXIS"),new SimpleInternationalString("Axis for CMY bands"));
+ else     return new DimensionlessAxis(Arrays.asList("CYAN","MAGENTA","YELLOW","BLACK"),new NameImpl("CMYK-AXIS"),new SimpleInternationalString("Axis for CMYK bands"));
+  }
+  if (firstBandCI == ColorInterpretation.HUE_BAND) {
+    return new DimensionlessAxis(Arrays.asList("HUE","SATURATION","VALUE"),new NameImpl("HSV-AXIS"),new SimpleInternationalString("Axis for HSV bands"));
+  }
+  if (firstBandCI == ColorInterpretation.RED_BAND) {
+    return new DimensionlessAxis(Arrays.asList("RED","GREEN","BLUE","ALPHA"),new NameImpl("RGBA-AXIS"),new SimpleInternationalString("Axis for RGBA bands"));
+  }
+  if (firstBandCI == ColorInterpretation.PALETTE_INDEX)   return new DimensionlessAxis(Arrays.asList("PALETTE_INDEX"),new NameImpl("PALETTE_INDEX-AXIS"),new SimpleInternationalString("Axis for PALETTE INDEX bands"));
+  if (firstBandCI == ColorInterpretation.GRAY_INDEX) {
+    if (sm.getNumBands() == 2)     return new DimensionlessAxis(Arrays.asList("GRAY","ALPHA"),new NameImpl("GA-AXIS"),new SimpleInternationalString("Axis for GRAY-ALPHA bands"));
+ else     return new DimensionlessAxis(Arrays.asList("GRAY"),new NameImpl("GRAY-AXIS"),new SimpleInternationalString("Axis for GRAY bands"));
+  }
+  final ColorSpace cs=cm.getColorSpace();
+  if (cs instanceof IHSColorSpace)   return new DimensionlessAxis(Arrays.asList("INTENSITY","HUE","SATURATION"),new NameImpl("IHS-AXIS"),new SimpleInternationalString("Axis for IHS bands"));
+switch (cs.getType()) {
+case ColorSpace.TYPE_YCbCr:
+    return new DimensionlessAxis(Arrays.asList("LUMA","CHROMA-A","CHROMA-B"),new NameImpl("YCbCr-AXIS"),new SimpleInternationalString("Axis for YCbCr bands"));
+case ColorSpace.TYPE_Luv:
+  return new DimensionlessAxis(Arrays.asList("LIGHTNESS","U","V"),new NameImpl("LUV-AXIS"),new SimpleInternationalString("Axis for LUV bands"));
+case ColorSpace.TYPE_Lab:
+return new DimensionlessAxis(Arrays.asList("LIGHTNESS","A","B"),new NameImpl("LAB-AXIS"),new SimpleInternationalString("Axis for LAB bands"));
+case ColorSpace.TYPE_HLS:
+return new DimensionlessAxis(Arrays.asList("HUE","LIGHTNESS","SATURATION"),new NameImpl("HLS-AXIS"),new SimpleInternationalString("Axis for HLS bands"));
+case ColorSpace.CS_CIEXYZ:
+return new DimensionlessAxis(Arrays.asList("X","Y","Z"),new NameImpl("XYZ-AXIS"),new SimpleInternationalString("Axis for XYZ bands"));
+default :
+return null;
+}
+}

@@ -1,0 +1,18 @@
+{
+  final String XMMLNS="http://www.opengis.net/xmml";
+  final Name typeName=new NameImpl(XMMLNS,"Borehole");
+  AppSchemaDataAccess complexDs=(AppSchemaDataAccess)mappingDataStore;
+  mapping=complexDs.getMappingByElement(typeName);
+  NamespaceSupport namespaces=new NamespaceSupport();
+  namespaces.declarePrefix("gml",GML.NAMESPACE);
+  namespaces.declarePrefix("xmml",XMMLNS);
+  namespaces.declarePrefix("xlink",XLINK.NAMESPACE);
+  FilterFactory2 ff=new FilterFactoryImplNamespaceAware(namespaces);
+  String xpathExpression="sa:shape/geo:LineByVector/geo:origin/@xlink:href";
+  PropertyName propNameExpression=ff.property(xpathExpression);
+  visitor=new UnmappingFilterVisitor(mapping);
+  List unrolled=(List)propNameExpression.accept(visitor,null);
+  assertNotNull(unrolled);
+  assertEquals(1,unrolled.size());
+  assertTrue(unrolled.get(0) instanceof Expression);
+}

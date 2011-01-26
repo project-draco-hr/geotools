@@ -1,0 +1,43 @@
+{
+  DelaunayNode[] tempNodes=new DelaunayNode[nodes.length + 3];
+  double max=0;
+  for (int i=0; i < nodes.length; i++) {
+    tempNodes[i]=nodes[i];
+    max=Math.max(max,Math.abs(nodes[i].getCoordinate().x));
+    max=Math.max(max,Math.abs(nodes[i].getCoordinate().y));
+  }
+  tempNodes[nodes.length]=new DelaunayNode();
+  tempNodes[nodes.length].setCoordinate(new Coordinate(0,3 * max));
+  tempNodes[nodes.length + 1]=new DelaunayNode();
+  tempNodes[nodes.length + 1].setCoordinate(new Coordinate(3 * max,0));
+  tempNodes[nodes.length + 2]=new DelaunayNode();
+  tempNodes[nodes.length + 2].setCoordinate(new Coordinate(-3 * max,-3 * max));
+  temp1=tempNodes[nodes.length];
+  temp2=tempNodes[nodes.length + 1];
+  temp3=tempNodes[nodes.length + 2];
+  triangleList=new Vector();
+  DelaunayEdge e1=new DelaunayEdge(tempNodes[nodes.length],tempNodes[nodes.length + 1]);
+  DelaunayEdge e2=new DelaunayEdge(tempNodes[nodes.length],tempNodes[nodes.length + 2]);
+  DelaunayEdge e3=new DelaunayEdge(tempNodes[nodes.length + 1],tempNodes[nodes.length + 2]);
+  Triangle first=new Triangle(e1,e2,e3);
+  e1.setFaceA(first);
+  e2.setFaceA(first);
+  e3.setFaceA(first);
+  DelaunayNode U1=new DelaunayNode();
+  U1.setCoordinate(new Coordinate(Double.POSITIVE_INFINITY,0));
+  DelaunayNode U2=new DelaunayNode();
+  U2.setCoordinate(new Coordinate(0,Double.POSITIVE_INFINITY));
+  DelaunayNode U3=new DelaunayNode();
+  U3.setCoordinate(new Coordinate(Double.NEGATIVE_INFINITY,Double.NEGATIVE_INFINITY));
+  Triangle UNBOUNDED=new Triangle(new DelaunayEdge(U1,U2),new DelaunayEdge(U1,U3),new DelaunayEdge(U2,U3));
+  e1.setFaceB(UNBOUNDED);
+  e2.setFaceB(UNBOUNDED);
+  e3.setFaceB(UNBOUNDED);
+  triangleList.add(first);
+  for (int i=0; i < nodes.length; i++) {
+    System.out.println("triangulating node " + i);
+    triangleList=insertNode(tempNodes[i],triangleList);
+  }
+  Graph g=triangleListToGraph(triangleList);
+  return g;
+}

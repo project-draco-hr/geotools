@@ -1,0 +1,30 @@
+{
+  if (geometry == null)   return null;
+  if (geometry instanceof com.vividsolutions.jts.geom.Polygon) {
+    return geometry;
+  }
+ else   if (geometry instanceof MultiPolygon) {
+    MultiPolygon mp=(MultiPolygon)geometry;
+    return geometry.getFactory().createGeometryCollection(unrollGeometries(mp).toArray(new Geometry[0]));
+  }
+ else   if (geometry instanceof GeometryCollection) {
+    List<com.vividsolutions.jts.geom.Polygon> ret=new ArrayList<Polygon>();
+    GeometryCollection gc=(GeometryCollection)geometry;
+    for (int i=0; i < gc.getNumGeometries(); i++) {
+      Geometry g=gc.getGeometryN(i);
+      if (g instanceof com.vividsolutions.jts.geom.Polygon) {
+        ret.add((com.vividsolutions.jts.geom.Polygon)g);
+      }
+ else       if (g instanceof MultiPolygon) {
+        ret.addAll(unrollGeometries((MultiPolygon)g));
+      }
+ else {
+        throw new IllegalArgumentException(g.getClass().toString());
+      }
+    }
+    return geometry.getFactory().createGeometryCollection(ret.toArray(new Geometry[0]));
+  }
+ else {
+    throw new IllegalArgumentException(geometry.getClass().toString());
+  }
+}

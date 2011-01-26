@@ -1,0 +1,42 @@
+{
+  if ((properties == null) && (override == null)) {
+    return featureType;
+  }
+  if (properties == null) {
+    properties=new String[featureType.getAttributeCount()];
+    for (int i=0; i < properties.length; i++) {
+      properties[i]=featureType.getDescriptor(i).getLocalName();
+    }
+  }
+  String namespaceURI=namespace != null ? namespace.toString() : null;
+  boolean same=featureType.getAttributeCount() == properties.length && featureType.getTypeName().equals(typeName) && Utilities.equals(featureType.getName().getNamespaceURI(),namespaceURI);
+  for (int i=0; (i < featureType.getAttributeCount()) && same; i++) {
+    AttributeDescriptor type=featureType.getDescriptor(i);
+    same=type.getLocalName().equals(properties[i]) && (((override != null) && type instanceof GeometryDescriptor) ? assertEquals(override,((GeometryDescriptor)type).getCoordinateReferenceSystem()) : true);
+  }
+  if (same) {
+    return featureType;
+  }
+  AttributeDescriptor[] types=new AttributeDescriptor[properties.length];
+  for (int i=0; i < properties.length; i++) {
+    types[i]=featureType.getDescriptor(properties[i]);
+    if ((override != null) && types[i] instanceof GeometryDescriptor) {
+      AttributeTypeBuilder ab=new AttributeTypeBuilder();
+      ab.init(types[i]);
+      ab.setCRS(override);
+      types[i]=ab.buildDescriptor(types[i].getLocalName(),ab.buildGeometryType());
+    }
+  }
+  if (typeName == null)   typeName=featureType.getTypeName();
+  if (namespace == null && featureType.getName().getNamespaceURI() != null)   try {
+    namespace=new URI(featureType.getName().getNamespaceURI());
+  }
+ catch (  URISyntaxException e) {
+    throw new RuntimeException(e);
+  }
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName(typeName);
+  tb.setNamespaceURI(namespace);
+  tb.addAll(types);
+  return tb.buildFeatureType();
+}

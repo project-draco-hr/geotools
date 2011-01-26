@@ -1,0 +1,22 @@
+{
+  final int numRasters=rasterInfo.getNumRasters();
+  List<RasterQueryInfo> matchingRasters=new ArrayList<RasterQueryInfo>(numRasters);
+  int optimalPyramidLevel;
+  GeneralEnvelope gridEnvelope;
+  for (int rasterN=0; rasterN < numRasters; rasterN++) {
+    optimalPyramidLevel=rasterInfo.getOptimalPyramidLevel(rasterN,overviewPolicy,requestedEnvelope,requestedDim);
+    gridEnvelope=rasterInfo.getGridEnvelope(rasterN,optimalPyramidLevel);
+    final boolean edgesInclusive=true;
+    if (requestedEnvelope.intersects(gridEnvelope,edgesInclusive)) {
+      RasterQueryInfo match=new RasterQueryInfo();
+      match.setRequestedEnvelope(requestedEnvelope);
+      match.setRequestedDim(requestedDim);
+      match.setRasterId(rasterInfo.getRasterId(rasterN));
+      match.setRasterIndex(rasterN);
+      match.setPyramidLevel(optimalPyramidLevel);
+      match.setResolution(rasterInfo.getResolution(rasterN,optimalPyramidLevel));
+      matchingRasters.add(match);
+    }
+  }
+  return matchingRasters;
+}

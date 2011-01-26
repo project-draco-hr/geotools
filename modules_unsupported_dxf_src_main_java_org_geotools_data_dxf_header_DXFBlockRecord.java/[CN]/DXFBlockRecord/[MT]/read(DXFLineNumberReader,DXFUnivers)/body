@@ -1,0 +1,46 @@
+{
+  Vector<DXFEntity> sEnt=new Vector<DXFEntity>();
+  String name="";
+  double x=0, y=0;
+  int flag=0;
+  DXFLayer l=null;
+  int sln=br.getLineNumber();
+  log.debug(">Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    if (ENDBLK.equals(type)) {
+      doLoop=false;
+    }
+ else     if (ENDSEC.equals(type)) {
+      doLoop=false;
+      br.reset();
+    }
+  break;
+case NAME:
+name=cvp.getStringValue();
+break;
+default :
+break;
+}
+}
+DXFBlockRecord e=new DXFBlockRecord(x,y,flag,name,sEnt,DXFColor.getDefaultColorIndex(),l);
+log.debug(e.toString(x,y,flag,name,sEnt.size(),DXFColor.getDefaultColorIndex()));
+log.debug(">Exit at line: " + br.getLineNumber());
+return e;
+}

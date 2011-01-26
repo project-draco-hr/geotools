@@ -1,0 +1,24 @@
+{
+  Identification id=metaCRS.getBaseCRS();
+  org.geotools.imageio.metadata.Identification identDatum=id != null ? id : metaCRS.getIdentification();
+  if (identDatum == null) {
+    throw new Exception("The datum is not defined.");
+  }
+  final String name=identDatum.getName();
+  if (name == null) {
+    throw new Exception("Datum name not defined.");
+  }
+  if (name.toUpperCase().contains("WGS84")) {
+    return DefaultGeodeticDatum.WGS84;
+  }
+  final String primeMeridianName=metaCRS.getPrimeMeridian().getName();
+  final PrimeMeridian primeMeridian;
+  if ((primeMeridianName == null) || (primeMeridianName != null && primeMeridianName.toLowerCase().contains("greenwich"))) {
+    primeMeridian=DefaultPrimeMeridian.GREENWICH;
+  }
+ else {
+    final double greenwichLon=Double.parseDouble(metaCRS.getGreenwichLongitude());
+    primeMeridian=(Double.isNaN(greenwichLon)) ? DefaultPrimeMeridian.GREENWICH : new DefaultPrimeMeridian(primeMeridianName,greenwichLon);
+  }
+  return new DefaultGeodeticDatum(name,getEllipsoid(metaCRS),primeMeridian);
+}

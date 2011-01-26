@@ -1,0 +1,73 @@
+{
+  if (diff.isEmpty()) {
+    return;
+  }
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  try {
+    writer=store.createFeatureWriter(typeName,transaction);
+  }
+ catch (  UnsupportedOperationException e) {
+    try {
+      writer=store.getFeatureWriter(typeName);
+    }
+ catch (    UnsupportedOperationException eek) {
+      throw e;
+    }
+  }
+  SimpleFeature feature;
+  SimpleFeature update;
+  String fid;
+  try {
+    while (writer.hasNext()) {
+      feature=(SimpleFeature)writer.next();
+      fid=feature.getID();
+      if (diff.modified2.containsKey(fid)) {
+        update=(SimpleFeature)diff.modified2.get(fid);
+        if (update == NULL) {
+          writer.remove();
+          store.listenerManager.fireFeaturesRemoved(typeName,transaction,ReferencedEnvelope.reference(feature.getBounds()),true);
+        }
+ else {
+          try {
+            feature.setAttributes(update.getAttributes());
+            writer.write();
+            ReferencedEnvelope bounds=new ReferencedEnvelope((CoordinateReferenceSystem)null);
+            bounds.include(feature.getBounds());
+            bounds.include(update.getBounds());
+            store.listenerManager.fireFeaturesChanged(typeName,transaction,bounds,true);
+          }
+ catch (          IllegalAttributeException e) {
+            throw new DataSourceException("Could update " + fid,e);
+          }
+        }
+      }
+    }
+    SimpleFeature addedFeature;
+    SimpleFeature nextFeature;
+synchronized (diff) {
+      for (Iterator i=diff.added.values().iterator(); i.hasNext(); ) {
+        addedFeature=(SimpleFeature)i.next();
+        fid=addedFeature.getID();
+        nextFeature=(SimpleFeature)writer.next();
+        if (nextFeature == null) {
+          throw new DataSourceException("Could not add " + fid);
+        }
+ else {
+          try {
+            nextFeature.setAttributes(addedFeature.getAttributes());
+            writer.write();
+            store.listenerManager.fireFeaturesAdded(typeName,transaction,ReferencedEnvelope.reference(nextFeature.getBounds()),true);
+          }
+ catch (          IllegalAttributeException e) {
+            throw new DataSourceException("Could update " + fid,e);
+          }
+        }
+      }
+    }
+  }
+  finally {
+    writer.close();
+    store.listenerManager.fireChanged(typeName,transaction,true);
+    diff.clear();
+  }
+}

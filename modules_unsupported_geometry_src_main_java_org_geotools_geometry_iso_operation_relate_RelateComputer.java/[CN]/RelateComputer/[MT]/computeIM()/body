@@ -1,0 +1,29 @@
+{
+  IntersectionMatrix tIM=new IntersectionMatrix();
+  tIM.set(Location.EXTERIOR,Location.EXTERIOR,2);
+  EnvelopeImpl env1=(EnvelopeImpl)arg[0].getGeometry().getEnvelope();
+  EnvelopeImpl env2=(EnvelopeImpl)arg[1].getGeometry().getEnvelope();
+  if (!env1.intersects(env2)) {
+    computeDisjointIM(tIM);
+    return tIM;
+  }
+  this.arg[0].computeSelfNodes(this.li,false);
+  this.arg[1].computeSelfNodes(this.li,false);
+  SegmentIntersector tIntersector=this.arg[0].computeEdgeIntersections(this.arg[1],this.li,false);
+  this.computeIntersectionNodes(0);
+  this.computeIntersectionNodes(1);
+  this.copyNodesAndLabels(0);
+  this.copyNodesAndLabels(1);
+  this.labelIsolatedNodes();
+  this.computeProperIntersectionIM(tIntersector,tIM);
+  EdgeEndBuilder eeBuilder=new EdgeEndBuilder();
+  List ee0=eeBuilder.computeEdgeEnds(arg[0].getEdgeIterator());
+  this.insertEdgeEnds(ee0);
+  List ee1=eeBuilder.computeEdgeEnds(arg[1].getEdgeIterator());
+  this.insertEdgeEnds(ee1);
+  this.labelNodeEdges();
+  this.labelIsolatedEdges(0,1);
+  this.labelIsolatedEdges(1,0);
+  this.updateIM(tIM);
+  return tIM;
+}

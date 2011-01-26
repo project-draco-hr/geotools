@@ -1,0 +1,55 @@
+{
+  System.out.println("   test problem image");
+  final double ROUND_OFF_TOLERANCE=1.0e-4D;
+  URL url=getClass().getResource("data/viewshed.tif");
+  BufferedImage img=ImageIO.read(url);
+  ReferencedEnvelope env=new ReferencedEnvelope(new Rectangle2D.Double(img.getMinX(),img.getMinY(),img.getWidth(),img.getHeight()),null);
+  GridCoverage2D cov=covFactory.create("coverage",img,env);
+  int band=0;
+  double outside=-1.0;
+  Set<Double> outsideValues=Collections.singleton(outside);
+  ProgressListener progress=null;
+  SimpleFeatureCollection fc=RasterToVectorProcess.process(cov,band,null,outsideValues,true,progress);
+  SimpleFeatureIterator iter=fc.features();
+  Map<Integer,Double> areas=new HashMap<Integer,Double>();
+  try {
+    while (iter.hasNext()) {
+      SimpleFeature feature=iter.next();
+      Geometry geom=(Geometry)feature.getDefaultGeometry();
+      assertTrue(geom.isValid());
+      double gridvalue=(Double)feature.getAttribute("gridvalue");
+      if (gridvalue != outside) {
+        Double sum=areas.get((int)gridvalue);
+        if (sum == null) {
+          sum=0.0d;
+        }
+        sum+=geom.getArea();
+        areas.put((int)gridvalue,sum);
+      }
+    }
+  }
+  finally {
+    iter.close();
+  }
+  Map<Integer,Double> imgAreas=new HashMap<Integer,Double>();
+  Raster tile=img.getTile(0,0);
+  for (int y=img.getMinY(), ny=0; ny < img.getHeight(); y++, ny++) {
+    for (int x=img.getMinX(), nx=0; nx < img.getWidth(); x++, nx++) {
+      double gridvalue=tile.getSampleDouble(x,y,0);
+      if (gridvalue != outside) {
+        Double sum=areas.get((int)gridvalue);
+        if (sum == null) {
+          sum=1.0D;
+        }
+ else {
+          sum+=1.0D;
+        }
+        areas.put((int)gridvalue,sum);
+      }
+    }
+  }
+  for (  Integer i : imgAreas.keySet()) {
+    double ratio=areas.get(i) / imgAreas.get(i);
+    assertTrue(Math.abs(1.0D - ratio) < ROUND_OFF_TOLERANCE);
+  }
+}

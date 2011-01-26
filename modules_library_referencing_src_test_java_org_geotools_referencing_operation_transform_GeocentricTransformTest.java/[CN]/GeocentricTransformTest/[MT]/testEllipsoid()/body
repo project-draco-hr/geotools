@@ -1,0 +1,32 @@
+{
+  final DefaultEllipsoid e=DefaultEllipsoid.WGS84;
+  final double hm=0.5 / 60;
+  assertEquals("Nautical mile at equator",1842.78,e.orthodromicDistance(0,00 - hm,0,00 + hm),0.2);
+  assertEquals("Nautical mile at North pole",1861.67,e.orthodromicDistance(0,90 - 2 * hm,0,90),0.2);
+  assertEquals("Nautical mile at South pole",1861.67,e.orthodromicDistance(0,2 * hm - 90,0,-90),0.2);
+  assertEquals("International nautical mile",1852.00,e.orthodromicDistance(0,45 - hm,0,45 + hm),0.2);
+  for (double i=0.01; i < 180; i+=1) {
+    final double base=180 * random.nextDouble() - 90;
+    assertEquals(i + "?? rotation",e.getSemiMajorAxis() * Math.toRadians(i),e.orthodromicDistance(base,0,base + i,0),0.2);
+  }
+  final double radius=e.getSemiMajorAxis();
+  final double circumference=(radius * 1.00000001) * (2 * Math.PI);
+  final DefaultEllipsoid s=DefaultEllipsoid.createEllipsoid("Sphere",radius,radius,e.getAxisUnit());
+  assertTrue("Spheroid class",!DefaultEllipsoid.class.equals(s.getClass()));
+  for (double i=0; i <= 180; i+=1) {
+    final double base=360 * random.nextDouble() - 180;
+    assertEquals(i + "?? rotation",s.getSemiMajorAxis() * Math.toRadians(i),s.orthodromicDistance(base,0,base + i,0),0.001);
+  }
+  for (double i=-90; i <= +90; i+=1) {
+    final double meridian=360 * random.nextDouble() - 180;
+    assertEquals(i + "?? rotation",s.getSemiMajorAxis() * Math.toRadians(Math.abs(i)),s.orthodromicDistance(meridian,0,meridian,i),0.001);
+  }
+  for (int i=0; i < 100; i++) {
+    final double y1=-90 + 180 * random.nextDouble();
+    final double y2=-90 + 180 * random.nextDouble();
+    final double x1=-180 + 360 * random.nextDouble();
+    final double x2=-180 + 360 * random.nextDouble();
+    final double distance=s.orthodromicDistance(x1,y1,x2,y2);
+    assertTrue("Range of legal values",distance >= 0 && distance <= circumference);
+  }
+}

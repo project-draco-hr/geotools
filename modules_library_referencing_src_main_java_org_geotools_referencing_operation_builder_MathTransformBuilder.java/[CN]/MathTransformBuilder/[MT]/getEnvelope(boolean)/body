@@ -1,0 +1,22 @@
+{
+  GeneralEnvelope envelope=null;
+  CoordinateReferenceSystem crs=null;
+  for (final Iterator<MappedPosition> it=getMappedPositions().iterator(); it.hasNext(); ) {
+    final MappedPosition mp=(MappedPosition)it.next();
+    final DirectPosition point=target ? mp.getTarget() : mp.getSource();
+    if (point != null) {
+      if (envelope == null) {
+        final double[] coordinates=point.getCoordinates();
+        envelope=new GeneralEnvelope(coordinates,coordinates);
+      }
+ else {
+        envelope.add(point);
+      }
+      crs=getCoordinateReferenceSystem(point,crs);
+    }
+  }
+  if (envelope != null) {
+    envelope.setCoordinateReferenceSystem(crs);
+  }
+  return envelope;
+}

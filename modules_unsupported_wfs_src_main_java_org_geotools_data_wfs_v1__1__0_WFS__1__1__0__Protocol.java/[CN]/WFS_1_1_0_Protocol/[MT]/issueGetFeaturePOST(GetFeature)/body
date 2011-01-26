@@ -1,0 +1,18 @@
+{
+  if (!supportsOperation(WFSOperationType.GET_FEATURE,true)) {
+    throw new UnsupportedOperationException("The server does not support GetFeature for HTTP method POST");
+  }
+  URL url=getOperationURL(WFSOperationType.GET_FEATURE,true);
+  RequestComponents reqParts=strategy.createGetFeatureRequest(this,request);
+  GetFeatureType serverRequest=reqParts.getServerRequest();
+  Encoder encoder=new Encoder(strategy.getWfsConfiguration());
+  String typeName=reqParts.getKvpParameters().get("TYPENAME");
+  QName fullName=getFeatureTypeName(typeName);
+  String prefix=fullName.getPrefix();
+  String namespace=fullName.getNamespaceURI();
+  if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
+    encoder.getNamespaces().declarePrefix(prefix,namespace);
+  }
+  WFSResponse response=issuePostRequest(serverRequest,url,encoder);
+  return response;
+}

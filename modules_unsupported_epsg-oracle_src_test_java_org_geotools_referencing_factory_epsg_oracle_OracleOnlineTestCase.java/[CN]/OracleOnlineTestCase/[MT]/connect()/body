@@ -1,0 +1,16 @@
+{
+  String user=fixture.getProperty("user");
+  String password=fixture.getProperty("password");
+  String url=fixture.getProperty("url");
+  DataSource source=connect(user,password,url,fixture);
+  if (!isEpsgDatabaseLoaded(source)) {
+    throw new SQLException("Could not find EPSG tables");
+  }
+  datasource=source;
+  Hashtable env=new Hashtable();
+  env.put(Context.INITIAL_CONTEXT_FACTORY,"org.osjava.sj.memory.MemoryContextFactory");
+  InitialContext context=new InitialContext(env);
+  String name="jdbc/EPSG";
+  context.bind(name,source);
+  GeoTools.init(context);
+}

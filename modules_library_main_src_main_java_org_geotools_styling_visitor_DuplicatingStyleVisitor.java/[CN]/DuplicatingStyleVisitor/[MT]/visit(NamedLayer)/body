@@ -1,0 +1,29 @@
+{
+  NamedLayer copy=null;
+  Style[] style=layer.getStyles();
+  Style[] styleCopy=new Style[style.length];
+  int length=style.length;
+  for (int i=0; i < length; i++) {
+    if (style[i] != null) {
+      style[i].accept(this);
+      styleCopy[i]=(Style)pages.pop();
+    }
+  }
+  FeatureTypeConstraint[] lfc=layer.getLayerFeatureConstraints();
+  FeatureTypeConstraint[] lfcCopy=new FeatureTypeConstraint[lfc.length];
+  length=lfc.length;
+  for (int i=0; i < length; i++) {
+    if (lfc[i] != null) {
+      lfc[i].accept(this);
+      lfcCopy[i]=(FeatureTypeConstraint)pages.pop();
+    }
+  }
+  copy=sf.createNamedLayer();
+  copy.setName(layer.getName());
+  length=styleCopy.length;
+  for (int i=0; i < length; i++) {
+    copy.addStyle(styleCopy[i]);
+  }
+  copy.setLayerFeatureConstraints(lfcCopy);
+  pages.push(copy);
+}

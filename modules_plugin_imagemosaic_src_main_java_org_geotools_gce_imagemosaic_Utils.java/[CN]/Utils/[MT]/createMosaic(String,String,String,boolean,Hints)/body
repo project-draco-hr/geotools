@@ -1,0 +1,50 @@
+{
+  final CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
+  configuration.setAbsolute(absolutePath);
+  configuration.setHints(hints);
+  configuration.setRootMosaicDirectory(location);
+  configuration.setIndexingDirectories(Arrays.asList(location));
+  configuration.setIndexName(indexName);
+  final File parent=new File(location);
+  final File indexerProperties=new File(parent,"indexer.properties");
+  if (Utils.checkFileReadable(indexerProperties)) {
+    final Properties props=Utils.loadPropertiesFromURL(DataUtilities.fileToURL(indexerProperties));
+    if (props.containsKey("Name"))     configuration.setIndexName(props.getProperty("Name"));
+    if (props.containsKey("Absolute"))     configuration.setAbsolute(Boolean.getBoolean(props.getProperty("Absolute")));
+    if (props.containsKey("Recursive"))     configuration.setRecursive(Boolean.valueOf(props.getProperty("Recursive")));
+    if (props.containsKey("Wildcard"))     configuration.setWildcard(props.getProperty("Wildcard"));
+    if (props.containsKey("Schema"))     configuration.setSchema(props.getProperty("Schema"));
+    if (props.containsKey("TimeAttribute"))     configuration.setTimeAttribute(props.getProperty("TimeAttribute"));
+    if (props.containsKey("ElevationAttribute"))     configuration.setElevationAttribute(props.getProperty("ElevationAttribute"));
+    if (props.containsKey("RuntimeAttribute"))     configuration.setRuntimeAttribute(props.getProperty("RuntimeAttribute"));
+    if (props.containsKey("Envelope2D"))     configuration.setEnvelope2D(props.getProperty("Envelope2D"));
+    if (props.containsKey("ResolutionLevels"))     configuration.setResolutionLevels(props.getProperty("ResolutionLevels"));
+    if (props.containsKey("PropertyCollectors"))     configuration.setPropertyCollectors(props.getProperty("PropertyCollectors"));
+  }
+  final CatalogBuilder catalogBuilder=new CatalogBuilder(configuration);
+  final Queue<Throwable> exceptions=new LinkedList<Throwable>();
+  try {
+    final CatalogBuilder.ProcessingEventListener listener=new CatalogBuilder.ProcessingEventListener(){
+      @Override public void exceptionOccurred(      ExceptionEvent event){
+        final Throwable t=event.getException();
+        exceptions.add(t);
+        if (LOGGER.isLoggable(Level.SEVERE))         LOGGER.log(Level.SEVERE,t.getLocalizedMessage(),t);
+      }
+      @Override public void getNotification(      ProcessingEvent event){
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine(event.getMessage());
+      }
+    }
+;
+    catalogBuilder.addProcessingEventListener(listener);
+    catalogBuilder.run();
+  }
+ catch (  Throwable e) {
+    LOGGER.log(Level.SEVERE,"Unable to build mosaic",e);
+    return false;
+  }
+ finally {
+    catalogBuilder.dispose();
+  }
+  if (exceptions.size() > 0)   return false;
+  return true;
+}

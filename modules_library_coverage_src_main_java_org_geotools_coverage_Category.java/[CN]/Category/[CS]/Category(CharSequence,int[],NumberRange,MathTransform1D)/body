@@ -1,0 +1,41 @@
+{
+  ensureNonNull("name",name);
+  this.name=SimpleInternationalString.wrap(name);
+  this.ARGB=ARGB;
+  this.range=range;
+  Class<?> type=range.getElementClass();
+  boolean minInc=range.isMinIncluded();
+  boolean maxInc=range.isMaxIncluded();
+  this.minimum=doubleValue(type,range.getMinValue(),minInc ? 0 : +1);
+  this.maximum=doubleValue(type,range.getMaxValue(),maxInc ? 0 : -1);
+  if (sampleToGeophysics == null && minInc && maxInc && Double.isNaN(minimum) && Double.doubleToRawLongBits(minimum) == Double.doubleToRawLongBits(maximum)) {
+    inverse=this;
+    transform=createLinearTransform(0,minimum);
+    return;
+  }
+  if (!(minimum <= maximum) || Double.isInfinite(minimum) || Double.isInfinite(maximum)) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_RANGE_$2,range.getMinValue(),range.getMaxValue()));
+  }
+  TransformException cause=null;
+  try {
+    if (sampleToGeophysics == null) {
+      inverse=new GeophysicsCategory(this,false);
+      transform=createLinearTransform(0,inverse.minimum);
+      return;
+    }
+    transform=sampleToGeophysics;
+    if (sampleToGeophysics.isIdentity()) {
+      inverse=this;
+    }
+ else {
+      inverse=new GeophysicsCategory(this,true);
+    }
+    if (inverse.minimum <= inverse.maximum) {
+      return;
+    }
+  }
+ catch (  TransformException exception) {
+    cause=exception;
+  }
+  throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_TRANSFORM_$1,Classes.getClass(sampleToGeophysics)),cause);
+}

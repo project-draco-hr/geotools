@@ -1,0 +1,26 @@
+{
+  if (!isCompatible(resultsToAdd)) {
+    throw new IllegalArgumentException("Parameter is not a compatible type");
+  }
+  if (resultsToAdd == CalcResult.NULL_RESULT) {
+    return this;
+  }
+  if (resultsToAdd instanceof AverageResult) {
+    AverageResult moreResults=(AverageResult)resultsToAdd;
+    if (isOptimized || moreResults.isOptimized) {
+      throw new IllegalArgumentException("Optimized average results cannot be merged.");
+    }
+    Number[] sums=new Number[]{(Number)averageStrategy.getSum(),(Number)moreResults.averageStrategy.getSum()};
+    Number newSum=CalcUtil.sum(sums);
+    Number newCount=(Number)new Integer(averageStrategy.getCount() + moreResults.averageStrategy.getCount());
+    Number[] params=new Number[]{newSum,newCount};
+    Object newAverage=CalcUtil.getObject(params);
+    AverageStrategy newAverageObj;
+    newAverageObj=createStrategy(newAverage.getClass());
+    newAverageObj.set(newCount.intValue(),newSum);
+    return new AverageResult(newAverageObj);
+  }
+ else {
+    throw new IllegalArgumentException("The CalcResults claim to be compatible, but the appropriate merge method has not been implemented.");
+  }
+}

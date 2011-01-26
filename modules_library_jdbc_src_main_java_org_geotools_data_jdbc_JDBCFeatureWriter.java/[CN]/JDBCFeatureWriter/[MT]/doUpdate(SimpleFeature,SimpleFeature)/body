@@ -1,0 +1,23 @@
+{
+  try {
+    for (int i=0; i < current.getAttributeCount(); i++) {
+      Object currAtt=current.getAttribute(i);
+      Object liveAtt=live.getAttribute(i);
+      if ((live == null) || !DataUtilities.attributesEqual(liveAtt,currAtt)) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("modifying att# " + i + " to "+ currAtt);
+        }
+        queryData.write(i,currAtt);
+      }
+    }
+  }
+ catch (  IOException ioe) {
+    String message="problem modifying row";
+    if (queryData.getTransaction() != Transaction.AUTO_COMMIT) {
+      queryData.getTransaction().rollback();
+      message+="(transaction canceled)";
+    }
+    throw ioe;
+  }
+  queryData.updateRow();
+}

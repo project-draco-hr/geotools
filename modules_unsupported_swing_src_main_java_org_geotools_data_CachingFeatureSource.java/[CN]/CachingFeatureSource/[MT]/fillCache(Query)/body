@@ -1,0 +1,19 @@
+{
+  System.out.println("Refilling cache from " + query);
+  Query cloned=new DefaultQuery(query);
+  cloned.getHints().remove(Hints.GEOMETRY_DISTANCE);
+  FeatureCollection features=wrapped.getFeatures(cloned);
+  FeatureIterator fi=features.features();
+  index=null;
+  STRtree newIndex=new STRtree();
+  while (fi.hasNext()) {
+    Feature f=fi.next();
+    newIndex.insert(ReferencedEnvelope.reference(f.getBounds()),f);
+  }
+  fi.close();
+  index=newIndex;
+  cachedQuery=query;
+  cachedSchema=(SimpleFeatureType)features.getSchema();
+  cachedBounds=getEnvelope(query.getFilter());
+  dirty=false;
+}

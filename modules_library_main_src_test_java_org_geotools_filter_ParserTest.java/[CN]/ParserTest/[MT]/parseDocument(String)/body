@@ -1,0 +1,16 @@
+{
+  LOGGER.finest("about to create parser");
+  SAXParserFactory factory=SAXParserFactory.newInstance();
+  TestFilterHandler filterHandler=new TestFilterHandler();
+  FilterFilter filterFilter=new FilterFilter(filterHandler,null);
+  GMLFilterGeometry geometryFilter=new GMLFilterGeometry(filterFilter);
+  GMLFilterDocument documentFilter=new GMLFilterDocument(geometryFilter);
+  SAXParserFactory fac=SAXParserFactory.newInstance();
+  SAXParser parser=fac.newSAXParser();
+  ParserAdapter p=new ParserAdapter(parser.getParser());
+  p.setContentHandler(documentFilter);
+  LOGGER.fine("just made parser, " + uri);
+  p.parse(TestData.getResource(this,uri).toExternalForm());
+  LOGGER.finest("just parsed: " + uri);
+  return filterHandler.getFilter();
+}

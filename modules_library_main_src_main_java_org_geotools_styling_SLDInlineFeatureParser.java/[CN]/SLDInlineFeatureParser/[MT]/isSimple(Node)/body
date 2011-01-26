@@ -1,0 +1,44 @@
+{
+  int foundFeature=0;
+  int foundFC=0;
+  Node fcNode=null;
+  String featureName=null;
+  NodeList children=root.getChildNodes();
+  for (int i=0; i < children.getLength(); i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null)     childName=child.getNodeName();
+    if (childName.equalsIgnoreCase("FeatureCollection")) {
+      (foundFC)++;
+      fcNode=child;
+    }
+ else {
+      if (featureName == null)       featureName=childName;
+      if (!(childName.equalsIgnoreCase(featureName)))       throw new Exception("SLD inline feature parser  - it appear that there is >1 feature type present.  I got a " + childName + " when I was expecting a "+ featureName+ " tag");
+    }
+  }
+  if (foundFC > 1)   throw new Exception("SLD - UserLayer, inline feature parser - found >1 FeatureCollection.  Not supported");
+  if ((foundFC > 0) && (foundFeature > 0))   throw new Exception("SLD - UserLayer, inline feature parser - found  SimpleFeatureCollection and featureMembers.  Not supported");
+  if (foundFC == 0)   return true;
+  featureName=null;
+  children=fcNode.getChildNodes();
+  for (int i=0; i < children.getLength(); i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null)     childName=child.getNodeName();
+    if (childName.equalsIgnoreCase("featureMember"))     foundFeature++;
+ else     if (childName.equalsIgnoreCase("boundedBy")) {
+    }
+ else     if (childName.equalsIgnoreCase("FeatureCollection")) {
+      throw new Exception("SLD - UserLayer, inline feature parser - found a node of type FeatureCollection.  Expected a featureMember - dont support nested collections.");
+    }
+ else     throw new Exception("SLD - UserLayer, inline feature parser - found a node of type '" + child.getLocalName() + "' and dont understand it.  Expected a featureMember.");
+  }
+  return true;
+}

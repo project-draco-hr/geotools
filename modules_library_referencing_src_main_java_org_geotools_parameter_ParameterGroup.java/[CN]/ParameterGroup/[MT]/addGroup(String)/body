@@ -1,0 +1,19 @@
+{
+  final GeneralParameterDescriptor check=((ParameterDescriptorGroup)descriptor).descriptor(name);
+  if (!(check instanceof ParameterDescriptorGroup)) {
+    throw new ParameterNotFoundException(Errors.format(ErrorKeys.MISSING_PARAMETER_$1,name),name);
+  }
+  int count=0;
+  for (final Iterator it=values.iterator(); it.hasNext(); ) {
+    final GeneralParameterValue value=(GeneralParameterValue)it.next();
+    if (AbstractIdentifiedObject.nameMatches(value.getDescriptor(),name)) {
+      count++;
+    }
+  }
+  if (count >= check.getMaximumOccurs()) {
+    throw new InvalidParameterCardinalityException(Errors.format(ErrorKeys.TOO_MANY_OCCURENCES_$2,name,count),name);
+  }
+  final ParameterValueGroup value=((ParameterDescriptorGroup)check).createValue();
+  values.add(value);
+  return value;
+}

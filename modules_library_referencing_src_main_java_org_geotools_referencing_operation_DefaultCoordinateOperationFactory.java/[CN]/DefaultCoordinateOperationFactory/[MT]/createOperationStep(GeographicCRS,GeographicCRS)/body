@@ -1,0 +1,75 @@
+{
+  final EllipsoidalCS sourceCS=sourceCRS.getCoordinateSystem();
+  final EllipsoidalCS targetCS=targetCRS.getCoordinateSystem();
+  final GeodeticDatum sourceDatum=sourceCRS.getDatum();
+  final GeodeticDatum targetDatum=targetCRS.getDatum();
+  final PrimeMeridian sourcePM=sourceDatum.getPrimeMeridian();
+  final PrimeMeridian targetPM=targetDatum.getPrimeMeridian();
+  if (equalsIgnorePrimeMeridian(sourceDatum,targetDatum)) {
+    final Matrix matrix=swapAndScaleAxis(sourceCS,targetCS,sourcePM,targetPM);
+    return createFromAffineTransform(AXIS_CHANGES,sourceCRS,targetCRS,matrix);
+  }
+  if (molodenskiMethod != null) {
+    ReferenceIdentifier identifier=DATUM_SHIFT;
+    BursaWolfParameters bursaWolf=null;
+    if (sourceDatum instanceof DefaultGeodeticDatum) {
+      bursaWolf=((DefaultGeodeticDatum)sourceDatum).getBursaWolfParameters(targetDatum);
+    }
+    if (bursaWolf == null) {
+      final Matrix shift=DefaultGeodeticDatum.getAffineTransform(sourceDatum,targetDatum);
+      if (shift != null)       try {
+        bursaWolf=new BursaWolfParameters(targetDatum);
+        bursaWolf.setAffineTransform(shift,1E-4);
+      }
+ catch (      IllegalArgumentException ignore) {
+      }
+ else       if (lenientDatumShift) {
+        bursaWolf=new BursaWolfParameters(targetDatum);
+        identifier=ELLIPSOID_SHIFT;
+      }
+    }
+    if (bursaWolf != null && bursaWolf.isTranslation()) {
+      final Ellipsoid sourceEllipsoid=sourceDatum.getEllipsoid();
+      final Ellipsoid targetEllipsoid=targetDatum.getEllipsoid();
+      if (bursaWolf.isIdentity() && equalsIgnoreMetadata(sourceEllipsoid,targetEllipsoid)) {
+        final Matrix matrix=swapAndScaleAxis(sourceCS,targetCS,sourcePM,targetPM);
+        return createFromAffineTransform(identifier,sourceCRS,targetCRS,matrix);
+      }
+      final int sourceDim=getDimension(sourceCRS);
+      final int targetDim=getDimension(targetCRS);
+      final ParameterValueGroup parameters;
+      parameters=getMathTransformFactory().getDefaultParameters(molodenskiMethod);
+      parameters.parameter("src_semi_major").setValue(sourceEllipsoid.getSemiMajorAxis());
+      parameters.parameter("src_semi_minor").setValue(sourceEllipsoid.getSemiMinorAxis());
+      parameters.parameter("tgt_semi_major").setValue(targetEllipsoid.getSemiMajorAxis());
+      parameters.parameter("tgt_semi_minor").setValue(targetEllipsoid.getSemiMinorAxis());
+      parameters.parameter("dx").setValue(bursaWolf.dx);
+      parameters.parameter("dy").setValue(bursaWolf.dy);
+      parameters.parameter("dz").setValue(bursaWolf.dz);
+      parameters.parameter("dim").setValue(sourceDim);
+      if (sourceDim == targetDim) {
+        final CoordinateOperation step1, step2, step3;
+        final GeographicCRS normSourceCRS=normalize(sourceCRS,true);
+        final GeographicCRS normTargetCRS=normalize(targetCRS,true);
+        step1=createOperationStep(sourceCRS,normSourceCRS);
+        step2=createFromParameters(identifier,normSourceCRS,normTargetCRS,parameters);
+        step3=createOperationStep(normTargetCRS,targetCRS);
+        return concatenate(step1,step2,step3);
+      }
+ else {
+      }
+    }
+  }
+  final CartesianCS STANDARD=DefaultCartesianCS.GEOCENTRIC;
+  final GeocentricCRS stepCRS;
+  final CRSFactory crsFactory=getFactoryContainer().getCRSFactory();
+  if (getGreenwichLongitude(targetPM) == 0) {
+    stepCRS=crsFactory.createGeocentricCRS(getTemporaryName(targetCRS),targetDatum,STANDARD);
+  }
+ else {
+    stepCRS=crsFactory.createGeocentricCRS(getTemporaryName(sourceCRS),sourceDatum,STANDARD);
+  }
+  final CoordinateOperation step1=createOperationStep(sourceCRS,stepCRS);
+  final CoordinateOperation step2=createOperationStep(stepCRS,targetCRS);
+  return concatenate(step1,step2);
+}

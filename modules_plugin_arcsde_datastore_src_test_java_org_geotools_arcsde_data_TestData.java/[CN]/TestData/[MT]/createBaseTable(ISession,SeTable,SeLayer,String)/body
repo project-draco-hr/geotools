@@ -1,0 +1,43 @@
+{
+  Command<SeColumnDefinition[]> createTableCmd=new Command<SeColumnDefinition[]>(){
+    @Override public SeColumnDefinition[] execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeColumnDefinition[] colDefs=new SeColumnDefinition[9];
+      boolean isNullable=true;
+      colDefs[0]=new SeColumnDefinition("ROW_ID",SeColumnDefinition.TYPE_INT32,10,0,false);
+      colDefs[1]=new SeColumnDefinition(TEST_TABLE_COLS[0],SeColumnDefinition.TYPE_INT32,10,0,false);
+      colDefs[2]=new SeColumnDefinition(TEST_TABLE_COLS[1],SeColumnDefinition.TYPE_INT16,4,0,isNullable);
+      colDefs[3]=new SeColumnDefinition(TEST_TABLE_COLS[2],SeColumnDefinition.TYPE_FLOAT32,5,2,isNullable);
+      colDefs[4]=new SeColumnDefinition(TEST_TABLE_COLS[3],SeColumnDefinition.TYPE_FLOAT64,25,4,isNullable);
+      colDefs[5]=new SeColumnDefinition(TEST_TABLE_COLS[4],SeColumnDefinition.TYPE_STRING,25,0,isNullable);
+      colDefs[6]=new SeColumnDefinition(TEST_TABLE_COLS[5],SeColumnDefinition.TYPE_NSTRING,25,0,isNullable);
+      colDefs[7]=new SeColumnDefinition(TEST_TABLE_COLS[6],SeColumnDefinition.TYPE_DATE,1,0,isNullable);
+      colDefs[8]=new SeColumnDefinition("SE_ANNO_CAD_DATA",SeColumnDefinition.TYPE_BLOB,1000,0,isNullable);
+      try {
+        table.delete();
+      }
+ catch (      Exception e) {
+      }
+      table.create(colDefs,configKeyword);
+      SeRegistration reg=new SeRegistration(connection,table.getName());
+      LOGGER.fine("setting rowIdColumnName to ROW_ID in table " + reg.getTableName());
+      reg.setRowIdColumnName("ROW_ID");
+      final int rowIdColumnType=SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE;
+      reg.setRowIdColumnType(rowIdColumnType);
+      reg.alter();
+      layer.setSpatialColumnName(TEST_TABLE_COLS[TEST_TABLE_COLS.length - 1]);
+      layer.setShapeTypes(SeLayer.SE_NIL_TYPE_MASK | SeLayer.SE_POINT_TYPE_MASK | SeLayer.SE_LINE_TYPE_MASK| SeLayer.SE_SIMPLE_LINE_TYPE_MASK| SeLayer.SE_AREA_TYPE_MASK| SeLayer.SE_MULTIPART_TYPE_MASK);
+      layer.setGridSizes(1100.0,0.0,0.0);
+      layer.setDescription("Layer Example");
+      SeCoordinateReference coordref=getGenericCoordRef();
+      SeExtent ext=coordref.getXYEnvelope();
+      layer.setExtent(ext);
+      layer.setCoordRef(coordref);
+      layer.setCreationKeyword(configKeyword);
+      layer.create(3,4);
+      return colDefs;
+    }
+  }
+;
+  SeColumnDefinition[] colDefs=session.issue(createTableCmd);
+  return colDefs;
+}

@@ -1,0 +1,80 @@
+{
+  testData.insertTestData();
+  final String typeName=testData.getTempTableName();
+  final DataStore ds=testData.getDataStore();
+  final Filter oldValueFilter=CQL.toFilter("INT32_COL = 3");
+  final Query oldValueQuery=new Query(typeName,oldValueFilter);
+  final Filter newValueFilter=CQL.toFilter("INT32_COL = -1000");
+  final Query newValueQuery=new Query(typeName,newValueFilter);
+  final Transaction transaction=new DefaultTransaction("testUpdateTransaction");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=ds.getFeatureWriter(typeName,oldValueFilter,transaction);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  try {
+    try {
+      assertTrue(writer.hasNext());
+      SimpleFeature feature=writer.next();
+      feature.setAttribute("INT32_COL",Integer.valueOf(-1000));
+      writer.write();
+      assertFalse(writer.hasNext());
+    }
+  finally {
+      writer.close();
+    }
+    reader=ds.getFeatureReader(oldValueQuery,Transaction.AUTO_COMMIT);
+    try {
+      if (databaseIsMsSqlServer) {
+        assertFalse(reader.hasNext());
+      }
+ else {
+        assertTrue(reader.hasNext());
+      }
+    }
+  finally {
+      reader.close();
+    }
+    reader=ds.getFeatureReader(newValueQuery,Transaction.AUTO_COMMIT);
+    try {
+      if (databaseIsMsSqlServer) {
+        assertTrue(reader.hasNext());
+      }
+ else {
+        assertFalse(reader.hasNext());
+      }
+    }
+  finally {
+      reader.close();
+    }
+    reader=ds.getFeatureReader(oldValueQuery,transaction);
+    try {
+      assertFalse(reader.hasNext());
+    }
+  finally {
+      reader.close();
+    }
+    reader=ds.getFeatureReader(newValueQuery,transaction);
+    try {
+      assertTrue(reader.hasNext());
+    }
+  finally {
+      reader.close();
+    }
+    try {
+      transaction.commit();
+    }
+ catch (    IOException e) {
+      transaction.rollback();
+      throw e;
+    }
+  }
+  finally {
+    transaction.close();
+  }
+  reader=ds.getFeatureReader(newValueQuery,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(reader.hasNext());
+  }
+  finally {
+    reader.close();
+  }
+}

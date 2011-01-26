@@ -1,0 +1,47 @@
+{
+  HashMap<String,HashMap<String,String>> attribut=new HashMap<String,HashMap<String,String>>();
+  Iterator<String> it=atts.keySet().iterator();
+  while (it.hasNext()) {
+    String key=it.next();
+    EdigeoParser dicParser=new EdigeoParser(dicFile);
+    HashMap<String,String> attParams=new HashMap<String,String>();
+    while (dicParser.readLine()) {
+      if (dicParser.line.contains(atts.get(key))) {
+        while (dicParser.readLine()) {
+          if (dicParser.line.contains("TYPSA")) {
+            attParams.put("type",dicParser.getValue("TYPSA"));
+          }
+          if (dicParser.line.contains("AVCSN")) {
+            int nbPrecoded=Integer.parseInt(dicParser.getValue("AVCSN"));
+            if (nbPrecoded > 0) {
+              attParams.put("precoded","true");
+              String preKey=null;
+              for (int i=0; i < nbPrecoded; i++) {
+                while (dicParser.readLine()) {
+                  if (dicParser.line.contains("AVLSA")) {
+                    preKey=dicParser.getValue("AVLSA");
+                    while (dicParser.readLine()) {
+                      if (dicParser.line.contains("AVDST")) {
+                        attParams.put(preKey,dicParser.getValue("AVDST"));
+                        break;
+                      }
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+ else {
+              attParams.put("precoded","false");
+            }
+            break;
+          }
+        }
+        attribut.put(key,attParams);
+        break;
+      }
+    }
+    dicParser.close();
+  }
+  return attribut;
+}

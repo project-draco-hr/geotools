@@ -1,0 +1,72 @@
+{
+  Transaction t=new DefaultTransaction();
+  WFSFeatureStore fs=(WFSFeatureStore)ds.getFeatureSource(ft.getTypeName());
+  fs.setTransaction(t);
+  System.out.println("Insert Read 1");
+  SimpleFeatureIterator fr=fs.getFeatures().features();
+  int count1=0;
+  while (fr.hasNext()) {
+    count1++;
+    fr.next();
+  }
+  fr.close();
+  System.out.println("Insert Add Features");
+  List<FeatureId> fids1=fs.addFeatures(insert);
+  System.out.println("Insert Read 2");
+  fr=fs.getFeatures().features();
+  int count2=0;
+  while (fr.hasNext()) {
+    count2++;
+    fr.next();
+  }
+  fr.close();
+  assertEquals(count1 + insert.size(),count2);
+  FilterFactory fac=CommonFactoryFinder.getFilterFactory(null);
+  Set<FeatureId> featureIds=new HashSet<FeatureId>();
+  for (  FeatureId id : fids1) {
+    featureIds.add(id);
+  }
+  Id fidfilter=fac.id(featureIds);
+  System.out.println("Remove Inserted Features");
+  fs.removeFeatures(fidfilter);
+  System.out.println("Insert Read 3");
+  fr=fs.getFeatures().features();
+  count2=0;
+  while (fr.hasNext()) {
+    count2++;
+    fr.next();
+  }
+  fr.close();
+  assertEquals(count1,count2);
+  System.out.println("Insert Add Features");
+  fs.addFeatures(insert);
+  System.out.println("Insert Read 2");
+  fr=fs.getFeatures().features();
+  count2=0;
+  while (fr.hasNext()) {
+    count2++;
+    fr.next();
+  }
+  fr.close();
+  assertEquals(count1 + insert.size(),count2);
+  System.out.println("Insert Commit");
+  t.commit();
+  System.out.println("Insert Read 3");
+  fr=fs.getFeatures().features();
+  int count3=0;
+  while (fr.hasNext()) {
+    count3++;
+    fr.next();
+  }
+  fr.close();
+  assertEquals(count2,count3);
+  WFSTransactionState ts=(WFSTransactionState)t.getState(ds);
+  String[] fids=ts.getFids(ft.getTypeName());
+  assertNotNull(fids);
+  Set ids=new HashSet();
+  for (int i=0; i < fids.length; i++) {
+    ids.add(fac.featureId(fids[i]));
+  }
+  Id ff=fac.id(ids);
+  return ff;
+}

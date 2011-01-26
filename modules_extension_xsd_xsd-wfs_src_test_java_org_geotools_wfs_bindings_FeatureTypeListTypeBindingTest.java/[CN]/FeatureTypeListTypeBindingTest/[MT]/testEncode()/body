@@ -1,0 +1,43 @@
+{
+  FeatureTypeListType ftl=factory.createFeatureTypeListType();
+{
+    OperationsType ops=factory.createOperationsType();
+    ops.getOperation().add(OperationType.DELETE_LITERAL);
+    ops.getOperation().add(OperationType.INSERT_LITERAL);
+    ops.getOperation().add(OperationType.QUERY_LITERAL);
+    ftl.setOperations(ops);
+  }
+{
+    FeatureTypeType ft=factory.createFeatureTypeType();
+    ft.setName(new QName("http://www.openplans.org/topp","Type1"));
+    ft.setTitle("Title1");
+    ft.setAbstract("Abstract1");
+    KeywordsType kwd=Ows10Factory.eINSTANCE.createKeywordsType();
+    kwd.getKeyword().add("keword1");
+    kwd.getKeyword().add("keword2");
+    ft.getKeywords().add(kwd);
+    ft.setDefaultSRS("urn:ogc:crs:EPSG:6.7:4326");
+    ft.getOtherSRS().add("urn:ogc:crs:EPSG:6.7:23030");
+    ft.setOperations(factory.createOperationsType());
+    OperationsType operations=ft.getOperations();
+    List operationList=operations.getOperation();
+    operationList.add(OperationType.QUERY_LITERAL);
+    operationList.add(OperationType.INSERT_LITERAL);
+    operationList.add(OperationType.UPDATE_LITERAL);
+    operationList.add(OperationType.DELETE_LITERAL);
+    OutputFormatListType outputFormat=factory.createOutputFormatListType();
+    outputFormat.getFormat().add("GML2");
+    ft.setOutputFormats(outputFormat);
+    WGS84BoundingBoxType bbox=Ows10Factory.eINSTANCE.createWGS84BoundingBoxType();
+    bbox.setCrs("urn:ogc:crs:EPSG:6.7:4326");
+    ft.getWGS84BoundingBox().add(bbox);
+    ftl.getFeatureType().add(ft);
+  }
+  final Document dom=encode(ftl,WFS.FeatureTypeList);
+  final Element root=dom.getDocumentElement();
+  assertName(WFS.FeatureTypeList,root);
+  assertOperations(root);
+  Element ft=getElementByQName(root,new QName(WFS.NAMESPACE,"FeatureType"));
+  assertNotNull(ft);
+  assertFeatureType(ft);
+}

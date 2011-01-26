@@ -1,0 +1,25 @@
+{
+  if (type != null) {
+    return type;
+  }
+  String pkg=factory.getClass().getPackage().getName();
+  if (pkg.endsWith(".impl")) {
+    pkg=pkg.substring(0,pkg.length() - 5);
+  }
+  String localName=getTarget().getLocalPart();
+  try {
+    return Class.forName(pkg + "." + localName);
+  }
+ catch (  ClassNotFoundException e) {
+    int i=localName.indexOf('_');
+    if (i != -1) {
+      String className=localName.substring(i + 1) + "Type";
+      try {
+        return Class.forName(pkg + "." + className);
+      }
+ catch (      ClassNotFoundException e1) {
+      }
+    }
+  }
+  throw new RuntimeException("Could not map an EMF model class to:" + localName);
+}

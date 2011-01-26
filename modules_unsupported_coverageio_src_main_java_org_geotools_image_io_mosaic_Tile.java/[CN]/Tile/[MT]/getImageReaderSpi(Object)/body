@@ -1,0 +1,27 @@
+{
+  ImageReaderSpi provider=null;
+  final String path=getInputName(input);
+  if (path != null) {
+    final int split=path.indexOf('.',path.lastIndexOf('/') + 1);
+    if (split >= 0) {
+      final String suffix=path.substring(split + 1).trim();
+      String[] suffixes=null;
+      final Iterator<ImageReaderSpi> it=IIORegistry.getDefaultInstance().getServiceProviders(ImageReaderSpi.class,true);
+      while (it.hasNext()) {
+        final ImageReaderSpi candidate=it.next();
+        final String[] candidateSuffixes=candidate.getFileSuffixes();
+        if (XArray.containsIgnoreCase(candidateSuffixes,suffix)) {
+          if (provider != null) {
+            if (Arrays.equals(candidateSuffixes,suffixes)) {
+              continue;
+            }
+            return null;
+          }
+          provider=candidate;
+          suffixes=candidateSuffixes;
+        }
+      }
+    }
+  }
+  return provider;
+}

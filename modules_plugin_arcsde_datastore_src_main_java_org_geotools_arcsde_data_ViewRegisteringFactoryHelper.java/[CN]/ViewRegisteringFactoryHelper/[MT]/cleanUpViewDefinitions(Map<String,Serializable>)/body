@@ -1,0 +1,21 @@
+{
+  Map<String,Serializable> cleanedUpViews=new HashMap<String,Serializable>();
+  for (  Map.Entry<String,Serializable> entry : params.entrySet()) {
+    String key=entry.getKey();
+    if (!key.startsWith("sqlView.")) {
+      continue;
+    }
+    if (!key.endsWith(".typeName")) {
+      continue;
+    }
+    String typeName=(String)entry.getValue();
+    String viewId=key.substring("sqlView.".length(),key.indexOf(".typeName"));
+    String queryKey="sqlView." + viewId + ".sqlQuery";
+    String query=(String)params.get(queryKey);
+    if (query == null) {
+      throw new IllegalArgumentException("No SQL query definition provided for type name " + typeName);
+    }
+    cleanedUpViews.put(typeName,query);
+  }
+  return cleanedUpViews;
+}

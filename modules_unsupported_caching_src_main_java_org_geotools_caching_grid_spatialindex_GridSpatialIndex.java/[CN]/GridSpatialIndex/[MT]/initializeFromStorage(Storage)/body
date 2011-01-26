@@ -1,0 +1,37 @@
+{
+  Collection<FeatureType> types=store.getFeatureTypes();
+  for (Iterator<FeatureType> iterator=types.iterator(); iterator.hasNext(); ) {
+    GridData.getFeatureMarshaller().registerType((SimpleFeatureType)iterator.next());
+  }
+  ReferencedEnvelope bounds=store.getBounds();
+  if (bounds == null) {
+    return;
+  }
+  this.mbr=new Region(new double[]{bounds.getMinX(),bounds.getMinY()},new double[]{bounds.getMaxX(),bounds.getMaxY()});
+  this.dimension=this.mbr.getDimension();
+  NodeIdentifier id=findUniqueInstance(new RegionNodeIdentifier(this.mbr));
+  this.rootNode=null;
+  try {
+    this.rootNode=storage.get(id);
+  }
+ catch (  Exception ex) {
+  }
+  if (this.rootNode == null) {
+    this.root=null;
+  }
+ else {
+    this.stats.reset();
+    this.root=this.rootNode.getIdentifier();
+    this.gridsize=((GridRootNode)this.rootNode).getCapacity();
+    this.stats.addToDataCounter(((GridRootNode)this.rootNode).getCapacity() + 1);
+    this.stats.addToDataCounter(this.rootNode.getDataCount());
+    for (int i=0; i < this.rootNode.getChildrenCount(); i++) {
+      RegionNodeIdentifier cid=(RegionNodeIdentifier)findUniqueInstance(this.rootNode.getChildIdentifier(i));
+      ((GridRootNode)this.rootNode).setChildIdentifier(i,cid);
+      if (cid.isValid()) {
+        Node n=readNode(cid);
+        this.stats.addToDataCounter(n.getDataCount());
+      }
+    }
+  }
+}

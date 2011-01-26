@@ -1,0 +1,50 @@
+{
+  GeometryFactory geomFact=new GeometryFactory();
+  Geometry geom=null;
+  LinearRing shell=null;
+  LinearRing[] holes=null;
+  Polygon[] polys=null;
+  if (geoType.equals(POINT)) {
+    geom=(Geometry)geomFact.createPoint(coords.get(0)[0]);
+  }
+ else   if (geoType.equals(LINESTRING)) {
+    geom=(Geometry)geomFact.createLineString(coords.get(0));
+  }
+ else   if (geoType.equals(POLYGON) && !topo) {
+    shell=geomFact.createLinearRing(coords.get(0));
+    if (coords.size() > 1) {
+      holes=new LinearRing[coords.size() - 1];
+      for (int i=1; i < coords.size(); i++) {
+        holes[i - 1]=geomFact.createLinearRing(coords.get(i));
+      }
+    }
+    geom=(Geometry)geomFact.createPolygon(shell,holes);
+  }
+ else   if (geoType.equals(POLYGON) && topo) {
+    List<Coordinate[]> polygonCoords=getPolygonCoordinates(coords);
+    shell=geomFact.createLinearRing(polygonCoords.get(0));
+    holes=new LinearRing[polygonCoords.size() - 1];
+    for (int i=1; i < polygonCoords.size(); i++) {
+      holes[i - 1]=geomFact.createLinearRing(polygonCoords.get(i));
+    }
+    geom=(Geometry)geomFact.createPolygon(shell,holes);
+  }
+ else   if (geoType.equals(MULTIPOLYGON)) {
+    polys=new Polygon[coords.size()];
+    Iterator<Coordinate[]> it=coords.iterator();
+    int cpt=0;
+    while (it.hasNext()) {
+      shell=geomFact.createLinearRing(it.next());
+      polys[cpt]=geomFact.createPolygon(shell,holes);
+      cpt++;
+    }
+    geom=geomFact.createMultiPolygon(polys);
+  }
+ else {
+    if (logger.isLoggable(Level.SEVERE)) {
+      logger.severe("Can't handle the type " + geoType + " for fid#"+ FID);
+    }
+    throw new DataSourceException("Can't handle the type " + geoType + " for fid#"+ FID);
+  }
+  return geom;
+}

@@ -1,0 +1,34 @@
+{
+  String uri=element.getNamespaceURI();
+  String local=element.getLocalName();
+  String qName=element.getLocalName();
+  NamespaceSupport namespaces=this.namespaces;
+  if (namespaceAware) {
+    uri=(uri != null) ? uri : namespaces.getURI("");
+    qName=namespaces.getPrefix(uri) + ":" + qName;
+  }
+ else {
+    uri="";
+    namespaces=null;
+  }
+  DOMAttributes atts=new DOMAttributes(element.getAttributes(),namespaces);
+  serializer.startElement(uri,local,qName,atts);
+  for (int i=0; i < element.getChildNodes().getLength(); i++) {
+    Node node=(Node)element.getChildNodes().item(i);
+    if (node instanceof Text) {
+      char[] ch=((Text)node).getData().toCharArray();
+      serializer.characters(ch,0,ch.length);
+    }
+  }
+  for (int i=0; i < element.getChildNodes().getLength(); i++) {
+    Node node=(Node)element.getChildNodes().item(i);
+    if (node instanceof Element) {
+      start((Element)node);
+      end((Element)node);
+    }
+  }
+  this.namespaces.pushContext();
+  if (uri != null) {
+    this.namespaces.declarePrefix("",uri);
+  }
+}

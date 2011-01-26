@@ -1,0 +1,20 @@
+{
+  visitor.setFIDValidator(new SimplifyingFilterVisitor.FIDValidator(){
+    public boolean isValid(    String fid){
+      return fid.startsWith("pass");
+    }
+  }
+);
+  Set<Identifier> ids=new HashSet<Identifier>();
+  ids.add(ff.featureId("notPass"));
+  Id filter=ff.id(ids);
+  assertEquals(Filter.EXCLUDE,filter.accept(visitor,null));
+  ids.add(ff.featureId("pass1"));
+  ids.add(ff.featureId("pass2"));
+  filter=ff.id(ids);
+  Set<Identifier> validIds=new HashSet<Identifier>();
+  validIds.add(ff.featureId("pass2"));
+  validIds.add(ff.featureId("pass1"));
+  Filter expected=ff.id(validIds);
+  assertEquals(expected,filter.accept(visitor,null));
+}

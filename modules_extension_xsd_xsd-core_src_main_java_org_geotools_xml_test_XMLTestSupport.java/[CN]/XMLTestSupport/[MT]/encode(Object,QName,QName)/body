@@ -1,0 +1,19 @@
+{
+  Configuration configuration=createConfiguration();
+  if (type != null) {
+    configuration.getContext().registerComponentInstance("http://geotools.org/typeDefinition",type);
+  }
+  XSDSchema schema=configuration.getXSD().getSchema();
+  Encoder encoder=new Encoder(configuration,schema);
+  for (Iterator e=namespaceMappings.entrySet().iterator(); e.hasNext(); ) {
+    Map.Entry mapping=(Map.Entry)e.next();
+    String prefix=(String)mapping.getKey();
+    String uri=(String)mapping.getValue();
+    encoder.getNamespaces().declarePrefix(prefix,uri);
+  }
+  ByteArrayOutputStream output=new ByteArrayOutputStream();
+  encoder.write(object,element,output);
+  DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+  dbf.setNamespaceAware(true);
+  return dbf.newDocumentBuilder().parse(new ByteArrayInputStream(output.toByteArray()));
+}

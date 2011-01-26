@@ -1,0 +1,36 @@
+{
+  final String key=toKey(code);
+  CompoundCRS crs=(CompoundCRS)cache.get(key);
+  if (crs == null) {
+    try {
+      cache.writeLock(key);
+      crs=(CompoundCRS)cache.peek(key);
+      if (crs == null) {
+        AbstractCachedAuthorityFactory worker=null;
+        try {
+          worker=(AbstractCachedAuthorityFactory)getPool().borrowObject();
+          crs=worker.createCompoundCRS(code);
+          cache.put(key,crs);
+        }
+ catch (        FactoryException e) {
+          throw e;
+        }
+catch (        Exception e) {
+          throw new FactoryException(e);
+        }
+ finally {
+          try {
+            getPool().returnObject(worker);
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.WARNING,"Unable to return worker " + e,e);
+          }
+        }
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return crs;
+}

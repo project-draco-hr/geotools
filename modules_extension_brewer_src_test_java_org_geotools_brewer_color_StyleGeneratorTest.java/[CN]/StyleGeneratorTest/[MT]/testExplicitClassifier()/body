@@ -1,0 +1,47 @@
+{
+  ColorBrewer brewer=new ColorBrewer();
+  brewer.loadPalettes();
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Expression expr=null;
+  SimpleFeatureType type=riverType;
+  final String attribName="river";
+  SimpleFeatureCollection fc=DataUtilities.collection(riverFeatures);
+  expr=ff.property(attribName);
+  String paletteName="YlGn";
+  final Set<String>[] binValues2=new Set[1];
+  binValues2[0]=new HashSet<String>();
+  try {
+    fc.accepts(new FeatureVisitor(){
+      public void visit(      Feature feature){
+        binValues2[0].add(((SimpleFeature)feature).getAttribute(attribName).toString());
+      }
+    }
+,null);
+  }
+ catch (  IOException e) {
+    fail(e.getMessage());
+    e.printStackTrace();
+  }
+  ExplicitClassifier classifier=new ExplicitClassifier(binValues2);
+  Color[] colors=brewer.getPalette(paletteName).getColors(binValues2.length);
+  FeatureTypeStyle fts=StyleGenerator.createFeatureTypeStyle(classifier,expr,colors,"myfts",riverFeatures[0].getFeatureType().getGeometryDescriptor(),StyleGenerator.ELSEMODE_IGNORE,0.5,null);
+  assertNotNull(fts);
+  List<Rule> rules=fts.rules();
+  assertEquals(1,rules.size());
+  assertNotNull(StyleGenerator.toStyleExpression(rules.get(0).getFilter()));
+  final Filter filter=rules.get(0).getFilter();
+  try {
+    fc.accepts(new FeatureVisitor(){
+      public void visit(      Feature feature){
+        if (!filter.evaluate(feature)) {
+          fail("Not all features accepted.");
+        }
+      }
+    }
+,null);
+  }
+ catch (  IOException e) {
+    fail(e.getMessage());
+    e.printStackTrace();
+  }
+}

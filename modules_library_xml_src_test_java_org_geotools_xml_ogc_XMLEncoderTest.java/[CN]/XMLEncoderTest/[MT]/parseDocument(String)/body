@@ -1,0 +1,22 @@
+{
+  Filter filter=null;
+  DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+  DocumentBuilder db=dbf.newDocumentBuilder();
+  Document dom=db.parse(TestData.getResource(this,uri).toExternalForm());
+  NodeList nodes=dom.getElementsByTagName("Filter");
+  for (int j=0; j < nodes.getLength(); j++) {
+    Element filterNode=(Element)nodes.item(j);
+    NodeList list=filterNode.getChildNodes();
+    Node child=null;
+    for (int i=0; i < list.getLength(); i++) {
+      child=list.item(i);
+      if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+        continue;
+      }
+      filter=FilterDOMParser.parseFilter(child);
+      StringWriter output=new StringWriter();
+      DocumentWriter.writeFragment(filter,FilterSchema.getInstance(),output,null);
+    }
+  }
+  return filter;
+}

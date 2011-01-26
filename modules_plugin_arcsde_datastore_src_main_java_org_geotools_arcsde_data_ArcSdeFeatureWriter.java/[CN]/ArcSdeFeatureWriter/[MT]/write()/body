@@ -1,0 +1,27 @@
+{
+  feature.validate();
+  if (isNewlyCreated(feature)) {
+    Number newId;
+    try {
+      newId=insertSeRow(feature);
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.WARNING,"Error inserting " + feature + ": "+ e.getMessage(),e);
+      throw e;
+    }
+    MutableFIDFeature mutableFidFeature=(MutableFIDFeature)feature;
+    String id=featureType.getTypeName() + "." + newId.longValue();
+    mutableFidFeature.setID(id);
+    fireAdded(mutableFidFeature);
+  }
+ else {
+    try {
+      updateRow(feature);
+      fireChanged(feature);
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.WARNING,"Error updating " + feature + ": "+ e.getMessage(),e);
+      throw e;
+    }
+  }
+}

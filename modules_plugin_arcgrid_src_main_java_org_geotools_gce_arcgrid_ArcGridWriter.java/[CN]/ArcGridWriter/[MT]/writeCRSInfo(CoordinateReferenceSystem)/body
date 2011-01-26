@@ -1,0 +1,33 @@
+{
+  if (crs == null) {
+    throw new NullPointerException("CRS cannot be null!");
+  }
+  URL url=null;
+  if (this.destination instanceof String) {
+    url=(new File((String)this.destination)).toURI().toURL();
+  }
+ else   if (this.destination instanceof File) {
+    url=((File)this.destination).toURI().toURL();
+  }
+ else   if (this.destination instanceof URL) {
+    url=(URL)this.destination;
+  }
+ else {
+    return;
+  }
+  File ascFile=DataUtilities.urlToFile(url);
+  String prjName=ascFile.getName().substring(0,ascFile.getName().lastIndexOf(".")) + ".prj";
+  File prjFile=new File(ascFile.getParent(),prjName);
+  final BufferedWriter fileWriter=new BufferedWriter(new FileWriter(prjFile));
+  try {
+    fileWriter.write(crs.toWKT());
+  }
+  finally {
+    try {
+      fileWriter.close();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+  }
+}

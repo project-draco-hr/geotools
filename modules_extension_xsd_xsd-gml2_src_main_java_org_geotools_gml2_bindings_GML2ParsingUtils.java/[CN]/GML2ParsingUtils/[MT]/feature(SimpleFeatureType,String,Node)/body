@@ -1,0 +1,17 @@
+{
+  SimpleFeatureBuilder b=new SimpleFeatureBuilder(fType);
+  Object[] attributes=new Object[fType.getAttributeCount()];
+  for (int i=0; i < fType.getAttributeCount(); i++) {
+    AttributeDescriptor att=fType.getDescriptor(i);
+    AttributeType attType=att.getType();
+    Object attValue=node.getChildValue(att.getLocalName());
+    if ((attValue != null) && !attType.getBinding().isAssignableFrom(attValue.getClass())) {
+      Object converted=Converters.convert(attValue,attType.getBinding());
+      if (converted != null) {
+        attValue=converted;
+      }
+    }
+    b.add(attValue);
+  }
+  return b.buildFeature(fid);
+}

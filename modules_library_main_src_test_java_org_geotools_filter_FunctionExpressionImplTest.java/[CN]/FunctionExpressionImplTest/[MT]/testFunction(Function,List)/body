@@ -1,0 +1,26 @@
+{
+  final String functionClass=function.getClass().getName();
+  if (null == function.getName()) {
+    errors.add(functionClass + ": getName() == null");
+  }
+  testVisitor=new TestExpressionVisitor();
+  Object extraData="[extraData correctly returned]";
+  function.accept(testVisitor,extraData);
+  Object[] functionVisited=testVisitor.functionVisited;
+  if (Boolean.TRUE != functionVisited[0] || extraData != functionVisited[1]) {
+    errors.add(functionClass + ": accept didn't called visitor.visit(Function, extraData): " + " visited: "+ functionVisited[0]+ ", extraData: "+ functionVisited[1]);
+  }
+  try {
+    String toString=function.toString();
+  }
+ catch (  Exception e) {
+    addExceptionError(errors,functionClass,"toString",e);
+  }
+  if (function instanceof FunctionExpression) {
+    testDeprecatedMethods((FunctionExpression)function,errors);
+  }
+  List<Expression> parameters=function.getParameters();
+  if (parameters == null) {
+    errors.add(functionClass + ".getParameters() returns null");
+  }
+}

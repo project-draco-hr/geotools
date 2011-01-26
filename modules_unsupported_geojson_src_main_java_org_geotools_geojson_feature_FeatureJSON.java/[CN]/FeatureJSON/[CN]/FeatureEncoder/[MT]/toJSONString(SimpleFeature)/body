@@ -1,0 +1,54 @@
+{
+  StringBuilder sb=new StringBuilder();
+  sb.append("{");
+  entry("type","Feature",sb);
+  sb.append(",");
+  if (encodeFeatureCRS) {
+    CoordinateReferenceSystem crs=feature.getFeatureType().getCoordinateReferenceSystem();
+    if (crs != null) {
+      try {
+        string("crs",sb).append(":");
+        sb.append(FeatureJSON.this.toString(crs)).append(",");
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+  if (encodeFeatureBounds) {
+    BoundingBox bbox=feature.getBounds();
+    string("bbox",sb).append(":");
+    sb.append(gjson.toString(bbox)).append(",");
+  }
+  if (feature.getDefaultGeometry() != null) {
+    string("geometry",sb).append(":").append(gjson.toString((Geometry)feature.getDefaultGeometry()));
+    sb.append(",");
+  }
+  int gindex=featureType.getGeometryDescriptor() != null ? featureType.indexOf(featureType.getGeometryDescriptor().getLocalName()) : -1;
+  string("properties",sb).append(":").append("{");
+  for (int i=0; i < featureType.getAttributeCount(); i++) {
+    AttributeDescriptor ad=featureType.getDescriptor(i);
+    if (i == gindex) {
+      continue;
+    }
+    Object value=feature.getAttribute(i);
+    if (value == null) {
+      continue;
+    }
+    if (value instanceof Envelope) {
+      array(ad.getLocalName(),gjson.toString((Envelope)value),sb);
+    }
+ else     if (value instanceof BoundingBox) {
+      array(ad.getLocalName(),gjson.toString((BoundingBox)value),sb);
+    }
+ else {
+      entry(ad.getLocalName(),value,sb);
+    }
+    sb.append(",");
+  }
+  sb.setLength(sb.length() - 1);
+  sb.append("},");
+  entry("id",feature.getID(),sb);
+  sb.append("}");
+  return sb.toString();
+}

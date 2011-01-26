@@ -1,0 +1,69 @@
+{
+  if (crs instanceof SingleCRS) {
+    final CoordinateSystem cs=crs.getCoordinateSystem();
+    final int dimension=cs.getDimension();
+    if (dimension == 2) {
+      CoordinateReferenceSystem base=crs;
+      while (base instanceof GeneralDerivedCRS) {
+        base=((GeneralDerivedCRS)base).getBaseCRS();
+      }
+      if (base instanceof GeographicCRS) {
+        return (SingleCRS)crs;
+      }
+      if (base.getCoordinateSystem() instanceof CartesianCS) {
+        return (SingleCRS)crs;
+      }
+    }
+ else     if (dimension >= 3 && crs instanceof GeographicCRS) {
+      CoordinateSystemAxis axis0=null, axis1=null;
+      int count=0;
+      for (int i=0; i < dimension; i++) {
+        final CoordinateSystemAxis axis=cs.getAxis(i);
+        search:         if (DefaultCoordinateSystemAxis.isCompassDirection(axis.getDirection())) {
+switch (count++) {
+case 0:
+            axis0=axis;
+          break;
+case 1:
+        axis1=axis;
+      break;
+default :
+    break search;
+}
+}
+}
+if (count == 2) {
+final GeodeticDatum datum=((GeographicCRS)crs).getDatum();
+Map<String,?> properties=CRSUtilities.changeDimensionInName(cs,"3D","2D");
+EllipsoidalCS horizontalCS;
+try {
+horizontalCS=ReferencingFactoryFinder.getCSFactory(null).createEllipsoidalCS(properties,axis0,axis1);
+}
+ catch (FactoryException e) {
+Logging.recoverableException(CRS.class,"getHorizontalCRS",e);
+horizontalCS=new DefaultEllipsoidalCS(properties,axis0,axis1);
+}
+properties=CRSUtilities.changeDimensionInName(crs,"3D","2D");
+GeographicCRS horizontalCRS;
+try {
+horizontalCRS=ReferencingFactoryFinder.getCRSFactory(null).createGeographicCRS(properties,datum,horizontalCS);
+}
+ catch (FactoryException e) {
+Logging.recoverableException(CRS.class,"getHorizontalCRS",e);
+horizontalCRS=new DefaultGeographicCRS(properties,datum,horizontalCS);
+}
+return horizontalCRS;
+}
+}
+}
+if (crs instanceof CompoundCRS) {
+final CompoundCRS cp=(CompoundCRS)crs;
+for (final CoordinateReferenceSystem c : cp.getCoordinateReferenceSystems()) {
+final SingleCRS candidate=getHorizontalCRS(c);
+if (candidate != null) {
+return candidate;
+}
+}
+}
+return null;
+}

@@ -1,0 +1,49 @@
+{
+  String value=(String)source;
+  if (!Calendar.class.equals(target) && !Date.class.isAssignableFrom(target))   return null;
+  try {
+    Converter converter=new CommonsConverterFactory().createConverter(value.getClass(),target,null);
+    if (converter != null) {
+      Object converted=null;
+      try {
+        converted=converter.convert(source,target);
+      }
+ catch (      Exception e) {
+      }
+      if (converted != null) {
+        return converted;
+      }
+    }
+  }
+ catch (  Exception e) {
+  }
+  Calendar date;
+  try {
+    try {
+      date=DatatypeConverterImpl.getInstance().parseDateTime(value);
+    }
+ catch (    Exception e) {
+      date=DatatypeConverterImpl.getInstance().parseDate(value);
+    }
+  }
+ catch (  Exception e) {
+    date=DatatypeConverterImpl.getInstance().parseTime(value);
+  }
+  if (Calendar.class.equals(target)) {
+    return date;
+  }
+  if (Date.class.isAssignableFrom(target)) {
+    Date time=date.getTime();
+    if (java.sql.Date.class.equals(target)) {
+      return new java.sql.Date(time.getTime());
+    }
+    if (Time.class.equals(target)) {
+      return new Time(time.getTime());
+    }
+    if (Timestamp.class.equals(target)) {
+      return new Timestamp(time.getTime());
+    }
+    return time;
+  }
+  return null;
+}

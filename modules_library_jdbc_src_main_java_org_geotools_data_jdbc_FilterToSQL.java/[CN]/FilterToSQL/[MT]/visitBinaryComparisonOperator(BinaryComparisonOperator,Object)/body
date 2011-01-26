@@ -1,0 +1,46 @@
+{
+  LOGGER.finer("exporting SQL ComparisonFilter");
+  Expression left=filter.getExpression1();
+  Expression right=filter.getExpression2();
+  Class leftContext=null, rightContext=null;
+  if (left instanceof PropertyName) {
+    AttributeDescriptor attType=(AttributeDescriptor)left.evaluate(featureType);
+    if (attType != null) {
+      rightContext=attType.getType().getBinding();
+    }
+  }
+  if (right instanceof PropertyName) {
+    AttributeDescriptor attType=(AttributeDescriptor)right.evaluate(featureType);
+    if (attType != null) {
+      leftContext=attType.getType().getBinding();
+    }
+  }
+  boolean matchCase=true;
+  if (!filter.isMatchingCase()) {
+    if (filter instanceof PropertyIsEqualTo || filter instanceof PropertyIsNotEqualTo) {
+      if (String.class.equals(leftContext) || String.class.equals(rightContext)) {
+        matchCase=false;
+      }
+    }
+  }
+  String type=(String)extraData;
+  try {
+    if (matchCase) {
+      left.accept(this,leftContext);
+      out.write(" " + type + " ");
+      right.accept(this,rightContext);
+    }
+ else {
+      FunctionImpl f=new FunctionImpl();
+      f.setName("lower");
+      f.setParameters(Arrays.asList(left));
+      f.accept(this,Arrays.asList(leftContext));
+      out.write(" " + type + " ");
+      f.setParameters(Arrays.asList(right));
+      f.accept(this,Arrays.asList(rightContext));
+    }
+  }
+ catch (  java.io.IOException ioe) {
+    throw new RuntimeException(IO_ERROR,ioe);
+  }
+}

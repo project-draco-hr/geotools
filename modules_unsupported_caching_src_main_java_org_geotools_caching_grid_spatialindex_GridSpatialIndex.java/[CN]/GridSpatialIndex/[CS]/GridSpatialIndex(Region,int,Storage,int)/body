@@ -1,0 +1,23 @@
+{
+  this.gridsize=gridsize;
+  this.mbr=mbr;
+  this.store=store;
+  this.stats=new GridSpatialIndexStatistics();
+  this.policy=new LRUEvictionPolicy(this);
+  this.featureCapacity=capacity;
+  this.root=null;
+  try {
+    initializeFromStorage(this.store);
+  }
+ catch (  Exception ex) {
+  }
+  if (this.root == null) {
+    this.dimension=mbr.getDimension();
+    this.store.clear();
+    this.root=findUniqueInstance(new RegionNodeIdentifier(mbr));
+    GridRootNode root=new GridRootNode(gridsize,(RegionNodeIdentifier)this.root);
+    root.split(this);
+    writeNode(root);
+    this.stats.addToNodesCounter(root.getCapacity() + 1);
+  }
+}

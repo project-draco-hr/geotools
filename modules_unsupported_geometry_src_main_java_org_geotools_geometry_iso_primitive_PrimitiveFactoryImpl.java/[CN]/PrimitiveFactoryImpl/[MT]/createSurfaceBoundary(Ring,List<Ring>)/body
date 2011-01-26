@@ -1,0 +1,26 @@
+{
+  if (interiors == null && exterior == null)   throw new NullPointerException();
+  CoordinateReferenceSystem thisCRS=this.getCoordinateReferenceSystem();
+  if (exterior != null) {
+    if (this.getDimension() != exterior.getCoordinateDimension()) {
+      throw new MismatchedDimensionException();
+    }
+    CoordinateReferenceSystem exteriorCRS=exterior.getCoordinateReferenceSystem();
+    if (!CRS.equalsIgnoreMetadata(thisCRS,exteriorCRS)) {
+      throw new MismatchedReferenceSystemException();
+    }
+  }
+  if (interiors != null) {
+    for (    Ring ring : interiors) {
+      if (ring != null) {
+        if (this.getDimension() != ring.getCoordinateDimension()) {
+          throw new MismatchedDimensionException();
+        }
+        if (!CRS.equalsIgnoreMetadata(thisCRS,ring.getCoordinateReferenceSystem())) {
+          throw new MismatchedReferenceSystemException();
+        }
+      }
+    }
+  }
+  return new SurfaceBoundaryImpl(getCoordinateReferenceSystem(),exterior,interiors);
+}

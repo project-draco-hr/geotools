@@ -1,0 +1,24 @@
+{
+  XSDTypeDefinition type=instance.getTypeDefinition();
+  String value=instance.getText();
+  while (type != null) {
+    if (type instanceof XSDSimpleTypeDefinition) {
+      XSDSimpleTypeDefinition simpleType=(XSDSimpleTypeDefinition)type;
+      List facets=simpleType.getFacets();
+      for (Iterator itr=facets.iterator(); itr.hasNext(); ) {
+        XSDFacet facet=(XSDFacet)itr.next();
+        if ("whiteSpace".equals(facet.getFacetName())) {
+          Whitespace whitespace=Whitespace.valueOf(facet.getLexicalValue());
+          if (whitespace != null) {
+            value=whitespace.preparse(value);
+          }
+        }
+      }
+    }
+    if (type.equals(type.getBaseType())) {
+      break;
+    }
+    type=type.getBaseType();
+  }
+  return value;
+}

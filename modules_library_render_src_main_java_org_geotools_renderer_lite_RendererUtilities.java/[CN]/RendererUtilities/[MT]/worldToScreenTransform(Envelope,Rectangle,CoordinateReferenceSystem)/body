@@ -1,0 +1,11 @@
+{
+  final CoordinateReferenceSystem crs2D=CRS.getHorizontalCRS(destinationCrs);
+  if (crs2D == null)   throw new TransformException(Errors.format(ErrorKeys.CANT_REDUCE_TO_TWO_DIMENSIONS_$1,destinationCrs));
+  final boolean lonFirst=crs2D.getCoordinateSystem().getAxis(0).getDirection().absolute().equals(AxisDirection.EAST);
+  final GeneralEnvelope newEnvelope=lonFirst ? new GeneralEnvelope(new double[]{mapExtent.getMinX(),mapExtent.getMinY()},new double[]{mapExtent.getMaxX(),mapExtent.getMaxY()}) : new GeneralEnvelope(new double[]{mapExtent.getMinY(),mapExtent.getMinX()},new double[]{mapExtent.getMaxY(),mapExtent.getMaxX()});
+  newEnvelope.setCoordinateReferenceSystem(destinationCrs);
+  final GridToEnvelopeMapper m=(GridToEnvelopeMapper)gridToEnvelopeMappers.get();
+  m.setGridRange(new GridEnvelope2D(paintArea));
+  m.setEnvelope(newEnvelope);
+  return (AffineTransform)(m.createTransform().inverse());
+}

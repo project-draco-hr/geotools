@@ -1,0 +1,22 @@
+{
+  ArrayList remaining=new ArrayList(content);
+  for (Iterator itr=all.iterator(); itr.hasNext(); ) {
+    AttributeDescriptor ad=(AttributeDescriptor)itr.next();
+    int min=ad.getMinOccurs();
+    int max=ad.getMaxOccurs();
+    int occurences=0;
+    for (Iterator citr=remaining.iterator(); citr.hasNext(); ) {
+      Attribute a=(Attribute)citr.next();
+      if (a.getName().equals(ad.getName())) {
+        occurences++;
+        citr.remove();
+      }
+    }
+    if (occurences < ad.getMinOccurs() || occurences > ad.getMaxOccurs()) {
+      throw new IllegalAttributeException(ad,"Found " + occurences + " of "+ ad.getName()+ " when type"+ "specifies between "+ min+ " and "+ max);
+    }
+  }
+  if (!remaining.isEmpty()) {
+    throw new IllegalAttributeException((AttributeDescriptor)remaining.iterator().next(),"Extra content found beyond the specified in the schema: " + remaining);
+  }
+}

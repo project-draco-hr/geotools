@@ -1,0 +1,36 @@
+{
+  handleCharacters();
+  if (isFeatureMember(localName)) {
+    SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+    tb.setName(typeName);
+    tb.setNamespaceURI(namespaceURI);
+    for (int i=0, ii=attributes.size(); i < ii; i++) {
+      String name=(String)attributeNames.get(i);
+      Class clazz=attributes.get(i).getClass();
+      tb.add(name,clazz);
+    }
+    SimpleFeatureType featureType=tb.buildFeatureType();
+    try {
+      SimpleFeature feature=SimpleFeatureBuilder.build(featureType,attributes,fid);
+      parent.feature(feature);
+    }
+ catch (    org.geotools.feature.IllegalAttributeException ife) {
+    }
+    attName="";
+    insideFeature=false;
+  }
+ else   if (insideAttribute) {
+    if ((tempValue != null) && !tempValue.toString().trim().equals("")) {
+      if (tempValue instanceof StringBuffer) {
+        tempValue=tempValue.toString();
+      }
+      attributes.add(tempValue);
+      attributeNames.add(attName);
+      tempValue=null;
+    }
+    endAttribute();
+  }
+ else {
+    parent.endElement(namespaceURI,localName,qName);
+  }
+}

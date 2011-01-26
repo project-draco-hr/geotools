@@ -1,0 +1,26 @@
+{
+  try {
+    PreGeneralizedDataStore ds=getDataStore(configName);
+    SimpleFeatureSource fs=ds.getFeatureSource("GenStreams");
+    assertTrue(fs.getSupportedHints().contains(Hints.GEOMETRY_DISTANCE));
+    Filter filter=CQL.toFilter("CAT_ID = 2");
+    DefaultQuery[] queries=new DefaultQuery[2];
+    queries[0]=new DefaultQuery("GenStreams");
+    queries[1]=new DefaultQuery("GenStreams",filter);
+    for (    DefaultQuery q : queries) {
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,1.0);
+      int count=fs.getCount(q);
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,5.0);
+      assertTrue(count == fs.getCount(q));
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,10.0);
+      assertTrue(count == fs.getCount(q));
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,20.0);
+      assertTrue(count == fs.getCount(q));
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,25.0);
+      assertTrue(count == fs.getCount(q));
+    }
+  }
+ catch (  Exception ex) {
+    Assert.fail(ex.getMessage());
+  }
+}

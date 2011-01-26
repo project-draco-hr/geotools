@@ -1,0 +1,18 @@
+{
+  final Set<Class<? extends PaletteFactory>> existings=new HashSet<Class<? extends PaletteFactory>>();
+  for (PaletteFactory p=getDefault(); p != null; p=p.fallback) {
+    existings.add(p.getClass());
+  }
+  final Iterator<? extends PaletteFactory> it=(loader == null) ? ServiceRegistry.lookupProviders(PaletteFactory.class) : ServiceRegistry.lookupProviders(PaletteFactory.class,loader);
+  while (it.hasNext()) {
+    final PaletteFactory factory=it.next();
+    if (existings.add(factory.getClass())) {
+      PaletteFactory tail=factory;
+      while (tail.fallback != null) {
+        tail=tail.fallback;
+      }
+      tail.fallback=defaultFactory;
+      defaultFactory=factory;
+    }
+  }
+}

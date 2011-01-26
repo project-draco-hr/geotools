@@ -1,0 +1,52 @@
+{
+  coverage=cCoverage;
+  directoryName=cDirectoryName;
+  typeName=cName;
+  if (cNamespace == null) {
+    namespace=VPFLibrary.DEFAULT_NAMESPACE;
+  }
+ else {
+    namespace=cNamespace;
+  }
+  String fcsFileName=directoryName + File.separator + TABLE_FCS;
+  try {
+    VPFFile fcsFile=(VPFFile)VPFFileFactory.getInstance().getFile(fcsFileName);
+    Iterator iter=fcsFile.readAllRows().iterator();
+    while (iter.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)iter.next();
+      String featureClassName=feature.getAttribute("feature_class").toString().trim();
+      if (typeName.equals(featureClassName)) {
+        addFCS(feature);
+      }
+    }
+    iter=columns.iterator();
+    GeometryDescriptor gat=null;
+    AttributeDescriptor geometryColumn=null;
+    while (iter.hasNext()) {
+      geometryColumn=(AttributeDescriptor)iter.next();
+      if (Geometry.class.isAssignableFrom(geometryColumn.getType().getBinding())) {
+        if (geometryColumn instanceof GeometryDescriptor) {
+          gat=(GeometryDescriptor)geometryColumn;
+        }
+ else         if (geometryColumn instanceof VPFColumn) {
+          gat=((VPFColumn)geometryColumn).getGeometryAttributeType();
+        }
+        break;
+      }
+    }
+    SimpleFeatureType superType=null;
+    if (textTypeFeature) {
+      superType=AnnotationFeatureType.ANNOTATION;
+    }
+    SimpleFeatureTypeBuilder b=new SimpleFeatureTypeBuilder();
+    b.setName(cName);
+    b.setNamespaceURI(namespace);
+    b.setSuperType(superType);
+    b.addAll(columns);
+    b.setDefaultGeometry(gat.getLocalName());
+    featureType=b.buildFeatureType();
+  }
+ catch (  IOException exp) {
+    exp.printStackTrace();
+  }
+}

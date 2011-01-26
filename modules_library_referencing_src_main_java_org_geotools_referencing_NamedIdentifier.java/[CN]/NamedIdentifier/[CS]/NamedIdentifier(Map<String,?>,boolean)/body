@@ -1,0 +1,113 @@
+{
+  ensureNonNull("properties",properties);
+  Object code=null;
+  Object codespace=null;
+  Object version=null;
+  Object authority=null;
+  Object remarks=null;
+  GrowableInternationalString growable=null;
+  String key=null;
+  Object value=null;
+  for (  final Map.Entry<String,?> entry : properties.entrySet()) {
+    key=entry.getKey().trim().toLowerCase();
+    value=entry.getValue();
+switch (key.hashCode()) {
+case 3373707:
+{
+        if (!standalone && key.equals("name")) {
+          code=value;
+          continue;
+        }
+        break;
+      }
+case 3059181:
+{
+      if (key.equals(CODE_KEY)) {
+        code=value;
+        continue;
+      }
+      break;
+    }
+case -1108676807:
+{
+    if (key.equals(CODESPACE_KEY)) {
+      codespace=value;
+      continue;
+    }
+    break;
+  }
+case 351608024:
+{
+  if (key.equals(VERSION_KEY)) {
+    version=value;
+    continue;
+  }
+  break;
+}
+case 1475610435:
+{
+if (key.equals(AUTHORITY_KEY)) {
+  if (value instanceof String) {
+    value=Citations.fromName(value.toString());
+  }
+  authority=value;
+  continue;
+}
+break;
+}
+case 1091415283:
+{
+if (standalone && key.equals(REMARKS_KEY)) {
+if (value instanceof InternationalString) {
+  remarks=value;
+  continue;
+}
+}
+break;
+}
+}
+if (standalone && value instanceof String) {
+if (growable == null) {
+if (remarks instanceof GrowableInternationalString) {
+growable=(GrowableInternationalString)remarks;
+}
+ else {
+growable=new GrowableInternationalString();
+}
+}
+growable.add(REMARKS_KEY,key,value.toString());
+}
+}
+if (growable != null && !growable.getLocales().isEmpty()) {
+if (remarks == null) {
+remarks=growable;
+}
+ else {
+final Logger logger=Logging.getLogger(NamedIdentifier.class);
+final LogRecord record=Loggings.format(Level.WARNING,LoggingKeys.LOCALES_DISCARTED);
+record.setLoggerName(logger.getName());
+logger.log(record);
+}
+}
+if (codespace == null && authority instanceof Citation) {
+codespace=getCodeSpace((Citation)authority);
+}
+try {
+key=CODE_KEY;
+this.code=(String)(value=code);
+key=VERSION_KEY;
+this.version=(String)(value=version);
+key=CODESPACE_KEY;
+this.codespace=(String)(value=codespace);
+key=AUTHORITY_KEY;
+this.authority=(Citation)(value=authority);
+key=REMARKS_KEY;
+this.remarks=(InternationalString)(value=remarks);
+}
+ catch (ClassCastException exception) {
+InvalidParameterValueException e=new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,key,value),key,value);
+e.initCause(exception);
+throw e;
+}
+ensureNonNull(CODE_KEY,code);
+}

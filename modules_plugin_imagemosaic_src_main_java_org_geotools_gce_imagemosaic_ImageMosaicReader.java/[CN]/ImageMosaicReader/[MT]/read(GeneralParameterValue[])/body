@@ -1,0 +1,44 @@
+{
+  if (LOGGER.isLoggable(Level.FINE)) {
+    if (sourceURL != null) {
+      LOGGER.fine("Reading mosaic from " + sourceURL.toString());
+    }
+ else {
+      LOGGER.fine("Reading mosaic");
+    }
+    LOGGER.fine(new StringBuffer("Highest res ").append(highestRes[0]).append(" ").append(highestRes[1]).toString());
+  }
+  if (this.maxAllowedTiles != Integer.MAX_VALUE) {
+    if (params != null) {
+      boolean found=false;
+      for (      GeneralParameterValue pv : params) {
+        if (pv.getDescriptor().getName().equals(ImageMosaicFormat.MAX_ALLOWED_TILES.getName())) {
+          found=true;
+          break;
+        }
+      }
+      if (!found) {
+        final GeneralParameterValue[] temp=new GeneralParameterValue[params.length + 1];
+        System.arraycopy(params,0,temp,0,params.length);
+        ParameterValue<Integer> tempVal=ImageMosaicFormat.MAX_ALLOWED_TILES.createValue();
+        tempVal.setValue(this.maxAllowedTiles);
+        temp[params.length]=tempVal;
+      }
+    }
+ else {
+      ParameterValue<Integer> tempVal=ImageMosaicFormat.MAX_ALLOWED_TILES.createValue();
+      tempVal.setValue(this.maxAllowedTiles);
+      params=new GeneralParameterValue[]{tempVal};
+    }
+  }
+  final Collection<GridCoverage2D> response=rasterManager.read(params);
+  if (response.isEmpty()) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("The response is empty. ==> returning a null GridCoverage");
+    }
+    return null;
+  }
+ else {
+    return response.iterator().next();
+  }
+}

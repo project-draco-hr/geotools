@@ -1,0 +1,38 @@
+{
+  if (colorModel != null && numberOfBands > 1) {
+    throw new IllegalArgumentException("Indexed rasters shall contain a single band. numberOfBands = " + numberOfBands);
+  }
+{
+    testData.deleteTable(tableName);
+    ISession session=getConnectionPool().getSession();
+    try {
+      createRasterBusinessTempTable(tableName,session);
+    }
+  finally {
+      session.dispose();
+    }
+  }
+  final SeExtent extent=new SeExtent(0,0,2 * imageWidth,2 * imageHeight);
+  final SeCoordinateReference crs=getSeCRSFromPeProjectedCSId(PePCSDefs.PE_PCS_NAD_1983_HARN_MA_M);
+  final ISession session=getConnectionPool().getSession();
+  try {
+    createRasterColumn(tableName,crs,session);
+    int maxLevels;
+    if (pyramiding) {
+      int tileWidth=imageWidth >> 4;
+      if (forceNumLevels == null) {
+        maxLevels=(imageWidth / (4 * tileWidth)) - 1;
+      }
+ else {
+        maxLevels=forceNumLevels;
+      }
+    }
+ else {
+      maxLevels=0;
+    }
+    addRasterAttribute(tableName,numberOfBands,imageWidth,imageHeight,pixelType,colorModel,maxLevels,skipLevelOne,interpolationType,extent,session);
+  }
+  finally {
+    session.dispose();
+  }
+}

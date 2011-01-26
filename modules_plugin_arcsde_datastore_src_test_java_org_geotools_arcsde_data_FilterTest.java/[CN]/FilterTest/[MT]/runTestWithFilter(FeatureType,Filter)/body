@@ -1,0 +1,28 @@
+{
+  System.err.println("****************");
+  System.err.println("**");
+  System.err.println("** TESTING FILTER: " + filter);
+  System.err.println("**");
+  System.err.println("****************");
+  String[] propertyNames=safePropertyNames(ft);
+  Query allQuery=new Query(testData.getTempTableName(),Filter.INCLUDE,propertyNames);
+  System.err.println("Performing slow read...");
+  long startTime=System.currentTimeMillis();
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=this.dataStore.getFeatureReader(allQuery,Transaction.AUTO_COMMIT);
+  FilteringFeatureReader<SimpleFeatureType,SimpleFeature> ffr=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(fr,filter);
+  ArrayList<SimpleFeature> slowResults=new ArrayList<SimpleFeature>();
+  collectResults(ffr,slowResults);
+  ffr.close();
+  long endTime=System.currentTimeMillis();
+  System.err.println("Slow read took " + (endTime - startTime) + " milliseconds.");
+  System.err.println("Performing fast read...");
+  startTime=System.currentTimeMillis();
+  Query filteringQuery=new Query(testData.getTempTableName(),filter,safePropertyNames(ft));
+  fr=this.dataStore.getFeatureReader(filteringQuery,Transaction.AUTO_COMMIT);
+  ArrayList<SimpleFeature> fastResults=new ArrayList<SimpleFeature>();
+  collectResults(fr,fastResults);
+  fr.close();
+  endTime=System.currentTimeMillis();
+  System.err.println("Fast read took " + (endTime - startTime) + " milliseconds.");
+  assertFeatureListsSimilar(slowResults,fastResults);
+}

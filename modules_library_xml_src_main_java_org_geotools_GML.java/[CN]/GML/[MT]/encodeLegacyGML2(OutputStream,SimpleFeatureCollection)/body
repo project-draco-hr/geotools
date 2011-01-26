@@ -1,0 +1,35 @@
+{
+  final SimpleFeatureType TYPE=collection.getSchema();
+  FeatureTransformer transform=new FeatureTransformer();
+  transform.setIndentation(4);
+  transform.setGmlPrefixing(true);
+  if (prefix != null && namespace != null) {
+    transform.getFeatureTypeNamespaces().declareDefaultNamespace(prefix,namespace);
+    transform.addSchemaLocation(prefix,namespace);
+  }
+  if (TYPE.getName().getNamespaceURI() != null && TYPE.getUserData().get("prefix") != null) {
+    String typeNamespace=TYPE.getName().getNamespaceURI();
+    String typePrefix=(String)TYPE.getUserData().get("prefix");
+    transform.getFeatureTypeNamespaces().declareNamespace(TYPE,typePrefix,typeNamespace);
+  }
+ else   if (prefix != null && namespace != null) {
+    transform.getFeatureTypeNamespaces().declareNamespace(TYPE,prefix,namespace);
+  }
+ else {
+  }
+  transform.setCollectionPrefix(null);
+  transform.setCollectionNamespace(null);
+  transform.setCollectionBounding(true);
+  transform.setEncoding(encoding);
+  transform.getFeatureNamespaces();
+  String srsName=CRS.toSRS(TYPE.getCoordinateReferenceSystem());
+  if (srsName != null) {
+    transform.setSrsName(srsName);
+  }
+  try {
+    transform.transform(collection,out);
+  }
+ catch (  TransformerException e) {
+    throw (IOException)new IOException("Failed to encode feature collection:" + e).initCause(e);
+  }
+}

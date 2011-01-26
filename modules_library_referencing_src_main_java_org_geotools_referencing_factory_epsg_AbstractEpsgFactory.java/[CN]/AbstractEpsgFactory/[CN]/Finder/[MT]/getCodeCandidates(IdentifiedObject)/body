@@ -1,0 +1,52 @@
+{
+  String select="COORD_REF_SYS_CODE";
+  String from="[Coordinate Reference System]";
+  String where, code;
+  if (object instanceof Ellipsoid) {
+    select="ELLIPSOID_CODE";
+    from="[Ellipsoid]";
+    where="SEMI_MAJOR_AXIS";
+    code=Double.toString(((Ellipsoid)object).getSemiMajorAxis());
+  }
+ else {
+    IdentifiedObject dependency;
+    if (object instanceof GeneralDerivedCRS) {
+      dependency=((GeneralDerivedCRS)object).getBaseCRS();
+      where="SOURCE_GEOGCRS_CODE";
+    }
+ else     if (object instanceof SingleCRS) {
+      dependency=((SingleCRS)object).getDatum();
+      where="DATUM_CODE";
+    }
+ else     if (object instanceof GeodeticDatum) {
+      dependency=((GeodeticDatum)object).getEllipsoid();
+      select="DATUM_CODE";
+      from="[Datum]";
+      where="ELLIPSOID_CODE";
+    }
+ else {
+      return super.getCodeCandidates(object);
+    }
+    dependency=getIdentifiedObjectFinder(dependency.getClass()).find(dependency);
+    Identifier id=AbstractIdentifiedObject.getIdentifier(dependency,getAuthority());
+    if (id == null || (code=id.getCode()) == null) {
+      return super.getCodeCandidates(object);
+    }
+  }
+  String sql="SELECT " + select + " FROM "+ from+ " WHERE "+ where+ "='"+ code+ '\'';
+  sql=adaptSQL(sql);
+  final Set<String> result=new LinkedHashSet<String>();
+  try {
+    final Statement s=getConnection().createStatement();
+    final ResultSet r=s.executeQuery(sql);
+    while (r.next()) {
+      result.add(r.getString(1));
+    }
+    r.close();
+    s.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(Identifier.class,code,exception);
+  }
+  return result;
+}

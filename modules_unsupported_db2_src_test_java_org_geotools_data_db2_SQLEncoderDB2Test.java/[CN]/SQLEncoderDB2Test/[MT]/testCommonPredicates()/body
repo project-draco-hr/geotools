@@ -1,0 +1,18 @@
+{
+  BinarySpatialOperator gf=null;
+  Set keys=encoder.getPredicateMap().keySet();
+  Iterator it=keys.iterator();
+  while (it.hasNext()) {
+    Class filterType=(Class)it.next();
+    String predicateName=(String)encoder.getPredicateMap().get(filterType);
+    if (predicateName.equals("EnvelopesIntersect") || predicateName.equals("ST_Distance")) {
+      continue;
+    }
+    System.out.println("Testing predicate '" + predicateName + "' type = "+ filterType);
+    gf=createGeometryFilter(filterType);
+    encoder.setSelectivityClause(null);
+    sqlString=this.encoder.encodeToString(gf);
+    String expected="WHERE db2gse." + predicateName + "(\"Geom\", db2gse.ST_POLYGON('POLYGON ((-76 41, -76 42, -74 42, -74 41, -76 41))', 1)) = 1";
+    assertEquals("Testing predicate: " + predicateName,expected,sqlString);
+  }
+}

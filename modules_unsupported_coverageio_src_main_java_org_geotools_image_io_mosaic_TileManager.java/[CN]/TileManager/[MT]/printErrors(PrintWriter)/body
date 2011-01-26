@@ -1,0 +1,43 @@
+{
+  if (out == null) {
+    out=new PrintWriter(System.out,true);
+  }
+  final Collection<Tile> tiles;
+  try {
+    tiles=getTiles();
+  }
+ catch (  IOException e) {
+    e.printStackTrace(out);
+    return;
+  }
+  for (  final Tile tile : tiles) {
+    final int imageIndex=tile.getImageIndex();
+    ImageReader reader=null;
+    String message=null;
+    try {
+      final Rectangle region=tile.getRegion();
+      reader=tile.getImageReader();
+      final int width=reader.getWidth(imageIndex);
+      final int height=reader.getHeight(imageIndex);
+      if (width != region.width || height != region.height) {
+        message=Errors.format(ErrorKeys.UNEXPECTED_IMAGE_SIZE);
+      }
+      Tile.dispose(reader);
+      reader=null;
+    }
+ catch (    IOException exception) {
+      message=exception.toString();
+    }
+catch (    RuntimeException exception) {
+      message=exception.toString();
+    }
+    if (message != null) {
+      out.println(tile);
+      out.print("    ");
+      out.println(message);
+    }
+    if (reader != null) {
+      reader.dispose();
+    }
+  }
+}

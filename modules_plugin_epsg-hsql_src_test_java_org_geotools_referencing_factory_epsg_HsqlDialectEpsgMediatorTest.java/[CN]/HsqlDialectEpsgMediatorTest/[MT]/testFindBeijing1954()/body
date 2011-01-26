@@ -1,0 +1,17 @@
+{
+  if (!TestData.isExtensiveTest()) {
+    return;
+  }
+  String wkt="PROJCS[\"Beijing 1954\",\n" + "   GEOGCS[\"Beijing 1954\",\n" + "     DATUM[\"Beijing 1954\",\n"+ "       SPHEROID[\"Krassowsky 1940\", 6378245.0, 298.3]],\n"+ "     PRIMEM[\"Greenwich\", 0.0],\n"+ "     UNIT[\"degree\", 0.017453292519943295],\n"+ "     AXIS[\"Geodetic latitude\", NORTH],\n"+ "     AXIS[\"Geodetic longitude\", EAST]],\n"+ "   PROJECTION[\"Transverse Mercator\"],\n"+ "   PARAMETER[\"central_meridian\", 135.0],\n"+ "   PARAMETER[\"latitude_of_origin\", 0.0],\n"+ "   PARAMETER[\"scale_factor\", 1.0],\n"+ "   PARAMETER[\"false_easting\", 500000.0],\n"+ "   PARAMETER[\"false_northing\", 0.0],\n"+ "   UNIT[\"m\", 1.0],\n"+ "   AXIS[\"Northing\", NORTH],\n"+ "   AXIS[\"Easting\", EAST]]";
+  CoordinateReferenceSystem crs=CRS.parseWKT(wkt);
+  finder.setFullScanAllowed(false);
+  assertNull("Should not find the CRS without a full scan.",finder.find(crs));
+  finder.setFullScanAllowed(true);
+  IdentifiedObject find=finder.find(crs);
+  assertNotNull("With full scan allowed, the CRS should be found.",find);
+  assertTrue("Should found an object equals (ignoring metadata) to the requested one.",CRS.equalsIgnoreMetadata(crs,find));
+  assertEquals("2442",AbstractIdentifiedObject.getIdentifier(find,factory.getAuthority()).getCode());
+  finder.setFullScanAllowed(false);
+  String id=finder.findIdentifier(crs);
+  assertEquals("The CRS should still in the cache.","EPSG:2442",id);
+}

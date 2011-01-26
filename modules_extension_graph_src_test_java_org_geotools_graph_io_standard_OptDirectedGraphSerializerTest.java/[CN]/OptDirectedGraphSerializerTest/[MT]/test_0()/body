@@ -1,0 +1,38 @@
+{
+  final int nnodes=100;
+  Object[] obj=GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  final Map node2id=(Map)obj[2];
+  final Map edge2id=(Map)obj[3];
+  try {
+    File victim=File.createTempFile("graph",null);
+    victim.deleteOnExit();
+    serializer().setProperty(SerializedReaderWriter.FILENAME,victim.getAbsolutePath());
+    serializer().write(builder().getGraph());
+    Graph before=builder().getGraph();
+    Graph after=serializer().read();
+    assertTrue(before.getNodes().size() == after.getNodes().size());
+    assertTrue(before.getEdges().size() == after.getEdges().size());
+    GraphVisitor visitor=new GraphVisitor(){
+      public int visit(      Graphable component){
+        DirectedNode node=(DirectedNode)component;
+        if (node.getInDegree() == 0 || node.getOutDegree() == 0)         return (Graph.PASS_AND_CONTINUE);
+        return (Graph.FAIL_QUERY);
+      }
+    }
+;
+    assertTrue(after.queryNodes(visitor).size() == 2);
+    visitor=new GraphVisitor(){
+      public int visit(      Graphable component){
+        DirectedNode node=(DirectedNode)component;
+        if (node.getInDegree() == 1 || node.getOutDegree() == 1)         return (Graph.PASS_AND_CONTINUE);
+        return (Graph.FAIL_QUERY);
+      }
+    }
+;
+    assertTrue(after.getNodesOfDegree(2).size() == nnodes - 2);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    assertTrue(false);
+  }
+}

@@ -1,0 +1,36 @@
+{
+  final Random random=new Random(6969483179756527012L);
+  final KeySortedList<Integer,Double> list=new KeySortedList<Integer,Double>();
+  final Collection<Double> check=new ArrayList<Double>();
+  final int maxElements=1000;
+  for (int i=0; i < maxElements; i++) {
+    final double x=random.nextDouble() * (maxElements / 10);
+    final Integer key=(int)x;
+    final Double value=x;
+    list.add(key,value);
+    check.add(value);
+  }
+  assertEquals(maxElements,check.size());
+  assertEquals(maxElements,list.size());
+  assertEquals(new HashSet<Double>(check),new HashSet<Double>(list));
+  int count=0, lastKey=0;
+  for (final ListIterator<Double> it=list.listIterator(); it.hasNext(); count++) {
+    assertEquals(count,it.nextIndex());
+    final Double element=it.next();
+    assertEquals(count,it.previousIndex());
+    final double value=element.doubleValue();
+    final int key=(int)value;
+    assertTrue(key >= lastKey);
+    lastKey=key;
+    assertSame(element,list.get(count));
+  }
+  assertEquals(maxElements,count);
+  final Integer midKey=(maxElements / 10) / 2;
+  final KeySortedList<Integer,Double> head=list.headList(midKey);
+  final KeySortedList<Integer,Double> tail=list.tailList(midKey);
+  final Collection<Double> rebuild=new ArrayList<Double>(head);
+  rebuild.addAll(tail);
+  assertEquals(list.size(),head.size() + tail.size());
+  assertEquals(list,rebuild);
+  assertSame(list.listIterator(midKey).next(),tail.listIterator().next());
+}

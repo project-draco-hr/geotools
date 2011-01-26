@@ -1,0 +1,40 @@
+{
+  if ((cType.getContent() == null) || (cType.getContent() instanceof XSDSimpleTypeDefinition)) {
+    return;
+  }
+  LinkedList queue=new LinkedList();
+  queue.addLast(cType.getContent());
+  while (!queue.isEmpty()) {
+    XSDParticle particle=(XSDParticle)queue.removeFirst();
+    int pType=XSDUtil.nodeType(particle.getElement());
+    if (pType == XSDConstants.ELEMENT_ELEMENT) {
+      visitor.visit(particle);
+    }
+ else {
+      XSDModelGroup grp=null;
+switch (pType) {
+case XSDConstants.GROUP_ELEMENT:
+        XSDModelGroupDefinition grpDef=(XSDModelGroupDefinition)particle.getContent();
+      if (grpDef.isModelGroupDefinitionReference()) {
+        grpDef=grpDef.getResolvedModelGroupDefinition();
+      }
+    grp=grpDef.getModelGroup();
+  break;
+case XSDConstants.CHOICE_ELEMENT:
+case XSDConstants.ALL_ELEMENT:
+case XSDConstants.SEQUENCE_ELEMENT:
+grp=(XSDModelGroup)particle.getContent();
+break;
+}
+if (grp != null) {
+List parts=grp.getParticles();
+if (parts.isEmpty()) {
+parts=grp.getContents();
+}
+for (int i=parts.size() - 1; i >= 0; i--) {
+queue.addFirst(parts.get(i));
+}
+}
+}
+}
+}

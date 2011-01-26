@@ -1,0 +1,35 @@
+{
+  try {
+    Method[] methods=c.getDeclaredMethods();
+    File testFile=new File(PATH_AND_FILE_NAME_PREFIX + "Test" + ".java");
+    PrintStream testPrintStream=new PrintStream(new FileOutputStream(testFile));
+    createTestFileHeader(testPrintStream);
+    for (int t=0; t < methods.length; t++) {
+      Method method=methods[t];
+      Type type=method.getGenericReturnType();
+      if (!type.toString().equals("void")) {
+        String name=method.getName();
+        File f=new File(PATH_AND_FILE_NAME_PREFIX + name + ".java");
+        int count=2;
+        while (f.exists()) {
+          name=method.getName() + "_" + count;
+          f=new File(PATH_AND_FILE_NAME_PREFIX + name + ".java");
+          count++;
+        }
+        PrintStream ps=new PrintStream(new FileOutputStream(f));
+        emitHeader(method,ps,name);
+        emitCode(method,ps);
+        emitFooter(method,ps);
+        ps.close();
+        PrintStream printStream=System.out;
+        writeServiceInfo(method,printStream,name);
+        writeTestMethodInTestFile(testPrintStream,method,name);
+      }
+    }
+    writeFooterInTestFile(testPrintStream);
+    testPrintStream.close();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+}

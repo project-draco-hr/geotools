@@ -1,0 +1,52 @@
+{
+  LogRecord record=null;
+  try {
+    String[] values;
+synchronized (this) {
+      values=this.values;
+      if (values != null) {
+        return values;
+      }
+      record=new LogRecord(Level.FINER,"Loaded resources for {0} from bundle \"{1}\".");
+      record.setSourceClassName(getClass().getName());
+      record.setSourceMethodName((key != null) ? "getObject" : "getKeys");
+      InputStream in;
+      String name=filename;
+      while ((in=getClass().getResourceAsStream(name)) == null) {
+        final int ext=name.lastIndexOf('.');
+        final int lang=name.lastIndexOf('_',ext - 1);
+        if (lang <= 0) {
+          throw new FileNotFoundException(filename);
+        }
+        name=name.substring(0,lang) + name.substring(ext);
+      }
+      final DataInputStream input=new DataInputStream(new BufferedInputStream(in));
+      this.values=values=new String[input.readInt()];
+      for (int i=0; i < values.length; i++) {
+        values[i]=input.readUTF();
+        if (values[i].length() == 0)         values[i]=null;
+      }
+      input.close();
+      String language=getLocale().getDisplayName(Locale.US);
+      if (language == null || language.length() == 0) {
+        language="<default>";
+      }
+      record.setParameters(new String[]{language,getPackageName()});
+    }
+    final Logger logger=Logging.getLogger(IndexedResourceBundle.class);
+    record.setLoggerName(logger.getName());
+    logger.log(record);
+    return values;
+  }
+ catch (  IOException exception) {
+    record.setLevel(Level.WARNING);
+    record.setMessage(exception.getLocalizedMessage());
+    record.setThrown(exception);
+    final Logger logger=Logging.getLogger(IndexedResourceBundle.class);
+    record.setLoggerName(logger.getName());
+    logger.log(record);
+    final MissingResourceException error=new MissingResourceException(exception.getLocalizedMessage(),getClass().getName(),key);
+    error.initCause(exception);
+    throw error;
+  }
+}

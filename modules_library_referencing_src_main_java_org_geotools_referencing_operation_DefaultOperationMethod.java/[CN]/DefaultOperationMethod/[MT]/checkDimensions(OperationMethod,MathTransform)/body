@@ -1,0 +1,40 @@
+{
+  if (method != null && transform != null) {
+    int actual, expected=method.getSourceDimensions();
+    while ((actual=transform.getSourceDimensions()) > expected) {
+      if (transform instanceof ConcatenatedTransform) {
+        final ConcatenatedTransform c=(ConcatenatedTransform)transform;
+        if (isTrivial(c.transform1)) {
+          transform=c.transform2;
+        }
+ else         if (isTrivial(c.transform2)) {
+          transform=c.transform1;
+        }
+ else {
+          break;
+        }
+      }
+ else       if (transform instanceof PassThroughTransform) {
+        transform=((PassThroughTransform)transform).getSubTransform();
+      }
+ else {
+        break;
+      }
+    }
+    final String name;
+    if (actual != expected) {
+      name="sourceDimensions";
+    }
+ else {
+      actual=transform.getTargetDimensions();
+      expected=method.getTargetDimensions();
+      if (actual != expected) {
+        name="targetDimensions";
+      }
+ else {
+        return;
+      }
+    }
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.MISMATCHED_DIMENSION_$3,name,actual,expected));
+  }
+}

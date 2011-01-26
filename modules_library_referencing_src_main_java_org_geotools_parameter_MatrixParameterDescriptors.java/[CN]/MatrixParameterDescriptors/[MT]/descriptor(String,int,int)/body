@@ -1,0 +1,30 @@
+{
+  ensureNonNull("name",name);
+  name=name.trim();
+  RuntimeException cause=null;
+  if (name.regionMatches(true,0,prefix,0,prefix.length())) {
+    final int split=name.indexOf(separator,prefix.length());
+    if (split >= 0)     try {
+      final int row=Integer.parseInt(name.substring(prefix.length(),split));
+      final int col=Integer.parseInt(name.substring(split + 1));
+      return descriptor(row,col,numRow,numCol);
+    }
+ catch (    NumberFormatException exception) {
+      cause=exception;
+    }
+catch (    IndexOutOfBoundsException exception) {
+      cause=exception;
+    }
+  }
+  try {
+    return super.descriptor(name);
+  }
+ catch (  ParameterNotFoundException exception) {
+    if (cause != null)     try {
+      exception.initCause(cause);
+    }
+ catch (    IllegalStateException ignore) {
+    }
+    throw exception;
+  }
+}

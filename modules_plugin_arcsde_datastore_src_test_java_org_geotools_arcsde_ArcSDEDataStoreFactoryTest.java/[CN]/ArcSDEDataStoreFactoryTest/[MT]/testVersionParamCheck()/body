@@ -1,0 +1,18 @@
+{
+  ISession session=testData.getConnectionPool().getSession(true);
+  final String versionName="testVersionParamCheck";
+  try {
+    testData.createVersion(session,versionName,SeVersion.SE_QUALIFIED_DEFAULT_VERSION_NAME);
+  }
+  finally {
+    session.dispose();
+  }
+  Map<String,Serializable> paramsWithVersion=new HashMap<String,Serializable>(workingParams);
+  try {
+    paramsWithVersion.put(VERSION_PARAM_NAME,"Non existent version name");
+    dsFactory.createDataStore(paramsWithVersion);
+  }
+ catch (  IOException e) {
+    assertTrue(e.getMessage(),e.getMessage().startsWith("Specified ArcSDE version does not exist"));
+  }
+}

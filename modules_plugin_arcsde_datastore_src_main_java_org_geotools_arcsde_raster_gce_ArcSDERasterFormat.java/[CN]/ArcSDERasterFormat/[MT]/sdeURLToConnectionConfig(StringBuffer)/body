@@ -1,0 +1,96 @@
+{
+  String sdeHost, sdeUser, sdePass, sdeDBName;
+  int sdePort;
+  if (sdeUrl.indexOf("sde:/") == -1) {
+    throw new IllegalArgumentException("ArcSDE Raster URL must be of the form sde://user:pass@sdehost:port/[dbname]#rasterTableName -- Got " + sdeUrl);
+  }
+  if (sdeUrl.indexOf("sde://") == -1) {
+    sdeUrl.delete(0,5);
+  }
+ else {
+    sdeUrl.delete(0,6);
+  }
+  int idx=sdeUrl.indexOf(":");
+  if (idx == -1) {
+    throw new IllegalArgumentException("ArcSDE Raster URL must be of the form sde://user:pass@sdehost:port/[dbname]#rasterTableName[;pool.minConnections=<int>][;pool.maxConnections=<int>]");
+  }
+  sdeUser=sdeUrl.substring(0,idx);
+  sdeUrl.delete(0,idx);
+  idx=sdeUrl.indexOf("@");
+  if (idx == -1) {
+    throw new IllegalArgumentException("ArcSDE Raster URL must be of the form sde://user:pass@sdehost:port/[dbname]#rasterTableName[;pool.minConnections=<int>][;pool.maxConnections=<int>]");
+  }
+  sdePass=sdeUrl.substring(1,idx);
+  sdeUrl.delete(0,idx);
+  idx=sdeUrl.indexOf(":");
+  if (idx == -1) {
+    sdePort=5151;
+    idx=sdeUrl.indexOf("/");
+    if (idx == -1) {
+      throw new IllegalArgumentException("ArcSDE Raster URL must be of the form sde://user:pass@sdehost:port/[dbname]#rasterTableName");
+    }
+    sdeHost=sdeUrl.substring(1,idx).toString();
+    sdeUrl.delete(0,idx);
+  }
+ else {
+    sdeHost=sdeUrl.substring(1,idx).toString();
+    sdeUrl.delete(0,idx);
+    idx=sdeUrl.indexOf("/");
+    if (idx == -1) {
+      throw new IllegalArgumentException("ArcSDE Raster URL must be of the form sde://user:pass@sdehost:port/[dbname]#rasterTableName");
+    }
+    sdePort=Integer.parseInt(sdeUrl.substring(1,idx).toString());
+    sdeUrl.delete(0,idx);
+  }
+  idx=sdeUrl.indexOf("#");
+  if (idx == -1) {
+    throw new IllegalArgumentException("ArcSDE Raster URL must be of the form sde://user:pass@sdehost:port/[dbname]#rasterTableName");
+  }
+  sdeDBName=sdeUrl.substring(1,idx).toString();
+  sdeUrl.delete(0,idx);
+  String minConnections="1";
+  String maxConnections="10";
+  if (sdeUrl.indexOf(";") > 0) {
+    String optionals=sdeUrl.substring(sdeUrl.indexOf(";") + 1);
+    String[] options=optionals.split(";");
+    for (    String option : options) {
+      String[] pair=option.split("=");
+      if (pair.length != 2) {
+        LOGGER.info("Ignoring malformed optional param '" + option + "'");
+        continue;
+      }
+      String name=pair[0];
+      String value=pair[1];
+      if ("pool.minConnections".equals(name)) {
+        try {
+          minConnections=Integer.valueOf(value).toString();
+        }
+ catch (        NumberFormatException e) {
+          LOGGER.warning("Wrong pool.minConnections parameter: " + value);
+        }
+      }
+ else       if ("pool.maxConnections".equals(name)) {
+        try {
+          maxConnections=Integer.valueOf(value).toString();
+        }
+ catch (        NumberFormatException e) {
+          LOGGER.warning("Wrong pool.maxConnections parameter: " + value);
+        }
+      }
+ else {
+        LOGGER.info("Ignoring unrecognized optional parameter '" + option + "'. Must be one of [pool.minConnections, pool.maxConnections]");
+      }
+    }
+  }
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put(ArcSDEConnectionConfig.SERVER_NAME_PARAM_NAME,sdeHost);
+  params.put(ArcSDEConnectionConfig.PORT_NUMBER_PARAM_NAME,String.valueOf(sdePort));
+  params.put(ArcSDEConnectionConfig.INSTANCE_NAME_PARAM_NAME,sdeDBName);
+  params.put(ArcSDEConnectionConfig.USER_NAME_PARAM_NAME,sdeUser);
+  params.put(ArcSDEConnectionConfig.PASSWORD_PARAM_NAME,sdePass);
+  params.put(ArcSDEConnectionConfig.MIN_CONNECTIONS_PARAM_NAME,minConnections);
+  params.put(ArcSDEConnectionConfig.MAX_CONNECTIONS_PARAM_NAME,maxConnections);
+  params.put(ArcSDEConnectionConfig.CONNECTION_TIMEOUT_PARAM_NAME,"-1");
+  ArcSDEConnectionConfig config=ArcSDEConnectionConfig.fromMap(params);
+  return config;
+}

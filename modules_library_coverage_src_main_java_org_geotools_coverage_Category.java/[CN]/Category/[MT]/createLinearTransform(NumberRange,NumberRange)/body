@@ -1,0 +1,31 @@
+{
+  final Class<?> sType=sampleValueRange.getElementClass();
+  final Class<?> gType=geophysicsValueRange.getElementClass();
+  int sMinInc=sampleValueRange.isMinIncluded() ? 0 : +1;
+  int sMaxInc=sampleValueRange.isMaxIncluded() ? 0 : -1;
+  int gMinInc=geophysicsValueRange.isMinIncluded() ? 0 : +1;
+  int gMaxInc=geophysicsValueRange.isMaxIncluded() ? 0 : -1;
+  if (sMinInc == gMinInc)   sMinInc=gMinInc=0;
+  if (sMaxInc == gMaxInc)   sMaxInc=gMaxInc=0;
+  final boolean adjustSamples=(Classes.isInteger(sType) && !Classes.isInteger(gType));
+  if ((adjustSamples ? gMinInc : sMinInc) != 0) {
+    int swap=sMinInc;
+    sMinInc=-gMinInc;
+    gMinInc=-swap;
+  }
+  if ((adjustSamples ? gMaxInc : sMaxInc) != 0) {
+    int swap=sMaxInc;
+    sMaxInc=-gMaxInc;
+    gMaxInc=-swap;
+  }
+  final double minSample=doubleValue(sType,sampleValueRange.getMinValue(),sMinInc);
+  final double maxSample=doubleValue(sType,sampleValueRange.getMaxValue(),sMaxInc);
+  final double minValue=doubleValue(gType,geophysicsValueRange.getMinValue(),gMinInc);
+  final double maxValue=doubleValue(gType,geophysicsValueRange.getMaxValue(),gMaxInc);
+  double scale=(maxValue - minValue) / (maxSample - minSample);
+  if (Double.isNaN(scale) && !Double.isNaN(maxValue - minValue) && !Double.isNaN(maxSample - minSample)) {
+    scale=1.0;
+  }
+  final double offset=minValue - scale * minSample;
+  return createLinearTransform(scale,offset);
+}

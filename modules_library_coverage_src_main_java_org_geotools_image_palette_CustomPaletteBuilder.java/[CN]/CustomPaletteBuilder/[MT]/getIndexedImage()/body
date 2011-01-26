@@ -1,0 +1,50 @@
+{
+  final IndexColorModel icm=getIndexColorModel();
+  final WritableRaster destWr=icm.createCompatibleWritableRaster(src.getWidth(),src.getHeight());
+  final BufferedImage dst=new BufferedImage(icm,destWr,false,null);
+  final int numBands=src.getSampleModel().getNumBands();
+  final int rgba[]=new int[numBands];
+  final boolean sourceHasAlpha=(numBands % 2 == 0);
+  final int alphaBand=sourceHasAlpha ? numBands - 1 : -1;
+  final int minx_=src.getMinX();
+  final int miny_=src.getMinY();
+  final int srcW_=src.getWidth();
+  final int srcH_=src.getHeight();
+  final int maxx_=minx_ + srcW_;
+  final int maxy_=miny_ + srcH_;
+  final int minTileX=src.getMinTileX();
+  final int minTileY=src.getMinTileY();
+  final int tileW=src.getTileWidth();
+  final int tileH=src.getTileHeight();
+  final int maxTileX=minTileX + src.getNumXTiles();
+  final int maxTileY=minTileY + src.getNumYTiles();
+  int dstTempX=0;
+  int dstTempY=0;
+  for (int ty=minTileY; ty < maxTileY; ty++) {
+    dstTempX=0;
+    int actualWidth=0;
+    int actualHeight=0;
+    for (int tx=minTileX; tx < maxTileX; tx++) {
+      final Raster r=src.getTile(tx,ty);
+      int minx=r.getMinX();
+      int miny=r.getMinY();
+      minx=minx < minx_ ? minx_ : minx;
+      miny=miny < miny_ ? miny_ : miny;
+      int maxx=minx + tileW;
+      int maxy=miny + tileH;
+      maxx=maxx > maxx_ ? maxx_ : maxx;
+      maxy=maxy > maxy_ ? maxy_ : maxy;
+      actualWidth=maxx - minx;
+      actualHeight=maxy - miny;
+      for (int j=miny, jj=dstTempY; j < maxy; j++, jj++) {
+        for (int i=minx, ii=dstTempX; i < maxx; i++, ii++) {
+          r.getPixel(i,j,rgba);
+          destWr.setSample(ii,jj,0,findColorIndex(root,rgba,alphaBand));
+        }
+      }
+      dstTempX+=actualWidth;
+    }
+    dstTempY+=actualHeight;
+  }
+  return dst;
+}

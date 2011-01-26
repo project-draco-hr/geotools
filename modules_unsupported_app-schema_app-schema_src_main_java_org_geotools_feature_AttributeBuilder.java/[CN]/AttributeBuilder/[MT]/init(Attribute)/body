@@ -1,0 +1,29 @@
+{
+  init();
+  descriptor=attribute.getDescriptor();
+  type=attribute.getType();
+  if (attribute instanceof ComplexAttribute) {
+    ComplexAttribute complex=(ComplexAttribute)attribute;
+    Collection properties=(Collection)complex.getValue();
+    for (Iterator itr=properties.iterator(); itr.hasNext(); ) {
+      Property property=(Property)itr.next();
+      if (property instanceof Attribute) {
+        Attribute att=(Attribute)property;
+        add(att.getIdentifier() == null ? null : att.getIdentifier().toString(),att.getValue(),att.getName());
+      }
+ else       if (property instanceof Association) {
+        Association assoc=(Association)property;
+        associate(assoc.getValue(),assoc.getName());
+      }
+    }
+  }
+  if (attribute instanceof Feature) {
+    Feature feature=(Feature)attribute;
+    if (feature.getDefaultGeometryProperty() != null) {
+      if (crs == null) {
+        crs=feature.getDefaultGeometryProperty().getType().getCoordinateReferenceSystem();
+      }
+      defaultGeometry=feature.getDefaultGeometryProperty().getValue();
+    }
+  }
+}

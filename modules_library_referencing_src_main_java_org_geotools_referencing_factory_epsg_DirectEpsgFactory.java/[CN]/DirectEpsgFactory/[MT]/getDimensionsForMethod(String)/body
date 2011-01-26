@@ -1,0 +1,24 @@
+{
+  final PreparedStatement stmt;
+  stmt=prepareStatement("MethodDimensions","SELECT SOURCE_CRS_CODE," + " TARGET_CRS_CODE" + " FROM [Coordinate_Operation]"+ " WHERE COORD_OP_METHOD_CODE = ?"+ " AND SOURCE_CRS_CODE IS NOT NULL"+ " AND TARGET_CRS_CODE IS NOT NULL");
+  stmt.setInt(1,Integer.parseInt(code));
+  final ResultSet result=stmt.executeQuery();
+  final Map<Dimensions,Dimensions> dimensions=new HashMap<Dimensions,Dimensions>();
+  final Dimensions temp=new Dimensions((2 << 16) | 2);
+  Dimensions max=temp;
+  while (result.next()) {
+    final short sourceDimensions=getDimensionForCRS(result.getString(1));
+    final short targetDimensions=getDimensionForCRS(result.getString(2));
+    temp.encoded=(sourceDimensions << 16) | (targetDimensions);
+    Dimensions candidate=dimensions.get(temp);
+    if (candidate == null) {
+      candidate=new Dimensions(temp.encoded);
+      dimensions.put(candidate,candidate);
+    }
+    if (++candidate.occurences > max.occurences) {
+      max=candidate;
+    }
+  }
+  result.close();
+  return max.encoded;
+}

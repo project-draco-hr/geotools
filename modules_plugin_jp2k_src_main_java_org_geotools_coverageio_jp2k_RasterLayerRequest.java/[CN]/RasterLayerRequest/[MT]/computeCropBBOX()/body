@@ -1,0 +1,56 @@
+{
+  final CoordinateReferenceSystem requestCRS=CRS.getHorizontalCRS(requestedBBox.getCoordinateReferenceSystem());
+  try {
+    if (!CRS.equalsIgnoreMetadata(requestCRS,rasterManager.spatialDomainManager.coverageCRS2D))     destinationToSourceTransform=CRS.findMathTransform(requestCRS,rasterManager.spatialDomainManager.coverageCRS2D,true);
+    if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
+      final GeneralEnvelope temp=CRS.transform(destinationToSourceTransform,requestedBBox);
+      temp.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageCRS2D);
+      cropBBox=new ReferencedEnvelope(temp);
+    }
+ else {
+      cropBBox=new ReferencedEnvelope(requestedBBox.getMinX(),requestedBBox.getMaxX(),requestedBBox.getMinY(),requestedBBox.getMaxY(),rasterManager.spatialDomainManager.coverageCRS2D);
+    }
+    if (!cropBBox.intersects((BoundingBox)rasterManager.spatialDomainManager.coverageBBox)) {
+      cropBBox=null;
+      empty=true;
+      return;
+    }
+    cropBBox=new ReferencedEnvelope(((ReferencedEnvelope)cropBBox).intersection(rasterManager.spatialDomainManager.coverageBBox),rasterManager.spatialDomainManager.coverageCRS2D);
+    return;
+  }
+ catch (  TransformException te) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,te.getLocalizedMessage(),te);
+  }
+catch (  FactoryException fe) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,fe.getLocalizedMessage(),fe);
+  }
+  try {
+    if (!CRS.equalsIgnoreMetadata(rasterManager.spatialDomainManager.coverageGeographicCRS2D,requestCRS)) {
+      requestCRSToCoverageGeographicCRS2D=CRS.findMathTransform(requestCRS,rasterManager.spatialDomainManager.coverageGeographicCRS2D,true);
+      if (!requestCRSToCoverageGeographicCRS2D.isIdentity()) {
+        requestedBBOXInCoverageGeographicCRS=CRS.transform(requestCRSToCoverageGeographicCRS2D,requestedBBox);
+        requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageGeographicCRS2D);
+      }
+    }
+    if (requestedBBOXInCoverageGeographicCRS == null)     requestedBBOXInCoverageGeographicCRS=new GeneralEnvelope(requestCRS);
+    if (!requestedBBOXInCoverageGeographicCRS.intersects(rasterManager.spatialDomainManager.coverageGeographicBBox,true)) {
+      cropBBox=null;
+      empty=true;
+      return;
+    }
+    requestedBBOXInCoverageGeographicCRS.intersect(rasterManager.spatialDomainManager.coverageGeographicBBox);
+    requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageGeographicCRS2D);
+    final MathTransform transform=CRS.findMathTransform(requestedBBOXInCoverageGeographicCRS.getCoordinateReferenceSystem(),rasterManager.spatialDomainManager.coverageCRS2D,true);
+    approximateRequestedBBoInNativeCRS=CRS.transform(transform,requestedBBOXInCoverageGeographicCRS);
+    approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageCRS2D);
+    cropBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
+  }
+ catch (  TransformException te) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,te.getLocalizedMessage(),te);
+  }
+catch (  FactoryException fe) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,fe.getLocalizedMessage(),fe);
+  }
+  LOGGER.log(Level.INFO,"We did not manage to crop the requested envelope, we fall back onto loading the whole coverage.");
+  cropBBox=null;
+}

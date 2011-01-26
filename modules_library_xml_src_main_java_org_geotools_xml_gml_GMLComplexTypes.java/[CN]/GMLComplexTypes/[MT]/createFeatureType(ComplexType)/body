@@ -1,0 +1,31 @@
+{
+  String ftName=element.getName();
+  URI ftNS=element.getNamespace();
+  logger.finest("Creating feature type for " + ftName + ":"+ ftNS);
+  SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+  build.setNamespaceURI(ftNS);
+  build.setName(ftName);
+  GeometryDescriptor geometryAttribute=null;
+  ElementGrouping child=(element).getChild();
+  List<AttributeDescriptor> attrs=getAttributes(element.getName(),child);
+  for (  AttributeDescriptor attributeDescriptor : attrs) {
+    if (attributeDescriptor == null)     continue;
+    build.add(attributeDescriptor);
+    if ((geometryAttribute == null) && attributeDescriptor instanceof GeometryDescriptor) {
+      if (!attributeDescriptor.getLocalName().equalsIgnoreCase(AbstractFeatureType.getInstance().getChildElements()[2].getName())) {
+        geometryAttribute=(GeometryDescriptor)attributeDescriptor;
+      }
+    }
+  }
+  if (geometryAttribute != null) {
+    build.setDefaultGeometry(geometryAttribute.getLocalName());
+  }
+  try {
+    SimpleFeatureType ft=build.buildFeatureType();
+    return ft;
+  }
+ catch (  IllegalArgumentException e) {
+    logger.warning(e.toString());
+    throw new SAXException(e);
+  }
+}

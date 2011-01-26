@@ -1,0 +1,22 @@
+{
+  AuthorityFactory primary=factories.next();
+  if (factories.hasNext()) {
+    AuthorityFactory fallback=create(true,interfaceMask,factories);
+    while (fallback != primary) {
+      if (!sameAuthorityCodes(fallback,primary)) {
+        if (automatic) {
+          interfaceMask&=(interfaceMask(primary) | interfaceMask(fallback));
+        }
+        primary=create(interfaceMask,primary,fallback);
+      }
+ else {
+        if (fallback instanceof FallbackAuthorityFactory) {
+          fallback=((FallbackAuthorityFactory)fallback).fallback;
+          continue;
+        }
+      }
+      break;
+    }
+  }
+  return primary;
+}

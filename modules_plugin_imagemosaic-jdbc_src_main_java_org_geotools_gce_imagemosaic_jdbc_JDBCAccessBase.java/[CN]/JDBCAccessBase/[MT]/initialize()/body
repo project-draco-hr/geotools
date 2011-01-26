@@ -1,0 +1,35 @@
+{
+  Connection con=null;
+  try {
+    con=dataSource.getConnection();
+    if (con.getAutoCommit()) {
+      con.setAutoCommit(false);
+    }
+    initFromDB(config.getCoverageName(),con);
+    calculateExtentsFromDB(config.getCoverageName(),con);
+    calculateResolutionsFromDB(config.getCoverageName(),con);
+    con.close();
+    for (    ImageLevelInfo levelInfo : levelInfos) {
+      if (LOGGER.isLoggable(Level.INFO))       LOGGER.info(levelInfo.infoString());
+    }
+  }
+ catch (  SQLException e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    try {
+      con.close();
+    }
+ catch (    SQLException e1) {
+    }
+    LOGGER.severe(e.getMessage());
+    throw new IOException(e.getMessage());
+  }
+  if (levelInfos.isEmpty()) {
+    String msg="No level available for " + config.getCoverageName();
+    LOGGER.severe(msg);
+    throw new IOException(msg);
+  }
+  SortedSet<ImageLevelInfo> sortColl=new TreeSet<ImageLevelInfo>();
+  sortColl.addAll(levelInfos);
+  levelInfos=new ArrayList<ImageLevelInfo>();
+  levelInfos.addAll(sortColl);
+}

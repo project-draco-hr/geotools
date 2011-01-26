@@ -1,0 +1,22 @@
+{
+  final double dphi=(y - latitudeOfOrigin) * (180 / PI * 3600E-5);
+  double dphi_pow_i=dphi;
+  double dpsi=0;
+  for (int i=0; i < TPSI.length; i++) {
+    dpsi+=(TPSI[i] * dphi_pow_i);
+    dphi_pow_i*=dphi;
+  }
+  final Complex theta=new Complex(dpsi,x);
+  final Complex power=new Complex(theta);
+  final Complex z=new Complex();
+  z.multiply(A[0],power);
+  for (int i=1; i < A.length; i++) {
+    power.multiply(power,theta);
+    z.addMultiply(z,A[i],power);
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(z.imag,z.real);
+    return ptDst;
+  }
+  return new Point2D.Double(z.imag,z.real);
+}

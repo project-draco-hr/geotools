@@ -1,0 +1,36 @@
+{
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.finest("setting up stream for version " + versionName + " in "+ streamOperation.getClass().getName());
+      }
+      if (version == null) {
+        version=session.issue(getVersionCommand);
+      }
+      if (!(streamOperation instanceof SeQuery)) {
+        LOGGER.finer("StreamOp is not query, verifying an SeState can be used");
+        final SeState currentState;
+        final SeObjectId currStateId=version.getStateId();
+        currentState=new SeState(connection,currStateId);
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.finer(versionName + " version state: " + currStateId.longValue()+ ", parent: "+ currentState.getParentId().longValue()+ ", open: "+ currentState.isOpen()+ ", owner: "+ currentState.getOwner()+ ", current user: "+ connection.getUser());
+        }
+        final String currUser=connection.getUser();
+        final String stateOwner=currentState.getOwner();
+        if (!(currentState.isOpen() && currUser.equals(stateOwner))) {
+          LOGGER.finer("Creating new state for the operation");
+          SeState newState=session.createChildState(currStateId.longValue());
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("Setting version " + versionName + "to new state "+ newState.getId().longValue());
+          }
+          version.changeState(newState.getId());
+        }
+      }
+      SeObjectId differencesId=new SeObjectId(SeState.SE_NULL_STATE_ID);
+      SeObjectId currentStateId=version.getStateId();
+      streamOperation.setState(currentStateId,differencesId,SeState.SE_STATE_DIFF_NOCHECK);
+      return null;
+    }
+  }
+);
+}

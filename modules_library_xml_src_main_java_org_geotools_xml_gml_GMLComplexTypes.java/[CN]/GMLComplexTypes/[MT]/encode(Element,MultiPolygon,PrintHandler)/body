@@ -1,0 +1,39 @@
+{
+  if ((g == null) || (g.getNumGeometries() <= 0)) {
+    throw new IOException("Bad MultiPolygon Data");
+  }
+  AttributesImpl ai=new AttributesImpl();
+  if (g.getUserData() != null) {
+    ai.addAttribute("","srsName","","anyURI",g.getUserData().toString());
+  }
+ else {
+    if (g.getSRID() != 0) {
+      ai.addAttribute("","srsName","","anyURI","" + g.getSRID());
+    }
+ else {
+      if (e == null) {
+        throw new IOException("srsName required for MultiPolygon");
+      }
+ else {
+        throw new IOException("srsName required for MultiPolygon " + e.getName());
+      }
+    }
+  }
+  if (e == null) {
+    output.startElement(GMLSchema.NAMESPACE,"MultiPolygon",ai);
+  }
+ else {
+    output.startElement(e.getNamespace(),e.getName(),ai);
+  }
+  for (int i=0; i < g.getNumGeometries(); i++) {
+    output.startElement(GMLSchema.NAMESPACE,"polygonMember",null);
+    encode(null,(Polygon)g.getGeometryN(i),output);
+    output.endElement(GMLSchema.NAMESPACE,"polygonMember");
+  }
+  if (e == null) {
+    output.endElement(GMLSchema.NAMESPACE,"MultiPolygon");
+  }
+ else {
+    output.endElement(e.getNamespace(),e.getName());
+  }
+}

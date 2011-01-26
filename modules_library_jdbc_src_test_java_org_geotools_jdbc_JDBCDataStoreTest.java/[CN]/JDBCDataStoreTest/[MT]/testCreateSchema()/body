@@ -1,0 +1,35 @@
+{
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.setName(tname("ft2"));
+  builder.setNamespaceURI(dataStore.getNamespaceURI());
+  builder.setCRS(CRS.decode("EPSG:4326"));
+  builder.add(aname("geometry"),Geometry.class);
+  builder.add(aname("intProperty"),Integer.class);
+  builder.add(aname("dateProperty"),Date.class);
+  SimpleFeatureType featureType=builder.buildFeatureType();
+  dataStore.createSchema(featureType);
+  SimpleFeatureType ft2=dataStore.getSchema(tname("ft2"));
+  assertEqualsLax(ft2,featureType);
+  assertNotSame(ft2,featureType);
+  Connection cx=dataStore.createConnection();
+  Statement st=cx.createStatement();
+  ResultSet rs=null;
+  try {
+    StringBuffer sql=new StringBuffer();
+    sql.append("SELECT * FROM ");
+    if (dataStore.getDatabaseSchema() != null) {
+      dataStore.getSQLDialect().encodeSchemaName(dataStore.getDatabaseSchema(),sql);
+      sql.append(".");
+    }
+    dataStore.getSQLDialect().encodeTableName("ft2",sql);
+    rs=st.executeQuery(sql.toString());
+  }
+ catch (  SQLException e) {
+    throw e;
+  }
+ finally {
+    if (rs != null)     rs.close();
+    st.close();
+    cx.close();
+  }
+}

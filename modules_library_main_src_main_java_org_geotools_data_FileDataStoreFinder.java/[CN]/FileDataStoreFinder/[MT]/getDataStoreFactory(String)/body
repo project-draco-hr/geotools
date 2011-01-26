@@ -1,0 +1,28 @@
+{
+  String extension2=null;
+  if (!extension.startsWith(".")) {
+    extension2="." + extension;
+  }
+  Iterator<FileDataStoreFactorySpi> ps=getAvailableDataStores();
+  while (ps.hasNext()) {
+    FileDataStoreFactorySpi fac=ps.next();
+    if (!fac.isAvailable()) {
+      continue;
+    }
+    try {
+      for (      String ext : fac.getFileExtensions()) {
+        if (extension.equalsIgnoreCase(ext)) {
+          return fac;
+        }
+        if (extension2 != null && extension2.equalsIgnoreCase(ext)) {
+          return fac;
+        }
+      }
+    }
+ catch (    Throwable t) {
+      LOGGER.log(Level.WARNING,"Could not aquire " + fac.getDescription() + ":"+ t,t);
+      continue;
+    }
+  }
+  return null;
+}

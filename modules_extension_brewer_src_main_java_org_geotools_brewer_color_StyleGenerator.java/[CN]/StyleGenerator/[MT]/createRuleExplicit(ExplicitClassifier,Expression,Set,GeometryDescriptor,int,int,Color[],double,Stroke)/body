@@ -1,0 +1,36 @@
+{
+  Object[] items=value.toArray();
+  Arrays.sort(items);
+  String title="";
+  List<Filter> filters=new ArrayList<Filter>();
+  for (int item=0; item < items.length; item++) {
+    Filter filter;
+    if (items[item] == null) {
+      filter=ff.isNull(expression);
+    }
+ else {
+      filter=ff.equals(expression,ff.literal(items[item]));
+    }
+    if (items[item] == null) {
+      title+="NULL";
+    }
+ else {
+      title+=items[item].toString();
+    }
+    if ((item + 1) != items.length) {
+      title+=", ";
+    }
+    filters.add(filter);
+  }
+  Symbolizer symb=createSymbolizer(geometryAttrType,getColor(elseMode,colors,i),opacity,defaultStroke);
+  Rule rule=sb.createRule(symb);
+  if (filters.size() == 1) {
+    rule.setFilter(filters.get(0));
+  }
+ else   if (filters.size() > 1) {
+    rule.setFilter(ff.or(filters));
+  }
+  rule.setTitle(title);
+  rule.setName(getRuleName(i + 1));
+  return rule;
+}

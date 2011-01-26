@@ -1,0 +1,40 @@
+{
+  String base=baseName(url);
+  if (base == null) {
+    throw new IllegalArgumentException(url.getPath() + " is not one of the files types that is known to be associated with a shapefile");
+  }
+  String urlString=url.toExternalForm();
+  char lastChar=urlString.charAt(urlString.length() - 1);
+  boolean upperCase=Character.isUpperCase(lastChar);
+  for (  ShpFileType type : ShpFileType.values()) {
+    String extensionWithPeriod=type.extensionWithPeriod;
+    if (upperCase) {
+      extensionWithPeriod=extensionWithPeriod.toUpperCase();
+    }
+ else {
+      extensionWithPeriod=extensionWithPeriod.toLowerCase();
+    }
+    URL newURL;
+    String string=base + extensionWithPeriod;
+    try {
+      newURL=new URL(url,string);
+    }
+ catch (    MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+    urls.put(type,newURL);
+  }
+  if (isLocal()) {
+    Set<Entry<ShpFileType,URL>> entries=urls.entrySet();
+    Map<ShpFileType,URL> toUpdate=new HashMap<ShpFileType,URL>();
+    for (    Entry<ShpFileType,URL> entry : entries) {
+      if (!exists(entry.getKey())) {
+        url=findExistingFile(entry.getKey(),entry.getValue());
+        if (url != null) {
+          toUpdate.put(entry.getKey(),url);
+        }
+      }
+    }
+    urls.putAll(toUpdate);
+  }
+}

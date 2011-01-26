@@ -1,0 +1,24 @@
+{
+  DefaultMathTransformFactory factory=new DefaultMathTransformFactory();
+  ParameterValueGroup parameters=factory.getDefaultParameters("Lambert_Conformal_Conic_2SP");
+  final double majorAxis=6.3712e+6;
+  final double minorAxis=6.3712e+6;
+  parameters.parameter("semi_major").setValue(majorAxis);
+  parameters.parameter("semi_minor").setValue(minorAxis);
+  parameters.parameter("latitude_of_origin").setValue(25.0);
+  parameters.parameter("standard_parallel_1").setValue(25.0);
+  parameters.parameter("standard_parallel_2").setValue(25.0);
+  parameters.parameter("longitude_of_origin").setValue(-95.0);
+  parameters.parameter("false_easting").setValue(0.0);
+  parameters.parameter("false_northing").setValue(0.0);
+  GeographicCRS base=DefaultGeographicCRS.WGS84;
+  MathTransform mt=factory.createParameterizedTransform(parameters);
+  CartesianCS cs=DefaultCartesianCS.PROJECTED;
+  CoordinateReferenceSystem crs=new DefaultProjectedCRS("Lambert",base,mt,cs);
+  final String wkt=crs.toWKT();
+  assertTrue(wkt.contains("semi_major"));
+  assertTrue(wkt.contains("semi_minor"));
+  final Parser parser=new Parser();
+  CoordinateReferenceSystem check=parser.parseCoordinateReferenceSystem(wkt);
+  assertEquals(wkt,check.toWKT());
+}

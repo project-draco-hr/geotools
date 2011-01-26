@@ -1,0 +1,31 @@
+{
+  if (_point == null || _point._point == null || _radius <= 0) {
+    addError("coordinate array can not be created.");
+    return null;
+  }
+  List<Coordinate> lc=new ArrayList<Coordinate>();
+  double startAngle=0.0;
+  double endAngle=2 * Math.PI;
+  double segAngle=2 * Math.PI / _radius;
+  if (_radius < DXFUnivers.NUM_OF_SEGMENTS) {
+    segAngle=DXFUnivers.MIN_ANGLE;
+  }
+  double angle=startAngle;
+  for (; ; ) {
+    double x=_point._point.getX() + _radius * Math.cos(angle);
+    double y=_point._point.getY() + _radius * Math.sin(angle);
+    Coordinate c=new Coordinate(x,y);
+    lc.add(c);
+    if (angle >= endAngle) {
+      break;
+    }
+    angle+=segAngle;
+    if (angle > endAngle) {
+      angle=endAngle;
+    }
+  }
+  if (!lc.get(0).equals(lc.get(lc.size() - 1))) {
+    lc.set(lc.size() - 1,lc.get(0));
+  }
+  return rotateAndPlace(lc.toArray(new Coordinate[]{}));
+}

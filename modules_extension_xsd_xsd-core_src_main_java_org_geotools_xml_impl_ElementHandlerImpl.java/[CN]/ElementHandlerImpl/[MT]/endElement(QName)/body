@@ -1,0 +1,20 @@
+{
+  if (isMixed()) {
+    ((NodeImpl)node).collapseWhitespace();
+  }
+  XSDTypeDefinition container=null;
+  if (getParentHandler().getComponent() != null) {
+    container=getParentHandler().getComponent().getTypeDefinition();
+  }
+  ParseExecutor executor=new ParseExecutor(element,node,getParentHandler().getContext(),parser);
+  parser.getBindingWalker().walk(element.getElementDeclaration(),executor,container,getParentHandler().getContext());
+  value=executor.getValue();
+  if (value == null) {
+    if (parser.getLogger().isLoggable(Level.FINE)) {
+      parser.getLogger().fine("Binding for " + element.getName() + " returned null");
+    }
+  }
+  node.setValue(value);
+  parent.endChildHandler(this);
+  parent.getContext().removeChildContainer(getContext());
+}

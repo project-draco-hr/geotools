@@ -1,0 +1,22 @@
+{
+  this.featureTypeInfo=featureTypeInfo;
+  this.mapper=featureTypeInfo.getFIDMapper();
+  this.baseIndex=mapper.getColumnCount() + 1;
+  this.resultSet=resultSet;
+  this.statement=statement;
+  this.connection=connection;
+  this.transaction=transaction;
+  this.fidAttributes=new Object[mapper.getColumnCount()];
+  this.listenerManager=parentDataStore.listenerManager;
+  this.hints=hints;
+  List<AttributeDescriptor> attributeTypes=featureTypeInfo.getSchema().getAttributeDescriptors();
+  this.attributeHandlers=new AttributeIO[attributeTypes.size()];
+  for (int i=0; i < attributeHandlers.length; i++) {
+    if (attributeTypes.get(i) instanceof GeometryDescriptor) {
+      attributeHandlers[i]=parentDataStore.getGeometryAttributeIO(attributeTypes.get(i),this);
+    }
+ else {
+      attributeHandlers[i]=parentDataStore.getAttributeIO(attributeTypes.get(i));
+    }
+  }
+}

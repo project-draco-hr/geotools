@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  GeocentricCRS crs=(GeocentricCRS)cache.get(key);
+  if (crs == null) {
+    try {
+      cache.writeLock(key);
+      crs=(GeocentricCRS)cache.peek(key);
+      if (crs == null) {
+        crs=crsAuthority.createGeocentricCRS(code);
+        cache.put(key,crs);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return crs;
+}

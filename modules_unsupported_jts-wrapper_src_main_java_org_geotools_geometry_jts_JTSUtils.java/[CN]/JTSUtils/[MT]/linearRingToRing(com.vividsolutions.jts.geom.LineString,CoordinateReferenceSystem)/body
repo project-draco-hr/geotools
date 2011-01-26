@@ -1,0 +1,19 @@
+{
+  int numPoints=jtsLinearRing.getNumPoints();
+  if (!jtsLinearRing.getCoordinateN(0).equals(jtsLinearRing.getCoordinateN(numPoints - 1))) {
+    throw new IllegalArgumentException("LineString must be a ring");
+  }
+  Hints hints=new Hints(Hints.CRS,crs);
+  PrimitiveFactory pf=GeometryFactoryFinder.getPrimitiveFactory(hints);
+  GeometryFactory gf=GeometryFactoryFinder.getGeometryFactory(hints);
+  LineString ls=gf.createLineString(new ArrayList());
+  List pointList=ls.getControlPoints().positions();
+  for (int i=0; i < numPoints; i++) {
+    pointList.add(coordinateToDirectPosition(jtsLinearRing.getCoordinateN(i),crs));
+  }
+  Curve curve=pf.createCurve(new ArrayList());
+  ((List)curve.getSegments()).add(ls);
+  Ring result=pf.createRing(new ArrayList());
+  ((List)result.getGenerators()).add(curve);
+  return result;
+}

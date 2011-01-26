@@ -1,0 +1,25 @@
+{
+  Map<SimpleFeatureSource,FeatureListener[]> map=new HashMap<SimpleFeatureSource,FeatureListener[]>();
+  SimpleFeatureSource featureSource;
+  EventListenerList listenerList;
+  FeatureListener[] listeners;
+synchronized (listenerMap) {
+    for (    Map.Entry entry : listenerMap.entrySet()) {
+      featureSource=(SimpleFeatureSource)entry.getKey();
+      if (!featureSource.getName().getLocalPart().equals(typeName)) {
+        continue;
+      }
+      if ((transaction != Transaction.AUTO_COMMIT) && hasTransaction(featureSource)) {
+        if (transaction != getTransaction(featureSource)) {
+          continue;
+        }
+      }
+      listenerList=(EventListenerList)entry.getValue();
+      listeners=(FeatureListener[])listenerList.getListeners(FeatureListener.class);
+      if (listeners.length != 0) {
+        map.put(featureSource,listeners);
+      }
+    }
+  }
+  return map;
+}

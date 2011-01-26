@@ -1,0 +1,26 @@
+{
+  try {
+    String path="xml/mails.xml";
+    File f=TestData.copy(this,path);
+    TestData.copy(this,"xml/mails.xsd");
+    Object doc=DocumentFactory.getInstance(f.toURI(),null,Level.WARNING);
+    assertNotNull("Document missing",doc);
+    Schema s=SchemaFactory.getInstance(new URI("http://mails/refractions/net"));
+    path="mails_out.xml";
+    f=TestData.temp(this,path);
+    if (f.exists())     f.delete();
+    f.createNewFile();
+    DocumentWriter.writeDocument(doc,s,f,null);
+    doc=DocumentFactory.getInstance(f.toURI(),null,Level.WARNING);
+    assertNotNull("New Document missing",doc);
+    assertTrue("file was not created +f",f.exists());
+    System.out.println(f);
+  }
+ catch (  SAXException e) {
+    e.printStackTrace();
+    fail(e.toString());
+  }
+catch (  Throwable e) {
+    assertTrue(e instanceof OperationNotSupportedException);
+  }
+}

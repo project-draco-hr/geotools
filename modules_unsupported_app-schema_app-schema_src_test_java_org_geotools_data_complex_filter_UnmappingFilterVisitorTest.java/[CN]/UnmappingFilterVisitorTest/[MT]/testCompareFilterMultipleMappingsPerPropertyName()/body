@@ -1,0 +1,38 @@
+{
+  final String XMMLNS="http://www.opengis.net/xmml";
+  final Name typeName=new NameImpl(XMMLNS,"Borehole");
+  AppSchemaDataAccess complexDs=(AppSchemaDataAccess)mappingDataStore;
+  mapping=complexDs.getMappingByElement(typeName);
+  NamespaceSupport namespaces=new NamespaceSupport();
+  namespaces.declarePrefix("gml",GML.NAMESPACE);
+  namespaces.declarePrefix("xmml",XMMLNS);
+  FilterFactory2 ff=new FilterFactoryImplNamespaceAware(namespaces);
+  PropertyIsEqualTo complexFilter=ff.equals(ff.property("gml:name"),ff.literal("SWADLINCOTE"));
+  visitor=new UnmappingFilterVisitor(mapping);
+  Filter unrolled=(Filter)complexFilter.accept(visitor,null);
+  assertNotNull(unrolled);
+  assertNotSame(complexFilter,unrolled);
+  assertTrue(unrolled.getClass().getName(),unrolled instanceof org.opengis.filter.Or);
+  Or oredFilter=(Or)unrolled;
+  List children=oredFilter.getChildren();
+  assertEquals(4,children.size());
+  assertTrue(children.get(0) instanceof PropertyIsEqualTo);
+  assertTrue(children.get(1) instanceof PropertyIsEqualTo);
+  assertTrue(children.get(2) instanceof PropertyIsEqualTo);
+  assertTrue(children.get(3) instanceof PropertyIsEqualTo);
+  PropertyIsEqualTo filter1=(PropertyIsEqualTo)children.get(0);
+  PropertyIsEqualTo filter2=(PropertyIsEqualTo)children.get(1);
+  PropertyIsEqualTo filter3=(PropertyIsEqualTo)children.get(2);
+  PropertyIsEqualTo filter4=(PropertyIsEqualTo)children.get(3);
+  assertTrue(filter1.getExpression1() instanceof Function);
+  assertTrue(filter2.getExpression1() instanceof PropertyName);
+  assertTrue(filter3.getExpression1() instanceof PropertyName);
+  assertTrue(filter4.getExpression1() instanceof PropertyName);
+  assertTrue(filter1.getExpression2() instanceof Literal);
+  assertTrue(filter2.getExpression2() instanceof Literal);
+  assertTrue(filter3.getExpression2() instanceof Literal);
+  assertTrue(filter4.getExpression2() instanceof Literal);
+  assertEquals("BGS_ID",((PropertyName)filter2.getExpression1()).getPropertyName());
+  assertEquals("NAME",((PropertyName)filter3.getExpression1()).getPropertyName());
+  assertEquals("ORIGINAL_N",((PropertyName)filter4.getExpression1()).getPropertyName());
+}

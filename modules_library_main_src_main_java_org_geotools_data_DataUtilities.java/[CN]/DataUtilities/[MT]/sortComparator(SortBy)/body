@@ -1,0 +1,41 @@
+{
+  if (sortBy == null) {
+    sortBy=SortBy.NATURAL_ORDER;
+  }
+  if (sortBy == SortBy.NATURAL_ORDER) {
+    return new Comparator<SimpleFeature>(){
+      public int compare(      SimpleFeature f1,      SimpleFeature f2){
+        return f1.getID().compareTo(f2.getID());
+      }
+    }
+;
+  }
+ else   if (sortBy == SortBy.REVERSE_ORDER) {
+    return new Comparator<SimpleFeature>(){
+      public int compare(      SimpleFeature f1,      SimpleFeature f2){
+        int compare=f1.getID().compareTo(f2.getID());
+        return -compare;
+      }
+    }
+;
+  }
+ else {
+    final PropertyName PROPERTY=sortBy.getPropertyName();
+    return new Comparator<SimpleFeature>(){
+      @SuppressWarnings("unchecked") public int compare(      SimpleFeature f1,      SimpleFeature f2){
+        Object value1=PROPERTY.evaluate(f1,Comparable.class);
+        Object value2=PROPERTY.evaluate(f2,Comparable.class);
+        if (value1 == null || value2 == null) {
+          return 0;
+        }
+        if (value1 instanceof Comparable && value1.getClass().isInstance(value2)) {
+          return ((Comparable<Object>)value1).compareTo(value2);
+        }
+ else {
+          return 0;
+        }
+      }
+    }
+;
+  }
+}

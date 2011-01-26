@@ -1,0 +1,20 @@
+{
+  String valueWithDelimiter="text" + DELIMITER + "with"+ DELIMITER+ "delimiter";
+  final String filterListStr="attr1 > 5" + DELIMITER + "attr2 between 1 and 7"+ DELIMITER+ "attr3 = '"+ valueWithDelimiter+ "'";
+  List<Filter> filters=CQL.toFilterList(filterListStr);
+  Assert.assertNotNull(filters);
+  Assert.assertEquals(3,filters.size());
+  Assert.assertTrue(filters.get(0) instanceof PropertyIsGreaterThan);
+  Assert.assertTrue(filters.get(1) instanceof PropertyIsBetween);
+  Assert.assertTrue(filters.get(2) instanceof PropertyIsEqualTo);
+  PropertyIsGreaterThan gt=(PropertyIsGreaterThan)filters.get(0);
+  Assert.assertEquals("attr1",((PropertyName)gt.getExpression1()).getPropertyName());
+  Assert.assertEquals(new Long(5),((Literal)gt.getExpression2()).getValue());
+  PropertyIsBetween btw=(PropertyIsBetween)filters.get(1);
+  Assert.assertEquals("attr2",((PropertyName)btw.getExpression()).getPropertyName());
+  Assert.assertEquals(new Long(1),((Literal)btw.getLowerBoundary()).getValue());
+  Assert.assertEquals(new Long(7),((Literal)btw.getUpperBoundary()).getValue());
+  PropertyIsEqualTo equals=(PropertyIsEqualTo)filters.get(2);
+  Assert.assertEquals("attr3",((PropertyName)equals.getExpression1()).getPropertyName());
+  Assert.assertEquals(valueWithDelimiter,((Literal)equals.getExpression2()).getValue());
+}

@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  Unit<?> unit=(Unit)cache.get(key);
+  if (unit == null) {
+    try {
+      cache.writeLock(key);
+      unit=(Unit)cache.peek(key);
+      if (unit == null) {
+        unit=generateUnit(code);
+        cache.put(key,unit);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return unit;
+}

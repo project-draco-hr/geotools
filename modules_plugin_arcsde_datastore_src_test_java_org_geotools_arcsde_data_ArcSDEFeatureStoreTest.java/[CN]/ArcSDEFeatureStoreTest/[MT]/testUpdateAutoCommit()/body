@@ -1,0 +1,37 @@
+{
+  testData.insertTestData();
+  final String typeName=testData.getTempTableName();
+  final DataStore ds=testData.getDataStore();
+  final Filter filter=CQL.toFilter("INT32_COL = 3");
+  final FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=ds.getFeatureWriter(typeName,filter,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(writer.hasNext());
+    SimpleFeature feature=writer.next();
+    feature.setAttribute("INT32_COL",Integer.valueOf(-1000));
+    writer.write();
+    assertFalse(writer.hasNext());
+  }
+  finally {
+    writer.close();
+  }
+  Query query=new Query(typeName,filter);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    assertFalse(reader.hasNext());
+  }
+  finally {
+    reader.close();
+  }
+  query=new Query(typeName,CQL.toFilter("INT32_COL = -1000"));
+  reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(reader.hasNext());
+    reader.next();
+    assertFalse(reader.hasNext());
+  }
+  finally {
+    reader.close();
+  }
+}

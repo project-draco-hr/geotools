@@ -1,0 +1,24 @@
+{
+  String sequenceName=tableName + "_" + columnName+ "_SEQUENCE";
+  sequenceName=sequenceName.toUpperCase();
+  Statement st=cx.createStatement();
+  try {
+    StringBuffer sql=new StringBuffer();
+    sql.append("SELECT * FROM INFORMATION_SCHEMA.SEQUENCES ");
+    sql.append("WHERE SEQUENCE_NAME = '").append(sequenceName).append("'");
+    dataStore.getLogger().fine(sql.toString());
+    ResultSet rs=st.executeQuery(sql.toString());
+    try {
+      if (rs.next()) {
+        return sequenceName;
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+  return null;
+}

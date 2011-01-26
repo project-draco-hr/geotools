@@ -1,0 +1,21 @@
+{
+  final int dimSource=getSourceDimensions();
+  final boolean hasHeight=(dimSource >= 3);
+  if (srcPts == dstPts && needCopy(srcOff,dimSource,dstOff,3,numPts)) {
+    final float[] old=srcPts;
+    srcPts=new float[numPts * dimSource];
+    System.arraycopy(old,srcOff,srcPts,0,srcPts.length);
+    srcOff=0;
+  }
+  while (--numPts >= 0) {
+    final double L=Math.toRadians(srcPts[srcOff++]);
+    final double P=Math.toRadians(srcPts[srcOff++]);
+    final double h=hasHeight ? srcPts[srcOff++] : 0;
+    final double cosLat=Math.cos(P);
+    final double sinLat=Math.sin(P);
+    final double rn=a / Math.sqrt(1 - e2 * (sinLat * sinLat));
+    dstPts[dstOff++]=(float)((rn + h) * cosLat * Math.cos(L));
+    dstPts[dstOff++]=(float)((rn + h) * cosLat * Math.sin(L));
+    dstPts[dstOff++]=(float)((rn * (1 - e2) + h) * sinLat);
+  }
+}

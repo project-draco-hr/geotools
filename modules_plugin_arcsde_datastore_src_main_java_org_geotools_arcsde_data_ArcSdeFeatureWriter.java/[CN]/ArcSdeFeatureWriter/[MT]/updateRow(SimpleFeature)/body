@@ -1,0 +1,37 @@
+{
+  final SeLayer layer=getLayer();
+  final SeCoordinateReference seCoordRef=layer == null ? null : layer.getCoordRef();
+  final SeUpdate updateStream=(SeUpdate)createStream(SeUpdate.class);
+  final LinkedHashMap<Integer,String> mutableColumns=getUpdatableColumnNames();
+  final String[] rowColumnNames=new ArrayList<String>(mutableColumns.values()).toArray(new String[0]);
+  final String typeName=featureType.getTypeName();
+  final String fid=modifiedFeature.getID();
+  final long numericFid=ArcSDEAdapter.getNumericFid(fid);
+  final SeObjectId seObjectId=new SeObjectId(numericFid);
+  final Command<Void> updateCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      try {
+        final SeRow row=updateStream.singleRow(seObjectId,typeName,rowColumnNames);
+        setRowProperties(modifiedFeature,seCoordRef,mutableColumns,row);
+        updateStream.execute();
+      }
+  finally {
+        updateStream.close();
+      }
+      return null;
+    }
+  }
+;
+  try {
+    session.issue(updateCmd);
+    versionHandler.editOperationWritten(updateStream);
+  }
+ catch (  NoSuchElementException e) {
+    versionHandler.editOperationFailed(updateStream);
+    throw e;
+  }
+catch (  IOException e) {
+    versionHandler.editOperationFailed(updateStream);
+    throw e;
+  }
+}

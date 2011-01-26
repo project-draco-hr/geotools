@@ -1,0 +1,37 @@
+{
+  assertNotNull("doInsertFailed?",ff);
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureStore fs=(SimpleFeatureStore)ds.getFeatureSource(ft.getTypeName());
+  fs.setTransaction(t);
+  System.out.println("Delete Read 1");
+  SimpleFeatureIterator fr=fs.getFeatures().features();
+  int count1=0;
+  while (fr.hasNext()) {
+    count1++;
+    fr.next();
+  }
+  fr.close();
+  System.out.println("Delete Remove " + ff);
+  fs.removeFeatures(ff);
+  System.out.println("Delete Read 2");
+  fr=fs.getFeatures().features();
+  int count2=0;
+  while (fr.hasNext()) {
+    count2++;
+    if (count2 < 5)     System.out.println("# == " + count2 + " "+ fr.next().getID());
+ else     fr.next();
+  }
+  fr.close();
+  assertTrue("Read 1 == " + count1 + " Read 2 == "+ count2,count2 < count1);
+  System.out.println("Delete Commit");
+  t.commit();
+  System.out.println("Delete Read 3");
+  fr=fs.getFeatures().features();
+  int count3=0;
+  while (fr.hasNext()) {
+    count3++;
+    fr.next();
+  }
+  fr.close();
+  assertTrue(count2 == count3);
+}

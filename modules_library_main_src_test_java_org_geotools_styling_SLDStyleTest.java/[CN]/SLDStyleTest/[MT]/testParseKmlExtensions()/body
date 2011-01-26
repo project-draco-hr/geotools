@@ -1,0 +1,21 @@
+{
+  StyleFactory factory=CommonFactoryFinder.getStyleFactory(null);
+  java.net.URL surl=TestData.getResource(this,"kmlSymbolizer.sld");
+  SLDParser stylereader=new SLDParser(factory,surl);
+  Style[] styles=stylereader.readXML();
+  assertEquals(1,styles.length);
+  assertEquals(1,styles[0].getFeatureTypeStyles().length);
+  assertEquals(1,styles[0].getFeatureTypeStyles()[0].getRules().length);
+  final Rule rule=styles[0].getFeatureTypeStyles()[0].getRules()[0];
+  assertEquals(1,rule.getSymbolizers().length);
+  TextSymbolizer2 ts=(TextSymbolizer2)rule.getSymbolizers()[0];
+  assertEquals("propertyOne",((PropertyName)ts.getSnippet()).getPropertyName());
+  Expression desc=ts.getFeatureDescription();
+  assertTrue(desc instanceof Function);
+  assertEquals("strConcat",((Function)desc).getName());
+  assertEquals(2,((Function)desc).getParameters().size());
+  assertTrue(((Function)desc).getParameters().get(0) instanceof Literal);
+  assertTrue(((Function)desc).getParameters().get(1) instanceof PropertyName);
+  assertEquals("extrude",ts.getOtherText().getTarget());
+  assertTrue(ts.getOtherText().getText() instanceof Literal);
+}

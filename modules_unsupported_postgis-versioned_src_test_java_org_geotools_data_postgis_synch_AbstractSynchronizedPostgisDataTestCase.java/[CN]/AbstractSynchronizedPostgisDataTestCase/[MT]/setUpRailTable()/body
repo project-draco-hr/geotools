@@ -1,0 +1,29 @@
+{
+  Connection conn=pool.getConnection();
+  conn.setAutoCommit(true);
+  try {
+    Statement s=conn.createStatement();
+    s.execute("SELECT dropgeometrycolumn( '" + f.schema + "','rail','geom')");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("DROP TABLE " + f.schema + ".rail  cascade");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("CREATE TABLE " + f.schema + ".rail ( id serial primary key ) WITH OIDS");
+    s.execute("SELECT AddGeometryColumn('" + f.schema + "', 'rail', 'geom', 4326, 'LINESTRING', 2);");
+    for (int i=0; i < railFeatures.length; i++) {
+      SimpleFeature feature=railFeatures[i];
+      String ql="INSERT INTO " + f.schema + ".rail (geom) VALUES ("+ "GeometryFromText('"+ ((Geometry)feature.getAttribute("geom")).toText()+ "', 4326 ))";
+      s.execute(ql);
+    }
+  }
+  finally {
+    conn.close();
+  }
+}

@@ -1,0 +1,24 @@
+{
+  StyleFactory sf=CommonFactoryFinder.getStyleFactory(null);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  Random rand=new Random();
+  Stroke stroke=sf.createStroke(ff.literal("#8024d0"),ff.literal(rand.nextInt(10) + 1));
+  stroke.setOpacity(ff.literal(rand.nextFloat()));
+  LineSymbolizer lineSymb=sf.createLineSymbolizer(stroke,".");
+  Rule rule=sf.createRule();
+  rule.symbolizers().add(lineSymb);
+  rule.setFilter(Filter.INCLUDE);
+  rule.setMaxScaleDenominator(20000);
+  FeatureTypeStyle style=sf.createFeatureTypeStyle();
+  style.addRule(rule);
+  style.setFeatureTypeName("Feature");
+  Style namedStyle=sf.createStyle();
+  namedStyle.addFeatureTypeStyle(style);
+  namedStyle.setName("Feature");
+  DuplicatingStyleVisitor duplicator=new DuplicatingStyleVisitor();
+  namedStyle.accept(duplicator);
+  Style namedStyle2=(Style)duplicator.getCopy();
+  SLDTransformer writer=new SLDTransformer();
+  String out=writer.transform(style);
+  assertNotNull(out);
+}

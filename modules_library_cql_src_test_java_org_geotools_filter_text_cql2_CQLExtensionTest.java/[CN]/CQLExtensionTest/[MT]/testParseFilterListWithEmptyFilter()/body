@@ -1,0 +1,21 @@
+{
+  String valueWithDelimiter="text" + DELIMITER + "with"+ DELIMITER+ "delimiter";
+  String filterListStr="attr1 > 5" + DELIMITER + "INCLUDE"+ DELIMITER+ " attr3 = '"+ valueWithDelimiter+ "'";
+  List<Filter> filters=CQL.toFilterList(filterListStr);
+  Assert.assertNotNull(filters);
+  Assert.assertEquals(3,filters.size());
+  Assert.assertTrue(filters.get(0) instanceof PropertyIsGreaterThan);
+  Assert.assertTrue(filters.get(1) instanceof IncludeFilter);
+  Assert.assertTrue(filters.get(2) instanceof PropertyIsEqualTo);
+  PropertyIsGreaterThan gt=(PropertyIsGreaterThan)filters.get(0);
+  Assert.assertEquals("attr1",((PropertyName)gt.getExpression1()).getPropertyName());
+  Assert.assertEquals(new Long(5),((Literal)gt.getExpression2()).getValue());
+  PropertyIsEqualTo equals=(PropertyIsEqualTo)filters.get(2);
+  Assert.assertEquals("attr3",((PropertyName)equals.getExpression1()).getPropertyName());
+  Assert.assertEquals(valueWithDelimiter,((Literal)equals.getExpression2()).getValue());
+  filterListStr="EXCLUDE" + DELIMITER + "INCLUDE"+ DELIMITER+ "attr3 = '"+ valueWithDelimiter+ "'";
+  filters=CQL.toFilterList(filterListStr);
+  Assert.assertTrue(filters.get(0) instanceof ExcludeFilter);
+  Assert.assertTrue(filters.get(1) instanceof IncludeFilter);
+  Assert.assertTrue(filters.get(2) instanceof PropertyIsEqualTo);
+}

@@ -1,0 +1,20 @@
+{
+  if (bounds == null || bounds.isEmpty() || bounds.isNull()) {
+    throw new IllegalArgumentException("bounds should not be null or empty");
+  }
+  if (width <= 0) {
+    throw new IllegalArgumentException("width must be greater than 0");
+  }
+  if (height <= 0) {
+    throw new IllegalArgumentException("height must be greater than 0");
+  }
+  CoordinateReferenceSystem boundsCRS=bounds.getCoordinateReferenceSystem();
+  CoordinateReferenceSystem builderCRS=gridFeatureBuilder.getType().getCoordinateReferenceSystem();
+  if (boundsCRS != null && builderCRS != null && !CRS.equalsIgnoreMetadata(boundsCRS,builderCRS)) {
+    throw new IllegalArgumentException("Different CRS set for bounds and grid feature builder");
+  }
+  final SimpleFeatureCollection fc=new ListFeatureCollection(gridFeatureBuilder.getType());
+  OblongGridBuilder gridBuilder=new OblongGridBuilder(bounds,width,height);
+  gridBuilder.buildGrid(fc,gridFeatureBuilder,vertexSpacing);
+  return DataUtilities.source(fc);
+}

@@ -1,0 +1,24 @@
+{
+  log("-----------------------------------------------------");
+  log("Testing SeQuery with SeShape fetching");
+  Map<String,Serializable> props=testData.getConProps();
+  SeConnection conn=new SeConnection(String.valueOf(props.get("server")),Integer.parseInt(String.valueOf(props.get("port"))),String.valueOf(props.get("instance")),String.valueOf(props.get("user")),String.valueOf(props.get("password")));
+  try {
+    SeQuery query;
+    SeQueryInfo queryInfo;
+    queryInfo=new SeQueryInfo();
+    queryInfo.setColumns(new String[]{"SHAPE"});
+    queryInfo.setConstruct(new SeSqlConstruct(typeName));
+    long runTime=0;
+    for (int run=0; run < numRuns; run++) {
+      query=new SeQuery(conn);
+      runTime+=iterateWithSeShapeFetching(query,queryInfo);
+    }
+    double avg=runTime / numRuns;
+    log("--- Avg iteration time with SeShape fetching for " + numRuns + " runs: "+ (avg / 1000D)+ "s");
+  }
+  finally {
+    conn.close();
+  }
+  log("-----------------------------------------------------");
+}

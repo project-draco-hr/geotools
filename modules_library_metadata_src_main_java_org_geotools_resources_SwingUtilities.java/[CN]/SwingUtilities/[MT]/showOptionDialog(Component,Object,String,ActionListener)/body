@@ -1,0 +1,36 @@
+{
+  if (!EventQueue.isDispatchThread()) {
+    final boolean result[]=new boolean[1];
+    invokeAndWait(new Runnable(){
+      public void run(){
+        result[0]=showOptionDialog(owner,dialog,title,reset);
+      }
+    }
+);
+    return result[0];
+  }
+  Object[] options=null;
+  Object initialValue=null;
+  int okChoice=JOptionPane.OK_OPTION;
+  if (reset != null) {
+    final Vocabulary resources=Vocabulary.getResources(owner != null ? owner.getLocale() : null);
+    final JButton button;
+    if (reset instanceof Action) {
+      button=new JButton((Action)reset);
+    }
+ else {
+      button=new JButton(resources.getString(VocabularyKeys.RESET));
+      button.addActionListener(reset);
+    }
+    options=new Object[]{resources.getString(VocabularyKeys.OK),resources.getString(VocabularyKeys.CANCEL),button};
+    initialValue=options[okChoice=0];
+  }
+  final int choice;
+  if (JOptionPane.getDesktopPaneForComponent(owner) != null) {
+    choice=JOptionPane.showInternalOptionDialog(owner,dialog,title,JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,null,options,initialValue);
+  }
+ else {
+    choice=JOptionPane.showOptionDialog(owner,dialog,title,JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE,null,options,initialValue);
+  }
+  return choice == okChoice;
+}

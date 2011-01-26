@@ -1,0 +1,33 @@
+{
+  this.factory=factory;
+  final StringBuilder buffer=new StringBuilder("SELECT ");
+  buffer.append(table.codeColumn);
+  if (table.nameColumn != null) {
+    buffer.append(", ").append(table.nameColumn);
+  }
+  buffer.append(" FROM ").append(table.table);
+  boolean hasWhere=false;
+  Class<?> tableType=table.type;
+  if (table.typeColumn != null) {
+    for (int i=0; i < table.subTypes.length; i++) {
+      final Class<?> candidate=table.subTypes[i];
+      if (candidate.isAssignableFrom(type)) {
+        buffer.append(" WHERE (").append(table.typeColumn).append(" LIKE '").append(table.typeNames[i]).append("%'");
+        hasWhere=true;
+        tableType=candidate;
+        break;
+      }
+    }
+    if (hasWhere) {
+      buffer.append(')');
+    }
+  }
+  this.type=tableType;
+  isProjection=Projection.class.isAssignableFrom(tableType);
+  final int length=buffer.length();
+  buffer.append(" ORDER BY ").append(table.codeColumn);
+  sqlAll=factory.adaptSQL(buffer.toString());
+  buffer.setLength(length);
+  buffer.append(hasWhere ? " AND " : " WHERE ").append(table.codeColumn).append(" = ?");
+  sqlSingle=factory.adaptSQL(buffer.toString());
+}

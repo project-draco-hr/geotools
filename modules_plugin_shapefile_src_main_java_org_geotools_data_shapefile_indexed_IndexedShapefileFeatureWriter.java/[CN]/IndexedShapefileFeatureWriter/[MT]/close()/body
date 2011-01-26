@@ -1,0 +1,19 @@
+{
+  super.close();
+  fidWriter.close();
+  try {
+    if (shpFiles.isLocal()) {
+      if (indexedShapefileDataStore.needsGeneration(ShpFileType.FIX)) {
+        FidIndexer.generate(shpFiles);
+      }
+      deleteFile(ShpFileType.QIX);
+      if (indexedShapefileDataStore.treeType == IndexType.QIX) {
+        indexedShapefileDataStore.buildQuadTree();
+      }
+    }
+  }
+ catch (  Throwable e) {
+    indexedShapefileDataStore.treeType=IndexType.NONE;
+    ShapefileDataStoreFactory.LOGGER.log(Level.WARNING,"Error creating Spatial index",e);
+  }
+}

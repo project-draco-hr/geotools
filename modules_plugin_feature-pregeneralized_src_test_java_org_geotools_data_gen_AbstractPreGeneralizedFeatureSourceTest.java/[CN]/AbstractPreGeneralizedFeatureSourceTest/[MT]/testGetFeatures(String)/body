@@ -1,0 +1,73 @@
+{
+  try {
+    PreGeneralizedDataStore ds=getDataStore(configName);
+    SimpleFeatureSource fs=ds.getFeatureSource("GenStreams");
+    assertTrue(fs.getSupportedHints().contains(Hints.GEOMETRY_DISTANCE));
+    Filter filter=CQL.toFilter("CAT_ID = 2");
+    DefaultQuery[] queries=new DefaultQuery[2];
+    queries[0]=new DefaultQuery("GenStreams");
+    queries[1]=new DefaultQuery("GenStreams",filter,new String[]{"the_geom","CAT_ID"});
+    for (    DefaultQuery q : queries) {
+      SimpleFeatureCollection fCollection;
+      String typeName;
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,1.0);
+      fCollection=fs.getFeatures(q);
+      typeName=fCollection.getSchema().getTypeName();
+      assertTrue("GenStreams".equals(typeName));
+      assertTrue("the_geom".equals(fCollection.getSchema().getGeometryDescriptor().getLocalName()));
+      SimpleFeatureIterator iterator=fCollection.features();
+      while (iterator.hasNext()) {
+        SimpleFeature f=iterator.next();
+        checkPoints(f,0.0);
+      }
+      fCollection.close(iterator);
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,5.0);
+      fCollection=fs.getFeatures(q);
+      typeName=fCollection.getSchema().getTypeName();
+      assertTrue("GenStreams".equals(typeName));
+      assertTrue("the_geom".equals(fCollection.getSchema().getGeometryDescriptor().getLocalName()));
+      iterator=fCollection.features();
+      while (iterator.hasNext()) {
+        SimpleFeature f=iterator.next();
+        checkPoints(f,5.0);
+      }
+      fCollection.close(iterator);
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,10.0);
+      fCollection=fs.getFeatures(q);
+      typeName=fCollection.getSchema().getTypeName();
+      assertTrue("GenStreams".equals(typeName));
+      assertTrue("the_geom".equals(fCollection.getSchema().getGeometryDescriptor().getLocalName()));
+      iterator=fCollection.features();
+      while (iterator.hasNext()) {
+        SimpleFeature f=iterator.next();
+        checkPoints(f,10.0);
+      }
+      fCollection.close(iterator);
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,20.0);
+      fCollection=fs.getFeatures(q);
+      typeName=fCollection.getSchema().getTypeName();
+      assertTrue("GenStreams".equals(typeName));
+      assertTrue("the_geom".equals(fCollection.getSchema().getGeometryDescriptor().getLocalName()));
+      iterator=fCollection.features();
+      while (iterator.hasNext()) {
+        SimpleFeature f=iterator.next();
+        checkPoints(f,20.0);
+      }
+      fCollection.close(iterator);
+      q.getHints().put(Hints.GEOMETRY_DISTANCE,50.0);
+      fCollection=fs.getFeatures(q);
+      typeName=fCollection.getSchema().getTypeName();
+      assertTrue("GenStreams".equals(typeName));
+      assertTrue("the_geom".equals(fCollection.getSchema().getGeometryDescriptor().getLocalName()));
+      iterator=fCollection.features();
+      while (iterator.hasNext()) {
+        SimpleFeature f=iterator.next();
+        checkPoints(f,0.0);
+      }
+      fCollection.close(iterator);
+    }
+  }
+ catch (  Exception ex) {
+    Assert.fail(ex.getMessage());
+  }
+}

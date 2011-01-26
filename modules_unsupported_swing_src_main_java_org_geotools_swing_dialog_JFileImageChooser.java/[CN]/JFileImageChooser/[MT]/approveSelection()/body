@@ -1,0 +1,39 @@
+{
+  FormatFilter filter=(FormatFilter)getFileFilter();
+  File file=getSelectedFile();
+  String name=file.getAbsolutePath();
+  int dot=name.lastIndexOf('.');
+  boolean ok=true;
+  if (dot < 0) {
+    name=name + filter.getDefaultSuffix();
+    file=new File(name);
+    setSelectedFile(file);
+  }
+  if (this.getDialogType() == JFileImageChooser.SAVE_DIALOG) {
+    if (!filter.accept(getSelectedFile())) {
+      StringBuilder sb=new StringBuilder();
+      sb.append("'");
+      sb.append(name.substring(dot + 1));
+      sb.append("' ");
+      sb.append("is not a standard suffix for a ");
+      sb.append(filter.getDescription());
+      sb.append(".");
+      sb.append("\nDo you want to save with this name ?");
+      int answer=JOptionPane.showConfirmDialog(getParent(),sb.toString(),"Incompatible file suffix",JOptionPane.YES_NO_OPTION);
+      ok=answer == JOptionPane.YES_OPTION;
+    }
+    if (ok && file.exists()) {
+      int answer=JOptionPane.showConfirmDialog(this,"Overwrite the existing file ?","File exists",JOptionPane.YES_NO_OPTION);
+      ok=answer == JOptionPane.YES_OPTION;
+    }
+  }
+ else {
+    if (!file.exists()) {
+      JOptionPane.showMessageDialog(this,"Can't file this file","File not found",JOptionPane.WARNING_MESSAGE);
+      ok=false;
+    }
+  }
+  if (ok) {
+    super.approveSelection();
+  }
+}

@@ -1,0 +1,37 @@
+{
+  final String LITHOLOGY="lithology";
+  AbstractMappingFeatureIterator iterator=(AbstractMappingFeatureIterator)ccFeatures.features();
+  int count=0;
+  Map<String,Feature> featureList=new HashMap<String,Feature>();
+  try {
+    while (iterator.hasNext()) {
+      Feature f=iterator.next();
+      featureList.put(f.getIdentifier().getID(),f);
+      count++;
+    }
+  }
+  finally {
+    iterator.close();
+  }
+  assertEquals(5,count);
+  FeatureIterator<Feature> cpIterator=cpFeatures.features();
+  while (cpIterator.hasNext()) {
+    Feature cpFeature=(Feature)cpIterator.next();
+    Collection<Property> lithologies=cpFeature.getProperties(LITHOLOGY);
+    if (cpFeature.getIdentifier().toString().equals("cp.167775491936278812")) {
+      assertEquals(2,((Collection)lithologies).size());
+      Collection<String> lithologyIds=new ArrayList<String>();
+      for (      Property lithologyProperty : lithologies) {
+        Feature nestedFeature=(Feature)((Collection)lithologyProperty.getValue()).iterator().next();
+        String fId=nestedFeature.getIdentifier().getID();
+        lithologyIds.add(fId);
+        Feature lithology=featureList.get(fId);
+        assertEquals(nestedFeature.getProperties(),lithology.getProperties());
+      }
+      assertTrue(featureList.keySet().containsAll(lithologyIds));
+    }
+ else {
+      assertEquals(1,lithologies.size());
+    }
+  }
+}

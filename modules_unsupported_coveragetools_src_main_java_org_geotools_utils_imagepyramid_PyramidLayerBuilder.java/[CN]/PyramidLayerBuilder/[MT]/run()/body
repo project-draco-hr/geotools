@@ -1,0 +1,165 @@
+{
+  StringBuilder message=new StringBuilder("Requested scale factor is ").append(scaleFactor);
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  message=new StringBuilder("Acquiring a mosaic reader to mosaic ").append(inputLocation);
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  ImageMosaicReader inReader=null;
+  try {
+    inReader=new ImageMosaicReader(inputLocation,new Hints(Hints.OVERVIEW_POLICY,OverviewPolicy.IGNORE));
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    fireException(e);
+    return;
+  }
+  if (!outputLocation.exists())   outputLocation.mkdir();
+  final GeneralEnvelope envelope=inReader.getOriginalEnvelope();
+  message=new StringBuilder("Original envelope is ").append(envelope.toString());
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  final GridEnvelope range=inReader.getOriginalGridRange();
+  message=new StringBuilder("Original range is ").append(range.toString());
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  final double newWidth=(range.getSpan(0) * 1.0) / scaleFactor;
+  final double newHeight=(range.getSpan(1) * 1.0) / scaleFactor;
+  if (tileW > newWidth)   tileW=newWidth;
+  if (tileH > newHeight)   tileH=newHeight;
+  message=new StringBuilder("New dimension is (W,H)==(").append(newWidth).append(",").append(newHeight).append(")");
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  int newCols=(int)(newWidth / tileW);
+  int newRows=(int)(newHeight / tileH);
+  final boolean hasRemainingColum=(newWidth % tileW) != 0;
+  final boolean hasRemainingRow=(newHeight % tileH) != 0;
+  message=new StringBuilder("New matrix dimension is (cols,rows)==(").append(newCols).append(",").append(newRows).append(")");
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  final double minx=envelope.getMinimum(0);
+  final double miny=envelope.getMinimum(1);
+  final double maxx=envelope.getMaximum(0);
+  final double maxy=envelope.getMaximum(1);
+  double _maxx=0.0;
+  double _maxy=0.0;
+  double _minx=0.0;
+  double _miny=0.0;
+  newRows+=hasRemainingRow ? 1 : 0;
+  newCols+=hasRemainingColum ? 1 : 0;
+  final double totalNumberOfFile=newRows * newCols;
+  final double tileGeoWidth=envelope.getSpan(0) / newCols;
+  final double tileGeoHeight=envelope.getSpan(1) / newRows;
+  final int uppers[]=range.getHigh().getCoordinateValues();
+  uppers[0]++;
+  uppers[1]++;
+  final double newRange[]=new double[]{uppers[0] / newCols,uppers[1] / newRows};
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  for (int i=0; i < newRows; i++)   for (int j=0; j < newCols; j++) {
+    _maxx=minx + (j + 1) * tileGeoWidth;
+    _minx=minx + (j) * tileGeoWidth;
+    _maxy=miny + (i + 1) * tileGeoHeight;
+    _miny=miny + (i) * tileGeoHeight;
+    if (_maxx > maxx)     _maxx=maxx;
+    if (_maxy > maxy)     _maxy=maxy;
+    final File fileOut=new File(outputLocation,new StringBuilder("mosaic").append("_").append(Integer.toString(i * newCols + j)).append(".").append("tiff").toString());
+    if (fileOut.exists())     fileOut.delete();
+    message=new StringBuilder("Preparing tile (col,row)==(").append(j).append(",").append(i).append(") to file ").append(fileOut);
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),(j + i * newCols) / totalNumberOfFile);
+    final ParameterValue<GridGeometry2D> gg=ImageMosaicFormat.READ_GRIDGEOMETRY2D.createValue();
+    final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{_minx,_miny},new double[]{_maxx,_maxy});
+    cropEnvelope.setCoordinateReferenceSystem(inReader.getCrs());
+    gg.setValue(new GridGeometry2D(new GridEnvelope2D(new Rectangle(0,0,800,800)),cropEnvelope));
+    message=new StringBuilder("Reading with grid envelope ").append(cropEnvelope.toString());
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),(j + i * newCols) / totalNumberOfFile);
+    GridCoverage2D gc;
+    try {
+      gc=(GridCoverage2D)inReader.read(new GeneralParameterValue[]{gg});
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+      fireEvent(e.getLocalizedMessage(),0);
+      return;
+    }
+    ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+    param.parameter("Source").setValue(gc);
+    param.parameter("Envelope").setValue(cropEnvelope);
+    param.parameter("ConserveEnvelope").setValue(Boolean.TRUE);
+    final GridCoverage2D cropped=(GridCoverage2D)processor.doOperation(param);
+    final GridEnvelope2D newGridrange=new GridEnvelope2D(new Rectangle2D.Double(0.0,0.0,newRange[0],newRange[1]).getBounds());
+    final GridGeometry2D scaledGridGeometry=new GridGeometry2D(newGridrange,cropEnvelope);
+    param=processor.getOperation("Resample").getParameters();
+    param.parameter("Source").setValue(cropped);
+    param.parameter("CoordinateReferenceSystem").setValue(inReader.getCrs());
+    param.parameter("GridGeometry").setValue(scaledGridGeometry);
+    param.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+    gc=(GridCoverage2D)processor.doOperation(param);
+    message=new StringBuilder("Scaling...");
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),0);
+    if (scaleAlgorithm.equalsIgnoreCase("nn")) {
+      param=processor.getOperation("Scale").getParameters();
+      param.parameter("Source").setValue(gc);
+      param.parameter("xScale").setValue(new Float(1.0 / scaleFactor));
+      param.parameter("yScale").setValue(new Float(1.0 / scaleFactor));
+      param.parameter("xTrans").setValue(new Float(0));
+      param.parameter("yTrans").setValue(new Float(0));
+      param.parameter("Interpolation").setValue(Interpolation.getInstance(Interpolation.INTERP_BILINEAR));
+      gc=(GridCoverage2D)CoverageToolsConstants.SCALE_FACTORY.doOperation(param,new Hints());
+    }
+ else     if (scaleAlgorithm.equalsIgnoreCase("filt")) {
+      param=CoverageToolsConstants.FILTERED_SUBSAMPLE_FACTORY.getParameters();
+      param.parameter("source").setValue(gc);
+      param.parameter("scaleX").setValue(new Integer((int)scaleFactor));
+      param.parameter("scaleY").setValue(new Integer((int)scaleFactor));
+      param.parameter("qsFilterArray").setValue(new float[]{0.5F,1.0F / 3.0F,0.0F,-1.0F / 12.0F});
+      param.parameter("Interpolation").setValue(new InterpolationNearest());
+      gc=(GridCoverage2D)CoverageToolsConstants.FILTERED_SUBSAMPLE_FACTORY.doOperation(param,new Hints());
+    }
+ else     if (scaleAlgorithm.equalsIgnoreCase("bil")) {
+      param=processor.getOperation("Scale").getParameters();
+      param.parameter("Source").setValue(gc);
+      param.parameter("xScale").setValue(new Float(1.0 / scaleFactor));
+      param.parameter("yScale").setValue(new Float(1.0 / scaleFactor));
+      param.parameter("xTrans").setValue(new Float(0));
+      param.parameter("yTrans").setValue(new Float(0));
+      param.parameter("Interpolation").setValue(Interpolation.getInstance(Interpolation.INTERP_BILINEAR));
+      gc=(GridCoverage2D)CoverageToolsConstants.SCALE_FACTORY.doOperation(param,new Hints());
+    }
+ else     if (scaleAlgorithm.equalsIgnoreCase("avg")) {
+      param=processor.getOperation("SubsampleAverage").getParameters();
+      param.parameter("Source").setValue(gc);
+      param.parameter("scaleX").setValue(new Double(1.0 / scaleFactor));
+      param.parameter("scaleY").setValue(new Double(1.0 / scaleFactor));
+      param.parameter("Interpolation").setValue(scaleFactor);
+      gc=(GridCoverage2D)CoverageToolsConstants.SUBSAMPLE_AVERAGE_FACTORY.doOperation(param,new Hints());
+    }
+ else     throw new IllegalArgumentException("The provided scale algorithm is not availaible");
+    message=new StringBuilder("Writing out...");
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),(j + i * newCols) / totalNumberOfFile);
+    try {
+      final GeoTiffWriter writerWI=new GeoTiffWriter(fileOut);
+      final GeoToolsWriteParams wp=((AbstractGridFormat)writerWI.getFormat()).getDefaultImageIOWriteParameters();
+      if (this.compressionScheme != null) {
+        wp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        wp.setCompressionType(this.compressionScheme);
+        wp.setCompressionQuality((float)this.compressionRatio);
+      }
+      wp.setTilingMode(ImageWriteParam.MODE_EXPLICIT);
+      wp.setTiling(internalTileWidth,internalTileHeight,0,0);
+      writerWI.write(gc,null);
+      writerWI.dispose();
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+      fireEvent(e.getLocalizedMessage(),0);
+      return;
+    }
+  }
+  message=new StringBuilder("Done...");
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),100);
+}

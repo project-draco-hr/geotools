@@ -1,0 +1,52 @@
+{
+  ensureNonNull("code",code);
+  CoordinateSystemAxis returnValue=null;
+  try {
+    final String primaryKey=trimAuthority(code);
+    final PreparedStatement stmt;
+    stmt=prepareStatement("Axis","SELECT COORD_AXIS_CODE," + " COORD_AXIS_NAME_CODE," + " COORD_AXIS_ORIENTATION,"+ " COORD_AXIS_ABBREVIATION,"+ " UOM_CODE"+ " FROM [Coordinate Axis]"+ " WHERE COORD_AXIS_CODE = ?");
+    stmt.setInt(1,Integer.parseInt(primaryKey));
+    ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String nameCode=getString(result,2,code);
+      final String orientation=getString(result,3,code);
+      final String abbreviation=getString(result,4,code);
+      final String unit=getString(result,5,code);
+      AxisDirection direction;
+      try {
+        direction=DefaultCoordinateSystemAxis.getDirection(orientation);
+      }
+ catch (      NoSuchElementException exception) {
+        if (orientation.equalsIgnoreCase("Geocentre > equator/PM")) {
+          direction=AxisDirection.OTHER;
+        }
+ else         if (orientation.equalsIgnoreCase("Geocentre > equator/90dE") || orientation.equalsIgnoreCase("Geocentre > equator/90??E")) {
+          direction=AxisDirection.GEOCENTRIC_Y;
+        }
+ else         if (orientation.equalsIgnoreCase("Geocentre > equator/0dE") || orientation.equalsIgnoreCase("Geocentre > equator/0??E")) {
+          direction=AxisDirection.GEOCENTRIC_X;
+        }
+ else         if (orientation.equalsIgnoreCase("Geocentre > north pole")) {
+          direction=AxisDirection.GEOCENTRIC_Z;
+        }
+ else {
+          throw new FactoryException(exception);
+        }
+      }
+      final AxisName an=getAxisName(nameCode);
+      final Map<String,Object> properties=createProperties(an.name,epsg,an.description);
+      final CSFactory factory=factories.getCSFactory();
+      final CoordinateSystemAxis axis=factory.createCoordinateSystemAxis(properties,abbreviation,direction,buffered.createUnit(unit));
+      returnValue=ensureSingleton(axis,returnValue,code);
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(CoordinateSystemAxis.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(CoordinateSystemAxis.class,code);
+  }
+  return returnValue;
+}

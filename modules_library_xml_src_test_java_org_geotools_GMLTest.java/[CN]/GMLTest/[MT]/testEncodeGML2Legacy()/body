@@ -1,0 +1,15 @@
+{
+  SimpleFeatureType TYPE=DataUtilities.createType("Location","geom:Point,name:String");
+  SimpleFeatureCollection collection=FeatureCollections.newCollection("internal");
+  WKTReader2 wkt=new WKTReader2();
+  collection.add(SimpleFeatureBuilder.build(TYPE,new Object[]{wkt.read("POINT (1 2)"),"name1"},null));
+  collection.add(SimpleFeatureBuilder.build(TYPE,new Object[]{wkt.read("POINT (4 4)"),"name2"},null));
+  ByteArrayOutputStream out=new ByteArrayOutputStream();
+  GML encode=new GML(Version.GML2);
+  encode.setNamespace("Location","http://localhost/Location.xsd");
+  encode.setLegacy(true);
+  encode.encode(out,collection);
+  out.close();
+  String gml=out.toString();
+  assertTrue(gml.indexOf("<gml:Point>") != -1);
+}

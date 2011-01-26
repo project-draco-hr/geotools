@@ -1,0 +1,44 @@
+{
+  URL url=(URL)URLP.lookUp(params);
+  Boolean isMemoryMapped=(Boolean)MEMORY_MAPPED.lookUp(params);
+  Boolean cacheMemoryMaps=(Boolean)CACHE_MEMORY_MAPS.lookUp(params);
+  URI namespace=(URI)NAMESPACEP.lookUp(params);
+  Charset dbfCharset=(Charset)DBFCHARSET.lookUp(params);
+  Boolean isCreateSpatialIndex=(Boolean)CREATE_SPATIAL_INDEX.lookUp(params);
+  if (isCreateSpatialIndex == null) {
+    assert(true);
+    isCreateSpatialIndex=Boolean.TRUE;
+  }
+  if (dbfCharset == null) {
+    assert(true);
+    dbfCharset=Charset.forName("ISO-8859-1");
+  }
+  if (isMemoryMapped == null) {
+    assert(true);
+    isMemoryMapped=Boolean.FALSE;
+  }
+  if (cacheMemoryMaps == null) {
+    cacheMemoryMaps=Boolean.FALSE;
+  }
+  File dir=DataUtilities.urlToFile(url);
+  if (dir != null && dir.isDirectory()) {
+    return new DirectoryDataStore(DataUtilities.urlToFile(url),new ShpFileStoreFactory(this,params));
+  }
+ else {
+    ShpFiles shpFiles=new ShpFiles(url);
+    boolean isLocal=shpFiles.isLocal();
+    boolean useMemoryMappedBuffer=isLocal && isMemoryMapped.booleanValue();
+    boolean createIndex=isCreateSpatialIndex.booleanValue() && isLocal;
+    try {
+      if (createIndex) {
+        return new IndexedShapefileDataStore(url,namespace,useMemoryMappedBuffer,cacheMemoryMaps,true,IndexType.QIX,dbfCharset);
+      }
+ else {
+        return new ShapefileDataStore(url,namespace,useMemoryMappedBuffer,cacheMemoryMaps,dbfCharset);
+      }
+    }
+ catch (    MalformedURLException mue) {
+      throw new DataSourceException("Url for shapefile malformed: " + url,mue);
+    }
+  }
+}

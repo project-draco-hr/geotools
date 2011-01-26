@@ -1,0 +1,20 @@
+{
+  Hints hints=null;
+  if (crs != null) {
+    hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,crs);
+  }
+  AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(configUrl);
+  ImageMosaicJDBCReader reader=(ImageMosaicJDBCReader)format.getReader(configUrl,hints);
+  ParameterValue gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  if (envelope == null) {
+    envelope=reader.getOriginalEnvelope();
+  }
+ else   if (envelope.getCoordinateReferenceSystem() == null) {
+    envelope.setCoordinateReferenceSystem(reader.getOriginalEnvelope().getCoordinateReferenceSystem());
+  }
+  gg.setValue(new GridGeometry2D(new GridEnvelope2D(new Rectangle(0,0,width,heigth)),envelope));
+  final ParameterValue outTransp=ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.createValue();
+  outTransp.setValue((bColor == null) ? ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.getDefaultValue() : bColor);
+  GridCoverage2D coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,outTransp});
+  ImageIO.write(coverage.getRenderedImage(),"tif",new File(getOutPutDir() + File.separator + name+ ".tif"));
+}

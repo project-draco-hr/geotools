@@ -1,0 +1,35 @@
+{
+  StringBuffer buff=new StringBuffer(imageFile.getAbsolutePath());
+  char charToRemove=buff.charAt(buff.length() - 2);
+  buff=buff.deleteCharAt(buff.length() - 2);
+  if (Character.isUpperCase(charToRemove))   buff.append("W");
+ else   buff.append("w");
+  File f=new File(buff.toString());
+  if (f.exists() == false) {
+    f=null;
+    int index=buff.lastIndexOf(".");
+    if (index != -1) {
+      buff.delete(index + 1,buff.length());
+      buff.append("wld");
+      f=new File(buff.toString());
+    }
+  }
+  if (f.exists() == false)   throw new IOException("Cannot find world file for " + imageFile.getAbsolutePath());
+  BufferedReader in=new BufferedReader(new FileReader(f));
+  Double resx=new Double(in.readLine());
+  in.readLine();
+  in.readLine();
+  Double resy=new Double(in.readLine());
+  Double ulx=new Double(in.readLine());
+  Double uly=new Double(in.readLine());
+  in.close();
+  double minx=ulx;
+  double maxx=ulx + width * resx;
+  if (resy > 0)   resy*=-1;
+  double miny=uly + height * resy;
+  double maxy=uly;
+  GeometryFactory factory=new GeometryFactory();
+  Coordinate[] coords=new Coordinate[]{new Coordinate(minx,miny),new Coordinate(minx,maxy),new Coordinate(maxx,maxy),new Coordinate(maxx,miny),new Coordinate(minx,miny)};
+  Polygon poly=factory.createPolygon(factory.createLinearRing(coords),new LinearRing[0]);
+  return factory.createMultiPolygon(new Polygon[]{poly});
+}

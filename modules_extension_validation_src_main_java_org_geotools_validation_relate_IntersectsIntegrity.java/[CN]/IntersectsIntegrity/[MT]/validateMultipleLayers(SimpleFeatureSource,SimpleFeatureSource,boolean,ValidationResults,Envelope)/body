@@ -1,0 +1,31 @@
+{
+  boolean success=true;
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Filter filter=null;
+  SimpleFeatureCollection FeatureCollectionA=featureSourceA.getFeatures(filter);
+  SimpleFeatureCollection FeatureCollectionB=featureSourceB.getFeatures(filter);
+  SimpleFeatureIterator fr1=null;
+  SimpleFeatureIterator fr2=null;
+  try {
+    fr1=FeatureCollectionA.features();
+    if (fr1 == null)     return false;
+    while (fr1.hasNext()) {
+      SimpleFeature f1=fr1.next();
+      Geometry g1=(Geometry)f1.getDefaultGeometry();
+      fr2=FeatureCollectionB.features();
+      while (fr2 != null && fr2.hasNext()) {
+        SimpleFeature f2=fr2.next();
+        Geometry g2=(Geometry)f2.getDefaultGeometry();
+        if (g1.intersects(g2) != expected) {
+          results.error(f1,((Geometry)f1.getDefaultGeometry()).getGeometryType() + " " + getGeomTypeRefA()+ " intersects "+ getGeomTypeRefB()+ "("+ f2.getID()+ "), Result was not "+ expected);
+          success=false;
+        }
+      }
+    }
+  }
+  finally {
+    fr1.close();
+    if (fr2 != null)     fr2.close();
+  }
+  return success;
+}

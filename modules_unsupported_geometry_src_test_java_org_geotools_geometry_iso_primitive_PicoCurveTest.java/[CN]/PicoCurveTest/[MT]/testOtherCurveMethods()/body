@@ -1,0 +1,36 @@
+{
+  CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
+  PicoContainer container=container(crs);
+  PositionFactory positionFactory=(PositionFactory)container.getComponentInstanceOfType(PositionFactory.class);
+  DirectPosition positionA=positionFactory.createDirectPosition(new double[]{10,10});
+  DirectPosition positionB=positionFactory.createDirectPosition(new double[]{20,20});
+  CurveImpl curve=createCurve(positionA,positionB);
+  CurveSegmentImpl segmentAt=curve.getSegmentAt(1);
+  assertTrue(segmentAt.equals(curve.asLineSegments().get(0)));
+  double d=curve.length(0,1);
+  assertTrue(d == 1);
+  LineStringImpl linestring=curve.asLineString();
+  List<Position> posList=new ArrayList<Position>();
+  posList.add(positionA);
+  posList.add(positionB);
+  assertTrue(linestring.equals(new LineStringImpl(posList)));
+  assertEquals(curve.getDimension(positionA),1);
+  String toS=curve.toString();
+  assertTrue(toS != null);
+  assertTrue(toS.length() > 0);
+  CurveImpl curve2=null;
+  try {
+    curve2=curve.clone();
+  }
+ catch (  CloneNotSupportedException e) {
+    e.printStackTrace();
+    fail();
+  }
+  assertTrue(curve.equals((Object)curve2));
+  assertTrue(curve.equals((Object)curve));
+  assertFalse(curve.equals((Object)positionA));
+  assertFalse(curve.equals((Object)null));
+  DirectPosition positionC=positionFactory.createDirectPosition(new double[]{30,30});
+  CurveImpl curve3=createCurve(positionA,positionC);
+  assertFalse(curve.equals((Object)curve3));
+}

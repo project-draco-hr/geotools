@@ -1,0 +1,14 @@
+{
+  List<Object> attributes=current.getAttributes();
+  List<AttributeDescriptor> attributeTypes=current.getFeatureType().getAttributeDescriptors();
+  AttributeIO[] aios=queryData.getAttributeHandlers();
+  FeatureTypeInfo ftInfo=queryData.getFeatureTypeInfo();
+  for (int i=0; i < attributeTypes.size(); i++) {
+    aios[i].write(statement,i + 1,attributes.get(i));
+  }
+  int baseIndex=attributeTypes.size() + 1;
+  if (!mapper.returnFIDColumnsAsAttributes() && !mapper.hasAutoIncrementColumns()) {
+    baseIndex=fillPrimaryKeyParameters(statement,current,baseIndex);
+  }
+  fillPrimaryKeyParameters(statement,live,baseIndex + 1);
+}

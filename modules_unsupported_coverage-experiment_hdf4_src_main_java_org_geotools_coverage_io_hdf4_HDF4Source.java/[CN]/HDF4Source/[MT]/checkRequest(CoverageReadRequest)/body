@@ -1,0 +1,21 @@
+{
+  BoundingBox requestedBoundingBox=request.getGeographicArea();
+  Rectangle requestedRasterArea=request.getRasterArea();
+  if (requestedRasterArea == null || requestedBoundingBox == null) {
+    if (requestedRasterArea == null) {
+      requestedRasterArea=access.gridGeometry2DMap.get(this.name).getGridRange2D().getBounds();
+    }
+    if (requestedBoundingBox == null) {
+      requestedBoundingBox=(BoundingBox)new ReferencedEnvelope(access.gridGeometry2DMap.get(this.name).getEnvelope());
+    }
+    request.setDomainSubset(requestedRasterArea,requestedBoundingBox);
+  }
+  SortedSet<TemporalGeometricPrimitive> temporalSubset=request.getTemporalSubset();
+  if (temporalSubset.isEmpty()) {
+    Set<TemporalGeometricPrimitive> temporalExtent=access.temporalExtentMap.get(this.name);
+    temporalSubset=new TreeSet<TemporalGeometricPrimitive>(temporalExtent);
+    request.setTemporalSubset(temporalSubset);
+  }
+  RangeType range=request.getRangeSubset();
+  if (range == null)   request.setRangeSubset(access.rangeMap.get(this.name));
+}

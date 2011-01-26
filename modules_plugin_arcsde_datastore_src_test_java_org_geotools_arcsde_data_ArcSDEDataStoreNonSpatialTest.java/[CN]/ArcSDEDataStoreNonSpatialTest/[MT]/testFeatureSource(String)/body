@@ -1,0 +1,24 @@
+{
+  testData.truncateTestTable(tableName);
+  SimpleFeatureSource fs;
+  fs=ds.getFeatureSource(tableName);
+  assertNotNull(fs);
+  assertNull(fs.getBounds());
+  assertTrue(fs instanceof FeatureStore);
+  assertEquals(0,fs.getCount(Query.ALL));
+  addFeatures(tableName,Transaction.AUTO_COMMIT).close();
+  assertNotNull(fs.getFeatures());
+  assertEquals(2,fs.getFeatures().size());
+  assertNull(fs.getBounds());
+  Filter filter=CQL.toFilter("INT_COL = 2000");
+  SimpleFeatureCollection features=fs.getFeatures(filter);
+  assertNotNull(features);
+  assertEquals(1,features.size());
+  assertNull(fs.getBounds());
+  SimpleFeatureIterator iterator=features.features();
+  assertTrue(iterator.hasNext());
+  SimpleFeature next=iterator.next();
+  assertNotNull(next);
+  assertFalse(iterator.hasNext());
+  iterator.close();
+}

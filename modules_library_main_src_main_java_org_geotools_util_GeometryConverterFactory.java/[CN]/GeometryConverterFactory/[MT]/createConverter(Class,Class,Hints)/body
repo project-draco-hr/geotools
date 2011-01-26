@@ -1,0 +1,43 @@
+{
+  if (Geometry.class.isAssignableFrom(target)) {
+    if (String.class.equals(source)) {
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          return new WKTReader().read((String)source);
+        }
+      }
+;
+    }
+    if (Envelope.class.isAssignableFrom(source)) {
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          Envelope e=(Envelope)source;
+          GeometryFactory factory=new GeometryFactory();
+          return factory.createPolygon(factory.createLinearRing(new Coordinate[]{new Coordinate(e.getMinX(),e.getMinY()),new Coordinate(e.getMaxX(),e.getMinY()),new Coordinate(e.getMaxX(),e.getMaxY()),new Coordinate(e.getMinX(),e.getMaxY()),new Coordinate(e.getMinX(),e.getMinY())}),null);
+        }
+      }
+;
+    }
+  }
+  if (Geometry.class.isAssignableFrom(source)) {
+    if (Envelope.class.equals(target)) {
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          Geometry geometry=(Geometry)source;
+          return geometry.getEnvelopeInternal();
+        }
+      }
+;
+    }
+    if (String.class.equals(target)) {
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          Geometry geometry=(Geometry)source;
+          return geometry.toText();
+        }
+      }
+;
+    }
+  }
+  return null;
+}

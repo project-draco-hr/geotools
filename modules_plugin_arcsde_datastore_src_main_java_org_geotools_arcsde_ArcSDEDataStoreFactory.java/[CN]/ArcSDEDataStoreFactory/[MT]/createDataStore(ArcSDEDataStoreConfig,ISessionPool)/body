@@ -1,0 +1,45 @@
+{
+  ArcSDEDataStore sdeDStore;
+  ISession session;
+  try {
+    session=connPool.getSession(false);
+  }
+ catch (  UnavailableConnectionException e) {
+    throw new RuntimeException(e);
+  }
+  try {
+    SeRelease releaseInfo=session.getRelease();
+    int majVer=releaseInfo.getMajor();
+    int minVer=releaseInfo.getMinor();
+    if (majVer == 9 && minVer > 1 && JSDE_CLIENT_VERSION < JSDE_VERSION_91) {
+      LOGGER.severe("\n\n**************************\n" + "DANGER DANGER DANGER!!!  You're using the ArcSDE 9.0 (or earlier) jars with " + "ArcSDE " + majVer + "."+ minVer+ " on host '"+ config.getServerName()+ "' .  "+ "This PROBABLY WON'T WORK.  If you have issues "+ "or unexplained exceptions when rendering maps, upgrade your ArcSDE jars to version "+ "9.2 or higher.  See http://docs.codehaus.org/display/GEOTOOLS/ArcSDE+Plugin\n"+ "**************************\n\n");
+    }
+    final String versionName=config.getVersion();
+    if (versionName != null && !("".equals(versionName.trim()))) {
+      session.issue(new Commands.GetVersionCommand(versionName));
+    }
+  }
+  finally {
+    session.dispose();
+  }
+  String namespaceUri=config.getNamespaceUri();
+  if (namespaceUri != null && "".equals(namespaceUri.trim())) {
+    namespaceUri=null;
+  }
+  String versionName=config.getVersion();
+  if (versionName != null && "".equals(versionName.trim())) {
+    versionName=null;
+  }
+  boolean allowNonSpatialTables=config.isAllowNonSpatialTables();
+  final String port=config.getPortNumber();
+  final String[] directConnectParts=port.split(":");
+  final int length=directConnectParts.length;
+  final int multiGeoDB=4;
+  if (length == multiGeoDB) {
+    final int multiGeoDBIndex=port.lastIndexOf(":");
+    final String user_schema=port.substring(multiGeoDBIndex + 1);
+    versionName=user_schema + ".DEFAULT";
+  }
+  sdeDStore=new ArcSDEDataStore(connPool,namespaceUri,versionName,allowNonSpatialTables);
+  return sdeDStore;
+}

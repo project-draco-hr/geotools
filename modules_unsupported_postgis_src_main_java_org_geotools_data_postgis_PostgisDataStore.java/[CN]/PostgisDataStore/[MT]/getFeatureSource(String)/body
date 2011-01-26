@@ -1,0 +1,20 @@
+{
+  if (!typeHandler.getFIDMapper(typeName).isVolatile() || allowWriteOnVolatileFIDs) {
+    LOGGER.fine("get Feature source called on " + typeName);
+    if (OPTIMIZE_MODE == OPTIMIZE_SQL) {
+      LOGGER.fine("returning pg feature locking");
+      return createFeatureLockingInternal(this,getSchema(typeName));
+    }
+    if (getLockingManager() != null) {
+      LOGGER.fine("returning jdbc feature locking");
+      return new JDBCFeatureLocking(this,getSchema(typeName));
+    }
+ else {
+      LOGGER.fine("returning jdbc feature store (lock manager is null)");
+      return new JDBCFeatureStore(this,getSchema(typeName));
+    }
+  }
+ else {
+    return new JDBCFeatureSource(this,getSchema(typeName));
+  }
+}

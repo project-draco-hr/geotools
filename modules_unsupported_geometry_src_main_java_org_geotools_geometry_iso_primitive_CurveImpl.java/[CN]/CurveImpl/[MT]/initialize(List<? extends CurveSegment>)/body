@@ -1,0 +1,32 @@
+{
+  if ((segments == null) || segments.isEmpty())   throw new IllegalArgumentException("The list of CurveSegments ist empty.");
+  this.curveSegments=(List<CurveSegment>)segments;
+  Iterator<? extends CurveSegment> it=segments.iterator();
+  CurveSegmentImpl cs0=(CurveSegmentImpl)it.next();
+  cs0.setCurve(this);
+  this.envelope=new EnvelopeImpl(cs0.getEnvelope());
+  Position p0=cs0.getStartPosition();
+  CurveSegmentImpl cs1=null;
+  while (it.hasNext()) {
+    cs1=(CurveSegmentImpl)it.next();
+    cs1.setCurve(this);
+    this.envelope.expand(cs1.getEnvelope());
+    if (!cs0.getEndPoint().equals(cs1.getStartPoint())) {
+      throw new IllegalArgumentException("Curvesegments are not continuous. Following curve segments are disjoint:" + cs0 + " and "+ cs1);
+    }
+    cs0=cs1;
+  }
+  Position p1=cs0.getEndPosition();
+  Point pt0=toPoint(p0);
+  Point pt1=toPoint(p1);
+  if (pt0 == null) {
+    DirectPositionImpl copy=new DirectPositionImpl(p0.getPosition());
+    pt0=new PointImpl(copy);
+  }
+  if (pt1 == null) {
+    DirectPositionImpl copy=new DirectPositionImpl(p1.getPosition());
+    pt1=new PointImpl(copy);
+  }
+  this.boundary=this.calculateBoundary(pt0,pt1);
+  this.calculateParametrisation();
+}

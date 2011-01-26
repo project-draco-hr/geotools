@@ -1,0 +1,36 @@
+{
+  final boolean isClosed;
+  try {
+    Connection connection=getConnection();
+    isClosed=connection.isClosed();
+    for (final Iterator<Reference<AuthorityCodes>> it=authorityCodes.values().iterator(); it.hasNext(); ) {
+      final AuthorityCodes set=it.next().get();
+      if (set != null) {
+        set.finalize();
+      }
+      it.remove();
+    }
+    for (final Iterator it=statements.values().iterator(); it.hasNext(); ) {
+      ((PreparedStatement)it.next()).close();
+      it.remove();
+    }
+    shutdown(true);
+    connection.close();
+    dataSource=null;
+  }
+ catch (  SQLException exception) {
+    throw new FactoryException(exception);
+  }
+  super.dispose();
+  try {
+    shutdown(false);
+  }
+ catch (  SQLException exception) {
+    throw new FactoryException(exception);
+  }
+  if (!isClosed) {
+    final LogRecord record=Loggings.format(Level.FINE,LoggingKeys.CLOSED_EPSG_DATABASE);
+    record.setLoggerName(LOGGER.getName());
+    LOGGER.log(record);
+  }
+}

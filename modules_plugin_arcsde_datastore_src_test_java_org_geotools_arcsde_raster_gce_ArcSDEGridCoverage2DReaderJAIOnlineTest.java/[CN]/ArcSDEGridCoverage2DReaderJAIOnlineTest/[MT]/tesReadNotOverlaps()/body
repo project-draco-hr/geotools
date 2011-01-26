@@ -1,0 +1,20 @@
+{
+  tableName=rasterTestData.getRasterTableName(RasterCellType.TYPE_8BIT_U,1);
+  rasterTestData.loadTestRaster(tableName,1,100,100,TYPE_8BIT_U,null,true,false,SeRaster.SE_INTERPOLATION_NEAREST,null);
+  final AbstractGridCoverage2DReader reader=getReader();
+  assertNotNull(reader);
+  final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope();
+  final CoordinateReferenceSystem originalCrs=originalEnvelope.getCoordinateReferenceSystem();
+  final GridEnvelope originalGridRange=reader.getOriginalGridRange();
+  final int requestedWidth=originalGridRange.getSpan(0);
+  final int requestedHeight=originalGridRange.getSpan(1);
+  final GeneralEnvelope nonOverlappingEnvelope;
+  nonOverlappingEnvelope=new GeneralEnvelope(new ReferencedEnvelope(300,500,300,500,originalCrs));
+  try {
+    readCoverage(reader,requestedWidth,requestedHeight,nonOverlappingEnvelope);
+    fail("Expected IAE, envelopes does not overlap");
+  }
+ catch (  IllegalArgumentException e) {
+    assertTrue(true);
+  }
+}

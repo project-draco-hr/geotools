@@ -1,0 +1,32 @@
+{
+  final AffineTransform gridToWorld=(AffineTransform)((GridGeometry2D)gc.getGridGeometry()).getGridToCRS2D();
+  final double dx=XAffineTransform.getScaleX0(gridToWorld);
+  final double dy=XAffineTransform.getScaleY0(gridToWorld);
+  if (AsciiGridsImageWriter.resolutionCheck(dx,dy,AsciiGridsImageWriter.EPS)) {
+    return gc;
+  }
+  final RenderedImage image=gc.getRenderedImage();
+  int Nx=image.getWidth();
+  int Ny=image.getHeight();
+  final double _Nx;
+  final double _Ny;
+  final Envelope oldEnv=gc.getEnvelope2D();
+  final double W=oldEnv.getSpan(0);
+  final double H=oldEnv.getSpan(1);
+  if ((dx - dy) > ArcGridWriter.ROTATION_EPS) {
+    _Nx=W / dy;
+    Nx=(int)(_Nx + 0.5);
+  }
+ else {
+    _Ny=H / dx;
+    Ny=(int)(_Ny + 0.5);
+  }
+  final GeneralGridEnvelope newGridrange=new GeneralGridEnvelope(new int[]{0,0},new int[]{Nx,Ny});
+  final GridGeometry2D newGridGeometry=new GridGeometry2D(newGridrange,new GeneralEnvelope(gc.getEnvelope()));
+  final ParameterValueGroup param=(ParameterValueGroup)reShapeParams.clone();
+  param.parameter("source").setValue(gc);
+  param.parameter("CoordinateReferenceSystem").setValue(gc.getCoordinateReferenceSystem2D());
+  param.parameter("GridGeometry").setValue(newGridGeometry);
+  param.parameter("InterpolationType").setValue(Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+  return (GridCoverage2D)resampleFactory.doOperation(param,hints);
+}

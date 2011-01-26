@@ -1,0 +1,40 @@
+{
+  int nS=aSurfaces.size();
+  int nC=aCurves.size();
+  int nP=aPoints.size();
+  AggregateFactoryImpl aggregateFactory=new AggregateFactoryImpl(crs);
+  if (nS + nC + nP == 0)   return null;
+  if (nS == 0) {
+    if (nC == 0) {
+      if (nP == 1) {
+        return (GeometryImpl)aPoints.get(0);
+      }
+ else {
+        return (GeometryImpl)aggregateFactory.createMultiPoint(new HashSet(aPoints));
+      }
+    }
+ else     if (nP == 0) {
+      if (nC == 1) {
+        return (GeometryImpl)aCurves.get(0);
+      }
+ else {
+        return (GeometryImpl)aggregateFactory.createMultiCurve(new HashSet(aCurves));
+      }
+    }
+  }
+ else {
+    if (nC == 0 && nP == 0) {
+      if (nS == 1) {
+        return (GeometryImpl)aSurfaces.get(0);
+      }
+ else {
+        return (GeometryImpl)aggregateFactory.createMultiSurface(new HashSet(aSurfaces));
+      }
+    }
+  }
+  Set<Primitive> tPrimitives=new HashSet<Primitive>();
+  tPrimitives.addAll(aSurfaces);
+  tPrimitives.addAll(aCurves);
+  tPrimitives.addAll(aPoints);
+  return (GeometryImpl)aggregateFactory.createMultiPrimitive(tPrimitives);
+}

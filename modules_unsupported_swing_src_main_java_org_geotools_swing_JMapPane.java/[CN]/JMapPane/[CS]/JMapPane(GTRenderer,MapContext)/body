@@ -1,0 +1,44 @@
+{
+  imageOrigin=new Point(0,0);
+  acceptRepaintRequests=true;
+  needNewBaseImage=true;
+  redrawBaseImage=true;
+  baseImageMoved=false;
+  clearLabelCache=false;
+  resizingPaintDelay=DEFAULT_RESIZING_PAINT_DELAY;
+  resizeTimer=new Timer(resizingPaintDelay,new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      onResizingCompleted();
+    }
+  }
+);
+  resizeTimer.setRepeats(false);
+  setRenderer(renderer);
+  setMapContext(context);
+  renderingExecutor=new RenderingExecutor(this);
+  toolManager=new MapToolManager(this);
+  dragBox=new DragBox();
+  this.addMouseListener(dragBox);
+  this.addMouseMotionListener(dragBox);
+  this.addMouseListener(toolManager);
+  this.addMouseMotionListener(toolManager);
+  this.addMouseWheelListener(toolManager);
+  this.addMouseListener(new MouseInputAdapter(){
+    @Override public void mouseEntered(    MouseEvent e){
+      super.mouseEntered(e);
+      CursorTool tool=toolManager.getCursorTool();
+      if (tool != null) {
+        JMapPane.this.setCursor(tool.getCursor());
+      }
+    }
+  }
+);
+  addComponentListener(new ComponentAdapter(){
+    @Override public void componentResized(    ComponentEvent ev){
+      acceptRepaintRequests=false;
+      renderingExecutor.cancelTask();
+      resizeTimer.restart();
+    }
+  }
+);
+}

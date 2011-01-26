@@ -1,0 +1,32 @@
+{
+  SAXParserFactory factory=SAXParserFactory.newInstance();
+  factory.setNamespaceAware(true);
+  factory.setValidating(false);
+  SAXParser parser=null;
+  try {
+    parser=factory.newSAXParser();
+  }
+ catch (  Exception e) {
+    throw (IOException)new IOException("could not create parser").initCause(e);
+  }
+  SchemaImportIncludeValidator validator=new SchemaImportIncludeValidator(locators,resolvers);
+  LinkedList q=new LinkedList();
+  q.add(location);
+  while (!q.isEmpty()) {
+    location=(String)q.removeFirst();
+    validator.setBaseLocation(location);
+    try {
+      parser.parse(location,validator);
+    }
+ catch (    SAXException e) {
+      throw (IOException)new IOException("parse error").initCause(e);
+    }
+    if (!validator.errors.isEmpty()) {
+      return validator.errors;
+    }
+    if (!validator.next.isEmpty()) {
+      q.addAll(validator.next);
+    }
+  }
+  return Collections.EMPTY_LIST;
+}

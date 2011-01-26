@@ -1,0 +1,28 @@
+{
+  final ImageReferencing referencing=metadata.getReferencing();
+  String name=referencing.getCoordinateReferenceSystem().name;
+  if (name == null) {
+    name="Unknown";
+  }
+  if (name.contains("WGS84")) {
+    return (name.contains("3D")) ? DefaultGeographicCRS.WGS84_3D : DefaultGeographicCRS.WGS84;
+  }
+  String type=referencing.getCoordinateReferenceSystem().type;
+  if (type == null) {
+    type=(referencing.getProjectionName() == null) ? GeographicMetadataFormat.GEOGRAPHIC : GeographicMetadataFormat.PROJECTED;
+  }
+  final CRSFactory factory=factories.getCRSFactory();
+  final Map<String,String> map=Collections.singletonMap("name",name);
+  try {
+    if (type.equalsIgnoreCase(GeographicMetadataFormat.GEOGRAPHIC)) {
+      return factory.createGeographicCRS(map,(GeodeticDatum)getDatum(),(EllipsoidalCS)getCoordinateSystem());
+    }
+ else {
+      final GeographicCRS baseCRS=factory.createGeographicCRS(map,(GeodeticDatum)getDatum(),DefaultEllipsoidalCS.GEODETIC_2D);
+      return factory.createProjectedCRS(map,baseCRS,getProjection(),(CartesianCS)getCoordinateSystem());
+    }
+  }
+ catch (  FactoryException e) {
+    throw new MetadataException(e.getLocalizedMessage());
+  }
+}

@@ -1,0 +1,40 @@
+{
+  double[] constants=new double[]{18.75};
+  GridCoverage sourceCoverage=SST.view(GEOPHYSICS);
+  GridCoverage targetCoverage=(GridCoverage)processor.subtract(sourceCoverage,constants);
+  RenderedImage sourceImage=sourceCoverage.getRenderableImage(0,1).createDefaultRendering();
+  RenderedImage targetImage=targetCoverage.getRenderableImage(0,1).createDefaultRendering();
+  Raster sourceRaster=sourceImage.getData();
+  Raster targetRaster=targetImage.getData();
+  assertNotSame(sourceCoverage,targetCoverage);
+  assertNotSame(sourceImage,targetImage);
+  assertNotSame(sourceRaster,targetRaster);
+  assertSame(sourceCoverage.getCoordinateReferenceSystem(),targetCoverage.getCoordinateReferenceSystem());
+  assertEquals(sourceCoverage.getEnvelope(),targetCoverage.getEnvelope());
+  assertEquals(sourceCoverage.getGridGeometry(),targetCoverage.getGridGeometry());
+  assertEquals(sourceRaster.getMinX(),targetRaster.getMinX());
+  assertEquals(sourceRaster.getMinY(),targetRaster.getMinY());
+  assertEquals(sourceRaster.getWidth(),targetRaster.getWidth());
+  assertEquals(sourceRaster.getHeight(),targetRaster.getHeight());
+  assertEquals(0,sourceRaster.getMinX());
+  assertEquals(0,sourceRaster.getMinY());
+  assertEquals("SubtractConst",((OperationNode)targetImage).getOperationName());
+  final boolean medialib=TestData.isMediaLibAvailable();
+  for (int y=sourceRaster.getHeight(); --y >= 0; ) {
+    for (int x=sourceRaster.getWidth(); --x >= 0; ) {
+      final float s=sourceRaster.getSampleFloat(x,y,0);
+      final float t=targetRaster.getSampleFloat(x,y,0);
+      if (Float.isNaN(s)) {
+        if (medialib) {
+          assertTrue(Float.isNaN(t));
+        }
+      }
+ else {
+        assertEquals(s - constants[0],t,1E-3f);
+      }
+    }
+  }
+  if (SHOW) {
+    show(targetCoverage);
+  }
+}

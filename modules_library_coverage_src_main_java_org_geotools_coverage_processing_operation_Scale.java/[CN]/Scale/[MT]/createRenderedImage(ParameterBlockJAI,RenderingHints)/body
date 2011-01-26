@@ -1,0 +1,21 @@
+{
+  final RenderedImage source=(RenderedImage)parameters.getSource(0);
+  final Interpolation interpolation;
+  if (parameters.getObjectParameter("Interpolation") != null)   interpolation=(Interpolation)parameters.getObjectParameter("Interpolation");
+ else   if (hints.get(JAI.KEY_INTERPOLATION) != null)   interpolation=(Interpolation)hints.get(JAI.KEY_INTERPOLATION);
+ else {
+    interpolation=null;
+  }
+  final int transferType=source.getSampleModel().getDataType();
+  final JAI processor=OperationJAI.getJAI(hints);
+  PlanarImage image;
+  if (interpolation != null && !(interpolation instanceof InterpolationNearest) && (transferType == DataBuffer.TYPE_FLOAT || transferType == DataBuffer.TYPE_DOUBLE)) {
+synchronized (lock) {
+      Registry.setNativeAccelerationAllowed(getName(),false);
+      image=processor.createNS(getName(),parameters,hints).getRendering();
+      Registry.setNativeAccelerationAllowed(getName(),true);
+    }
+  }
+ else   image=processor.createNS(getName(),parameters,hints);
+  return image;
+}

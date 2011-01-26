@@ -1,0 +1,60 @@
+{
+  if (uiSet) {
+    return;
+  }
+  StringBuilder sb=new StringBuilder();
+  if (!toolSet.isEmpty()) {
+    sb.append("[]");
+  }
+  sb.append("[grow]");
+  if (showStatusBar) {
+    sb.append("[30px::]");
+  }
+  JPanel panel=new JPanel(new MigLayout("wrap 1, insets 0","[grow]",sb.toString()));
+  if (!toolSet.isEmpty()) {
+    toolBar=new JToolBar();
+    toolBar.setOrientation(JToolBar.HORIZONTAL);
+    toolBar.setFloatable(false);
+    ButtonGroup cursorToolGrp=new ButtonGroup();
+    if (toolSet.contains(Tool.ZOOM)) {
+      JButton zoomInBtn=new JButton(new ZoomInAction(mapPane));
+      toolBar.add(zoomInBtn);
+      cursorToolGrp.add(zoomInBtn);
+      JButton zoomOutBtn=new JButton(new ZoomOutAction(mapPane));
+      toolBar.add(zoomOutBtn);
+      cursorToolGrp.add(zoomOutBtn);
+      toolBar.addSeparator();
+    }
+    if (toolSet.contains(Tool.PAN)) {
+      JButton panBtn=new JButton(new PanAction(mapPane));
+      toolBar.add(panBtn);
+      cursorToolGrp.add(panBtn);
+      toolBar.addSeparator();
+    }
+    if (toolSet.contains(Tool.INFO)) {
+      JButton infoBtn=new JButton(new InfoAction(mapPane));
+      toolBar.add(infoBtn);
+      toolBar.addSeparator();
+    }
+    if (toolSet.contains(Tool.RESET)) {
+      JButton resetBtn=new JButton(new ResetAction(mapPane));
+      toolBar.add(resetBtn);
+    }
+    panel.add(toolBar,"grow");
+  }
+  if (showLayerTable) {
+    mapLayerTable=new MapLayerTable(mapPane);
+    mapLayerTable.setPreferredSize(new Dimension(200,-1));
+    JSplitPane splitPane=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,false,mapLayerTable,mapPane);
+    panel.add(splitPane,"grow");
+  }
+ else {
+    panel.add(mapPane,"grow");
+  }
+  if (showStatusBar) {
+    statusBar=new StatusBar(mapPane);
+    panel.add(statusBar,"grow");
+  }
+  this.getContentPane().add(panel);
+  uiSet=true;
+}

@@ -1,0 +1,60 @@
+{
+  if (geometry == null) {
+    return null;
+  }
+  SeShape shape=null;
+  try {
+    shape=new SeShape(seSrs);
+  }
+ catch (  SeException ex) {
+    ArcSdeException e=new ArcSdeException("Can't create SeShape with SeCrs " + seSrs,ex);
+    LOGGER.log(Level.WARNING,e.getMessage(),e);
+    throw e;
+  }
+  if (geometry.isEmpty()) {
+    return shape;
+  }
+  int numParts;
+  GeometryCollection gcol=null;
+  if (geometry instanceof GeometryCollection) {
+    gcol=(GeometryCollection)geometry;
+  }
+ else {
+    Geometry[] geoms={geometry};
+    gcol=new GeometryFactory().createGeometryCollection(geoms);
+  }
+  List<SDEPoint> allPoints=new ArrayList<SDEPoint>();
+  numParts=gcol.getNumGeometries();
+  int[] partOffsets=new int[numParts];
+  Geometry geom;
+  Coordinate[] coords;
+  Coordinate c;
+  for (int currGeom=0; currGeom < numParts; currGeom++) {
+    partOffsets[currGeom]=allPoints.size();
+    geom=gcol.getGeometryN(currGeom);
+    coords=geom.getCoordinates();
+    for (int i=0; i < coords.length; i++) {
+      c=coords[i];
+      allPoints.add(new SDEPoint(c.x,c.y));
+    }
+  }
+  SDEPoint[] points=new SDEPoint[allPoints.size()];
+  allPoints.toArray(points);
+  try {
+    if (geometry instanceof Point || gcol instanceof MultiPoint) {
+      shape.generatePoint(points.length,points);
+    }
+ else     if (geometry instanceof LineString || geometry instanceof MultiLineString) {
+      shape.generateLine(points.length,numParts,partOffsets,points);
+    }
+ else {
+      shape.generatePolygon(points.length,numParts,partOffsets,points);
+    }
+  }
+ catch (  SeException e) {
+    ArcSdeException sdeEx=new ArcSdeException("Can't generate SeShape from " + geometry + "\n",e);
+    LOGGER.log(Level.WARNING,sdeEx.getMessage());
+    throw sdeEx;
+  }
+  return shape;
+}

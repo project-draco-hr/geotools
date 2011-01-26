@@ -1,0 +1,52 @@
+{
+  final SeColumnDefinition[] colDefs=new SeColumnDefinition[7];
+  boolean isNullable=true;
+  colDefs[0]=new SeColumnDefinition("INT32_COL",SeColumnDefinition.TYPE_INTEGER,10,0,isNullable);
+  colDefs[1]=new SeColumnDefinition("INT16_COL",SeColumnDefinition.TYPE_SMALLINT,4,0,isNullable);
+  colDefs[2]=new SeColumnDefinition("FLOAT32_COL",SeColumnDefinition.TYPE_FLOAT,5,2,isNullable);
+  colDefs[3]=new SeColumnDefinition("FLOAT64_COL",SeColumnDefinition.TYPE_DOUBLE,15,4,isNullable);
+  colDefs[4]=new SeColumnDefinition("STRING_COL",SeColumnDefinition.TYPE_STRING,25,0,isNullable);
+  colDefs[5]=new SeColumnDefinition("DATE_COL",SeColumnDefinition.TYPE_DATE,1,0,isNullable);
+  colDefs[6]=new SeColumnDefinition("INT64_COL",SeColumnDefinition.TYPE_INTEGER,10,0,isNullable);
+  final Command<Void> createBaseTableCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeLayer layer=new SeLayer(connection);
+      SeTable table=null;
+      String tableName=(connection.getUser() + ".EXAMPLE");
+      table=new SeTable(connection,tableName);
+      layer.setTableName("EXAMPLE");
+      try {
+        table.delete();
+      }
+ catch (      Exception e) {
+        LOGGER.warning(e.getMessage());
+      }
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("\n--> Creating a table using DBMS Default Keyword");
+      }
+      table.create(colDefs,testData.getConfigKeyword());
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine(" - Done.");
+      }
+      layer.setSpatialColumnName("SHAPE");
+      layer.setShapeTypes(SeLayer.SE_NIL_TYPE_MASK | SeLayer.SE_POINT_TYPE_MASK | SeLayer.SE_LINE_TYPE_MASK| SeLayer.SE_SIMPLE_LINE_TYPE_MASK| SeLayer.SE_AREA_TYPE_MASK| SeLayer.SE_MULTIPART_TYPE_MASK);
+      layer.setGridSizes(1100.0,0.0,0.0);
+      layer.setDescription("Layer Example");
+      SeExtent ext=new SeExtent(0.0,0.0,10000.0,10000.0);
+      layer.setExtent(ext);
+      SeCoordinateReference coordref=TestData.getGenericCoordRef();
+      layer.setCoordRef(coordref);
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("\n--> Adding spatial column \"SHAPE\"...");
+      }
+      layer.setCreationKeyword(testData.getConfigKeyword());
+      layer.create(3,4);
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine(" - Done.");
+      }
+      return null;
+    }
+  }
+;
+  session.issue(createBaseTableCmd);
+}

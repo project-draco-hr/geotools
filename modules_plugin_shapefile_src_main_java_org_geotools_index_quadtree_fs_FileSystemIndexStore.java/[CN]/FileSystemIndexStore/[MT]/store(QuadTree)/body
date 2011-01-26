@@ -1,0 +1,40 @@
+{
+  tree.trim();
+  FileOutputStream fos=null;
+  FileChannel channel=null;
+  try {
+    fos=new FileOutputStream(file);
+    channel=fos.getChannel();
+    ByteBuffer buf=ByteBuffer.allocate(8);
+    if (this.byteOrder > IndexHeader.NATIVE_ORDER) {
+      LOGGER.finest("Writing file header");
+      IndexHeader header=new IndexHeader(byteOrder);
+      header.writeTo(buf);
+      buf.flip();
+      channel.write(buf);
+    }
+    ByteOrder order=byteToOrder(this.byteOrder);
+    buf.clear();
+    buf.order(order);
+    buf.putInt(tree.getNumShapes());
+    buf.putInt(tree.getMaxDepth());
+    buf.flip();
+    channel.write(buf);
+    this.writeNode(tree.getRoot(),channel,order);
+  }
+ catch (  IOException e) {
+    throw new StoreException(e);
+  }
+ finally {
+    try {
+      channel.close();
+    }
+ catch (    Exception e) {
+    }
+    try {
+      fos.close();
+    }
+ catch (    Exception e) {
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  CoordinateReferenceSystem mercator=CRS.decode("EPSG:3395",true);
+  ReferencedEnvelope world=new ReferencedEnvelope(-180,180,-80,80,DefaultGeographicCRS.WGS84);
+  ReferencedEnvelope worldMercator=world.transform(mercator,true);
+  StyleBuilder sb=new StyleBuilder();
+  Style s=sb.createStyle(sb.createPolygonSymbolizer());
+  Filter f=CQL.toFilter("CONTAINS(the_geom, POINT(-100 32))");
+  MapContext mc=new DefaultMapContext(mercator);
+  MapLayer l=new DefaultMapLayer(new FeatureLayer(ds.getFeatureSource(),s));
+  l.setQuery(new DefaultQuery("statepop",f));
+  mc.addLayer(l);
+  SimpleFeatureCollection sanityCheck=ds.getFeatureSource().getFeatures(f);
+  SimpleFeatureIterator iter=sanityCheck.features();
+  final Set<String> expected=new HashSet<String>();
+  while (iter.hasNext()) {
+    SimpleFeature feature=iter.next();
+    String fid=feature.getID();
+    expected.add(fid);
+  }
+  iter.close();
+  System.out.println(expected);
+  ShapefileRenderer r=new ShapefileRenderer(mc);
+  r.addRenderListener(new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+      features++;
+      String fid=feature.getID();
+      assertTrue("Unexpected result " + fid + " - "+ feature.getAttribute("STATE_NAME"),expected.contains(fid));
+    }
+    public void errorOccurred(    Exception e){
+      errors++;
+    }
+  }
+);
+  BufferedImage image=new BufferedImage(400,300,BufferedImage.TYPE_4BYTE_ABGR);
+  final Graphics2D graphics=(Graphics2D)image.getGraphics();
+  r.paint(graphics,new Rectangle(image.getWidth(),image.getHeight()),worldMercator);
+  assertEquals(1,features);
+  assertEquals(0,errors);
+}

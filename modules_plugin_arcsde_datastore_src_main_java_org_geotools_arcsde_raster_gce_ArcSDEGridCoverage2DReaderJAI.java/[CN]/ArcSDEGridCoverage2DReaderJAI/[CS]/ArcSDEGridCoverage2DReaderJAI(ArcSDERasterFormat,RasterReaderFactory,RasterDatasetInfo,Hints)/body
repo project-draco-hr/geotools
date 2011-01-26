@@ -1,0 +1,33 @@
+{
+{
+    final int bitsPerSample=rasterInfo.getBand(0,0).getCellType().getBitsPerSample();
+    if (rasterInfo.getNumBands() > 1 && (bitsPerSample == 1 || bitsPerSample == 4)) {
+      throw new IllegalArgumentException(bitsPerSample + "-bit rasters with more than one band are not supported");
+    }
+  }
+  this.parent=parent;
+  this.rasterReaderFactory=rasterReaderFactory;
+  this.rasterInfo=rasterInfo;
+  super.hints=hints;
+  super.coverageFactory=CoverageFactoryFinder.getGridCoverageFactory(this.hints);
+  super.crs=rasterInfo.getCoverageCrs();
+  super.originalEnvelope=rasterInfo.getOriginalEnvelope(PixelInCell.CELL_CENTER);
+  GridEnvelope gridRange=rasterInfo.getOriginalGridRange();
+  super.originalGridRange=gridRange;
+  super.coverageName=rasterInfo.getRasterTable();
+  final int numLevels=rasterInfo.getNumPyramidLevels(0);
+  super.numOverviews=numLevels - 1;
+  highestRes=super.getResolution(originalEnvelope,new Rectangle(originalGridRange.getLow(0),originalGridRange.getLow(1),originalGridRange.getSpan(0),originalGridRange.getSpan(1)),crs);
+  if (numOverviews > 0) {
+    overViewResolutions=new double[numOverviews][2];
+    for (int pyramidLevel=1; pyramidLevel <= numOverviews; pyramidLevel++) {
+      GridEnvelope levelGridRange=rasterInfo.getGridRange(0,pyramidLevel);
+      GeneralEnvelope levelEnvelope=rasterInfo.getGridEnvelope(0,pyramidLevel);
+      Rectangle2D levelGridRangeRect=new Rectangle2D.Double(levelGridRange.getLow(0),levelGridRange.getLow(1),levelGridRange.getSpan(0),levelGridRange.getSpan(1));
+      overViewResolutions[pyramidLevel - 1]=super.getResolution(levelEnvelope,levelGridRangeRect,crs);
+    }
+  }
+ else {
+    overViewResolutions=null;
+  }
+}

@@ -1,0 +1,110 @@
+{
+  if (XPath.LOGGER.isLoggable(Level.CONFIG)) {
+    XPath.LOGGER.entering("XPath","set",new Object[]{att,xpath,value,id,targetNodeType});
+  }
+  final StepList steps=new StepList(xpath);
+  Attribute parent=att;
+  Name rootName=null;
+  if (parent.getDescriptor() != null) {
+    rootName=parent.getDescriptor().getName();
+    Step rootStep=(Step)steps.get(0);
+    QName stepName=rootStep.getName();
+    if (stepName.getLocalPart().equals(rootName.getLocalPart())) {
+      if (XMLConstants.NULL_NS_URI.equals(stepName.getNamespaceURI()) || stepName.getNamespaceURI().equals(rootName.getNamespaceURI())) {
+        steps.remove(0);
+      }
+    }
+  }
+  Iterator stepsIterator=steps.iterator();
+  for (; stepsIterator.hasNext(); ) {
+    final XPath.Step currStep=(Step)stepsIterator.next();
+    AttributeDescriptor currStepDescriptor=null;
+    final boolean isLastStep=!stepsIterator.hasNext();
+    final QName stepName=currStep.getName();
+    final Name attributeName=Types.toName(stepName);
+    final AttributeType _parentType=parent.getType();
+    if (_parentType.equals(XSSchema.ANYTYPE_TYPE) && targetDescriptor != null) {
+      currStepDescriptor=targetDescriptor;
+    }
+ else {
+      ComplexType parentType=(ComplexType)_parentType;
+      if (!isLastStep || targetNodeType == null) {
+        if (null == attributeName.getNamespaceURI()) {
+          currStepDescriptor=(AttributeDescriptor)Types.descriptor(parentType,attributeName.getLocalPart());
+        }
+ else {
+          currStepDescriptor=(AttributeDescriptor)Types.descriptor(parentType,attributeName);
+        }
+        if (currStepDescriptor == null) {
+          String prefixedStepName=currStep.toString();
+          PropertyName name=FF.property(prefixedStepName);
+          Attribute child=(Attribute)name.evaluate(parent);
+          if (child != null) {
+            currStepDescriptor=child.getDescriptor();
+          }
+        }
+      }
+ else {
+        AttributeDescriptor actualDescriptor;
+        if (null == attributeName.getNamespaceURI()) {
+          actualDescriptor=(AttributeDescriptor)Types.descriptor(parentType,attributeName.getLocalPart(),targetNodeType);
+        }
+ else {
+          actualDescriptor=(AttributeDescriptor)Types.descriptor(parentType,attributeName,targetNodeType);
+        }
+        if (actualDescriptor != null) {
+          int minOccurs=actualDescriptor.getMinOccurs();
+          int maxOccurs=actualDescriptor.getMaxOccurs();
+          boolean nillable=actualDescriptor.isNillable();
+          if (actualDescriptor instanceof GeometryDescriptor) {
+            if (Geometry.class.isAssignableFrom(targetNodeType.getBinding())) {
+              if (!(targetNodeType instanceof GeometryType)) {
+                targetNodeType=new GeometryTypeImpl(targetNodeType.getName(),targetNodeType.getBinding(),crs != null ? crs : ((GeometryDescriptor)actualDescriptor).getCoordinateReferenceSystem(),targetNodeType.isIdentified(),targetNodeType.isAbstract(),targetNodeType.getRestrictions(),targetNodeType.getSuper(),targetNodeType.getDescription());
+              }
+              currStepDescriptor=descriptorFactory.createGeometryDescriptor((GeometryType)targetNodeType,attributeName,minOccurs,maxOccurs,nillable,null);
+            }
+ else {
+              throw new IllegalArgumentException("Can't set targetNodeType: " + targetNodeType.toString() + " for attribute mapping: "+ attributeName+ " as it is not a Geometry type!");
+            }
+          }
+ else {
+            currStepDescriptor=descriptorFactory.createAttributeDescriptor(targetNodeType,attributeName,minOccurs,maxOccurs,nillable,null);
+          }
+        }
+      }
+      if (currStepDescriptor == null) {
+        StringBuffer parentAtts=new StringBuffer();
+        Collection properties=parentType.getDescriptors();
+        for (Iterator it=properties.iterator(); it.hasNext(); ) {
+          PropertyDescriptor desc=(PropertyDescriptor)it.next();
+          Name name=desc.getName();
+          parentAtts.append(name.getNamespaceURI());
+          parentAtts.append("#");
+          parentAtts.append(name.getLocalPart());
+          if (it.hasNext()) {
+            parentAtts.append(", ");
+          }
+        }
+        throw new IllegalArgumentException(currStep + " is not a valid location path for type " + parentType.getName()+ ". "+ currStep+ " ns: "+ currStep.getName().getNamespaceURI()+ ", "+ parentType.getName().getLocalPart()+ " properties: "+ parentAtts);
+      }
+    }
+    if (isLastStep) {
+      if (currStepDescriptor == null) {
+        throw new IllegalArgumentException(currStep + " is not a valid location path for type " + _parentType.getName());
+      }
+      if (value == null && !currStepDescriptor.isNillable() && sourceExpression != null && !sourceExpression.equals(Expression.NIL)) {
+        if (currStepDescriptor.getMinOccurs() == 0) {
+          return null;
+        }
+      }
+      int index=currStep.isIndexed ? currStep.getIndex() : -1;
+      Attribute attribute=setValue(currStepDescriptor,id,value,index,parent,targetNodeType,isXlinkRef);
+      return attribute;
+    }
+ else {
+      int index=currStep.isIndexed ? currStep.getIndex() : -1;
+      parent=setValue(currStepDescriptor,null,new ArrayList<Property>(),index,parent,null,isXlinkRef);
+    }
+  }
+  throw new IllegalStateException();
+}

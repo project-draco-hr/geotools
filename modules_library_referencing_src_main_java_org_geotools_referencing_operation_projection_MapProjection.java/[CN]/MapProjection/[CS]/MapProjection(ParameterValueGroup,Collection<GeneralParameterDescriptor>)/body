@@ -1,0 +1,24 @@
+{
+  if (expected == null) {
+    expected=getParameterDescriptors().descriptors();
+  }
+  semiMajor=doubleValue(expected,AbstractProvider.SEMI_MAJOR,values);
+  semiMinor=doubleValue(expected,AbstractProvider.SEMI_MINOR,values);
+  centralMeridian=doubleValue(expected,AbstractProvider.CENTRAL_MERIDIAN,values);
+  latitudeOfOrigin=doubleValue(expected,AbstractProvider.LATITUDE_OF_ORIGIN,values);
+  scaleFactor=doubleValue(expected,AbstractProvider.SCALE_FACTOR,values);
+  falseEasting=doubleValue(expected,AbstractProvider.FALSE_EASTING,values);
+  falseNorthing=doubleValue(expected,AbstractProvider.FALSE_NORTHING,values);
+  isSpherical=(semiMajor == semiMinor);
+  excentricitySquared=1.0 - (semiMinor * semiMinor) / (semiMajor * semiMajor);
+  excentricity=sqrt(excentricitySquared);
+  globalScale=scaleFactor * semiMajor;
+  ensureLongitudeInRange(AbstractProvider.CENTRAL_MERIDIAN,centralMeridian,true);
+  ensureLatitudeInRange(AbstractProvider.LATITUDE_OF_ORIGIN,latitudeOfOrigin,true);
+  double t;
+  en0=C00 - excentricitySquared * (C02 + excentricitySquared * (C04 + excentricitySquared * (C06 + excentricitySquared * C08)));
+  en1=excentricitySquared * (C22 - excentricitySquared * (C04 + excentricitySquared * (C06 + excentricitySquared * C08)));
+  en2=(t=excentricitySquared * excentricitySquared) * (C44 - excentricitySquared * (C46 + excentricitySquared * C48));
+  en3=(t*=excentricitySquared) * (C66 - excentricitySquared * C68);
+  en4=t * excentricitySquared * C88;
+}

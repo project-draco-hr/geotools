@@ -1,0 +1,18 @@
+{
+  final Object key=ObjectCaches.toKey(getAuthority(),sourceCode,targetCode);
+  Set operations=(Set)cache.get(key);
+  if (operations == null) {
+    try {
+      cache.writeLock(key);
+      operations=(Set)cache.peek(key);
+      if (operations == null) {
+        operations=generateFromCoordinateReferenceSystemCodes(sourceCode,targetCode);
+        cache.put(key,operations);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return operations;
+}

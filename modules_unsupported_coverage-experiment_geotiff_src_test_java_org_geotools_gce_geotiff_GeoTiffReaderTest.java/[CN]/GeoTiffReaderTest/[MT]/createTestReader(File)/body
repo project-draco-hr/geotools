@@ -1,0 +1,70 @@
+{
+  Test test=new Test(){
+    public int countTestCases(){
+      return 1;
+    }
+    public String toString(){
+      return file.getName();
+    }
+    public void run(    TestResult result){
+      result.startTest(this);
+      try {
+        ProgressListener watch;
+        StringBuffer buffer=new StringBuffer();
+        buffer.append(file.getAbsolutePath()).append("\n");
+        final URL source=file.toURI().toURL();
+        if (factory.canProcess(DriverOperation.CONNECT,source,null)) {
+          buffer.append("ACCEPTED").append("\n");
+          watch=new TestProgress();
+          final CoverageAccess access=factory.process(DriverOperation.CONNECT,source,null,null,watch);
+          assertEquals("Connect progress",1.0f,watch.getProgress());
+          if (access == null)           throw new IOException("Could not access " + file);
+          watch=new TestProgress();
+          final List<Name> names=access.getNames(watch);
+          assertEquals("names progress",1.0f,watch.getProgress());
+          for (          Name name : names) {
+            watch=new TestProgress();
+            final CoverageSource gridSource=access.access(name,null,AccessType.READ_ONLY,null,watch);
+            assertEquals("access progress",1.0f,watch.getProgress());
+            if (gridSource == null)             throw new IOException("");
+            watch=new TestProgress();
+            CoverageResponse response=gridSource.read(new DefaultCoverageReadRequest(),watch);
+            assertEquals("read progress",1.0f,watch.getProgress());
+            assertNotNull("response is null",response);
+            assertEquals("response success",Status.SUCCESS,response.getStatus());
+            assertTrue("response has no errors",response.getExceptions().isEmpty());
+            watch=new TestProgress();
+            final Collection<? extends Coverage> results=response.getResults(watch);
+            assertEquals("request results progress",1.0f,watch.getProgress());
+            for (            Coverage c : results) {
+              GridCoverage2D coverage=(GridCoverage2D)c;
+              if (TestData.isInteractiveTest()) {
+                buffer.append("CRS: ").append(coverage.getCoordinateReferenceSystem2D().toWKT()).append("\n");
+                buffer.append("GG: ").append(coverage.getGridGeometry().toString()).append("\n");
+              }
+              if (TestData.isInteractiveTest())               coverage.show();
+ else               coverage.getRenderedImage().getData();
+            }
+          }
+        }
+ else {
+          buffer.append("NOT ACCEPTED").append("\n");
+        }
+        if (TestData.isInteractiveTest()) {
+          LOGGER.info(buffer.toString());
+        }
+      }
+ catch (      AssertionFailedError failure) {
+        result.addFailure(this,failure);
+      }
+catch (      Exception error) {
+        result.addError(this,error);
+      }
+ finally {
+        result.endTest(this);
+      }
+    }
+  }
+;
+  return test;
+}

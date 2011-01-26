@@ -1,0 +1,70 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  encodeColumnName("srid",sql);
+  sql.append(" FROM ");
+  encodeTableName("geometry_columns",sql);
+  sql.append(" WHERE ");
+  encodeColumnName("f_table_schema",sql);
+  if (schemaName != null) {
+    sql.append(" = '").append(schemaName).append("'");
+  }
+ else {
+    sql.append(" IS NULL");
+  }
+  sql.append(" AND ");
+  encodeColumnName("f_table_name",sql);
+  sql.append(" = '").append(tableName).append("' AND ");
+  encodeColumnName("f_geometry_column",sql);
+  sql.append(" = '").append(columnName).append("'");
+  dataStore.getLogger().fine(sql.toString());
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery(sql.toString());
+    try {
+      if (rs.next()) {
+        return new Integer(rs.getInt(1));
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+ catch (  SQLException e) {
+  }
+ finally {
+    dataStore.closeSafe(st);
+  }
+  sql=new StringBuffer();
+  sql.append("SELECT srid(");
+  encodeColumnName(columnName,sql);
+  sql.append(") ");
+  sql.append("FROM ");
+  if (schemaName != null) {
+    encodeTableName(schemaName,sql);
+    sql.append(".");
+  }
+  encodeSchemaName(tableName,sql);
+  sql.append(" WHERE ");
+  encodeColumnName(columnName,sql);
+  sql.append(" is not null LIMIT 1");
+  dataStore.getLogger().fine(sql.toString());
+  st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery(sql.toString());
+    try {
+      if (rs.next()) {
+        return new Integer(rs.getInt(1));
+      }
+ else {
+        return null;
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

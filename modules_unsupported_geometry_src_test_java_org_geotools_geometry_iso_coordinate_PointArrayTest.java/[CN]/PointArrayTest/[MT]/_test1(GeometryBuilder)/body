@@ -1,0 +1,50 @@
+{
+  GeometryFactoryImpl tCoordFactory=(GeometryFactoryImpl)builder.getGeometryFactory();
+  PositionImpl p1=new PositionImpl(tCoordFactory.createDirectPosition(new double[]{-50,0}));
+  PositionImpl p2=new PositionImpl(tCoordFactory.createDirectPosition(new double[]{-30,30}));
+  PositionImpl p3=new PositionImpl(tCoordFactory.createDirectPosition(new double[]{0,50}));
+  PositionImpl p4=new PositionImpl(tCoordFactory.createDirectPosition(new double[]{30,30}));
+  PositionImpl p5=new PositionImpl(tCoordFactory.createDirectPosition(new double[]{50,0}));
+  List<Position> posList=new ArrayList<Position>();
+  PointArray pa=null;
+  try {
+    pa=tCoordFactory.createPointArray(posList);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertTrue(pa == null);
+  posList.add(p1);
+  posList.add(p2);
+  posList.add(p3);
+  posList.add(p4);
+  posList.add(p5);
+  pa=tCoordFactory.createPointArray(posList);
+  assertTrue(pa.size() == 5);
+  assertTrue(pa.size() == 5);
+  DirectPosition directPosition=pa.getDirectPosition(0,null);
+  assertTrue(directPosition.getOrdinate(0) == -50);
+  assertTrue(directPosition.getOrdinate(1) == 0);
+  DirectPosition directPositionAt4=pa.getDirectPosition(4,directPosition);
+  assertTrue(directPosition.getOrdinate(0) == 50);
+  assertTrue(directPosition.getOrdinate(1) == 0);
+  assertTrue(directPositionAt4 == directPosition);
+  DirectPosition directPositionAddition=tCoordFactory.createDirectPosition(new double[]{5,5});
+  pa.setDirectPosition(4,directPositionAddition);
+  DirectPosition directPositionAt4mk2=pa.getDirectPosition(4,directPosition);
+  assertEquals("Same values as we put into 4",directPositionAt4mk2,directPositionAddition);
+  assertNotSame("Not the same object we put into 4",directPositionAt4mk2,directPositionAddition);
+  assertEquals(directPositionAt4mk2,directPositionAddition);
+  assertEquals(5.0,directPosition.getOrdinate(0));
+  assertEquals(5.0,directPosition.getOrdinate(1));
+  directPositionAddition.setOrdinate(0,2);
+  DirectPosition directPositionAt4mk3=pa.getDirectPosition(4,directPosition);
+  assertEquals("check if position is independent",5.0,directPositionAt4mk3.getOrdinate(0));
+  double[] coord=((PointArrayImpl)pa).getCoordinate(0);
+  assertTrue(!((PointArrayImpl)pa).isEmpty());
+  ((PointArrayImpl)pa).removePosition(((PointArrayImpl)pa).get(3));
+  ((PointArrayImpl)pa).remove(0);
+  ((PointArrayImpl)pa).remove(0);
+  ((PointArrayImpl)pa).remove(0);
+  ((PointArrayImpl)pa).remove(0);
+  assertTrue(((PointArrayImpl)pa).isEmpty());
+}

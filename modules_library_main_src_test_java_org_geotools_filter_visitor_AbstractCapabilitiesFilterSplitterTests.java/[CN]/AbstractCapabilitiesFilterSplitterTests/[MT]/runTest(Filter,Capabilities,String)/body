@@ -1,0 +1,21 @@
+{
+  CapabilitiesFilterSplitter visitor=newVisitor(new Capabilities());
+  if (accessor != null)   accessor.setUpdate("",null);
+  filter.accept(visitor,null);
+  assertEquals(filter,visitor.getFilterPost());
+  assertEquals(Filter.INCLUDE,visitor.getFilterPre());
+  visitor=newVisitor(supportedCaps);
+  filter.accept(visitor,null);
+  assertEquals(Filter.INCLUDE,visitor.getFilterPost());
+  assertEquals(filter,visitor.getFilterPre());
+  if (attToEdit != null && accessor != null) {
+    Set<FeatureId> idSet=new HashSet<FeatureId>();
+    idSet.add(ff.featureId("fid"));
+    Id updateFilter=ff.id(idSet);
+    accessor.setUpdate(attToEdit,updateFilter);
+    visitor=newVisitor(supportedCaps);
+    filter.accept(visitor,null);
+    assertEquals(filter,visitor.getFilterPost());
+    assertEquals(ff.or(filter,updateFilter),visitor.getFilterPre());
+  }
+}

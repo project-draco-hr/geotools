@@ -1,0 +1,106 @@
+{
+  final ParameterValueGroup readParams=this.rasterManager.parent.getFormat().getReadParameters();
+  if (readParams == null) {
+    if (LOGGER.isLoggable(Level.FINER))     LOGGER.finer("No default values for the read parameters!");
+    return;
+  }
+  final List<GeneralParameterDescriptor> parametersDescriptors=readParams.getDescriptor().descriptors();
+  for (  GeneralParameterDescriptor descriptor : parametersDescriptors) {
+    if (!(descriptor instanceof ParameterDescriptor))     continue;
+    final ParameterDescriptor desc=(ParameterDescriptor)descriptor;
+    final ReferenceIdentifier name=desc.getName();
+    final Object value=desc.getDefaultValue();
+    if (descriptor.getName().equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
+      if (value == null)       continue;
+      final GridGeometry2D gg=(GridGeometry2D)value;
+      requestedBBox=new ReferencedEnvelope((Envelope)gg.getEnvelope2D());
+      requestedRasterArea=gg.getGridRange2D().getBounds();
+      requestedGridToWorld=(AffineTransform)gg.getGridToCRS2D();
+      continue;
+    }
+    if (name.equals(AbstractGridFormat.USE_JAI_IMAGEREAD.getName())) {
+      if (value == null)       continue;
+      readType=((Boolean)value) ? ReadType.JAI_IMAGEREAD : ReadType.DIRECT_READ;
+      continue;
+    }
+    if (name.equals(AbstractGridFormat.OVERVIEW_POLICY.getName())) {
+      if (value == null)       continue;
+      overviewPolicy=(OverviewPolicy)value;
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.DECIMATION_POLICY.getName())) {
+      if (value == null)       continue;
+      decimationPolicy=(DecimationPolicy)value;
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.INTERPOLATION.getName())) {
+      if (value == null) {
+        continue;
+      }
+      interpolation=(Interpolation)value;
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.INPUT_TRANSPARENT_COLOR.getName())) {
+      if (value == null)       continue;
+      inputTransparentColor=(Color)value;
+      inputTransparentColor=new Color(inputTransparentColor.getRed(),inputTransparentColor.getGreen(),inputTransparentColor.getBlue());
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.FADING.getName())) {
+      if (value == null)       continue;
+      blend=((Boolean)value).booleanValue();
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.OUTPUT_TRANSPARENT_COLOR.getName())) {
+      if (value == null)       continue;
+      outputTransparentColor=(Color)value;
+      outputTransparentColor=new Color(outputTransparentColor.getRed(),outputTransparentColor.getGreen(),outputTransparentColor.getBlue());
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.BACKGROUND_VALUES.getName())) {
+      if (value == null)       continue;
+      backgroundValues=(double[])value;
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.MAX_ALLOWED_TILES.getName())) {
+      if (value == null)       continue;
+      maximumNumberOfGranules=(Integer)value;
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.ALLOW_MULTITHREADING.getName())) {
+      if (value == null)       continue;
+      multithreadingAllowed=((Boolean)value).booleanValue();
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.HANDLE_FOOTPRINT.getName())) {
+      if (value == null)       continue;
+      footprintManagement=((Boolean)value).booleanValue();
+      continue;
+    }
+    if (name.equals(ImageMosaicFormat.SET_ROI_PROPERTY.getName())) {
+      if (value == null)       continue;
+      setRoiProperty=((Boolean)value).booleanValue();
+      return;
+    }
+    if (name.equals(ImageMosaicFormat.SUGGESTED_TILE_SIZE.getName())) {
+      final String suggestedTileSize=(String)value;
+      if ((suggestedTileSize != null) && (suggestedTileSize.trim().length() > 0)) {
+        if (suggestedTileSize.contains(ImageMosaicFormat.TILE_SIZE_SEPARATOR)) {
+          final String[] tilesSize=suggestedTileSize.split(ImageMosaicFormat.TILE_SIZE_SEPARATOR);
+          if (tilesSize.length == 2) {
+            try {
+              final int tileWidth=Integer.valueOf(tilesSize[0].trim());
+              final int tileHeight=Integer.valueOf(tilesSize[1].trim());
+              tileDimensions=new Dimension(tileWidth,tileHeight);
+            }
+ catch (            NumberFormatException nfe) {
+              if (LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.log(Level.WARNING,"Unable to parse " + "suggested tile size parameter");
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

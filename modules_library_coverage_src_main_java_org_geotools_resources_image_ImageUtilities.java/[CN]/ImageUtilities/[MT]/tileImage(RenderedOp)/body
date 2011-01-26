@@ -1,0 +1,27 @@
+{
+  final int width=image.getWidth();
+  final int height=image.getHeight();
+  final int tileHeight=image.getTileHeight();
+  final int tileWidth=image.getTileWidth();
+  boolean needToTile=false;
+  final Object o=image.getProperty(ImageReadDescriptor.PROPERTY_NAME_IMAGE_READER);
+  if (o instanceof ImageReader) {
+    final ImageReader reader=(ImageReader)o;
+    if (!reader.isImageTiled(0)) {
+      needToTile=true;
+    }
+  }
+  if (!needToTile && tileWidth == width && tileHeight <= height) {
+    needToTile=true;
+  }
+  if (needToTile) {
+    final ImageLayout layout=getImageLayout(image);
+    layout.unsetValid(ImageLayout.COLOR_MODEL_MASK | ImageLayout.SAMPLE_MODEL_MASK);
+    final RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    final ParameterBlockJAI pbjFormat=new ParameterBlockJAI("Format");
+    pbjFormat.addSource(image);
+    pbjFormat.setParameter("dataType",image.getSampleModel().getDataType());
+    return JAI.create("Format",pbjFormat,hints);
+  }
+  return image;
+}

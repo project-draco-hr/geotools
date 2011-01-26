@@ -1,0 +1,61 @@
+{
+  assertTrue(GridNode.class.desiredAssertionStatus());
+  assertNotNull(root.getUserObject());
+  assertEquals(root,root);
+  assertTrue(root.containsAll(manager.getTiles()));
+  assertFalse(root.containsAll(Arrays.asList(sourceTiles)));
+  assertTrue(((GridNode)root).isDense(root));
+  final Rectangle bounds=new Rectangle(SOURCE_SIZE * 4,SOURCE_SIZE * 2);
+  final Rectangle roi=new Rectangle();
+  final Random random=new Random(4353223575290515986L);
+  for (int i=0; i < 100; i++) {
+    roi.x=random.nextInt(bounds.width);
+    roi.y=random.nextInt(bounds.height);
+    roi.width=random.nextInt(bounds.width / 4);
+    roi.height=random.nextInt(bounds.height / 4);
+    final Set<Tile> intersect1=toSet(root.intersecting(roi));
+    final Set<Tile> intersect2=intersecting(targetTiles,roi);
+    final Set<Tile> contained1=toSet(root.containedIn(roi));
+    final Set<Tile> contained2=containedIn(targetTiles,roi);
+    assertEquals(intersect2,intersect1);
+    assertEquals(contained2,contained1);
+    assertFalse(intersect1.isEmpty());
+    assertTrue(intersect1.containsAll(contained1));
+    assertFalse(contained1.containsAll(intersect1));
+    if (false) {
+      System.out.print(roi);
+      System.out.print(" intersect=");
+      System.out.print(intersect1.size());
+      System.out.print(" contained=");
+      System.out.println(contained1.size());
+    }
+  }
+  final GridNode tree2=new GridNode(targetTiles);
+  assertEquals(root,tree2);
+  assertEquals(root,tree2);
+  for (int i=0; i < targetTiles.length; i+=10) {
+    assertTrue(tree2.remove(targetTiles[i]));
+  }
+  assertFalse(root.deepEquals(tree2));
+  for (int i=0; i < 20; i++) {
+    roi.x=random.nextInt(bounds.width);
+    roi.y=random.nextInt(bounds.height);
+    roi.width=random.nextInt(bounds.width / 4);
+    roi.height=random.nextInt(bounds.height / 4);
+    final Set<Tile> intersect1=toSet(tree2.intersecting(roi));
+    final Set<Tile> intersect2=intersecting(targetTiles,roi);
+    final Set<Tile> contained1=toSet(tree2.containedIn(roi));
+    final Set<Tile> contained2=containedIn(targetTiles,roi);
+    boolean removedSome=false;
+    for (int j=0; j < targetTiles.length; j+=10) {
+      final Tile tile=targetTiles[j];
+      removedSome|=intersect2.remove(tile);
+      removedSome|=contained2.remove(tile);
+    }
+    assertTrue(removedSome);
+    assertEquals(intersect2,intersect1);
+    assertEquals(contained2,contained1);
+    assertTrue(intersect1.containsAll(contained1));
+    assertFalse(contained1.containsAll(intersect1));
+  }
+}

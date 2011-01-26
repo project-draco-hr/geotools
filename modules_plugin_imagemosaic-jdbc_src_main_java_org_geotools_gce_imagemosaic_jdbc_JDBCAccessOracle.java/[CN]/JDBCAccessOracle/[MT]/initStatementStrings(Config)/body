@@ -1,0 +1,11 @@
+{
+  String geomAttr=config.getGeomAttributeNameInSpatialTable();
+  extentSelect="select min(sdo_geom.sdo_min_mbr_ordinate(" + geomAttr + ",1)),"+ "min(sdo_geom.sdo_min_mbr_ordinate("+ geomAttr+ ",2)),"+ "max(sdo_geom.sdo_max_mbr_ordinate("+ geomAttr+ ",1)),"+ "max(sdo_geom.sdo_max_mbr_ordinate("+ geomAttr+ ",2)) from {0}";
+  String spatialSelectClause="select s." + config.getKeyAttributeNameInSpatialTable() + ","+ "sdo_geom.sdo_min_mbr_ordinate(s."+ geomAttr+ ",1),"+ "sdo_geom.sdo_min_mbr_ordinate(s."+ geomAttr+ ",2),"+ "sdo_geom.sdo_max_mbr_ordinate(s."+ geomAttr+ ",1),"+ "sdo_geom.sdo_max_mbr_ordinate(s."+ geomAttr+ ",2)";
+  allSelect=spatialSelectClause + ",s." + config.getBlobAttributeNameInTileTable()+ " from {0} s";
+  allSelectJoined=spatialSelectClause + ",t." + config.getBlobAttributeNameInTileTable()+ " from {0} s, {1} t  WHERE ";
+  allSelectJoined+=(" s." + config.getKeyAttributeNameInSpatialTable() + " = t."+ config.getKeyAttributeNameInTileTable());
+  String whereClause=" SDO_FILTER(s." + geomAttr + ","+ "SDO_GEOMETRY(2003, ?, NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(?,?, ?,?))"+ ") = 'TRUE'";
+  gridSelect=allSelect + " WHERE " + whereClause;
+  gridSelectJoined=allSelectJoined + " AND " + whereClause;
+}

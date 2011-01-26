@@ -1,0 +1,28 @@
+{
+  SimpleFeatureSource lineSource1=(SimpleFeatureSource)layers.get(getLineTypeRef());
+  SimpleFeatureSource lineSource2=(SimpleFeatureSource)layers.get(getRestrictedLineTypeRef());
+  Object[] lines1=lineSource1.getFeatures().toArray();
+  Object[] lines2=lineSource2.getFeatures().toArray();
+  if (!envelope.contains(lineSource1.getBounds())) {
+    results.error((SimpleFeature)lines1[0],"Point Feature Source is not contained within the Envelope provided.");
+    return false;
+  }
+  if (!envelope.contains(lineSource2.getBounds())) {
+    results.error((SimpleFeature)lines2[0],"Line Feature Source is not contained within the Envelope provided.");
+    return false;
+  }
+  boolean r=true;
+  for (int i=0; i < lines2.length; i++) {
+    SimpleFeature tmp=(SimpleFeature)lines2[i];
+    Geometry gt=(Geometry)tmp.getDefaultGeometry();
+    for (int j=0; j < lines1.length; j++) {
+      SimpleFeature tmp2=(SimpleFeature)lines1[j];
+      Geometry gt2=(Geometry)tmp2.getDefaultGeometry();
+      if (gt.overlaps(gt2)) {
+        results.error(tmp,"Overlaps with another line specified. Id=" + tmp2.getID());
+        r=false;
+      }
+    }
+  }
+  return r;
+}

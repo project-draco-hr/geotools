@@ -1,0 +1,130 @@
+{
+  Iterator triangleIterator=tList.iterator();
+  Triangle contains=null;
+  Triangle borderA=null;
+  Triangle borderB=null;
+  boolean notDone=true;
+  while ((triangleIterator.hasNext()) && (notDone)) {
+    Triangle next=(Triangle)triangleIterator.next();
+    int relation=next.relate(newNode);
+switch (relation) {
+case Triangle.INSIDE:
+      contains=next;
+    notDone=false;
+  break;
+case Triangle.ON_EDGE:
+borderA=next;
+borderB=((DelaunayEdge)next.getBoundaryEdge(newNode)).getOtherFace(next);
+break;
+case Triangle.OUTSIDE:
+notDone=true;
+break;
+default :
+throw new RuntimeException("So the point isn't inside, outside, or on the edge of this triangle?!");
+}
+}
+if (contains != null) {
+Node[] triangleNodes=contains.getNodes();
+Edge[] triangleEdges=contains.getEdges();
+DelaunayEdge newEdgeP_0=new DelaunayEdge(newNode,(DelaunayNode)triangleNodes[0]);
+DelaunayEdge newEdgeP_1=new DelaunayEdge(newNode,(DelaunayNode)triangleNodes[1]);
+DelaunayEdge newEdgeP_2=new DelaunayEdge(newNode,(DelaunayNode)triangleNodes[2]);
+DelaunayEdge oldEdge0_1=null;
+DelaunayEdge oldEdge0_2=null;
+DelaunayEdge oldEdge1_2=null;
+for (int i=0; i < 3; i++) {
+if (((DelaunayEdge)triangleEdges[i]).hasEndPoint((DelaunayNode)triangleNodes[0])) {
+if (((DelaunayEdge)triangleEdges[i]).hasEndPoint((DelaunayNode)triangleNodes[1])) {
+oldEdge0_1=(DelaunayEdge)triangleEdges[i];
+}
+ else {
+oldEdge0_2=(DelaunayEdge)triangleEdges[i];
+}
+}
+ else {
+oldEdge1_2=(DelaunayEdge)triangleEdges[i];
+}
+}
+Triangle newTriangleP_0_1=new Triangle(newEdgeP_0,newEdgeP_1,oldEdge0_1);
+Triangle newTriangleP_0_2=new Triangle(newEdgeP_0,newEdgeP_2,oldEdge0_2);
+Triangle newTriangleP_1_2=new Triangle(newEdgeP_1,newEdgeP_2,oldEdge1_2);
+Triangle farSide0_1=oldEdge0_1.getOtherFace(contains);
+Triangle farSide0_2=oldEdge0_2.getOtherFace(contains);
+Triangle farSide1_2=oldEdge1_2.getOtherFace(contains);
+oldEdge0_1.setOtherFace(newTriangleP_0_1,farSide0_1);
+oldEdge0_2.setOtherFace(newTriangleP_0_2,farSide0_2);
+oldEdge1_2.setOtherFace(newTriangleP_1_2,farSide1_2);
+newEdgeP_0.setFaceA(newTriangleP_0_1);
+newEdgeP_0.setFaceB(newTriangleP_0_2);
+newEdgeP_1.setFaceA(newTriangleP_0_1);
+newEdgeP_1.setFaceB(newTriangleP_1_2);
+newEdgeP_2.setFaceA(newTriangleP_0_2);
+newEdgeP_2.setFaceB(newTriangleP_1_2);
+tList.remove(contains);
+tList.add(newTriangleP_0_1);
+tList.add(newTriangleP_0_2);
+tList.add(newTriangleP_1_2);
+LOGGER.finer("was inside " + contains);
+LOGGER.finer("triangle List now is " + tList);
+legalizeEdge(newTriangleP_0_1,oldEdge0_1,newNode,tList);
+legalizeEdge(newTriangleP_0_2,oldEdge0_2,newNode,tList);
+legalizeEdge(newTriangleP_1_2,oldEdge1_2,newNode,tList);
+LOGGER.finer("after legalization, triangle list now is: " + triangleList);
+}
+ else if ((borderA != null) && (borderB != null)) {
+DelaunayEdge shared=(DelaunayEdge)borderA.getSharedEdge(borderB);
+if (shared == null) {
+throw new RuntimeException("The two bordering triangles for a border case apparently don't share an edge(!)");
+}
+DelaunayNode shared1=(DelaunayNode)shared.getNodeA();
+DelaunayNode shared2=(DelaunayNode)shared.getNodeB();
+DelaunayNode onlyInA=(DelaunayNode)borderA.getThirdNode(shared);
+DelaunayNode onlyInB=(DelaunayNode)borderB.getThirdNode(shared);
+DelaunayEdge newEdgeP_1=new DelaunayEdge(newNode,shared1);
+DelaunayEdge newEdgeP_2=new DelaunayEdge(newNode,shared2);
+DelaunayEdge newEdgeP_A=new DelaunayEdge(newNode,onlyInA);
+DelaunayEdge newEdgeP_B=new DelaunayEdge(newNode,onlyInB);
+DelaunayEdge oldEdgeA_1=(DelaunayEdge)borderA.getOppositeEdge(shared2);
+DelaunayEdge oldEdgeA_2=(DelaunayEdge)borderA.getOppositeEdge(shared1);
+DelaunayEdge oldEdgeB_1=(DelaunayEdge)borderB.getOppositeEdge(shared2);
+DelaunayEdge oldEdgeB_2=(DelaunayEdge)borderB.getOppositeEdge(shared1);
+Triangle farSideA_1=oldEdgeA_1.getOtherFace(borderA);
+Triangle farSideA_2=oldEdgeA_2.getOtherFace(borderA);
+Triangle farSideB_1=oldEdgeB_1.getOtherFace(borderB);
+Triangle farSideB_2=oldEdgeB_2.getOtherFace(borderB);
+Triangle newTriangleP_A_1=new Triangle(newEdgeP_A,newEdgeP_1,oldEdgeA_1);
+Triangle newTriangleP_A_2=new Triangle(newEdgeP_A,newEdgeP_2,oldEdgeA_2);
+Triangle newTriangleP_B_1=new Triangle(newEdgeP_B,newEdgeP_1,oldEdgeB_1);
+Triangle newTriangleP_B_2=new Triangle(newEdgeP_B,newEdgeP_2,oldEdgeB_2);
+newEdgeP_A.setFaceA(newTriangleP_A_1);
+newEdgeP_A.setFaceB(newTriangleP_A_2);
+newEdgeP_B.setFaceA(newTriangleP_B_1);
+newEdgeP_B.setFaceB(newTriangleP_B_2);
+newEdgeP_1.setFaceA(newTriangleP_A_1);
+newEdgeP_1.setFaceB(newTriangleP_B_1);
+newEdgeP_2.setFaceA(newTriangleP_A_2);
+newEdgeP_2.setFaceB(newTriangleP_B_2);
+oldEdgeA_1.setOtherFace(newTriangleP_A_1,farSideA_1);
+oldEdgeA_2.setOtherFace(newTriangleP_A_2,farSideA_2);
+oldEdgeB_1.setOtherFace(newTriangleP_B_1,farSideB_1);
+oldEdgeB_2.setOtherFace(newTriangleP_B_2,farSideB_2);
+shared.disconnect();
+tList.remove(borderA);
+tList.remove(borderB);
+tList.add(newTriangleP_A_1);
+tList.add(newTriangleP_A_2);
+tList.add(newTriangleP_B_1);
+tList.add(newTriangleP_B_2);
+LOGGER.finer("bordered " + borderA + " and "+ borderB);
+LOGGER.finer("triangle list now is " + tList);
+legalizeEdge(newTriangleP_A_1,oldEdgeA_1,newNode,tList);
+legalizeEdge(newTriangleP_A_2,oldEdgeA_2,newNode,tList);
+legalizeEdge(newTriangleP_B_1,oldEdgeB_1,newNode,tList);
+legalizeEdge(newTriangleP_B_2,oldEdgeB_2,newNode,tList);
+LOGGER.finer("after legalization, triangle list now is: " + triangleList);
+}
+ else {
+throw new RuntimeException("What the?  It isn't in any triangle or on any borders?");
+}
+return tList;
+}

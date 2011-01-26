@@ -1,0 +1,22 @@
+{
+  Properties conProps=new Properties();
+  String propsFile="testparams.properties";
+  URL conParamsSource=org.geotools.test.TestData.url(null,propsFile);
+  LOGGER.fine("loading connection parameters from " + conParamsSource.toExternalForm());
+  InputStream in=conParamsSource.openStream();
+  if (in == null) {
+    throw new IllegalStateException("cannot find test params: " + conParamsSource.toExternalForm());
+  }
+  conProps.load(in);
+  in.close();
+  connectionParameters=new HashMap<String,Serializable>();
+  for (  Entry<Object,Object> e : conProps.entrySet()) {
+    connectionParameters.put((String)e.getKey(),(String)e.getValue());
+  }
+  try {
+    connectionConfig=ArcSDEConnectionConfig.fromMap(connectionParameters);
+  }
+ catch (  Exception ex) {
+    throw new IllegalStateException("No valid connection parameters found in " + conParamsSource.toExternalForm() + ": "+ ex.getMessage());
+  }
+}

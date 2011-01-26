@@ -1,0 +1,43 @@
+{
+  final String typeName=query.getTypeName();
+  final FeatureTypeInfo typeInfo=typeInfoCache.getFeatureTypeInfo(typeName,session);
+  final SimpleFeatureType completeSchema=typeInfo.getFeatureType();
+  final ArcSDEQuery sdeQuery;
+  final Filter queryFilter=query.getFilter();
+  if (queryFilter == Filter.EXCLUDE || queryFilter.equals(Filter.EXCLUDE)) {
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(targetSchema);
+  }
+  if (typeInfo.isInProcessView()) {
+    SeQueryInfo definitionQuery=typeInfo.getSdeDefinitionQuery();
+    PlainSelect viewSelectStatement=typeInfo.getDefinitionQuery();
+    sdeQuery=ArcSDEQuery.createInprocessViewQuery(session,completeSchema,query,definitionQuery,viewSelectStatement);
+  }
+ else {
+    final FIDReader fidStrategy=typeInfo.getFidStrategy();
+    sdeQuery=ArcSDEQuery.createQuery(session,completeSchema,query,fidStrategy,versionHandler);
+  }
+  final GeometryFactory geometryFactory=getGeometryFactory(query.getHints());
+  final ArcSDEAttributeReader attReader;
+  attReader=new ArcSDEAttributeReader(sdeQuery,geometryFactory,session);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  final Filter unsupportedFilter=sdeQuery.getFilters().getUnsupportedFilter();
+  try {
+    final ArcSDEFeatureReader sdeReader;
+    sdeReader=new ArcSDEFeatureReader(attReader);
+    reader=sdeReader;
+  }
+ catch (  SchemaException e) {
+    throw new RuntimeException("Schema missmatch, should never happen!: " + e.getMessage(),e);
+  }
+  if (!unsupportedFilter.equals(Filter.INCLUDE)) {
+    reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,unsupportedFilter);
+  }
+  if (!targetSchema.equals(reader.getFeatureType())) {
+    LOGGER.fine("Recasting feature type to subtype by using a ReTypeFeatureReader");
+    reader=new ReTypeFeatureReader(reader,targetSchema,false);
+  }
+  if (query.getMaxFeatures() != Query.DEFAULT_MAX) {
+    reader=new MaxFeatureReader<SimpleFeatureType,SimpleFeature>(reader,query.getMaxFeatures());
+  }
+  return reader;
+}

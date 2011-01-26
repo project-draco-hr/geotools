@@ -1,0 +1,43 @@
+{
+  StringBuffer buf=new StringBuffer("");
+  for (int i=0; i < attributeType.length; i++) {
+    String typeName=null;
+    typeName=(String)CLASS_MAPPINGS.get(attributeType[i].getType().getBinding());
+    if (typeName == null)     typeName=(String)GEOM_CLASS_MAPPINGS.get(attributeType[i].getType().getBinding());
+    if (typeName != null) {
+      if (attributeType[i] instanceof GeometryDescriptor) {
+        typeName="GEOMETRY";
+      }
+ else       if (typeName.equals("VARCHAR")) {
+        int length=FeatureTypes.getFieldLength(attributeType[i]);
+        if (length < 1) {
+          LOGGER.warning("FeatureType did not specify string length; defaulted to 256");
+          length=256;
+        }
+ else         if (length > MAX_ALLOWED_VALUE) {
+          length=MAX_ALLOWED_VALUE;
+        }
+        typeName=typeName + "(" + length+ ")";
+      }
+      if (!attributeType[i].isNillable()) {
+        typeName=typeName + " NOT NULL";
+      }
+      Object defaultValue=attributeType[i].getDefaultValue();
+      if (defaultValue != null) {
+        typeName=typeName + " DEFAULT '" + defaultValue.toString()+ "'";
+      }
+      buf.append(" \"" + attributeType[i].getLocalName() + "\" "+ typeName+ ",");
+    }
+ else {
+      String msg;
+      if (attributeType[i] == null) {
+        msg="AttributeDescriptor was null!";
+      }
+ else {
+        msg="Type '" + attributeType[i].getType().getBinding() + "' not supported!";
+      }
+      throw (new IOException(msg));
+    }
+  }
+  return buf.deleteCharAt(buf.length() - 1);
+}

@@ -1,0 +1,62 @@
+{
+  try {
+    int classNum=getClasses();
+    UniqueVisitor uniqueVisit=new UniqueVisitor(getExpression());
+    if (progress == null)     progress=new NullProgressListener();
+    featureCollection.accepts(uniqueVisit,progress);
+    if (progress.isCanceled())     return null;
+    CalcResult calcResult=uniqueVisit.getResult();
+    if (calcResult == null)     return null;
+    List result=calcResult.toList();
+    Collections.sort(result,new Comparator(){
+      public int compare(      Object o1,      Object o2){
+        if (o1 == null) {
+          if (o2 == null) {
+            return 0;
+          }
+          return -1;
+        }
+ else         if (o2 == null) {
+          return 1;
+        }
+        if (o1 instanceof String && o2 instanceof String) {
+          return ((String)o1).compareTo((String)o2);
+        }
+        return 0;
+      }
+    }
+);
+    Object[] results=result.toArray();
+    Set[] values;
+    if (classNum < results.length) {
+      values=new Set[classNum];
+      int binPop=new Double(Math.ceil((double)results.length / classNum)).intValue();
+      int lastBigBin=results.length % classNum;
+      if (lastBigBin == 0)       lastBigBin=classNum;
+ else       lastBigBin--;
+      int itemIndex=0;
+      for (int binIndex=0; binIndex < classNum; binIndex++) {
+        HashSet val=new HashSet();
+        for (int binItem=0; binItem < binPop; binItem++)         val.add(results[itemIndex++]);
+        if (lastBigBin == binIndex)         binPop--;
+        values[binIndex]=val;
+      }
+    }
+ else {
+      if (classNum > results.length) {
+        classNum=results.length;
+      }
+      values=new Set[classNum];
+      for (int i=0; i < classNum; i++) {
+        HashSet val=new HashSet();
+        val.add(results[i]);
+        values[i]=val;
+      }
+    }
+    return new ExplicitClassifier(values);
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,"UniqueIntervalFunction calculate failed",e);
+    return null;
+  }
+}

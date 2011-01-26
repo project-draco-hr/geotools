@@ -1,0 +1,33 @@
+{
+  double u, v;
+  if (abs(abs(y) - PI / 2.0) > EPSILON) {
+    double Q=E / pow(tsfn(y,sin(y)),B);
+    double temp=1.0 / Q;
+    double S=0.5 * (Q - temp);
+    double V=sin(B * x);
+    double U=(S * singamma0 - V * cosgamma0) / (0.5 * (Q + temp));
+    if (abs(abs(U) - 1.0) < EPSILON) {
+      throw new ProjectionException(ErrorKeys.INFINITE_VALUE_$1,"v");
+    }
+    v=0.5 * ArB * log((1.0 - U) / (1.0 + U));
+    temp=cos(B * x);
+    if (abs(temp) < EPSILON_LATITUDE) {
+      u=AB * x;
+    }
+ else {
+      u=ArB * atan2((S * cosgamma0 + V * singamma0),temp);
+    }
+  }
+ else {
+    v=y > 0 ? v_pole_n : v_pole_s;
+    u=ArB * y;
+  }
+  u-=u_c;
+  x=v * cosrot + u * sinrot;
+  y=u * cosrot - v * sinrot;
+  if (ptDst != null) {
+    ptDst.setLocation(x,y);
+    return ptDst;
+  }
+  return new Point2D.Double(x,y);
+}

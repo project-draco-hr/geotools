@@ -1,0 +1,44 @@
+{
+  Matrix geographicScale=null;
+  Matrix projectedScale=null;
+  projection=crs.getConversionFromBase();
+  MathTransform candidate=projection.getMathTransform();
+  while (candidate instanceof ConcatenatedTransform) {
+    final ConcatenatedTransform ctr=(ConcatenatedTransform)candidate;
+    if (ctr.transform1 instanceof LinearTransform) {
+      if (geographicScale != null) {
+        throw new IllegalStateException(String.valueOf(candidate));
+      }
+      geographicScale=((LinearTransform)ctr.transform1).getMatrix();
+      candidate=ctr.transform2;
+      continue;
+    }
+    if (ctr.transform2 instanceof LinearTransform) {
+      if (projectedScale != null) {
+        throw new IllegalStateException(String.valueOf(candidate));
+      }
+      projectedScale=((LinearTransform)ctr.transform2).getMatrix();
+      candidate=ctr.transform1;
+      continue;
+    }
+    candidate=null;
+    break;
+  }
+  ParameterValueGroup group=null;
+  if (candidate instanceof AbstractMathTransform) {
+    group=((AbstractMathTransform)candidate).getParameterValues();
+  }
+  if (group == null) {
+    group=projection.getParameterValues();
+    if (projectedScale == null) {
+      final CoordinateSystem cs=crs.getCoordinateSystem();
+      projectedScale=AbstractCS.swapAndScaleAxis(AbstractCS.standard(cs),cs);
+    }
+  }
+  if (group != null) {
+    parameters=group.values();
+  }
+  this.geographicScale=geographicScale;
+  this.projectedScale=projectedScale;
+  this.transform=candidate;
+}

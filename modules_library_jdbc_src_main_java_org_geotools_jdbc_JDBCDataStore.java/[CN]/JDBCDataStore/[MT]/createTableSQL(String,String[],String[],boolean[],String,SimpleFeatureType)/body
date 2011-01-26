@@ -1,0 +1,40 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("CREATE TABLE ");
+  encodeTableName(tableName,sql,null);
+  sql.append(" ( ");
+  if (pkeyColumn != null) {
+    dialect.encodePrimaryKey(pkeyColumn,sql);
+    sql.append(", ");
+  }
+  for (int i=0; i < columnNames.length; i++) {
+    dialect.encodeColumnName(columnNames[i],sql);
+    sql.append(" ");
+    int length=-1;
+    if (sqlTypeNames[i].toUpperCase().startsWith("VARCHAR")) {
+      if (featureType != null) {
+        AttributeDescriptor att=featureType.getDescriptor(columnNames[i]);
+        length=findVarcharColumnLength(att);
+      }
+    }
+    if (length == -1) {
+      dialect.encodeColumnType(sqlTypeNames[i],sql);
+    }
+ else {
+      dialect.encodeColumnType(sqlTypeNames[i] + "(" + length+ ")",sql);
+    }
+    if (nillable != null && !nillable[i]) {
+      sql.append(" NOT NULL ");
+    }
+    if (featureType != null) {
+      AttributeDescriptor att=featureType.getDescriptor(columnNames[i]);
+      dialect.encodePostColumnCreateTable(att,sql);
+    }
+    if (i < (sqlTypeNames.length - 1)) {
+      sql.append(", ");
+    }
+  }
+  sql.append(" ) ");
+  dialect.encodePostCreateTable(tableName,sql);
+  return sql.toString();
+}

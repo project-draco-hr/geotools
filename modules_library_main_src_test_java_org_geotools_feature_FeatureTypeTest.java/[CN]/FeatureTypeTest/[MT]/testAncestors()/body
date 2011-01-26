@@ -1,0 +1,42 @@
+{
+  URI uri=new URI("http://www.geotools.org/example");
+  SimpleFeatureTypeBuilder tb;
+  tb=new SimpleFeatureTypeBuilder();
+  tb.setName("A");
+  tb.setNamespaceURI(uri);
+  final SimpleFeatureType typeA=tb.buildFeatureType();
+  tb=new SimpleFeatureTypeBuilder();
+  tb.setName("B");
+  tb.setNamespaceURI(uri);
+  tb.setSuperType(typeA);
+  tb.add("b",String.class);
+  final SimpleFeatureType typeB=tb.buildFeatureType();
+  tb=new SimpleFeatureTypeBuilder();
+  tb.setName("C");
+  tb.setNamespaceURI(uri);
+  tb.setSuperType(typeB);
+  tb.add("c",Integer.class);
+  final SimpleFeatureType typeC=tb.buildFeatureType();
+  assertEquals("Ancestors of Feature, nearest first",Collections.<FeatureType>emptyList(),FeatureTypes.getAncestors(BasicFeatureTypes.FEATURE));
+  assertEquals("Ancestors of A, nearest first",new ArrayList<FeatureType>(){
+{
+      add(BasicFeatureTypes.FEATURE);
+    }
+  }
+,FeatureTypes.getAncestors(typeA));
+  assertEquals("Ancestors of B, nearest first",new ArrayList<FeatureType>(){
+{
+      add(typeA);
+      add(BasicFeatureTypes.FEATURE);
+    }
+  }
+,FeatureTypes.getAncestors(typeB));
+  assertEquals("Ancestors of C, nearest first",new ArrayList<FeatureType>(){
+{
+      add(typeB);
+      add(typeA);
+      add(BasicFeatureTypes.FEATURE);
+    }
+  }
+,FeatureTypes.getAncestors(typeC));
+}

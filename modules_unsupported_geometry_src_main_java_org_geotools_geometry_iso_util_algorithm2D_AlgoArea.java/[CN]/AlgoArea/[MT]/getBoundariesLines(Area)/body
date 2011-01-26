@@ -1,0 +1,54 @@
+{
+  ArrayList<ArrayList<Line2D>> result=new ArrayList<ArrayList<Line2D>>();
+  PathIterator pi=area.getPathIterator(null);
+  double coords[]=new double[6];
+  while (!pi.isDone()) {
+    int type=pi.currentSegment(coords);
+    if (type == PathIterator.SEG_MOVETO) {
+      ArrayList<Line2D> lines=new ArrayList<Line2D>();
+      result.add(lines);
+      Point2D p0=new Point2D.Double(coords[0],coords[1]);
+      Point2D pStart=p0;
+      pi.next();
+      while (!pi.isDone()) {
+        type=pi.currentSegment(coords);
+        if (type == PathIterator.SEG_CLOSE) {
+          if (!AlgoPoint2D.equalsTol(p0,pStart)) {
+            lines.add(new Line2D.Double(p0,pStart));
+          }
+          pi.next();
+          break;
+        }
+ else         if (type == PathIterator.SEG_LINETO) {
+          Point2D p1=new Point2D.Double(coords[0],coords[1]);
+          lines.add(new Line2D.Double(p0,p1));
+          p0=p1;
+        }
+ else         if (type == PathIterator.SEG_QUADTO) {
+          Point2D p1=new Point2D.Double(coords[0],coords[1]);
+          lines.add(new Line2D.Double(p0,p1));
+          Point2D p2=new Point2D.Double(coords[2],coords[3]);
+          lines.add(new Line2D.Double(p1,p2));
+          p0=p2;
+        }
+ else         if (type == PathIterator.SEG_CUBICTO) {
+          Point2D p1=new Point2D.Double(coords[0],coords[1]);
+          lines.add(new Line2D.Double(p0,p1));
+          Point2D p2=new Point2D.Double(coords[2],coords[3]);
+          lines.add(new Line2D.Double(p1,p2));
+          Point2D p3=new Point2D.Double(coords[4],coords[5]);
+          lines.add(new Line2D.Double(p2,p3));
+          p0=p3;
+        }
+ else {
+          throw new IllegalArgumentException("Bad PathIterator");
+        }
+        pi.next();
+      }
+    }
+ else {
+      pi.next();
+    }
+  }
+  return result;
+}

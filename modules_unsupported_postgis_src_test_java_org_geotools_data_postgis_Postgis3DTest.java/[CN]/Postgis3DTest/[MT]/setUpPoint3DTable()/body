@@ -1,0 +1,28 @@
+{
+  Connection conn=pool.getConnection();
+  conn.setAutoCommit(true);
+  try {
+    Statement s=conn.createStatement();
+    s.execute("SELECT dropgeometrycolumn( '" + f.schema + "','point3d','geom')");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("DROP TABLE " + f.schema + ".point3d CASCADE");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("CREATE TABLE " + f.schema + ".point3d (id int primary key)");
+    s.execute("SELECT AddGeometryColumn('" + f.schema + "', 'point3d', 'geom', 4326, 'POINT', 3);");
+    s.execute("ALTER TABLE " + f.schema + ".point3d add name varchar;");
+    s.execute("INSERT INTO " + f.schema + ".point3d (id,geom,name) VALUES (0,"+ "GeometryFromText('POINT(1 1 1)', 4326), 'p1')");
+    s.execute("INSERT INTO " + f.schema + ".point3d (id,geom,name) VALUES (1,"+ "GeometryFromText('POINT(3 0 1)', 4326), 'p2')");
+    s.execute("VACUUM ANALYZE " + f.schema + ".point3d");
+  }
+  finally {
+    conn.close();
+  }
+}

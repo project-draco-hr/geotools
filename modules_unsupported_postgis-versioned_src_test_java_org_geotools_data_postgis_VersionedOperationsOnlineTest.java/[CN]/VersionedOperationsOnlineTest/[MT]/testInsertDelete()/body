@@ -1,0 +1,14 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  ds.setVersioned("tree",true,"gimbo","What do you want, I'm undecided...");
+  SimpleFeature tree=SimpleFeatureBuilder.build(treeType,new Object[]{gf.createPoint(new Coordinate(7,7)),"SmallPine"},"tree.tr2");
+  Transaction t=createTransaction("gimbo","double update");
+  SimpleFeatureStore store=(SimpleFeatureStore)ds.getFeatureSource("tree");
+  store.setTransaction(t);
+  List<FeatureId> ids=store.addFeatures(DataUtilities.collection(tree));
+  Filter filter=ff.id(new HashSet(ids));
+  store.removeFeatures(filter);
+  t.commit();
+  assertEquals(0,store.getFeatures(filter).size());
+  t.close();
+}

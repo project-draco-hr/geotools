@@ -1,0 +1,83 @@
+{
+  VPFFile secondFile=null;
+  VPFColumn column=null;
+  Map rows=generateFileRowMap(file,row);
+  List<AttributeDescriptor> attributes=featureType.getFeatureClass().getAttributeDescriptors();
+  Object[] values=new Object[featureType.getAttributeCount()];
+  Object value=null;
+  String featureId=null;
+  for (int inx=0; inx < attributes.size(); inx++) {
+    if (attributes.get(inx).getLocalName().equals("id")) {
+      value=row.getAttribute(inx);
+      if (value != null) {
+        featureId=value.toString();
+      }
+      break;
+    }
+  }
+  try {
+    currentFeature=SimpleFeatureBuilder.build(featureType,values,featureId);
+  }
+ catch (  IllegalAttributeException exc) {
+    exc.printStackTrace();
+  }
+  for (int inx=0; inx < attributes.size(); inx++) {
+    try {
+      if (attributes.get(inx).getLocalName().equals(AnnotationFeatureType.ANNOTATION_ATTRIBUTE_NAME)) {
+        try {
+          currentFeature.setAttribute(inx,"nam");
+        }
+ catch (        IllegalAttributeException exc) {
+          exc.printStackTrace();
+        }
+        continue;
+      }
+      column=(VPFColumn)attributes.get(inx);
+      value=null;
+      secondFile=getVPFFile(column);
+      SimpleFeature tempRow=(SimpleFeature)rows.get(secondFile);
+      if (tempRow != null) {
+        value=tempRow.getAttribute(column.getLocalName());
+        if (column.isAttemptLookup()) {
+          try {
+            String featureClassName=getVPFFile(column).getFileName();
+            String intVdtFileName=featureType.getFeatureClass().getDirectoryName().concat(File.separator).concat("int.vdt");
+            VPFFile intVdtFile=VPFFileFactory.getInstance().getFile(intVdtFileName);
+            Iterator intVdtIter=intVdtFile.readAllRows().iterator();
+            while (intVdtIter.hasNext()) {
+              SimpleFeature intVdtRow=(SimpleFeature)intVdtIter.next();
+              if (intVdtRow.getAttribute("table").toString().trim().equals(featureClassName) && (Short.parseShort(intVdtRow.getAttribute("value").toString()) == Short.parseShort(value.toString()) && (intVdtRow.getAttribute("attribute").toString().trim().equals(column.getLocalName())))) {
+                value=intVdtRow.getAttribute("description").toString().trim();
+                break;
+              }
+            }
+          }
+ catch (          IOException exc) {
+          }
+catch (          RuntimeException exc) {
+          }
+        }
+      }
+      try {
+        currentFeature.setAttribute(inx,value);
+      }
+ catch (      ArrayIndexOutOfBoundsException exc) {
+        exc.printStackTrace();
+      }
+catch (      IllegalAttributeException exc) {
+        exc.printStackTrace();
+      }
+    }
+ catch (    ClassCastException exc2) {
+      try {
+        featureType.getFeatureClass().getGeometryFactory().createGeometry(featureType,currentFeature);
+      }
+ catch (      IllegalAttributeException exc) {
+        exc.printStackTrace();
+      }
+catch (      SQLException exc) {
+        exc.printStackTrace();
+      }
+    }
+  }
+}

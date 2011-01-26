@@ -1,0 +1,18 @@
+{
+  FeatureTypeInfo typeInfo=getCachedTypeInfo(typeName);
+  if (typeInfo != null) {
+    return typeInfo;
+  }
+  cacheLock.writeLock().lock();
+  try {
+    typeInfo=featureTypeInfos.get(typeName);
+    if (typeInfo == null) {
+      typeInfo=ArcSDEAdapter.fetchSchema(typeName,this.namespace,session);
+      featureTypeInfos.put(typeName,typeInfo);
+    }
+  }
+  finally {
+    cacheLock.writeLock().unlock();
+  }
+  return typeInfo;
+}

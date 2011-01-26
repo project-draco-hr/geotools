@@ -1,0 +1,80 @@
+{
+  final WKTReader reader=new WKTReader();
+  final Polygon p1=(Polygon)reader.read("POLYGON((-10 -10, -10 10, 0 10, 0 -10, -10 -10))");
+  final Polygon p2=(Polygon)reader.read("POLYGON((0 -10, 0 10, 10 10, 10 -10, 0 -10))");
+  final Polygon modif1=(Polygon)reader.read("POLYGON ((-10 -10, -10 10, 5 10, -5 -10, -10 -10))");
+  final Polygon modif2=(Polygon)reader.read("POLYGON ((-5 -10, 5 10, 10 10, 10 -10, -5 -10))");
+  final String typeName=testData.getTempTableName();
+  final ArcSDEDataStore dataStore=testData.getDataStore();
+  final SimpleFeatureStore store;
+  store=(SimpleFeatureStore)dataStore.getFeatureSource(typeName);
+  final SimpleFeatureType schema=store.getSchema();
+  GeometryDescriptor defaultGeometry=schema.getGeometryDescriptor();
+  String fid1;
+  String fid2;
+{
+    FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriterAppend(typeName,Transaction.AUTO_COMMIT);
+    SimpleFeature feature;
+    try {
+      feature=writer.next();
+      feature.setAttribute("INT32_COL",Integer.valueOf(0));
+      feature.setAttribute(defaultGeometry.getName(),p1);
+      writer.write();
+      fid1=feature.getID();
+      feature=writer.next();
+      feature.setAttribute("INT32_COL",Integer.valueOf(0));
+      feature.setAttribute(defaultGeometry.getName(),p2);
+      writer.write();
+      fid2=feature.getID();
+    }
+  finally {
+      writer.close();
+    }
+  }
+  final Transaction transaction=new DefaultTransaction("testUpdateAdjacentPolygons");
+  store.setTransaction(transaction);
+  final FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Filter fid1Filter=ff.id(Collections.singleton(ff.featureId(fid1)));
+  Filter fid2Filter=ff.id(Collections.singleton(ff.featureId(fid2)));
+  try {
+    store.modifyFeatures(defaultGeometry.getName(),modif2,fid2Filter);
+    store.modifyFeatures(defaultGeometry.getName(),modif1,fid1Filter);
+    transaction.commit();
+  }
+ catch (  Exception e) {
+    transaction.rollback();
+    throw e;
+  }
+ finally {
+    transaction.close();
+  }
+  store.setTransaction(Transaction.AUTO_COMMIT);
+  try {
+    SimpleFeatureCollection features;
+    SimpleFeatureIterator iterator;
+    features=store.getFeatures(fid1Filter);
+    iterator=features.features();
+    final SimpleFeature feature1=iterator.next();
+    iterator.close();
+    features=store.getFeatures(fid2Filter);
+    iterator=features.features();
+    final SimpleFeature feature2=iterator.next();
+    iterator.close();
+    Geometry actual1=(Geometry)feature1.getAttribute(defaultGeometry.getLocalName());
+    Geometry actual2=(Geometry)feature2.getAttribute(defaultGeometry.getLocalName());
+    System.out.println(actual1);
+    System.out.println(modif1);
+    assertTrue(modif1.buffer(.01).contains(actual1));
+    assertTrue(modif2.buffer(.01).contains(actual2));
+  }
+  finally {
+    try {
+      store.removeFeatures(fid1Filter);
+      store.removeFeatures(fid2Filter);
+    }
+ catch (    Exception e) {
+      e.printStackTrace();
+      throw e;
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  GetCapabilitiesRequest request=spec.createGetCapabilitiesRequest(server);
+  Properties properties=new Properties();
+  StringTokenizer tokenizer=new StringTokenizer(request.getFinalURL().getQuery(),"&");
+  while (tokenizer.hasMoreTokens()) {
+    String token=tokenizer.nextToken();
+    String[] param=token.split("=");
+    properties.setProperty(param[0].toUpperCase(),param[1]);
+  }
+  checkProperties(properties);
+  try {
+    WebMapServer wms=new WebMapServer(server);
+    WMSCapabilities capabilities=wms.getCapabilities();
+    assertNotNull(capabilities);
+  }
+ catch (  java.net.ConnectException ce) {
+    if (ce.getMessage().indexOf("timed out") > 0) {
+      System.err.println("Unable to test - timed out: " + ce);
+    }
+ else {
+      throw (ce);
+    }
+  }
+}

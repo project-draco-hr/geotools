@@ -1,0 +1,29 @@
+{
+  Coordinate[] coords=new Coordinate[3];
+  coords[0]=new Coordinate(1,2);
+  coords[1]=new Coordinate(3,4);
+  coords[2]=new Coordinate(5,6);
+  PropertyName left=new AttributeExpressionImpl(testSchema,"testGeometry");
+  GeometryFactory gf=new GeometryFactory(new PrecisionModel());
+  LineString geom=gf.createLineString(coords);
+  Literal right=new LiteralExpressionImpl(geom);
+  Equals filter=fac.equal(left,right);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertTrue(filter.evaluate(testFeature));
+  Function function=new GeometryFunction(geom);
+  filter=fac.equal(left,function);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertTrue(filter.evaluate(testFeature));
+  coords[0]=new Coordinate(0,0);
+  right=new LiteralExpressionImpl(geom);
+  filter=fac.equal(left,right);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertFalse(filter.evaluate(testFeature));
+  filter=fac.equal(left,new LiteralExpressionImpl(null));
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertFalse(filter.evaluate(testFeature));
+}

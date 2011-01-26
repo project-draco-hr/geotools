@@ -1,0 +1,52 @@
+{
+  Connection conn=null;
+  Statement st=null;
+  ResultSet tables=null;
+  try {
+    conn=wrapped.getDataSource().getConnection();
+    conn.setAutoCommit(false);
+    boolean changeSets=false;
+    boolean tablesChanged=false;
+    boolean versionedTables=false;
+    DatabaseMetaData meta=conn.getMetaData();
+    String[] tableType={"TABLE"};
+    tables=meta.getTables(null,getConfig().getDatabaseSchemaName(),"%",tableType);
+    while (tables.next()) {
+      String tableName=tables.getString(3);
+      if (tableName.equals(TBL_CHANGESETS))       changeSets=true;
+      if (tableName.equals(TBL_TABLESCHANGED))       tablesChanged=true;
+      if (tableName.equals(TBL_VERSIONEDTABLES))       versionedTables=true;
+    }
+    if (!(changeSets && tablesChanged && versionedTables)) {
+      if (changeSets || tablesChanged || versionedTables) {
+        String msg="The versioning tables are not complete, yet some table with the same name is there.\n";
+        msg+="Remove tables (";
+        if (changeSets)         msg+=TBL_CHANGESETS + " ";
+        if (tablesChanged)         msg+=TBL_TABLESCHANGED + " ";
+        if (versionedTables)         msg+=TBL_VERSIONEDTABLES;
+        msg+=") before using again the versioned data store";
+        throw new IOException(msg);
+      }
+      st=conn.createStatement();
+      execute(st,"CREATE TABLE " + TBL_VERSIONEDTABLES + "(ID SERIAL PRIMARY KEY, "+ "SCHEMA VARCHAR(63) NOT NULL, NAME VARCHAR(63) NOT NULL, "+ "VERSIONED BOOLEAN NOT NULL)");
+      execute(st,"CREATE TABLE " + TBL_CHANGESETS + "(REVISION BIGSERIAL PRIMARY KEY, "+ "AUTHOR VARCHAR(256), "+ "DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "+ "MESSAGE TEXT)");
+      String schema=getConfig().getDatabaseSchemaName();
+      if (schema == null)       schema="public";
+      execute(st,"SELECT ADDGEOMETRYCOLUMN('" + schema + "', '"+ TBL_CHANGESETS+ "', 'bbox', 4326,  'POLYGON', 2)");
+      execute(st,"CREATE TABLE " + TBL_TABLESCHANGED + "(REVISION BIGINT NOT NULL REFERENCES "+ TBL_CHANGESETS+ ", VERSIONEDTABLE INT NOT NULL REFERENCES "+ TBL_VERSIONEDTABLES+ ", PRIMARY KEY (REVISION, VERSIONEDTABLE))");
+      conn.commit();
+    }
+  }
+ catch (  SQLException sqlException) {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,sqlException);
+    conn=null;
+    String message="Error querying database for list of tables:" + sqlException.getMessage();
+    throw new DataSourceException(message,sqlException);
+  }
+ finally {
+    JDBCUtils.close(tables);
+    JDBCUtils.close(st);
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+  resetTypeInfo();
+}

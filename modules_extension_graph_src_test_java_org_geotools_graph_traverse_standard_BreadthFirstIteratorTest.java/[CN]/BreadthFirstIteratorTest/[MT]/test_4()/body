@@ -1,0 +1,56 @@
+{
+  int k=4;
+  Object[] obj=GraphTestUtil.buildPerfectBinaryTree(builder(),k);
+  final Node root=(Node)obj[0];
+  final Map obj2node=(Map)obj[1];
+  final Node ln=(Node)obj2node.get(root.getObject().toString() + ".0");
+  final Node rn=(Node)obj2node.get(root.getObject().toString() + ".1");
+  CountingWalker walker=new CountingWalker(){
+    private int m_mode=0;
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      super.visit(element,traversal);
+      if (m_mode == 0) {
+        if (element != root) {
+          m_mode++;
+          return (GraphTraversal.SUSPEND);
+        }
+      }
+ else       if (m_mode == 1) {
+        String eid=element.getObject().toString();
+        if (ln.isVisited())         assertTrue(element == rn);
+ else         assertTrue(element == ln);
+        m_mode++;
+      }
+      return (GraphTraversal.CONTINUE);
+    }
+  }
+;
+  BreadthFirstIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  iterator.setSource(root);
+  traversal.traverse();
+  assertTrue(root.isVisited());
+  assertTrue((rn.isVisited() && !ln.isVisited()) || (!rn.isVisited() && ln.isVisited()));
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      if (component != root && component != ln && component != rn) {
+        assertTrue(!component.isVisited());
+      }
+      return (0);
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == 2);
+  traversal.traverse();
+  visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      assertTrue(component.isVisited());
+      return (0);
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == (int)Math.pow(2,k + 1) - 1);
+}

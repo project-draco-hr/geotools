@@ -1,0 +1,21 @@
+{
+  FilterFactory f=CommonFactoryFinder.getFilterFactory(null);
+  Filter filter=f.equal(f.property("testString"),f.literal(2),false);
+  File file=File.createTempFile("filter","xml");
+  file.deleteOnExit();
+  OutputStream output=new BufferedOutputStream(new FileOutputStream(file));
+  Encoder encoder=new Encoder(new OGCConfiguration());
+  encoder.encode(filter,OGC.PropertyIsEqualTo,output);
+  output.flush();
+  output.close();
+  DocumentBuilderFactory docFactory=DocumentBuilderFactory.newInstance();
+  docFactory.setNamespaceAware(true);
+  Document doc=docFactory.newDocumentBuilder().parse(file);
+  assertEquals("ogc:PropertyIsEqualTo",doc.getDocumentElement().getNodeName());
+  assertEquals(1,doc.getElementsByTagName("ogc:PropertyName").getLength());
+  assertEquals(1,doc.getElementsByTagName("ogc:Literal").getLength());
+  Element propertyName=(Element)doc.getElementsByTagName("ogc:PropertyName").item(0);
+  Element literal=(Element)doc.getElementsByTagName("ogc:Literal").item(0);
+  assertEquals("testString",propertyName.getFirstChild().getNodeValue());
+  assertEquals("2",literal.getFirstChild().getNodeValue());
+}

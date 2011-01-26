@@ -1,0 +1,42 @@
+{
+  double latitude=this.latitude;
+  double longitude=this.longitude;
+  longitude=-longitude;
+  final double julianDay=Calendar.julianDay(this.time);
+  final double time=(julianDay - 2451545) / 36525;
+  double solarDec=sunDeclination(time);
+  double eqTime=equationOfTime(time);
+  this.noonTime=Math.round(solarNoonTime(longitude,eqTime) * (60 * 1000)) + (this.time / DAY_MILLIS) * DAY_MILLIS;
+  double trueSolarTime=((julianDay + 0.5) - Math.floor(julianDay + 0.5)) * 1440;
+  trueSolarTime+=(eqTime - 4.0 * longitude);
+  trueSolarTime-=1440 * Math.floor(trueSolarTime / 1440);
+  longitude=Math.toRadians(longitude);
+  latitude=Math.toRadians(latitude);
+  solarDec=Math.toRadians(solarDec);
+  double csz=Math.sin(latitude) * Math.sin(solarDec) + Math.cos(latitude) * Math.cos(solarDec) * Math.cos(Math.toRadians(trueSolarTime / 4 - 180));
+  if (csz > +1)   csz=+1;
+  if (csz < -1)   csz=-1;
+  final double zenith=Math.acos(csz);
+  final double azDenom=Math.cos(latitude) * Math.sin(zenith);
+  if (Math.abs(azDenom) > 0.001) {
+    double azRad=((Math.sin(latitude) * Math.cos(zenith)) - Math.sin(solarDec)) / azDenom;
+    if (azRad > +1)     azRad=+1;
+    if (azRad < -1)     azRad=-1;
+    azimuth=180 - Math.toDegrees(Math.acos(azRad));
+    if (trueSolarTime > 720) {
+      azimuth=-azimuth;
+    }
+  }
+ else {
+    azimuth=(latitude > 0) ? 180 : 0;
+  }
+  azimuth-=360 * Math.floor(azimuth / 360);
+  final double refractionCorrection=refractionCorrection(Math.toDegrees(zenith));
+  final double solarZen=Math.toDegrees(zenith) - refractionCorrection;
+  elevation=90 - solarZen;
+  if (elevation < twilight) {
+    azimuth=DARK;
+    elevation=DARK;
+  }
+  updated=true;
+}

@@ -1,0 +1,31 @@
+{
+  if (value == null) {
+    return;
+  }
+  if (type == UNION) {
+    for (int i=0; i < parents.length; i++) {
+      if (parents[i].equals(element.getType()) && parents[i].canEncode(element,value,hints)) {
+        parents[i].encode(element,value,output,hints);
+      }
+      return;
+    }
+    parents[0].encode(element,value,output,hints);
+    return;
+  }
+  if (type == LIST) {
+    List l=(List)value;
+    Iterator i=l.iterator();
+    String s="";
+    if (i.hasNext()) {
+      Object t=parents[0].toAttribute(new AttributeGT(null,null,namespace,parents[0],0,null,null,false),value,hints).getValue();
+      s=t.toString();
+      while (i.hasNext()) {
+        t=parents[0].toAttribute(new AttributeGT(null,null,namespace,parents[0],0,null,null,false),value,hints).getValue();
+        s=s + " " + t.toString();
+      }
+    }
+    parents[0].encode(element,s,output,hints);
+    return;
+  }
+  parents[0].encode(element,value,output,hints);
+}

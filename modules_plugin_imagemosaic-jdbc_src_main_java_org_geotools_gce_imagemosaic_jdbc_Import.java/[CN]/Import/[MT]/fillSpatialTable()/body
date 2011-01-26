@@ -1,0 +1,69 @@
+{
+  truncateTables();
+  int insertCount=0;
+  while (next()) {
+    URL imageUrl=calculateImageUrl();
+    byte[] imageBytes=getImageBytes(imageUrl);
+    if (typ == ImportTyp.DIR) {
+      BufferedImage image=null;
+      try {
+        image=ImageIO.read(new ByteArrayInputStream(imageBytes));
+      }
+ catch (      IOException e) {
+        image=readImage2(imageBytes);
+      }
+      if (image == null)       image=readImage2(imageBytes);
+      currentGeom=getGeomFromWorldFile(imageFiles[currentPos - 1],image.getWidth(),image.getHeight());
+    }
+    if (config.getSpatialExtension() == SpatialExtension.UNIVERSAL) {
+      sqlInsertSpatial.setString(1,currentLocation);
+      Envelope env=currentGeom.getEnvelopeInternal();
+      sqlInsertSpatial.setDouble(2,env.getMinX());
+      sqlInsertSpatial.setDouble(3,env.getMinY());
+      sqlInsertSpatial.setDouble(4,env.getMaxX());
+      sqlInsertSpatial.setDouble(5,env.getMaxY());
+      if (isJoined()) {
+        sqlInsertSpatial.setBytes(6,imageBytes);
+      }
+ else {
+        insertImage(imageUrl,imageBytes);
+      }
+      sqlExecute(sqlInsertSpatial);
+    }
+ else     if ((config.getSpatialExtension() == SpatialExtension.DB2) || (config.getSpatialExtension() == SpatialExtension.MYSQL) || (config.getSpatialExtension() == SpatialExtension.POSTGIS)) {
+      sqlInsertSpatial.setString(1,currentLocation);
+      WKBWriter w=new WKBWriter();
+      byte[] wkb=w.write(currentGeom);
+      sqlInsertSpatial.setBytes(2,wkb);
+      if (isJoined()) {
+        sqlInsertSpatial.setBytes(3,imageBytes);
+      }
+ else {
+        insertImage(imageUrl,imageBytes);
+      }
+      sqlExecute(sqlInsertSpatial);
+    }
+ else     if (config.getSpatialExtension() == SpatialExtension.ORACLE) {
+      String stmt=MessageFormat.format(oracleInsertSpatial,getOracleToGemoetryClause(currentGeom));
+      sqlInsertSpatial=con.prepareStatement(stmt);
+      sqlInsertSpatial.setString(1,currentLocation);
+      if (isJoined()) {
+        sqlInsertSpatial.setBytes(2,imageBytes);
+      }
+ else {
+        insertImage(imageUrl,imageBytes);
+      }
+      sqlInsertSpatial.execute();
+      sqlInsertSpatial.close();
+    }
+    insertCount++;
+    logInfo("Inserted tile " + currentLocation + " : "+ insertCount+ "/"+ total);
+    if ((insertCount % commitCount) == 0) {
+      sqlCommit();
+    }
+  }
+  insertMasterRecord();
+  sqlCommit();
+  terminate();
+  logInfo("FINISHED");
+}

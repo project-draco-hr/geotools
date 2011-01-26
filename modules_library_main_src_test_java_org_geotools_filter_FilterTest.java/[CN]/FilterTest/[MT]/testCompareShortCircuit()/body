@@ -1,0 +1,24 @@
+{
+  PropertyName testAttribute=new AttributeExpressionImpl(testSchema,"testInteger");
+  PropertyIsNull nullFilter=fac.isNull(testAttribute);
+  org.opengis.filter.Filter notNullFilter=fac.not(nullFilter);
+  PropertyIsEqualTo compareFilter=fac.equals(testAttribute,fac.literal(10));
+  testFeature.setAttribute("testInteger",null);
+  assertEquals(false,compareFilter.evaluate(testFeature));
+  assertTrue(nullFilter.evaluate(testFeature));
+  assertFalse(notNullFilter.evaluate(testFeature));
+  org.opengis.filter.Filter finalFilter=fac.and(notNullFilter,compareFilter);
+  try {
+    assertFalse(finalFilter.evaluate(testFeature));
+  }
+ catch (  NullPointerException e) {
+    fail("Short-circuit evaluation was not performed by LogicFilter: " + e.getMessage());
+  }
+  finalFilter=fac.or(nullFilter,compareFilter);
+  try {
+    assertTrue(finalFilter.evaluate(testFeature));
+  }
+ catch (  NullPointerException e) {
+    fail("Short-circuit evaluation was not performed by LogicFilter: " + e.getMessage());
+  }
+}

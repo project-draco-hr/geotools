@@ -1,0 +1,24 @@
+{
+  SimpleFeature original=null;
+  if (updateWriter != null && updateWriter.hasNext()) {
+    oldFeature=updateWriter.next();
+    newFeature=appendWriter.next();
+    original=oldFeature;
+    state.expandDirtyBounds(getWgs84FeatureEnvelope(oldFeature));
+  }
+ else {
+    oldFeature=null;
+    newFeature=appendWriter.next();
+    original=newFeature;
+  }
+  try {
+    liveFeature=DataUtilities.reType(featureType,original);
+    String unversionedId=liveFeature.getID();
+    if (oldFeature != null)     unversionedId=mapper.getUnversionedFid(liveFeature.getID());
+    liveFeature=new MutableFIDFeature((List)liveFeature.getAttributes(),featureType,unversionedId);
+    return liveFeature;
+  }
+ catch (  IllegalAttributeException e) {
+    throw new DataSourceException("Error casting versioned feature to external one. " + "Should not happen, there's a bug at work",e);
+  }
+}

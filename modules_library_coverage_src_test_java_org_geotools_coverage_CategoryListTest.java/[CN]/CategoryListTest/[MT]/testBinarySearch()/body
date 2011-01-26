@@ -1,0 +1,28 @@
+{
+  for (int pass=0; pass < 50; pass++) {
+    final double[] array=new double[64];
+    for (int i=0; i < array.length; i++) {
+      array[i]=(random.nextInt(100) - 50) / 10;
+    }
+    Arrays.sort(array);
+    for (int i=0; i < 300; i++) {
+      final double searchFor=(random.nextInt(150) - 75) / 10;
+      assertEquals("binarySearch",Arrays.binarySearch(array,searchFor),CategoryList.binarySearch(array,searchFor));
+    }
+    final Category[] categories=new Category[array.length];
+    for (int i=0; i < categories.length; i++) {
+      categories[i]=new Category(String.valueOf(i),null,random.nextInt(100)).inverse;
+    }
+    Arrays.sort(categories,new CategoryList(new Category[0],null));
+    assertTrue("isSorted",CategoryList.isSorted(categories));
+    for (int i=0; i < categories.length; i++) {
+      array[i]=categories[i].inverse.minimum;
+    }
+    for (int i=0; i < categories.length; i++) {
+      final double expected=categories[i].inverse.minimum;
+      final int foundAt=CategoryList.binarySearch(array,expected);
+      final double actual=categories[foundAt].inverse.minimum;
+      assertEquals("binarySearch",toHexString(expected),toHexString(actual));
+    }
+  }
+}

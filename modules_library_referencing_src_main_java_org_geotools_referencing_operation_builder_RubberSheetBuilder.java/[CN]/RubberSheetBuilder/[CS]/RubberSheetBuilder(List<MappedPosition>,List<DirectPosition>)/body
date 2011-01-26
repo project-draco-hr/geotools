@@ -1,0 +1,35 @@
+{
+  super.setMappedPositions(vectors);
+  if (vertices.size() != 4) {
+    throw new IllegalArgumentException("The region of interest must have four vertices.");
+  }
+  DirectPosition[] ddpp=new DirectPosition[4];
+  for (int i=0; i < vertices.size(); i++) {
+    ddpp[i]=(DirectPosition)vertices.get(i);
+  }
+  CoordinateReferenceSystem crs;
+  try {
+    crs=getSourceCRS();
+  }
+ catch (  FactoryException e) {
+    crs=ddpp[0].getCoordinateReferenceSystem();
+  }
+  if (!(CRS.equalsIgnoreMetadata(crs,ddpp[0].getCoordinateReferenceSystem()) || CRS.equalsIgnoreMetadata(crs,ddpp[1].getCoordinateReferenceSystem()) || CRS.equalsIgnoreMetadata(crs,ddpp[2].getCoordinateReferenceSystem())|| CRS.equalsIgnoreMetadata(crs,ddpp[3].getCoordinateReferenceSystem()))) {
+    throw new MismatchedReferenceSystemException("Region of interest defined by mismatched DirectPositions.");
+  }
+  DirectPosition[] dpa=this.getSourcePoints();
+  GeneralEnvelope srcextnt=new GeneralEnvelope(2);
+  for (int i=0; i < dpa.length; i++) {
+    srcextnt.add(dpa[i]);
+  }
+  GeneralEnvelope vtxextnt=new GeneralEnvelope(2);
+  vtxextnt.add(ddpp[0]);
+  vtxextnt.add(ddpp[1]);
+  vtxextnt.add(ddpp[2]);
+  vtxextnt.add(ddpp[3]);
+  if (!vtxextnt.contains(srcextnt,true))   throw new IllegalArgumentException("The region of interest must contain the control points");
+  Quadrilateral quad=new Quadrilateral(ddpp[0],ddpp[1],ddpp[2],ddpp[3]);
+  MapTriangulationFactory trianglemap=new MapTriangulationFactory(quad,vectors);
+  this.trianglesMap=(HashMap)trianglemap.getTriangleMap();
+  this.trianglesToKeysMap=mapTrianglesToKey();
+}

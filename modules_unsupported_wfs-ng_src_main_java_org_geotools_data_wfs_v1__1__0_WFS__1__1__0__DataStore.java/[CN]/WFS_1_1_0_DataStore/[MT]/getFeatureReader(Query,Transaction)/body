@@ -1,0 +1,54 @@
+{
+  if (Filter.EXCLUDE.equals(query.getFilter())) {
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(getQueryType(query));
+  }
+  query=new DefaultQuery(query);
+  Filter[] filters=wfs.splitFilters(query.getFilter());
+  Filter supportedFilter=filters[0];
+  Filter postFilter=filters[1];
+  System.out.println("Supported filter:  " + supportedFilter);
+  System.out.println("Unupported filter: " + postFilter);
+  ((DefaultQuery)query).setFilter(supportedFilter);
+  ((DefaultQuery)query).setMaxFeatures(getMaxFeatures(query));
+  final CoordinateReferenceSystem queryCrs=query.getCoordinateSystem();
+  WFSResponse response=executeGetFeatures(query,transaction,ResultType.RESULTS);
+  Object result=WFSExtensions.process(this,response);
+  GetFeatureParser parser;
+  if (result instanceof WFSException) {
+    throw (WFSException)result;
+  }
+ else   if (result instanceof GetFeatureParser) {
+    parser=(GetFeatureParser)result;
+  }
+ else {
+    throw new IllegalStateException("Unknown response result for GetFeature: " + result);
+  }
+  final SimpleFeatureType contentType=getQueryType(query);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=new WFSFeatureReader((GetFeatureParser)parser);
+  if (!reader.hasNext()) {
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(contentType);
+  }
+  final SimpleFeatureType readerType=reader.getFeatureType();
+  CoordinateReferenceSystem readerCrs=readerType.getCoordinateReferenceSystem();
+  if (queryCrs != null && !queryCrs.equals(readerCrs)) {
+    try {
+      reader=new ReprojectFeatureReader(reader,queryCrs);
+    }
+ catch (    Exception e) {
+      throw new DataSourceException(e);
+    }
+  }
+  if (Filter.INCLUDE != postFilter) {
+    reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,postFilter);
+  }
+  if (!contentType.equals(readerType)) {
+    final boolean cloneContents=false;
+    reader=new ReTypeFeatureReader(reader,contentType,cloneContents);
+  }
+  if (this.maxFeaturesHardLimit.intValue() > 0 || query.getMaxFeatures() != Integer.MAX_VALUE) {
+    int maxFeatures=maxFeaturesHardLimit.intValue() > 0 ? Math.min(maxFeaturesHardLimit.intValue(),query.getMaxFeatures()) : query.getMaxFeatures();
+    reader=new MaxFeatureReader<SimpleFeatureType,SimpleFeature>(reader,maxFeatures);
+  }
+  return reader;
+}

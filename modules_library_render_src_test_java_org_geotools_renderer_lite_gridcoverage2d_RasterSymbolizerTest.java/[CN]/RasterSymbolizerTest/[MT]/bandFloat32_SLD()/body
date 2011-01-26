@@ -1,0 +1,26 @@
+{
+  GridCoverage2D gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("name",JAI.create("ImageRead",new File(TestData.url(this,"small_1band_Float32.tif").toURI())),new GeneralEnvelope(new double[]{-90,-180},new double[]{90,180}),new GridSampleDimension[]{new GridSampleDimension("test1BandByte_SLD")},null,null);
+  java.net.URL surl=TestData.url(this,"1band_Float32_test1.sld");
+  SLDParser stylereader=new SLDParser(sf,surl);
+  StyledLayerDescriptor sld=stylereader.parseSLD();
+  SubchainStyleVisitorCoverageProcessingAdapter rsh=new RasterSymbolizerHelper(gc,null);
+  final RasterSymbolizer rs_1=extractRasterSymbolizer(sld);
+  rsh.visit(rs_1);
+  testRasterSymbolizerHelper(rsh);
+  gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("name",JAI.create("ImageRead",new File(TestData.url(this,"small_1band_Float32.tif").toURI())),new GeneralEnvelope(new double[]{-90,-180},new double[]{90,180}));
+  rsh=new RasterSymbolizerHelper(gc,null);
+  StyleBuilder sldBuilder=new StyleBuilder();
+  rsh=new RasterSymbolizerHelper(gc,null);
+  final RasterSymbolizer rsb_1=sldBuilder.createRasterSymbolizer();
+  final ChannelSelection chSel=new ChannelSelectionImpl();
+  final SelectedChannelType chTypeGray=new SelectedChannelTypeImpl();
+  final ContrastEnhancement cntEnh=new ContrastEnhancementImpl();
+  cntEnh.setLogarithmic();
+  chTypeGray.setChannelName("1");
+  chTypeGray.setContrastEnhancement(cntEnh);
+  chSel.setGrayChannel(chTypeGray);
+  rsb_1.setChannelSelection(chSel);
+  rsb_1.setOpacity(sldBuilder.literalExpression(1.0));
+  rsh.visit(rsb_1);
+  testRasterSymbolizerHelper(rsh);
+}

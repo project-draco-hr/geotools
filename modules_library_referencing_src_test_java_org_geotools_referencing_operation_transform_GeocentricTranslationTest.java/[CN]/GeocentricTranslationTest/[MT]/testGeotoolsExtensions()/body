@@ -1,0 +1,29 @@
+{
+  final String classification="Coordinate Frame rotation (geog2d domain)";
+  final MathTransformFactory factory=ReferencingFactoryFinder.getMathTransformFactory(null);
+  final ParameterValueGroup param=factory.getDefaultParameters(classification);
+  final Ellipsoid sourceEllipsoid=DefaultEllipsoid.INTERNATIONAL_1924;
+  final Ellipsoid targetEllipsoid=DefaultEllipsoid.WGS84;
+  param.parameter("dx").setValue(0.000);
+  param.parameter("dy").setValue(0.000);
+  param.parameter("dz").setValue(4.5);
+  param.parameter("ex").setValue(0.000);
+  param.parameter("ey").setValue(0.000);
+  param.parameter("ez").setValue(-0.554);
+  param.parameter("ppm").setValue(0.219);
+  param.parameter("src_dim").setValue(3);
+  param.parameter("tgt_dim").setValue(3);
+  param.parameter("src_semi_major").setValue(sourceEllipsoid.getSemiMajorAxis());
+  param.parameter("src_semi_minor").setValue(sourceEllipsoid.getSemiMinorAxis());
+  param.parameter("tgt_semi_major").setValue(targetEllipsoid.getSemiMajorAxis());
+  param.parameter("tgt_semi_minor").setValue(targetEllipsoid.getSemiMinorAxis());
+  final MathTransform test=factory.createParameterizedTransform(param);
+  final GeneralDirectPosition position=new GeneralDirectPosition(3);
+  position.setOrdinate(0,4.00);
+  position.setOrdinate(1,55.00);
+  position.setOrdinate(2,-191.61);
+  assertSame(position,test.transform(position,position));
+  assertEquals(4.00,position.getOrdinate(0),1E-2);
+  assertEquals(55.00,position.getOrdinate(1),1E-2);
+  assertEquals(3.23,position.getOrdinate(2),1E-2);
+}

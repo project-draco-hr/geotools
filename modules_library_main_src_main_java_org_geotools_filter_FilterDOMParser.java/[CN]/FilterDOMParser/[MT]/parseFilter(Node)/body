@@ -1,0 +1,311 @@
+{
+  LOGGER.finer("parsingFilter " + root.getLocalName());
+  if ((root == null) || (root.getNodeType() != Node.ELEMENT_NODE)) {
+    LOGGER.finest("bad node input ");
+    return null;
+  }
+  LOGGER.finest("processing root " + root.getLocalName() + " "+ root.getNodeName());
+  Node child=root;
+  String childName=child.getLocalName();
+  if (childName == null) {
+    childName=child.getNodeName();
+  }
+  if (childName.indexOf(':') != -1) {
+    childName=childName.substring(childName.indexOf(':') + 1);
+  }
+  LOGGER.finest("looking up " + childName);
+  if (comparisions.containsKey(childName)) {
+    LOGGER.finer("a comparision filter " + childName);
+    try {
+      short type=((Integer)comparisions.get(childName)).shortValue();
+      LOGGER.finer("type is " + type);
+      if (type == AbstractFilter.FID) {
+        Set<FeatureId> ids=new HashSet<FeatureId>();
+        Element fidElement=(Element)child;
+        ids.add(FILTER_FACT.featureId(fidElement.getAttribute("fid")));
+        Node sibling=fidElement.getNextSibling();
+        while (sibling != null) {
+          LOGGER.finer("Parsing another FidFilter");
+          if (sibling.getNodeType() == Node.ELEMENT_NODE) {
+            fidElement=(Element)sibling;
+            String fidElementName=fidElement.getLocalName();
+            if (fidElementName == null) {
+              fidElementName=fidElement.getNodeName();
+            }
+            if (fidElementName.indexOf(':') != -1) {
+              fidElementName=fidElementName.substring(fidElementName.indexOf(':') + 1);
+            }
+            if ("FeatureId".equals(fidElementName)) {
+              ids.add(FILTER_FACT.featureId(fidElement.getAttribute("fid")));
+            }
+          }
+          sibling=sibling.getNextSibling();
+        }
+        return FILTER_FACT.id(ids);
+      }
+ else       if (type == AbstractFilter.BETWEEN) {
+        NodeList kids=child.getChildNodes();
+        if (kids.getLength() < NUM_BETWEEN_CHILDREN) {
+          throw new IllegalFilterException("wrong number of children in Between filter: expected 3 got " + kids.getLength());
+        }
+        Node value=child.getFirstChild();
+        while (value.getNodeType() != Node.ELEMENT_NODE) {
+          value=value.getNextSibling();
+        }
+        LOGGER.finer("add middle value -> " + value + "<-");
+        Expression middle=ExpressionDOMParser.parseExpression(value);
+        Expression lower=null;
+        Expression upper=null;
+        for (int i=0; i < kids.getLength(); i++) {
+          Node kid=kids.item(i);
+          String kidName=(kid.getLocalName() != null) ? kid.getLocalName() : kid.getNodeName();
+          if (kidName.indexOf(':') != -1) {
+            kidName=kidName.substring(kidName.indexOf(':') + 1);
+          }
+          if (kidName.equalsIgnoreCase("LowerBoundary")) {
+            value=kid.getFirstChild();
+            while (value.getNodeType() != Node.ELEMENT_NODE) {
+              value=value.getNextSibling();
+            }
+            LOGGER.finer("add left value -> " + value + "<-");
+            lower=ExpressionDOMParser.parseExpression(value);
+          }
+          if (kidName.equalsIgnoreCase("UpperBoundary")) {
+            value=kid.getFirstChild();
+            while (value.getNodeType() != Node.ELEMENT_NODE) {
+              value=value.getNextSibling();
+            }
+            LOGGER.finer("add right value -> " + value + "<-");
+            upper=ExpressionDOMParser.parseExpression(value);
+          }
+        }
+        return FILTER_FACT.between(middle,lower,upper);
+      }
+ else       if (type == AbstractFilter.LIKE) {
+        String wildcard=null;
+        String single=null;
+        String escape=null;
+        String pattern=null;
+        Expression value=null;
+        NodeList map=child.getChildNodes();
+        for (int i=0; i < map.getLength(); i++) {
+          Node kid=map.item(i);
+          if ((kid == null) || (kid.getNodeType() != Node.ELEMENT_NODE)) {
+            continue;
+          }
+          String res=(kid.getLocalName() != null) ? kid.getLocalName() : kid.getNodeName();
+          if (res.indexOf(':') != -1) {
+            res=res.substring(res.indexOf(':') + 1);
+          }
+          if (res.equalsIgnoreCase("PropertyName")) {
+            value=ExpressionDOMParser.parseExpression(kid);
+          }
+          if (res.equalsIgnoreCase("Literal")) {
+            pattern=ExpressionDOMParser.parseExpression(kid).toString();
+          }
+        }
+        NamedNodeMap kids=child.getAttributes();
+        for (int i=0; i < kids.getLength(); i++) {
+          Node kid=kids.item(i);
+          String res=(kid.getLocalName() != null) ? kid.getLocalName() : kid.getNodeName();
+          if (res.indexOf(':') != -1) {
+            res=res.substring(res.indexOf(':') + 1);
+          }
+          if (res.equalsIgnoreCase("wildCard")) {
+            wildcard=kid.getNodeValue();
+          }
+          if (res.equalsIgnoreCase("singleChar")) {
+            single=kid.getNodeValue();
+          }
+          if (res.equalsIgnoreCase("escapeChar") || res.equalsIgnoreCase("escape")) {
+            escape=kid.getNodeValue();
+          }
+        }
+        if (!((wildcard == null) || (single == null) || (escape == null)|| (pattern == null))) {
+          LOGGER.finer("Building like filter " + value.toString() + "\n"+ pattern+ " "+ wildcard+ " "+ single+ " "+ escape);
+          return FILTER_FACT.like(value,pattern,wildcard,single,escape);
+        }
+        LOGGER.finer("Problem building like filter\n" + pattern + " "+ wildcard+ " "+ single+ " "+ escape);
+        return null;
+      }
+ else       if (type == AbstractFilter.NULL) {
+        return parseNullFilter(child);
+      }
+      Node value=child.getFirstChild();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finest("add left value -> " + value + "<-");
+      Expression left=ExpressionDOMParser.parseExpression(value);
+      value=value.getNextSibling();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finest("add right value -> " + value + "<-");
+      Expression right=ExpressionDOMParser.parseExpression(value);
+switch (type) {
+case FilterType.COMPARE_EQUALS:
+        return FILTER_FACT.equals(left,right);
+case FilterType.COMPARE_GREATER_THAN:
+      return FILTER_FACT.greater(left,right);
+case FilterType.COMPARE_GREATER_THAN_EQUAL:
+    return FILTER_FACT.greaterOrEqual(left,right);
+case FilterType.COMPARE_LESS_THAN:
+  return FILTER_FACT.less(left,right);
+case FilterType.COMPARE_LESS_THAN_EQUAL:
+return FILTER_FACT.lessOrEqual(left,right);
+case FilterType.COMPARE_NOT_EQUALS:
+return FILTER_FACT.notEqual(left,right,true);
+default :
+LOGGER.warning("Unable to build filter for " + childName);
+return null;
+}
+}
+ catch (IllegalFilterException ife) {
+LOGGER.warning("Unable to build filter: " + ife);
+return null;
+}
+}
+ else if (spatial.containsKey(childName)) {
+LOGGER.finest("a spatial filter " + childName);
+try {
+short type=((Integer)spatial.get(childName)).shortValue();
+Node value=child.getFirstChild();
+while (value.getNodeType() != Node.ELEMENT_NODE) {
+value=value.getNextSibling();
+}
+LOGGER.finest("add left value -> " + value + "<-");
+Expression left=ExpressionDOMParser.parseExpression(value);
+value=value.getNextSibling();
+while (value.getNodeType() != Node.ELEMENT_NODE) {
+value=value.getNextSibling();
+}
+LOGGER.finest("add right value -> " + value + "<-");
+String valueName=(value.getLocalName() != null) ? value.getLocalName() : value.getNodeName();
+if (valueName.indexOf(':') != -1) {
+valueName=valueName.substring(valueName.indexOf(':') + 1);
+}
+Node nextNode=value.getNextSibling();
+Expression right;
+if (!(valueName.equalsIgnoreCase("Literal") || valueName.equalsIgnoreCase("propertyname"))) {
+Element literal=value.getOwnerDocument().createElement("literal");
+literal.appendChild(value);
+LOGGER.finest("Built new literal " + literal);
+right=ExpressionDOMParser.parseExpression(literal);
+}
+ else {
+right=ExpressionDOMParser.parseExpression(value);
+}
+double distance;
+String units=null;
+String nodeName=null;
+switch (type) {
+case FilterType.GEOMETRY_EQUALS:
+return FILTER_FACT.equal(left,right);
+case FilterType.GEOMETRY_DISJOINT:
+return FILTER_FACT.disjoint(left,right);
+case FilterType.GEOMETRY_INTERSECTS:
+return FILTER_FACT.intersects(left,right);
+case FilterType.GEOMETRY_TOUCHES:
+return FILTER_FACT.touches(left,right);
+case FilterType.GEOMETRY_CROSSES:
+return FILTER_FACT.touches(left,right);
+case FilterType.GEOMETRY_WITHIN:
+return FILTER_FACT.within(left,right);
+case FilterType.GEOMETRY_CONTAINS:
+return FILTER_FACT.contains(left,right);
+case FilterType.GEOMETRY_OVERLAPS:
+return FILTER_FACT.overlaps(left,right);
+case FilterType.GEOMETRY_DWITHIN:
+value=nextNode;
+while (value != null && value.getNodeType() != Node.ELEMENT_NODE) {
+value=value.getNextSibling();
+}
+if (value == null) {
+throw new IllegalFilterException("DWithin is missing the Distance element");
+}
+nodeName=value.getNodeName();
+if (nodeName.indexOf(':') > 0) {
+nodeName=nodeName.substring(nodeName.indexOf(":") + 1);
+}
+if (!"Distance".equals(nodeName)) {
+throw new IllegalFilterException("Parsing DWithin, was expecting to find Distance but found " + value.getLocalName());
+}
+distance=Double.parseDouble(value.getTextContent());
+if (value.getAttributes().getNamedItem("units") != null) units=value.getAttributes().getNamedItem("units").getTextContent();
+return FILTER_FACT.dwithin(left,right,distance,units);
+case FilterType.GEOMETRY_BEYOND:
+value=nextNode;
+while (value != null && value.getNodeType() != Node.ELEMENT_NODE) {
+value=value.getNextSibling();
+}
+if (value == null) {
+throw new IllegalFilterException("Beyond is missing the Distance element");
+}
+nodeName=value.getNodeName();
+if (nodeName.indexOf(':') > 0) {
+nodeName=nodeName.substring(nodeName.indexOf(":") + 1);
+}
+if (!"Distance".equals(nodeName)) {
+throw new IllegalFilterException("Parsing Beyond, was expecting to find Distance but found " + value.getLocalName());
+}
+distance=Double.parseDouble(value.getTextContent());
+if (value.getAttributes().getNamedItem("units") != null) units=value.getAttributes().getNamedItem("units").getTextContent();
+return FILTER_FACT.beyond(left,right,distance,units);
+case FilterType.GEOMETRY_BBOX:
+{
+Literal literal=(Literal)right;
+Object obj=literal.getValue();
+ReferencedEnvelope bbox=null;
+if (obj instanceof Geometry) {
+bbox=JTS.toEnvelope((Geometry)obj);
+}
+ else if (obj instanceof ReferencedEnvelope) {
+bbox=(ReferencedEnvelope)obj;
+}
+ else if (obj instanceof Envelope) {
+bbox=new ReferencedEnvelope((Envelope)obj,null);
+}
+return FILTER_FACT.bbox(left,bbox);
+}
+default :
+LOGGER.warning("Unable to build filter: " + childName);
+return null;
+}
+}
+ catch (IllegalFilterException ife) {
+LOGGER.warning("Unable to build filter: " + ife);
+return null;
+}
+}
+ else if (logical.containsKey(childName)) {
+LOGGER.finest("a logical filter " + childName);
+try {
+List<org.opengis.filter.Filter> children=new ArrayList<org.opengis.filter.Filter>();
+NodeList map=child.getChildNodes();
+for (int i=0; i < map.getLength(); i++) {
+Node kid=map.item(i);
+if ((kid == null) || (kid.getNodeType() != Node.ELEMENT_NODE)) {
+continue;
+}
+LOGGER.finest("adding to logic filter " + kid.getLocalName());
+children.add(parseFilter(kid));
+}
+if (childName.equals("And")) return FILTER_FACT.and(children);
+ else if (childName.equals("Or")) return FILTER_FACT.or(children);
+ else if (childName.equals("Not")) {
+if (children.size() != 1) throw new IllegalFilterException("Filter negation can be " + "applied to one and only one child filter");
+return FILTER_FACT.not(children.get(0));
+}
+ else {
+throw new RuntimeException("Logical filter, but not And, Or, Not? " + "This should not happen");
+}
+}
+ catch (IllegalFilterException ife) {
+LOGGER.warning("Unable to build filter: " + ife);
+return null;
+}
+}
+LOGGER.warning("unknown filter " + root);
+return null;
+}

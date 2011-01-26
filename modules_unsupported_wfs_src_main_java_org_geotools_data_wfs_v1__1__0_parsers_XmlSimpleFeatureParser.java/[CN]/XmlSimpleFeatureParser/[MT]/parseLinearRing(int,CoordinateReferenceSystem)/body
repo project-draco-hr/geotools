@@ -1,0 +1,33 @@
+{
+  parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.LinearRing.getLocalPart());
+  parser.nextTag();
+  String tagName=parser.getName();
+  String ns=parser.getNamespace();
+  Coordinate[] shellCoords;
+  if (GML.NAMESPACE.equals(ns) && GML.pos.getLocalPart().equals(tagName)) {
+    Coordinate[] point;
+    List<Coordinate> coords=new ArrayList<Coordinate>();
+    int eventType;
+    do {
+      point=parseCoordList(dimension);
+      coords.add(point[0]);
+      parser.nextTag();
+      tagName=parser.getName();
+      eventType=parser.getEventType();
+    }
+ while (eventType == XmlPullParser.START_TAG && tagName == GML.pos.getLocalPart());
+    shellCoords=coords.toArray(new Coordinate[coords.size()]);
+  }
+ else   if (GML.NAMESPACE.equals(ns) && GML.posList.getLocalPart().equals(tagName)) {
+    crs=crs(crs);
+    shellCoords=parseCoordList(dimension);
+    parser.nextTag();
+  }
+ else {
+    throw new IllegalStateException("Expected posList or pos inside LinearRing: " + tagName);
+  }
+  parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.LinearRing.getLocalPart());
+  LinearRing linearRing=geomFac.createLinearRing(shellCoords);
+  linearRing.setUserData(crs);
+  return linearRing;
+}

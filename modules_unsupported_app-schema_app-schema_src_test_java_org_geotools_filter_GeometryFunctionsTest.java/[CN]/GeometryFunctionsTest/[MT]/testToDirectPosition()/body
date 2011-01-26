@@ -1,0 +1,41 @@
+{
+  Function function=ff.function("toDirectPosition",ToDirectPositionFunction.SRS_NAME,ff.literal("EPSG:4326"),pointOne,pointTwo);
+  Object value=function.evaluate(feature);
+  assertTrue(value instanceof DirectPosition);
+  DirectPosition pos=(DirectPosition)value;
+  assertEquals(CRS.toSRS(pos.getCoordinateReferenceSystem()),"EPSG:4326");
+  assertEquals(pos.getDimension(),2);
+  assertEquals(pos.getOrdinate(0),5.0,0);
+  assertEquals(pos.getOrdinate(1),2.5,0);
+  function=ff.function("toDirectPosition",pointOne);
+  value=function.evaluate(feature);
+  assertTrue(value instanceof DirectPosition);
+  pos=(DirectPosition)value;
+  assertNull(pos.getCoordinateReferenceSystem());
+  assertEquals(pos.getDimension(),1);
+  assertEquals(pos.getOrdinate(0),5.0,0);
+  try {
+    function=ff.function("toDirectPosition",ToDirectPositionFunction.SRS_NAME,ff.literal("1"),pointOne,pointTwo);
+    function.evaluate(feature);
+    fail("Shouldn't get this far with invalid SRS name: '1'");
+  }
+ catch (  Throwable e) {
+    LOGGER.info("Testing exception: " + e.toString());
+  }
+  try {
+    function=ff.function("toDirectPosition",pointOne,pointTwo,pointOne);
+    function.evaluate(feature);
+    fail("Shouldn't get this far with too many parameters: " + pointOne.toString() + ", "+ pointTwo.toString()+ ", "+ pointOne.toString());
+  }
+ catch (  Throwable e) {
+    LOGGER.info("Testing exception: " + e.toString());
+  }
+  try {
+    function=ff.function("toDirectPosition",ToDirectPositionFunction.SRS_NAME,ff.literal("EPSG:WGS84"));
+    function.evaluate(feature);
+    fail("Shouldn't get this far with too many parameters: " + pointOne.toString() + ", "+ pointTwo.toString()+ ", "+ pointOne.toString());
+  }
+ catch (  Throwable e) {
+    LOGGER.info("Testing exception: " + e.toString());
+  }
+}

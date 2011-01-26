@@ -1,0 +1,50 @@
+{
+  if (monitor == null) {
+    monitor=new NullProgressListener();
+  }
+  try {
+    double[] curData=new double[4];
+    RandomIter imageIter=RandomIterFactory.create(image,null);
+    outside=new TreeSet<Double>();
+    if (outsideValues == null || outsideValues.isEmpty()) {
+      outside.add(Double.NaN);
+    }
+ else {
+      outside.addAll(outsideValues);
+    }
+    if (!insideEdges) {
+      setInsideValue();
+    }
+    float progressScale=100.0f / (imageBounds.y + imageBounds.height - 1);
+    for (int row=imageBounds.y - 1; row < imageBounds.y + imageBounds.height; row++) {
+      if (monitor.isCanceled()) {
+        throw new CancellationException();
+      }
+      monitor.progress(progressScale * row);
+      curData[TR]=curData[BR]=outside.first();
+      for (int col=imageBounds.x - 1; col < imageBounds.x + imageBounds.width; col++) {
+        boolean[] ok=inDataWindow(row,col);
+        curData[TL]=curData[TR];
+        curData[BL]=curData[BR];
+        curData[TR]=(ok[TR] ? imageIter.getSampleDouble(col + 1,row,band) : outside.first());
+        if (isOutside(curData[TR])) {
+          curData[TR]=outside.first();
+        }
+ else         if (!insideEdges) {
+          curData[TR]=inside;
+        }
+        curData[BR]=(ok[BR] ? imageIter.getSampleDouble(col + 1,row + 1,band) : outside.first());
+        if (isOutside(curData[BR])) {
+          curData[BR]=outside.first();
+        }
+ else         if (!insideEdges) {
+          curData[BR]=inside;
+        }
+        updateCoordList(row,col,curData);
+      }
+    }
+  }
+  finally {
+    monitor.complete();
+  }
+}

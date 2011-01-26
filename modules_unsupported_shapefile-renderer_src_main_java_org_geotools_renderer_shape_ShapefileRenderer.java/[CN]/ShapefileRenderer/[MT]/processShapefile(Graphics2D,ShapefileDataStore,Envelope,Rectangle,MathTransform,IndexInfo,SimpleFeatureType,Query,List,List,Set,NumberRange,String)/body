@@ -1,0 +1,163 @@
+{
+  IndexedDbaseFileReader dbfreader=null;
+  IndexInfo.Reader shpreader=null;
+  FIDReader fidReader=null;
+  int hit=0;
+  int miss=0;
+  try {
+    graphics=(Graphics2D)graphics.create();
+    graphics.clip(screenSize);
+    if (type.getAttributeCount() > 1) {
+      try {
+        dbfreader=ShapefileRendererUtil.getDBFReader(datastore);
+      }
+ catch (      Exception e) {
+        fireErrorEvent(e);
+      }
+    }
+    OpacityFinder opacityFinder=new OpacityFinder(getAcceptableSymbolizers(type.getGeometryDescriptor()));
+    for (Iterator iter=ruleList.iterator(); iter.hasNext(); ) {
+      Rule rule=(Rule)iter.next();
+      rule.accept(opacityFinder);
+    }
+    if (datastore instanceof IndexedShapefileDataStore) {
+      ((IndexedShapefileDataStore)datastore).createSpatialIndex(false);
+    }
+    boolean useJTS=true;
+    try {
+      shpreader=new IndexInfo.Reader(info,ShapefileRendererUtil.getShpReader(datastore,bbox,screenSize,mt,opacityFinder.hasOpacity,useJTS),bbox);
+    }
+ catch (    Exception e) {
+      fireErrorEvent(e);
+      return;
+    }
+    try {
+      fidReader=ShapefileRendererUtil.getFidReader(datastore,shpreader);
+    }
+ catch (    Exception e) {
+      fireErrorEvent(e);
+      return;
+    }
+    SimpleFeatureBuilder fbuilder=new SimpleFeatureBuilder(type);
+    while (true) {
+      try {
+        if (renderingStopRequested) {
+          break;
+        }
+        if (!shpreader.hasNext()) {
+          break;
+        }
+        boolean doElse=true;
+        String nextFid=null;
+        if (fidReader.hasNext()) {
+          try {
+            nextFid=fidReader.next();
+          }
+ catch (          NoSuchElementException invalidIndex) {
+            fireErrorEvent(new IllegalStateException("Skipping invalid FID; Please regenerate your index.",invalidIndex));
+          }
+        }
+ else {
+          fireErrorEvent(new IllegalStateException("Skipping invalid FID; shape and index are out of sync please regenerate index."));
+        }
+        if (LOGGER.isLoggable(Level.FINER))         LOGGER.finer("trying to read geometry ...");
+        if (nextFid == null || modifiedFIDs.contains(nextFid)) {
+          shpreader.next();
+          if (dbfreader != null && !dbfreader.IsRandomAccessEnabled()) {
+            dbfreader.skip();
+          }
+          continue;
+        }
+        final int recno=shpreader.getRecordNumber();
+        ShapefileReader.Record record=shpreader.next();
+        Object geom=record.shape();
+        if (geom == null) {
+          miss++;
+          if (LOGGER.isLoggable(Level.FINEST))           LOGGER.finest("skipping geometry");
+          if (dbfreader != null && !dbfreader.IsRandomAccessEnabled())           dbfreader.skip();
+          continue;
+        }
+ else {
+          hit++;
+        }
+        if (dbfreader != null && dbfreader.IsRandomAccessEnabled()) {
+          dbfreader.goTo(recno);
+        }
+        SimpleFeature feature=createFeature(fbuilder,record,dbfreader,nextFid);
+        if (!query.getFilter().evaluate(feature))         continue;
+        if (renderingStopRequested) {
+          break;
+        }
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.finest("... done: " + geom.toString());
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.fine("... done: " + type.getTypeName());
+        }
+        for (Iterator it=ruleList.iterator(); it.hasNext(); ) {
+          Rule r=(Rule)it.next();
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("applying rule: " + r.toString());
+          }
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("this rule applies ...");
+          }
+          Filter filter=r.getFilter();
+          if ((filter == null) || filter.evaluate(feature)) {
+            doElse=false;
+            if (LOGGER.isLoggable(Level.FINER)) {
+              LOGGER.finer("processing Symobolizer ...");
+            }
+            Symbolizer[] symbolizers=r.getSymbolizers();
+            processSymbolizers(graphics,feature,geom,symbolizers,scaleRange,useJTS,layerId,screenSize);
+            if (LOGGER.isLoggable(Level.FINER)) {
+              LOGGER.finer("... done!");
+            }
+          }
+        }
+        if (doElse) {
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("rules with an else filter");
+          }
+          for (Iterator it=elseRuleList.iterator(); it.hasNext(); ) {
+            Rule r=(Rule)it.next();
+            Symbolizer[] symbolizers=r.getSymbolizers();
+            if (LOGGER.isLoggable(Level.FINER)) {
+              LOGGER.finer("processing Symobolizer ...");
+            }
+            processSymbolizers(graphics,feature,geom,symbolizers,scaleRange,useJTS,layerId,screenSize);
+            if (LOGGER.isLoggable(Level.FINER)) {
+              LOGGER.finer("... done!");
+            }
+          }
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.finer("feature rendered event ...");
+        }
+      }
+ catch (      Exception e) {
+        fireErrorEvent(e);
+      }
+    }
+  }
+  finally {
+    try {
+      if (dbfreader != null) {
+        dbfreader.close();
+      }
+    }
+  finally {
+      try {
+        if (shpreader != null) {
+          shpreader.close();
+        }
+      }
+  finally {
+        if (fidReader != null)         fidReader.close();
+      }
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.log(Level.FINE,type.getTypeName() + "): hit " + hit+ " miss "+ miss);
+  }
+}

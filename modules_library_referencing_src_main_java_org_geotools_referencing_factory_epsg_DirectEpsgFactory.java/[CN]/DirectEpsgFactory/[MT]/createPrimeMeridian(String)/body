@@ -1,0 +1,30 @@
+{
+  ensureNonNull("code",code);
+  PrimeMeridian returnValue=null;
+  try {
+    final String primaryKey=toPrimaryKey(PrimeMeridian.class,code,"[Prime Meridian]","PRIME_MERIDIAN_CODE","PRIME_MERIDIAN_NAME");
+    final PreparedStatement stmt;
+    stmt=prepareStatement("PrimeMeridian","SELECT PRIME_MERIDIAN_CODE," + " PRIME_MERIDIAN_NAME," + " GREENWICH_LONGITUDE,"+ " UOM_CODE,"+ " REMARKS"+ " FROM [Prime Meridian]"+ " WHERE PRIME_MERIDIAN_CODE = ?");
+    stmt.setInt(1,Integer.parseInt(primaryKey));
+    final ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final double longitude=getDouble(result,3,code);
+      final String unit_code=getString(result,4,code);
+      final String remarks=result.getString(5);
+      final Unit unit=buffered.createUnit(unit_code);
+      final Map<String,Object> properties=createProperties(name,epsg,remarks);
+      PrimeMeridian primeMeridian=factories.getDatumFactory().createPrimeMeridian(properties,longitude,unit);
+      returnValue=ensureSingleton(primeMeridian,returnValue,code);
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(PrimeMeridian.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(PrimeMeridian.class,code);
+  }
+  return returnValue;
+}

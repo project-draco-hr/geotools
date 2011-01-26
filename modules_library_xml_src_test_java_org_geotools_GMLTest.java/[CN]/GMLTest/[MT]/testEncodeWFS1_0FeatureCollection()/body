@@ -1,0 +1,19 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName("feature");
+  tb.setNamespaceURI("http://geotools.org");
+  tb.add("geometry",Point.class);
+  tb.add("name",String.class);
+  SimpleFeatureType TYPE=tb.buildFeatureType();
+  SimpleFeatureCollection collection=FeatureCollections.newCollection("internal");
+  WKTReader2 wkt=new WKTReader2();
+  collection.add(SimpleFeatureBuilder.build(TYPE,new Object[]{wkt.read("POINT (1 2)"),"name1"},null));
+  collection.add(SimpleFeatureBuilder.build(TYPE,new Object[]{wkt.read("POINT (4 4)"),"name2"},null));
+  ByteArrayOutputStream out=new ByteArrayOutputStream();
+  GML encode=new GML(Version.WFS1_0);
+  encode.setNamespace("geotools","http://geotools.org");
+  encode.encode(out,collection);
+  out.close();
+  String gml=out.toString();
+  assertTrue(gml.indexOf("<gml:Point>") != -1);
+}

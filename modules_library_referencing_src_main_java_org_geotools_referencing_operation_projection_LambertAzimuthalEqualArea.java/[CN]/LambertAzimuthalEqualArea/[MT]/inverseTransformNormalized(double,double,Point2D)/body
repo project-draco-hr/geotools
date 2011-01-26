@@ -1,0 +1,66 @@
+{
+  final double lambda, phi;
+switch (mode) {
+case EQUATORIAL:
+case OBLIQUE:
+{
+      x/=dd;
+      y*=dd;
+      final double rho=hypot(x,y);
+      if (rho < FINE_EPSILON) {
+        lambda=0.0;
+        phi=latitudeOfOrigin;
+      }
+ else {
+        double sCe, cCe, q, ab;
+        sCe=2.0 * asin(0.5 * rho / rq);
+        cCe=cos(sCe);
+        sCe=sin(sCe);
+        x*=sCe;
+        if (mode == OBLIQUE) {
+          ab=cCe * sinb1 + y * sCe * cosb1 / rho;
+          q=qp * ab;
+          y=rho * cosb1 * cCe - y * sinb1 * sCe;
+        }
+ else {
+          ab=y * sCe / rho;
+          q=qp * ab;
+          y=rho * cCe;
+        }
+        lambda=atan2(x,y);
+        phi=authlat(asin(ab));
+      }
+      break;
+    }
+case NORTH_POLE:
+{
+    y=-y;
+  }
+case SOUTH_POLE:
+{
+  final double q=x * x + y * y;
+  if (q == 0) {
+    lambda=0.;
+    phi=latitudeOfOrigin;
+  }
+ else {
+    double ab=1.0 - q / qp;
+    if (mode == SOUTH_POLE) {
+      ab=-ab;
+    }
+    lambda=atan2(x,y);
+    phi=authlat(asin(ab));
+  }
+  break;
+}
+default :
+{
+throw new AssertionError(mode);
+}
+}
+if (ptDst != null) {
+ptDst.setLocation(lambda,phi);
+return ptDst;
+}
+return new Point2D.Double(lambda,phi);
+}

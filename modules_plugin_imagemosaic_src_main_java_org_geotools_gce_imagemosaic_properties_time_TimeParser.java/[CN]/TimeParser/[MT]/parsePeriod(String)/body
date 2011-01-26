@@ -1,0 +1,65 @@
+{
+  final int length=period.length();
+  if (length != 0 && Character.toUpperCase(period.charAt(0)) != 'P') {
+    throw new ParseException("Invalid period increment given: " + period,0);
+  }
+  long millis=0;
+  boolean time=false;
+  int lower=0;
+  while (++lower < length) {
+    char letter=Character.toUpperCase(period.charAt(lower));
+    if (letter == 'T') {
+      time=true;
+      if (++lower >= length) {
+        break;
+      }
+    }
+    int upper=lower;
+    letter=period.charAt(upper);
+    while (!Character.isLetter(letter) || letter == 'e' || letter == 'E') {
+      if (++upper >= length) {
+        throw new ParseException("Missing symbol in \"" + period + "\".",lower);
+      }
+      letter=period.charAt(upper);
+    }
+    letter=Character.toUpperCase(letter);
+    final double value=Double.parseDouble(period.substring(lower,upper));
+    final double factor;
+    if (time) {
+switch (letter) {
+case 'S':
+        factor=1000;
+      break;
+case 'M':
+    factor=60 * 1000;
+  break;
+case 'H':
+factor=60 * 60 * 1000;
+break;
+default :
+throw new ParseException("Unknown time symbol: " + letter,upper);
+}
+}
+ else {
+switch (letter) {
+case 'D':
+factor=MILLIS_IN_DAY;
+break;
+case 'W':
+factor=7 * MILLIS_IN_DAY;
+break;
+case 'M':
+factor=30 * MILLIS_IN_DAY;
+break;
+case 'Y':
+factor=365.25 * MILLIS_IN_DAY;
+break;
+default :
+throw new ParseException("Unknown period symbol: " + letter,upper);
+}
+}
+millis+=Math.round(value * factor);
+lower=upper;
+}
+return millis;
+}

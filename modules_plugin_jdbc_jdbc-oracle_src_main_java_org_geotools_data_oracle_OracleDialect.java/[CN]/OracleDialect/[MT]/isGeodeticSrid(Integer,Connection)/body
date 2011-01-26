@@ -1,0 +1,31 @@
+{
+  if (srid == null)   return false;
+  Boolean geodetic=geodeticCache.get(srid);
+  if (geodetic == null) {
+synchronized (this) {
+      geodetic=geodeticCache.get(srid);
+      if (geodetic == null) {
+        PreparedStatement ps=null;
+        ResultSet rs=null;
+        boolean closeConnection=false;
+        try {
+          ps=cx.prepareStatement("SELECT COUNT(*) FROM MDSYS.GEODETIC_SRIDS WHERE SRID = ?");
+          ps.setInt(1,srid);
+          rs=ps.executeQuery();
+          rs.next();
+          geodetic=rs.getInt(1) > 0;
+          geodeticCache.put(srid,geodetic);
+        }
+ catch (        SQLException e) {
+          LOGGER.log(Level.WARNING,"Could not evaluate if the SRID " + srid + " is geodetic",e);
+        }
+ finally {
+          dataStore.closeSafe(rs);
+          dataStore.closeSafe(ps);
+          if (closeConnection)           dataStore.closeSafe(cx);
+        }
+      }
+    }
+  }
+  return geodetic;
+}

@@ -1,0 +1,31 @@
+{
+  Connection cx=createConnection();
+  List typeNames=new ArrayList();
+  try {
+    DatabaseMetaData metaData=cx.getMetaData();
+    ResultSet tables=metaData.getTables(null,databaseSchema,"%",new String[]{"TABLE","VIEW"});
+    try {
+      while (tables.next()) {
+        String schemaName=tables.getString("TABLE_SCHEM");
+        String tableName=tables.getString("TABLE_NAME");
+        if (!dialect.includeTable(schemaName,tableName,cx)) {
+          continue;
+        }
+        typeNames.add(new NameImpl(namespaceURI,tableName));
+      }
+    }
+  finally {
+      closeSafe(tables);
+    }
+  }
+ catch (  SQLException e) {
+    throw (IOException)new IOException("Error occurred getting table name list.").initCause(e);
+  }
+ finally {
+    closeSafe(cx);
+  }
+  for (  String virtualTable : virtualTables.keySet()) {
+    typeNames.add(new NameImpl(namespaceURI,virtualTable));
+  }
+  return typeNames;
+}

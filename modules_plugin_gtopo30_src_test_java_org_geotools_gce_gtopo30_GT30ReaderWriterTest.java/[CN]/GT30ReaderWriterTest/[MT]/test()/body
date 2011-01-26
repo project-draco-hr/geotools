@@ -1,0 +1,35 @@
+{
+  URL statURL=TestData.url(this,(new StringBuffer(this.fileName).append(".DEM").toString()));
+  AbstractGridFormat format=(AbstractGridFormat)new GTopo30FormatFactory().createFormat();
+  final JAI jaiDef=JAI.getDefaultInstance();
+  final TileCache cache=jaiDef.getTileCache();
+  cache.setMemoryCapacity(64 * 1024 * 1024);
+  cache.setMemoryThreshold(1.0f);
+  jaiDef.setRenderingHint(JAI.KEY_CACHED_TILE_RECYCLING_ENABLED,Boolean.TRUE);
+  final RecyclingTileFactory recyclingFactory=new RecyclingTileFactory();
+  jaiDef.setRenderingHint(JAI.KEY_TILE_FACTORY,recyclingFactory);
+  jaiDef.setRenderingHint(JAI.KEY_TILE_RECYCLER,recyclingFactory);
+  if (format.accepts(statURL)) {
+    GridCoverageReader reader=format.getReader(statURL);
+    gc=((GridCoverage2D)reader.read(null));
+    assertTrue(CoverageUtilities.hasRenderingCategories(gc));
+    if (TestData.isInteractiveTest())     gc.show();
+    File testDir=TestData.file(this,"");
+    newDir=new File(testDir.getAbsolutePath() + "/newDir");
+    newDir.mkdir();
+    GridCoverageWriter writer=format.getWriter(newDir);
+    writer.write(gc,null);
+    statURL=TestData.getResource(this,"newDir/" + this.fileName + ".DEM");
+    reader=format.getReader(statURL);
+    gc=((GridCoverage2D)reader.read(null));
+    GridCoverage2D gc1=gc.geophysics(false);
+    if (TestData.isInteractiveTest()) {
+      gc1.show();
+      logger.info(gc.getCoordinateReferenceSystem2D().toWKT() + "\n" + gc.toString());
+      logger.info(gc1.getCoordinateReferenceSystem2D().toWKT() + "\n" + gc1.toString());
+    }
+ else {
+      gc1.getRenderedImage().getData();
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  String expectedName=expected.getName().getLocalPart();
+  String actualName=actual.getName().getLocalPart();
+  if (!expectedName.equals(actualName)) {
+    throw new IllegalAttributeException("Expected '" + expectedName + "' but was supplied '"+ actualName+ "'.");
+  }
+  Set<String> names=new TreeSet<String>();
+  for (  PropertyDescriptor descriptor : actual.getDescriptors()) {
+    names.add(descriptor.getName().getLocalPart());
+  }
+  for (  PropertyDescriptor descriptor : expected.getDescriptors()) {
+    expectedName=descriptor.getName().getLocalPart();
+    if (names.contains(expectedName)) {
+      names.remove(expectedName);
+    }
+ else {
+      throw new IllegalAttributeException("Expected to find a match for '" + expectedName + "' but was not available remaining names: "+ names);
+    }
+  }
+  if (!names.isEmpty()) {
+    throw new IllegalAttributeException("Expected to find attributes '" + expectedName + "' but was not available remaining names: "+ names);
+  }
+  for (  PropertyDescriptor expectedDescriptor : expected.getDescriptors()) {
+    expectedName=expectedDescriptor.getName().getLocalPart();
+    PropertyDescriptor actualDescriptor=actual.getDescriptor(expectedName);
+    Class<?> expectedBinding=expectedDescriptor.getType().getBinding();
+    Class<?> actualBinding=actualDescriptor.getType().getBinding();
+    if (!actualBinding.isAssignableFrom(expectedBinding)) {
+      throw new IllegalArgumentException("Expected " + expectedBinding.getSimpleName() + " for "+ expectedName+ " but was "+ actualBinding.getSimpleName());
+    }
+  }
+}

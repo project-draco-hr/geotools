@@ -1,0 +1,27 @@
+{
+  if (implementation != null && !implementation.isInterface()) {
+    final Set<Class<?>> interfaces=new LinkedHashSet<Class<?>>();
+    do {
+      getInterfaces(implementation,interfacePackage,interfaces);
+      implementation=implementation.getSuperclass();
+    }
+ while (implementation != null);
+    for (final Iterator<Class<?>> it=interfaces.iterator(); it.hasNext(); ) {
+      final Class<?> candidate=it.next();
+      for (      final Class<?> child : interfaces) {
+        if (candidate != child && candidate.isAssignableFrom(child)) {
+          it.remove();
+          break;
+        }
+      }
+    }
+    final Iterator<Class<?>> it=interfaces.iterator();
+    if (it.hasNext()) {
+      final Class<?> candidate=it.next();
+      if (!it.hasNext()) {
+        return candidate;
+      }
+    }
+  }
+  return null;
+}

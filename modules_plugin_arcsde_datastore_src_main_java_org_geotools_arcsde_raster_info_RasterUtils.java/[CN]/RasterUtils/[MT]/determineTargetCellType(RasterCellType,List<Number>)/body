@@ -1,0 +1,27 @@
+{
+  if (TYPE_32BIT_REAL == nativeCellType || TYPE_64BIT_REAL == nativeCellType) {
+    for (    Number nodata : noDataValues) {
+      if (!Double.isNaN(nodata.doubleValue())) {
+        throw new IllegalArgumentException("no data values for float and " + "double cell types shall be NaN: " + nodata);
+      }
+    }
+    return nativeCellType;
+  }
+  double noDataMin=Double.POSITIVE_INFINITY, noDataMax=Double.NEGATIVE_INFINITY;
+{
+    for (    Number noData : noDataValues) {
+      noDataMin=Math.min(noDataMin,noData.doubleValue());
+      noDataMax=Math.max(noDataMax,noData.doubleValue());
+    }
+  }
+  final NumberRange<Double> sampleValueRange;
+  sampleValueRange=nativeCellType.getSampleValueRange().castTo(Double.class);
+  final RasterCellType targetCellType;
+  if (sampleValueRange.contains((Number)Double.valueOf(noDataMin)) && sampleValueRange.contains((Number)Double.valueOf(noDataMax))) {
+    targetCellType=nativeCellType;
+  }
+ else {
+    targetCellType=promote(nativeCellType);
+  }
+  return targetCellType;
+}

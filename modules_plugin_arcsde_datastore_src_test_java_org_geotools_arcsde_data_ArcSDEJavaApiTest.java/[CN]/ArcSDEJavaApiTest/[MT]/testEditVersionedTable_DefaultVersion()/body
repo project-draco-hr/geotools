@@ -1,0 +1,72 @@
+{
+  final SeTable versionedTable=testData.createVersionedTable(session);
+  final SeVersion defaultVersion;
+  final SeVersion newVersion;
+{
+    defaultVersion=session.issue(new Commands.GetVersionCommand(SeVersion.SE_QUALIFIED_DEFAULT_VERSION_NAME));
+    newVersion=session.issue(new Command<SeVersion>(){
+      @Override public SeVersion execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeVersion newVersion=new SeVersion(connection,SeVersion.SE_QUALIFIED_DEFAULT_VERSION_NAME);
+        newVersion.setName(connection.getUser() + ".GeoToolsTestVersion");
+        newVersion.setParentName(defaultVersion.getName());
+        newVersion.setDescription(defaultVersion.getName() + " child for GeoTools ArcSDE unit tests");
+        boolean uniqueName=false;
+        try {
+          newVersion.create(uniqueName,newVersion);
+        }
+ catch (        SeException e) {
+          int sdeError=e.getSeError().getSdeError();
+          if (sdeError != -177) {
+            throw new ArcSdeException(e);
+          }
+          newVersion.getInfo();
+        }
+        return newVersion;
+      }
+    }
+);
+  }
+  SeState newState1=session.issue(new Command<SeState>(){
+    @Override public SeState execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeObjectId defVersionStateId=defaultVersion.getStateId();
+      SeState defVersionState=new SeState(connection,defVersionStateId);
+      if (defVersionState.isOpen()) {
+        defVersionState.close();
+      }
+      SeState newState1=new SeState(connection);
+      newState1.create(defVersionState.getId());
+      return newState1;
+    }
+  }
+);
+  session.startTransaction();
+  testData.insertIntoVersionedTable(session,newState1,versionedTable.getName(),"name 1 state 1");
+  testData.insertIntoVersionedTable(session,newState1,versionedTable.getName(),"name 2 state 1");
+  final SeObjectId parentStateId=newState1.getId();
+  session.close(newState1);
+  final SeState newState2=session.issue(new Command<SeState>(){
+    @Override public SeState execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeState newState=new SeState(connection);
+      newState.create(parentStateId);
+      return newState;
+    }
+  }
+);
+  testData.insertIntoVersionedTable(session,newState2,versionedTable.getName(),"name 1 state 2");
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      defaultVersion.changeState(newState2.getId());
+      newState2.trimTree(parentStateId,newState2.getId());
+      return null;
+    }
+  }
+);
+  session.commitTransaction();
+  final SeObjectId defaultVersionStateId=defaultVersion.getStateId();
+  SeState defVersionState=session.createState(defaultVersionStateId);
+  int defVersionCount=getTempTableCount(session,versionedTable.getName(),null,null,defVersionState);
+  assertEquals(3,defVersionCount);
+  SeState newVersionState=session.createState(newVersion.getStateId());
+  int newVersionCount=getTempTableCount(session,versionedTable.getName(),null,null,newVersionState);
+  assertEquals(0,newVersionCount);
+}

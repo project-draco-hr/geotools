@@ -1,0 +1,23 @@
+{
+  if (data == null) {
+    if (columnCount < 0)     columnCount=line.length;
+    min=new double[columnCount];
+    Arrays.fill(min,Double.POSITIVE_INFINITY);
+    max=new double[columnCount];
+    Arrays.fill(max,Double.NEGATIVE_INFINITY);
+    data=new float[columnCount * expectedLineCount];
+  }
+  final int limit=Math.min(columnCount,line.length);
+  final int nextUpper=upper + columnCount;
+  if (nextUpper >= data.length) {
+    data=XArray.resize(data,Math.max(nextUpper,data.length + Math.min(data.length,65536)));
+  }
+  for (int i=0; i < limit; i++) {
+    final double value=line[i];
+    if (value < min[i])     min[i]=value;
+    if (value > max[i])     max[i]=value;
+    data[upper + i]=(float)value;
+  }
+  Arrays.fill(data,upper + limit,nextUpper,Float.NaN);
+  upper=nextUpper;
+}

@@ -1,0 +1,24 @@
+{
+  try {
+    PrimaryKey key=dataStore.getPrimaryKey(featureType);
+    String fid=dataStore.encodeFID(key,rs);
+    Id filter=dataStore.getFilterFactory().id(Collections.singleton(dataStore.getFilterFactory().featureId(fid)));
+    List<AttributeDescriptor> changed=new ArrayList<AttributeDescriptor>();
+    List<Object> values=new ArrayList<Object>();
+    for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+      if (last.isDirrty(att.getLocalName())) {
+        changed.add(att);
+        values.add(last.getAttribute(att.getLocalName()));
+      }
+    }
+    dataStore.update(featureType,changed,values,filter,st.getConnection());
+    ContentEntry entry=featureSource.getEntry();
+    ContentState state=entry.getState(this.tx);
+    if (state.hasListener()) {
+      state.fireFeatureUpdated(featureSource,last,lastBounds);
+    }
+  }
+ catch (  Exception e) {
+    throw (IOException)new IOException().initCause(e);
+  }
+}

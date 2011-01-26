@@ -1,0 +1,53 @@
+{
+  final int numberOfBands=3;
+  final RasterCellType pixelType=TYPE_8BIT_U;
+  final String tableName=getRasterTableName(pixelType,numberOfBands) + "_CAT";
+{
+    testData.deleteTable(tableName);
+    ISession session=getConnectionPool().getSession();
+    try {
+      createRasterBusinessTempTable(tableName,session);
+    }
+  finally {
+      session.dispose();
+    }
+  }
+  final SeCoordinateReference crs=getSeCRSFromPeProjectedCSId(PePCSDefs.PE_PCS_NAD_1983_HARN_MA_M);
+  final ISession session=getConnectionPool().getSession();
+  try {
+    createRasterColumn(tableName,crs,session);
+    int imageWidth;
+    int imageHeight;
+    SeExtent extent;
+    int maxLevels;
+    maxLevels=2;
+    extent=new SeExtent(0,0,256,256);
+    imageWidth=228;
+    imageHeight=228;
+    addRasterToCatalog(session,tableName,crs,numberOfBands,imageWidth,imageHeight,pixelType,maxLevels,extent);
+    maxLevels=3;
+    extent=new SeExtent(512,512,768,768);
+    imageWidth=456;
+    imageHeight=456;
+    addRasterToCatalog(session,tableName,crs,numberOfBands,imageWidth,imageHeight,pixelType,maxLevels,extent);
+    maxLevels=3;
+    extent=new SeExtent(512,0,768,256);
+    imageWidth=532;
+    imageHeight=532;
+    addRasterToCatalog(session,tableName,crs,numberOfBands,imageWidth,imageHeight,pixelType,maxLevels,extent);
+    maxLevels=3;
+    extent=new SeExtent(0,512,256,768);
+    imageWidth=1024;
+    imageHeight=1024;
+    addRasterToCatalog(session,tableName,crs,numberOfBands,imageWidth,imageHeight,pixelType,maxLevels,extent);
+    maxLevels=3;
+    extent=new SeExtent(256,256,512,512);
+    imageWidth=99;
+    imageHeight=99;
+    addRasterToCatalog(session,tableName,crs,numberOfBands,imageWidth,imageHeight,pixelType,maxLevels,extent);
+  }
+  finally {
+    session.dispose();
+  }
+  return tableName;
+}

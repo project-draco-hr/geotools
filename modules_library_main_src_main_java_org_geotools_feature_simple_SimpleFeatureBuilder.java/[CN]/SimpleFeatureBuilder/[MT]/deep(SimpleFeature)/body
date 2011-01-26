@@ -1,0 +1,19 @@
+{
+  if (original == null)   return null;
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(original.getFeatureType());
+  for (  Property property : original.getProperties()) {
+    Object value=property.getValue();
+    try {
+      Object copy=value;
+      if (value instanceof Geometry) {
+        Geometry geometry=(Geometry)value;
+        copy=geometry.clone();
+      }
+      builder.set(property.getName(),copy);
+    }
+ catch (    Exception e) {
+      throw new IllegalAttributeException((AttributeDescriptor)property.getDescriptor(),value,e);
+    }
+  }
+  return builder.buildFeature(original.getID());
+}

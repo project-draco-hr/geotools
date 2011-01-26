@@ -1,0 +1,37 @@
+{
+  if (stroke == null) {
+    return null;
+  }
+  String joinType;
+  int joinCode;
+  joinType=evalToString(stroke.getLineJoin(),feature,"miter");
+  if (joinLookup.containsKey(joinType)) {
+    joinCode=((Integer)joinLookup.get(joinType)).intValue();
+  }
+ else {
+    joinCode=java.awt.BasicStroke.JOIN_MITER;
+  }
+  String capType;
+  int capCode;
+  capType=evalToString(stroke.getLineCap(),feature,"square");
+  if (capLookup.containsKey(capType)) {
+    capCode=((Integer)capLookup.get(capType)).intValue();
+  }
+ else {
+    capCode=java.awt.BasicStroke.CAP_SQUARE;
+  }
+  float[] dashes=stroke.getDashArray();
+  float width=evalToFloat(stroke.getWidth(),feature,1);
+  float dashOffset=evalToFloat(stroke.getDashOffset(),feature,0);
+  if (width < 1.5 & lineOptimizationEnabled) {
+    width=0;
+  }
+  BasicStroke stroke2d;
+  if ((dashes != null) && (dashes.length > 0)) {
+    stroke2d=new BasicStroke(width,capCode,joinCode,1,dashes,dashOffset);
+  }
+ else {
+    stroke2d=new BasicStroke(width,capCode,joinCode,1);
+  }
+  return stroke2d;
+}

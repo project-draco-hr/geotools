@@ -1,0 +1,35 @@
+{
+  int nnodes=100;
+  Node[] ends=GraphTestUtil.buildCircular(builder(),nnodes);
+  CountingWalker walker=new CountingWalker();
+  final DijkstraIterator iterator=createIterator();
+  iterator.setSource(ends[0]);
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      Graphable parent=iterator.getParent(component);
+      if (component.getID() < 50 && component.getID() > 0) {
+        assertTrue(iterator.getCost(component) == (double)component.getID());
+        assertTrue(parent.getID() == component.getID() - 1);
+      }
+ else       if (component.getID() > 50 && component.getID() < 99) {
+        assertTrue(iterator.getCost(component) == (double)100 - component.getID());
+        assertTrue(parent.getID() == component.getID() + 1);
+      }
+ else       if (component.getID() == 0) {
+        assertTrue(parent == null);
+        assertTrue(iterator.getCost(component) == 0d);
+      }
+ else       if (component.getID() == 99) {
+        assertTrue(parent.getID() == 0);
+        assertTrue(iterator.getCost(component) == 1d);
+      }
+      return (0);
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == nnodes);
+}

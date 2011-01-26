@@ -1,0 +1,42 @@
+{
+  ReferencedEnvelope maxBounds=null;
+  CoordinateReferenceSystem mapCRS=viewport != null ? viewport.getCoordianteReferenceSystem() : null;
+  for (  Layer layer : layers()) {
+    if (layer == null) {
+      continue;
+    }
+    ReferencedEnvelope dataBounds=layer.getBounds();
+    if (dataBounds == null) {
+      continue;
+    }
+ else {
+      try {
+        CoordinateReferenceSystem dataCrs=dataBounds.getCoordinateReferenceSystem();
+        if ((dataCrs != null) && mapCRS != null && !CRS.equalsIgnoreMetadata(dataCrs,mapCRS)) {
+          dataBounds=dataBounds.transform(mapCRS,true);
+        }
+        if (dataCrs == null && mapCRS != null) {
+          LOGGER.log(Level.SEVERE,"It was not possible to get a projected bounds estimate");
+        }
+      }
+ catch (      FactoryException e) {
+        LOGGER.log(Level.SEVERE,"Data source and map context coordinate system differ, yet it was not possible to get a projected bounds estimate...",e);
+        continue;
+      }
+catch (      TransformException e) {
+        LOGGER.log(Level.SEVERE,"Data source and map context coordinate system differ, yet it was not possible to get a projected bounds estimate...",e);
+        continue;
+      }
+      if (maxBounds == null) {
+        maxBounds=dataBounds;
+      }
+ else {
+        maxBounds.expandToInclude(dataBounds);
+      }
+      if (mapCRS == null) {
+        mapCRS=dataBounds.getCoordinateReferenceSystem();
+      }
+    }
+  }
+  return maxBounds;
+}

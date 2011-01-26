@@ -1,0 +1,23 @@
+{
+  String path=AppSchemaResolver.getSimpleHttpResourcePath(location);
+  if (path == null) {
+    return null;
+  }
+  String relativePath=path.substring(1);
+  File file=new File(getDirectory(),relativePath);
+  if (file.exists()) {
+    return DataUtilities.fileToURL(file).toExternalForm();
+  }
+ else   if (isDownloadAllowed()) {
+    byte[] bytes=download(location);
+    if (bytes == null) {
+      return null;
+    }
+    store(file,bytes);
+    LOGGER.info("Cached application schema: " + location);
+    return DataUtilities.fileToURL(file).toExternalForm();
+  }
+ else {
+    return null;
+  }
+}

@@ -1,0 +1,60 @@
+{
+  if (type == ShapeType.NULL) {
+    return createNull();
+  }
+  buffer.position(buffer.position() + 4 * 8);
+  int[] partOffsets;
+  int numParts=buffer.getInt();
+  int numPoints=buffer.getInt();
+  int dimensions=(shapeType == ShapeType.POLYGONZ) && !flatFeature ? 3 : 2;
+  partOffsets=new int[numParts];
+  for (int i=0; i < numParts; i++) {
+    partOffsets[i]=buffer.getInt();
+  }
+  ArrayList shells=new ArrayList();
+  ArrayList holes=new ArrayList();
+  CoordinateSequence coords=readCoordinates(buffer,numPoints,dimensions);
+  int offset=0;
+  int start;
+  int finish;
+  int length;
+  for (int part=0; part < numParts; part++) {
+    start=partOffsets[part];
+    if (part == (numParts - 1)) {
+      finish=numPoints;
+    }
+ else {
+      finish=partOffsets[part + 1];
+    }
+    length=finish - start;
+    CoordinateSequence csRing=geometryFactory.getCoordinateSequenceFactory().create(length,dimensions);
+    for (int i=0; i < length; i++) {
+      csRing.setOrdinate(i,0,coords.getOrdinate(offset,0));
+      csRing.setOrdinate(i,1,coords.getOrdinate(offset,1));
+      if (dimensions == 3) {
+        csRing.setOrdinate(i,2,coords.getOrdinate(offset,2));
+      }
+      offset++;
+    }
+    if (csRing.size() == 0 || csRing.size() > 3) {
+      LinearRing ring=geometryFactory.createLinearRing(csRing);
+      if (CoordinateSequences.isCCW(csRing)) {
+        holes.add(ring);
+      }
+ else {
+        shells.add(ring);
+      }
+    }
+  }
+  if (shells.size() == 1) {
+    return createMulti((LinearRing)shells.get(0),holes);
+  }
+ else   if (holes.size() == 1 && shells.size() == 0) {
+    return createMulti((LinearRing)holes.get(0));
+  }
+ else {
+    final ArrayList holesForShells=assignHolesToShells(shells,holes);
+    Geometry g=buildGeometries(shells,holes,holesForShells);
+    return g;
+  }
+}

@@ -1,0 +1,129 @@
+{
+  super(parameters,expected);
+  this.twoPoint=twoPoint;
+  centralMeridian=Double.NaN;
+  latitudeOfOrigin=Double.NaN;
+  latitudeOfCentre=doubleValue(expected,Provider.LATITUDE_OF_CENTRE,parameters);
+  ensureLatitudeInRange(Provider.LATITUDE_OF_CENTRE,latitudeOfCentre,false);
+  final double com=sqrt(1.0 - excentricitySquared);
+  final double sinphi0=sin(latitudeOfCentre);
+  final double cosphi0=cos(latitudeOfCentre);
+  double temp=cosphi0 * cosphi0;
+  B=sqrt(1.0 + excentricitySquared * (temp * temp) / (1.0 - excentricitySquared));
+  final double con=1.0 - excentricitySquared * sinphi0 * sinphi0;
+  A=B * com / con;
+  final double D=B * com / (cosphi0 * sqrt(con));
+  double F=D * D - 1.0;
+  if (F < 0.0) {
+    F=0.0;
+  }
+ else {
+    F=sqrt(F);
+    if (latitudeOfCentre < 0.0) {
+      F=-F;
+    }
+  }
+  F=F+=D;
+  E=F * pow(tsfn(latitudeOfCentre,sinphi0),B);
+  final double gamma0;
+  if (twoPoint) {
+    longitudeOfCentre=Double.NaN;
+    latitudeOf1stPoint=doubleValue(expected,Provider_TwoPoint.LAT_OF_1ST_POINT,parameters);
+    ensureLatitudeInRange(Provider_TwoPoint.LAT_OF_1ST_POINT,latitudeOf1stPoint,false);
+    longitudeOf1stPoint=doubleValue(expected,Provider_TwoPoint.LONG_OF_1ST_POINT,parameters);
+    ensureLongitudeInRange(Provider_TwoPoint.LONG_OF_1ST_POINT,longitudeOf1stPoint,true);
+    latitudeOf2ndPoint=doubleValue(expected,Provider_TwoPoint.LAT_OF_2ND_POINT,parameters);
+    ensureLatitudeInRange(Provider_TwoPoint.LAT_OF_2ND_POINT,latitudeOf2ndPoint,true);
+    double longitudeOf2ndPoint;
+    longitudeOf2ndPoint=doubleValue(expected,Provider_TwoPoint.LONG_OF_2ND_POINT,parameters);
+    ensureLongitudeInRange(Provider_TwoPoint.LONG_OF_2ND_POINT,longitudeOf2ndPoint,true);
+    ParameterDescriptor desc=null;
+    Object value=null;
+    if (abs(latitudeOf1stPoint - latitudeOf2ndPoint) < EPSILON_LATITUDE) {
+      desc=Provider_TwoPoint.LAT_OF_1ST_POINT;
+      value=Provider_TwoPoint.LAT_OF_2ND_POINT.getName().getCode();
+    }
+    if (abs(latitudeOf1stPoint) < EPSILON_LATITUDE) {
+      desc=Provider_TwoPoint.LAT_OF_1ST_POINT;
+      value=new Latitude(latitudeOf1stPoint);
+    }
+    if (abs(latitudeOf2ndPoint + PI / 2.0) < EPSILON_LATITUDE) {
+      desc=Provider_TwoPoint.LAT_OF_2ND_POINT;
+      value=new Latitude(latitudeOf2ndPoint);
+    }
+    if (desc != null) {
+      final String name=desc.getName().getCode();
+      throw new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,name,value),name,value);
+    }
+    final double H=pow(tsfn(latitudeOf1stPoint,sin(latitudeOf1stPoint)),B);
+    final double L=pow(tsfn(latitudeOf2ndPoint,sin(latitudeOf2ndPoint)),B);
+    final double Fp=E / H;
+    final double P=(L - H) / (L + H);
+    double J=E * E;
+    J=(J - L * H) / (J + L * H);
+    double diff=longitudeOf1stPoint - longitudeOf2ndPoint;
+    if (diff < -PI) {
+      longitudeOf2ndPoint-=2.0 * PI;
+    }
+ else     if (diff > PI) {
+      longitudeOf2ndPoint+=2.0 * PI;
+    }
+    this.longitudeOf2ndPoint=longitudeOf2ndPoint;
+    centralMeridian=rollLongitude(0.5 * (longitudeOf1stPoint + longitudeOf2ndPoint) - atan(J * tan(0.5 * B * (longitudeOf1stPoint - longitudeOf2ndPoint)) / P) / B);
+    gamma0=atan(2.0 * sin(B * rollLongitude(longitudeOf1stPoint - centralMeridian)) / (Fp - 1.0 / Fp));
+    azimuth=asin(D * sin(gamma0));
+    rectifiedGridAngle=azimuth;
+  }
+ else {
+    latitudeOf1stPoint=Double.NaN;
+    longitudeOf1stPoint=Double.NaN;
+    latitudeOf2ndPoint=Double.NaN;
+    longitudeOf2ndPoint=Double.NaN;
+    longitudeOfCentre=doubleValue(expected,Provider.LONGITUDE_OF_CENTRE,parameters);
+    ensureLongitudeInRange(Provider.LONGITUDE_OF_CENTRE,longitudeOfCentre,true);
+    azimuth=doubleValue(expected,Provider.AZIMUTH,parameters);
+    if ((azimuth > -1.5 * PI && azimuth < -0.5 * PI) || (azimuth > 0.5 * PI && azimuth < 1.5 * PI)) {
+      final String name=Provider.AZIMUTH.getName().getCode();
+      final Angle value=new Angle(toDegrees(azimuth));
+      throw new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,name,value),name,value);
+    }
+    temp=doubleValue(expected,Provider.RECTIFIED_GRID_ANGLE,parameters);
+    if (Double.isNaN(temp)) {
+      temp=azimuth;
+    }
+    rectifiedGridAngle=temp;
+    gamma0=asin(sin(azimuth) / D);
+    temp=0.5 * (F - 1.0 / F) * tan(gamma0);
+    if (abs(temp) > 1.0) {
+      if (abs(abs(temp) - 1.0) > EPSILON) {
+        throw new IllegalArgumentException(Errors.format(ErrorKeys.TOLERANCE_ERROR));
+      }
+      temp=(temp > 0) ? 1.0 : -1.0;
+    }
+    centralMeridian=longitudeOfCentre - asin(temp) / B;
+  }
+  singamma0=sin(gamma0);
+  cosgamma0=cos(gamma0);
+  sinrot=sin(rectifiedGridAngle);
+  cosrot=cos(rectifiedGridAngle);
+  ArB=A / B;
+  AB=A * B;
+  BrA=B / A;
+  v_pole_n=ArB * log(tan(0.5 * (PI / 2.0 - gamma0)));
+  v_pole_s=ArB * log(tan(0.5 * (PI / 2.0 + gamma0)));
+  if (hotine) {
+    u_c=0.0;
+  }
+ else {
+    if (abs(abs(azimuth) - PI / 2.0) < EPSILON_LATITUDE) {
+      u_c=A * (longitudeOfCentre - centralMeridian);
+    }
+ else {
+      double u_c=abs(ArB * atan2(sqrt(D * D - 1.0),cos(azimuth)));
+      if (latitudeOfCentre < 0.0) {
+        u_c=-u_c;
+      }
+      this.u_c=u_c;
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  boolean firstAttr=true;
+  SQLEncoderDB2 db2Encoder=(SQLEncoderDB2)encoder;
+  StringBuffer statementSQL=new StringBuffer("UPDATE " + getSchemaTableName() + " SET ");
+  for (int i=0; i < current.getAttributeCount(); i++) {
+    Object currAtt=current.getAttribute(i);
+    Object liveAtt=live.getAttribute(i);
+    if (!DataUtilities.attributesEqual(currAtt,liveAtt)) {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.fine("modifying att# " + i + " to "+ currAtt);
+      }
+      String attrValue=null;
+      String attrName=attributes.get(i).getLocalName();
+      if (Geometry.class.isAssignableFrom(attributes.get(i).getType().getBinding())) {
+        attrValue=db2Encoder.db2Geom((Geometry)currAtt);
+      }
+ else       if (String.class.isAssignableFrom(attributes.get(i).getType().getBinding())) {
+        attrValue="'" + currAtt.toString() + "'";
+      }
+ else {
+        attrValue=currAtt.toString();
+      }
+      String colName=escapeName(attrName);
+      if (!firstAttr) {
+        statementSQL.append(", ");
+      }
+      firstAttr=false;
+      statementSQL.append(colName).append(" = ").append(attrValue);
+    }
+  }
+  statementSQL.append(makeFIDWhere(current));
+  return (statementSQL.toString());
+}

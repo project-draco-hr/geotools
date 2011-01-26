@@ -1,0 +1,33 @@
+{
+  final ParameterValue<?> parameter;
+  try {
+    parameter=parameters.parameter(name);
+  }
+ catch (  ParameterNotFoundException ignore) {
+    return false;
+  }
+  try {
+    if (Math.abs(parameter.doubleValue(unit) / value - 1) <= EPS) {
+      return false;
+    }
+  }
+ catch (  InvalidParameterTypeException exception) {
+    return false;
+  }
+catch (  IllegalStateException exception) {
+    parameter.setValue(value,unit);
+    return true;
+  }
+  if (force) {
+    parameter.setValue(value,unit);
+  }
+ else {
+    final LogRecord record=new LogRecord(Level.FINE,"Axis length mismatch.");
+    record.setSourceClassName(Parameters.class.getName());
+    record.setSourceMethodName("ensureSet");
+    final Logger logger=Logging.getLogger(Parameters.class);
+    record.setLoggerName(logger.getName());
+    logger.log(record);
+  }
+  return true;
+}

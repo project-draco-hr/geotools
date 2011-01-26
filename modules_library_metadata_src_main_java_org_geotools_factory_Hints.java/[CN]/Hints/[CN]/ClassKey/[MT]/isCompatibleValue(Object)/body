@@ -1,0 +1,29 @@
+{
+  if (value == null) {
+    return false;
+  }
+  if (value instanceof Class<?>[]) {
+    final Class<?>[] types=(Class<?>[])value;
+    for (int i=0; i < types.length; i++) {
+      if (!isCompatibleValue(types[i])) {
+        return false;
+      }
+    }
+    return types.length != 0;
+  }
+  if (value instanceof Class<?>) {
+    final Class<?> type=(Class<?>)value;
+    final Class<?> expected=getValueClass();
+    if (expected.isAssignableFrom(type)) {
+      return true;
+    }
+    if (expected.isInterface() && !type.isInterface()) {
+      final int modifiers=type.getModifiers();
+      if (Modifier.isAbstract(modifiers) && !Modifier.isFinal(modifiers)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  return super.isCompatibleValue(value);
+}

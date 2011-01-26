@@ -1,0 +1,52 @@
+{
+  DXFLayer l=null;
+  int flag=0, visibility=0, c=-1;
+  String name="";
+  DXFLineType lineType=null;
+  Vector<DXFVertex> lv=new Vector<DXFVertex>();
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      br.reset();
+    doLoop=false;
+  break;
+case LAYER_NAME:
+l=univers.findLayer(cvp.getStringValue());
+break;
+case X_1:
+double x=cvp.getDoubleValue();
+lv.add(new DXFVertex(x,-1,1,c,l,visibility));
+case Y_1:
+int lastIndex=lv.size() - 1;
+DXFVertex lastCoord=lv.get(lastIndex);
+lastCoord.setY(cvp.getDoubleValue());
+lv.set(lastIndex,lastCoord);
+break;
+default :
+break;
+}
+}
+DXFSpLine e=new DXFSpLine(name,4,c,l,lv,visibility,lineType,DXFTables.defaultThickness);
+e.setType(GeometryType.LINE);
+e.setStartingLineNumber(sln);
+e.setUnivers(univers);
+log.debug(e.toString(lv.get(0).X(),lv.get(0).Y(),lv.get(lv.size() - 1).X(),lv.get(lv.size() - 1).Y(),c,visibility));
+log.debug(">Exit at line: " + br.getLineNumber());
+return e;
+}

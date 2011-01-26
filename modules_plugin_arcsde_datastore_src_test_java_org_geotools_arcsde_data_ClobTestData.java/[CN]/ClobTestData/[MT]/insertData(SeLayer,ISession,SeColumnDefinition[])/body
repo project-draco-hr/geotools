@@ -1,0 +1,50 @@
+{
+  WKTReader reader=new WKTReader();
+  Geometry[] geoms=new Geometry[2];
+  geoms[0]=reader.read("POINT(0 0)");
+  geoms[1]=reader.read("POINT(0 0)");
+  final byte[][] strings=new byte[2][];
+  strings[0]=new byte[]{0x00,0x48,0x00,0x65,0x00,0x6C,0x00,0x6C,0x00,0x6F};
+  strings[1]=new byte[]{0x00,0x57,0x00,0x6F,0x00,0x72,0x00,0x6C,0x00,0x64};
+  final SeCoordinateReference coordref=layer.getCoordRef();
+  final SeShape shapes[]=new SeShape[2];
+  for (int i=0; i < shapes.length; i++) {
+    Geometry geom=geoms[i];
+    SeShape shape;
+    if (geom == null) {
+      shape=null;
+    }
+ else {
+      ArcSDEGeometryBuilder builder=ArcSDEGeometryBuilder.builderFor(geom.getClass());
+      shape=builder.constructShape(geom,coordref);
+    }
+    shapes[i]=shape;
+  }
+  final String[] columns=new String[colDefs.length];
+  for (int j=1; j < colDefs.length; j++) {
+    columns[j - 1]=colDefs[j].getName();
+  }
+  columns[colDefs.length - 1]="SHAPE";
+  Command<Void> insertDataCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeInsert insert=new SeInsert(connection);
+      insert.intoTable(layer.getName(),columns);
+      insert.setWriteMode(true);
+      try {
+        for (int i=0; i < shapes.length; i++) {
+          SeRow row=insert.getRowToSet();
+          row.setClob(0,new ByteArrayInputStream(strings[i]));
+          SeShape seShape=shapes[i];
+          row.setShape(tempTableColumns.length - 1,seShape);
+          insert.execute();
+        }
+      }
+  finally {
+        insert.close();
+      }
+      return null;
+    }
+  }
+;
+  session.issue(insertDataCmd);
+}

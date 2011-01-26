@@ -1,0 +1,69 @@
+{
+  String nomBlock="";
+  DXFInsert m=null;
+  DXFLayer l=null;
+  double x=0, y=0;
+  int visibility=0, c=-1;
+  DXFBlock refBlock=null;
+  DXFLineType lineType=null;
+  double angle=0.0;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    br.reset();
+  doLoop=false;
+break;
+case LAYER_NAME:
+l=univers.findLayer(cvp.getStringValue());
+break;
+case NAME:
+nomBlock=cvp.getStringValue();
+break;
+case X_1:
+x=cvp.getDoubleValue();
+break;
+case Y_1:
+y=cvp.getDoubleValue();
+break;
+case ANGLE_1:
+angle=cvp.getDoubleValue();
+break;
+case COLOR:
+c=cvp.getShortValue();
+break;
+case VISIBILITY:
+visibility=cvp.getShortValue();
+break;
+case LINETYPE_NAME:
+lineType=univers.findLType(cvp.getStringValue());
+break;
+default :
+break;
+}
+}
+m=new DXFInsert(x,y,nomBlock,refBlock,l,visibility,c,lineType,angle);
+m.setType(GeometryType.POINT);
+m.setStartingLineNumber(sln);
+m.setUnivers(univers);
+univers.addRefBlockForUpdate(m);
+log.debug(m.toString(x,y,visibility,c,lineType));
+log.debug(">>Exit at line: " + br.getLineNumber());
+return m;
+}

@@ -1,0 +1,43 @@
+{
+  String geomName=GMLUtils.getGeometryName(geometry);
+  if ((srsName == null) || srsName.equals("")) {
+    start(geomName);
+  }
+ else {
+    AttributesImpl atts=new AttributesImpl();
+    atts.addAttribute("","srsName","srsName","",srsName);
+    start(geomName,atts);
+  }
+  int geometryType=GMLUtils.getGeometryType(geometry);
+  CoordinateSequence coordSeq;
+switch (geometryType) {
+case GMLUtils.POINT:
+    coordSeq=((Point)geometry).getCoordinateSequence();
+  try {
+    coordWriter.writeCoordinates(coordSeq,contentHandler);
+  }
+ catch (  SAXException e) {
+    throw new RuntimeException(e);
+  }
+break;
+case GMLUtils.LINESTRING:
+coordSeq=((LineString)geometry).getCoordinateSequence();
+try {
+coordWriter.writeCoordinates(coordSeq,contentHandler);
+}
+ catch (SAXException s) {
+throw new RuntimeException(s);
+}
+break;
+case GMLUtils.POLYGON:
+writePolygon((Polygon)geometry);
+break;
+case GMLUtils.MULTIPOINT:
+case GMLUtils.MULTILINESTRING:
+case GMLUtils.MULTIPOLYGON:
+case GMLUtils.MULTIGEOMETRY:
+writeMulti((GeometryCollection)geometry,GMLUtils.getMemberName(geometryType));
+break;
+}
+end(geomName);
+}

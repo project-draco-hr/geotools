@@ -1,0 +1,38 @@
+{
+  int crsDimension=2;
+  Node dimensions=(Node)node.getAttribute("srsDimension");
+  if (dimensions != null) {
+    crsDimension=((Number)dimensions.getValue()).intValue();
+  }
+  CoordinateReferenceSystem crs=GML3ParsingUtils.crs(node);
+  Double[] values=(Double[])value;
+  BigInteger coordinatesCount=(BigInteger)node.getAttributeValue("count");
+  if (coordinatesCount == null) {
+    coordinatesCount=BigInteger.valueOf(values.length / crsDimension);
+  }
+  final int coordCount=coordinatesCount.intValue();
+  if (coordCount == 0) {
+    return new DirectPosition[]{};
+  }
+  int dim=values.length / coordCount;
+  if (dim < 1) {
+    throw new IllegalArgumentException("dimension must be greater or equal to 1");
+  }
+  DirectPosition[] dps=new DirectPosition[coordCount];
+  if (dim == 1) {
+    for (int i=0; i < coordCount; i++) {
+      dps[i]=new DirectPosition1D(crs);
+      dps[i].setOrdinate(0,values[i].doubleValue());
+    }
+  }
+ else {
+    int ordinateIdx=0;
+    for (int coordIndex=0; coordIndex < coordCount; coordIndex++) {
+      dps[coordIndex]=new DirectPosition2D(crs);
+      dps[coordIndex].setOrdinate(0,values[ordinateIdx].doubleValue());
+      dps[coordIndex].setOrdinate(1,values[ordinateIdx + 1].doubleValue());
+      ordinateIdx+=crsDimension;
+    }
+  }
+  return dps;
+}

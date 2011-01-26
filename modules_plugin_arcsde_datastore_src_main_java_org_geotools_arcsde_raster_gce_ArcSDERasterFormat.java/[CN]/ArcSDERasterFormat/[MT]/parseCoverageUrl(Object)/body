@@ -1,0 +1,30 @@
+{
+  String coverageUrl;
+  if (input instanceof String) {
+    coverageUrl=(String)input;
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("connecting to ArcSDE Raster: " + coverageUrl);
+    }
+  }
+ else   if (input instanceof File) {
+    String path=((File)input).getPath();
+    while (path.indexOf('\\') > -1) {
+      path=path.replace('\\','/');
+    }
+    URI uri;
+    try {
+      uri=new URI(path);
+    }
+ catch (    URISyntaxException e) {
+      throw new IllegalArgumentException(path);
+    }
+    coverageUrl=uri.toString();
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("connectiong via file-hack to ArcSDE Raster: " + coverageUrl);
+    }
+  }
+ else {
+    throw new IllegalArgumentException("Unsupported input type: " + input.getClass());
+  }
+  return coverageUrl;
+}

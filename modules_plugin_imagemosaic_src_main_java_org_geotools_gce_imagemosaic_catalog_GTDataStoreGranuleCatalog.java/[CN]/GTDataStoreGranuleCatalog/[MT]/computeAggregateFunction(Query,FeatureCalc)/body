@@ -1,0 +1,16 @@
+{
+  final Lock lock=rwLock.readLock();
+  try {
+    lock.lock();
+    checkStore();
+    SimpleFeatureSource fs=tileIndexStore.getFeatureSource(query.getTypeName());
+    if (fs instanceof ContentFeatureSource)     ((ContentFeatureSource)fs).accepts(query,function,null);
+ else {
+      final SimpleFeatureCollection collection=fs.getFeatures(query);
+      collection.accepts(function,null);
+    }
+  }
+  finally {
+    lock.unlock();
+  }
+}

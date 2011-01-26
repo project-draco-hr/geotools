@@ -1,0 +1,34 @@
+{
+  GeneralEnvelope adjustedRequestedEnvelope=new GeneralEnvelope(2);
+  GeneralGridEnvelope baseGridRange=(GeneralGridEnvelope)originalGridRange;
+  try {
+    if (requestedEnvelope != null) {
+      final GeneralEnvelope requestedEnvelope2D=Utilities.getRequestedEnvelope2D(requestedEnvelope);
+      adjustedRequestedEnvelope=Utilities.getIntersection(baseEnvelope2D,spatialReferenceSystem2D,requestedEnvelope2D,requestedDim,readGridToWorld,wgs84BaseEnvelope2D);
+      if (adjustedRequestedEnvelope == null)       return null;
+      sourceRegion.setRect(Utilities.getCropRegion(adjustedRequestedEnvelope,Utilities.getOriginalGridToWorld(originalGridToWorld,PixelInCell.CELL_CORNER)));
+      if (sourceRegion.isEmpty()) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.log(Level.INFO,"Too small envelope resulting in empty cropped raster region");
+        }
+        return null;
+      }
+      if (!sourceRegion.intersects(baseGridRange.toRectangle()) || sourceRegion.isEmpty())       throw new DataSourceException("The crop region is invalid.");
+      sourceRegion.setRect(sourceRegion.intersection(baseGridRange.toRectangle()));
+      if (LOGGER.isLoggable(Level.FINE)) {
+        StringBuilder sb=new StringBuilder("Adjusted Requested Envelope = ").append(adjustedRequestedEnvelope.toString()).append("\n").append("Requested raster dimension = ").append(requestedDim.toString()).append("\n").append("Corresponding raster source region = ").append(sourceRegion.toString());
+        LOGGER.log(Level.FINE,sb.toString());
+      }
+    }
+ else {
+      sourceRegion.setBounds(new Rectangle(0,0,Integer.MIN_VALUE,Integer.MIN_VALUE));
+    }
+  }
+ catch (  TransformException e) {
+    throw new DataSourceException("Unable to create a coverage for this source",e);
+  }
+catch (  FactoryException e) {
+    throw new DataSourceException("Unable to create a coverage for this source",e);
+  }
+  return adjustedRequestedEnvelope;
+}

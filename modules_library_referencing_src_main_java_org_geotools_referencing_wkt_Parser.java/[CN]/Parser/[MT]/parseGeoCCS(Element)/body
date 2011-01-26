@@ -1,0 +1,26 @@
+{
+  final Element element=parent.pullElement("GEOCCS");
+  final String name=element.pullString("name");
+  final Map<String,?> properties=parseAuthority(element,name);
+  final PrimeMeridian meridian=parsePrimem(element,NonSI.DEGREE_ANGLE);
+  final GeodeticDatum datum=parseDatum(element,meridian);
+  final Unit<Length> linearUnit=parseUnit(element,SI.METER);
+  CoordinateSystemAxis axis0, axis1, axis2;
+  axis0=parseAxis(element,linearUnit,false);
+  try {
+    if (axis0 != null) {
+      axis1=parseAxis(element,linearUnit,true);
+      axis2=parseAxis(element,linearUnit,true);
+    }
+ else {
+      axis0=createAxis(null,"X",AxisDirection.OTHER,linearUnit);
+      axis1=createAxis(null,"Y",AxisDirection.EAST,linearUnit);
+      axis2=createAxis(null,"Z",AxisDirection.NORTH,linearUnit);
+    }
+    element.close();
+    return crsFactory.createGeocentricCRS(properties,datum,csFactory.createCartesianCS(properties,axis0,axis1,axis2));
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

@@ -1,0 +1,22 @@
+{
+  super(postgisDataStore,featureType);
+  tableName=featureType.getTypeName();
+  fidMapper=postgisDataStore.getFIDMapper(tableName);
+  sqlBuilder=(PostgisSQLBuilder)postgisDataStore.getSqlBuilder(tableName);
+  AttributeDescriptor geomType=featureType.getGeometryDescriptor();
+  queryCapabilities=new JDBCQueryCapabilities(featureType){
+    @Override public boolean isOffsetSupported(){
+      return true;
+    }
+    @Override protected boolean supportsNaturalOrderSorting(){
+      return true;
+    }
+    @Override protected boolean supportsReverseOrderSorting(){
+      return true;
+    }
+    @Override public boolean isReliableFIDSupported(){
+      return !isNullFidMapper(fidMapper);
+    }
+  }
+;
+}

@@ -1,0 +1,19 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  String newId=buildRiverHistory();
+  Transaction t=createTransaction("Mambo","Gimbo, what did you do? " + "Now I have to rollback your changes!");
+  VersionedPostgisFeatureStore fs=(VersionedPostgisFeatureStore)ds.getFeatureSource("river");
+  fs.setTransaction(t);
+  fs.rollback("3",Filter.INCLUDE,null);
+  t.commit();
+  Filter rv2Filter=ff.id(Collections.singleton(ff.featureId("river.rv2")));
+  Filter newFilter=ff.id(Collections.singleton(ff.featureId(newId)));
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=ds.getFeatureReader(new DefaultQuery("river",rv2Filter),Transaction.AUTO_COMMIT);
+  assertTrue(fr.hasNext());
+  fr.close();
+  fr=ds.getFeatureReader(new DefaultQuery("river",newFilter),Transaction.AUTO_COMMIT);
+  assertFalse(fr.hasNext());
+  fr.close();
+  assertEquals(2,fs.getFeatures(Filter.INCLUDE).size());
+  t.close();
+}

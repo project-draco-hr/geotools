@@ -1,0 +1,33 @@
+{
+  Command<SeColumnDefinition[]> createTableCmd=new Command<SeColumnDefinition[]>(){
+    @Override public SeColumnDefinition[] execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeColumnDefinition[] colDefs=getTestTableCols();
+      try {
+        table.delete();
+      }
+ catch (      Exception e) {
+      }
+      table.create(colDefs,configKeyword);
+      SeRegistration reg=new SeRegistration(connection,table.getName());
+      LOGGER.fine("setting rowIdColumnName to ROW_ID in table " + reg.getTableName());
+      reg.setRowIdColumnName("ROW_ID");
+      final int rowIdColumnType=SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE;
+      reg.setRowIdColumnType(rowIdColumnType);
+      reg.alter();
+      layer.setSpatialColumnName("SHAPE");
+      layer.setShapeTypes(SeLayer.SE_NIL_TYPE_MASK | SeLayer.SE_POINT_TYPE_MASK | SeLayer.SE_LINE_TYPE_MASK| SeLayer.SE_SIMPLE_LINE_TYPE_MASK| SeLayer.SE_AREA_TYPE_MASK| SeLayer.SE_MULTIPART_TYPE_MASK);
+      layer.setGridSizes(1100.0,0.0,0.0);
+      layer.setDescription("Layer Example");
+      SeCoordinateReference coordref=getGenericCoordRef();
+      SeExtent ext=coordref.getXYEnvelope();
+      layer.setExtent(ext);
+      layer.setCoordRef(coordref);
+      layer.setCreationKeyword(configKeyword);
+      layer.create(3,4);
+      return colDefs;
+    }
+  }
+;
+  SeColumnDefinition[] colDefs=session.issue(createTableCmd);
+  return colDefs;
+}

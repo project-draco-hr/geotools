@@ -1,0 +1,81 @@
+{
+  Object convertedValue=convertValue(descriptor,value);
+  Attribute leafAttribute=null;
+  final Name attributeName=descriptor.getName();
+  if (!isXlinkRef) {
+    if (parent instanceof ComplexAttribute) {
+      Object currStepValue=((ComplexAttribute)parent).getProperties(attributeName);
+      if (currStepValue instanceof Collection) {
+        List<Attribute> values=new ArrayList((Collection)currStepValue);
+        if (!values.isEmpty()) {
+          if (isEmpty(convertedValue)) {
+            if (index > -1) {
+              for (              Attribute stepValue : values) {
+                if (stepValue.getUserData().containsKey(ComplexFeatureConstants.MAPPED_ATTRIBUTE_INDEX)) {
+                  if (index == Integer.parseInt(String.valueOf(stepValue.getUserData().get(ComplexFeatureConstants.MAPPED_ATTRIBUTE_INDEX)))) {
+                    return stepValue;
+                  }
+                }
+              }
+            }
+ else {
+              return values.get(values.size() - 1);
+            }
+          }
+ else {
+            for (            Attribute stepValue : values) {
+              boolean sameIndex=true;
+              if (index > -1) {
+                if (stepValue.getUserData().containsKey(ComplexFeatureConstants.MAPPED_ATTRIBUTE_INDEX)) {
+                  sameIndex=(index == Integer.parseInt(String.valueOf(stepValue.getUserData().get(ComplexFeatureConstants.MAPPED_ATTRIBUTE_INDEX))));
+                }
+              }
+              if (sameIndex && stepValue.getValue().equals(convertedValue)) {
+                return stepValue;
+              }
+            }
+          }
+        }
+      }
+ else       if (currStepValue instanceof Attribute) {
+        leafAttribute=(Attribute)currStepValue;
+      }
+ else       if (currStepValue != null) {
+        throw new IllegalStateException("Unknown addressed object. Xpath:" + attributeName + ", addressed: "+ currStepValue.getClass().getName()+ " ["+ currStepValue.toString()+ "]");
+      }
+    }
+  }
+  if (leafAttribute == null) {
+    AttributeBuilder builder=new AttributeBuilder(featureFactory);
+    if (crs != null) {
+      builder.setCRS(crs);
+    }
+    builder.setDescriptor(parent.getDescriptor());
+    builder.setType(parent.getType());
+    if (targetNodeType != null) {
+      if (parent.getType().equals(XSSchema.ANYTYPE_TYPE)) {
+        leafAttribute=builder.addAnyTypeValue(convertedValue,targetNodeType,descriptor,id);
+      }
+ else {
+        leafAttribute=builder.add(id,convertedValue,attributeName,targetNodeType);
+      }
+    }
+ else     if (value == null && descriptor.getType().equals(XSSchema.ANYTYPE_TYPE)) {
+      leafAttribute=builder.addComplexAnyTypeAttribute(convertedValue,descriptor,id);
+    }
+ else {
+      leafAttribute=builder.add(id,convertedValue,attributeName);
+    }
+    if (index > -1) {
+      leafAttribute.getUserData().put(ComplexFeatureConstants.MAPPED_ATTRIBUTE_INDEX,index);
+    }
+    List newValue=new ArrayList();
+    newValue.addAll((Collection)parent.getValue());
+    newValue.add(leafAttribute);
+    parent.setValue(newValue);
+  }
+  if (!isEmpty(convertedValue)) {
+    leafAttribute.setValue(convertedValue);
+  }
+  return leafAttribute;
+}

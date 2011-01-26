@@ -1,0 +1,30 @@
+{
+  final Hints hints;
+  if (queryHints == null) {
+    hints=GeoTools.getDefaultHints();
+  }
+ else {
+    hints=queryHints;
+  }
+  GeometryFactory gf=(GeometryFactory)hints.get(Hints.JTS_GEOMETRY_FACTORY);
+  if (gf == null) {
+    PrecisionModel pm=(PrecisionModel)hints.get(Hints.JTS_PRECISION_MODEL);
+    if (pm == null) {
+      pm=new PrecisionModel();
+    }
+    Integer SRID=(Integer)hints.get(Hints.JTS_SRID);
+    int srid=SRID == null ? 0 : SRID.intValue();
+    Integer dimension=(Integer)hints.get(Hints.COORDINATE_DIMENSION);
+    CoordinateSequenceFactory csFactory=(CoordinateSequenceFactory)hints.get(Hints.JTS_COORDINATE_SEQUENCE_FACTORY);
+    if (csFactory == null) {
+      if (dimension == null || dimension <= 3) {
+        csFactory=CoordinateArraySequenceFactory.instance();
+      }
+ else {
+        csFactory=new LiteCoordinateSequenceFactory();
+      }
+    }
+    gf=new GeometryFactory(pm,srid,csFactory);
+  }
+  return gf;
+}

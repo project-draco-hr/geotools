@@ -1,0 +1,52 @@
+{
+  if (text == null) {
+    return;
+  }
+  AttributesImpl atts=new AttributesImpl();
+  Unit<Length> uom=text.getUnitOfMeasure();
+  if (uom != null)   atts.addAttribute("","uom","uom","",UomOgcMapping.get(uom).getSEString());
+  start("TextSymbolizer",atts);
+  encodeGeometryExpression(text.getGeometry());
+  if (text.getLabel() != null) {
+    element("Label",text.getLabel());
+  }
+  if ((text.getFonts() != null) && (text.getFonts().length != 0)) {
+    start("Font");
+    Font[] fonts=text.getFonts();
+    for (int i=0; i < fonts.length; i++) {
+      encodeCssParam("font-family",fonts[i].getFontFamily());
+    }
+    encodeCssParam("font-size",fonts[0].getFontSize());
+    encodeCssParam("font-style",fonts[0].getFontStyle());
+    encodeCssParam("font-weight",fonts[0].getFontWeight());
+    end("Font");
+  }
+  if (text.getPlacement() != null) {
+    text.getPlacement().accept(this);
+  }
+  if (text.getHalo() != null) {
+    text.getHalo().accept(this);
+  }
+  if (text.getFill() != null) {
+    text.getFill().accept(this);
+  }
+  if (text instanceof TextSymbolizer2) {
+    TextSymbolizer2 text2=(TextSymbolizer2)text;
+    if (text2.getGraphic() != null)     visit(text2.getGraphic());
+    if (text2.getSnippet() != null)     element("Snippet",text2.getSnippet());
+    if (text2.getFeatureDescription() != null)     element("FeatureDescription",text2.getFeatureDescription());
+    OtherText otherText=text2.getOtherText();
+    if (otherText != null) {
+      AttributesImpl otherTextAtts=new AttributesImpl();
+      otherTextAtts.addAttribute("","target","target","",otherText.getTarget());
+      element("OtherText",otherText.getText(),null,otherTextAtts);
+    }
+  }
+  if (text.getPriority() != null) {
+    element("Priority",text.getPriority());
+  }
+  if (text.getOptions() != null) {
+    encodeVendorOptions(text.getOptions());
+  }
+  end("TextSymbolizer");
+}

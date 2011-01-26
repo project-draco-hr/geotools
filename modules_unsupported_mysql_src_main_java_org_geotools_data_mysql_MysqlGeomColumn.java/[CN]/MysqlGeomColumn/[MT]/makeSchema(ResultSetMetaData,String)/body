@@ -1,0 +1,27 @@
+{
+  String columnName=null;
+  Class colClass=null;
+  int numCols=metaData.getColumnCount();
+  AttributeDescriptor[] attributes=new AttributeDescriptor[numCols - 1];
+  LOGGER.finer("about to loop through cols");
+  for (int i=2; i <= numCols; i++) {
+    columnName=metaData.getColumnName(i);
+    LOGGER.finer("reading col: " + i + " named: "+ columnName);
+    LOGGER.finer("reading col: " + metaData.getColumnTypeName(i));
+    AttributeTypeBuilder build=new AttributeTypeBuilder();
+    build.setNillable(true);
+    if (columnName.equals(geoColumn)) {
+      build.setBinding(Geometry.class);
+      attributes[i - COLUMN_OFFSET]=build.buildDescriptor(columnName);
+    }
+ else {
+      colClass=(Class)sqlTypeMap.get(metaData.getColumnTypeName(i));
+      build.setBinding(colClass);
+      attributes[i - COLUMN_OFFSET]=build.buildDescriptor(columnName);
+    }
+  }
+  SimpleFeatureTypeBuilder b=new SimpleFeatureTypeBuilder();
+  b.setName("mysql-features");
+  b.addAll(attributes);
+  return b.buildFeatureType();
+}

@@ -1,0 +1,38 @@
+{
+  boolean result=true;
+  VPFFile file=(VPFFile)featureType.getFeatureClass().getFileList().get(0);
+  hasNext=false;
+  SimpleFeature row=null;
+  try {
+    if (file.hasNext()) {
+      row=file.readFeature();
+    }
+  }
+ catch (  IOException exc1) {
+    exc1.printStackTrace();
+  }
+catch (  IllegalAttributeException exc1) {
+    exc1.printStackTrace();
+  }
+  if ((row == null)) {
+    hasNext=false;
+    result=false;
+  }
+ else   if (featureType.getFaccCode() != null) {
+    try {
+      Object temp=null;
+      for (int i=0; temp == null && i < ALLOWED_FCODE_ATTRIBUTES.length; i++) {
+        temp=row.getAttribute(ALLOWED_FCODE_ATTRIBUTES[i]);
+      }
+      String faccCode=temp.toString().trim();
+      if (featureType.getFaccCode().equals(faccCode)) {
+        retrieveObject(file,row);
+        hasNext=true;
+        result=false;
+      }
+    }
+ catch (    RuntimeException exc) {
+    }
+  }
+  return result;
+}

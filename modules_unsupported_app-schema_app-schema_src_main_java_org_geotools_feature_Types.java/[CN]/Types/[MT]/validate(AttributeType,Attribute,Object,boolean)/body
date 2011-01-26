@@ -1,0 +1,72 @@
+{
+  if (type == null) {
+    throw new IllegalAttributeException(attribute.getDescriptor(),"null type");
+  }
+  if (attributeContent == null) {
+    if (!attribute.isNillable()) {
+      throw new IllegalAttributeException(attribute.getDescriptor(),type.getName() + " not nillable");
+    }
+    return;
+  }
+  if (type.isIdentified() && attribute.getIdentifier() == null) {
+    throw new NullPointerException(type.getName() + " is identified, null id not accepted");
+  }
+  if (!isSuper) {
+    Class clazz=attributeContent.getClass();
+    Class binding=type.getBinding();
+    if (binding != null && !binding.isAssignableFrom(clazz)) {
+      throw new IllegalAttributeException(attribute.getDescriptor(),clazz.getName() + " is not an acceptable class for " + type.getName()+ " as it is not assignable from "+ binding);
+    }
+  }
+  if (type.getRestrictions() != null && type.getRestrictions().size() > 0) {
+    final Attribute fatt=attribute;
+    Attribute fake=new Attribute(){
+      private Map<Object,Object> userData=new HashMap<Object,Object>();
+      public AttributeDescriptor getDescriptor(){
+        return fatt.getDescriptor();
+      }
+      public PropertyDescriptor descriptor(){
+        return fatt.getDescriptor();
+      }
+      public org.opengis.feature.type.Name name(){
+        return fatt.getName();
+      }
+      public AttributeType getType(){
+        return fatt.getType();
+      }
+      public boolean isNillable(){
+        return fatt.isNillable();
+      }
+      public Identifier getIdentifier(){
+        return fatt.getIdentifier();
+      }
+      public Object getValue(){
+        return fatt.getValue();
+      }
+      public void setValue(      Object newValue) throws IllegalArgumentException {
+        throw new UnsupportedOperationException("Modification is not supported");
+      }
+      public Object operation(      Name arg0,      List arg1){
+        throw new UnsupportedOperationException("Operation is not supported");
+      }
+      public Name getName(){
+        return null;
+      }
+      public Map<Object,Object> getUserData(){
+        return userData;
+      }
+      public void validate() throws IllegalAttributeException {
+      }
+    }
+;
+    for (Iterator itr=type.getRestrictions().iterator(); itr.hasNext(); ) {
+      Filter f=(Filter)itr.next();
+      if (!f.evaluate(fake)) {
+        throw new IllegalAttributeException(attribute.getDescriptor(),"Attribute instance (" + fake.getIdentifier().toString() + ")"+ "fails to pass filter: "+ f);
+      }
+    }
+  }
+  if (type.getSuper() != null) {
+    validate(type.getSuper(),attribute,attributeContent,true);
+  }
+}

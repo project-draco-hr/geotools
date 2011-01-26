@@ -1,0 +1,45 @@
+{
+  final Arguments arguments=new Arguments(args);
+  final String load=arguments.getOptionalString("-load");
+  final String file=arguments.getOptionalString("-file");
+  args=arguments.getRemainingArguments(0);
+  Locale.setDefault(arguments.locale);
+  final LineNumberReader input;
+  final Console console;
+  if (file == null) {
+    input=null;
+    console=new Console();
+  }
+ else   try {
+    input=new LineNumberReader(new FileReader(file));
+    console=new Console(input);
+    console.setPrompt(null);
+  }
+ catch (  IOException exception) {
+    System.err.println(exception.getLocalizedMessage());
+    return;
+  }
+  if (load != null)   try {
+    final LineNumberReader in=new LineNumberReader(new FileReader(load));
+    try {
+      console.loadDefinitions(in);
+    }
+ catch (    ParseException exception) {
+      console.reportError(exception);
+      in.close();
+      return;
+    }
+    in.close();
+  }
+ catch (  IOException exception) {
+    console.reportError(exception);
+    return;
+  }
+  console.run();
+  if (input != null)   try {
+    input.close();
+  }
+ catch (  IOException exception) {
+    console.reportError(exception);
+  }
+}

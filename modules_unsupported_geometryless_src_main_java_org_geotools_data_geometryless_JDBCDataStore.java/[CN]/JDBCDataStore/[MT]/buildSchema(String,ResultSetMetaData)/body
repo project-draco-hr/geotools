@@ -1,0 +1,62 @@
+{
+  SimpleFeatureType viewType;
+  final int NAME_COLUMN=4;
+  final int TYPE_NAME=6;
+  ResultSet tableInfo=null;
+  FIDMapper mapper=new NullFIDMapper();
+  tableInfo=new RsMd2DbMdResultSet(rsmd);
+  try {
+    List attributeDescriptors=new ArrayList();
+    boolean tableInfoFound=false;
+    while (tableInfo.next()) {
+      tableInfoFound=true;
+      try {
+        String columnName=tableInfo.getString(NAME_COLUMN);
+        if (!mapper.returnFIDColumnsAsAttributes()) {
+          boolean isPresent=false;
+          for (int i=0; i < mapper.getColumnCount(); i++) {
+            if (columnName.equalsIgnoreCase(mapper.getColumnName(i))) {
+              isPresent=true;
+              break;
+            }
+          }
+          if (isPresent) {
+            continue;
+          }
+        }
+        AttributeDescriptor attribute=buildAttributeType(tableInfo);
+        if (attribute != null) {
+          attributeDescriptors.add(attribute);
+        }
+ else {
+          LOGGER.finest("Unknown SQL Type: (may be consumed) " + tableInfo.getString(TYPE_NAME));
+        }
+      }
+ catch (      DataSourceException dse) {
+        String msg="Error building attribute type. The column will be ignored";
+        LOGGER.log(Level.WARNING,msg,dse);
+      }
+    }
+    if (!tableInfoFound) {
+      throw new SchemaNotFoundException(typeName);
+    }
+    URI namespace=getNameSpace();
+    String ns=null;
+    if (namespace != null) {
+      ns=namespace.toString();
+    }
+    AttributeDescriptor[] types=(AttributeDescriptor[])attributeDescriptors.toArray(new AttributeDescriptor[0]);
+    SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+    tb.setName(typeName);
+    tb.setNamespaceURI(namespace);
+    tb.addAll(types);
+    viewType=tb.buildFeatureType();
+    return viewType;
+  }
+ catch (  Exception sqlException) {
+    throw new DataSourceException("SQL Error building FeatureType for " + typeName + " "+ sqlException.getMessage(),sqlException);
+  }
+ finally {
+    JDBCUtils.close(tableInfo);
+  }
+}

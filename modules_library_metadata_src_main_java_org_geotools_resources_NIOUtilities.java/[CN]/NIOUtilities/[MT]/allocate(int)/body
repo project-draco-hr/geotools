@@ -1,0 +1,24 @@
+{
+  Queue<Object> buffers=getBuffers(size);
+  Object sr=null;
+  while ((sr=buffers.poll()) != null) {
+    ByteBuffer buffer=null;
+    if (sr instanceof BufferSoftReference) {
+      buffer=((BufferSoftReference)sr).get();
+    }
+ else {
+      buffer=(ByteBuffer)sr;
+      hardCacheSize.addAndGet(-buffer.capacity());
+    }
+    if (buffer != null) {
+      buffer.clear();
+      return buffer;
+    }
+  }
+  if (directBuffersEnabled) {
+    return ByteBuffer.allocateDirect(size);
+  }
+ else {
+    return ByteBuffer.allocate(size);
+  }
+}

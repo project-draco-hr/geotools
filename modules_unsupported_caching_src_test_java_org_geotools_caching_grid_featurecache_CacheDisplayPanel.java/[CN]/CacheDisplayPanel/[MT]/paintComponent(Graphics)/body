@@ -1,0 +1,41 @@
+{
+  Graphics2D g2d=(Graphics2D)g.create();
+  g2d.clearRect(0,0,g2d.getClipBounds().width,g2d.getClipBounds().height);
+  AffineTransform saveAT=g2d.getTransform();
+  AffineTransform trans=new AffineTransform();
+  trans.setToTranslation(5,g2d.getClipBounds().height - 5);
+  trans.scale(1,-1);
+  int width=g2d.getClipBounds().width;
+  int height=g2d.getClipBounds().height;
+  double scaleFactor=Math.min(width,height);
+  trans.scale(scaleFactor,scaleFactor);
+  g2d.transform(trans);
+  g2d.setStroke(new BasicStroke(0));
+  DrawingVisitor v=new DrawingVisitor(g2d);
+  cache.readLock();
+  try {
+    cache.tracker.setDoRecordAccess(false);
+    cache.tracker.intersectionQuery(new Region(new double[]{0,0},new double[]{1,1}),v);
+  }
+  finally {
+    cache.tracker.setDoRecordAccess(true);
+    cache.readUnLock();
+  }
+  if (!queries.isEmpty()) {
+    for (Iterator<Entry<String,Envelope>> it=queries.entrySet().iterator(); it.hasNext(); ) {
+      Entry<String,Envelope> next=it.next();
+      Envelope query=next.getValue();
+      g2d.setColor(Color.BLUE);
+      g2d.setStroke(new BasicStroke(0.005f));
+      Rectangle2D.Double window=new Rectangle2D.Double(query.getMinX(),query.getMinY(),query.getWidth(),query.getHeight());
+      g2d.draw(window);
+      g2d.setTransform(saveAT);
+      Point2D.Double p=new Point2D.Double(window.x + (0.5 * window.width),window.y + (0.5 * window.height));
+      Point2D pt=trans.transform(p,new Point2D.Double(0,0));
+      g2d.drawString(next.getKey(),(int)pt.getX(),(int)pt.getY());
+      g2d.setTransform(trans);
+    }
+  }
+  g2d.setTransform(saveAT);
+  g2d.dispose();
+}

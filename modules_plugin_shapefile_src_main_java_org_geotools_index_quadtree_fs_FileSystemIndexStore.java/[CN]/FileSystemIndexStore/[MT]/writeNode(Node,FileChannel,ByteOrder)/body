@@ -1,0 +1,21 @@
+{
+  int offset=this.getSubNodeOffset(node);
+  ByteBuffer buf=ByteBuffer.allocate((4 * 8) + (3 * 4) + (node.getNumShapeIds() * 4));
+  buf.order(order);
+  buf.putInt(offset);
+  Envelope env=node.getBounds();
+  buf.putDouble(env.getMinX());
+  buf.putDouble(env.getMinY());
+  buf.putDouble(env.getMaxX());
+  buf.putDouble(env.getMaxY());
+  buf.putInt(node.getNumShapeIds());
+  for (int i=0; i < node.getNumShapeIds(); i++) {
+    buf.putInt(node.getShapeId(i));
+  }
+  buf.putInt(node.getNumSubNodes());
+  buf.flip();
+  channel.write(buf);
+  for (int i=0; i < node.getNumSubNodes(); i++) {
+    this.writeNode(node.getSubNode(i),channel,order);
+  }
+}

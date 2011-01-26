@@ -1,0 +1,61 @@
+{
+  clearAbortRequest();
+  if (all) {
+    processImageStarted(imageIndex);
+  }
+  float[] values=(data != null) ? new float[width] : null;
+  int offset=width * height;
+  final BufferedReader input=getReader();
+  final LineFormat format=getLineFormat(imageIndex);
+  final float padValue=(float)getPadValue(imageIndex);
+  String line;
+  while ((line=input.readLine()) != null) {
+    if (isComment(line)) {
+      continue;
+    }
+    try {
+      format.setLine(line);
+      values=format.getValues(values);
+      for (int i=values.length; --i >= 0; ) {
+        if (values[i] == padValue) {
+          values[i]=Float.NaN;
+        }
+      }
+    }
+ catch (    ParseException exception) {
+      throw new IIOException(getPositionString(exception.getLocalizedMessage()),exception);
+    }
+    if (data == null) {
+      data=new float[1024];
+    }
+    final int newOffset=offset + (width=values.length);
+    if (newOffset > data.length) {
+      data=XArray.resize(data,newOffset + Math.min(newOffset,65536));
+    }
+    System.arraycopy(values,0,data,offset,width);
+    offset=newOffset;
+    height++;
+    if (!all) {
+      final long streamLength=getStreamLength(imageIndex,imageIndex + 1);
+      if (streamLength >= 0) {
+        expectedHeight=(int)(streamLength / (line.length() + 1));
+      }
+      break;
+    }
+    if (height <= expectedHeight) {
+      processImageProgress(height * 100f / expectedHeight);
+      if (abortRequested()) {
+        processReadAborted();
+        return true;
+      }
+    }
+  }
+  if ((completed=all) == true) {
+    data=XArray.resize(data,offset);
+    expectedHeight=height;
+  }
+  if (all) {
+    processImageComplete();
+  }
+  return false;
+}

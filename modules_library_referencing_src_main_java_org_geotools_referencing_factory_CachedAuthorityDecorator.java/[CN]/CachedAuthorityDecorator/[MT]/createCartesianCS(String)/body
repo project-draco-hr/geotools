@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  CartesianCS cs=(CartesianCS)cache.get(key);
+  if (cs == null) {
+    try {
+      cache.writeLock(key);
+      cs=(CartesianCS)cache.peek(key);
+      if (cs == null) {
+        cs=csAuthority.createCartesianCS(code);
+        cache.put(key,cs);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return cs;
+}

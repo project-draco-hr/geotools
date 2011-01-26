@@ -1,0 +1,26 @@
+{
+  PositionFactory positionFactory=new PositionFactoryImpl(crs1,new PrecisionModel());
+  PrimitiveFactory primitiveFactory=new PrimitiveFactoryImpl(crs1,positionFactory);
+  GeometryFactory geometryFactory=new GeometryFactoryImpl(crs1,positionFactory);
+  List<Position> points=new ArrayList<Position>();
+  points.add(primitiveFactory.createPoint(new double[]{-123.47009555832284,48.543261561072285}));
+  points.add(primitiveFactory.createPoint(new double[]{-123.46972894676578,48.55009592117936}));
+  points.add(primitiveFactory.createPoint(new double[]{-123.45463828850829,48.54973520267305}));
+  points.add(primitiveFactory.createPoint(new double[]{-123.4550070827961,48.54290089070186}));
+  LineString lineString=geometryFactory.createLineString(points);
+  List curveSegmentList=Collections.singletonList(lineString);
+  CurveImpl curve1=(CurveImpl)primitiveFactory.createCurve(curveSegmentList);
+  CurveImpl curve2=(CurveImpl)curve1.transform(crs2);
+  PositionFactory expectedPosF2=new PositionFactoryImpl(crs2,new PrecisionModel());
+  PrimitiveFactory expectedPrimF2=new PrimitiveFactoryImpl(crs2,expectedPosF2);
+  GeometryFactory ExpectedGeomF2=new GeometryFactoryImpl(crs2,expectedPosF2);
+  List<Position> expectedPoints=new ArrayList<Position>();
+  expectedPoints.add(expectedPrimF2.createPoint(new double[]{1187128.000000001,395268.0000000004}));
+  expectedPoints.add(expectedPrimF2.createPoint(new double[]{1187127.9999999998,396026.99999999825}));
+  expectedPoints.add(expectedPrimF2.createPoint(new double[]{1188245.0000000007,396027.0000000039}));
+  expectedPoints.add(expectedPrimF2.createPoint(new double[]{1188245.0000000005,395268.0000000018}));
+  LineString expectedLineString=ExpectedGeomF2.createLineString(expectedPoints);
+  List expectedCurveSegmentList=Collections.singletonList(expectedLineString);
+  CurveImpl expectedCurve=(CurveImpl)expectedPrimF2.createCurve(expectedCurveSegmentList);
+  assertEquals(curve2,expectedCurve,0.9);
+}

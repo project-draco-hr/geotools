@@ -1,0 +1,22 @@
+{
+  final List<SingleCRS> sources=DefaultCompoundCRS.getSingleCRS(sourceCRS);
+  final List<SingleCRS> targets=DefaultCompoundCRS.getSingleCRS(targetCRS);
+  if (targets.size() == 1) {
+    return createOperation(sourceCRS,targets.get(0));
+  }
+  if (sources.size() == 1) {
+    return createOperation(sources.get(0),targetCRS);
+  }
+  for (  final SingleCRS target : targets) {
+    if (needsGeodetic3D(sources,target)) {
+      final ReferencingFactoryContainer factories=getFactoryContainer();
+      final CoordinateReferenceSystem source3D=factories.toGeodetic3D(sourceCRS);
+      final CoordinateReferenceSystem target3D=factories.toGeodetic3D(targetCRS);
+      if (source3D != sourceCRS || target3D != targetCRS) {
+        return createOperation(source3D,target3D);
+      }
+      throw new OperationNotFoundException(getErrorMessage(sourceCRS,targetCRS));
+    }
+  }
+  return createOperationStep(sourceCRS,sources,targetCRS,targets);
+}

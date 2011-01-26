@@ -1,0 +1,30 @@
+{
+  final SimpleFeatureType featureType;
+  if ((featureArray == null) || (featureArray.length == 0)) {
+    featureType=FeatureTypes.EMPTY;
+  }
+ else {
+    featureType=featureArray[0].getFeatureType();
+  }
+  DataStore arrayStore=new AbstractDataStore(){
+    public String[] getTypeNames(){
+      return new String[]{featureType.getTypeName()};
+    }
+    public SimpleFeatureType getSchema(    String typeName) throws IOException {
+      if ((typeName != null) && typeName.equals(featureType.getTypeName())) {
+        return featureType;
+      }
+      throw new IOException(typeName + " not available");
+    }
+    protected FeatureReader<SimpleFeatureType,SimpleFeature> getFeatureReader(    String typeName) throws IOException {
+      return reader(featureArray);
+    }
+  }
+;
+  try {
+    return arrayStore.getFeatureSource(arrayStore.getTypeNames()[0]);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Something is wrong with the geotools code, " + "this exception should not happen",e);
+  }
+}

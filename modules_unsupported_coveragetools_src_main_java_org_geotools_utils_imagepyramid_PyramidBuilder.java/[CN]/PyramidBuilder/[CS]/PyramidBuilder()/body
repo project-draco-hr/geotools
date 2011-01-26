@@ -1,0 +1,73 @@
+{
+  super(NAME,VERSION);
+  internalTileDimOpt=optionBuilder.withShortName("it").withLongName("internal_tile_dimension").withArgument(argumentBuilder.withName("it").withMinimum(0).withMaximum(1).create()).withDescription("Internal width and height of each tile we generate").withRequired(false).create();
+  locationOpt=optionBuilder.withShortName("s").withLongName("source").withArgument(argumentBuilder.withName("source").withMinimum(1).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Source can be a single file or directory ");
+      final File source=new File((String)args.get(0));
+      if (!source.exists())       throw new InvalidArgumentException(new StringBuffer("The provided source is invalid! ").toString());
+    }
+  }
+).create()).withDescription("path where files are located").withRequired(true).create();
+  nameOpt=optionBuilder.withShortName("name").withLongName("pyramid_name").withArgument(argumentBuilder.withName("name").withMinimum(0).withMaximum(1).create()).withDescription("name for the pyramid property file").withRequired(false).create();
+  tileDimOpt=optionBuilder.withShortName("t").withLongName("tiled_dimension").withArgument(argumentBuilder.withName("t").withMinimum(0).withMaximum(1).create()).withDescription("tile dimensions as a couple width,height in pixels").withRequired(true).create();
+  scaleFactorOpt=optionBuilder.withShortName("f").withLongName("scale_factor").withArgument(argumentBuilder.withName("f").withMinimum(1).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+      int factor=Integer.parseInt((String)args.get(0));
+      if (factor <= 0)       throw new InvalidArgumentException(new StringBuffer("The provided scale factor is negative! ").toString());
+      if (factor == 1) {
+        LOGGER.warning("The scale factor is 1, program will exit!");
+        System.exit(0);
+      }
+    }
+  }
+).create()).withDescription("integer scale factor").withRequired(true).create();
+  numStepsOpt=optionBuilder.withShortName("n").withLongName("num_steps").withArgument(argumentBuilder.withName("n").withMinimum(1).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+      int steps=Integer.parseInt((String)args.get(0));
+      if (steps <= 0)       throw new InvalidArgumentException(new StringBuffer("The provided scale factor is negative! ").toString());
+    }
+  }
+).create()).withDescription("integer scale factor").withRequired(true).create();
+  scaleAlgorithmOpt=optionBuilder.withShortName("a").withLongName("scaling_algorithm").withArgument(argumentBuilder.withName("a").withMinimum(0).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+      if (!scalingAlgorithms.contains(args.get(0)))       throw new InvalidArgumentException(new StringBuffer("The output format ").append(args.get(0)).append(" is not permitted").toString());
+    }
+  }
+).create()).withDescription("name of the scaling algorithm, eeither one of average (a), filtered (f), bilinear (bil), nearest neigbhor (nn)").withRequired(false).create();
+  overwriteOpt=optionBuilder.withShortName("w").withLongName("overwrite").withDescription("completely wipe out existing layer dirs before proceeding.").withRequired(false).create();
+  compressionTypeOpt=optionBuilder.withShortName("z").withLongName("compressionType").withDescription("compression type.").withArgument(argumentBuilder.withName("compressionType").withMinimum(0).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+    }
+  }
+).create()).withRequired(false).create();
+  compressionRatioOpt=optionBuilder.withShortName("r").withLongName("compressionRatio").withDescription("compression ratio.").withArgument(argumentBuilder.withName("compressionRatio").withMinimum(0).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+      final String val=(String)args.get(0);
+      final double value=Double.parseDouble(val);
+      if (value <= 0 || value > 1)       throw new InvalidArgumentException("Invalid compressio ratio");
+    }
+  }
+).create()).withRequired(false).create();
+  addOption(compressionTypeOpt);
+  addOption(compressionRatioOpt);
+  addOption(locationOpt);
+  addOption(tileDimOpt);
+  addOption(scaleFactorOpt);
+  addOption(scaleAlgorithmOpt);
+  addOption(numStepsOpt);
+  addOption(overwriteOpt);
+  addOption(internalTileDimOpt);
+  finishInitialization();
+}

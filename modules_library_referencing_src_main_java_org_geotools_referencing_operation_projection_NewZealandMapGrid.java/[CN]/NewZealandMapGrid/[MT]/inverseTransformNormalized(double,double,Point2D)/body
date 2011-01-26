@@ -1,0 +1,46 @@
+{
+  final Complex z=new Complex(y,x);
+  final Complex power=new Complex(z);
+  final Complex theta=new Complex();
+  theta.multiply(B[0],z);
+  for (int j=1; j < B.length; j++) {
+    power.multiply(power,z);
+    theta.addMultiply(theta,B[j],power);
+  }
+  final Complex num=new Complex();
+  final Complex denom=new Complex();
+  final Complex t=new Complex();
+  for (int j=0; j < 3; j++) {
+    power.power(theta,2);
+    num.addMultiply(z,A[1],power);
+    for (int k=2; k < A.length; k++) {
+      power.multiply(power,theta);
+      t.multiply(A[k],power);
+      t.multiply(t,k);
+      num.add(num,t);
+    }
+    power.real=1;
+    power.imag=0;
+    denom.copy(A[0]);
+    for (int k=1; k < A.length; k++) {
+      power.multiply(power,theta);
+      t.multiply(A[k],power);
+      t.multiply(t,k + 1);
+      denom.add(denom,t);
+    }
+    theta.divide(num,denom);
+  }
+  final double dpsi=theta.real;
+  double dpsi_pow_i=dpsi;
+  double dphi=TPHI[0] * dpsi;
+  for (int i=1; i < TPHI.length; i++) {
+    dpsi_pow_i*=dpsi;
+    dphi+=(TPHI[i] * dpsi_pow_i);
+  }
+  dphi=dphi / (180 / PI * 3600E-5) + latitudeOfOrigin;
+  if (ptDst != null) {
+    ptDst.setLocation(theta.imag,dphi);
+    return ptDst;
+  }
+  return new Point2D.Double(theta.imag,dphi);
+}

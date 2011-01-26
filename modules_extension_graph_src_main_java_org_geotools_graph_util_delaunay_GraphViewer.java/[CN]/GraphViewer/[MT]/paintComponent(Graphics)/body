@@ -1,0 +1,42 @@
+{
+  int i=0;
+  xOffset=(int)Math.round(xScaling - minX * xScaling);
+  yOffset=(int)Math.round(yScaling - minY * yScaling);
+  System.out.println("xOffset is " + xOffset);
+  System.out.println("yOffset is " + yOffset);
+  Iterator it=nodes.iterator();
+  while (it.hasNext()) {
+    Object next=it.next();
+    if (!(next instanceof XYNode)) {
+      throw new RuntimeException("I can't draw a node that doesn't have a coordinate.");
+    }
+    Coordinate coord=((XYNode)next).getCoordinate();
+    g.fillOval((int)Math.round(xOffset + coord.x * xScaling - 2),(int)Math.round(yOffset + coord.y * yScaling - 2),4,4);
+  }
+  g.setColor(Color.RED);
+  Collection edges=graph.getEdges();
+  Iterator edgeIt=edges.iterator();
+  while (edgeIt.hasNext()) {
+    Edge next=(Edge)edgeIt.next();
+    if (!((next.getNodeA() instanceof XYNode) && (next.getNodeB() instanceof XYNode))) {
+      throw new RuntimeException("I can't draw an edge without endpoint coordinates.");
+    }
+    Coordinate coordA=((XYNode)next.getNodeA()).getCoordinate();
+    Coordinate coordB=((XYNode)next.getNodeB()).getCoordinate();
+    if (colorEdges) {
+      if (shortEdges.contains(next)) {
+        g.setColor(Color.RED);
+      }
+ else       if (longEdges.contains(next)) {
+        g.setColor(Color.GREEN);
+      }
+ else       if (otherEdges.contains(next)) {
+        g.setColor(Color.BLACK);
+      }
+ else {
+        g.setColor(Color.YELLOW);
+      }
+    }
+    g.drawLine((int)Math.round(xOffset + coordA.x * xScaling),(int)Math.round(yOffset + coordA.y * yScaling),(int)Math.round(xOffset + coordB.x * xScaling),(int)Math.round(yOffset + coordB.y * yScaling));
+  }
+}

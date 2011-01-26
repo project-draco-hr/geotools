@@ -1,0 +1,38 @@
+{
+  double[] result={x,y};
+  if (axisTransform != null) {
+    try {
+      axisTransform.transform(new double[]{x,y},0,result,0,1);
+    }
+ catch (    TransformException e) {
+      throw new ProjectionException(e);
+    }
+  }
+  final double ro=hypot(result[0],result[1]);
+  final double eps=atan2(-result[0],-result[1]);
+  final double d=eps / n;
+  final double s=2 * (atan(pow(ro0 / ro,1 / n) * tanS2) - s45);
+  final double cs=cos(s);
+  final double u=asin((cosAzim * sin(s)) - (sinAzim * cs * cos(d)));
+  final double kau=ka * pow(tan((u / 2.) + s45),1 / alfa);
+  final double deltav=asin((cs * sin(d)) / cos(u));
+  final double lambda=-deltav / alfa;
+  double phi=0;
+  double fi1=u;
+  for (int i=MAXIMUM_ITERATIONS; ; ) {
+    fi1=phi;
+    final double esf=excentricity * sin(fi1);
+    phi=2. * (atan(kau * pow((1. + esf) / (1. - esf),excentricity / 2.)) - s45);
+    if (abs(fi1 - phi) <= ITERATION_TOLERANCE) {
+      break;
+    }
+    if (--i < 0) {
+      throw new ProjectionException(ErrorKeys.NO_CONVERGENCE);
+    }
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(lambda,phi);
+    return ptDst;
+  }
+  return new Point2D.Double(lambda,phi);
+}

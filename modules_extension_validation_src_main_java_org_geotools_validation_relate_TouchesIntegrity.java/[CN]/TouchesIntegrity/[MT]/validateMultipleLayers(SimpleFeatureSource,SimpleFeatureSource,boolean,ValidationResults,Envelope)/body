@@ -1,0 +1,34 @@
+{
+  boolean success=true;
+  Filter filter=null;
+  SimpleFeatureCollection collectionA=featureSourceA.getFeatures(filter);
+  SimpleFeatureCollection collectionB=featureSourceB.getFeatures(filter);
+  SimpleFeatureIterator fr1=null;
+  SimpleFeatureIterator fr2=null;
+  try {
+    fr1=collectionA.features();
+    if (fr1 == null)     return false;
+    while (fr1.hasNext()) {
+      SimpleFeature f1=fr1.next();
+      Geometry g1=(Geometry)f1.getDefaultGeometry();
+      fr2=collectionB.features();
+      try {
+        while (fr2 != null && fr2.hasNext()) {
+          SimpleFeature f2=fr2.next();
+          Geometry g2=(Geometry)f2.getDefaultGeometry();
+          if (g1.touches(g2) != expected) {
+            results.error(f1,((Geometry)f1.getDefaultGeometry()).getGeometryType() + " " + getGeomTypeRefA()+ " touches "+ getGeomTypeRefB()+ "("+ f2.getID()+ "), Result was not "+ expected);
+            success=false;
+          }
+        }
+      }
+  finally {
+        collectionB.close(fr2);
+      }
+    }
+  }
+  finally {
+    collectionA.close(fr1);
+  }
+  return success;
+}

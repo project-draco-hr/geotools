@@ -1,0 +1,29 @@
+{
+  createTestProtocol(GEOS_ARCHSITES.CAPABILITIES);
+  try {
+    wfs.describeFeatureTypeGET("nonExistentTypeName","text/xml; subtype=gml/3.1.1");
+    fail("Expected IAE");
+  }
+ catch (  IllegalArgumentException e) {
+    assertTrue(true);
+  }
+  HTTPResponse httpResponse=new TestHttpResponse("text/xml; subtype=gml/3.1.1",null,"mock-content");
+  TestHttpProtocol mockHttp=new TestHttpProtocol(httpResponse);
+  createTestProtocol(GEOS_ARCHSITES.CAPABILITIES,mockHttp);
+  WFSResponse wfsResponse;
+  wfsResponse=wfs.describeFeatureTypeGET(GEOS_ARCHSITES.FEATURETYPENAME,"text/xml; subtype=gml/3.1.1");
+  URL baseUrl=mockHttp.targetUrl;
+  assertNotNull(baseUrl);
+  String externalForm=baseUrl.toExternalForm();
+  externalForm=URLDecoder.decode(externalForm,"UTF-8");
+  assertTrue(externalForm.startsWith("http://localhost:8080/geoserver/wfs?"));
+  assertTrue(externalForm.contains("REQUEST=DescribeFeatureType"));
+  assertTrue(externalForm.contains("TYPENAME=sf:archsites"));
+  assertTrue(externalForm.contains("VERSION=1.1.0"));
+  assertTrue(externalForm.contains("SERVICE=WFS"));
+  assertTrue(externalForm.contains("NAMESPACE=xmlns(sf=http://www.openplans.org/spearfish)"));
+  assertNotNull(wfsResponse);
+  assertEquals(Charset.forName("UTF-8"),wfsResponse.getCharacterEncoding());
+  assertEquals("text/xml; subtype=gml/3.1.1",wfsResponse.getContentType());
+  assertNotNull(wfsResponse.getInputStream());
+}

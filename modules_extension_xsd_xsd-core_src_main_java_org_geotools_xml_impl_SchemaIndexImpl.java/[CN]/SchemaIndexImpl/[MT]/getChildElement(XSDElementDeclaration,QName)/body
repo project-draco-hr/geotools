@@ -1,0 +1,30 @@
+{
+  OrderedMap children=(OrderedMap)children(parent);
+  XSDParticle particle=(XSDParticle)children.get(childName);
+  if (particle != null) {
+    XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+    if (child.isElementDeclarationReference()) {
+      child=child.getResolvedElementDeclaration();
+    }
+    return child;
+  }
+  if ("*".equals(childName.getNamespaceURI())) {
+    ArrayList matches=new ArrayList();
+    for (Iterator e=children.entrySet().iterator(); e.hasNext(); ) {
+      Map.Entry entry=(Map.Entry)e.next();
+      QName name=(QName)entry.getKey();
+      if (name.getLocalPart().equals(childName.getLocalPart())) {
+        matches.add(entry.getValue());
+      }
+    }
+    if (matches.size() == 1) {
+      particle=(XSDParticle)matches.get(0);
+      XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+      if (child.isElementDeclarationReference()) {
+        child=child.getResolvedElementDeclaration();
+      }
+      return child;
+    }
+  }
+  return null;
+}

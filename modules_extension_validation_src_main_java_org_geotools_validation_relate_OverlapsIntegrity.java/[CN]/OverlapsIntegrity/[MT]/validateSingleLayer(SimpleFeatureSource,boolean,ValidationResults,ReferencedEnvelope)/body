@@ -1,0 +1,62 @@
+{
+  boolean success=true;
+  int errors=0;
+  Date date1=new Date();
+  int countInterval=100;
+  int counter=0;
+  SimpleFeatureType ft=featureSourceA.getSchema();
+  System.out.println("---------------- In Overlaps Integrity ----------------");
+  SimpleFeatureCollection collectionA=null;
+  if (bBox != null && !bBox.isNull() && bBox.getHeight() != 0.0 && bBox.getWidth() != 0.0) {
+    Filter filter=filterBBox(bBox,ft);
+    collectionA=featureSourceA.getFeatures(filter);
+  }
+ else   collectionA=featureSourceA.getFeatures();
+  SimpleFeatureIterator fr1=null;
+  SimpleFeatureIterator fr2=null;
+  try {
+    fr1=collectionA.features();
+    if (fr1 == null)     return success;
+    while (fr1.hasNext()) {
+      counter++;
+      SimpleFeature f1=fr1.next();
+      Geometry g1=(Geometry)f1.getDefaultGeometry();
+      Filter filter2=filterBBox(ReferencedEnvelope.reference(g1.getEnvelope().getEnvelopeInternal()),ft);
+      SimpleFeatureCollection collectionB=featureSourceA.getFeatures(filter2);
+      fr2=collectionB.features();
+      try {
+        while (fr2 != null && fr2.hasNext()) {
+          SimpleFeature f2=fr2.next();
+          Geometry g2=(Geometry)f2.getDefaultGeometry();
+          if (!usedIDs.contains(f2.getID())) {
+            if (!f1.getID().equals(f2.getID())) {
+              if (g1.relate(g2,"1********") != expected) {
+                if (results != null) {
+                  results.error(f1,"" + getGeomTypeRefA() + "("+ f1.getID()+ ")"+ " overlapped "+ getGeomTypeRefA()+ "("+ f2.getID()+ ")");
+                }
+                if (showPrintLines) {
+                }
+                success=false;
+                errors++;
+              }
+            }
+          }
+        }
+        usedIDs.add(f1.getID());
+      }
+  finally {
+        collectionB.close(fr2);
+      }
+    }
+  }
+  finally {
+    Date date2=new Date();
+    float dt=date2.getTime() - date1.getTime();
+    if (showPrintLines) {
+      System.out.println("########## Validation duration: " + dt);
+      System.out.println("########## Validation errors: " + errors);
+    }
+    collectionA.close(fr1);
+  }
+  return success;
+}

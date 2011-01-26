@@ -1,0 +1,75 @@
+{
+  final int dimension=cs.getDimension();
+  if (cs instanceof CartesianCS) {
+switch (dimension) {
+case 2:
+{
+        if (DefaultCartesianCS.PROJECTED.axisColinearWith(cs)) {
+          return DefaultCartesianCS.PROJECTED;
+        }
+        if (DefaultCartesianCS.GRID.axisColinearWith(cs)) {
+          return DefaultCartesianCS.GRID;
+        }
+        if (DefaultCartesianCS.GENERIC_2D.directionColinearWith(cs)) {
+          return DefaultCartesianCS.GENERIC_2D;
+        }
+        return rightHanded((CartesianCS)cs);
+      }
+case 3:
+{
+      if (DefaultCartesianCS.GEOCENTRIC.axisColinearWith(cs)) {
+        return DefaultCartesianCS.GEOCENTRIC;
+      }
+      if (DefaultCartesianCS.GENERIC_3D.directionColinearWith(cs)) {
+        return DefaultCartesianCS.GENERIC_3D;
+      }
+      return rightHanded((CartesianCS)cs);
+    }
+}
+}
+if (cs instanceof AffineCS) {
+return rightHanded((AffineCS)cs);
+}
+if (cs instanceof EllipsoidalCS) {
+switch (dimension) {
+case 2:
+  return DefaultEllipsoidalCS.GEODETIC_2D;
+case 3:
+return DefaultEllipsoidalCS.GEODETIC_3D;
+}
+}
+if (cs instanceof SphericalCS) {
+switch (dimension) {
+case 3:
+return DefaultSphericalCS.GEOCENTRIC;
+}
+}
+if (cs instanceof VerticalCS) {
+switch (dimension) {
+case 1:
+{
+return DefaultVerticalCS.ELLIPSOIDAL_HEIGHT;
+}
+}
+}
+if (cs instanceof TimeCS) {
+switch (dimension) {
+case 1:
+return DefaultTimeCS.DAYS;
+}
+}
+if (cs instanceof DefaultCompoundCS) {
+final List<CoordinateSystem> components=((DefaultCompoundCS)cs).getCoordinateSystems();
+final CoordinateSystem[] user=new CoordinateSystem[components.size()];
+final CoordinateSystem[] std=new CoordinateSystem[user.length];
+for (int i=0; i < std.length; i++) {
+std[i]=standard(user[i]=components.get(i));
+}
+if (csComparator == null) {
+csComparator=new PredefinedCS();
+}
+Arrays.sort(std,csComparator);
+return Arrays.equals(user,std) ? cs : new DefaultCompoundCS(std);
+}
+throw new IllegalArgumentException(Errors.format(ErrorKeys.UNSUPPORTED_COORDINATE_SYSTEM_$1,cs.getName().getCode()));
+}

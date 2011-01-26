@@ -1,0 +1,60 @@
+{
+  if ((args.length != 2) && (args.length != 3)) {
+    System.out.println("usage: \"host=myHost port=myPort  dbname=myDB user=myUser password=myPassword\" <module name> [allowMissingPIP]");
+    System.out.println("dont forget to:");
+    System.out.println("1. put quotes around the postgresql connection string");
+    System.out.println("2. pre-create the output database table:");
+    System.out.println("	     	 create table poly2 (the_geom geometry, polyid numeric(10,0), module char(8)) with oids;");
+    System.out.println("             insert into geometry_columns values ('','public','poly2','the_geom',2,1,'POLYGON');");
+    System.out.println("");
+    System.out.println("allowMissingPIP -- dont set this unless you know what you're doing. TIGER is supposed to be a coverage, but a few groups have 'holes' in the coverage.  There's nothing you can do about it -- setting this option will cause this program NOT to throw qa-qc exceptions in this case. ");
+    return;
+  }
+  TigerPoly THIS=new TigerPoly();
+  if (args.length == 3) {
+    if (args[2].equalsIgnoreCase("allowMissingPIP")) {
+      THIS.allowHolesWithNoPIP=true;
+    }
+ else {
+      System.out.println("to turn on 'allowMissingPIP', just put those words after your group.");
+    }
+  }
+  PostgisDataStoreFactory pgdsf=new PostgisDataStoreFactory();
+  try {
+    Map param=parsePG(args[0]);
+    param.put("wkb enabled","true");
+    param.put("loose bbox","true");
+    param.put("dbtype","postgis");
+    THIS.ds=pgdsf.createDataStore(param);
+    THIS.MODULE=args[1];
+    System.out.println("start module = " + THIS.MODULE);
+    System.out.println("loading completechains...");
+    THIS.getCC();
+    System.out.println("loaded " + THIS.completeChains.size() + " completechains...");
+    System.out.println("loading polychainlink...");
+    THIS.getPolygonLines();
+    System.out.println("loaded " + THIS.polyLineSet.size() + " polygons...");
+    System.out.println("loading PIP...");
+    THIS.getPIP();
+    System.out.println("loaded " + THIS.PIP.size() + " PIPs...");
+    if (THIS.polyLineSet.size() != THIS.PIP.size()) {
+      throw new Exception("polylineset and PIP should be the same size!");
+    }
+    System.out.println("Processing...");
+    THIS.process();
+    if (THIS.polyLineSet.size() != THIS.finishedPolys.size()) {
+      throw new Exception("didnt build enough polygons!");
+    }
+    System.out.println("writing");
+    THIS.write();
+    System.out.println("done! " + THIS.MODULE);
+  }
+ catch (  SchemaNotFoundException ee) {
+    System.out.println("You must create the poly2 table in the postgis database:");
+    System.out.println("	     	 create table poly2 (the_geom geometry, polyid numeric(10,0), module char(8)) with oids;");
+    System.out.println("             insert into geometry_columns values ('','public','poly2','the_geom',2,1,'POLYGON');");
+  }
+catch (  Exception e) {
+    e.printStackTrace();
+  }
+}

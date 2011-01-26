@@ -1,0 +1,38 @@
+{
+  final String functionClass=function.getClass().getName();
+  int argCount=function.getArgCount();
+  final org.geotools.filter.Expression[] expected=new org.geotools.filter.Expression[argCount];
+  for (int i=0; i < argCount; i++) {
+    org.geotools.filter.Expression ex=new AttributeExpressionImpl("attName");
+    expected[i]=ex;
+  }
+  final List expectedList=Arrays.asList(expected);
+  try {
+    function.setArgs(expected);
+  }
+ catch (  Exception e) {
+    addExceptionError(errors,functionClass,"setArgs",e);
+  }
+  List returnedParams=function.getParameters();
+  if (returnedParams == null) {
+    errors.add(functionClass + ".getParameters() returned null when parameters were set through setArgs(Expression[])");
+  }
+ else   if (!expectedList.equals(returnedParams)) {
+    errors.add(functionClass + ".getParameters() returned a wrong result when parameters were set through setArgs(Expression[])");
+  }
+  function=(FunctionExpression)function.getClass().newInstance();
+  function.setParameters(expectedList);
+  Expression[] returnedArgs=function.getArgs();
+  if (returnedArgs == null) {
+    errors.add(functionClass + ".getArgs() returns null then arguments set through setParameters()");
+  }
+ else {
+    returnedParams=Arrays.asList(expected);
+    if (!expectedList.equals(returnedParams)) {
+      errors.add(functionClass + ".getArgs() incompatible with getParameters()");
+    }
+  }
+  if (ExpressionType.FUNCTION != function.getType()) {
+    errors.add(functionClass + ".getType != " + ExpressionType.FUNCTION);
+  }
+}

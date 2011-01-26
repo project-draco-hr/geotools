@@ -1,0 +1,46 @@
+{
+  query=DataUtilities.resolvePropertyNames(query,getSchema());
+  final int offset=query.getStartIndex() != null ? query.getStartIndex() : 0;
+  if (offset > 0 & query.getSortBy() == null) {
+    if (!getQueryCapabilities().supportsSorting(query.getSortBy())) {
+      throw new IllegalStateException("Feature source does not support this sorting " + "so there is no way a stable paging (offset/limit) can be performed");
+    }
+    Query copy=new Query(query);
+    copy.setSortBy(new SortBy[]{SortBy.NATURAL_ORDER});
+    query=copy;
+  }
+  SimpleFeatureCollection features=collection;
+  if (query.getFilter() != null && query.getFilter().equals(Filter.EXCLUDE)) {
+    return new EmptyFeatureCollection(getSchema());
+  }
+  if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE) {
+    features=new FilteringSimpleFeatureCollection(features,query.getFilter());
+  }
+  if (query.getCoordinateSystemReproject() != null) {
+    features=new ReprojectingFeatureCollection(features,query.getCoordinateSystemReproject());
+  }
+  if (query.getSortBy() != null && query.getSortBy().length != 0) {
+    SimpleFeature array[]=features.toArray(new SimpleFeature[features.size()]);
+    for (    SortBy sortBy : query.getSortBy()) {
+      Comparator<SimpleFeature> comparator=DataUtilities.sortComparator(sortBy);
+      Arrays.sort(array,comparator);
+    }
+    ArrayList<SimpleFeature> list=new ArrayList<SimpleFeature>(Arrays.asList(array));
+    features=new ListFeatureCollection(getSchema(),list);
+  }
+  if (offset > 0 || !query.isMaxFeaturesUnlimited()) {
+    long max=Long.MAX_VALUE;
+    if (!query.isMaxFeaturesUnlimited()) {
+      max=query.getMaxFeatures();
+    }
+    features=new MaxSimpleFeatureCollection(features,offset,max);
+  }
+  if (query.getPropertyNames() != Query.ALL_NAMES) {
+    SimpleFeatureType schema=features.getSchema();
+    SimpleFeatureType target=SimpleFeatureTypeBuilder.retype(schema,query.getPropertyNames());
+    if (!target.equals(schema)) {
+      features=new ReTypingFeatureCollection(features,target);
+    }
+  }
+  return new SubCollection(query,features);
+}

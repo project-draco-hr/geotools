@@ -1,0 +1,32 @@
+{
+  final GeneralEnvelope e1=(GeneralEnvelope)gc1.getEnvelope();
+  final GeneralEnvelope e2=(GeneralEnvelope)gc2.getEnvelope();
+  if ((e1.getLowerCorner().getOrdinate(0) != e2.getLowerCorner().getOrdinate(0)) || (e1.getLowerCorner().getOrdinate(1) != e2.getLowerCorner().getOrdinate(1)) || (e1.getUpperCorner().getOrdinate(0) != e2.getUpperCorner().getOrdinate(0))|| (e1.getUpperCorner().getOrdinate(1) != e2.getUpperCorner().getOrdinate(1))) {
+    throw new Exception("GridCoverage Envelopes are not equal" + e1.toString() + e2.toString());
+  }
+  if (e1.getCoordinateReferenceSystem().toWKT().compareToIgnoreCase(e2.getCoordinateReferenceSystem().toWKT()) != 0) {
+    throw new Exception("GridCoverage CRS are not equal" + e1.getCoordinateReferenceSystem().toWKT() + e2.getCoordinateReferenceSystem().toWKT());
+  }
+  final Double noData1=new Double(ArcGridWriter.getCandidateNoData(gc1));
+  final Double noData2=new Double(ArcGridWriter.getCandidateNoData(gc2));
+  final int minTileX1=gc1.getRenderedImage().getMinTileX();
+  final int minTileY1=gc1.getRenderedImage().getMinTileY();
+  final int width=gc1.getRenderedImage().getTileWidth();
+  final int height=gc1.getRenderedImage().getTileHeight();
+  final int maxTileX1=minTileX1 + gc1.getRenderedImage().getNumXTiles();
+  final int maxTileY1=minTileY1 + gc1.getRenderedImage().getNumYTiles();
+  double value1=0, value2=0;
+  for (int tileIndexX=minTileX1; tileIndexX < maxTileX1; tileIndexX++)   for (int tileIndexY=minTileY1; tileIndexY < maxTileY1; tileIndexY++) {
+    final Raster r1=gc1.getRenderedImage().getTile(tileIndexX,tileIndexY);
+    final Raster r2=gc2.getRenderedImage().getTile(tileIndexX,tileIndexY);
+    for (int i=r1.getMinX(); i < width; i++) {
+      for (int j=r1.getMinY(); j < height; j++) {
+        value1=r1.getSampleDouble(i,j,0);
+        value2=r2.getSampleDouble(i,j,0);
+        if (!(noData1.compareTo(value1) == 0 && noData2.compareTo(value2) == 0) && (value1 != value2)) {
+          throw new Exception("GridCoverage Values are not equal: " + value1 + ", "+ value2);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  start("UserLayer");
+  if ((layer.getName() != null) && (layer.getName().length() > 0)) {
+    element("Name",layer.getName());
+  }
+  DataStore inlineFDS=layer.getInlineFeatureDatastore();
+  if (inlineFDS != null) {
+    visitInlineFeatureType(inlineFDS,layer.getInlineFeatureType());
+  }
+ else   if (layer.getRemoteOWS() != null) {
+    visit(layer.getRemoteOWS());
+  }
+  start("LayerFeatureConstraints");
+  FeatureTypeConstraint[] lfc=layer.getLayerFeatureConstraints();
+  if ((lfc != null) && lfc.length > 0) {
+    for (int i=0; i < lfc.length; i++) {
+      visit(lfc[i]);
+    }
+  }
+ else {
+    start("FeatureTypeConstraint");
+    end("FeatureTypeConstraint");
+  }
+  end("LayerFeatureConstraints");
+  Style[] styles=layer.getUserStyles();
+  for (int i=0; i < styles.length; i++) {
+    visit(styles[i]);
+  }
+  end("UserLayer");
+}

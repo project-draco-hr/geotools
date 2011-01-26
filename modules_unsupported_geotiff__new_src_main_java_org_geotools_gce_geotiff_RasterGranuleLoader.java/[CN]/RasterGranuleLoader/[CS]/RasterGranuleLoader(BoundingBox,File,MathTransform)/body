@@ -1,0 +1,39 @@
+{
+  this.granuleBBOX=ReferencedEnvelope.reference(granuleBBOX);
+  this.granuleFile=granuleFile;
+  ImageInputStream inStream=null;
+  ImageReader reader=null;
+  try {
+    inStream=Utils.getInputStream(granuleFile);
+    if (inStream == null)     throw new IllegalArgumentException("Unable to get an input stream for the provided file " + granuleFile.toString());
+    reader=Utils.getReader(inStream);
+    if (reader == null) {
+      throw new IllegalArgumentException("Unable to get an ImageReader for the provided file " + granuleFile.toString());
+    }
+    final Rectangle originalDimension=Utils.getDimension(0,inStream,reader);
+    if (gridToWorld == null) {
+      final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(originalDimension),granuleBBOX);
+      geMapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+      this.baseGridToWorld=geMapper.createAffineTransform();
+    }
+ else     this.baseGridToWorld=(AffineTransform)gridToWorld;
+    this.granuleLevels.put(Integer.valueOf(0),new Level(1,1,originalDimension.width,originalDimension.height));
+  }
+ catch (  IllegalStateException e) {
+    throw new IllegalArgumentException(e);
+  }
+catch (  IOException e) {
+    throw new IllegalArgumentException(e);
+  }
+ finally {
+    try {
+      if (inStream != null)       inStream.close();
+    }
+ catch (    Throwable e) {
+      throw new IllegalArgumentException(e);
+    }
+ finally {
+      if (reader != null)       reader.dispose();
+    }
+  }
+}

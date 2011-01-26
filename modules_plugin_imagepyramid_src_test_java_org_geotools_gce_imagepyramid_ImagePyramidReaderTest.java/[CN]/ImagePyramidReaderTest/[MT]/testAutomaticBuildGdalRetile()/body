@@ -1,0 +1,22 @@
+{
+  final URL testFile=TestData.getResource(this,TEST_FILE);
+  File sourceDir=DataUtilities.urlToFile(testFile).getParentFile();
+  File targetDir=File.createTempFile("pyramid","tst",new File("./target"));
+  targetDir.delete();
+  targetDir.mkdir();
+  try {
+    prepareEmptyMosaic(sourceDir,targetDir);
+    File zeroDir=new File(targetDir,"0");
+    assertTrue(zeroDir.isDirectory());
+    FileUtils.copyDirectory(zeroDir,targetDir);
+    FileUtils.deleteDirectory(zeroDir);
+    final AbstractGridFormat format=new ImagePyramidFormat();
+    final Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,DefaultGeographicCRS.WGS84);
+    assertTrue(((ImagePyramidFormat)format).accepts(targetDir,hints));
+    final ImagePyramidReader reader=(ImagePyramidReader)format.getReader(targetDir,hints);
+    assertNotNull(reader);
+  }
+  finally {
+    FileUtils.deleteQuietly(targetDir);
+  }
+}

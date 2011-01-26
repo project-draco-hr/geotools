@@ -1,0 +1,27 @@
+{
+  if (base == null || base.isNull()) {
+    return merge;
+  }
+ else   if (merge == null || merge.isNull()) {
+    return base;
+  }
+ else {
+    final CoordinateReferenceSystem crsBase=base.getCoordinateReferenceSystem();
+    final CoordinateReferenceSystem crsMerge=merge.getCoordinateReferenceSystem();
+    if (crsBase == null) {
+      merge.expandToInclude(base);
+      return merge;
+    }
+ else     if (crsMerge == null) {
+      base.expandToInclude(base);
+      return base;
+    }
+ else {
+      if (!CRS.equalsIgnoreMetadata(crsBase,crsMerge)) {
+        merge=merge.transform(crsBase,true);
+      }
+      base.expandToInclude(merge);
+      return base;
+    }
+  }
+}

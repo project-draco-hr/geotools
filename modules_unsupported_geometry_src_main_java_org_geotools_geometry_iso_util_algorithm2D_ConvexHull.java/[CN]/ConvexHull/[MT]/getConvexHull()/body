@@ -1,0 +1,23 @@
+{
+  if (inputPts.length == 0) {
+    return null;
+  }
+  if (inputPts.length == 1) {
+    return new PointImpl(new DirectPositionImpl(crs,inputPts[0].getCoordinates()));
+  }
+  if (inputPts.length == 2) {
+    List<Position> positions=CoordinateArrays.toPositionList(this.crs,this.inputPts);
+    LineStringImpl lineString=new LineStringImpl(new PointArrayImpl(positions),0.0);
+    List<CurveSegment> segments=new ArrayList<CurveSegment>();
+    segments.add(lineString);
+    return new CurveImpl(this.crs,segments);
+  }
+  Coordinate[] reducedPts=inputPts;
+  if (inputPts.length > 50) {
+    reducedPts=reduce(inputPts);
+  }
+  Coordinate[] sortedPts=preSort(reducedPts);
+  Stack cHS=grahamScan(sortedPts);
+  Coordinate[] cH=toCoordinateArray(cHS);
+  return lineOrPolygon(cH);
+}

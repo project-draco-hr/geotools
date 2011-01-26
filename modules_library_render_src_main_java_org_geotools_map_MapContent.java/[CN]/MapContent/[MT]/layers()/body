@@ -1,0 +1,132 @@
+{
+  if (layerList == null) {
+    layerList=new CopyOnWriteArrayList<Layer>(){
+      private static final long serialVersionUID=8011733882551971475L;
+      public void add(      int index,      Layer element){
+        super.add(index,element);
+        if (layerListener != null) {
+          element.addMapLayerListener(layerListener);
+        }
+        fireLayerAdded(element,index,index);
+      }
+      @Override public boolean add(      Layer element){
+        boolean added=super.add(element);
+        if (added) {
+          if (layerListener != null) {
+            element.addMapLayerListener(layerListener);
+          }
+          fireLayerAdded(element,size() - 1,size() - 1);
+        }
+        return added;
+      }
+      public boolean addAll(      Collection<? extends Layer> c){
+        int start=size() - 1;
+        boolean added=super.addAll(c);
+        if (layerListener != null) {
+          for (          Layer element : c) {
+            element.addMapLayerListener(layerListener);
+          }
+        }
+        fireLayerAdded(null,start,size() - 1);
+        return added;
+      }
+      public boolean addAll(      int index,      Collection<? extends Layer> c){
+        boolean added=super.addAll(index,c);
+        if (layerListener != null) {
+          for (          Layer element : c) {
+            element.addMapLayerListener(layerListener);
+          }
+        }
+        fireLayerAdded(null,index,size() - 1);
+        return added;
+      }
+      @Override public int addAllAbsent(      Collection<? extends Layer> c){
+        int start=size() - 1;
+        int added=super.addAllAbsent(c);
+        if (layerListener != null) {
+          for (          Layer element : c) {
+            element.addMapLayerListener(layerListener);
+          }
+        }
+        fireLayerAdded(null,start,size() - 1);
+        return added;
+      }
+      @Override public boolean addIfAbsent(      Layer e){
+        boolean added=super.addIfAbsent(e);
+        if (added) {
+          fireLayerAdded(e,size() - 1,size() - 1);
+        }
+        return added;
+      }
+      @Override public void clear(){
+        for (        Layer element : this) {
+          if (layerListener != null) {
+            element.removeMapLayerListener(layerListener);
+          }
+          element.dispose();
+        }
+        super.clear();
+        fireLayerRemoved(null,-1,-1);
+      }
+      @Override public Layer remove(      int index){
+        Layer removed=super.remove(index);
+        fireLayerRemoved(removed,index,index);
+        if (layerListener != null) {
+          removed.removeMapLayerListener(layerListener);
+        }
+        removed.dispose();
+        return removed;
+      }
+      @Override public boolean remove(      Object o){
+        boolean removed=super.remove(o);
+        if (removed) {
+          fireLayerRemoved((Layer)o,-1,-1);
+          if (o instanceof Layer) {
+            Layer element=(Layer)o;
+            if (layerListener != null) {
+              element.removeMapLayerListener(layerListener);
+            }
+            element.dispose();
+          }
+        }
+        return removed;
+      }
+      @Override public boolean removeAll(      Collection<?> c){
+        for (        Object obj : c) {
+          if (!contains(obj)) {
+            continue;
+          }
+          if (obj instanceof Layer) {
+            Layer element=(Layer)obj;
+            if (layerListener != null) {
+              element.removeMapLayerListener(layerListener);
+            }
+            element.dispose();
+          }
+        }
+        boolean removed=super.removeAll(c);
+        fireLayerRemoved(null,0,size() - 1);
+        return removed;
+      }
+      @Override public boolean retainAll(      Collection<?> c){
+        for (        Object obj : c) {
+          if (contains(obj)) {
+            continue;
+          }
+          if (obj instanceof Layer) {
+            Layer element=(Layer)obj;
+            if (layerListener != null) {
+              element.removeMapLayerListener(layerListener);
+            }
+            element.dispose();
+          }
+        }
+        boolean removed=super.retainAll(c);
+        fireLayerRemoved(null,0,size() - 1);
+        return removed;
+      }
+    }
+;
+  }
+  return layerList;
+}

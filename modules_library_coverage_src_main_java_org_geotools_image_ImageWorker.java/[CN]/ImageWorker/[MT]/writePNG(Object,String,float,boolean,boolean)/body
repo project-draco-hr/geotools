@@ -1,0 +1,54 @@
+{
+  if (!paletted) {
+    forceComponentColorModel();
+  }
+ else {
+    forceIndexColorModelForGIF(true);
+  }
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Encoded input image for png writer");
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Getting a writer");
+  final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("PNG");
+  if (!it.hasNext()) {
+    throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+  }
+  ImageWriter writer=it.next();
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Setting write parameters for this writer");
+  ImageWriteParam iwp=null;
+  final ImageOutputStream memOutStream=ImageIO.createImageOutputStream(destination);
+  if (memOutStream == null)   throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
+  if (nativeAcc && writer.getClass().getName().equals("com.sun.media.imageioimpl.plugins.png.CLibPNGImageWriter")) {
+    if (LOGGER.isLoggable(Level.FINER))     LOGGER.finer("Writer is native");
+    iwp=writer.getDefaultWriteParam();
+    iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+    iwp.setCompressionType(compression);
+    iwp.setCompressionQuality(compressionRate);
+    iwp.setDestinationType(new ImageTypeSpecifier(image.getColorModel(),image.getSampleModel()));
+  }
+ else {
+    if (!nativeAcc && it.hasNext() && writer.getClass().getName().equals("com.sun.media.imageioimpl.plugins.png.CLibPNGImageWriter")) {
+      writer=it.next();
+    }
+    if (LOGGER.isLoggable(Level.FINER))     LOGGER.finer("Writer is NOT native");
+    iwp=new PNGImageWriteParam();
+    iwp.setCompressionMode(ImageWriteParam.MODE_DEFAULT);
+  }
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("About to write png image");
+  try {
+    writer.setOutput(memOutStream);
+    writer.write(null,new IIOImage(image,null,null),iwp);
+  }
+  finally {
+    try {
+      writer.dispose();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+    try {
+      memOutStream.close();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+  }
+}

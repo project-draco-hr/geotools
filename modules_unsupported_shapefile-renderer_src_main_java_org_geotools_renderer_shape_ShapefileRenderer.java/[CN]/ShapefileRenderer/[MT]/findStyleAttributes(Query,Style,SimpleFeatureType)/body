@@ -1,0 +1,16 @@
+{
+  StyleAttributeExtractor sae=new StyleAttributeExtractor();
+  sae.visit(style);
+  FilterAttributeExtractor qae=new FilterAttributeExtractor();
+  query.getFilter().accept(qae,null);
+  Set ftsAttributes=new LinkedHashSet(sae.getAttributeNameSet());
+  ftsAttributes.addAll(qae.getAttributeNameSet());
+  if (sae.getDefaultGeometryUsed() && (!ftsAttributes.contains(schema.getGeometryDescriptor().getLocalName()))) {
+    ftsAttributes.add(schema.getGeometryDescriptor().getLocalName());
+  }
+ else {
+    ftsAttributes.remove(schema.getGeometryDescriptor().getLocalName());
+    ftsAttributes.add(schema.getGeometryDescriptor().getLocalName());
+  }
+  return (String[])ftsAttributes.toArray(new String[0]);
+}

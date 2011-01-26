@@ -1,0 +1,35 @@
+{
+  try {
+    Method s=null;
+    try {
+      s=visitor.getClass().getMethod("setValue",result.getClass());
+    }
+ catch (    Exception e) {
+    }
+    if (s == null) {
+      for (      Method m : visitor.getClass().getMethods()) {
+        if ("setValue".equals(m.getName())) {
+          s=m;
+          break;
+        }
+      }
+    }
+    if (s != null) {
+      Class type=s.getParameterTypes()[0];
+      if (!type.isInstance(result)) {
+        Object converted=Converters.convert(result,type);
+        if (converted != null) {
+          result=converted;
+        }
+ else {
+          return false;
+        }
+      }
+      s.invoke(visitor,result);
+      return true;
+    }
+  }
+ catch (  Exception e) {
+  }
+  return false;
+}

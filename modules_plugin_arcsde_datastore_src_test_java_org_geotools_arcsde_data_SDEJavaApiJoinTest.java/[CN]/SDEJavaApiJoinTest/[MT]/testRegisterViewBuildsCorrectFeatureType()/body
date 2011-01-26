@@ -1,0 +1,23 @@
+{
+  final String plainSQL="SELECT " + InProcessViewSupportTestData.MASTER_UNQUALIFIED + ".*, "+ InProcessViewSupportTestData.CHILD_UNQUALIFIED+ ".DESCRIPTION FROM "+ InProcessViewSupportTestData.MASTER_UNQUALIFIED+ ", "+ InProcessViewSupportTestData.CHILD_UNQUALIFIED+ " WHERE "+ InProcessViewSupportTestData.CHILD_UNQUALIFIED+ ".MASTER_ID = "+ InProcessViewSupportTestData.MASTER_UNQUALIFIED+ ".ID";
+  SelectBody select=ViewRegisteringFactoryHelper.parseSqlQuery(plainSQL);
+  store.registerView(InProcessViewSupportTestData.typeName,(PlainSelect)select);
+  SimpleFeatureType type=store.getSchema(InProcessViewSupportTestData.typeName);
+  assertNotNull(type);
+  assertEquals(InProcessViewSupportTestData.typeName,type.getTypeName());
+  assertEquals(4,type.getAttributeCount());
+  List<AttributeDescriptor> atts=type.getAttributeDescriptors();
+  assertEquals(4,atts.size());
+  AttributeDescriptor att1=(AttributeDescriptor)atts.get(0);
+  AttributeDescriptor att2=(AttributeDescriptor)atts.get(1);
+  AttributeDescriptor att3=(AttributeDescriptor)atts.get(2);
+  AttributeDescriptor att4=(AttributeDescriptor)atts.get(3);
+  assertEquals("ID",att1.getLocalName());
+  assertEquals("NAME",att2.getLocalName());
+  assertEquals("SHAPE",att3.getLocalName());
+  assertEquals("DESCRIPTION",att4.getLocalName());
+  assertEquals(Integer.class,att1.getType().getBinding());
+  assertEquals(String.class,att2.getType().getBinding());
+  assertEquals(Point.class,att3.getType().getBinding());
+  assertEquals(String.class,att4.getType().getBinding());
+}

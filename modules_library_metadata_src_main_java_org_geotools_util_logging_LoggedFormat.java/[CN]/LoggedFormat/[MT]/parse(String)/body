@@ -1,0 +1,20 @@
+{
+  if (text == null || (text=text.trim()).length() == 0) {
+    return null;
+  }
+  final ParsePosition position=new ParsePosition(0);
+  final Object value=parseObject(text,position);
+  int index=position.getIndex();
+  final int error=position.getErrorIndex();
+  if (error >= 0 && error < index) {
+    index=error;
+  }
+  if (index < text.length()) {
+    doLogWarning(formatUnparsable(text,0,index,getWarningLocale(),level));
+  }
+ else   if (value != null && !type.isInstance(value)) {
+    doLogWarning(Errors.getResources(getWarningLocale()).getLogRecord(level,ErrorKeys.ILLEGAL_CLASS_$2,value.getClass(),type));
+    return null;
+  }
+  return type.cast(value);
+}

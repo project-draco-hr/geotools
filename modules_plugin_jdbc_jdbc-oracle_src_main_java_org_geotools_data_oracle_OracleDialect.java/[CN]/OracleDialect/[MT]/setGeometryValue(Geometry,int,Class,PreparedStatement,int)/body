@@ -1,0 +1,14 @@
+{
+  if (g == null) {
+    ps.setNull(column,Types.STRUCT,"MDSYS.SDO_GEOMETRY");
+    return;
+  }
+  OracleConnection ocx=unwrapConnection(ps.getConnection());
+  GeometryConverter converter=new GeometryConverter(ocx);
+  STRUCT s=converter.toSDO(g,srid);
+  ps.setObject(column,s);
+  if (LOGGER.isLoggable(Level.FINE)) {
+    String sdo=SDOSqlDumper.toSDOGeom(g,srid);
+    LOGGER.fine("Setting parameter " + column + " as "+ sdo);
+  }
+}

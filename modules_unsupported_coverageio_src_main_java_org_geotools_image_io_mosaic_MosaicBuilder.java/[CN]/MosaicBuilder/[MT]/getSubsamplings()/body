@@ -1,0 +1,82 @@
+{
+  if (subsamplings == null) {
+    final Rectangle untiledBounds=getUntiledImageBounds();
+    if (untiledBounds == null) {
+      return null;
+    }
+    final Dimension tileSize=getTileSize();
+    if (tileSize == null) {
+      return null;
+    }
+    final boolean constantArea=TileLayout.CONSTANT_GEOGRAPHIC_AREA.equals(layout);
+    int nx=tileSize.width;
+    int ny=tileSize.height;
+    if (!constantArea) {
+      nx=Fraction.round(untiledBounds.width,nx);
+      ny=Fraction.round(untiledBounds.height,ny);
+    }
+    int[] xSubsamplings=XMath.divisors(nx);
+    if (nx != ny) {
+      final int[] ySubsamplings=XMath.divisors(ny);
+      final int[] union=new int[xSubsamplings.length + ySubsamplings.length];
+      int nu=0;
+      for (int ix=0, iy=0; ; ) {
+        if (ix == xSubsamplings.length) {
+          final int no=ySubsamplings.length - iy;
+          System.arraycopy(ySubsamplings,iy,union,nu,no);
+          nu+=no;
+          break;
+        }
+        if (iy == ySubsamplings.length) {
+          final int no=xSubsamplings.length - ix;
+          System.arraycopy(xSubsamplings,ix,union,nu,no);
+          nu+=no;
+          break;
+        }
+        final int sx=xSubsamplings[ix];
+        final int sy=ySubsamplings[iy];
+        final int s;
+        if (sx <= sy) {
+          s=sx;
+          ix++;
+          if (sx == sy) {
+            iy++;
+          }
+        }
+ else {
+          s=sy;
+          iy++;
+        }
+        union[nu++]=s;
+      }
+      xSubsamplings=XArray.resize(union,nu);
+    }
+    if (constantArea) {
+      nx=tileSize.width / MIN_TILE_SIZE;
+      ny=tileSize.height / MIN_TILE_SIZE;
+    }
+ else {
+      nx=(untiledBounds.width - 1) / tileSize.width + 1;
+      ny=(untiledBounds.height - 1) / tileSize.height + 1;
+    }
+    nx=Arrays.binarySearch(xSubsamplings,nx);
+    if (nx < 0)     nx=~nx;
+    nx++;
+    ny=Arrays.binarySearch(xSubsamplings,ny);
+    if (ny < 0)     ny=~ny;
+    ny++;
+    final int length=Math.min(Math.max(nx,ny),xSubsamplings.length);
+    subsamplings=new int[length * 2];
+    int source=0;
+    for (int i=0; i < length; i++) {
+      subsamplings[source++]=xSubsamplings[i];
+      subsamplings[source++]=xSubsamplings[i];
+    }
+  }
+  final Dimension[] dimensions=new Dimension[subsamplings.length / 2];
+  int source=0;
+  for (int i=0; i < dimensions.length; i++) {
+    dimensions[i]=new Dimension(subsamplings[source++],subsamplings[source++]);
+  }
+  return dimensions;
+}

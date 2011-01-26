@@ -1,0 +1,61 @@
+{
+  checkImageIndex(index);
+  final ImageReadParam param=reader.getDefaultReadParam();
+  if (param instanceof RawBinaryImageReadParam) {
+    final RawBinaryImageReadParam rawParam=(RawBinaryImageReadParam)param;
+    final GridEnvelope range=getGridRange(index);
+    final Dimension size=new Dimension(range.getSpan(0),range.getSpan(1));
+    rawParam.setStreamImageSize(size);
+  }
+  final String name=getName(index);
+  final MathTransform gridToCRS=getMathTransform(index);
+  final CoordinateReferenceSystem crs=getCoordinateReferenceSystem(index);
+  final GridSampleDimension[] bands=getSampleDimensions(index);
+  final RenderedImage image=reader.readAsRenderedImage(index,param);
+  if (LOGGER.isLoggable(Level.FINE)) {
+    final Envelope envelope=getEnvelope(index);
+    final StringWriter buffer=new StringWriter();
+    final LineWriter trimer=new LineWriter(buffer);
+    final TableWriter table=new TableWriter(trimer,1);
+    final PrintWriter out=new PrintWriter(table);
+    buffer.write("Creating GridCoverage[\"");
+    buffer.write(name);
+    buffer.write("\"] with:");
+    buffer.write(trimer.getLineSeparator());
+    table.setMultiLinesCells(true);
+    final int sdCount=(bands != null) ? bands.length : 0;
+    for (int i=-3; i < sdCount; i++) {
+      String key="";
+      Object value;
+switch (i) {
+case -3:
+        key="RenderedImage";
+      value=image;
+    break;
+case -2:
+  key="CoordinateReferenceSystem";
+value=crs;
+break;
+case -1:
+key="Envelope";
+value=envelope;
+break;
+case 0:
+key="SampleDimensions";
+default :
+value=bands[i];
+break;
+}
+out.print("    ");
+out.print(key);
+table.nextColumn();
+out.print('=');
+table.nextColumn();
+out.print(value);
+table.nextLine();
+}
+out.flush();
+LOGGER.fine(buffer.toString());
+}
+return factory.create(name,image,crs,gridToCRS,bands,null,null);
+}

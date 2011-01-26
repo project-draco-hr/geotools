@@ -1,0 +1,39 @@
+{
+  GridEnvelope resultGridRange;
+  GeneralEnvelope resultEnvelope;
+  GridEnvelope tiledImageGridRange;
+  GridEnvelope matchingTiles;
+  int rasterIndex=query.getRasterIndex();
+  int pyramidLevel=query.getPyramidLevel();
+  MathTransform2D rasterToModel=(MathTransform2D)rasterInfo.getRasterToModel(rasterIndex,pyramidLevel);
+  MathTransform2D modelToRaster;
+  try {
+    modelToRaster=(MathTransform2D)rasterToModel.inverse();
+    final GeneralEnvelope adjustedGRange=CRS.transform(modelToRaster,requestedEnvelope);
+    int xmin=(int)Math.floor(adjustedGRange.getMinimum(0));
+    int ymin=(int)Math.floor(adjustedGRange.getMinimum(1));
+    int xmax=(int)Math.ceil(adjustedGRange.getMaximum(0));
+    int ymax=(int)Math.ceil(adjustedGRange.getMaximum(1));
+    final GridEnvelope levelRange=rasterInfo.getGridRange(rasterIndex,pyramidLevel);
+    xmin=Math.max(xmin,levelRange.getLow(0));
+    ymin=Math.max(ymin,levelRange.getLow(1));
+    xmax=Math.min(xmax,levelRange.getHigh(0) + 1);
+    ymax=Math.min(ymax,levelRange.getHigh(1) + 1);
+    int width=xmax - xmin;
+    int height=ymax - ymin;
+    resultGridRange=new GridEnvelope2D(xmin,ymin,width,height);
+    Rectangle2D finalEnvelope=CRS.transform(rasterToModel,(Rectangle2D)resultGridRange,new Rectangle2D.Double());
+    resultEnvelope=new GeneralEnvelope(finalEnvelope);
+    CoordinateReferenceSystem crs=rasterInfo.getCoverageCrs();
+    resultEnvelope.setCoordinateReferenceSystem(crs);
+  }
+ catch (  TransformException e) {
+    throw new RuntimeException(e);
+  }
+  matchingTiles=findMatchingTiles(rasterInfo,rasterIndex,pyramidLevel,resultGridRange);
+  tiledImageGridRange=getTiledImageGridRange(rasterInfo.getTileDimension(rasterIndex),matchingTiles);
+  query.setResultEnvelope(resultEnvelope);
+  query.setResultGridRange(resultGridRange);
+  query.setMatchingTiles(matchingTiles);
+  query.setTiledImageGridRange(tiledImageGridRange);
+}

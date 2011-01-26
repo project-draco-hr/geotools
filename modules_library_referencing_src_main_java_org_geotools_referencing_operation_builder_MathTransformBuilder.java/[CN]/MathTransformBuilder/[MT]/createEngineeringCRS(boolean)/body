@@ -1,0 +1,28 @@
+{
+  final Map<String,Object> properties=new HashMap<String,Object>(4);
+  properties.put(CoordinateReferenceSystem.NAME_KEY,Vocabulary.format(VocabularyKeys.UNKNOW));
+  final GeographicExtent validArea=getValidArea(target);
+  if (validArea != null) {
+    final ExtentImpl extent=new ExtentImpl();
+    extent.getGeographicElements().add(validArea);
+    properties.put(CoordinateReferenceSystem.DOMAIN_OF_VALIDITY_KEY,extent.unmodifiable());
+  }
+  final CoordinateReferenceSystem oppositeCRS=target ? sourceCRS : targetCRS;
+  final CoordinateSystem cs;
+  if (oppositeCRS != null) {
+    cs=oppositeCRS.getCoordinateSystem();
+  }
+ else {
+switch (getDimension()) {
+case 2:
+      cs=DefaultCartesianCS.GENERIC_2D;
+    break;
+case 3:
+  cs=DefaultCartesianCS.GENERIC_3D;
+break;
+default :
+throw new FactoryException(Errors.format(ErrorKeys.UNSPECIFIED_CRS));
+}
+}
+return crsFactory.createEngineeringCRS(properties,datumFactory.createEngineeringDatum(properties),cs);
+}

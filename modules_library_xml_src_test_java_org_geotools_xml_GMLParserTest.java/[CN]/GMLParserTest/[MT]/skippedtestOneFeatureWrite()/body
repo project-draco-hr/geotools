@@ -1,0 +1,26 @@
+{
+  try {
+    String path="xml/geoserver/oneFeature.xml";
+    File f=TestData.copy(this,path);
+    TestData.copy(this,"xml/geoserver/roadSchema.xsd");
+    TestData.copy(this,"xml/wfs/WFS-basic.xsd");
+    GMLFeatureCollection doc=(GMLFeatureCollection)DocumentFactory.getInstance(f.toURI(),null,Level.WARNING);
+    assertNotNull("Document missing",doc);
+    Schema s=SchemaFactory.getInstance(new URI("http://www.openplans.org/topp"));
+    path="oneFeature_out.xml";
+    f=new File(f.getParentFile(),path);
+    if (f.exists())     f.delete();
+    f.createNewFile();
+    assertNotNull("Bounds exists",doc.getBounds());
+    DocumentWriter.writeDocument(doc,s,f,null);
+    System.out.println(f);
+  }
+ catch (  SAXException e) {
+    e.printStackTrace();
+    fail(e.toString());
+  }
+catch (  Throwable e) {
+    e.printStackTrace();
+    fail(e.toString());
+  }
+}

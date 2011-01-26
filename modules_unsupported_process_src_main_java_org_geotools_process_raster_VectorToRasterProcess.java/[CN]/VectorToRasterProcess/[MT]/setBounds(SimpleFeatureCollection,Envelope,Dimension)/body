@@ -1,0 +1,33 @@
+{
+  ReferencedEnvelope featureBounds=features.getBounds();
+  if (bounds != null) {
+    ReferencedEnvelope inputBounds=new ReferencedEnvelope(bounds);
+    CoordinateReferenceSystem featuresCRS=featureBounds.getCoordinateReferenceSystem();
+    CoordinateReferenceSystem envCRS=bounds.getCoordinateReferenceSystem();
+    ReferencedEnvelope trEnv;
+    if (!CRS.equalsIgnoreMetadata(envCRS,featuresCRS)) {
+      try {
+        trEnv=inputBounds.transform(featuresCRS,true);
+      }
+ catch (      Exception tex) {
+        throw new VectorToRasterException(tex);
+      }
+    }
+ else {
+      trEnv=inputBounds;
+    }
+    com.vividsolutions.jts.geom.Envelope common=trEnv.intersection(features.getBounds());
+    if (common == null || common.isNull()) {
+      throw new VectorToRasterException("Features do not lie within the requested rasterizing bounds");
+    }
+    extent=new ReferencedEnvelope(common,featuresCRS);
+  }
+ else {
+    extent=featureBounds;
+  }
+  GeometryFactory gf=new GeometryFactory();
+  extentGeometry=gf.toGeometry(extent);
+  double xInterval=extent.getWidth() / gridDim.getWidth();
+  double yInterval=extent.getHeight() / gridDim.getHeight();
+  cellsize=Math.max(xInterval,yInterval);
+}

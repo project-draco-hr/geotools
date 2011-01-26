@@ -1,0 +1,32 @@
+{
+  return new FeatureReader<SimpleFeatureType,SimpleFeature>(){
+    SimpleFeatureType featureType=getSchema(typeName);
+    Iterator<SimpleFeature> iterator=features(typeName).values().iterator();
+    public SimpleFeatureType getFeatureType(){
+      return featureType;
+    }
+    public SimpleFeature next() throws IOException, IllegalAttributeException, NoSuchElementException {
+      if (iterator == null) {
+        throw new IOException("Feature Reader has been closed");
+      }
+      try {
+        return SimpleFeatureBuilder.copy((SimpleFeature)iterator.next());
+      }
+ catch (      NoSuchElementException end) {
+        throw new DataSourceException("There are no more Features",end);
+      }
+    }
+    public boolean hasNext(){
+      return (iterator != null) && iterator.hasNext();
+    }
+    public void close(){
+      if (iterator != null) {
+        iterator=null;
+      }
+      if (featureType != null) {
+        featureType=null;
+      }
+    }
+  }
+;
+}

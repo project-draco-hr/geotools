@@ -1,0 +1,84 @@
+{
+  WMSCapabilities capabilities=createCapabilities("1.1.0Capabilities.xml");
+  try {
+    assertEquals(capabilities.getVersion(),"1.1.0");
+    assertEquals(capabilities.getService().getName(),"OGC:WMS");
+    assertEquals(capabilities.getService().getTitle(),"GMap WMS Demo Server");
+    assertNotNull(capabilities.getService().get_abstract());
+    assertEquals(capabilities.getService().getOnlineResource(),new URL("http://dev1.dmsolutions.ca/cgi-bin/mswms_gmap?"));
+    assertNull(capabilities.getService().getKeywordList());
+    assertEquals(capabilities.getRequest().getGetCapabilities().getFormats().size(),1);
+    assertEquals(capabilities.getRequest().getGetCapabilities().getFormats().get(0),"application/vnd.ogc.wms_xml");
+    assertEquals(capabilities.getRequest().getGetCapabilities().getGet(),new URL("http://dev1.dmsolutions.ca/cgi-bin/mswms_gmap?"));
+    assertEquals(capabilities.getRequest().getGetCapabilities().getPost(),new URL("http://dev1.dmsolutions.ca/cgi-bin/mswms_gmap?"));
+    assertEquals(capabilities.getRequest().getGetMap().getFormats().size(),7);
+    assertEquals(capabilities.getRequest().getGetMap().getFormats().get(0),"image/gif");
+    assertEquals(capabilities.getRequest().getGetMap().getFormats().get(3),"image/wbmp");
+    assertEquals(capabilities.getRequest().getGetMap().getFormats().get(6),"image/tiff");
+    assertEquals(capabilities.getRequest().getGetMap().getGet(),new URL("http://dev1.dmsolutions.ca/cgi-bin/mswms_gmap?"));
+    assertEquals(capabilities.getRequest().getGetMap().getPost(),new URL("http://dev1.dmsolutions.ca/cgi-bin/mswms_gmap?"));
+    assertEquals(capabilities.getRequest().getGetFeatureInfo().getFormats().size(),3);
+    assertEquals(capabilities.getRequest().getGetFeatureInfo().getFormats().get(0),"text/plain");
+    assertEquals(capabilities.getRequest().getGetFeatureInfo().getFormats().get(1),"text/html");
+    assertEquals(capabilities.getRequest().getGetFeatureInfo().getFormats().get(2),"application/vnd.ogc.gml");
+    assertEquals(capabilities.getLayerList().size(),12);
+    Layer layer=(Layer)capabilities.getLayerList().get(0);
+    assertNull(layer.getParent());
+    assertEquals(layer.getName(),"DEMO");
+    assertEquals(layer.get_abstract(),"Abstract Test");
+    String[] keywords=layer.getKeywords();
+    assertNotNull(keywords);
+    assertEquals(keywords.length,2);
+    assertEquals(keywords[0],"word1");
+    assertEquals(keywords[1],"word2");
+    assertEquals(layer.getTitle(),"GMap WMS Demo Server");
+    assertEquals(layer.getSrs().size(),4);
+    assertTrue(layer.getSrs().contains("EPSG:42304"));
+    assertTrue(layer.getSrs().contains("EPSG:42101"));
+    assertTrue(layer.getSrs().contains("EPSG:4269"));
+    assertTrue(layer.getSrs().contains("EPSG:4326"));
+    CRSEnvelope llbbox=layer.getLatLonBoundingBox();
+    validateBoundingBox(llbbox,-172.367,35.6673,-11.5624,83.8293);
+    assertEquals(layer.getBoundingBoxes().size(),1);
+    assertNotNull(layer.getBoundingBoxes().get("EPSG:42304"));
+    Layer layer2=(Layer)capabilities.getLayerList().get(1);
+    assertEquals(layer2.getParent(),layer);
+    assertEquals(layer2.getName(),"bathymetry");
+    assertEquals(layer2.getTitle(),"Elevation/Bathymetry");
+    assertTrue(layer2.getSrs().contains("EPSG:42304"));
+    assertFalse(layer2.isQueryable());
+    layer2=(Layer)capabilities.getLayerList().get(2);
+    assertEquals(layer2.getParent(),layer);
+    assertEquals(layer2.getName(),"land_fn");
+    assertEquals(layer2.getTitle(),"Foreign Lands");
+    validateBoundingBox(layer2.getLatLonBoundingBox(),-178.838,31.8844,179.94,89.8254);
+    assertTrue(layer2.getSrs().contains("EPSG:42304"));
+    assertFalse(layer2.isQueryable());
+    assertNotNull(layer2.getBoundingBoxes().get("EPSG:42304"));
+    layer2=(Layer)capabilities.getLayerList().get(3);
+    assertEquals(layer2.getParent(),layer);
+    assertEquals(layer2.getName(),"park");
+    assertEquals(layer2.getTitle(),"Parks");
+    validateBoundingBox(layer2.getLatLonBoundingBox(),-173.433,41.4271,-13.3643,83.7466);
+    assertTrue(layer2.getSrs().contains("EPSG:42304"));
+    assertTrue(layer2.isQueryable());
+    assertNotNull(layer2.getBoundingBoxes().get("EPSG:42304"));
+    layer2=(Layer)capabilities.getLayerList().get(11);
+    assertEquals(layer2.getParent(),layer);
+    assertEquals(layer2.getName(),"grid");
+    assertEquals(layer2.getTitle(),"Grid");
+    llbbox=layer2.getLatLonBoundingBox();
+    validateBoundingBox(llbbox,-178.838,31.8844,179.94,89.8254);
+    assertTrue(layer2.getSrs().contains("EPSG:42304"));
+    assertFalse(layer2.isQueryable());
+    assertNotNull(layer2.getBoundingBoxes().get("EPSG:42304"));
+  }
+ catch (  Exception e) {
+    if (e.getMessage().indexOf("timed out") > 0) {
+      System.err.println("Unable to test - timed out: " + e);
+    }
+ else {
+      throw (e);
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  Element element=parent.pullElement("LOCAL_CS");
+  String name=element.pullString("name");
+  EngineeringDatum datum=parseLocalDatum(element);
+  Unit<Length> linearUnit=parseUnit(element,SI.METER);
+  CoordinateSystemAxis axis=parseAxis(element,linearUnit,true);
+  List<CoordinateSystemAxis> list=new ArrayList<CoordinateSystemAxis>();
+  do {
+    list.add(axis);
+    axis=parseAxis(element,linearUnit,false);
+  }
+ while (axis != null);
+  final Map<String,?> properties=parseAuthority(element,name);
+  element.close();
+  final CoordinateSystem cs;
+  cs=new AbstractCS(singletonMap("name",name),list.toArray(new CoordinateSystemAxis[list.size()]));
+  try {
+    return crsFactory.createEngineeringCRS(properties,datum,cs);
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

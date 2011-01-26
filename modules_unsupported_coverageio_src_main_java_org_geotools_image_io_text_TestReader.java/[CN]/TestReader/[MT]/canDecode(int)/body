@@ -1,0 +1,47 @@
+{
+  final Reader input=getReader(readAheadLimit);
+  if (input == null) {
+    return false;
+  }
+  final TextImageReader.Spi spi=(TextImageReader.Spi)originatingProvider;
+  final char[] buffer=new char[readAheadLimit];
+  final int length=input.read(buffer);
+  final LineFormat parser=getLineFormat(0);
+  double[][] rows=new double[16][];
+  int rowCount=0;
+  int lower=0;
+  scan:   while (lower < readAheadLimit) {
+    char c=buffer[lower];
+    if (c == '\r' || c == 'n') {
+      lower++;
+      continue;
+    }
+    int upper=lower;
+    while ((c=buffer[upper]) != '\r' && c != '\n') {
+      if (++upper >= readAheadLimit) {
+        break scan;
+      }
+    }
+    final String line=new String(buffer,lower,upper - lower);
+    if (!isComment(line)) {
+      try {
+        if (parser.setLine(line) != 0) {
+          if (rowCount == rows.length) {
+            rows=XArray.resize(rows,rows.length * 2);
+          }
+          rows[rowCount]=parser.getValues(rows[rowCount]);
+          rowCount++;
+        }
+      }
+ catch (      ParseException exception) {
+        return false;
+      }
+    }
+    lower=upper;
+  }
+  if (originatingProvider instanceof TextImageReader.Spi) {
+    rows=XArray.resize(rows,rowCount);
+    return ((TextImageReader.Spi)originatingProvider).isValidContent(rows);
+  }
+  return true;
+}

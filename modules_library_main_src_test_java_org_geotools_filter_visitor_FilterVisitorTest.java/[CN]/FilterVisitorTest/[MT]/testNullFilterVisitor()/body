@@ -1,0 +1,20 @@
+{
+  Filter filter=ff.isNull(ff.property("name"));
+  assertEquals(new Integer(1),filter.accept(NullFilterVisitor.NULL_VISITOR,1));
+  filter=Filter.INCLUDE;
+  assertEquals(new Integer(1),filter.accept(NullFilterVisitor.NULL_VISITOR,1));
+  FilterVisitor allFids=new NullFilterVisitor(){
+    public Object visit(    Id filter,    Object data){
+      if (data == null)       return null;
+      Set set=(Set)data;
+      set.addAll(filter.getIDs());
+      return set;
+    }
+  }
+;
+  Filter myFilter=ff.id(Collections.singleton(ff.featureId("fred")));
+  Set set=(Set)myFilter.accept(allFids,new HashSet());
+  assertNotNull(set);
+  Set set2=(Set)myFilter.accept(allFids,null);
+  assertNull(set2);
+}

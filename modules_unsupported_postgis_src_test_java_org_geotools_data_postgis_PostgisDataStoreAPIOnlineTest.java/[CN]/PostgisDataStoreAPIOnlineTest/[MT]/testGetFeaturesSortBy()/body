@@ -1,0 +1,20 @@
+{
+  final org.opengis.filter.FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  try {
+    DefaultQuery query=new DefaultQuery(riverType.getTypeName());
+    query.setSortBy(new SortBy[]{ff.sort("nonExistentProperty",SortOrder.ASCENDING)});
+    final SimpleFeatureSource river=data.getFeatureSource("river");
+    river.getFeatures(query);
+    fail("Expected a datasource exception while asking to sort by a non existent attribute");
+  }
+ catch (  DataSourceException e) {
+    assertTrue(true);
+  }
+  final String rv1="rv1";
+  final String rv2="rv2";
+  testSortBy(new SortBy[]{ff.sort("river",SortOrder.ASCENDING)},rv1,rv2);
+  testSortBy(new SortBy[]{ff.sort("river",SortOrder.DESCENDING)},rv2,rv1);
+  testSortBy(new SortBy[]{SortBy.NATURAL_ORDER},rv1,rv2);
+  testSortBy(new SortBy[]{SortBy.REVERSE_ORDER},rv2,rv1);
+  testSortBy(new SortBy[]{ff.sort("geot:river",SortOrder.ASCENDING)},rv1,rv2);
+}

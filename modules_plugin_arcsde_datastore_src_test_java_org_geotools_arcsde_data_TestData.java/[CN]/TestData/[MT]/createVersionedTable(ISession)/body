@@ -1,0 +1,51 @@
+{
+  final Command<SeTable> createCmd=new Command<SeTable>(){
+    @Override public SeTable execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeLayer layer=new SeLayer(connection);
+      SeTable table;
+      String dbname=connection.getDatabaseName();
+      String user=connection.getUser();
+      StringBuffer sb=new StringBuffer();
+      if (dbname != null && dbname.length() > 0) {
+        sb.append(dbname).append(".");
+      }
+      if (user != null && user.length() > 0) {
+        sb.append(user).append(".");
+      }
+      String tableName=sb.append("VERSIONED_EXAMPLE").toString().toUpperCase();
+      table=new SeTable(connection,tableName);
+      layer.setTableName("VERSIONED_EXAMPLE");
+      try {
+        table.delete();
+      }
+ catch (      Exception e) {
+      }
+      SeColumnDefinition[] colDefs=new SeColumnDefinition[2];
+      boolean isNullable=true;
+      colDefs[0]=new SeColumnDefinition("ROW_ID",SeColumnDefinition.TYPE_INT32,10,0,false);
+      colDefs[1]=new SeColumnDefinition("NAME",SeColumnDefinition.TYPE_STRING,25,0,isNullable);
+      table.create(colDefs,getConfigKeyword());
+      layer.setSpatialColumnName("SHAPE");
+      SeRegistration reg=new SeRegistration(connection,table.getName());
+      LOGGER.fine("setting rowIdColumnName to ROW_ID in table " + reg.getTableName());
+      reg.setRowIdColumnName("ROW_ID");
+      reg.setRowIdColumnType(SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE);
+      reg.alter();
+      layer.setShapeTypes(SeLayer.SE_NIL_TYPE_MASK | SeLayer.SE_POINT_TYPE_MASK);
+      layer.setGridSizes(1100.0,0.0,0.0);
+      layer.setDescription("Layer Example");
+      SeExtent ext=new SeExtent(0.0,0.0,10000.0,10000.0);
+      layer.setExtent(ext);
+      SeCoordinateReference coordref=getGenericCoordRef();
+      layer.setCoordRef(coordref);
+      layer.setCreationKeyword(getConfigKeyword());
+      layer.create(3,4);
+      SeRegistration registration=new SeRegistration(connection,tableName);
+      registration.setMultiVersion(true);
+      registration.alter();
+      return table;
+    }
+  }
+;
+  return session.issue(createCmd);
+}

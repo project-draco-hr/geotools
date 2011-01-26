@@ -1,0 +1,17 @@
+{
+  assertEquals(input.length,expected.length);
+  final ParameterValueGroup parameters=factory.getDefaultParameters(classification);
+  parameters.parameter("base").setValue(base);
+  final MathTransform1D direct=(MathTransform1D)factory.createParameterizedTransform(parameters);
+  final MathTransform1D inverse=direct.inverse();
+  final DirectPosition1D point=new DirectPosition1D();
+  for (int i=0; i < expected.length; i++) {
+    final double x=input[i];
+    final double y=direct.transform(x);
+    assertEquals("transform[x=" + x + ']',expected[i],y,1E-6);
+    assertEquals("inverse  [y=" + y + ']',x,inverse.transform(y),1E-6);
+    point.setOrdinate(0,x);
+    assertSame(direct.transform(point,point),point);
+    assertEquals(y,point.getOrdinate(0),1E-9);
+  }
+}

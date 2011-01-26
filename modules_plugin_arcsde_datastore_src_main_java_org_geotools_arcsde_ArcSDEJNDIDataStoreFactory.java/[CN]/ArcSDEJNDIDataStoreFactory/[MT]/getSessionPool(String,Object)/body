@@ -1,0 +1,26 @@
+{
+  final ISessionPool sessionPool;
+  if (lookup instanceof ISessionPool) {
+    LOGGER.info("Creating JNDI ArcSDE DataStore with shared session pool for " + lookup);
+    sessionPool=(ISessionPool)lookup;
+  }
+ else   if (lookup instanceof Map) {
+    Map<String,Serializable> map=new HashMap<String,Serializable>();
+{
+      Map<Object,Object> props=(Map<Object,Object>)lookup;
+      String key;
+      Object value;
+      for (      Map.Entry<Object,Object> e : props.entrySet()) {
+        key=String.valueOf(e.getKey());
+        value=e.getValue();
+        map.put(key,value == null ? null : String.valueOf(e.getValue()));
+      }
+    }
+    ArcSDEConnectionFactory factory=new ArcSDEConnectionFactory();
+    sessionPool=factory.getInstance(map);
+  }
+ else {
+    throw new DataSourceException("Unknown JNDI resource on path " + jndiName + ". Expected one of ["+ ArcSDEConnectionConfig.class.getName()+ ", "+ ISessionPool.class.getName()+ "] but got "+ lookup.getClass().getName()+ " ("+ lookup+ ")");
+  }
+  return sessionPool;
+}

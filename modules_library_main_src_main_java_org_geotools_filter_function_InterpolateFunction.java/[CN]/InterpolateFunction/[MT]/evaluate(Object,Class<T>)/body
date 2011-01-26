@@ -1,0 +1,37 @@
+{
+  initialize();
+  if (method == Method.NUMERIC && Color.class.isAssignableFrom(context)) {
+    throw new IllegalArgumentException("Trying to evaluate the function as Color but the method parameter is set as NUMERIC");
+  }
+  if (method == Method.COLOR && !Color.class.isAssignableFrom(context)) {
+    throw new IllegalArgumentException("Trying to evaluate the function as " + context.getSimpleName() + " but the method parameter is set as COLOR");
+  }
+  final Expression lookup=parameters.get(0);
+  Double lookupValue=null;
+  String lookupString=lookup.evaluate(object,String.class);
+  if (lookupString.equalsIgnoreCase(RASTER_DATA)) {
+    lookupValue=((Number)object).doubleValue();
+  }
+ else {
+    lookupValue=Double.valueOf(lookupString);
+  }
+  if (interpPoints.size() == 1) {
+    return interpPoints.get(0).value.evaluate(object,context);
+  }
+  final int segment=findSegment(lookupValue,object);
+  if (segment <= 0) {
+    return interpPoints.get(0).value.evaluate(object,context);
+  }
+ else   if (segment >= interpPoints.size()) {
+    return interpPoints.get(interpPoints.size() - 1).value.evaluate(object,context);
+  }
+switch (mode) {
+case COSINE:
+    return cosineInterpolate(lookupValue,object,segment,context);
+case CUBIC:
+  return cubicInterpolate(lookupValue,object,segment,context);
+case LINEAR:
+default :
+return linearInterpolate(lookupValue,object,segment,context);
+}
+}

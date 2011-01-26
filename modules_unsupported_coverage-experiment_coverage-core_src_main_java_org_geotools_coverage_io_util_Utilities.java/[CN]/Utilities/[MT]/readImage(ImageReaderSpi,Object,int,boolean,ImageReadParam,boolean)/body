@@ -1,0 +1,59 @@
+{
+  ImageInputStream paramInput=null;
+  if (input instanceof File) {
+    paramInput=new FileImageInputStreamExtImpl((File)input);
+  }
+ else   if (input instanceof FileImageInputStreamExt) {
+    paramInput=(FileImageInputStreamExt)input;
+  }
+ else   if (input instanceof URIImageInputStream) {
+    paramInput=(URIImageInputStream)input;
+  }
+ else   if (input instanceof URL) {
+    final URL tempURL=(URL)input;
+    String protocol=tempURL.getProtocol();
+    if (protocol.equalsIgnoreCase("file")) {
+      try {
+        File file=it.geosolutions.imageio.utilities.Utilities.urlToFile(tempURL);
+        paramInput=new FileImageInputStreamExtImpl(file);
+      }
+ catch (      IOException e) {
+        throw new RuntimeException("Failed to create a valid input stream ",e);
+      }
+    }
+ else     if (tempURL.getProtocol().toLowerCase().startsWith("http") || tempURL.getProtocol().equalsIgnoreCase("dods")) {
+      try {
+        paramInput=new URIImageInputStreamImpl(tempURL.toURI());
+      }
+ catch (      URISyntaxException e) {
+        throw new RuntimeException("Failed to create a valid input stream ",e);
+      }
+    }
+  }
+ else   throw new IllegalArgumentException("Unsupported Input type:" + input);
+  PlanarImage planarImage;
+  ImageReader reader;
+  ImageReaderSpi readerSpi=spi;
+  if (useJAI) {
+    final ParameterBlock pbjImageRead=new ParameterBlock();
+    pbjImageRead.add(paramInput);
+    pbjImageRead.add(imageIndex);
+    pbjImageRead.add(Boolean.FALSE);
+    pbjImageRead.add(Boolean.FALSE);
+    pbjImageRead.add(Boolean.FALSE);
+    pbjImageRead.add(null);
+    pbjImageRead.add(null);
+    pbjImageRead.add(imageReadParam);
+    reader=readerSpi.createReaderInstance();
+    pbjImageRead.add(reader);
+    final String jaiOperation=useMultithreading ? "ImageReadMT" : "ImageRead";
+    planarImage=JAI.create(jaiOperation,pbjImageRead,null);
+  }
+ else {
+    reader=readerSpi.createReaderInstance();
+    reader.setInput(paramInput,true,true);
+    planarImage=PlanarImage.wrapRenderedImage(reader.read(imageIndex,imageReadParam));
+    reader.dispose();
+  }
+  return planarImage;
+}

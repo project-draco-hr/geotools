@@ -1,0 +1,26 @@
+{
+  List coordinates=node.getChildren("coord");
+  if (!coordinates.isEmpty() && (coordinates.size() < 4)) {
+    throw new RuntimeException("LinearRing must have at least 4 coordinates");
+  }
+  if (!coordinates.isEmpty()) {
+    Node cnode=(Node)coordinates.get(0);
+    CoordinateSequence seq=(CoordinateSequence)cnode.getValue();
+    int dimension=GMLUtil.getDimension(seq);
+    CoordinateSequence lineSeq=csFactory.create(coordinates.size(),dimension);
+    for (int i=0; i < coordinates.size(); i++) {
+      cnode=(Node)coordinates.get(i);
+      seq=(CoordinateSequence)cnode.getValue();
+      for (int j=0; j < dimension; j++) {
+        lineSeq.setOrdinate(i,j,seq.getOrdinate(0,j));
+      }
+    }
+    return gFactory.createLinearRing(lineSeq);
+  }
+  if (node.getChild("coordinates") != null) {
+    Node cnode=(Node)node.getChild("coordinates");
+    CoordinateSequence lineSeq=(CoordinateSequence)cnode.getValue();
+    return gFactory.createLinearRing(lineSeq);
+  }
+  throw new RuntimeException("Could not find coordinates to build linestring");
+}

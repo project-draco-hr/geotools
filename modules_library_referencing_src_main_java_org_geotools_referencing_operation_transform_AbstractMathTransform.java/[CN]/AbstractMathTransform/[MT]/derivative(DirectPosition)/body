@@ -1,0 +1,24 @@
+{
+  final int dimSource=getSourceDimensions();
+  if (point == null) {
+    if (dimSource == 2) {
+      return derivative((Point2D)null);
+    }
+  }
+ else {
+    final int dimPoint=point.getDimension();
+    if (dimPoint != dimSource) {
+      throw new MismatchedDimensionException(constructMessage("point",dimPoint,dimSource));
+    }
+    if (dimSource == 2) {
+      if (point instanceof Point2D) {
+        return derivative((Point2D)point);
+      }
+      return derivative(new Point2D.Double(point.getOrdinate(0),point.getOrdinate(1)));
+    }
+    if (this instanceof MathTransform1D) {
+      return new Matrix1(((MathTransform1D)this).derivative(point.getOrdinate(0)));
+    }
+  }
+  throw new TransformException(Errors.format(ErrorKeys.CANT_COMPUTE_DERIVATIVE));
+}

@@ -1,0 +1,35 @@
+{
+  ColorBrewer brewer=new ColorBrewer();
+  brewer.loadPalettes();
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Expression expr=null;
+  Expression expr2=null;
+  SimpleFeatureType type=roadType;
+  String attribName=type.getDescriptor(0).getLocalName();
+  SimpleFeatureCollection fc=DataUtilities.collection(roadFeatures);
+  SimpleFeatureSource fs=DataUtilities.source(fc);
+  try {
+    expr=ff.multiply(ff.property(attribName),ff.property(attribName));
+    expr2=ff.add(expr,ff.literal(3));
+  }
+ catch (  IllegalFilterException e) {
+    fail(e.getMessage());
+  }
+  String paletteName="YlGn";
+  ClassificationFunction function=new EqualIntervalFunction();
+  List params=new ArrayList();
+  params.add(0,expr2);
+  params.add(1,ff.literal(2));
+  function.setParameters(params);
+  Object object=function.evaluate(fc);
+  assertTrue(object instanceof RangedClassifier);
+  RangedClassifier classifier=(RangedClassifier)object;
+  Color[] colors=brewer.getPalette(paletteName).getColors(2);
+  FeatureTypeStyle fts=StyleGenerator.createFeatureTypeStyle(classifier,expr2,colors,"myfts",roadFeatures[0].getFeatureType().getGeometryDescriptor(),StyleGenerator.ELSEMODE_IGNORE,0.5,null);
+  assertNotNull(fts);
+  Rule[] rule=fts.getRules();
+  assertEquals(2,rule.length);
+  checkFilteredResultNotEmpty(rule,fs,attribName);
+  assertNotNull(StyleGenerator.toStyleExpression(rule[0].getFilter()));
+  assertNotNull(StyleGenerator.toStyleExpression(rule[1].getFilter()));
+}

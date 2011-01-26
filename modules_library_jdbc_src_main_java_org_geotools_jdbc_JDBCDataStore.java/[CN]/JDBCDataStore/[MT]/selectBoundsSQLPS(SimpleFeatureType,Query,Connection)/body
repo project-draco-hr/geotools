@@ -1,0 +1,40 @@
+{
+  StringBuffer sql=new StringBuffer();
+  boolean offsetLimit=checkLimitOffset(query);
+  if (offsetLimit) {
+    sql.append(" SELECT *");
+  }
+ else {
+    sql.append("SELECT ");
+    buildEnvelopeAggregates(featureType,sql);
+  }
+  sql.append(" FROM ");
+  encodeTableName(featureType.getTypeName(),sql,query.getHints());
+  PreparedFilterToSQL toSQL=null;
+  Filter filter=query.getFilter();
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    try {
+      toSQL=createPreparedFilterToSQL(featureType);
+      sql.append(" ").append(toSQL.encodeToString(filter));
+    }
+ catch (    FilterToSQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  if (offsetLimit) {
+    applyLimitOffset(sql,query);
+    StringBuffer sb=new StringBuffer();
+    sb.append("SELECT ");
+    buildEnvelopeAggregates(featureType,sb);
+    sb.append("FROM (");
+    sql.insert(0,sb.toString());
+    sql.append(")");
+    dialect.encodeTableAlias("GT2_BOUNDS_",sql);
+  }
+  LOGGER.fine(sql.toString());
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  if (toSQL != null) {
+    setPreparedFilterValues(ps,toSQL,0,cx);
+  }
+  return ps;
+}

@@ -1,0 +1,49 @@
+{
+  int nnodes=9;
+  GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  CountingWalker walker=new CountingWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      element.setCount(getCount());
+      return super.visit(element,traversal);
+    }
+  }
+;
+  BreadthFirstTopologicalIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  assertTrue(walker.getCount() == nnodes);
+  boolean flip=false;
+  for (Iterator itr=builder().getGraph().getNodes().iterator(); itr.hasNext(); ) {
+    Node node=(Node)itr.next();
+    if (node.getID() == 0 && node.getCount() != 0) {
+      flip=true;
+      break;
+    }
+  }
+  final int size=builder().getGraph().getNodes().size();
+  for (Iterator itr=builder().getGraph().getNodes().iterator(); itr.hasNext(); ) {
+    Node node=(Node)itr.next();
+    int id=node.getID();
+    int expected=-1;
+    if (id == (int)size / 2)     expected=size - 1;
+ else     if (id < (int)size / 2) {
+      if (!flip) {
+        expected=id * 2;
+      }
+ else {
+        expected=id * 2 + 1;
+      }
+    }
+ else {
+      if (!flip) {
+        expected=(size - 1 - id) * 2 + 1;
+      }
+ else {
+        expected=(size - 1 - id) * 2;
+      }
+    }
+    assertTrue(expected == node.getCount());
+  }
+  ;
+}

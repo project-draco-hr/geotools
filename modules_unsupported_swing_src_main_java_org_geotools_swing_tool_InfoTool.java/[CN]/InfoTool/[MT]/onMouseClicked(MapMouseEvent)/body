@@ -1,0 +1,85 @@
+{
+  DirectPosition2D pos=ev.getMapPosition();
+  report(pos);
+  MapContext context=getMapPane().getMapContext();
+  for (  MapLayer layer : context.getLayers()) {
+    if (layer.isSelected()) {
+      InfoToolHelper helper=null;
+      String layerName=layer.getTitle();
+      if (layerName == null || layerName.length() == 0) {
+        layerName=layer.getFeatureSource().getName().getLocalPart();
+      }
+      if (layerName == null || layerName.length() == 0) {
+        layerName=layer.getFeatureSource().getSchema().getName().getLocalPart();
+      }
+      helper=helperTable.get(layer);
+      if (helper == null) {
+        if (MapLayerUtils.isGridLayer(layer)) {
+          try {
+            Class<?> clazz=Class.forName("org.geotools.swing.tool.GridLayerHelper");
+            Constructor<?> ctor=clazz.getConstructor(MapContext.class,MapLayer.class);
+            helper=(InfoToolHelper)ctor.newInstance(context,layer);
+            helperTable.put(layer,helper);
+          }
+ catch (          Exception ex) {
+            throw new IllegalStateException("Failed to create InfoToolHelper for grid layer",ex);
+          }
+        }
+ else {
+          try {
+            Class<?> clazz=Class.forName("org.geotools.swing.tool.VectorLayerHelper");
+            Constructor<?> ctor=clazz.getConstructor(MapContext.class,MapLayer.class);
+            helper=(InfoToolHelper)ctor.newInstance(context,layer);
+            helperTable.put(layer,helper);
+          }
+ catch (          Exception ex) {
+            throw new IllegalStateException("Failed to create InfoToolHelper for vector layer",ex);
+          }
+        }
+      }
+      Object info=null;
+      if (helper instanceof VectorLayerHelper) {
+        ReferencedEnvelope mapEnv=getMapPane().getDisplayArea();
+        double searchWidth=DEFAULT_DISTANCE_FRACTION * (mapEnv.getWidth() + mapEnv.getHeight()) / 2;
+        try {
+          info=helper.getInfo(pos,Double.valueOf(searchWidth));
+        }
+ catch (        Exception ex) {
+          throw new IllegalStateException(ex);
+        }
+        if (info != null) {
+          FeatureIterator<? extends Feature> iter=null;
+          FeatureCollection selectedFeatures=(FeatureCollection)info;
+          try {
+            iter=selectedFeatures.features();
+            while (iter.hasNext()) {
+              report(layerName,iter.next());
+            }
+          }
+ catch (          Exception ex) {
+            throw new IllegalStateException(ex);
+          }
+ finally {
+            if (iter != null) {
+              iter.close();
+            }
+          }
+        }
+      }
+ else {
+        try {
+          info=helper.getInfo(pos);
+        }
+ catch (        Exception ex) {
+          throw new IllegalStateException(ex);
+        }
+        if (info != null) {
+          List<Number> bandValues=(List<Number>)info;
+          if (!bandValues.isEmpty()) {
+            report(layerName,bandValues);
+          }
+        }
+      }
+    }
+  }
+}

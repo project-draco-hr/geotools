@@ -1,0 +1,59 @@
+{
+  final DataSource source=getDataSource();
+  final File directory=getDirectory(source);
+  directory.mkdirs();
+  if (!dataExists(directory)) {
+    FileLock lock=null;
+    try {
+      lock=acquireLock(directory);
+      if (!dataExists(directory)) {
+        final Logger logger=Logging.getLogger(LOGGER);
+        final LogRecord record=Loggings.format(Level.INFO,LoggingKeys.CREATING_CACHED_EPSG_DATABASE_$1,VERSION);
+        record.setLoggerName(logger.getName());
+        logger.log(record);
+        ZipInputStream zin=new ZipInputStream(ThreadedH2EpsgFactory.class.getResourceAsStream(ZIP_FILE));
+        ZipEntry ze=null;
+        byte[] buf=new byte[1024];
+        int read=0;
+        while ((ze=zin.getNextEntry()) != null) {
+          File file=new File(directory,ze.getName());
+          if (file.exists()) {
+            file.delete();
+          }
+          FileOutputStream fout=new FileOutputStream(file);
+          while ((read=zin.read(buf)) > 0) {
+            fout.write(buf,0,read);
+          }
+          zin.closeEntry();
+          fout.close();
+        }
+        zin.close();
+        File marker=new File(directory,MARKER_FILE);
+        if (marker.exists()) {
+          marker.delete();
+        }
+        marker.createNewFile();
+        setReadOnly(directory);
+      }
+    }
+ catch (    IOException exception) {
+      SQLException e=new SQLException(Errors.format(ErrorKeys.CANT_READ_$1,ZIP_FILE));
+      e.initCause(exception);
+      throw e;
+    }
+ finally {
+      if (lock != null) {
+        try {
+          lock.release();
+          lock.channel().close();
+          new File(directory,LOCK_FILE).delete();
+        }
+ catch (        IOException e) {
+        }
+      }
+    }
+  }
+  FactoryUsingAnsiSQL factory=new FactoryUsingAnsiSQL(hints,getDataSource().getConnection());
+  factory.setValidationQuery("CALL NOW()");
+  return factory;
+}

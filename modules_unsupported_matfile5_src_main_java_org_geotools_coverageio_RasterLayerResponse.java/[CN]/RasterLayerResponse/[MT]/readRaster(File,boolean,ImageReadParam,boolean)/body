@@ -1,0 +1,33 @@
+{
+  PlanarImage raster;
+  if (useJAI) {
+    final ParameterBlock pbjImageRead=new ParameterBlock();
+    pbjImageRead.add(new FileImageInputStreamExtImpl(input));
+    pbjImageRead.add(0);
+    pbjImageRead.add(Boolean.FALSE);
+    pbjImageRead.add(Boolean.FALSE);
+    pbjImageRead.add(Boolean.FALSE);
+    pbjImageRead.add(null);
+    pbjImageRead.add(null);
+    pbjImageRead.add(imageReadParam);
+    pbjImageRead.add(readerSpi.createReaderInstance());
+    final String jaiOperation=useMultithreading ? GridCoverageUtilities.IMAGEREADMT : GridCoverageUtilities.IMAGEREAD;
+    raster=JAI.create(jaiOperation,pbjImageRead,hints);
+  }
+ else {
+    final ImageReader reader=readerSpi.createReaderInstance();
+    try {
+      reader.setInput(new FileImageInputStreamExtImpl(input),true,true);
+      raster=PlanarImage.wrapRenderedImage(reader.read(0,imageReadParam));
+    }
+  finally {
+      if (reader != null)       try {
+        reader.dispose();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  return raster;
+}

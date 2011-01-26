@@ -1,0 +1,22 @@
+{
+  IIOMetadata imageMetadata=writer.getDefaultImageMetadata(type,params);
+  imageMetadata=writer.convertImageMetadata(imageMetadata,type,params);
+  org.w3c.dom.Element w3cElement=(org.w3c.dom.Element)imageMetadata.getAsTree(GeoTiffConstants.GEOTIFF_IIO_METADATA_FORMAT_NAME);
+  final Element element=new DOMBuilder().build(w3cElement);
+  geoTIFFMetadata.assignTo(element);
+  final Parent parent=element.getParent();
+  parent.removeContent(element);
+  final Document document=new Document(element);
+  try {
+    final org.w3c.dom.Document w3cDoc=new DOMOutputter().output(document);
+    final IIOMetadata iioMetadata=new TIFFImageMetadata(TIFFImageMetadata.parseIFD(w3cDoc.getDocumentElement().getFirstChild()));
+    imageMetadata=iioMetadata;
+  }
+ catch (  JDOMException e) {
+    throw new IIOException("Failed to set GeoTIFFWritingUtilities specific tags.",e);
+  }
+catch (  IIOInvalidTreeException e) {
+    throw new IIOException("Failed to set GeoTIFFWritingUtilities specific tags.",e);
+  }
+  return imageMetadata;
+}

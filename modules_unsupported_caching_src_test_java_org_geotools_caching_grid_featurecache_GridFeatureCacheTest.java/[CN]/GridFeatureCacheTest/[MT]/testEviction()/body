@@ -1,0 +1,19 @@
+{
+  super.cache=createInstance(numdata / 2);
+  for (int i=0; i < 11; i++) {
+    for (int j=0; j < 11; j++) {
+      Filter f=Generator.createBboxFilter(new Coordinate(i * 0.1,j * 0.1),0.1,0.1);
+      SimpleFeatureCollection control=ds.getFeatureSource(dataset.getSchema().getName()).getFeatures(f);
+      SimpleFeatureCollection c=cache.getFeatures(f);
+      assertEquals(control.size(),c.size());
+      if (!testEviction_holistic && (cache.tracker.getEvictions() > 10)) {
+        return;
+      }
+    }
+  }
+  System.out.println(cache.tracker.getStatistics());
+  System.out.println(cache.sourceAccessStats());
+  if (!testEviction_holistic) {
+    fail("Did not got enough evictions : " + cache.tracker.getEvictions());
+  }
+}

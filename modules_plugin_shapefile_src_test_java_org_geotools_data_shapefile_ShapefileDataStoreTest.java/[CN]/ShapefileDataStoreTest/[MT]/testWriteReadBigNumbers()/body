@@ -1,0 +1,26 @@
+{
+  SimpleFeatureType type=DataUtilities.createType("junk","a:Point,b:java.math.BigDecimal,c:java.math.BigInteger");
+  SimpleFeatureCollection features=FeatureCollections.newCollection();
+  BigInteger bigInteger=new BigInteger("1234567890123456789");
+  BigDecimal bigDecimal=new BigDecimal(bigInteger,2);
+  SimpleFeatureBuilder build=new SimpleFeatureBuilder(type);
+  build.add(new GeometryFactory().createPoint(new Coordinate(1,-1)));
+  build.add(bigDecimal);
+  build.add(bigInteger);
+  SimpleFeature feature=build.buildFeature(null);
+  features.add(feature);
+  File tmpFile=getTempFile();
+  tmpFile.createNewFile();
+  ShapefileDataStore s=new ShapefileDataStore(tmpFile.toURI().toURL());
+  writeFeatures(s,features);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=s.getFeatureReader("junk");
+  try {
+    SimpleFeature f=reader.next();
+    assertEquals("big decimal",bigDecimal.doubleValue(),((Number)f.getAttribute("b")).doubleValue(),0.00001);
+    assertEquals("big integer",bigInteger.longValue(),((Number)f.getAttribute("c")).longValue(),0.00001);
+  }
+  finally {
+    reader.close();
+  }
+  s.dispose();
+}

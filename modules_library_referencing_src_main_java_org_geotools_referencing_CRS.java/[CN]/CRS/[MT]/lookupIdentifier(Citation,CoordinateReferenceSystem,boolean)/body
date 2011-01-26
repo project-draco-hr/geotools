@@ -1,0 +1,22 @@
+{
+  ReferenceIdentifier id=AbstractIdentifiedObject.getIdentifier(crs,authority);
+  if (id != null) {
+    return id.getCode();
+  }
+  for (  final CRSAuthorityFactory factory : ReferencingFactoryFinder.getCRSAuthorityFactories(FORCE_LONGITUDE_FIRST_AXIS_ORDER)) {
+    if (!Citations.identifierMatches(factory.getAuthority(),authority)) {
+      continue;
+    }
+    if (!(factory instanceof AbstractAuthorityFactory)) {
+      continue;
+    }
+    final AbstractAuthorityFactory f=(AbstractAuthorityFactory)factory;
+    final IdentifiedObjectFinder finder=f.getIdentifiedObjectFinder(crs.getClass());
+    finder.setFullScanAllowed(fullScan);
+    final String code=finder.findIdentifier(crs);
+    if (code != null) {
+      return code;
+    }
+  }
+  return null;
+}

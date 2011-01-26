@@ -1,0 +1,27 @@
+{
+  final String typeName=query.getTypeName();
+  final SimpleFeatureType featureType=getSchema(typeName);
+  final CoordinateReferenceSystem coordinateSystemReproject=query.getCoordinateSystemReproject();
+  String[] propertyNames=query.getPropertyNames();
+  SimpleFeatureType queryType=featureType;
+  if (propertyNames != null && propertyNames.length > 0) {
+    try {
+      queryType=DataUtilities.createSubType(queryType,propertyNames);
+    }
+ catch (    SchemaException e) {
+      throw new DataSourceException(e);
+    }
+  }
+ else {
+    propertyNames=DataUtilities.attributeNames(featureType);
+  }
+  if (coordinateSystemReproject != null) {
+    try {
+      queryType=DataUtilities.createSubType(queryType,propertyNames,coordinateSystemReproject);
+    }
+ catch (    SchemaException e) {
+      throw new DataSourceException(e);
+    }
+  }
+  return queryType;
+}

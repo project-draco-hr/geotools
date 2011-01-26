@@ -1,0 +1,34 @@
+{
+  MedianVisitor medianVisitor1=new MedianVisitor(0,ft);
+  fc.accepts(medianVisitor1,null);
+  MedianVisitor medianVisitor2=new MedianVisitor(0,ft2);
+  fc2.accepts(medianVisitor2,null);
+  CalcResult medianResult1=medianVisitor1.getResult();
+  CalcResult medianResult2=medianVisitor2.getResult();
+  assertEquals(2,medianResult1.toInt());
+  assertEquals(1.5,medianResult2.toDouble(),0);
+  CalcResult medianResult3=medianResult1.merge(medianResult2);
+  assertEquals(2,medianResult3.toDouble(),0);
+  List vals=new ArrayList();
+  vals.add(new Double(2.5));
+  vals.add(new Double(3.5));
+  vals.add(new Double(4.5));
+  CalcResult medianResult4=new MedianResult(vals);
+  CalcResult medianResult5=medianResult4.merge(medianResult1);
+  assertEquals(2.75,medianResult5.toDouble(),0);
+  assertEquals(3.5,medianResult4.toDouble(),0);
+  medianVisitor1.setValue(new Double(544));
+  medianResult1=medianVisitor1.getResult();
+  try {
+    medianResult3=medianResult5.merge(medianResult1);
+    fail();
+  }
+ catch (  Exception e) {
+    assertEquals("Optimized median results cannot be merged.",e.getMessage());
+  }
+  medianVisitor1.reset();
+  empty.accepts(medianVisitor1,null);
+  assertEquals(CalcResult.NULL_RESULT,medianVisitor1.getResult());
+  assertSame(medianResult2,medianVisitor1.getResult().merge(medianResult2));
+  assertSame(medianResult2,medianResult2.merge(medianVisitor1.getResult()));
+}

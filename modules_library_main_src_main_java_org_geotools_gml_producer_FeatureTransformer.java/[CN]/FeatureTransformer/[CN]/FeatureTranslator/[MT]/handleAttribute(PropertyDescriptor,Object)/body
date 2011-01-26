@@ -1,0 +1,58 @@
+{
+  try {
+    if (value != null) {
+      String name=descriptor.getName().getLocalPart();
+      if (prefixGml && (name.equals("boundedBy") && value instanceof Geometry)) {
+        Envelope envelopeInternal=((Geometry)value).getEnvelopeInternal();
+        CoordinateReferenceSystem crs=null;
+        if (descriptor instanceof GeometryDescriptor) {
+          GeometryDescriptor geometryDescriptor=(GeometryDescriptor)descriptor;
+          crs=geometryDescriptor.getCoordinateReferenceSystem();
+        }
+        ReferencedEnvelope bounds=new ReferencedEnvelope(envelopeInternal,crs);
+        writeBounds(bounds);
+      }
+ else {
+        String thisPrefix=currentPrefix;
+        if (prefixGml && gmlAtts.contains(name)) {
+          thisPrefix="gml";
+        }
+        if (thisPrefix != null) {
+          name=thisPrefix + ":" + name;
+        }
+        contentHandler.startElement("","",name,NULL_ATTS);
+        if (value instanceof Geometry) {
+          if (dimension == 0) {
+            GeometryDescriptor geometryType=(GeometryDescriptor)descriptor;
+            CoordinateReferenceSystem crs=geometryType.getCoordinateReferenceSystem();
+            if (crs == null) {
+              dimension=2;
+            }
+ else {
+              dimension=crs.getCoordinateSystem().getDimension();
+              if (dimension == 3) {
+                setDimension(dimension);
+              }
+            }
+          }
+          geometryTranslator.encode((Geometry)value,srsName);
+        }
+ else         if (value instanceof Date) {
+          String text=null;
+          if (value instanceof java.sql.Date)           text=DateUtil.serializeSqlDate((java.sql.Date)value);
+ else           if (value instanceof java.sql.Time)           text=DateUtil.serializeSqlTime((java.sql.Time)value);
+ else           text=DateUtil.serializeDateTime((Date)value);
+          contentHandler.characters(text.toCharArray(),0,text.length());
+        }
+ else {
+          String text=value.toString();
+          contentHandler.characters(text.toCharArray(),0,text.length());
+        }
+        contentHandler.endElement("","",name);
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new IllegalStateException("Could not transform " + descriptor.getName() + ":"+ e,e);
+  }
+}

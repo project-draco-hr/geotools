@@ -1,0 +1,35 @@
+{
+  super(null,getSchemaInternal(source,query));
+  this.featureSource=source;
+  SimpleFeatureType originalType=source.getSchema();
+  String typeName=originalType.getTypeName();
+  if (typeName.equals(query.getTypeName())) {
+    this.query=query;
+  }
+ else {
+    this.query=new DefaultQuery(query);
+    ((DefaultQuery)this.query).setTypeName(typeName);
+  }
+  if (originalType.getGeometryDescriptor() == null) {
+    return;
+  }
+  CoordinateReferenceSystem cs=null;
+  if (query.getCoordinateSystemReproject() != null) {
+    cs=query.getCoordinateSystemReproject();
+  }
+ else   if (query.getCoordinateSystem() != null) {
+    cs=query.getCoordinateSystem();
+  }
+  CoordinateReferenceSystem originalCRS=originalType.getGeometryDescriptor().getCoordinateReferenceSystem();
+  if (query.getCoordinateSystem() != null) {
+    originalCRS=query.getCoordinateSystem();
+  }
+  if (cs != null && cs != originalCRS) {
+    try {
+      transform=CRS.findMathTransform(originalCRS,cs,true);
+    }
+ catch (    FactoryException noTransform) {
+      throw (IOException)new IOException("Could not reproject data to " + cs).initCause(noTransform);
+    }
+  }
+}

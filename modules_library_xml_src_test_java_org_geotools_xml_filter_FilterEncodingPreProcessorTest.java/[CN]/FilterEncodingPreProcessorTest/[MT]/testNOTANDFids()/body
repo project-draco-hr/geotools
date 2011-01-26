@@ -1,0 +1,22 @@
+{
+  FilterFactory2 factory=CommonFactoryFinder.getFilterFactory2(null);
+  String fid1="FID.1";
+  Filter fidFilter=factory.not(factory.id(Collections.singleton(factory.featureId(fid1))));
+  PropertyIsNull nullFilter=factory.isNull(factory.property("name"));
+  Filter filter=factory.and(nullFilter,fidFilter);
+  FilterEncodingPreProcessor visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_LOW);
+  Filters.accept(filter,visitor);
+  assertEquals(filter,visitor.getFilter());
+  assertTrue(visitor.getFidFilter().getIdentifiers().isEmpty());
+  assertFalse(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_MEDIUM);
+  Filters.accept(filter,visitor);
+  assertEquals(nullFilter,visitor.getFilter());
+  assertTrue(visitor.getFidFilter().getIdentifiers().isEmpty());
+  assertTrue(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_HIGH);
+  Filters.accept(filter,visitor);
+  assertEquals(nullFilter,visitor.getFilter());
+  assertTrue(visitor.getFidFilter().getIdentifiers().isEmpty());
+  assertTrue(visitor.requiresPostProcessing());
+}

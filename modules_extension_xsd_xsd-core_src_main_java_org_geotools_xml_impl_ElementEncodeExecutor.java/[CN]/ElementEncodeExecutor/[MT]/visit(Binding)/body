@@ -1,0 +1,63 @@
+{
+  if (object == null) {
+    throw new RuntimeException("Unable to encode " + element.getName() + ", value is null.");
+  }
+  if (binding.getType() == null) {
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine("Binding: " + binding.getTarget() + " does not declare a target type");
+    }
+    return;
+  }
+  if (!(object instanceof ComplexAttribute) && !binding.getType().isAssignableFrom(object.getClass())) {
+    Object converted=Converters.convert(object,binding.getType());
+    if (converted != null) {
+      object=converted;
+    }
+ else {
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine("[ " + object.getClass() + " ] is not of type "+ binding.getType());
+      }
+      return;
+    }
+  }
+  if (binding instanceof ComplexBinding) {
+    ComplexBinding complex=(ComplexBinding)binding;
+    try {
+      Element element=complex.encode(object,document,encoding);
+      if (element != null) {
+        encoding=element;
+      }
+    }
+ catch (    Throwable t) {
+      String msg="Encode failed for " + element.getName() + ". Cause: "+ t.getLocalizedMessage();
+      throw new RuntimeException(msg,t);
+    }
+  }
+ else {
+    SimpleBinding simple=(SimpleBinding)binding;
+    Text text=null;
+    for (int i=0; i < encoding.getChildNodes().getLength(); i++) {
+      Node node=(Node)encoding.getChildNodes().item(i);
+      if (node instanceof Text) {
+        text=(Text)node;
+        break;
+      }
+    }
+    try {
+      String value=simple.encode(object,(text != null) ? text.getData() : null);
+      if (value != null) {
+        if (text == null) {
+          text=document.createTextNode(value);
+          encoding.appendChild(text);
+        }
+ else {
+          text.setData(value);
+        }
+      }
+    }
+ catch (    Throwable t) {
+      String msg="Encode failed for " + element.getName() + ". Cause: "+ t.getLocalizedMessage();
+      throw new RuntimeException(msg,t);
+    }
+  }
+}

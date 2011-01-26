@@ -1,0 +1,20 @@
+{
+  try {
+    final IOFileFilter finalFilter=createGranuleFilterRules();
+    numFiles=0;
+    for (    String indexingDirectory : runConfiguration.getIndexingDirectories()) {
+      final File directoryToScan=new File(indexingDirectory);
+      final Collection files=FileUtils.listFiles(directoryToScan,finalFilter,runConfiguration.isRecursive() ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE);
+      numFiles+=files.size();
+    }
+    if (numFiles > 0) {
+      final List<String> indexingDirectories=runConfiguration.getIndexingDirectories();
+      for (      String indexingDirectory : indexingDirectories) {
+        @SuppressWarnings("unused") final CatalogBuilderDirectoryWalker walker=new CatalogBuilderDirectoryWalker(new File(indexingDirectory),finalFilter);
+      }
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+  }
+}

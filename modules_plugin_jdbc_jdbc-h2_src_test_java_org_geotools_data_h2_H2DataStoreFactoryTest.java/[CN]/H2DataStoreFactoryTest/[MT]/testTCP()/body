@@ -1,0 +1,26 @@
+{
+  HashMap params=new HashMap();
+  params.put(H2DataStoreFactory.HOST.key,"localhost");
+  params.put(H2DataStoreFactory.DATABASE.key,"geotools");
+  params.put(H2DataStoreFactory.USER.key,"geotools");
+  params.put(H2DataStoreFactory.PASSWD.key,"geotools");
+  DataStore ds=factory.createDataStore(params);
+  try {
+    ds.getTypeNames();
+    fail("Should not have made a connection.");
+  }
+ catch (  Exception ok) {
+  }
+  Server server=Server.createTcpServer(new String[]{"-baseDir","target"});
+  server.start();
+  try {
+    while (!server.isRunning(false)) {
+      Thread.sleep(100);
+    }
+    ds=factory.createDataStore(params);
+    ds.getTypeNames();
+  }
+  finally {
+    server.shutdown();
+  }
+}

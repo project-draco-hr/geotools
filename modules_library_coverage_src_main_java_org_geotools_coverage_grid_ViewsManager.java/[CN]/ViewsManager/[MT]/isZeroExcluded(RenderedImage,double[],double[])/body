@@ -1,0 +1,52 @@
+{
+  if (image instanceof WritableRenderedImage) {
+    return false;
+  }
+  Object parent=image;
+  while (parent instanceof PlanarImage) {
+    final PlanarImage planar=(PlanarImage)image;
+    if (parent instanceof RenderedOp) {
+      final RenderedOp op=(RenderedOp)parent;
+      final String name=op.getOperationName();
+      if (name.equalsIgnoreCase("Extrema")) {
+        final int n=op.getNumParameters();
+        for (int i=0; i < n; i++) {
+          if (op.getObjectParameter(i) instanceof ROI) {
+            return false;
+          }
+        }
+        break;
+      }
+      if (!name.equalsIgnoreCase("Null") && !name.equalsIgnoreCase("Histogram")) {
+        return false;
+      }
+    }
+    final int n=planar.getNumSources();
+    if (n >= 2)     return false;
+    if (n == 0)     break;
+    parent=planar.getSourceObject(0);
+  }
+  final Object property=image.getProperty("extrema");
+  if (!(property instanceof double[][])) {
+    return false;
+  }
+  final double[][] extrema=(double[][])property;
+  if (extrema.length != 2) {
+    return false;
+  }
+  for (int i=0; i < scales.length; i++) {
+    final double scale=scales[i];
+    final double offset=offsets[i];
+    double maximum=extrema[0][i] * scale + offset;
+    double minimum=extrema[1][i] * scale + offset;
+    if (minimum > maximum) {
+      final double tmp=minimum;
+      minimum=maximum;
+      maximum=tmp;
+    }
+    if (!(minimum > 0 || maximum < 0)) {
+      return false;
+    }
+  }
+  return true;
+}

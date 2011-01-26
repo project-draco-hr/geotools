@@ -1,0 +1,44 @@
+{
+  final Arguments arguments=new Arguments(args);
+  final boolean printAll=arguments.getFlag("-all");
+  Class<? extends Operation> type=null;
+  if (arguments.getFlag("-projections"))   type=Projection.class;
+  if (arguments.getFlag("-conversions"))   type=Conversion.class;
+  args=arguments.getRemainingArguments(1);
+  try {
+    final DefaultMathTransformFactory factory=new DefaultMathTransformFactory();
+    final ParameterWriter writer=new ParameterWriter(arguments.out);
+    writer.setLocale(arguments.locale);
+    Set<OperationMethod> methods=Collections.emptySet();
+    if (printAll || args.length == 0) {
+      final Set<String> scopes=new HashSet<String>();
+      scopes.add("EPSG");
+      scopes.add("Geotools");
+      methods=new TreeSet<OperationMethod>(AbstractIdentifiedObject.NAME_COMPARATOR);
+      methods.addAll(factory.getAvailableMethods(type));
+      writer.summary(methods,scopes);
+    }
+    if (!printAll) {
+      if (args.length == 0) {
+        methods=Collections.emptySet();
+      }
+ else {
+        methods=Collections.singleton((OperationMethod)factory.getProvider(args[0]));
+      }
+    }
+    final String lineSeparator=System.getProperty("line.separator","\n");
+    for (    final OperationMethod method : methods) {
+      arguments.out.write(lineSeparator);
+      writer.format(method);
+    }
+  }
+ catch (  NoSuchIdentifierException exception) {
+    arguments.err.println(exception.getLocalizedMessage());
+    return;
+  }
+catch (  Exception exception) {
+    exception.printStackTrace(arguments.err);
+    return;
+  }
+  arguments.out.flush();
+}

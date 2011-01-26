@@ -1,0 +1,75 @@
+{
+  final int numBands=image.getSampleModel().getNumBands();
+  final GridSampleDimension[] bands=new GridSampleDimension[numBands];
+  final ColorModel cm=image.getColorModel();
+  final String[] names=new String[numBands];
+  if (cm instanceof IndexColorModel) {
+    names[0]="index band";
+  }
+ else {
+    final ColorSpace cs=cm.getColorSpace();
+    if (cs instanceof IHSColorSpace) {
+      names[0]="Intensity band";
+      names[1]="Hue band";
+      names[2]="Saturation band";
+    }
+ else {
+      final int type=cs.getType();
+switch (type) {
+case ColorSpace.CS_GRAY:
+case ColorSpace.TYPE_GRAY:
+        names[0]="GRAY";
+      break;
+case ColorSpace.CS_sRGB:
+case ColorSpace.CS_LINEAR_RGB:
+case ColorSpace.TYPE_RGB:
+    names[0]="RED";
+  names[1]="GREEN";
+names[2]="BLUE";
+break;
+case ColorSpace.TYPE_CMY:
+names[0]="CYAN";
+names[1]="MAGENTA";
+names[2]="YELLOW";
+break;
+case ColorSpace.TYPE_CMYK:
+names[0]="CYAN";
+names[1]="MAGENTA";
+names[2]="YELLOW";
+names[3]="K";
+break;
+}
+}
+}
+Unit unit=null;
+if (this.unit != null) unit=this.unit;
+for (int i=0; i < numBands; i++) {
+Category[] categories=null;
+Category values=null;
+Category nan=null;
+int cat=0;
+if (validRange != null) {
+double min=validRange[0];
+double max=validRange[1];
+if (nan != null) {
+if (noDataValues[0] == validRange[0]) min+=Double.MIN_VALUE;
+}
+values=new Category("values",null,NumberRange.create(min,max),scalingParameters[0],scalingParameters[1]);
+cat++;
+}
+if (cat > 0) {
+categories=new Category[cat];
+if (cat == 2) {
+categories[0]=nan;
+categories[1]=values;
+}
+ else categories[0]=nan == null ? values : nan;
+}
+final GridSampleDimension band=new GridSampleDimension(names[i],categories,unit);
+bands[i]=band;
+}
+if (raster2Model != null) {
+return coverageFactory.create(coverageName,image,coverageCRS,raster2Model,bands,null,null);
+}
+return coverageFactory.create(coverageName,image,new GeneralEnvelope(coverageEnvelope),bands,null,null);
+}

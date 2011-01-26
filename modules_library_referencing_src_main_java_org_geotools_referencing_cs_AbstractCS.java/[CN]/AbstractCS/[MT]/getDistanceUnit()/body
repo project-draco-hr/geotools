@@ -1,0 +1,23 @@
+{
+  Unit<?> unit=distanceUnit;
+  if (unit == null) {
+    for (int i=0; i < axis.length; i++) {
+      final Unit<?> candidate=axis[i].getUnit();
+      if (candidate != null && !candidate.isCompatible(SI.RADIAN)) {
+        if (unit != null) {
+          final UnitConverter converter=candidate.getConverterTo(unit);
+          if (!converter.isLinear()) {
+            throw new ConversionException("Unit conversion is non-linear");
+          }
+          final double scale=converter.convert(1) - converter.convert(0);
+          if (Math.abs(scale) <= 1) {
+            continue;
+          }
+        }
+        unit=candidate;
+      }
+    }
+    distanceUnit=unit;
+  }
+  return unit;
+}

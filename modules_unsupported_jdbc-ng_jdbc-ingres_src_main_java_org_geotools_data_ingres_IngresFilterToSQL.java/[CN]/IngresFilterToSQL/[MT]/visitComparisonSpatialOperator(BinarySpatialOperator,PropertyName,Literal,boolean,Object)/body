@@ -1,0 +1,40 @@
+{
+  String closingParenthesis=")";
+  if (filter instanceof Equals) {
+    out.write("ST_Equals");
+  }
+ else   if (filter instanceof Disjoint) {
+    out.write("NOT (ST_Intersects");
+    closingParenthesis+=")";
+  }
+ else   if (filter instanceof Intersects || filter instanceof BBOX) {
+    out.write("ST_Intersects");
+  }
+ else   if (filter instanceof Crosses) {
+    out.write("ST_Crosses");
+  }
+ else   if (filter instanceof Within) {
+    if (swapped)     out.write("ST_Within");
+ else     out.write("ST_Contains");
+  }
+ else   if (filter instanceof Contains) {
+    if (swapped)     out.write("ST_Contains");
+ else     out.write("ST_Within");
+  }
+ else   if (filter instanceof Overlaps) {
+    out.write("ST_Overlaps");
+  }
+ else   if (filter instanceof Touches) {
+    out.write("ST_Touches");
+  }
+ else {
+    throw new RuntimeException("Unsupported filter type " + filter.getClass());
+  }
+  out.write("(");
+  property.accept(this,extraData);
+  out.write(", GeomFromWKB(");
+  geometry.accept(this,extraData);
+  out.write(")");
+  out.write(closingParenthesis);
+  out.write(" = 1");
+}

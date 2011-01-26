@@ -1,0 +1,19 @@
+{
+  ensureNonNull("name",name);
+  name=name.trim();
+  final List<ParameterValueGroup> groups=new ArrayList<ParameterValueGroup>(Math.min(values.size(),10));
+  for (  final GeneralParameterValue value : values) {
+    if (value instanceof ParameterValueGroup) {
+      if (AbstractIdentifiedObject.nameMatches(value.getDescriptor(),name)) {
+        groups.add((ParameterValueGroup)value);
+      }
+    }
+  }
+  if (groups.isEmpty()) {
+    final GeneralParameterDescriptor check=((ParameterDescriptorGroup)descriptor).descriptor(name);
+    if (!(check instanceof ParameterDescriptorGroup)) {
+      throw new ParameterNotFoundException(Errors.format(ErrorKeys.MISSING_PARAMETER_$1,name),name);
+    }
+  }
+  return groups;
+}

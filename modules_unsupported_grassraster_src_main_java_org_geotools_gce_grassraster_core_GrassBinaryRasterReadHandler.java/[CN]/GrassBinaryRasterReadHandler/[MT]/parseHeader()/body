@@ -1,0 +1,23 @@
+{
+  int first=imageIS.read();
+  int capacity=1 + first * nativeRasterRegion.getRows() + first;
+  ByteBuffer fileHeader=ByteBuffer.allocate(capacity);
+  imageIS.seek(0L);
+  byte[] array=fileHeader.array();
+  imageIS.read(array);
+  byte firstbyte=fileHeader.get();
+  addressesOfRows=new long[nativeRasterRegion.getRows() + 1];
+  if (firstbyte == 4) {
+    for (int i=0; i <= nativeRasterRegion.getRows(); i++) {
+      addressesOfRows[i]=fileHeader.getInt();
+    }
+  }
+ else   if (firstbyte == 8) {
+    for (int i=0; i <= nativeRasterRegion.getRows(); i++) {
+      addressesOfRows[i]=fileHeader.getLong();
+    }
+  }
+ else {
+    throw new IOException("The first byte of the GRASS file header is not 4 and not 8. Unknown case for file: " + readerGrassEnv.getCELL().getAbsolutePath());
+  }
+}

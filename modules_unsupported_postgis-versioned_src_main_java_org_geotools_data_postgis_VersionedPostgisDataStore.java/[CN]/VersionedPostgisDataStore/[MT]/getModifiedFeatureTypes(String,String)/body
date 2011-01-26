@@ -1,0 +1,29 @@
+{
+  Connection conn=null;
+  Statement st=null;
+  ResultSet rs=null;
+  RevisionInfo r1=new RevisionInfo(version1);
+  RevisionInfo r2=new RevisionInfo(version2);
+  if (r1.revision > r2.revision) {
+    RevisionInfo tmp=r1;
+    r1=r2;
+    r1=tmp;
+  }
+  if (r1.revision == Long.MAX_VALUE || r1.revision == r2.revision)   return new String[0];
+  try {
+    conn=wrapped.getDataSource().getConnection();
+    st=conn.createStatement();
+    rs=st.executeQuery("select distinct(name) from " + TBL_VERSIONEDTABLES + " where id in "+ "(select versionedtable from "+ TBL_TABLESCHANGED+ " where revision > "+ r1.revision+ " and revision <= "+ r2.revision+ ")");
+    List result=new ArrayList();
+    while (rs.next())     result.add(rs.getString(1));
+    return (String[])result.toArray(new String[result.size()]);
+  }
+ catch (  SQLException e) {
+    throw new DataSourceException("Error getting feature types modified between " + r1.revision + " and "+ r2.revision,e);
+  }
+ finally {
+    JDBCUtils.close(rs);
+    JDBCUtils.close(st);
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+}

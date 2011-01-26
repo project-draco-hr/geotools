@@ -1,0 +1,38 @@
+{
+  FilterFactory2 factory=CommonFactoryFinder.getFilterFactory2(null);
+  String fid1="FID.1";
+  String fid2="FID.2";
+  Filter filter=factory.id(Collections.singleton(factory.featureId(fid1)));
+  filter=factory.and(filter,factory.id(Collections.singleton(factory.featureId(fid2))));
+  FilterEncodingPreProcessor visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_LOW);
+  Filters.accept(filter,visitor);
+  assertEquals(filter,visitor.getFilter());
+  Set<FeatureId> empty=Collections.emptySet();
+  Filter fidFilter=factory.id(empty);
+  assertEquals(fidFilter,visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_MEDIUM);
+  Filters.accept(fidFilter,visitor);
+  assertEquals(Filter.EXCLUDE,visitor.getFilter());
+  fidFilter=createFidFilter();
+  assertEquals(fidFilter,visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_HIGH);
+  Filters.accept(fidFilter,visitor);
+  assertEquals(Filter.EXCLUDE,visitor.getFilter());
+  fidFilter=createFidFilter();
+  assertEquals(fidFilter,visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+  filter=factory.and(createFidFilter(fid1),createFidFilter(fid1));
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_MEDIUM);
+  Filters.accept(filter,visitor);
+  assertEquals(Filter.EXCLUDE,visitor.getFilter());
+  fidFilter=createFidFilter(fid1);
+  assertEquals(createFidFilter(fid1),visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_HIGH);
+  Filters.accept(filter,visitor);
+  assertEquals(Filter.EXCLUDE,visitor.getFilter());
+  assertEquals(fidFilter,visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+}

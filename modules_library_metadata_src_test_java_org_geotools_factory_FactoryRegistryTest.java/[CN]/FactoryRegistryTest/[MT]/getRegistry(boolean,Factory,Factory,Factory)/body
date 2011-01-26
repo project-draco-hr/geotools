@@ -1,0 +1,23 @@
+{
+  @SuppressWarnings("unchecked") final Set<Class<?>> categories=(Set)Collections.singleton(DummyFactory.class);
+  final FactoryRegistry registry;
+  if (creator) {
+    registry=new FactoryCreator(categories);
+  }
+ else {
+    registry=new FactoryRegistry(categories);
+  }
+  registry.registerServiceProvider(factory1);
+  registry.registerServiceProvider(factory2);
+  registry.registerServiceProvider(factory3);
+  assertTrue(registry.setOrdering(DummyFactory.class,(DummyFactory)factory1,(DummyFactory)factory2));
+  assertTrue(registry.setOrdering(DummyFactory.class,(DummyFactory)factory2,(DummyFactory)factory3));
+  assertTrue(registry.setOrdering(DummyFactory.class,(DummyFactory)factory1,(DummyFactory)factory3));
+  final List<?> factories=new ArrayList<Object>(new LazySet<Object>(registry.getServiceProviders(DummyFactory.class,null,null)));
+  assertTrue(factories.contains(factory1));
+  assertTrue(factories.contains(factory2));
+  assertTrue(factories.contains(factory3));
+  assertTrue(factories.indexOf(factory1) < factories.indexOf(factory2));
+  assertTrue(factories.indexOf(factory2) < factories.indexOf(factory3));
+  return registry;
+}

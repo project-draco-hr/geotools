@@ -1,0 +1,31 @@
+{
+  final String worldFilePath=new StringBuffer(this.parentPath).append(SEPARATOR).append(coverageName).toString();
+  File file2Parse=null;
+  boolean worldFileExists=false;
+  file2Parse=new File(worldFilePath + ".j2w");
+  worldFileExists=file2Parse.exists();
+  if (!worldFileExists) {
+    file2Parse=new File(worldFilePath + ".wld");
+    worldFileExists=file2Parse.exists();
+  }
+  if (worldFileExists) {
+    final WorldFileReader reader=new WorldFileReader(file2Parse);
+    raster2Model=reader.getTransform();
+    MathTransform tempTransform=PixelTranslation.translate(raster2Model,PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER);
+    try {
+      final Envelope gridRange=new GeneralEnvelope(nativeGridRange);
+      final GeneralEnvelope coverageEnvelope=CRS.transform(tempTransform,gridRange);
+      nativeEnvelope=coverageEnvelope;
+    }
+ catch (    TransformException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+catch (    IllegalStateException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+}

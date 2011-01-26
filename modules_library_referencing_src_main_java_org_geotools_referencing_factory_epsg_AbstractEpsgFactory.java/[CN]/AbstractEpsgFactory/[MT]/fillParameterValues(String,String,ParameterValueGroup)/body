@@ -1,0 +1,52 @@
+{
+  final PreparedStatement stmt;
+  stmt=prepareStatement("ParameterValues","SELECT CP.PARAMETER_NAME," + " CV.PARAMETER_VALUE," + " CV.PARAM_VALUE_FILE_REF,"+ " CV.UOM_CODE"+ " FROM ([Coordinate_Operation Parameter Value] AS CV"+ " INNER JOIN [Coordinate_Operation Parameter] AS CP"+ " ON CV.PARAMETER_CODE = CP.PARAMETER_CODE)"+ " INNER JOIN [Coordinate_Operation Parameter Usage] AS CU"+ " ON (CP.PARAMETER_CODE = CU.PARAMETER_CODE)"+ " AND (CV.COORD_OP_METHOD_CODE = CU.COORD_OP_METHOD_CODE)"+ " WHERE CV.COORD_OP_METHOD_CODE = ?"+ " AND CV.COORD_OP_CODE = ?"+ " ORDER BY CU.SORT_ORDER");
+  stmt.setString(1,method);
+  stmt.setString(2,operation);
+  final ResultSet result=stmt.executeQuery();
+  while (result.next()) {
+    final String name=getString(result,1,operation);
+    final double value=result.getDouble(2);
+    final Unit unit;
+    Object reference;
+    if (result.wasNull()) {
+      reference=getString(result,3,operation);
+      try {
+        reference=new URI((String)reference);
+      }
+ catch (      URISyntaxException exception) {
+        reference=new File((String)reference);
+      }
+      unit=null;
+    }
+ else {
+      reference=null;
+      final String unitCode=result.getString(4);
+      unit=(unitCode != null) ? createUnit(unitCode) : null;
+    }
+    final ParameterValue param;
+    try {
+      param=parameters.parameter(name);
+    }
+ catch (    ParameterNotFoundException exception) {
+      final NoSuchIdentifierException e=new NoSuchIdentifierException(Errors.format(ErrorKeys.CANT_SET_PARAMETER_VALUE_$1,name),name);
+      e.initCause(exception);
+      throw e;
+    }
+    try {
+      if (reference != null) {
+        param.setValue(reference);
+      }
+ else       if (unit != null) {
+        param.setValue(value,unit);
+      }
+ else {
+        param.setValue(value);
+      }
+    }
+ catch (    InvalidParameterValueException exception) {
+      throw new FactoryException(Errors.format(ErrorKeys.CANT_SET_PARAMETER_VALUE_$1,name),exception);
+    }
+  }
+  result.close();
+}

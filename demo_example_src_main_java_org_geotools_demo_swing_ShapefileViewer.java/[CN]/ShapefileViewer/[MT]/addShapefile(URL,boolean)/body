@@ -1,0 +1,40 @@
+{
+  if (shapefileURL == null) {
+    throw new IllegalArgumentException("shapefileURL must not me null");
+  }
+  ShapefileDataStore dstore=null;
+  DataStore found=repository.dataStore(shapefileURL.toString());
+  if (found != null && found instanceof ShapefileDataStore) {
+    dstore=(ShapefileDataStore)found;
+  }
+ else {
+    try {
+      dstore=new ShapefileDataStore(shapefileURL);
+    }
+ catch (    MalformedURLException urlEx) {
+      throw new RuntimeException(urlEx);
+    }
+    repository.register(shapefileURL.toString(),dstore);
+  }
+  dstore.getSchema();
+  String typeName=dstore.getTypeNames()[0];
+  Style style=null;
+  URL sldURL=getShapefileSLD(shapefileURL);
+  if (sldURL != null) {
+    StyleFactory factory=CommonFactoryFinder.getStyleFactory(null);
+    SLDParser stylereader=new SLDParser(factory,sldURL);
+    style=stylereader.readXML()[0];
+  }
+ else   if (defaultStyle) {
+    style=JSimpleStyleDialog.showDialog(this,dstore);
+    if (style == null) {
+      return false;
+    }
+  }
+ else {
+    return false;
+  }
+  MapLayer layer=new DefaultMapLayer(dstore.getFeatureSource(typeName),style);
+  addLayer(layer);
+  return true;
+}

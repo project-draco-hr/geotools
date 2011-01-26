@@ -1,0 +1,31 @@
+{
+  try {
+    out.flush();
+  }
+ catch (  IOException ignore) {
+    Logging.unexpectedException(AbstractConsole.class,"reportError",ignore);
+  }
+  err.print(Classes.getShortClassName(exception));
+  err.print(" at line ");
+  err.print(in.getLineNumber());
+  Throwable cause=exception;
+  while (true) {
+    String message=cause.getLocalizedMessage();
+    if (message != null) {
+      err.print(": ");
+      err.print(message);
+    }
+    err.println();
+    cause=cause.getCause();
+    if (cause == null) {
+      break;
+    }
+    err.print("Caused by ");
+    err.print(Classes.getShortClassName(cause));
+  }
+  err.println("Type 'stacktrace' for stack trace information.");
+  if (line != null && exception instanceof ParseException) {
+    AbstractParser.reportError(err,line,((ParseException)exception).getErrorOffset());
+  }
+  err.println();
+}

@@ -1,0 +1,79 @@
+{
+  StringBuilder message=new StringBuilder("Acquiring a reader to  ").append(inputLocation);
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(inputLocation);
+  if (format == null || format instanceof UnknownFormat) {
+    fireException("Unable to decide format for this coverage",0,new IOException("Could not find a format for this coverage"));
+    return;
+  }
+  final AbstractGridCoverage2DReader inReader=(AbstractGridCoverage2DReader)format.getReader(inputLocation,new Hints(Hints.OVERVIEW_POLICY,OverviewPolicy.IGNORE));
+  if (inReader == null) {
+    message=new StringBuilder("Unable to instantiate a reader for this coverage");
+    if (LOGGER.isLoggable(Level.WARNING))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),0);
+    return;
+  }
+  if (!outputLocation.exists())   outputLocation.mkdir();
+  final GeneralEnvelope envelope=inReader.getOriginalEnvelope();
+  message=new StringBuilder("Original envelope is ").append(envelope.toString());
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  final GridEnvelope range=inReader.getOriginalGridRange();
+  final int w=range.getSpan(0);
+  final int h=range.getSpan(1);
+  tileWidth=tileWidth > w ? w : tileWidth;
+  tileHeight=tileHeight > h ? h : tileHeight;
+  message=new StringBuilder("Original range is ").append(range.toString());
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  message=new StringBuilder("New matrix dimension is (cols,rows)==(").append(tileWidth).append(",").append(tileHeight).append(")");
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),0);
+  GridCoverage2D gc;
+  try {
+    gc=(GridCoverage2D)inReader.read(null);
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    fireException(e);
+    return;
+  }
+  final int numTileX=(int)(w / (tileWidth * 1.0) + 1);
+  final int numTileY=(int)(h / (tileHeight * 1.0) + 1);
+  for (int i=0; i < numTileX; i++)   for (int j=0; j < numTileY; j++) {
+    final Rectangle sourceRegion=new Rectangle(i * tileWidth,j * tileHeight,tileWidth,tileHeight);
+    message=new StringBuilder("Writing region  ").append(sourceRegion);
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),(i + j) / (numTileX * numTileY * 1.0));
+    final File fileOut=new File(outputLocation,new StringBuilder("mosaic").append("_").append(Integer.toString(i * tileWidth + j)).append(".").append("tiff").toString());
+    if (fileOut.exists())     fileOut.delete();
+    message=new StringBuilder("Preparing to write tile (col,row)==(").append(j).append(",").append(i).append(") to file ").append(fileOut);
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine(message.toString());
+    fireEvent(message.toString(),(i + j) / (numTileX * numTileY * 1.0));
+    final AbstractGridFormat outFormat=new GeoTiffFormat();
+    try {
+      final GeoTiffWriteParams wp=new GeoTiffWriteParams();
+      wp.setTilingMode(GeoToolsWriteParams.MODE_EXPLICIT);
+      wp.setTiling(internalTileWidth,internalTileHeight);
+      wp.setSourceRegion(sourceRegion);
+      if (this.compressionScheme != null && !Double.isNaN(compressionRatio)) {
+        wp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        wp.setCompressionType(compressionScheme);
+        wp.setCompressionQuality((float)this.compressionRatio);
+      }
+      final ParameterValueGroup params=outFormat.getWriteParameters();
+      params.parameter(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString()).setValue(wp);
+      final GeoTiffWriter writerWI=new GeoTiffWriter(fileOut);
+      writerWI.write(gc,(GeneralParameterValue[])params.values().toArray(new GeneralParameterValue[1]));
+      writerWI.dispose();
+    }
+ catch (    IOException e) {
+      fireException(e);
+      return;
+    }
+  }
+  message=new StringBuilder("Done...");
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(message.toString());
+  fireEvent(message.toString(),100);
+}

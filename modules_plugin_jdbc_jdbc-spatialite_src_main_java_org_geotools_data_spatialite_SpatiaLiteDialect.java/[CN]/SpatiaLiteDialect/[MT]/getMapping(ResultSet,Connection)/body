@@ -1,0 +1,23 @@
+{
+  String tbl=columnMetaData.getString("TABLE_NAME");
+  String col=columnMetaData.getString("COLUMN_NAME");
+  String sql="SELECT type FROM geometry_columns " + "WHERE f_table_name = '" + tbl + "' "+ "AND f_geometry_column = '"+ col+ "'";
+  LOGGER.fine(sql);
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery(sql);
+    try {
+      if (rs.next()) {
+        String type=rs.getString("type");
+        return Geometries.getForName(type).getBinding();
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+  return null;
+}

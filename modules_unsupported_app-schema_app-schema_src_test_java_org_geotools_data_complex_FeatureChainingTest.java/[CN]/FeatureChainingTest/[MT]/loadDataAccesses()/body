@@ -1,0 +1,29 @@
+{
+  Map dsParams=new HashMap();
+  URL url=FeatureChainingTest.class.getResource(schemaBase + "MappedFeaturePropertyfile.xml");
+  assertNotNull(url);
+  dsParams.put("dbtype","app-schema");
+  dsParams.put("url",url.toExternalForm());
+  DataAccess<FeatureType,Feature> mfDataAccess=DataAccessFinder.getDataStore(dsParams);
+  assertNotNull(mfDataAccess);
+  FeatureType mappedFeatureType=mfDataAccess.getSchema(MAPPED_FEATURE);
+  assertNotNull(mappedFeatureType);
+  mfSource=(FeatureSource)mfDataAccess.getFeatureSource(MAPPED_FEATURE);
+  mfFeatures=(FeatureCollection)mfSource.getFeatures();
+  url=FeatureChainingTest.class.getResource(schemaBase + "GeologicUnit.xml");
+  assertNotNull(url);
+  dsParams.put("url",url.toExternalForm());
+  DataAccess<FeatureType,Feature> guDataAccess=DataAccessFinder.getDataStore(dsParams);
+  assertNotNull(guDataAccess);
+  FeatureType guType=guDataAccess.getSchema(GEOLOGIC_UNIT);
+  assertNotNull(guType);
+  FeatureSource<FeatureType,Feature> guSource=(FeatureSource<FeatureType,Feature>)guDataAccess.getFeatureSource(GEOLOGIC_UNIT);
+  guFeatures=(FeatureCollection)guSource.getFeatures();
+  cpFeatures=DataAccessRegistry.getFeatureSource(COMPOSITION_PART).getFeatures();
+  FeatureCollection<FeatureType,Feature> cgiFeatures=DataAccessRegistry.getFeatureSource(CGI_TERM_VALUE).getFeatures();
+  ccFeatures=DataAccessRegistry.getFeatureSource(CONTROLLED_CONCEPT).getFeatures();
+  assertEquals(4,size(mfFeatures));
+  assertEquals(3,size(guFeatures));
+  assertEquals(4,size(cpFeatures));
+  assertEquals(6,size(cgiFeatures));
+}

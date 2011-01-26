@@ -1,0 +1,31 @@
+{
+  if (!TestData.isExtensiveTest())   return;
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+  try {
+    String path="xml/geoserver/roads.xml";
+    File f=TestData.copy(this,path);
+    TestData.copy(this,"xml/wfs/WFS-basic.xsd");
+    TestData.copy(this,"xml/geoserver/roadSchema.xsd");
+    URI u=f.toURI();
+    XMLSAXHandler.setLogLevel(Level.FINEST);
+    XSISAXHandler.setLogLevel(Level.FINEST);
+    XMLElementHandler.setLogLevel(Level.FINEST);
+    XSIElementHandler.setLogLevel(Level.FINEST);
+    fr=FCBuffer.getFeatureReader(u,10,10000);
+    assertNotNull("FeatureReader missing",fr);
+    int i=0;
+    for (; fr.hasNext(); i++) {
+      fr.next();
+    }
+    assertTrue("# features = " + i,i == 70);
+  }
+ catch (  Throwable e) {
+    e.printStackTrace();
+    fail(e.toString());
+  }
+ finally {
+    if (fr != null) {
+      ((FCBuffer)fr).close();
+    }
+  }
+}

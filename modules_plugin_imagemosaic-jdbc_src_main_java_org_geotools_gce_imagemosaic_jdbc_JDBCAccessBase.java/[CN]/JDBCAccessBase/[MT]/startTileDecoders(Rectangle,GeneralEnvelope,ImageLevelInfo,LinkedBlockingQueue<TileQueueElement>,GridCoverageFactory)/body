@@ -1,0 +1,47 @@
+{
+  Date start=new Date();
+  Connection con=null;
+  List<ImageDecoderThread> threads=new ArrayList<ImageDecoderThread>();
+  ExecutorService pool=getExecutorServivicePool();
+  String statementString=getGridSelectStatement(levelInfo);
+  try {
+    con=dataSource.getConnection();
+    PreparedStatement s=con.prepareStatement(statementString);
+    setGridSelectParams(s,requestEnvelope,levelInfo);
+    ResultSet r=s.executeQuery();
+    while (r.next()) {
+      byte[] tileBytes=getTileBytes(r);
+      Envelope env=getEnvelopeFromResultSet(r);
+      String location=r.getString(config.getKeyAttributeNameInSpatialTable());
+      Rectangle2D tmp=new Rectangle2D.Double(env.getMinX(),env.getMinY(),env.getWidth(),env.getHeight());
+      GeneralEnvelope tileGeneralEnvelope=new GeneralEnvelope(tmp);
+      tileGeneralEnvelope.setCoordinateReferenceSystem(requestEnvelope.getCoordinateReferenceSystem());
+      ImageDecoderThread thread=new ImageDecoderThread(tileBytes,location,tileGeneralEnvelope,pixelDimension,requestEnvelope,levelInfo,tileQueue,config);
+      threads.add(thread);
+      pool.execute(thread);
+    }
+    ;
+    r.close();
+    s.close();
+    con.close();
+  }
+ catch (  SQLException e) {
+    try {
+      con.close();
+    }
+ catch (    SQLException e1) {
+    }
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    throw new IOException(e.getMessage());
+  }
+  if (LOGGER.isLoggable(Level.INFO))   LOGGER.info("Getting " + threads.size() + " Tiles needs "+ ((new Date()).getTime() - start.getTime())+ " millisecs");
+  pool.shutdown();
+  try {
+    pool.awaitTermination(3600,TimeUnit.SECONDS);
+  }
+ catch (  InterruptedException e) {
+    throw new RuntimeException(e.getLocalizedMessage());
+  }
+  tileQueue.add(TileQueueElement.ENDELEMENT);
+  if (LOGGER.isLoggable(Level.INFO))   LOGGER.info("Getting and decoding  " + threads.size() + " Tiles needs "+ ((new Date()).getTime() - start.getTime())+ " millisecs");
+}

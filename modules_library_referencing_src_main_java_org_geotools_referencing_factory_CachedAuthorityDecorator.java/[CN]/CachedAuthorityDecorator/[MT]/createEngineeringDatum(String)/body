@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  EngineeringDatum datum=(EngineeringDatum)cache.get(key);
+  if (datum == null) {
+    try {
+      cache.writeLock(key);
+      datum=(EngineeringDatum)cache.peek(key);
+      if (datum == null) {
+        datum=datumAuthority.createEngineeringDatum(code);
+        cache.put(key,datum);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return datum;
+}

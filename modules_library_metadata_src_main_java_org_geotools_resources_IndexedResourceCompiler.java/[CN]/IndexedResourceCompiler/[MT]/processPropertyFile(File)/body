@@ -1,0 +1,59 @@
+{
+  final Properties properties=loadPropertyFile(file);
+  resources.clear();
+  for (  final Map.Entry<Object,Object> entry : properties.entrySet()) {
+    final String key=(String)entry.getKey();
+    final String value=(String)entry.getValue();
+    if (key.trim().length() == 0) {
+      warning(file,key,"Empty key.",null);
+      continue;
+    }
+    if (value.trim().length() == 0) {
+      warning(file,key,"Empty value.",null);
+      continue;
+    }
+    final MessageFormat message;
+    try {
+      message=new MessageFormat(toMessageFormatString(value));
+    }
+ catch (    IllegalArgumentException exception) {
+      warning(file,key,"Bad resource value",exception);
+      continue;
+    }
+    final int argumentCount;
+    final int index=key.lastIndexOf(ARGUMENT_COUNT_PREFIX);
+    if (index < 0) {
+      argumentCount=0;
+      resources.put(key,value);
+    }
+ else     try {
+      String suffix=key.substring(index + ARGUMENT_COUNT_PREFIX.length());
+      argumentCount=Integer.parseInt(suffix);
+      resources.put(key,message.toPattern());
+    }
+ catch (    NumberFormatException exception) {
+      warning(file,key,"Bad number in resource key",exception);
+      continue;
+    }
+    final int expected=message.getFormats().length;
+    if (argumentCount != expected) {
+      final String suffix=ARGUMENT_COUNT_PREFIX + expected;
+      warning(file,key,"Key name should ends with \"" + suffix + "\".",null);
+      continue;
+    }
+  }
+  final String[] keys=resources.keySet().toArray(new String[resources.size()]);
+  Arrays.sort(keys,this);
+  int freeID=0;
+  for (int i=0; i < keys.length; i++) {
+    final String key=keys[i];
+    if (!allocatedIDs.containsValue(key)) {
+      Integer ID;
+      do {
+        ID=freeID++;
+      }
+ while (allocatedIDs.containsKey(ID));
+      allocatedIDs.put(ID,key);
+    }
+  }
+}

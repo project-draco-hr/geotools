@@ -1,0 +1,54 @@
+{
+  final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+  if (tempCRS != null) {
+    this.crs=(CoordinateReferenceSystem)tempCRS;
+    LOGGER.log(Level.WARNING,"Using default coordinate reference system ");
+  }
+ else {
+    parsePRJFile();
+    if (this.crs == null) {
+      final String wkt=metadata.getProjection();
+      if ((wkt != null) && !(wkt.equalsIgnoreCase(""))) {
+        try {
+          this.crs=CRS.parseWKT(wkt);
+          final Integer epsgCode=CRS.lookupEpsgCode(this.crs,true);
+          if (epsgCode != null) {
+            this.crs=CRS.decode("EPSG:" + epsgCode);
+          }
+        }
+ catch (        FactoryException fe) {
+          if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE,"Unable to get CRS from WKT contained in metadata. Looking for a PRJ.");
+          }
+          this.crs=null;
+        }
+      }
+    }
+  }
+  if (this.originalGridRange == null)   this.originalGridRange=new GridEnvelope2D(new Rectangle(0,0,metadata.getWidth(),metadata.getHeight()));
+  parseWorldFile();
+  if (this.originalEnvelope == null) {
+    final double[] geoTransform=metadata.getGeoTransformation();
+    if ((geoTransform != null) && (geoTransform.length == 6)) {
+      final AffineTransform tempTransform=new AffineTransform(geoTransform[1],geoTransform[4],geoTransform[2],geoTransform[5],geoTransform[0],geoTransform[3]);
+      if (this.originalEnvelope == null) {
+        try {
+          this.originalEnvelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(((GridEnvelope2D)this.originalGridRange)));
+        }
+ catch (        IllegalStateException e) {
+          if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+          }
+        }
+catch (        TransformException e) {
+          if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+          }
+        }
+      }
+      final double tr=-PixelTranslation.getPixelTranslation(PixelInCell.CELL_CORNER);
+      tempTransform.translate(tr,tr);
+      this.raster2Model=ProjectiveTransform.create(tempTransform);
+    }
+  }
+}

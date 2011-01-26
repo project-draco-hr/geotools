@@ -1,0 +1,45 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  PrimaryKey key=null;
+  try {
+    key=getPrimaryKey(featureType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  Set<String> pkColumnNames=getColumnNames(key);
+  for (  PrimaryKeyColumn col : key.getColumns()) {
+    dialect.encodeColumnName(col.getName(),sql);
+    sql.append(",");
+  }
+  for (  AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+    String columnName=att.getLocalName();
+    if (pkColumnNames.contains(columnName))     continue;
+    if (att instanceof GeometryDescriptor) {
+      encodeGeometryColumn((GeometryDescriptor)att,sql,query.getHints());
+      dialect.encodeColumnAlias(columnName,sql);
+    }
+ else {
+      dialect.encodeColumnName(columnName,sql);
+    }
+    sql.append(",");
+  }
+  sql.setLength(sql.length() - 1);
+  sql.append(" FROM ");
+  encodeTableName(featureType.getTypeName(),sql,query.getHints());
+  Filter filter=query.getFilter();
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    try {
+      SimpleFeatureType fullSchema=getSchema(featureType.getTypeName());
+      FilterToSQL toSQL=createFilterToSQL(fullSchema);
+      sql.append(" ").append(toSQL.encodeToString(filter));
+    }
+ catch (    FilterToSQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  sort(featureType,query.getSortBy(),key,sql);
+  applyLimitOffset(sql,query);
+  return sql.toString();
+}

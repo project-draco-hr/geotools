@@ -1,0 +1,151 @@
+{
+  GeometryFactoryImpl tGeomFactory=(GeometryFactoryImpl)c.getComponentInstanceOfType(GeometryFactory.class);
+  PositionFactoryImpl tPosFactory=(PositionFactoryImpl)c.getComponentInstanceOfType(PositionFactory.class);
+  PrimitiveFactoryImpl tPrimFactory=(PrimitiveFactoryImpl)c.getComponentInstanceOfType(PrimitiveFactory.class);
+  PositionImpl p1=new PositionImpl(tPosFactory.createDirectPosition(new double[]{-50,0}));
+  PositionImpl p2=new PositionImpl(tPosFactory.createDirectPosition(new double[]{-30,30}));
+  PositionImpl p3=new PositionImpl(tPosFactory.createDirectPosition(new double[]{0,50}));
+  PositionImpl p4=new PositionImpl(tPosFactory.createDirectPosition(new double[]{30,30}));
+  PositionImpl p5=new PositionImpl(tPosFactory.createDirectPosition(new double[]{50,0}));
+  LineStringImpl line1=null;
+  ArrayList<Position> positionList=new ArrayList<Position>();
+  try {
+    line1=tGeomFactory.createLineString(positionList);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertEquals(line1,null);
+  positionList.add(p1);
+  try {
+    line1=tGeomFactory.createLineString(positionList);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertEquals(line1,null);
+  positionList.add(p2);
+  try {
+    line1=tGeomFactory.createLineString(positionList);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertNotNull(line1);
+  positionList.add(p3);
+  positionList.add(p4);
+  positionList.add(p5);
+  try {
+    line1=tGeomFactory.createLineString(positionList);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertNotNull(line1);
+  assertEquals(line1.getStartPoint().getOrdinate(0),-50.0);
+  assertEquals(line1.getStartPoint().getOrdinate(1),0.0);
+  assertEquals(line1.getEndPoint().getOrdinate(0),50.0);
+  assertEquals(line1.getEndPoint().getOrdinate(1),0.0);
+  ArrayList<CurveSegment> tLineList=new ArrayList<CurveSegment>();
+  tLineList.add(line1);
+  CurveImpl curve1=tPrimFactory.createCurve(tLineList);
+  line1.setCurve(curve1);
+  assertEquals(14422,Math.round(line1.length() * 100));
+  assertEquals(line1.getStartParam(),0.0);
+  assertEquals(14422,Math.round(line1.getEndParam() * 100));
+  assertEquals(line1.getStartConstructiveParam(),0.0);
+  assertEquals(line1.getEndConstructiveParam(),1.0);
+  List<LineSegment> segments=line1.asLineSegments();
+  assertEquals(segments.size(),4);
+  LineSegment seg1=segments.get(0);
+  LineSegment seg2=segments.get(1);
+  LineSegment seg3=segments.get(2);
+  LineSegment seg4=segments.get(3);
+  assertEquals(seg1.getStartParam(),0.0);
+  assertEquals(36,Math.round(seg1.getEndParam()));
+  assertEquals(36,Math.round(seg2.getStartParam()));
+  assertEquals(72,Math.round(seg2.getEndParam()));
+  assertEquals(seg1.getStartConstructiveParam(),0.0);
+  assertEquals(seg1.getEndConstructiveParam(),0.25);
+  assertEquals(segments.get(1).getStartConstructiveParam(),0.25);
+  assertEquals(segments.get(1).getEndConstructiveParam(),0.50);
+  assertEquals(segments.get(2).getStartConstructiveParam(),0.50);
+  assertEquals(segments.get(2).getEndConstructiveParam(),0.75);
+  assertEquals(segments.get(3).getStartConstructiveParam(),0.75);
+  assertEquals(segments.get(3).getEndConstructiveParam(),1.0);
+  DirectPosition resultPos=seg1.forParam(0.0);
+  assertEquals(resultPos.getOrdinate(0),-50.0);
+  assertEquals(resultPos.getOrdinate(1),0.0);
+  resultPos=seg1.forParam(seg1.getEndParam());
+  assertEquals(resultPos.getOrdinate(0),-30.0);
+  assertEquals(resultPos.getOrdinate(1),30.0);
+  resultPos=null;
+  try {
+    resultPos=seg1.forParam(180);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertEquals(resultPos,null);
+  resultPos=seg1.forParam(30);
+  assertEquals(seg1.getControlPoints().length(),2);
+  assertEquals(seg2.asLineSegments().size(),1);
+  double[] dp=line1.forParam(0).getCoordinates();
+  assertEquals(-50.0,dp[0]);
+  assertEquals(0.0,dp[1]);
+  dp=line1.forParam(line1.length()).getCoordinates();
+  assertEquals(50.0,dp[0]);
+  assertEquals(0.0,dp[1]);
+  dp=line1.forParam(seg1.getEndParam()).getCoordinates();
+  assertEquals(-30.0,dp[0]);
+  assertEquals(30.0,dp[1]);
+  dp=line1.forParam(50).getCoordinates();
+  assertEquals(Math.round(dp[0] * 1000),-18397);
+  assertEquals(Math.round(dp[1] * 1000),37735);
+  dp=line1.forConstructiveParam(0.0).getCoordinates();
+  assertEquals(-50.0,dp[0]);
+  assertEquals(0.0,dp[1]);
+  dp=line1.forConstructiveParam(1.0).getCoordinates();
+  assertEquals(50.0,dp[0]);
+  assertEquals(0.0,dp[1]);
+  dp=line1.forConstructiveParam(50 / line1.length()).getCoordinates();
+  assertEquals(Math.round(dp[0] * 1000),-18397);
+  assertEquals(Math.round(dp[1] * 1000),37735);
+  dp=line1.getTangent(0);
+  assertEquals(Math.round(dp[0] * 1000),-49445);
+  assertEquals(Math.round(dp[1] * 1000),832);
+  dp=line1.getTangent(40);
+  assertEquals(Math.round(dp[0] * 100),-2589);
+  assertEquals(Math.round(dp[1] * 100),3274);
+  dp=line1.getTangent(line1.getEndParam());
+  assertEquals(Math.round(dp[0] * 100),5055);
+  assertEquals(Math.round(dp[1] * 100),-83);
+  PositionImpl p6=new PositionImpl(tPosFactory.createDirectPosition(new double[]{80,40}));
+  PositionImpl p7=new PositionImpl(tPosFactory.createDirectPosition(new double[]{130,60}));
+  ArrayList<Position> positionList2=new ArrayList<Position>();
+  positionList2.add(p5);
+  positionList2.add(p6);
+  positionList2.add(p7);
+  LineStringImpl line2=tGeomFactory.createLineString(positionList2);
+  LineStringImpl line3=line1.merge(line2);
+  assertEquals(line1.getControlPoints().size(),5);
+  assertEquals(line2.getControlPoints().size(),3);
+  assertEquals(line3.getControlPoints().size(),7);
+  line3=line2.merge(line1);
+  assertEquals(line1.getControlPoints().size(),5);
+  assertEquals(line2.getControlPoints().size(),3);
+  assertEquals(line3.getControlPoints().size(),7);
+  positionList2.remove(0);
+  line3=null;
+  try {
+    line3=line2.merge(line1);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  assertEquals(line1.getNumDerivativesAtStart(),0);
+  assertEquals(line1.getNumDerivativesInterior(),0);
+  assertEquals(line1.getNumDerivativesAtEnd(),0);
+  line1.reverse();
+  PointArray controlPoints=line1.getControlPoints();
+  assertEquals(controlPoints.length(),5);
+  assertEquals(controlPoints.getDirectPosition(0,null),p5.getPosition());
+  assertEquals(controlPoints.getDirectPosition(1,null),p4.getPosition());
+  assertEquals(controlPoints.getDirectPosition(2,null),p3.getPosition());
+  assertEquals(controlPoints.getDirectPosition(3,null),p2.getPosition());
+  assertEquals(controlPoints.getDirectPosition(4,null),p1.getPosition());
+}

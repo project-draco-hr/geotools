@@ -1,0 +1,50 @@
+{
+  boolean inCqlExpression=false;
+  List<Expression> result=new ArrayList<Expression>();
+  StringBuilder sb=new StringBuilder();
+  for (int i=0; i < expression.length(); i++) {
+    final char curr=expression.charAt(i);
+    final boolean last=(i == expression.length() - 1);
+    final char next=last ? 0 : expression.charAt(i + 1);
+    if (curr == '\\') {
+      if (last)       throw new IllegalArgumentException("Unescaped \\ at position " + (i + 1));
+      if (next == '\\')       sb.append('\\');
+ else       if (next == '$')       sb.append('$');
+ else       if (next == '}')       sb.append('}');
+ else       throw new IllegalArgumentException("Unescaped \\ at position " + (i + 1));
+      i++;
+    }
+ else     if (curr == '$') {
+      if (last || next != '{')       throw new IllegalArgumentException("Unescaped $ at position " + (i + 1));
+      if (inCqlExpression)       throw new IllegalArgumentException("Already found a ${ sequence before the one at " + (i + 1));
+      if (sb.length() > 0) {
+        result.add(ff.literal(sb.toString()));
+        sb.setLength(0);
+      }
+      inCqlExpression=true;
+      i++;
+    }
+ else     if (curr == '}') {
+      if (!inCqlExpression)       throw new IllegalArgumentException("Already found a ${ sequence before the one at " + (i + 1));
+      if (sb.length() == 0)       throw new IllegalArgumentException("Invalid empty cql expression ${} at " + (i - 1));
+      try {
+        result.add(ECQL.toExpression(sb.toString()));
+        sb.setLength(0);
+      }
+ catch (      CQLException e) {
+        throw new IllegalArgumentException("Invalid cql expression '" + sb + "'",e);
+      }
+      inCqlExpression=false;
+    }
+ else {
+      sb.append(curr);
+    }
+  }
+  if (inCqlExpression) {
+    throw new IllegalArgumentException("Unclosed CQL expression '" + sb + "'");
+  }
+ else   if (sb.length() > 0) {
+    result.add(ff.literal(sb.toString()));
+  }
+  return result;
+}

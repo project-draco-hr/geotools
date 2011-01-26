@@ -1,0 +1,31 @@
+{
+  super(NAME,VERSION);
+  inputLocationOpt=optionBuilder.withShortName("s").withLongName("src_coverage").withArgument(argumentBuilder.withName("source").withMinimum(1).withMaximum(1).create()).withDescription("path where the source code is located").withRequired(true).create();
+  outputLocationOpt=optionBuilder.withShortName("d").withLongName("dest_directory").withArgument(argumentBuilder.withName("destination").withMinimum(0).withMaximum(1).create()).withDescription("output directory, if none is provided, the \"tiled\" directory will be used").withRequired(false).create();
+  tileDimOpt=optionBuilder.withShortName("t").withLongName("tile_dimension").withArgument(argumentBuilder.withName("t").withMinimum(1).withMaximum(1).create()).withDescription("Width and height of each tile we generate").withRequired(true).create();
+  internalTileDimOpt=optionBuilder.withShortName("it").withLongName("internal_tile_dimension").withArgument(argumentBuilder.withName("it").withMinimum(0).withMaximum(1).create()).withDescription("Internal width and height of each tile we generate").withRequired(false).create();
+  compressionTypeOpt=optionBuilder.withShortName("z").withLongName("compressionType").withDescription("compression type.").withArgument(argumentBuilder.withName("compressionType").withMinimum(0).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+    }
+  }
+).create()).withRequired(false).create();
+  compressionRatioOpt=optionBuilder.withShortName("r").withLongName("compressionRatio").withDescription("compression ratio.").withArgument(argumentBuilder.withName("compressionRatio").withMinimum(0).withMaximum(1).withValidator(new Validator(){
+    public void validate(    List args) throws InvalidArgumentException {
+      final int size=args.size();
+      if (size > 1)       throw new InvalidArgumentException("Only one scaling algorithm at a time can be chosen");
+      final String val=(String)args.get(0);
+      final double value=Double.parseDouble(val);
+      if (value <= 0 || value > 1)       throw new InvalidArgumentException("Invalid compressio ratio");
+    }
+  }
+).create()).withRequired(false).create();
+  addOption(tileDimOpt);
+  addOption(inputLocationOpt);
+  addOption(outputLocationOpt);
+  addOption(internalTileDimOpt);
+  addOption(compressionTypeOpt);
+  addOption(compressionRatioOpt);
+  finishInitialization();
+}

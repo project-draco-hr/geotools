@@ -1,0 +1,21 @@
+{
+  PostPreProcessFilterSplittingVisitor visitor=newVisitor(new FilterCapabilities());
+  if (accessor != null)   accessor.setUpdate("",null);
+  filter.accept(visitor,null);
+  assertEquals(filter,visitor.getFilterPost());
+  assertEquals(Filter.INCLUDE,visitor.getFilterPre());
+  visitor=newVisitor(supportedCaps);
+  filter.accept(visitor,null);
+  assertEquals(Filter.INCLUDE,visitor.getFilterPost());
+  assertEquals(filter,visitor.getFilterPre());
+  if (attToEdit != null && accessor != null) {
+    HashSet idSet=new HashSet();
+    idSet.add(ff.featureId("fid"));
+    Id updateFilter=ff.id(idSet);
+    accessor.setUpdate(attToEdit,updateFilter);
+    visitor=newVisitor(supportedCaps);
+    filter.accept(visitor,null);
+    assertEquals(filter,visitor.getFilterPost());
+    assertEquals(ff.or(filter,updateFilter),visitor.getFilterPre());
+  }
+}

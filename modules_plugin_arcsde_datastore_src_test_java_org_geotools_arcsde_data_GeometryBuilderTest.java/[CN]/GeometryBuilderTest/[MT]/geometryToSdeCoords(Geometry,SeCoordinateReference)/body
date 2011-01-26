@@ -1,0 +1,46 @@
+{
+  int numParts;
+  double[][][] sdeCoords;
+  GeometryCollection gcol=null;
+  if (jtsGeom instanceof GeometryCollection) {
+    gcol=(GeometryCollection)jtsGeom;
+  }
+ else {
+    Geometry[] geoms={jtsGeom};
+    gcol=new GeometryFactory().createGeometryCollection(geoms);
+  }
+  List<SDEPoint> allPoints=new ArrayList<SDEPoint>();
+  numParts=gcol.getNumGeometries();
+  int[] partOffsets=new int[numParts];
+  Geometry geom;
+  for (int currGeom=0; currGeom < numParts; currGeom++) {
+    partOffsets[currGeom]=allPoints.size();
+    geom=gcol.getGeometryN(currGeom);
+    Coordinate[] coords=geom.getCoordinates();
+    for (int i=0; i < coords.length; i++) {
+      Coordinate c=coords[i];
+      SDEPoint p=new SDEPoint(c.x,c.y);
+      allPoints.add(p);
+    }
+  }
+  SDEPoint[] points=new SDEPoint[allPoints.size()];
+  allPoints.toArray(points);
+  SeShape shape=new SeShape(seCRS);
+  try {
+    if (jtsGeom instanceof Point || gcol instanceof MultiPoint) {
+      shape.generatePoint(points.length,points);
+    }
+ else     if (jtsGeom instanceof LineString || jtsGeom instanceof MultiLineString) {
+      shape.generateLine(points.length,numParts,partOffsets,points);
+    }
+ else {
+      shape.generatePolygon(points.length,numParts,partOffsets,points);
+    }
+  }
+ catch (  SeException e) {
+    LOGGER.warning(e.getSeError().getErrDesc());
+    throw new DataSourceException(e.getSeError().getErrDesc() + ": " + jtsGeom,e);
+  }
+  sdeCoords=shape.getAllCoords();
+  return sdeCoords;
+}

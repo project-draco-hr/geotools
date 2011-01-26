@@ -1,0 +1,30 @@
+{
+  for (int i=0; i < iterations; i++) {
+    long timeStart=System.currentTimeMillis();
+    String code1="4326";
+    CoordinateReferenceSystem crs1=acquireCRS(code1);
+    String code2=null;
+    while (code2 == null || code1.equalsIgnoreCase(code2)) {
+      code2=getRandomCode();
+    }
+    try {
+      CoordinateReferenceSystem crs2=acquireCRS(code2);
+      MathTransform transform=CRS.findMathTransform(crs1,crs2,true);
+      DirectPosition pos=new DirectPosition2D(48.417,123.35);
+      try {
+        transform.transform(pos,null);
+      }
+ catch (      Exception e) {
+      }
+    }
+ catch (    Exception e) {
+      exceptions++;
+      System.out.println("Exception in Thread " + id + ", EPSG: "+ code2);
+    }
+    long timeElapsed=System.currentTimeMillis() - timeStart;
+    totalRuns++;
+    totalTime+=timeElapsed;
+    minTime=Math.min(minTime,timeElapsed);
+    maxTime=Math.max(maxTime,timeElapsed);
+  }
+}

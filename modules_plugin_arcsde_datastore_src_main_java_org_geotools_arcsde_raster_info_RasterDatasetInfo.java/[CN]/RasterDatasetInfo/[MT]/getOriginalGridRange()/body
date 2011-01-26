@@ -1,0 +1,43 @@
+{
+  if (originalGridRange == null) {
+    final int rasterCount=getNumRasters();
+    if (1 == rasterCount) {
+      originalGridRange=getGridRange(0,0);
+      return originalGridRange;
+    }
+    final MathTransform modelToRaster;
+    try {
+      final MathTransform rasterToModel=getRasterToModel();
+      modelToRaster=rasterToModel.inverse();
+    }
+ catch (    NoninvertibleTransformException e) {
+      throw new IllegalStateException("Can't create transform from model to raster");
+    }
+    int minx=Integer.MAX_VALUE;
+    int miny=Integer.MAX_VALUE;
+    int maxx=Integer.MIN_VALUE;
+    int maxy=Integer.MIN_VALUE;
+    for (int rasterN=0; rasterN < rasterCount; rasterN++) {
+      final GeneralEnvelope rasterEnvelope=getGridEnvelope(rasterN,0);
+      GeneralEnvelope rasterGridRangeInDataSet;
+      try {
+        rasterGridRangeInDataSet=CRS.transform(modelToRaster,rasterEnvelope);
+      }
+ catch (      NoninvertibleTransformException e) {
+        throw new IllegalArgumentException(e);
+      }
+catch (      TransformException e) {
+        throw new IllegalArgumentException(e);
+      }
+      minx=Math.min(minx,(int)Math.floor(rasterGridRangeInDataSet.getMinimum(0)));
+      miny=Math.min(miny,(int)Math.floor(rasterGridRangeInDataSet.getMinimum(1)));
+      maxx=Math.max(maxx,(int)Math.ceil(rasterGridRangeInDataSet.getMaximum(0)));
+      maxy=Math.max(maxy,(int)Math.ceil(rasterGridRangeInDataSet.getMaximum(1)));
+    }
+    int width=maxx - minx;
+    int height=maxy - miny;
+    Rectangle range=new Rectangle(0,0,width,height);
+    originalGridRange=new GeneralGridEnvelope(range,2);
+  }
+  return originalGridRange;
+}

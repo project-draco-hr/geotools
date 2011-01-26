@@ -1,0 +1,76 @@
+{
+  alphaChannels=new PlanarImage[granulesNumber];
+  int granuleIndex=0;
+  inputTransparentColor=request.getInputTransparentColor();
+  doInputTransparency=inputTransparentColor != null && !footprintManagement;
+  boolean firstGranule=true;
+  int[] alphaIndex=null;
+  for (  Future<GranuleLoadingResult> future : tasks) {
+    final RenderedImage loadedImage;
+    final GranuleLoadingResult result;
+    try {
+      if (!multithreadingAllowed) {
+        final FutureTask<GranuleLoadingResult> task=(FutureTask<GranuleLoadingResult>)future;
+        task.run();
+      }
+      result=future.get();
+      if (result == null) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,"Unable to load the raster for granule " + granuleIndex + " with request "+ request.toString());
+        continue;
+      }
+      loadedImage=result.getRaster();
+      if (loadedImage == null) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,"Unable to load the raster for granuleDescriptor " + granuleIndex + " with request "+ request.toString());
+        continue;
+      }
+      if (firstGranule) {
+        final ColorModel cm=loadedImage.getColorModel();
+        alphaIn=cm.hasAlpha();
+        if (alphaIn || doInputTransparency)         alphaIndex=new int[]{cm.getNumComponents() - 1};
+        sourceThreshold=new double[][]{{CoverageUtilities.getMosaicThreshold(loadedImage.getSampleModel().getDataType())}};
+        firstGranule=false;
+      }
+    }
+ catch (    InterruptedException e) {
+      if (LOGGER.isLoggable(Level.SEVERE))       LOGGER.log(Level.SEVERE,"Unable to load the raster for granuleDescriptor " + granuleIndex,e);
+      continue;
+    }
+catch (    ExecutionException e) {
+      if (LOGGER.isLoggable(Level.SEVERE))       LOGGER.log(Level.SEVERE,"Unable to load the raster for granuleDescriptor " + granuleIndex,e);
+      continue;
+    }
+catch (    ImagingException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Adding to mosaic image number " + granuleIndex + " failed, original request was "+ request);
+      continue;
+    }
+catch (    javax.media.jai.util.ImagingException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Adding to mosaic image number " + granuleIndex + " failed, original request was "+ request);
+      continue;
+    }
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("Adding to mosaic image number " + granuleIndex);
+    }
+    final RenderedImage raster=processGranuleRaster(loadedImage,granuleIndex,alphaIndex,alphaIn,alphaChannels,doInputTransparency,inputTransparentColor);
+    ROI imageBounds=new ROIShape(PlanarImage.wrapRenderedImage(raster).getBounds());
+    if (footprintManagement) {
+      final ROIShape footprint=result.getFootprint();
+      if (footprint != null) {
+        if (imageBounds.contains(footprint.getBounds())) {
+          imageBounds=footprint;
+        }
+ else {
+          imageBounds=imageBounds.intersect(footprint);
+        }
+      }
+    }
+    rois.add(imageBounds);
+    sources.add(raster);
+    granuleIndex++;
+  }
+  granulesNumber=granuleIndex;
+  if (granulesNumber == 0) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to load any granuleDescriptor ");
+    return;
+  }
+  sourceRoi=rois.toArray(new ROI[rois.size()]);
+}

@@ -1,0 +1,19 @@
+{
+  FeatureSource fs=data.getFeatureSource(LINE3D);
+  assertTrue(fs.getSupportedHints().contains(Hints.JTS_COORDINATE_SEQUENCE_FACTORY));
+  DefaultQuery q=new DefaultQuery(LINE3D);
+  Hints hints=new Hints(Hints.JTS_COORDINATE_SEQUENCE_FACTORY,new LiteCoordinateSequenceFactory());
+  q.setHints(hints);
+  FeatureCollection fc=fs.getFeatures(q);
+  FeatureType fcSchema=fc.getSchema();
+  assertEquals(epsg4326,fcSchema.getCoordinateReferenceSystem());
+  assertEquals(epsg4326,fcSchema.getGeometryDescriptor().getCoordinateReferenceSystem());
+  LineString expected=new GeometryFactory().createLineString(new Coordinate[]{new Coordinate(1,1),new Coordinate(2,2),new Coordinate(4,2),new Coordinate(5,1)});
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=data.getFeatureReader(q,Transaction.AUTO_COMMIT);
+  assertEquals(epsg4326,fr.getFeatureType().getCoordinateReferenceSystem());
+  assertEquals(epsg4326,fr.getFeatureType().getGeometryDescriptor().getCoordinateReferenceSystem());
+  assertTrue(fr.hasNext());
+  SimpleFeature f=fr.next();
+  assertTrue(expected.equals((Geometry)f.getDefaultGeometry()));
+  fr.close();
+}

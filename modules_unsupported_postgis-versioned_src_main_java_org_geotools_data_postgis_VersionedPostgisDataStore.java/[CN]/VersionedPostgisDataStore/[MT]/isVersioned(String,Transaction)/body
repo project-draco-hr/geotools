@@ -1,0 +1,29 @@
+{
+  Boolean versioned=(Boolean)versionedMap.get(typeName);
+  if (versioned == null) {
+    if (isVersionedFeatureCollection(typeName))     throw new DataSourceException("Could not find type " + typeName);
+    if (!Arrays.asList(wrapped.getTypeNames()).contains(typeName))     throw new DataSourceException("Unknown feature type " + typeName);
+    Connection conn=null;
+    Statement st=null;
+    PostgisSQLBuilder sqlb=wrapped.createSQLBuilder();
+    ResultSet rs=null;
+    try {
+      if (transaction != null)       conn=wrapped.getConnection(transaction);
+ else       conn=wrapped.getDataSource().getConnection();
+      st=conn.createStatement();
+      rs=executeQuery(st,"SELECT COUNT(*) from " + sqlb.encodeTableName(TBL_VERSIONEDTABLES) + " WHERE SCHEMA = '"+ getConfig().getDatabaseSchemaName()+ "'"+ " AND NAME='"+ typeName+ "'"+ " AND VERSIONED = TRUE");
+      rs.next();
+      versioned=new Boolean(rs.getInt(1) > 0);
+    }
+ catch (    SQLException e) {
+      throw new DataSourceException("Error occurred while checking versioned tables," + " database support tables are probably corrupt",e);
+    }
+ finally {
+      JDBCUtils.close(rs);
+      JDBCUtils.close(st);
+      JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+    }
+    versionedMap.put(typeName,versioned);
+  }
+  return versioned.booleanValue();
+}

@@ -1,0 +1,42 @@
+{
+  GeometryDescriptor desc=schema.getGeometryDescriptor();
+  Class<?> clazz=desc.getType().getBinding();
+  String labelText=schema.getTypeName();
+  if (Polygon.class.isAssignableFrom(clazz) || MultiPolygon.class.isAssignableFrom(clazz)) {
+    geomType=GeomType.POLYGON;
+    labelText=labelText + " (polygon)";
+  }
+ else   if (LineString.class.isAssignableFrom(clazz) || MultiLineString.class.isAssignableFrom(clazz)) {
+    geomType=GeomType.LINE;
+    labelText=labelText + " (line)";
+  }
+ else   if (Point.class.isAssignableFrom(clazz) || MultiPoint.class.isAssignableFrom(clazz)) {
+    geomType=GeomType.POINT;
+    labelText=labelText + " (point)";
+  }
+ else {
+    throw new UnsupportedOperationException("No style method for " + clazz.getName());
+  }
+  typeLabel.setText(labelText);
+  for (  Component c : controls.keySet()) {
+switch (controls.get(c)) {
+case LINE:
+      break;
+case FILL:
+    c.setEnabled(geomType != GeomType.LINE);
+  break;
+case POINT:
+c.setEnabled(geomType == GeomType.POINT);
+break;
+}
+}
+fieldsForLabels=new String[schema.getAttributeCount() - 1];
+int k=0;
+for (AttributeDescriptor attr : schema.getAttributeDescriptors()) {
+if (Geometry.class.isAssignableFrom(attr.getType().getBinding())) {
+continue;
+}
+fieldsForLabels[k++]=attr.getLocalName();
+}
+labelCBox.setModel(new DefaultComboBoxModel(fieldsForLabels));
+}

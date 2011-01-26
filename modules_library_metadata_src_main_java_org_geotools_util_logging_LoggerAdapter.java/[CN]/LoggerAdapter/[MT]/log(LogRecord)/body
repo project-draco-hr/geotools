@@ -1,0 +1,38 @@
+{
+  final Filter filter=getFilter();
+  if (filter != null && !filter.isLoggable(record)) {
+    return;
+  }
+  Level level=record.getLevel();
+  String sourceClass=record.getSourceClassName();
+  String sourceMethod=record.getSourceMethodName();
+  String bundleName=record.getResourceBundleName();
+  String message=record.getMessage();
+  Object[] params=record.getParameters();
+  Throwable thrown=record.getThrown();
+  ResourceBundle bundle=record.getResourceBundle();
+  boolean localized=false;
+  if (bundle != null)   try {
+    message=bundle.getString(message);
+    localized=true;
+  }
+ catch (  MissingResourceException e) {
+  }
+  final boolean useThrown=(thrown != null) && (params == null || params.length == 0);
+  if (localized) {
+    if (useThrown) {
+      logp(level,sourceClass,sourceMethod,message,thrown);
+    }
+ else {
+      logp(level,sourceClass,sourceMethod,message,params);
+    }
+  }
+ else {
+    if (useThrown) {
+      logrb(level,sourceClass,sourceMethod,bundleName,message,thrown);
+    }
+ else {
+      logrb(level,sourceClass,sourceMethod,bundleName,message,params);
+    }
+  }
+}

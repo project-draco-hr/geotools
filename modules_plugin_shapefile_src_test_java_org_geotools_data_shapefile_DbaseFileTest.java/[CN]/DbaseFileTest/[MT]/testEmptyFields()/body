@@ -1,0 +1,29 @@
+{
+  DbaseFileHeader header=new DbaseFileHeader();
+  header.addColumn("emptyString",'C',20,0);
+  header.addColumn("emptyInt",'N',20,0);
+  header.addColumn("emptyDouble",'N',20,5);
+  header.addColumn("emptyFloat",'F',20,5);
+  header.addColumn("emptyLogical",'L',1,0);
+  header.addColumn("emptyDate",'D',20,0);
+  header.setNumRecords(20);
+  File f=new File(System.getProperty("java.io.tmpdir"),"scratchDBF.dbf");
+  f.deleteOnExit();
+  FileOutputStream fout=new FileOutputStream(f);
+  DbaseFileWriter dbf=new DbaseFileWriter(header,fout.getChannel(),Charset.defaultCharset());
+  for (int i=0; i < header.getNumRecords(); i++) {
+    dbf.write(new Object[6]);
+  }
+  dbf.close();
+  ShpFiles tempShpFiles=new ShpFiles(f);
+  DbaseFileReader r=new DbaseFileReader(tempShpFiles,false,ShapefileDataStore.DEFAULT_STRING_CHARSET);
+  int cnt=0;
+  while (r.hasNext()) {
+    cnt++;
+    Object[] o=r.readEntry();
+    assertTrue(o.length == r.getHeader().getNumFields());
+  }
+  assertEquals("Bad number of records",cnt,20);
+  r.close();
+  f.delete();
+}

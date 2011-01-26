@@ -1,0 +1,31 @@
+{
+  if (targetUnits == null || targetUnits.equals(units)) {
+    if (type.equals(elementClass)) {
+      @SuppressWarnings("unchecked") final MeasurementRange<N> result=(MeasurementRange)this;
+      return result;
+    }
+ else {
+      return new MeasurementRange<N>(type,this,units);
+    }
+  }
+  if (units == null) {
+    return new MeasurementRange<N>(type,this,targetUnits);
+  }
+  final UnitConverter converter=units.getConverterTo(targetUnits);
+  if (converter.equals(UnitConverter.IDENTITY)) {
+    return new MeasurementRange<N>(type,this,targetUnits);
+  }
+  boolean isMinIncluded=isMinIncluded();
+  boolean isMaxIncluded=isMaxIncluded();
+  Double minimum=converter.convert(getMinimum());
+  Double maximum=converter.convert(getMaximum());
+  if (minimum.compareTo(maximum) > 0) {
+    final Double td=minimum;
+    minimum=maximum;
+    maximum=td;
+    final boolean tb=isMinIncluded;
+    isMinIncluded=isMaxIncluded;
+    isMaxIncluded=tb;
+  }
+  return new MeasurementRange<N>(type,ClassChanger.cast(minimum,type),isMinIncluded,ClassChanger.cast(maximum,type),isMaxIncluded,targetUnits);
+}

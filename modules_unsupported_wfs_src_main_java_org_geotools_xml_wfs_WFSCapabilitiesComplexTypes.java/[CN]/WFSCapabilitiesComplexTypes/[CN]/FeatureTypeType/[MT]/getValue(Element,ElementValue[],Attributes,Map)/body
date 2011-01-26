@@ -1,0 +1,79 @@
+{
+  if ((element == null) || (value == null)) {
+    throw new SAXException("Missing params for FeatureTypeType");
+  }
+  boolean validation=true;
+  if (hints != null && hints.containsKey(DocumentFactory.VALIDATION_HINT)) {
+    Boolean t=(Boolean)hints.get(DocumentFactory.VALIDATION_HINT);
+    if (t != null)     validation=t.booleanValue();
+  }
+  if (validation && value.length < 2) {
+    throw new SAXException("Missing child element for FeatureTypeType");
+  }
+  FeatureSetDescription fsd=new FeatureSetDescription();
+  List llbb=new LinkedList();
+  for (int i=0; i < value.length; i++) {
+    if (value[i].getElement() == null) {
+      throw new SAXException("Internal error -- a value object representing a child element was missing an element declaration");
+    }
+    if (elements[0].getName().equals(value[i].getElement().getName())) {
+      fsd.setName((String)value[i].getValue());
+      if (fsd.getName() != null) {
+        int j=fsd.getName().indexOf(":");
+        if (j > 0) {
+          String prefix=fsd.getName().substring(0,j);
+        }
+      }
+    }
+ else {
+      if (elements[1].getName().equals(value[i].getElement().getName())) {
+        fsd.setTitle((String)value[i].getValue());
+      }
+ else {
+        if (elements[2].getName().equals(value[i].getElement().getName())) {
+          String t=(String)value[i].getValue();
+          t="NONE".equals(t) ? "" : t;
+          fsd.setAbstract(t);
+        }
+ else {
+          if (elements[3].getName().equals(value[i].getElement().getName())) {
+            String t=(String)value[i].getValue();
+            t=(t == null) ? "" : t;
+            fsd.setKeywords(Arrays.asList(t.split(" ")));
+          }
+ else {
+            if (elements[4].getName().equals(value[i].getElement().getName())) {
+              fsd.setSRS((String)value[i].getValue());
+            }
+ else {
+              if (elements[5].getName().equals(value[i].getElement().getName())) {
+                fsd.setOperations(((Integer)value[i].getValue()).intValue());
+              }
+ else {
+                if (elements[6].getName().equals(value[i].getElement().getName())) {
+                  llbb.add(value[i].getValue());
+                }
+ else {
+                  if (elements[7].getName().equals(value[i].getElement().getName())) {
+                  }
+ else {
+                    throw new SAXException("Unknown child element within a FeatureTypeType: " + ((value[i].getElement().getName() == null) ? "null" : value[i].getElement().getName()));
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (llbb.size() > 0) {
+    Envelope e=(Envelope)llbb.get(0);
+    for (int i=1; i < llbb.size(); i++)     e.expandToInclude((Envelope)llbb.get(i));
+    fsd.setLatLongBoundingBox(e);
+  }
+  if ((fsd.getName() == null) || (fsd.getSRS() == null)) {
+    throw new SAXException("Missing child element for FeatureTypeType");
+  }
+  return fsd;
+}

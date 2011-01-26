@@ -1,0 +1,72 @@
+{
+  synchronizeIteratorProviders();
+  final boolean debug=LOGGER.isLoggable(DEBUG_LEVEL);
+  if (debug) {
+    debug("ENTRY",category,key,null,null);
+  }
+  Class<?> implementation=null;
+  if (key != null) {
+    final Class<?> valueClass=key.getValueClass();
+    if (!category.isAssignableFrom(valueClass)) {
+      if (debug) {
+        debug("THROW",category,key,"unexpected type:",valueClass);
+      }
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_KEY_$1,key));
+    }
+    if (hints != null) {
+      final Object hint=hints.get(key);
+      if (hint != null) {
+        if (debug) {
+          debug("CHECK",category,key,"user provided a",hint.getClass());
+        }
+        if (category.isInstance(hint)) {
+          if (debug) {
+            debug("RETURN",category,key,"return hint as provided.",null);
+          }
+          return category.cast(hint);
+        }
+        hints=new Hints(hints);
+        if (hints.remove(key) != hint) {
+          throw new AssertionError(key);
+        }
+        if (hint instanceof Class<?>[]) {
+          final Class<?>[] types=(Class<?>[])hint;
+          final int length=types.length;
+          for (int i=0; i < length - 1; i++) {
+            final Class<?> type=types[i];
+            if (debug) {
+              debug("CHECK",category,key,"consider hint[" + i + ']',type);
+            }
+            final T candidate=getServiceImplementation(category,type,filter,hints);
+            if (candidate != null) {
+              if (debug) {
+                debug("RETURN",category,key,"found implementation",candidate.getClass());
+              }
+              return candidate;
+            }
+          }
+          if (length != 0) {
+            implementation=types[length - 1];
+          }
+        }
+ else {
+          implementation=(Class<?>)hint;
+        }
+      }
+    }
+  }
+  if (debug && implementation != null) {
+    debug("CHECK",category,key,"consider hint[last]",implementation);
+  }
+  final T candidate=getServiceImplementation(category,implementation,filter,hints);
+  if (candidate != null) {
+    if (debug) {
+      debug("RETURN",category,key,"found implementation",candidate.getClass());
+    }
+    return candidate;
+  }
+  if (debug) {
+    debug("THROW",category,key,"could not find implementation.",null);
+  }
+  throw new FactoryNotFoundException(Errors.format(ErrorKeys.FACTORY_NOT_FOUND_$1,implementation != null ? implementation : category));
+}

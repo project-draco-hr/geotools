@@ -1,0 +1,30 @@
+{
+  SeState parentState=new SeState(connection,new SeObjectId(parentStateId));
+  SeState realParent=null;
+  boolean mergeParentToRealParent=false;
+  if (parentState.isOpen()) {
+    try {
+      parentState.close();
+      realParent=parentState;
+    }
+ catch (    SeException e) {
+      final int errorCode=e.getSeError().getSdeError();
+      if (SeError.SE_STATE_INUSE == errorCode || SeError.SE_NO_PERMISSIONS == errorCode) {
+        realParent=new SeState(connection,parentState.getParentId());
+        mergeParentToRealParent=true;
+      }
+ else {
+        throw e;
+      }
+    }
+  }
+ else {
+    realParent=parentState;
+  }
+  SeState newState=new SeState(connection);
+  newState.create(realParent.getId());
+  if (mergeParentToRealParent) {
+    newState.merge(realParent.getId(),parentState.getId());
+  }
+  return newState;
+}

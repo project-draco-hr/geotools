@@ -1,0 +1,32 @@
+{
+  final File testMosaic=TestData.file(this,"/rgb");
+  assertTrue(testMosaic.exists());
+  final URL testUrl=TestData.url(this,"/rgb/global_mosaic_12.png");
+  testUrl.openStream().close();
+  final GranuleDescriptor granuleDescriptor=new GranuleDescriptor(DataUtilities.urlToFile(testUrl).getAbsolutePath(),TEST_BBOX,spi,(Geometry)null);
+  final GranuleOverviewLevelDescriptor granuleOverviewLevelDescriptor=granuleDescriptor.getLevel(0);
+  assertNotNull(granuleOverviewLevelDescriptor);
+  final Hints crsHints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,DefaultGeographicCRS.WGS84);
+  final ImageMosaicReader reader=(ImageMosaicReader)new ImageMosaicFormat().getReader(testMosaic,crsHints);
+  assertNotNull(reader);
+  final RasterManager manager=new RasterManager(reader);
+  final ParameterValue<Boolean> useJai=ImageMosaicFormat.USE_JAI_IMAGEREAD.createValue();
+  useJai.setValue(false);
+  final ParameterValue<String> tileSize=ImageMosaicFormat.SUGGESTED_TILE_SIZE.createValue();
+  tileSize.setValue("10,10");
+  final RasterLayerRequest request=new RasterLayerRequest(new GeneralParameterValue[]{useJai,tileSize},manager);
+  final ImageReadParam readParameters=new ImageReadParam();
+  readParameters.setSourceRegion(new Rectangle(0,0,50,50));
+  final AffineTransform2D gridToWorldTransform=granuleOverviewLevelDescriptor.getGridToWorldTransform();
+  ImageLayout layout=new ImageLayout2().setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(10).setTileWidth(10);
+  RenderingHints rHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+  Hints hints=new Hints(rHints);
+  final RenderedImage raster=granuleDescriptor.loadRaster(readParameters,0,TEST_BBOX,gridToWorldTransform.inverse(),request,hints).getRaster();
+  assertEquals(raster.getWidth(),50);
+  assertEquals(raster.getHeight(),50);
+  AffineTransform translate=new AffineTransform(gridToWorldTransform);
+  translate.preConcatenate(AffineTransform.getTranslateInstance(2,2));
+  final RenderedImage translatedRaster=granuleDescriptor.loadRaster(readParameters,0,TEST_BBOX,new AffineTransform2D(translate).inverse(),request,hints).getRaster();
+  assertEquals(translatedRaster.getWidth(),50);
+  assertEquals(translatedRaster.getHeight(),50);
+}

@@ -1,0 +1,23 @@
+{
+  BasicShpFileWriter requestor=new BasicShpFileWriter("ShpFiles for deleting all files");
+  URL writeLockURL=acquireWrite(SHP,requestor);
+  boolean retVal=true;
+  try {
+    if (isLocal()) {
+      Collection<URL> values=urls.values();
+      for (      URL url : values) {
+        File f=DataUtilities.urlToFile(url);
+        if (!f.delete()) {
+          retVal=false;
+        }
+      }
+    }
+ else {
+      retVal=false;
+    }
+  }
+  finally {
+    unlockWrite(writeLockURL,requestor);
+  }
+  return retVal;
+}

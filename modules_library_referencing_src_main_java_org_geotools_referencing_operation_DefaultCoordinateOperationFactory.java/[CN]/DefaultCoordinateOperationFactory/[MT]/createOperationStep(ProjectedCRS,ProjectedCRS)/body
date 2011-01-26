@@ -1,0 +1,16 @@
+{
+  final Matrix linear=createLinearConversion(sourceCRS,targetCRS,EPS);
+  if (linear != null) {
+    return createFromAffineTransform(AXIS_CHANGES,sourceCRS,targetCRS,linear);
+  }
+  final GeographicCRS sourceGeo=sourceCRS.getBaseCRS();
+  final GeographicCRS targetGeo=targetCRS.getBaseCRS();
+  CoordinateOperation step1, step2, step3;
+  step1=tryDB(sourceCRS,sourceGeo);
+  if (step1 == null)   step1=createOperationStep(sourceCRS,sourceGeo);
+  step2=tryDB(sourceGeo,targetGeo);
+  if (step2 == null)   step2=createOperationStep(sourceGeo,targetGeo);
+  step3=tryDB(targetGeo,targetCRS);
+  if (step3 == null)   step3=createOperationStep(targetGeo,targetCRS);
+  return concatenate(step1,step2,step3);
+}

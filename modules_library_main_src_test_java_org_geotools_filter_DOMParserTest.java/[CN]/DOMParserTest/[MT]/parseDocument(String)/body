@@ -1,0 +1,28 @@
+{
+  org.opengis.filter.Filter filter=null;
+  DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+  DocumentBuilder db=dbf.newDocumentBuilder();
+  Document dom=db.parse(TestData.getResource(this,uri).toExternalForm());
+  LOGGER.fine("parsing " + uri);
+  NodeList nodes=dom.getElementsByTagName("Filter");
+  if (nodes.getLength() == 0) {
+    nodes=dom.getElementsByTagName("ogc:Filter");
+  }
+  for (int j=0; j < nodes.getLength(); j++) {
+    Element filterNode=(Element)nodes.item(j);
+    NodeList list=filterNode.getChildNodes();
+    Node child=null;
+    for (int i=0; i < list.getLength(); i++) {
+      child=list.item(i);
+      if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+        continue;
+      }
+      filter=FilterDOMParser.parseFilter(child);
+      assertNotNull("Null filter returned",filter);
+      LOGGER.finer("filter: " + filter.getClass().toString());
+      LOGGER.fine("parsed: " + filter.toString());
+      LOGGER.finer("result " + filter.evaluate(testFeature));
+    }
+  }
+  return filter;
+}

@@ -1,0 +1,34 @@
+{
+  DefaultQuery q=new DefaultQuery(TBL_VERSIONEDTABLES);
+  q.setFilter(ff.equal(ff.property("name"),ff.literal(typeName),true));
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+  Long tableId;
+  try {
+    fr=wrapped.getFeatureReader(q,transaction);
+    SimpleFeature feature=fr.next();
+    tableId=Long.parseLong(feature.getID().substring(TBL_VERSIONEDTABLES.length() + 1));
+  }
+  finally {
+    if (fr != null)     fr.close();
+  }
+  if (tableId == null) {
+    throw new RuntimeException("Table " + typeName + " does not appear "+ "to be versioned, there is no record of it in "+ TBL_VERSIONEDTABLES);
+  }
+  q=new DefaultQuery(TBL_TABLESCHANGED);
+  q.setFilter(ff.equal(ff.property("versionedtable"),ff.literal(tableId),false));
+  q.setSortBy(new org.opengis.filter.sort.SortBy[]{ff.sort(REVISION,SortOrder.ASCENDING)});
+  q.setMaxFeatures(1);
+  try {
+    fr=wrapped.getFeatureReader(q,transaction);
+    if (!fr.hasNext()) {
+      return -1;
+    }
+ else {
+      SimpleFeature feature=fr.next();
+      return (Long)feature.getAttribute(REVISION);
+    }
+  }
+  finally {
+    if (fr != null)     fr.close();
+  }
+}

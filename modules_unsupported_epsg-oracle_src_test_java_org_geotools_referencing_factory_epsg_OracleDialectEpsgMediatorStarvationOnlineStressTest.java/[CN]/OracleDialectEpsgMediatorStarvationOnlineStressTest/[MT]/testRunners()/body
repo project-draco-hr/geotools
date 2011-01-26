@@ -1,0 +1,82 @@
+{
+  TestRunnable runners[]=new TestRunnable[RUNNER_COUNT];
+  for (int i=0; i < RUNNER_COUNT; i++) {
+    ClientThread thread=new ClientThread(i,mediator);
+    thread.iterations=ITERATIONS;
+    runners[i]=thread;
+  }
+  MultiThreadedTestRunner mttr=new MultiThreadedTestRunner(runners,null);
+  long timeStart=System.currentTimeMillis();
+  mttr.runTestRunnables(MAX_TIME);
+  long timeElapsed=System.currentTimeMillis() - timeStart;
+  int exceptions=0;
+  int totalTime=0;
+  int totalRuns=0;
+  long minTime=Long.MAX_VALUE;
+  long maxTime=0;
+  for (int i=0; i < RUNNER_COUNT; i++) {
+    ClientThread thread=(ClientThread)runners[i];
+    exceptions+=thread.exceptions;
+    totalTime+=thread.totalTime;
+    totalRuns+=thread.totalRuns;
+    minTime=Math.min(minTime,thread.minTime);
+    maxTime=Math.max(maxTime,thread.maxTime);
+  }
+  if (SHOW_OUTPUT) {
+    System.out.println("Threads: " + RUNNER_COUNT);
+    System.out.println("Maximum Workers: " + MAX_WORKERS);
+    System.out.println("Iterations per Thread: " + ITERATIONS);
+    System.out.println("Average Time: " + (totalTime / totalRuns) + " ms");
+    System.out.println("Cumulative Time: " + totalTime + " ms");
+    System.out.println("Cumulative Iterations: " + totalRuns);
+    System.out.println("Overall Time: " + timeElapsed);
+    System.out.println("Throughput: " + (1000 * totalRuns / new Long(totalTime).doubleValue()) + " Hz");
+    System.out.println("Min: " + minTime);
+    System.out.println("Max: " + maxTime);
+    System.out.println("BUFFER_POLICY: " + hints.get(Hints.CACHE_POLICY).toString());
+    System.out.println("# CRS codes: " + codes.length);
+    StringBuffer sb=new StringBuffer();
+    sb.append(RUNNER_COUNT);
+    sb.append(", ");
+    sb.append(MAX_WORKERS);
+    sb.append(", ");
+    sb.append(ITERATIONS);
+    sb.append(", ");
+    sb.append(hints.get(Hints.CACHE_POLICY).toString());
+    sb.append(", ");
+    sb.append(totalTime / totalRuns);
+    sb.append(", ");
+    sb.append(totalTime);
+    sb.append(", ");
+    sb.append(totalRuns);
+    sb.append(", ");
+    sb.append((1000 * totalRuns / new Long(totalTime).doubleValue()));
+    sb.append(", ");
+    sb.append(minTime);
+    sb.append(", ");
+    sb.append(maxTime);
+    sb.append(", ");
+    sb.append(exceptions);
+    File file=new File("mediator-stress.csv");
+    String header=null;
+    String content=sb.toString();
+    if (!file.exists()) {
+      header="THREADS, MAX_WORKERS, ITERATIONS_PER_THREAD, CACHE, AVG_TIME, TOTAL_TIME, TOTAL_RUNS, THROUGHPUT, MIN_TIME, MAX_TIME, EXCEPTIONS";
+    }
+    file.createNewFile();
+    BufferedWriter bw=new BufferedWriter(new FileWriter(file));
+    if (header != null) {
+      bw.write(header);
+    }
+    bw.newLine();
+    bw.write(content);
+    bw.close();
+  }
+  if (exceptions != 0) {
+    fail(exceptions + " exception(s) occurred");
+  }
+  mediator.dispose();
+  mediator=null;
+  assertEquals(3,wrappedDS.getMaxActive());
+  assertEquals(1,wrappedDS.getNumActive());
+}

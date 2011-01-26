@@ -1,0 +1,36 @@
+{
+  final String typeName="badQuery";
+  String plainSql;
+  plainSql="(SELECT * FROM mytable) UNION (SELECT * FROM mytable2 WHERE mytable2.col = 9)";
+  SelectBody select;
+  try {
+    select=ViewRegisteringFactoryHelper.parseSqlQuery(plainSql);
+    fail("should complain on union");
+  }
+ catch (  UnsupportedOperationException e) {
+  }
+  plainSql="SELECT * FROM t1 INNER JOIN t2 ON t1.id = t2.parent_id";
+  try {
+    select=ViewRegisteringFactoryHelper.parseSqlQuery(plainSql);
+    store.registerView(typeName,(PlainSelect)select);
+    fail("should complain on join");
+  }
+ catch (  UnsupportedOperationException e) {
+  }
+  plainSql="SELECT f1,f2,f3 FROM t1 GROUP BY f1,f2";
+  try {
+    select=ViewRegisteringFactoryHelper.parseSqlQuery(plainSql);
+    store.registerView(typeName,(PlainSelect)select);
+    fail("should complain on group by");
+  }
+ catch (  UnsupportedOperationException e) {
+  }
+  plainSql="SELECT f1,f2,f3 FROM t1 LIMIT 10";
+  try {
+    select=ViewRegisteringFactoryHelper.parseSqlQuery(plainSql);
+    store.registerView(typeName,(PlainSelect)select);
+    fail("should complain on limit");
+  }
+ catch (  UnsupportedOperationException e) {
+  }
+}

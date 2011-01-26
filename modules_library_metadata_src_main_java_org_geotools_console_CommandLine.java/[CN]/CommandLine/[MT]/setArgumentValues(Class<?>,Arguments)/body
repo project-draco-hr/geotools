@@ -1,0 +1,69 @@
+{
+  final Class<?> parent=classe.getSuperclass();
+  if (!CommandLine.class.equals(parent)) {
+    setArgumentValues(parent,arguments);
+  }
+  for (  final Field field : classe.getDeclaredFields()) {
+    final Option option=field.getAnnotation(Option.class);
+    if (option == null) {
+      continue;
+    }
+    final boolean mandatory=option.mandatory();
+    final Class<?> type=field.getType();
+    String name=option.name().trim();
+    if (name.length() == 0) {
+      name=field.getName();
+    }
+    name=OPTION_PREFIX + name;
+    final Object value;
+    if (Boolean.class.isAssignableFrom(type) || Boolean.TYPE.equals(type)) {
+      if (mandatory) {
+        value=arguments.getRequiredBoolean(name);
+      }
+ else {
+        value=arguments.getFlag(name);
+      }
+    }
+ else     if (Integer.class.isAssignableFrom(type) || Integer.TYPE.equals(type)) {
+      if (mandatory) {
+        value=arguments.getRequiredInteger(name);
+      }
+ else {
+        value=arguments.getOptionalInteger(name);
+      }
+    }
+ else     if (Double.class.isAssignableFrom(type) || Double.TYPE.equals(type)) {
+      if (mandatory) {
+        value=arguments.getRequiredDouble(name);
+      }
+ else {
+        value=arguments.getOptionalDouble(name);
+      }
+    }
+ else     if (String.class.isAssignableFrom(type)) {
+      if (mandatory) {
+        value=arguments.getRequiredString(name);
+      }
+ else {
+        value=arguments.getOptionalString(name);
+      }
+    }
+ else {
+      final String text;
+      if (mandatory) {
+        text=arguments.getRequiredString(name);
+      }
+ else {
+        text=arguments.getOptionalString(name);
+      }
+      value=parse(type,text);
+    }
+    field.setAccessible(true);
+    try {
+      field.set(this,value);
+    }
+ catch (    IllegalAccessException e) {
+      throw new UnsupportedOperationException(e);
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  MultiLineString geom;
+  parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.MultiLineString.getLocalPart());
+  List<LineString> lines=new ArrayList<LineString>(2);
+  while (true) {
+    parser.nextTag();
+    if (XmlPullParser.END_TAG == parser.getEventType() && GML.MultiLineString.getLocalPart().equals(parser.getName())) {
+      break;
+    }
+    parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.lineStringMember.getLocalPart());
+    parser.nextTag();
+    parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.LineString.getLocalPart());
+    LineString line=parseLineString(dimension,crs);
+    lines.add(line);
+    parser.nextTag();
+    parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.lineStringMember.getLocalPart());
+  }
+  parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.MultiLineString.getLocalPart());
+  geom=geomFac.createMultiLineString(lines.toArray(new LineString[lines.size()]));
+  return geom;
+}

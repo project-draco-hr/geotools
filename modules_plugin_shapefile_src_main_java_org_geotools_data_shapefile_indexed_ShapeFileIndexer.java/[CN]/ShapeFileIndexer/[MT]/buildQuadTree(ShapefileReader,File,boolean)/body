@@ -1,0 +1,46 @@
+{
+  LOGGER.fine("Building quadtree spatial index with depth " + max + " for file "+ file.getAbsolutePath());
+  byte order=0;
+  if ((this.byteOrder == null) || this.byteOrder.equalsIgnoreCase("NM")) {
+    order=IndexHeader.NEW_MSB_ORDER;
+  }
+ else   if (this.byteOrder.equalsIgnoreCase("NL")) {
+    order=IndexHeader.NEW_LSB_ORDER;
+  }
+ else {
+    throw new StoreException("Asked byte order '" + this.byteOrder + "' must be 'NL' or 'NM'!");
+  }
+  IndexFile shpIndex=new IndexFile(shpFiles,false);
+  QuadTree tree=null;
+  int cnt=0;
+  int numRecs=shpIndex.getRecordCount();
+  ShapefileHeader header=reader.getHeader();
+  Envelope bounds=new Envelope(header.minX(),header.maxX(),header.minY(),header.maxY());
+  tree=new QuadTree(numRecs,max,bounds,shpIndex);
+  try {
+    Record rec=null;
+    while (reader.hasNext()) {
+      rec=reader.nextRecord();
+      tree.insert(cnt++,new Envelope(rec.minX,rec.maxX,rec.minY,rec.maxY));
+      if (verbose && ((cnt % 1000) == 0)) {
+        System.out.print('.');
+      }
+      if (cnt % 100000 == 0)       System.out.print('\n');
+    }
+    if (verbose)     System.out.println("done");
+    FileSystemIndexStore store=new FileSystemIndexStore(file,order);
+    if (leafSize > 0) {
+      LOGGER.info("Optimizing the tree (this might take some time)");
+      optimizeTree(tree,tree.getRoot(),0,reader,shpIndex);
+      LOGGER.info("Tree optimized");
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      printStats(tree);
+    }
+    store.store(tree);
+  }
+  finally {
+    tree.close();
+  }
+  return cnt;
+}

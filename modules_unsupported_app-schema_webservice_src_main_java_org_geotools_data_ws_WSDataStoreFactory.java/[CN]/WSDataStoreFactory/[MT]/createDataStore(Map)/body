@@ -1,0 +1,22 @@
+{
+  if (perParameterSetDataStoreCache.containsKey(params)) {
+    return perParameterSetDataStoreCache.get(params);
+  }
+  final URL getQueryRequest=(URL)GET_CONNECTION_URL.lookUp(params);
+  final int timeoutMillis=(Integer)TIMEOUT.lookUp(params);
+  final boolean tryGZIP=(Boolean)TRY_GZIP.lookUp(params);
+  final Integer maxFeatures=(Integer)MAXFEATURES.lookUp(params);
+  final String templateName=(String)TEMPLATE_NAME.lookUp(params);
+  final String templateDirectory=(String)TEMPLATE_DIRECTORY.lookUp(params);
+  final String capabilitiesDirectory=(String)CAPABILITIES_FILE_LOCATION.lookUp(params);
+  final HTTPProtocol http=new SimpleHttpProtocol();
+  http.setTryGzip(tryGZIP);
+  http.setTimeoutMillis(timeoutMillis);
+  InputStream capsIn=new FileInputStream(new File(capabilitiesDirectory));
+  WSStrategy strategy=determineCorrectStrategy(templateDirectory,templateName);
+  WS_Protocol ws=new WS_Protocol(capsIn,strategy,getQueryRequest,http);
+  final XmlDataStore dataStore=new WS_DataStore(ws);
+  dataStore.setMaxFeatures(maxFeatures);
+  perParameterSetDataStoreCache.put(new HashMap(params),dataStore);
+  return dataStore;
+}

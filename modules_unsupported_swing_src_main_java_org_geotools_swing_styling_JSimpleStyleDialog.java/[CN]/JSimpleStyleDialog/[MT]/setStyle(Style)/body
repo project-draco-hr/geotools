@@ -1,0 +1,46 @@
+{
+  assert(geomType != GeomType.UNDEFINED);
+  FeatureTypeStyle featureTypeStyle=null;
+  Rule rule=null;
+  Symbolizer symbolizer=null;
+  if (style != null) {
+    featureTypeStyle=SLD.featureTypeStyle(style,schema);
+    if (featureTypeStyle != null) {
+      if (featureTypeStyle.rules() == null || featureTypeStyle.rules().isEmpty()) {
+        return;
+      }
+      rule=featureTypeStyle.rules().get(0);
+      if (rule.symbolizers() == null) {
+        return;
+      }
+      for (      Symbolizer sym : rule.symbolizers()) {
+        if (isValidSymbolizer(sym,geomType)) {
+          symbolizer=sym;
+          break;
+        }
+      }
+      if (symbolizer == null) {
+        return;
+      }
+    }
+ else {
+      for (int ifts=0; featureTypeStyle == null && ifts < style.featureTypeStyles().size(); ifts++) {
+        FeatureTypeStyle fts=style.featureTypeStyles().get(ifts);
+        for (int irule=0; featureTypeStyle == null && irule < fts.rules().size(); irule++) {
+          Rule r=fts.rules().get(irule);
+          for (          Symbolizer sym : r.symbolizers()) {
+            if (isValidSymbolizer(sym,geomType)) {
+              featureTypeStyle=fts;
+              rule=r;
+              symbolizer=sym;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (featureTypeStyle != null && rule != null && symbolizer != null) {
+      initControls(featureTypeStyle,rule,symbolizer);
+    }
+  }
+}

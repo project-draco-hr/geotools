@@ -1,0 +1,52 @@
+{
+  final String TARGET_ELEMENT_NAME="gsml:MappedFeature";
+  final String MAPPING_NAME="MAPPING_NAME_ONE";
+  final String SOURCE_ID="MappedFeature";
+  final String MAPPING_FILE="MappedFeaturePropertyfile";
+  HashSet mappings=new HashSet();
+  Map dsParams=new HashMap();
+  URL url=AppSchemaDataAccessRegistryTest.class.getResource(schemaBase);
+  assertNotNull(url);
+  final SourceDataStore ds=new SourceDataStore();
+  ds.setId(SOURCE_ID);
+  try {
+    dsParams.put("directory",new File(url.toURI()).toURL().toString());
+  }
+ catch (  MalformedURLException e) {
+    throw new RuntimeException(e);
+  }
+catch (  URISyntaxException e) {
+    throw new RuntimeException(e);
+  }
+  ds.setParams(dsParams);
+  config=new AppSchemaDataAccessDTO();
+  config.setSourceDataStores(new ArrayList(){
+{
+      add(ds);
+    }
+  }
+);
+  config.setBaseSchemasUrl(url.toExternalForm());
+  config.setNamespaces(new HashMap<String,String>(){
+{
+      put("gsml",GSMLNS);
+    }
+  }
+);
+  config.setTargetSchemasUris(new ArrayList<String>(){
+{
+      add("http://www.geosciml.org/geosciml/2.0/xsd/geosciml.xsd");
+    }
+  }
+);
+  config.setCatalog("mappedPolygons.oasis.xml");
+  dtoMappingName=new TypeMapping();
+  dtoMappingName.setMappingName(MAPPING_NAME);
+  dtoMappingName.setSourceDataStore(SOURCE_ID);
+  dtoMappingName.setSourceTypeName(MAPPING_FILE);
+  dtoMappingName.setTargetElementName(TARGET_ELEMENT_NAME);
+  dtoNoMappingName=new TypeMapping();
+  dtoNoMappingName.setSourceDataStore(SOURCE_ID);
+  dtoNoMappingName.setSourceTypeName(MAPPING_FILE);
+  dtoNoMappingName.setTargetElementName(TARGET_ELEMENT_NAME);
+}

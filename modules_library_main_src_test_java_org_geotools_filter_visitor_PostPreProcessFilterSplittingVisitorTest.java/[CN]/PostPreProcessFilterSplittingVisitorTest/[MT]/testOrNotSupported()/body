@@ -1,0 +1,18 @@
+{
+  FilterCapabilities caps=new FilterCapabilities();
+  caps.addAll(FilterCapabilities.SIMPLE_COMPARISONS_OPENGIS);
+  caps.addType(And.class);
+  PostPreProcessFilterSplittingVisitor visitor=new PostPreProcessFilterSplittingVisitor(caps,null,null);
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Filter f1=ff.equals(ff.property("CFCC"),ff.literal("A41"));
+  Filter f2=ff.equals(ff.property("CFCC"),ff.literal("A42"));
+  Filter ored=ff.or(f1,f2);
+  ored.accept(visitor,null);
+  assertEquals(Filter.INCLUDE,visitor.getFilterPre());
+  assertEquals(ored,visitor.getFilterPost());
+  Filter anded=ff.and(f1,f2);
+  visitor=new PostPreProcessFilterSplittingVisitor(caps,null,null);
+  anded.accept(visitor,null);
+  assertEquals(anded,visitor.getFilterPre());
+  assertEquals(Filter.INCLUDE,visitor.getFilterPost());
+}

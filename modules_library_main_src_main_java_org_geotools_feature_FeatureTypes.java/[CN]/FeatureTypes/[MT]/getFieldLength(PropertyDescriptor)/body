@@ -1,0 +1,47 @@
+{
+  PropertyType type=descriptor.getType();
+  Integer length=null;
+  while (type != null) {
+    for (    Filter f : type.getRestrictions()) {
+      Integer filterLength=null;
+      try {
+        if (f == null) {
+          continue;
+        }
+        if (f instanceof PropertyIsLessThan) {
+          BinaryComparisonOperator cf=(BinaryComparisonOperator)f;
+          if (cf.getExpression1() instanceof LengthFunction) {
+            filterLength=cf.getExpression2().evaluate(null,Integer.class) - 1;
+          }
+        }
+ else         if (f instanceof PropertyIsLessThanOrEqualTo) {
+          BinaryComparisonOperator cf=(BinaryComparisonOperator)f;
+          if (cf.getExpression1() instanceof LengthFunction) {
+            filterLength=cf.getExpression2().evaluate(null,Integer.class);
+          }
+        }
+ else         if (f instanceof PropertyIsGreaterThan) {
+          BinaryComparisonOperator cf=(BinaryComparisonOperator)f;
+          if (cf.getExpression2() instanceof LengthFunction) {
+            filterLength=cf.getExpression1().evaluate(null,Integer.class) - 1;
+          }
+        }
+ else         if (f instanceof PropertyIsGreaterThanOrEqualTo) {
+          BinaryComparisonOperator cf=(BinaryComparisonOperator)f;
+          if (cf.getExpression2() instanceof LengthFunction) {
+            filterLength=cf.getExpression1().evaluate(null,Integer.class);
+          }
+        }
+      }
+ catch (      NullPointerException e) {
+      }
+      if (filterLength != null) {
+        if (length == null || filterLength < length) {
+          length=filterLength;
+        }
+      }
+    }
+    type=type.getSuper();
+  }
+  return length != null ? length : ANY_LENGTH;
+}

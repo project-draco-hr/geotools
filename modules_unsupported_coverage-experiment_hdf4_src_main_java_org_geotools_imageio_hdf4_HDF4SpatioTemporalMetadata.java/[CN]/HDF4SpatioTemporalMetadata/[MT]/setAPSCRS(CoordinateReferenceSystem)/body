@@ -1,0 +1,31 @@
+{
+  final String projectionCode=attributesMap.get(HDF4APSStreamMetadata.PROJECTION);
+  if (Double.parseDouble(projectionCode) != 5.0)   throw new IllegalArgumentException("Actually, only Mercator 1SP projection is supported");
+  String projectionNameS="Mercator_1SP";
+  crs.setDefinedByConversion(new Identification(projectionNameS),null,null,null);
+  crs.setIdentification(new Identification(projectionNameS));
+  final String datum=attributesMap.get(HDF4APSStreamMetadata.DATUM);
+  final String centralMeridianS=attributesMap.get(HDF4APSStreamMetadata.LONGITUDE_OF_CENTRAL_MERIDIAN);
+  final String latitudeOfTrueScaleS=attributesMap.get(HDF4APSStreamMetadata.LATITUDE_OF_TRUE_SCALE);
+  final String falseEastingS=attributesMap.get(HDF4APSStreamMetadata.FALSE_EASTINGS);
+  final String falseNorthingS=attributesMap.get(HDF4APSStreamMetadata.FALSE_NORTHINGS);
+  if (Utilities.ensureValidString(latitudeOfTrueScaleS,centralMeridianS,falseEastingS,falseNorthingS)) {
+    final double centralMeridian=Double.parseDouble(centralMeridianS) / 1000000d;
+    final double latitudeOfTrueScale=Double.parseDouble(latitudeOfTrueScaleS) / 1000000d;
+    final double falseNorthing=Double.parseDouble(falseNorthingS);
+    final double falseEasting=Double.parseDouble(falseEastingS);
+    crs.addParameterValue(new Identification("central_meridian"),Double.toString(centralMeridian));
+    crs.addParameterValue(new Identification("latitude_of_origin"),Double.toString(latitudeOfTrueScale));
+    crs.addParameterValue(new Identification("false_northing"),falseNorthingS);
+    crs.addParameterValue(new Identification("false_easting"),falseEastingS);
+    crs.addParameterValue(new Identification("scale_factor"),"1");
+    if (Double.parseDouble(datum) == 12.0) {
+      crs.setDatum(Datum.GEODETIC_DATUM,new Identification("WGS_1984","World Geodetic System 1984",null,"EPSG:6326"));
+      crs.addPrimeMeridian("0.0",new Identification("Greenwich",null,null,"EPSG:8901"));
+      crs.addEllipsoid("6378137.0",null,"298.257223563","meter",new Identification("WGS 84",null,null,"EPSG:7030"));
+    }
+    nativeCrs=CRSUtilities.getMercator1SPProjectedCRS(centralMeridian,latitudeOfTrueScale,falseEasting,falseNorthing,1,WGS84_CRS,null);
+    crs.addAxis(new Identification("Easting"),"East","metre",null);
+    crs.addAxis(new Identification("Northing"),"North","metre",null);
+  }
+}

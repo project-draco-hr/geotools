@@ -1,0 +1,33 @@
+{
+  GeneralizationInfosProvider provider=new GeneralizationInfosProviderImpl();
+  GeneralizationInfos ginfos=null;
+  try {
+    ginfos=provider.getGeneralizationInfos("src/test/resources/geninfo_only_base.xml");
+    PreGeneralizedDataStore ds=new PreGeneralizedDataStore(ginfos,TestSetup.REPOSITORY);
+    String typeName=ds.getTypeNames()[0];
+    assertTrue("GenStreams".equals(typeName));
+    Query query=new DefaultQuery(typeName);
+    FeatureReader<SimpleFeatureType,SimpleFeature> reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+    assertTrue(reader != null);
+    reader.close();
+    SimpleFeatureSource fsource=ds.getFeatureSource(typeName);
+    assertTrue(fsource != null);
+    fsource=ds.getFeatureSource(new NameImpl(typeName));
+    assertTrue(fsource != null);
+    ServiceInfo si=ds.getInfo();
+    assertTrue(si != null);
+    System.out.println(si);
+    List<Name> names=ds.getNames();
+    assertTrue(names.contains(new NameImpl(typeName)));
+    assertTrue("GenStreams".equals(ds.getNames().get(0).getLocalPart()));
+    fsource=DataUtilities.createView(ds,query);
+    assertTrue(fsource != null);
+    assertNotNull(ds.getSchema(typeName));
+    assertNotNull(ds.getSchema(new NameImpl(typeName)));
+    ds.dispose();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    Assert.fail();
+  }
+}

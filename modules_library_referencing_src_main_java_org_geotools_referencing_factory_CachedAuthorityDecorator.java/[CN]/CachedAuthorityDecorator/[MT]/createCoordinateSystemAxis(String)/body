@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  CoordinateSystemAxis axis=(CoordinateSystemAxis)cache.get(key);
+  if (axis == null) {
+    try {
+      cache.writeLock(key);
+      axis=(CoordinateSystemAxis)cache.peek(key);
+      if (axis == null) {
+        axis=csAuthority.createCoordinateSystemAxis(code);
+        cache.put(key,axis);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return axis;
+}

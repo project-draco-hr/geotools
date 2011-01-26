@@ -1,0 +1,26 @@
+{
+  byte[] data=null;
+  try {
+    data=writeNode(n);
+  }
+ catch (  IOException e1) {
+    logger.log(Level.SEVERE,"Cannot put data in DiskStorage : " + e1);
+    return;
+  }
+  Entry e=new Entry(n.getIdentifier());
+  Entry old=null;
+  if (pageIndex.containsKey(e.id)) {
+    old=pageIndex.get(e.id);
+    if (old == null) {
+      throw new IllegalStateException("old entry null");
+    }
+  }
+ else {
+    if (!pageIndex.containsKey(e.id)) {
+      pageIndex.put(e.id,null);
+      old=pageIndex.get(e.id);
+    }
+  }
+  writeData(data,e,old);
+  pageIndex.put(e.id,e);
+}

@@ -1,0 +1,22 @@
+{
+  StyleBuilder styleBuilder=new StyleBuilder();
+  Style style=styleBuilder.createStyle();
+  final String typeName="pretend";
+  final String attrName="PERCENT";
+  final int[] breaks={10,25,50,75,100};
+  final Color[] colors={Color.BLUE,Color.GREEN,Color.YELLOW,Color.ORANGE,Color.RED};
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(GeoTools.getDefaultHints());
+  Rule[] rules=new Rule[breaks.length];
+  for (int i=0; i < breaks.length; i++) {
+    Fill fill=styleBuilder.createFill(colors[i],0.5d);
+    Stroke stroke=styleBuilder.createStroke(colors[i],1.0d);
+    PolygonSymbolizer symbolizer=styleBuilder.createPolygonSymbolizer(stroke,fill);
+    Rule rule=styleBuilder.createRule(symbolizer);
+    Filter filter=ff.lessOrEqual(ff.property(attrName),ff.literal(breaks[i]));
+    rule.setFilter(filter);
+    rule.setIsElseFilter(i > 0);
+    rules[i]=rule;
+  }
+  FeatureTypeStyle fts=styleBuilder.createFeatureTypeStyle(typeName,rules);
+  style.featureTypeStyles().add(fts);
+}

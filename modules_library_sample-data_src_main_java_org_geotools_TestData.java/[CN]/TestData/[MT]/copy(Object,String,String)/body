@@ -1,0 +1,24 @@
+{
+  File path=new File(name);
+  File directory=new File(file(caller,null),path.getParent());
+  if (directoryName != null) {
+    directory=new File(directory,directoryName);
+  }
+  final File file=new File(directory,path.getName());
+  if (!file.exists()) {
+    if (directory.mkdirs()) {
+      deleteOnExit(directory,false);
+    }
+    final InputStream in=openStream(name);
+    final OutputStream out=new FileOutputStream(file);
+    final byte[] buffer=new byte[4096];
+    deleteOnExit(file,false);
+    int count;
+    while ((count=in.read(buffer)) >= 0) {
+      out.write(buffer,0,count);
+    }
+    out.close();
+    in.close();
+  }
+  return file;
+}

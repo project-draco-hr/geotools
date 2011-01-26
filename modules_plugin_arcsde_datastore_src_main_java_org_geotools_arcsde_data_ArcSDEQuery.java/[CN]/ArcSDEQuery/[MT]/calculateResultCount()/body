@@ -1,0 +1,33 @@
+{
+  final SimpleFeatureType schema=this.schema;
+  final GeometryDescriptor geometryDescriptor=schema.getGeometryDescriptor();
+  final String colName;
+  if (geometryDescriptor == null) {
+    colName=schema.getDescriptor(0).getLocalName();
+  }
+ else {
+    colName=geometryDescriptor.getLocalName();
+  }
+  final SeQueryInfo qInfo=filters.getQueryInfo(new String[]{colName});
+  final SeFilter[] spatialFilters=filters.getSpatialFilters();
+  final Command<Integer> countCmd=new Command<Integer>(){
+    @Override public Integer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeQuery query=new SeQuery(connection);
+      try {
+        versioningHandler.setUpStream(session,query);
+        if (spatialFilters != null && spatialFilters.length > 0) {
+          query.setSpatialConstraints(SeQuery.SE_OPTIMIZE,true,spatialFilters);
+        }
+        SeTable.SeTableStats tableStats=query.calculateTableStatistics("*",SeTable.SeTableStats.SE_COUNT_STATS,qInfo,0);
+        int actualCount=tableStats.getCount();
+        return new Integer(actualCount);
+      }
+  finally {
+        query.close();
+      }
+    }
+  }
+;
+  final Integer count=session.issue(countCmd);
+  return count.intValue();
+}

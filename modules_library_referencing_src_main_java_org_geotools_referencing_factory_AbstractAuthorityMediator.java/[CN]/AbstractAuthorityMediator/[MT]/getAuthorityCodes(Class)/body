@@ -1,0 +1,35 @@
+{
+  Set codes=(Set)cache.get(type);
+  if (codes == null) {
+    try {
+      cache.writeLock(type);
+      codes=(Set)cache.peek(type);
+      if (codes == null) {
+        AbstractCachedAuthorityFactory worker=null;
+        try {
+          worker=(AbstractCachedAuthorityFactory)getPool().borrowObject();
+          codes=worker.getAuthorityCodes(type);
+          cache.put(type,codes);
+        }
+ catch (        FactoryException e) {
+          throw e;
+        }
+catch (        Exception e) {
+          throw new FactoryException(e);
+        }
+ finally {
+          try {
+            getPool().returnObject(worker);
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.WARNING,"Unable to return worker " + e,e);
+          }
+        }
+      }
+    }
+  finally {
+      cache.writeUnLock(type);
+    }
+  }
+  return codes;
+}

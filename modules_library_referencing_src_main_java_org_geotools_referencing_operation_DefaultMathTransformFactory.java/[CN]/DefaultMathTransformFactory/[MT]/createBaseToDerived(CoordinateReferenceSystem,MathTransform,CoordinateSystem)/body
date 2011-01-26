@@ -1,0 +1,29 @@
+{
+  final CoordinateSystem sourceCS=baseCRS.getCoordinateSystem();
+  final Matrix swap1, swap3;
+  try {
+    swap1=AbstractCS.swapAndScaleAxis(sourceCS,AbstractCS.standard(sourceCS));
+    swap3=AbstractCS.swapAndScaleAxis(AbstractCS.standard(derivedCS),derivedCS);
+  }
+ catch (  IllegalArgumentException cause) {
+    throw new FactoryException(cause);
+  }
+catch (  ConversionException cause) {
+    throw new FactoryException(cause);
+  }
+  MathTransform step1=createAffineTransform(swap1);
+  MathTransform step3=createAffineTransform(swap3);
+  MathTransform step2=projection;
+  final int numTrailingOrdinates=step3.getSourceDimensions() - step2.getTargetDimensions();
+  if (numTrailingOrdinates > 0) {
+    step2=createPassThroughTransform(0,step2,numTrailingOrdinates);
+  }
+  final int sourceDim=step1.getTargetDimensions();
+  final int targetDim=step2.getSourceDimensions();
+  if (sourceDim > targetDim) {
+    final Matrix drop=MatrixFactory.create(targetDim + 1,sourceDim + 1);
+    drop.setElement(targetDim,sourceDim,1);
+    step1=createConcatenatedTransform(createAffineTransform(drop),step1);
+  }
+  return createConcatenatedTransform(createConcatenatedTransform(step1,step2),step3);
+}

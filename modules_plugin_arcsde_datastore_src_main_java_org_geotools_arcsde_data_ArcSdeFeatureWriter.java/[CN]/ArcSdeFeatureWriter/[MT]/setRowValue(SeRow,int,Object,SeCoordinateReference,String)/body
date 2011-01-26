@@ -1,0 +1,68 @@
+{
+  try {
+    final SeColumnDefinition seColumnDefinition=row.getColumnDef(index);
+    final int colType=seColumnDefinition.getType();
+    Object convertedValue=value;
+    if (colType == SeColumnDefinition.TYPE_INT16) {
+      convertedValue=Converters.convert(convertedValue,Short.class);
+      row.setShort(index,(Short)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_INT32) {
+      convertedValue=Converters.convert(convertedValue,Integer.class);
+      row.setInteger(index,(Integer)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_INT64) {
+      convertedValue=Converters.convert(convertedValue,Long.class);
+      row.setLong(index,(Long)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_FLOAT32) {
+      convertedValue=Converters.convert(convertedValue,Float.class);
+      row.setFloat(index,(Float)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_FLOAT64) {
+      convertedValue=Converters.convert(convertedValue,Double.class);
+      row.setDouble(index,(Double)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_STRING || colType == SeColumnDefinition.TYPE_CLOB || colType == SeColumnDefinition.TYPE_NCLOB) {
+      convertedValue=Converters.convert(convertedValue,String.class);
+      row.setString(index,(String)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_NSTRING) {
+      convertedValue=Converters.convert(convertedValue,String.class);
+      row.setNString(index,(String)convertedValue);
+    }
+ else     if (colType == SeColumnDefinition.TYPE_DATE) {
+      if (convertedValue != null) {
+        Calendar calendar=Calendar.getInstance();
+        calendar.setTime((Date)convertedValue);
+        row.setTime(index,calendar);
+      }
+ else {
+        row.setTime(index,null);
+      }
+    }
+ else     if (colType == SeColumnDefinition.TYPE_SHAPE) {
+      if (convertedValue != null) {
+        final Geometry geom=(Geometry)convertedValue;
+        IsValidOp validator=new IsValidOp(geom);
+        if (!validator.isValid()) {
+          TopologyValidationError validationError=validator.getValidationError();
+          String validationErrorMessage=validationError.getMessage();
+          Coordinate coordinate=validationError.getCoordinate();
+          String errorMessage="Topology validation error at or near point " + coordinate + ": "+ validationErrorMessage;
+          throw new DataSourceException("Invalid geometry passed for " + attName + "\n Geomerty: "+ geom+ "\n"+ errorMessage);
+        }
+        ArcSDEGeometryBuilder geometryBuilder;
+        geometryBuilder=ArcSDEGeometryBuilder.builderFor(geom.getClass());
+        SeShape shape=geometryBuilder.constructShape(geom,coordRef);
+        row.setShape(index,shape);
+      }
+ else {
+        row.setShape(index,null);
+      }
+    }
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException(e);
+  }
+}

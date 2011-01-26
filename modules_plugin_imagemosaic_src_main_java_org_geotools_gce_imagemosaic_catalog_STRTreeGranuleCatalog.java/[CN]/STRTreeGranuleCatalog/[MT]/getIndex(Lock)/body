@@ -1,0 +1,20 @@
+{
+  final Lock writeLock=rwLock.writeLock();
+  try {
+    readLock.unlock();
+    writeLock.lock();
+    checkStore();
+    STRtree tree=index.get();
+    if (tree == null) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("No index exits and we create a new one.");
+      createIndex();
+      tree=index.get();
+    }
+ else     if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Index does not need to be created...");
+    return tree;
+  }
+  finally {
+    readLock.lock();
+    writeLock.unlock();
+  }
+}

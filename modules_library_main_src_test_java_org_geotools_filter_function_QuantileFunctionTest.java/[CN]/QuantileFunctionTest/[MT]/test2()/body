@@ -1,0 +1,15 @@
+{
+  SimpleFeatureType dataType=DataUtilities.createType("classification.test1","id:0,value:int");
+  int iVal[]=new int[]{1,2,3,4,5,6};
+  SimpleFeature[] myfeatures=new SimpleFeature[iVal.length];
+  for (int i=0; i < iVal.length; i++) {
+    myfeatures[i]=SimpleFeatureBuilder.build(dataType,new Object[]{new Integer(i + 1),new Integer(iVal[i])},"classification.t" + (i + 1));
+  }
+  MemoryDataStore store=new MemoryDataStore();
+  store.createSchema(dataType);
+  store.addFeatures(myfeatures);
+  SimpleFeatureCollection myFeatureCollection=store.getFeatureSource("test1").getFeatures();
+  org.opengis.filter.expression.Expression function=ff.function("Quantile",ff.property("value"),ff.literal(5));
+  Classifier classifier=(Classifier)function.evaluate(myFeatureCollection);
+  RangedClassifier range=(RangedClassifier)classifier;
+}

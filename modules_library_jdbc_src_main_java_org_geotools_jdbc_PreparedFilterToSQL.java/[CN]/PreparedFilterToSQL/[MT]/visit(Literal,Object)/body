@@ -1,0 +1,33 @@
+{
+  if (!prepareEnabled)   return super.visit(expression,context);
+  Object literalValue=evaluateLiteral(expression,(context instanceof Class ? (Class)context : null));
+  literalValues.add(literalValue);
+  SRIDs.add(currentSRID);
+  Class clazz=null;
+  if (context instanceof Class)   clazz=(Class)context;
+ else   if (literalValue != null)   clazz=literalValue.getClass();
+  literalTypes.add(clazz);
+  try {
+    if (literalValue == null || dialect == null) {
+      out.write("?");
+    }
+ else {
+      StringBuffer sb=new StringBuffer();
+      if (Geometry.class.isAssignableFrom(literalValue.getClass())) {
+        int srid=currentSRID != null ? currentSRID : -1;
+        dialect.prepareGeometryValue((Geometry)literalValue,srid,Geometry.class,sb);
+      }
+ else       if (encodingFunction) {
+        dialect.prepareFunctionArgument(clazz,sb);
+      }
+ else {
+        sb.append("?");
+      }
+      out.write(sb.toString());
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  return context;
+}

@@ -1,0 +1,19 @@
+{
+  AggregateFactoryImpl af=(AggregateFactoryImpl)c.getComponentInstanceOfType(AggregateFactory.class);
+  GeometryFactoryImpl gf=(GeometryFactoryImpl)c.getComponentInstanceOfType(GeometryFactory.class);
+  PositionFactory pf=(PositionFactory)c.getComponentInstanceOfType(PositionFactory.class);
+  DirectPosition dp1=pf.createDirectPosition(new double[]{10,30});
+  DirectPosition dp2=pf.createDirectPosition(new double[]{70,15});
+  LineSegment line1=gf.createLineSegment(dp1,pf.createDirectPosition(new double[]{20,40}));
+  LineSegment line2=gf.createLineSegment(dp2,pf.createDirectPosition(new double[]{45,25}));
+  Set<OrientableCurve> curves=new HashSet<OrientableCurve>();
+  curves.add(new CurveImpl(line1));
+  curves.add(new CurveImpl(line2));
+  MultiCurve mc=af.createMultiCurve(curves);
+  assertNotNull(mc);
+  assertNotNull(mc.getEnvelope());
+  assertEquals(mc.getCoordinateDimension(),2);
+  assertEquals(mc.getElements().size(),2);
+  assertEquals(mc.getElements(),curves);
+  assertTrue(mc.equals(new MultiCurveImpl(mc.getCoordinateReferenceSystem(),curves)));
+}

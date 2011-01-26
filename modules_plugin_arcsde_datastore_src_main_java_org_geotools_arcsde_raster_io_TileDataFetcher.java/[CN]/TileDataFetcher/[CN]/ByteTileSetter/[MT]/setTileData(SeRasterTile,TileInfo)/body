@@ -1,0 +1,20 @@
+{
+  final int numPixelsRead=tileInfo.getNumPixelsRead();
+  final byte nodata=tileInfo.getNoDataValue().byteValue();
+  byte[] tileData=tileInfo.getTileDataAsBytes();
+  if (numPixelsRead == 0) {
+    Arrays.fill(tileData,nodata);
+  }
+ else {
+    byte[] pixelData=tile.getPixelData();
+    System.arraycopy(pixelData,0,tileData,0,numPixelsRead);
+    if (tileInfo.hasNoDataPixels()) {
+      final byte[] bitmaskData=tileInfo.getBitmaskData();
+      for (int pn=0; pn < numPixelsRead; pn++) {
+        if (isNoData(pn,bitmaskData)) {
+          tileData[pn]=nodata;
+        }
+      }
+    }
+  }
+}

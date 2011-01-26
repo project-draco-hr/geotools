@@ -1,0 +1,32 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName(name);
+  tb.setNamespaceURI(ns);
+  tb.setAbstract(isAbstract);
+  if (types != null) {
+    tb.addAll(types);
+  }
+  if (defaultGeometry != null) {
+    boolean add=true;
+    for (int i=0; i < types.length; i++) {
+      if (types[i] == defaultGeometry) {
+        add=false;
+        break;
+      }
+    }
+    if (add) {
+      tb.add(defaultGeometry);
+    }
+    tb.setDefaultGeometry(defaultGeometry.getLocalName());
+  }
+  if (superTypes != null && superTypes.length > 0) {
+    if (superTypes.length > 1) {
+      throw new SchemaException("Can only specify a single super type");
+    }
+    tb.setSuperType(superTypes[0]);
+  }
+ else {
+    tb.setSuperType(ABSTRACT_FEATURE_TYPE);
+  }
+  return (SimpleFeatureType)tb.buildFeatureType();
+}

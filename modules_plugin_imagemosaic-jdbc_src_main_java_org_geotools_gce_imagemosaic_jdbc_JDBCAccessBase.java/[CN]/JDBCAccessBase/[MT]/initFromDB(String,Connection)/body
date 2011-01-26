@@ -1,0 +1,85 @@
+{
+  PreparedStatement s=null;
+  ResultSet res=null;
+  try {
+    String stmt=config.getSqlSelectCoverageStatement();
+    stmt=stmt.replace("?","'" + coverageName + "'");
+    s=con.prepareStatement(stmt);
+    res=s.executeQuery();
+    while (res.next()) {
+      ImageLevelInfo imageLevelInfo=new ImageLevelInfo();
+      imageLevelInfo.setCoverageName(coverageName);
+      imageLevelInfo.setSpatialTableName(res.getString(config.getSpatialTableNameAtribute()));
+      imageLevelInfo.setTileTableName((res.getString(config.getTileTableNameAtribute())));
+      if (config.getVerifyCardinality().booleanValue()) {
+        imageLevelInfo.setCountFeature(new Integer(getRowCount(imageLevelInfo.getSpatialTableName(),con)));
+        if (imageLevelInfo.getSpatialTableName().equals(imageLevelInfo.getTileTableName())) {
+          imageLevelInfo.setCountTiles(imageLevelInfo.getCountFeature());
+        }
+ else {
+          imageLevelInfo.setCountTiles(new Integer(getRowCount(imageLevelInfo.getTileTableName(),con)));
+        }
+        if (imageLevelInfo.getCountFeature().intValue() == 0) {
+          LOGGER.severe("Table " + imageLevelInfo.getSpatialTableName() + " has no entries");
+        }
+ else         if (imageLevelInfo.getCountTiles().intValue() == 0) {
+          LOGGER.severe("Table " + imageLevelInfo.getTileTableName() + " has no entries");
+        }
+ else         if (imageLevelInfo.getCountFeature().intValue() != imageLevelInfo.getCountTiles().intValue()) {
+          if (LOGGER.isLoggable(Level.WARNING))           LOGGER.log(Level.WARNING,"Consistency warning: number of features: " + imageLevelInfo.getCountFeature() + " number tiles: "+ imageLevelInfo.getCountTiles());
+        }
+ else {
+          if (LOGGER.isLoggable(Level.FINE))           LOGGER.fine("Number of features: " + imageLevelInfo.getCountFeature() + " number tiles: "+ imageLevelInfo.getCountTiles());
+        }
+      }
+      imageLevelInfo.setExtentMaxX(new Double(res.getDouble(config.getMaxXAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMaxX(null);
+      }
+      imageLevelInfo.setExtentMaxY(new Double(res.getDouble(config.getMaxYAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMaxY(null);
+      }
+      imageLevelInfo.setExtentMinX(new Double(res.getDouble(config.getMinXAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMinX(null);
+      }
+      imageLevelInfo.setExtentMinY(new Double(res.getDouble(config.getMinYAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMinY(null);
+      }
+      imageLevelInfo.setResX(new Double(res.getDouble(config.getResXAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setResX(null);
+      }
+      imageLevelInfo.setResY(new Double(res.getDouble(config.getResYAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setResY(null);
+      }
+      if (config.getVerifyCardinality().booleanValue()) {
+        if ((imageLevelInfo.getCountFeature().intValue() > 0) && (imageLevelInfo.getCountTiles().intValue() > 0)) {
+          levelInfos.add(imageLevelInfo);
+        }
+      }
+ else {
+        levelInfos.add(imageLevelInfo);
+      }
+      imageLevelInfo.setSrsId(getSRSID(imageLevelInfo,con));
+      imageLevelInfo.setCrs(getCRS(imageLevelInfo,con));
+    }
+  }
+ catch (  SQLException e) {
+    throw (e);
+  }
+catch (  IOException e1) {
+    throw (e1);
+  }
+ finally {
+    if (res != null) {
+      res.close();
+    }
+    if (s != null) {
+      s.close();
+    }
+  }
+}

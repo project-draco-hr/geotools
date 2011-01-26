@@ -1,0 +1,29 @@
+{
+  Map r=null;
+  try {
+    validationDir=ReaderUtils.initFile(validationDir,true);
+  }
+ catch (  IOException dirException) {
+    throw new ValidationException("Problem opening " + validationDir.getName(),dirException);
+  }
+  File[] fileList=validationDir.listFiles();
+  r=new HashMap();
+  for (int i=0; i < fileList.length; i++) {
+    try {
+      if (fileList[i].canWrite() && fileList[i].isFile()) {
+        FileReader fr=new FileReader(fileList[i]);
+        try {
+          TestSuiteDTO dto=XMLReader.readTestSuite(fileList[i].getName(),fr,plugInDTOs);
+          r.put(dto.getName(),dto);
+        }
+  finally {
+          fr.close();
+        }
+      }
+    }
+ catch (    IOException open) {
+      throw new ValidationException("Could not open " + fileList[i].getName(),open);
+    }
+  }
+  return r;
+}

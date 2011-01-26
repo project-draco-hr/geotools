@@ -1,0 +1,37 @@
+{
+  List<FeatureId> addedFids=new LinkedList<FeatureId>();
+  String typeName=getSchema().getTypeName();
+  SimpleFeature feature=null;
+  SimpleFeature newFeature;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=getDataStore().getFeatureWriterAppend(typeName,getTransaction());
+  Iterator iterator=collection.iterator();
+  try {
+    while (iterator.hasNext()) {
+      try {
+        feature=(SimpleFeature)iterator.next();
+      }
+ catch (      Exception e) {
+        throw new DataSourceException("Could not add Features, problem with provided reader",e);
+      }
+      newFeature=(SimpleFeature)writer.next();
+      try {
+        Object[] attributes=new Object[newFeature.getAttributeCount()];
+        for (int i=0; i < attributes.length; i++) {
+          AttributeDescriptor type=newFeature.getFeatureType().getDescriptor(i);
+          attributes[i]=feature.getAttribute(type.getLocalName());
+        }
+        newFeature.setAttributes(attributes);
+      }
+ catch (      IllegalAttributeException writeProblem) {
+        throw new DataSourceException("Could not create " + typeName + " out of provided feature: "+ feature.getID(),writeProblem);
+      }
+      writer.write();
+      addedFids.add(newFeature.getIdentifier());
+    }
+  }
+  finally {
+    collection.close(iterator);
+    writer.close();
+  }
+  return addedFids;
+}

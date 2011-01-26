@@ -1,0 +1,29 @@
+{
+  Map aliases=new HashMap();
+  String sqlQ=sqlQueryDefinition.toLowerCase();
+  int idxFrom=sqlQ.indexOf("from ");
+  int firstField=7 + sqlQ.indexOf("select");
+  String fields=sqlQueryDefinition.substring(firstField,idxFrom);
+  LOGGER.fine("fields: " + fields);
+  List fieldsList=Arrays.asList(fields.split(","));
+  for (Iterator it=fieldsList.iterator(); it.hasNext(); ) {
+    String aliasDef=(String)it.next();
+    aliasDef=aliasDef.trim().toLowerCase();
+    LOGGER.fine("parsing alias from '" + aliasDef + "'");
+    int idx=aliasDef.indexOf("as ");
+    if (idx > 0) {
+      String sqlExpr, alias;
+      sqlExpr=aliasDef.substring(0,idx);
+      alias=aliasDef.substring(3 + idx);
+      LOGGER.fine("sqlExpr: " + sqlExpr + ", alias: "+ alias);
+      aliases.put(alias.trim(),sqlExpr.trim());
+      aliases.put(alias.trim().toUpperCase(),sqlExpr.trim().toUpperCase());
+    }
+ else {
+      LOGGER.fine(aliasDef + " is not aliased");
+      aliases.put(aliasDef,aliasDef);
+      aliases.put(aliasDef.toUpperCase(),aliasDef.toUpperCase());
+    }
+  }
+  return aliases;
+}

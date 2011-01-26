@@ -1,0 +1,49 @@
+{
+  XSDElementDeclaration elementDecl=parseFeatureType(featureName,schemaLocation);
+  Map bindings=wfsConfiguration.setupBindings();
+  BindingLoader bindingLoader=new BindingLoader(bindings);
+  MutablePicoContainer context=wfsConfiguration.setupContext(new DefaultPicoContainer());
+  NamespaceSupport namespaces=new NamespaceSupport();
+  context.registerComponentInstance(namespaces);
+  context.registerComponentInstance(new NamespaceSupportWrapper(namespaces));
+  BindingFactory bindingFactory=new BindingFactoryImpl(bindingLoader);
+  context.registerComponentInstance(bindingFactory);
+  BindingWalkerFactoryImpl bwFactory=new BindingWalkerFactoryImpl(bindingLoader,context);
+  context.registerComponentInstance(bwFactory);
+  try {
+    SimpleFeatureType featureType=GML3ParsingUtils.featureType(elementDecl,bwFactory);
+    if (crs != null) {
+      SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+      builder.setName(featureType.getName());
+      builder.setAbstract(featureType.isAbstract());
+      builder.setDescription(featureType.getDescription());
+      if (featureType.getSuper() instanceof SimpleFeatureType) {
+        builder.setSuperType((SimpleFeatureType)featureType.getSuper());
+      }
+      List<AttributeDescriptor> attributes=featureType.getAttributeDescriptors();
+      final GeometryDescriptor defaultGeometry=featureType.getGeometryDescriptor();
+      for (      AttributeDescriptor descriptor : attributes) {
+        if (descriptor instanceof GeometryDescriptor) {
+          String name=descriptor.getLocalName();
+          Class binding=descriptor.getType().getBinding();
+          builder.add(name,binding,crs);
+        }
+ else {
+          builder.add(descriptor);
+        }
+      }
+      if (defaultGeometry != null) {
+        builder.setDefaultGeometry(defaultGeometry.getLocalName());
+      }
+      featureType=builder.buildFeatureType();
+    }
+    return featureType;
+  }
+ catch (  Exception e) {
+    if (e instanceof IOException) {
+      throw (IOException)e;
+    }
+    String msg="Error parsing feature type for " + featureName + " from "+ schemaLocation.toExternalForm();
+    throw (IOException)new IOException(msg).initCause(e);
+  }
+}

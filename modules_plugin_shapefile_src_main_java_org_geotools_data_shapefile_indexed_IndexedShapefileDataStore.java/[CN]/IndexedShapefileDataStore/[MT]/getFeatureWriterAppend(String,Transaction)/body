@@ -1,0 +1,17 @@
+{
+  if (transaction == null) {
+    throw new NullPointerException("getFeatureWriter requires Transaction: " + "did you mean to use Transaction.AUTO_COMMIT?");
+  }
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  if (transaction == Transaction.AUTO_COMMIT) {
+    return super.getFeatureWriterAppend(typeName,transaction);
+  }
+ else {
+    writer=state(transaction).writer(typeName,Filter.EXCLUDE);
+  }
+  if (getLockingManager() != null) {
+    writer=((InProcessLockingManager)getLockingManager()).checkedWriter(writer,transaction);
+  }
+  while (writer.hasNext())   writer.next();
+  return writer;
+}

@@ -1,0 +1,26 @@
+{
+  Expression expression=filter.getExpression();
+  Expression lower=filter.getLowerBoundary();
+  Expression upper=filter.getUpperBoundary();
+  List expressions=(List)expression.accept(this,null);
+  List lowerExpressions=(List)lower.accept(this,null);
+  List upperExpressions=(List)upper.accept(this,null);
+  final int combinedSize=expressions.size() * lowerExpressions.size() * upperExpressions.size();
+  List combinedFilters=new ArrayList(combinedSize);
+  for (Iterator lowers=lowerExpressions.iterator(); lowers.hasNext(); ) {
+    Expression floor=(Expression)lowers.next();
+    for (Iterator exprs=expressions.iterator(); exprs.hasNext(); ) {
+      Expression prop=(Expression)exprs.next();
+      for (Iterator uppers=upperExpressions.iterator(); uppers.hasNext(); ) {
+        Expression roof=(Expression)uppers.next();
+        Filter newFilter=ff.between(prop,floor,roof);
+        if (prop instanceof NestedAttributeExpression) {
+          newFilter=new MultiValuedOrImpl(ff,newFilter,(NestedAttributeExpression)prop);
+        }
+        combinedFilters.add(newFilter);
+      }
+    }
+  }
+  Filter unrolled=combineOred(combinedFilters);
+  return unrolled;
+}

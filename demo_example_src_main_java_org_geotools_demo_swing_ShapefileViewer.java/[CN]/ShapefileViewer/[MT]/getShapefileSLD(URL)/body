@@ -1,0 +1,48 @@
+{
+  URL sldURL=null;
+  File shapefile;
+  try {
+    shapefile=new File(shapefileURL.toURI());
+  }
+ catch (  URISyntaxException e) {
+    shapefile=new File(shapefileURL.getPath());
+  }
+  String fileName=shapefile.getName();
+  int lastDot=fileName.lastIndexOf('.');
+  if (lastDot > 0) {
+    File directory=shapefile.getParentFile();
+    String sldname1=fileName.substring(0,lastDot) + ".sld";
+    String sldname2=fileName.substring(0,lastDot) + ".SLD";
+    InputStream input=null;
+    try {
+      File sldFile1=new File(directory,sldname1);
+      File sldFile2=new File(directory,sldname2);
+      if (sldFile1.exists() && sldFile1.canRead()) {
+        sldURL=sldFile1.toURL();
+      }
+ else       if (sldFile1.exists() && sldFile1.canRead()) {
+        sldURL=sldFile2.toURL();
+      }
+ else {
+        return null;
+      }
+      input=sldURL.openStream();
+    }
+ catch (    MalformedURLException urlEx) {
+      throw new RuntimeException(urlEx);
+    }
+catch (    IOException ioEx) {
+      return null;
+    }
+ finally {
+      if (input != null) {
+        try {
+          input.close();
+        }
+ catch (        IOException e) {
+        }
+      }
+    }
+  }
+  return sldURL;
+}

@@ -1,0 +1,49 @@
+{
+  String function=getAggregateFunctions().get(visitor.getClass());
+  if (function == null) {
+    Class clazz=visitor.getClass();
+    while (clazz != null && function == null) {
+      clazz=clazz.getSuperclass();
+      function=getAggregateFunctions().get(clazz);
+    }
+    if (function == null) {
+      LOGGER.info("Unable to find aggregate function matching visitor: " + visitor.getClass());
+      return null;
+    }
+  }
+  AttributeDescriptor att=null;
+  Expression expression=getExpression(visitor);
+  if (expression != null) {
+    att=(AttributeDescriptor)expression.evaluate(featureType);
+  }
+  try {
+    Object result=null;
+    Statement st=null;
+    ResultSet rs=null;
+    try {
+      if (dialect instanceof PreparedStatementSQLDialect) {
+        st=selectAggregateSQLPS(function,att,featureType,query,cx);
+        rs=((PreparedStatement)st).executeQuery();
+      }
+ else {
+        String sql=selectAggregateSQL(function,att,featureType,query);
+        LOGGER.fine(sql);
+        st=cx.createStatement();
+        rs=st.executeQuery(sql);
+      }
+      rs.next();
+      result=rs.getObject(1);
+    }
+  finally {
+      closeSafe(rs);
+      closeSafe(st);
+    }
+    if (setResult(visitor,result)) {
+      return result;
+    }
+    return null;
+  }
+ catch (  SQLException e) {
+    throw (IOException)new IOException().initCause(e);
+  }
+}

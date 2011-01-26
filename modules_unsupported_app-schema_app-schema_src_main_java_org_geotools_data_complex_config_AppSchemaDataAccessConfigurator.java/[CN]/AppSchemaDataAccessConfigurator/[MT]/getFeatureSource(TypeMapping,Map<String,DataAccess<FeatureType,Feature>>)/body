@@ -1,0 +1,17 @@
+{
+  String dsId=dto.getSourceDataStore();
+  String typeName=dto.getSourceTypeName();
+  DataAccess<FeatureType,Feature> sourceDataStore=sourceDataStores.get(dsId);
+  if (sourceDataStore == null) {
+    throw new DataSourceException("datastore " + dsId + " not found for type mapping "+ dto);
+  }
+  AppSchemaDataAccessConfigurator.LOGGER.fine("asking datastore " + sourceDataStore + " for source type "+ typeName);
+  Name name=Types.degloseName(typeName,namespaces);
+  FeatureSource<FeatureType,Feature> fSource=sourceDataStore.getFeatureSource(name);
+  if (inputDataAccessIds.contains(dsId)) {
+    fSource=DataAccessRegistry.getFeatureSource(fSource.getName());
+    sourceDataStores.put(dsId,fSource.getDataStore());
+  }
+  AppSchemaDataAccessConfigurator.LOGGER.fine("found feature source for " + typeName);
+  return fSource;
+}

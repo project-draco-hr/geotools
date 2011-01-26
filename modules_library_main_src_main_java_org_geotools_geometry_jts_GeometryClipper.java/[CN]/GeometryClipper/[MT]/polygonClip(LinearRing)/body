@@ -1,0 +1,128 @@
+{
+  final double INFINITY=Double.MAX_VALUE;
+  CoordinateSequence cs=ring.getCoordinateSequence();
+  Ordinates out=new Ordinates();
+  double xIn, xOut, yIn, yOut;
+  double tInX, tOutX, tInY, tOutY;
+  double tOut1, tOut2, tIn1, tIn2;
+  double deltaX, deltaY;
+  int i;
+  for (i=0; i < cs.size() - 1; i++) {
+    double x0=cs.getOrdinate(i,0);
+    double x1=cs.getOrdinate(i + 1,0);
+    double y0=cs.getOrdinate(i,1);
+    double y1=cs.getOrdinate(i + 1,1);
+    deltaX=x1 - x0;
+    deltaY=y1 - y0;
+    if ((deltaX > 0) || (deltaX == 0 && x0 > xmax)) {
+      xIn=xmin;
+      xOut=xmax;
+    }
+ else {
+      xIn=xmax;
+      xOut=xmin;
+    }
+    if ((deltaY > 0) || (deltaY == 0 && y0 > ymax)) {
+      yIn=ymin;
+      yOut=ymax;
+    }
+ else {
+      yIn=ymax;
+      yOut=ymin;
+    }
+    if (deltaX != 0) {
+      tOutX=(xOut - x0) / deltaX;
+    }
+ else     if (x0 <= xmax && xmin <= x0) {
+      tOutX=INFINITY;
+    }
+ else {
+      tOutX=-INFINITY;
+    }
+    if (deltaY != 0) {
+      tOutY=(yOut - y0) / deltaY;
+    }
+ else     if (y0 <= ymax && ymin <= y0) {
+      tOutY=INFINITY;
+    }
+ else {
+      tOutY=-INFINITY;
+    }
+    if (tOutX < tOutY) {
+      tOut1=tOutX;
+      tOut2=tOutY;
+    }
+ else {
+      tOut1=tOutY;
+      tOut2=tOutX;
+    }
+    if (tOut2 > 0) {
+      if (deltaX != 0) {
+        tInX=(xIn - x0) / deltaX;
+      }
+ else {
+        tInX=-INFINITY;
+      }
+      if (deltaY != 0) {
+        tInY=(yIn - y0) / deltaY;
+      }
+ else {
+        tInY=-INFINITY;
+      }
+      if (tInX < tInY) {
+        tIn1=tInX;
+        tIn2=tInY;
+      }
+ else {
+        tIn1=tInY;
+        tIn2=tInX;
+      }
+      if (tOut1 < tIn2) {
+        if (0 < tOut1 && tOut1 <= 1.0) {
+          if (tInX < tInY) {
+            out.add(xOut,yIn);
+          }
+ else {
+            out.add(xIn,yOut);
+          }
+        }
+      }
+ else {
+        if (0 < tOut1 && tIn2 <= 1.0) {
+          if (0 <= tIn2) {
+            if (tInX > tInY) {
+              out.add(xIn,y0 + (tInX * deltaY));
+            }
+ else {
+              out.add(x0 + (tInY * deltaX),yIn);
+            }
+          }
+          if (1.0 >= tOut1) {
+            if (tOutX < tOutY) {
+              out.add(xOut,y0 + (tOutX * deltaY));
+            }
+ else {
+              out.add(x0 + (tOutY * deltaX),yOut);
+            }
+          }
+ else {
+            out.add(x1,y1);
+          }
+        }
+      }
+      if ((0 < tOut2 && tOut2 <= 1.0)) {
+        out.add(xOut,yOut);
+      }
+    }
+  }
+  if (out.size() < 3) {
+    return null;
+  }
+  if (out.getOrdinate(0,0) != out.getOrdinate(out.size() - 1,0) || out.getOrdinate(0,1) != out.getOrdinate(out.size() - 1,1)) {
+    out.add(out.getOrdinate(0,0),out.getOrdinate(0,1));
+  }
+ else   if (out.size() == 3) {
+    return null;
+  }
+  return ring.getFactory().createLinearRing(out.toCoordinateSequence(ring.getFactory().getCoordinateSequenceFactory()));
+}

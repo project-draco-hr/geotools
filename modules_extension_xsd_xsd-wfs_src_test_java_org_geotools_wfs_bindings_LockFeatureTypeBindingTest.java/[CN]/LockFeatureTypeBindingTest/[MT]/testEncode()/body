@@ -1,0 +1,22 @@
+{
+  LockFeatureType lockFeature=factory.createLockFeatureType();
+  lockFeature.setExpiry(BigInteger.valueOf(1000));
+  lockFeature.setLockAction(AllSomeType.ALL_LITERAL);
+{
+    LockType lock1=factory.createLockType();
+    lock1.setTypeName(new QName(GML.NAMESPACE,"TestGmlFeature"));
+    lock1.setFilter(filterFac.id(Collections.singleton(filterFac.featureId("fid1"))));
+    lockFeature.getLock().add(lock1);
+  }
+{
+    LockType lock2=factory.createLockType();
+    lock2.setTypeName(new QName(WFS.NAMESPACE,"TestWfsFeature"));
+    lock2.setFilter(filterFac.id(Collections.singleton(filterFac.featureId("fid2"))));
+    lockFeature.getLock().add(lock2);
+  }
+  final Document dom=encode(lockFeature,WFS.LockFeature);
+  final Element root=dom.getDocumentElement();
+  assertName(WFS.LockFeature,root);
+  assertEquals("1000",root.getAttribute("expiry"));
+  assertEquals("ALL",root.getAttribute("lockAction"));
+}

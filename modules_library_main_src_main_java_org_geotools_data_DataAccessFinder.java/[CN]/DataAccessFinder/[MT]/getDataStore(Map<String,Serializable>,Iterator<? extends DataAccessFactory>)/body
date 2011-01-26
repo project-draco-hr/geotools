@@ -1,0 +1,42 @@
+{
+  DataAccessFactory fac;
+  IOException canProcessButNotAvailable=null;
+  while (ps.hasNext()) {
+    fac=(DataAccessFactory)ps.next();
+    boolean canProcess=false;
+    try {
+      canProcess=fac.canProcess(params);
+    }
+ catch (    Throwable t) {
+      LOGGER.log(Level.WARNING,"Problem asking " + fac.getDisplayName() + " if it can process request:"+ t,t);
+      continue;
+    }
+    if (canProcess) {
+      boolean isAvailable=false;
+      try {
+        isAvailable=fac.isAvailable();
+      }
+ catch (      Throwable t) {
+        LOGGER.log(Level.WARNING,"Difficulity checking if " + fac.getDisplayName() + " is available:"+ t,t);
+        continue;
+      }
+      if (isAvailable) {
+        try {
+          return fac.createDataStore(params);
+        }
+ catch (        IOException couldNotConnect) {
+          canProcessButNotAvailable=couldNotConnect;
+          LOGGER.log(Level.WARNING,fac.getDisplayName() + " should be used, but could not connect",couldNotConnect);
+        }
+      }
+ else {
+        canProcessButNotAvailable=new IOException(fac.getDisplayName() + " should be used, but is not availble. Have you installed the required drivers or jar files?");
+        LOGGER.log(Level.WARNING,fac.getDisplayName() + " should be used, but is not availble",canProcessButNotAvailable);
+      }
+    }
+  }
+  if (canProcessButNotAvailable != null) {
+    throw canProcessButNotAvailable;
+  }
+  return null;
+}

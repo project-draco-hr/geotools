@@ -1,0 +1,17 @@
+{
+  FeatureEventWatcher watcher=new FeatureEventWatcher();
+  SimpleFeatureType t=featureStore.getSchema();
+  featureStore.addFeatureListener(watcher);
+  featureStore.modifyFeatures(new AttributeDescriptor[]{t.getDescriptor(aname("stringProperty"))},new Object[]{"foo"},Filter.INCLUDE);
+  assertTrue("check that at least one event was issued",watcher.count > 0);
+  assertEquals("Should be an update event",Type.CHANGED,watcher.type);
+  assertEquals(Filter.INCLUDE,watcher.filter);
+  SimpleFeatureCollection features=featureStore.getFeatures();
+  Iterator<SimpleFeature> i=features.iterator();
+  assertTrue(i.hasNext());
+  while (i.hasNext()) {
+    SimpleFeature feature=(SimpleFeature)i.next();
+    assertEquals("foo",feature.getAttribute(aname("stringProperty")));
+  }
+  features.close(i);
+}

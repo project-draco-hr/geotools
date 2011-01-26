@@ -1,0 +1,32 @@
+{
+  String ftName=element.getName();
+  URI ftNS=element.getType().getNamespace();
+  logger.finest("Creating feature type for " + ftName + ":"+ ftNS);
+  SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+  build.setName(ftName);
+  build.setNamespaceURI(ftNS);
+  GeometryDescriptor geometryAttribute=null;
+  ElementGrouping child=((ComplexType)element.getType()).getChild();
+  AttributeDescriptor[] attrs=(AttributeDescriptor[])getAttributes(element.getName(),child).toArray(new AttributeDescriptor[]{});
+  for (int i=0; i < attrs.length; i++) {
+    if (attrs[i] != null) {
+      build.add(attrs[i]);
+      if ((geometryAttribute == null) && attrs[i] instanceof GeometryDescriptor) {
+        if (!attrs[i].getLocalName().equalsIgnoreCase(AbstractFeatureType.getInstance().getChildElements()[2].getName())) {
+          geometryAttribute=(GeometryDescriptor)attrs[i];
+        }
+      }
+    }
+  }
+  if (geometryAttribute != null) {
+    build.setDefaultGeometry(geometryAttribute.getLocalName());
+  }
+  try {
+    SimpleFeatureType ft=build.buildFeatureType();
+    return ft;
+  }
+ catch (  IllegalArgumentException e) {
+    logger.warning(e.toString());
+    throw new SAXException(e);
+  }
+}

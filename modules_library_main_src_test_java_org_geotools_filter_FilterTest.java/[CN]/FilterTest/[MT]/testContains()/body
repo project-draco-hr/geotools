@@ -1,0 +1,31 @@
+{
+  Coordinate[] coords={new Coordinate(0,0),new Coordinate(6,0),new Coordinate(6,7),new Coordinate(0,7),new Coordinate(0,0)};
+  GeometryFactory gf=new GeometryFactory(new PrecisionModel());
+  Polygon geom=gf.createPolygon(gf.createLinearRing(coords),new LinearRing[0]);
+  Literal expr1=new LiteralExpressionImpl(geom);
+  PropertyName expr2=new AttributeExpressionImpl(testSchema,"testGeometry");
+  Contains filter=fac.contains(expr1,expr2);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertTrue(filter.evaluate(testFeature));
+  Function function=new GeometryFunction(geom);
+  filter=fac.contains(expr1,function);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertTrue(filter.evaluate(testFeature));
+  filter=fac.contains(expr2,expr1);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertFalse(filter.evaluate(testFeature));
+  coords=new Coordinate[]{new Coordinate(2,2),new Coordinate(6,0),new Coordinate(6,7),new Coordinate(0,7),new Coordinate(2,2)};
+  geom=gf.createPolygon(gf.createLinearRing(coords),new LinearRing[0]);
+  expr1=new LiteralExpressionImpl(geom);
+  filter=fac.contains(expr1,expr2);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertFalse(filter.evaluate(testFeature));
+  filter=fac.contains(new LiteralExpressionImpl(null),expr2);
+  LOGGER.finer(filter.toString());
+  LOGGER.finer("contains feature: " + filter.evaluate(testFeature));
+  assertFalse(filter.evaluate(testFeature));
+}

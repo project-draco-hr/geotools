@@ -1,0 +1,19 @@
+{
+  checkActive();
+  if (!cachedLayers.containsKey(layerName)) {
+synchronized (cachedLayers) {
+      if (!cachedLayers.containsKey(layerName)) {
+        SeTable table=getTable(layerName);
+        SeLayer layer=issue(new Commands.GetLayerCommand(table));
+        if (layer != null) {
+          cachedLayers.put(layerName,layer);
+        }
+      }
+    }
+  }
+  SeLayer seLayer=cachedLayers.get(layerName);
+  if (seLayer == null) {
+    throw new NoSuchElementException("Layer '" + layerName + "' not found");
+  }
+  return seLayer;
+}

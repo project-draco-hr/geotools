@@ -1,0 +1,47 @@
+{
+  String prjPath=new StringBuilder(parentPath).append(SEPARATOR).append(coverageName).append(".prj").toString();
+  final File prjFile=new File(prjPath);
+  if (prjFile.exists()) {
+    PrjFileReader projReader=null;
+    FileInputStream instream=null;
+    try {
+      instream=new FileInputStream(prjFile);
+      final FileChannel channel=instream.getChannel();
+      projReader=new PrjFileReader(channel);
+      crs=projReader.getCoordinateReferenceSystem();
+    }
+ catch (    FileNotFoundException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+catch (    IOException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+catch (    FactoryException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+ finally {
+      if (projReader != null) {
+        try {
+          projReader.close();
+        }
+ catch (        IOException e) {
+          if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+          }
+        }
+        if (instream != null)         try {
+          instream.close();
+        }
+ catch (        IOException ioe) {
+          LOGGER.log(Level.FINE,ioe.getLocalizedMessage(),ioe);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  URL url;
+  if (SHAPE_TYPE == LINES) {
+    url=new URL(LINES_FILE);
+  }
+ else   if (SHAPE_TYPE == POLYGONS) {
+    url=new URL(POLY_FILE);
+  }
+ else {
+    url=new URL(POINT_FILE);
+  }
+  if (!QUADTREE) {
+    String s=url.getPath();
+    s=s.substring(0,s.lastIndexOf("."));
+    File file=new File(s + ".qix");
+    if (file.exists()) {
+      file.delete();
+    }
+  }
+  IndexedShapefileDataStoreFactory fac=new IndexedShapefileDataStoreFactory();
+  IndexedShapefileDataStore store;
+  Map params=new HashMap();
+  params.put(IndexedShapefileDataStoreFactory.URLP.key,url);
+  params.put(IndexedShapefileDataStoreFactory.CREATE_SPATIAL_INDEX.key,new Boolean(false));
+  if (QUADTREE) {
+    params.put(IndexedShapefileDataStoreFactory.CREATE_SPATIAL_INDEX.key,new Boolean(true));
+  }
+  store=(IndexedShapefileDataStore)fac.createDataStore(params);
+  if (QUADTREE)   store.buildQuadTree(0);
+  DefaultMapContext context=new DefaultMapContext();
+  if (SHAPE_TYPE == LINES)   context.addLayer(store.getFeatureSource(),createLineStyle());
+ else   if (SHAPE_TYPE == POLYGONS)   context.addLayer(store.getFeatureSource(),createPolyStyle());
+ else   context.addLayer(store.getFeatureSource(),createPointStyle());
+  if (NO_REPROJECTION)   context.setAreaOfInterest(new Envelope(),store.getSchema().getDefaultGeometry().getCoordinateSystem());
+  return context;
+}

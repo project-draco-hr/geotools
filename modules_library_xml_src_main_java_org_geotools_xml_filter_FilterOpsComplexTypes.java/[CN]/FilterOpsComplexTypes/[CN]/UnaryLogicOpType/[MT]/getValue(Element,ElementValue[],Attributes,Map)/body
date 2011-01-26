@@ -1,0 +1,30 @@
+{
+  FilterFactory2 factory=FilterSchema.filterFactory(hints);
+  String name=element.getName();
+  short type;
+  if ("and".equalsIgnoreCase(name)) {
+    type=FilterType.LOGIC_AND;
+  }
+ else   if ("or".equalsIgnoreCase(name)) {
+    type=FilterType.LOGIC_OR;
+  }
+ else   if ("not".equalsIgnoreCase(name)) {
+    type=FilterType.LOGIC_NOT;
+  }
+ else {
+    throw new SAXException("Expected AND or OR logic filter");
+  }
+  if (value == null || value.length != 1) {
+    throw new SAXException("Require a single filter for " + element);
+  }
+  try {
+    Filter filter=(Filter)value[0].getValue();
+    return factory.not(filter);
+  }
+ catch (  ClassCastException filterRequired) {
+    throw new SAXException("Require a single filter for " + element,filterRequired);
+  }
+catch (  IllegalFilterException e) {
+    throw new SAXException("Illegal filter for " + element);
+  }
+}

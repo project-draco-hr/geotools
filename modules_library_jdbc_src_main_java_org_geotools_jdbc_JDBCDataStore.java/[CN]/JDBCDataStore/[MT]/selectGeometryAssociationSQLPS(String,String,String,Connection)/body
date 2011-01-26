@@ -1,0 +1,51 @@
+{
+  PreparedStatementSQLDialect dialect=(PreparedStatementSQLDialect)getSQLDialect();
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  dialect.encodeColumnName("fid",sql);
+  sql.append(",");
+  dialect.encodeColumnName("gid",sql);
+  sql.append(",");
+  dialect.encodeColumnName("gname",sql);
+  sql.append(",");
+  dialect.encodeColumnName("ref",sql);
+  sql.append(" FROM ");
+  encodeTableName(GEOMETRY_ASSOCIATION_TABLE,sql,null);
+  if (fid != null) {
+    sql.append(" WHERE ");
+    dialect.encodeColumnName("fid",sql);
+    sql.append(" = ? ");
+  }
+  if (gid != null) {
+    if (fid == null) {
+      sql.append(" WHERE ");
+    }
+ else {
+      sql.append(" AND ");
+    }
+    dialect.encodeColumnName("gid",sql);
+    sql.append(" = ? ");
+  }
+  if (gname != null) {
+    if ((fid == null) && (gid == null)) {
+      sql.append(" WHERE ");
+    }
+ else {
+      sql.append(" AND ");
+    }
+    dialect.encodeColumnName("gname",sql);
+    sql.append(" = ?");
+  }
+  LOGGER.fine(sql.toString());
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  if (fid != null) {
+    ps.setString(1,fid);
+  }
+  if (gid != null) {
+    ps.setString(fid != null ? 2 : 1,gid);
+  }
+  if (gname != null) {
+    ps.setString(fid != null ? (gid != null ? 3 : 2) : (gid != null ? 2 : 1),gname);
+  }
+  return ps;
+}

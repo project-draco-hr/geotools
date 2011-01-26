@@ -1,0 +1,38 @@
+{
+  FeatureType complexType=ComplexTestData.createExample01MultiValuedComplexProperty(new FeatureTypeFactoryImpl());
+  Name name=complexType.getName();
+  AttributeDescriptor descriptor=new AttributeDescriptorImpl(complexType,name,0,Integer.MAX_VALUE,true,null);
+  NamespaceSupport namespaces=new NamespaceSupport();
+  namespaces.declarePrefix("wq",name.getNamespaceURI());
+  try {
+    XPath.steps(descriptor,null,namespaces);
+    fail("passed null");
+  }
+ catch (  NullPointerException e) {
+  }
+  List expected;
+  String xpath;
+  xpath="/";
+  assertEquals(1,XPath.steps(descriptor,xpath,namespaces).size());
+  XPath.Step step=(XPath.Step)XPath.steps(descriptor,xpath,namespaces).get(0);
+  QName rootQName=new QName(name.getNamespaceURI(),name.getLocalPart());
+  assertEquals(rootQName,step.getName());
+  expected=Collections.singletonList(new XPath.Step(rootQName,1));
+  xpath="wq_plus";
+  assertEquals(expected,XPath.steps(descriptor,xpath,namespaces));
+  expected=Collections.singletonList(new XPath.Step(rootQName,1));
+  xpath="/wq_plus";
+  assertEquals(expected,XPath.steps(descriptor,xpath,namespaces));
+  expected=Collections.singletonList(new XPath.Step(rootQName,1));
+  xpath="wq_plus/measurement/result/../../measurement/determinand_description/../..";
+  assertEquals(expected,XPath.steps(descriptor,xpath,namespaces));
+  expected=Arrays.asList(new XPath.Step[]{new XPath.Step(new QName(rootQName.getNamespaceURI(),"measurement"),2),new XPath.Step(new QName(rootQName.getNamespaceURI(),"result"),1)});
+  xpath="wq_plus/measurement/result/../../measurement[2]/result";
+  assertEquals(expected,XPath.steps(descriptor,xpath,namespaces));
+  expected=Arrays.asList(new XPath.Step[]{new XPath.Step(new QName(rootQName.getNamespaceURI(),"measurement"),1),new XPath.Step(new QName(rootQName.getNamespaceURI(),"result"),1)});
+  xpath="wq_plus/measurement/result/../result/.";
+  assertEquals(expected,XPath.steps(descriptor,xpath,namespaces));
+  expected=Arrays.asList(new XPath.Step[]{new XPath.Step(new QName(rootQName.getNamespaceURI(),"measurement"),5)});
+  xpath="measurement/result/../../measurement[5]";
+  assertEquals(expected,XPath.steps(descriptor,xpath,namespaces));
+}

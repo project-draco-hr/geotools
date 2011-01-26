@@ -1,0 +1,40 @@
+{
+  double[] result=null;
+  String statementString=getRandomTileStatement(li);
+  PreparedStatement s=con.prepareStatement(statementString);
+  ResultSet r=s.executeQuery();
+  while (r.next()) {
+    byte[] tileBytes=getTileBytes(r);
+    if (tileBytes == null) {
+      continue;
+    }
+    BufferedImage buffImage=null;
+    li.setCanImageIOReadFromInputStream(true);
+    try {
+      buffImage=ImageIO.read(new ByteArrayInputStream(tileBytes));
+    }
+ catch (    IOException e) {
+    }
+    if (buffImage == null) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.warning("Image IO cannot read from ByteInputStream,use less efficient jai methods");
+      }
+      li.setCanImageIOReadFromInputStream(false);
+      SeekableStream stream=new ByteArraySeekableStream(tileBytes);
+      String decoderName=null;
+      for (      String dn : ImageCodec.getDecoderNames(stream)) {
+        decoderName=dn;
+        break;
+      }
+      ImageDecoder decoder=ImageCodec.createImageDecoder(decoderName,stream,null);
+      PlanarImage img=PlanarImage.wrapRenderedImage(decoder.decodeAsRenderedImage());
+      buffImage=img.getAsBufferedImage();
+    }
+    Envelope env=getEnvelopeFromResultSet(r);
+    result=new double[]{env.getWidth() / buffImage.getWidth(),env.getHeight() / buffImage.getHeight()};
+    break;
+  }
+  r.close();
+  s.close();
+  return result;
+}

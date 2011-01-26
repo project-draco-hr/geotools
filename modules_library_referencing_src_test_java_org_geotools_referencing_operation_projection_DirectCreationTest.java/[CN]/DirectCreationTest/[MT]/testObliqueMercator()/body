@@ -1,0 +1,25 @@
+{
+  if (VERBOSE) {
+    printParameters("Oblique Mercator");
+  }
+  MathTransform transform;
+  ParameterValueGroup params;
+  params=mtFactory.getDefaultParameters("Oblique Mercator");
+  setObliqueMercatorParameter(params);
+  transform=mtFactory.createParameterizedTransform(params);
+  assertEquals(transform.getClass(),ObliqueMercator.class);
+  assertEquals(transform,new ObliqueMercator(params));
+  ParameterDescriptorGroup descriptor=((MapProjection)transform).getParameterDescriptors();
+  assertTrue(AbstractIdentifiedObject.nameMatches(descriptor,"Oblique Mercator"));
+  assertFalse(AbstractIdentifiedObject.nameMatches(descriptor,"Hotine Oblique Mercator"));
+  final MathTransform standard=transform;
+  params=mtFactory.getDefaultParameters("Hotine Oblique Mercator");
+  setObliqueMercatorParameter(params);
+  transform=mtFactory.createParameterizedTransform(params);
+  assertEquals(transform.getClass(),HotineObliqueMercator.class);
+  assertEquals(transform,new HotineObliqueMercator(params));
+  descriptor=((MapProjection)transform).getParameterDescriptors();
+  assertFalse(AbstractIdentifiedObject.nameMatches(descriptor,"Oblique Mercator"));
+  assertTrue(AbstractIdentifiedObject.nameMatches(descriptor,"Hotine Oblique Mercator"));
+  assertFalse(transform.equals(standard));
+}

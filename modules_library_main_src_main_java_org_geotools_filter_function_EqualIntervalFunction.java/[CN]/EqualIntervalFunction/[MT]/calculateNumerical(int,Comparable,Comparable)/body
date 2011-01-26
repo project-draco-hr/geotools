@@ -1,0 +1,24 @@
+{
+  double slotWidth=(((Number)globalMax).doubleValue() - ((Number)globalMin).doubleValue()) / classNum;
+  Comparable[] localMin=new Comparable[classNum];
+  Comparable[] localMax=new Comparable[classNum];
+  for (int i=0; i < classNum; i++) {
+    localMin[i]=new Double(((Number)globalMin).doubleValue() + (i * slotWidth));
+    localMax[i]=new Double(((Number)globalMax).doubleValue() - ((classNum - i - 1) * slotWidth));
+    int decPlaces=decimalPlaces(slotWidth);
+    if (decPlaces > -1) {
+      localMin[i]=new Double(round(((Number)localMin[i]).doubleValue(),decPlaces));
+      localMax[i]=new Double(round(((Number)localMax[i]).doubleValue(),decPlaces));
+    }
+    if (i == 0) {
+      if (localMin[i].compareTo(new Double(((Number)globalMin).doubleValue())) < 0)       localMin[i]=new Double(fixRound(((Number)localMin[i]).doubleValue(),decPlaces,false));
+    }
+ else     if (i == classNum - 1) {
+      if (localMax[i].compareTo(new Double(((Number)globalMax).doubleValue())) > 0)       localMax[i]=new Double(fixRound(((Number)localMax[i]).doubleValue(),decPlaces,true));
+    }
+    if ((i != 0) && (!localMin[i].equals(localMax[i - 1]))) {
+      localMin[i]=localMax[i - 1];
+    }
+  }
+  return new RangedClassifier(localMin,localMax);
+}

@@ -1,0 +1,43 @@
+{
+  if (cache != null) {
+    return cache;
+  }
+  String anyAttributeNamespace=(anyAttribute == null) ? null : anyAttribute.getNamespace();
+  Attribute[] attributes=null;
+  if (attrDecs != null) {
+    Iterator i=attrDecs.iterator();
+    HashSet h=new HashSet();
+    while (i.hasNext()) {
+      Object o=i.next();
+      if (o instanceof AttributeHandler) {
+        h.add(((AttributeHandler)o).compress(parent));
+      }
+ else {
+        AttributeGroupHandler agh=(AttributeGroupHandler)o;
+        AttributeGroup ag=agh.compress(parent);
+        if ((ag != null) && (ag.getAttributes() != null)) {
+          Attribute[] aa=ag.getAttributes();
+          for (int j=0; j < aa.length; j++)           h.add(aa[j]);
+        }
+      }
+    }
+    attributes=(Attribute[])h.toArray(new Attribute[h.size()]);
+  }
+  String name1=this.name;
+  if ((ref != null) && !"".equalsIgnoreCase(ref)) {
+    AttributeGroup ag=parent.lookUpAttributeGroup(ref);
+    if (ag == null) {
+      throw new SAXException("AttributeGroup '" + ref + "' was refered and not found");
+    }
+    name1=ag.getName();
+    if ((anyAttribute == null) || "".equalsIgnoreCase(anyAttribute.getNamespace())) {
+      anyAttributeNamespace=ag.getAnyAttributeNameSpace();
+    }
+    if (attributes != null) {
+      throw new SAXException("Cannot have a ref and children for an AttributeGroup");
+    }
+    attributes=ag.getAttributes();
+  }
+  cache=new AttributeGroupGT(id,name1,parent.getTargetNamespace(),attributes,anyAttributeNamespace);
+  return cache;
+}

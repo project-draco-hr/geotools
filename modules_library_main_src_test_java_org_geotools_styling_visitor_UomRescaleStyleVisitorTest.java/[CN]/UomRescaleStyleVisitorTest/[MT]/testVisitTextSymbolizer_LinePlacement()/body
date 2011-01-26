@@ -1,0 +1,41 @@
+{
+  try {
+    UomRescaleStyleVisitor visitor=null;
+    Unit<Length> uom=SI.METER;
+    int fontSize=100;
+    double perpOffset=13;
+    double gap=7;
+    double initialGap=5;
+    double scaleMetersToPixel=17;
+    double expectedRescaledFontSize=computeExpectedRescaleSize(fontSize,scaleMetersToPixel,uom);
+    double expectedRescaledPerpOffset=computeExpectedRescaleSize(perpOffset,scaleMetersToPixel,uom);
+    double expectedRescaledGap=computeExpectedRescaleSize(gap,scaleMetersToPixel,uom);
+    double expectedRescaledInitialGap=computeExpectedRescaleSize(initialGap,scaleMetersToPixel,uom);
+    StyleBuilder styleBuilder=new StyleBuilder();
+    TextSymbolizerImpl textSymb=(TextSymbolizerImpl)styleBuilder.createTextSymbolizer();
+    textSymb.setUnitOfMeasure(uom);
+    Font font=styleBuilder.createFont(new java.awt.Font("Verdana",java.awt.Font.PLAIN,fontSize));
+    textSymb.setFont(font);
+    LinePlacement placement=styleBuilder.createLinePlacement(perpOffset);
+    placement.setGap(styleBuilder.literalExpression(gap));
+    placement.setInitialGap(styleBuilder.literalExpression(initialGap));
+    textSymb.setLabelPlacement(placement);
+    visitor=new UomRescaleStyleVisitor(scaleMetersToPixel);
+    textSymb.accept(visitor);
+    TextSymbolizer rescaledTextSymb=(TextSymbolizer)visitor.getCopy();
+    double rescaledFontSize=rescaledTextSymb.getFont().getSize().evaluate(null,Double.class);
+    LinePlacement rescaledPlacement=(LinePlacement)rescaledTextSymb.getLabelPlacement();
+    double rescaledPerpOffset=rescaledPlacement.getPerpendicularOffset().evaluate(null,Double.class);
+    double rescaledGap=rescaledPlacement.getGap().evaluate(null,Double.class);
+    double rescaledInitialGap=rescaledPlacement.getInitialGap().evaluate(null,Double.class);
+    Assert.assertEquals(Math.round(expectedRescaledFontSize),Math.round(rescaledFontSize));
+    Assert.assertEquals(Math.round(expectedRescaledPerpOffset),Math.round(rescaledPerpOffset));
+    Assert.assertEquals(Math.round(expectedRescaledGap),Math.round(rescaledGap));
+    Assert.assertEquals(Math.round(expectedRescaledInitialGap),Math.round(rescaledInitialGap));
+    Assert.assertNotSame(rescaledTextSymb,textSymb);
+  }
+ catch (  Exception e2) {
+    e2.printStackTrace();
+    Assert.fail(e2.getClass().getSimpleName() + " should not be thrown.");
+  }
+}

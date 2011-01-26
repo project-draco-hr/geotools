@@ -1,0 +1,52 @@
+{
+  update();
+  DirectPosition transformedSource=null;
+  DirectPosition transformedTarget=null;
+  String targetException=null;
+  if (transform != null) {
+    if (sourcePosition != null) {
+      transformedSource=transform.transform(sourcePosition,null);
+    }
+    if (targetPosition != null)     try {
+      transformedTarget=transform.inverse().transform(targetPosition,null);
+    }
+ catch (    NoninvertibleTransformException exception) {
+      targetException=exception.getLocalizedMessage();
+      if (sourcePosition != null) {
+        final GeneralDirectPosition p;
+        transformedTarget=p=new GeneralDirectPosition(sourcePosition.getDimension());
+        Arrays.fill(p.ordinates,Double.NaN);
+      }
+    }
+  }
+  final Locale locale=null;
+  final Vocabulary resources=Vocabulary.getResources(locale);
+  final TableWriter table=new TableWriter(out,0);
+  table.setMultiLinesCells(true);
+  table.writeHorizontalSeparator();
+  table.setAlignment(TableWriter.ALIGN_RIGHT);
+  if (sourcePosition != null) {
+    table.write(resources.getLabel(VocabularyKeys.SOURCE_POINT));
+    print(sourcePosition,table);
+    print(transformedSource,table);
+    table.nextLine();
+  }
+  if (targetPosition != null) {
+    table.write(resources.getLabel(VocabularyKeys.TARGET_POINT));
+    print(transformedTarget,table);
+    print(targetPosition,table);
+    table.nextLine();
+  }
+  if (sourceCRS != null && targetCRS != null) {
+    table.write(resources.getLabel(VocabularyKeys.DISTANCE));
+    printDistance(sourceCRS,sourcePosition,transformedTarget,table);
+    printDistance(targetCRS,targetPosition,transformedSource,table);
+    table.nextLine();
+  }
+  table.writeHorizontalSeparator();
+  table.flush();
+  if (targetException != null) {
+    out.write(targetException);
+    out.write(lineSeparator);
+  }
+}

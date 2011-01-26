@@ -1,0 +1,25 @@
+{
+  final GridCoverage2D gc=(GridCoverage2D)coverage;
+  if (parameters != null) {
+    this.extension=((Parameter)parameters[0]).stringValue();
+  }
+  if (destination instanceof File) {
+    File imageFile=(File)destination;
+    final String path=imageFile.getAbsolutePath();
+    final int index=path.lastIndexOf(".");
+    final String baseFile=index >= 0 ? path.substring(0,index) : path;
+    final RenderedImage image=gc.getRenderedImage();
+    try {
+      createWorldFile(coverage,image,baseFile,extension);
+    }
+ catch (    TransformException e) {
+      final IOException ex=new IOException();
+      ex.initCause(e);
+      throw ex;
+    }
+    createProjectionFile(baseFile,coverage.getCoordinateReferenceSystem());
+  }
+  outStream=(destination instanceof ImageOutputStream) ? (ImageOutputStream)destination : ImageIO.createImageOutputStream(destination);
+  if (outStream == null)   throw new IOException("WorldImageWriter::write:No image output stream avalaible for the provided destination");
+  this.encode(gc,outStream,extension);
+}

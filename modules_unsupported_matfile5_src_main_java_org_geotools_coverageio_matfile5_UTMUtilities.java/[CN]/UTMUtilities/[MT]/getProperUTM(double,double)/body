@@ -1,0 +1,31 @@
+{
+  ReferencedEnvelope env;
+  CoordinateReferenceSystem crs=null;
+  try {
+    if (AOI_MAP.containsKey(DEFAULT_FIRST_TO_BE_SEEKED)) {
+      env=AOI_MAP.get(DEFAULT_FIRST_TO_BE_SEEKED);
+      if (env.contains(lon,lat)) {
+        return getCRS(DEFAULT_FIRST_TO_BE_SEEKED);
+      }
+    }
+    Iterator<String> keys=AOI_MAP.keySet().iterator();
+    while (keys.hasNext()) {
+      String code=keys.next();
+      if (AOI_MAP.containsKey(code)) {
+        env=AOI_MAP.get(code);
+        if (env.contains(lon,lat)) {
+          return getCRS(code);
+        }
+      }
+    }
+  }
+ catch (  NoSuchAuthorityCodeException e) {
+    crs=null;
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage());
+  }
+catch (  FactoryException e) {
+    crs=null;
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage());
+  }
+  return crs;
+}

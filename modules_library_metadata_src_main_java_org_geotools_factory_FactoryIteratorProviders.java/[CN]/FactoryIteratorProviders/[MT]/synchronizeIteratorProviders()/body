@@ -1,0 +1,31 @@
+{
+  FactoryIteratorProvider[] newProviders=null;
+  int count=0;
+synchronized (GLOBAL) {
+    if (modifications == GLOBAL.modifications) {
+      return null;
+    }
+    modifications=GLOBAL.modifications;
+    if (GLOBAL.iteratorProviders == null) {
+      throw new AssertionError(modifications);
+    }
+    if (iteratorProviders != null) {
+      iteratorProviders.retainAll(GLOBAL.iteratorProviders);
+    }
+ else     if (!GLOBAL.iteratorProviders.isEmpty()) {
+      iteratorProviders=new LinkedHashSet<FactoryIteratorProvider>();
+    }
+    int remaining=GLOBAL.iteratorProviders.size();
+    for (final Iterator it=GLOBAL.iteratorProviders.iterator(); it.hasNext(); ) {
+      final FactoryIteratorProvider candidate=(FactoryIteratorProvider)it.next();
+      if (iteratorProviders.add(candidate)) {
+        if (newProviders == null) {
+          newProviders=new FactoryIteratorProvider[remaining];
+        }
+        newProviders[count++]=candidate;
+      }
+      remaining--;
+    }
+  }
+  return XArray.resize(newProviders,count);
+}

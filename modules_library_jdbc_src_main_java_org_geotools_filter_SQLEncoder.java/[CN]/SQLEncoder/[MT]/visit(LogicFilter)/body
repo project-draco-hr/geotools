@@ -1,0 +1,26 @@
+{
+  LOGGER.finer("exporting LogicFilter");
+  filter.getFilterType();
+  String type=(String)logical.get(new Integer(filter.getFilterType()));
+  try {
+    java.util.Iterator list=filter.getFilterIterator();
+    if (filter.getFilterType() == AbstractFilter.LOGIC_NOT) {
+      out.write(" NOT (");
+      Filters.accept((org.opengis.filter.Filter)list.next(),this);
+      out.write(")");
+    }
+ else {
+      out.write("(");
+      while (list.hasNext()) {
+        Filters.accept((org.opengis.filter.Filter)list.next(),this);
+        if (list.hasNext()) {
+          out.write(" " + type + " ");
+        }
+      }
+      out.write(")");
+    }
+  }
+ catch (  java.io.IOException ioe) {
+    throw new RuntimeException(IO_ERROR,ioe);
+  }
+}

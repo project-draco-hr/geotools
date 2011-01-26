@@ -1,0 +1,77 @@
+{
+  super(driver);
+  if (listener == null)   listener=new NullProgressListener();
+  if (source == null) {
+    if (params.containsKey(URL.key)) {
+      source=(URL)params.get(URL.key);
+    }
+  }
+  if (source == null)   throw new IllegalArgumentException("Source 'url' is required");
+  connectionParameters=new HashMap<String,Serializable>();
+  if (params != null) {
+    connectionParameters.putAll(params);
+  }
+  connectionParameters.put(URL.key,source);
+  final String protocol=source.getProtocol();
+  listener.setTask(new SimpleInternationalString("connect"));
+  try {
+    if (protocol.equalsIgnoreCase("file")) {
+      final File sourceFile=BaseFileDriver.urlToFile(source);
+      if (!sourceFile.exists()) {
+        if (!canCreate) {
+          throw new FileNotFoundException("GeoTIFF file '" + sourceFile + "' does not exist.");
+        }
+        this.mustCreate=true;
+        final File parentDir=sourceFile.getParentFile();
+        if (!parentDir.exists() || !parentDir.isDirectory() || !parentDir.canWrite()) {
+          throw new IllegalArgumentException("Invalid input");
+        }
+        this.allowedAccessTypes.add(AccessType.READ_WRITE);
+      }
+ else {
+        if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead()) {
+          throw fail(listener,new IllegalArgumentException("Read access required to file " + sourceFile));
+        }
+        if (sourceFile.canWrite()) {
+          this.allowedAccessTypes.add(AccessType.READ_WRITE);
+        }
+        this.allowedAccessTypes.add(AccessType.READ_ONLY);
+      }
+      listener.progress(0.1f);
+      this.inputClass=File.class;
+      this.input=source;
+      this.init();
+      return;
+    }
+    if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("ftp")) {
+      InputStream inStream=null;
+      try {
+        listener.progress(0.1f);
+        inStream=source.openStream();
+        final byte[] bytes=new byte[256];
+        if (inStream.read(bytes) <= 0) {
+          throw new IllegalArgumentException("Input stream could not be opened");
+        }
+        this.inputClass=InputStream.class;
+        this.input=source;
+        this.allowedAccessTypes.add(AccessType.READ_ONLY);
+        this.init();
+        return;
+      }
+ catch (      Throwable t) {
+        throw fail(listener,new IllegalArgumentException("Could not connect to input",t));
+      }
+ finally {
+        if (inStream != null)         try {
+        }
+ catch (        Exception e) {
+          inStream.close();
+        }
+      }
+    }
+    throw new IllegalArgumentException("Invalid input");
+  }
+  finally {
+    listener.complete();
+  }
+}

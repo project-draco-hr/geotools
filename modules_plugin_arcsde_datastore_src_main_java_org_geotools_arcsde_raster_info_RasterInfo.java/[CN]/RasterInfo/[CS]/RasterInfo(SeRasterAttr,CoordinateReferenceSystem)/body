@@ -1,0 +1,27 @@
+{
+  this.crs=crs;
+  try {
+    this.rasterId=Long.valueOf(rasterAttributes.getRasterId().longValue());
+    final int numLevels=rasterAttributes.getMaxLevel() + 1;
+    pyramidList=new ArrayList<PyramidLevelInfo>(numLevels);
+    tileWidth=rasterAttributes.getTileWidth();
+    tileHeight=rasterAttributes.getTileHeight();
+    skipLevelone=rasterAttributes.skipLevelOne();
+    int internalPyramidLevel=0;
+    for (int arcsdePyramidLevel=0; arcsdePyramidLevel < numLevels; arcsdePyramidLevel++) {
+      if (arcsdePyramidLevel == 1 && skipLevelone) {
+      }
+      final int numTilesWide=rasterAttributes.getTilesPerRowByLevel(arcsdePyramidLevel);
+      final int numTilesHigh=rasterAttributes.getTilesPerColByLevel(arcsdePyramidLevel);
+      final GridEnvelope actualImageGridEnvelope;
+      final GeneralEnvelope actualImageSpatialExtent;
+      actualImageGridEnvelope=computeImageGridRange(arcsdePyramidLevel,rasterAttributes);
+      actualImageSpatialExtent=computeImageSpatialExtent(arcsdePyramidLevel,rasterAttributes,crs,actualImageGridEnvelope);
+      addPyramidLevel(arcsdePyramidLevel,numTilesWide,numTilesHigh,actualImageGridEnvelope,actualImageSpatialExtent);
+      internalPyramidLevel++;
+    }
+  }
+ catch (  SeException se) {
+    throw new DataSourceException(se);
+  }
+}

@@ -1,0 +1,33 @@
+{
+  this.inputStream=getFeatureResponseStream;
+  this.featureNamespace=featureDescriptorName.getNamespaceURI();
+  this.featureName=featureDescriptorName.getLocalPart();
+  this.targetType=targetType;
+  this.builder=new SimpleFeatureBuilder(targetType);
+  XmlPullParserFactory factory;
+  try {
+    factory=XmlPullParserFactory.newInstance();
+    factory.setNamespaceAware(true);
+    factory.setValidating(false);
+    parser=factory.newPullParser();
+    parser.setInput(inputStream,"UTF-8");
+    parser.nextTag();
+    parser.require(XmlPullParser.START_TAG,WFS.NAMESPACE,WFS.FeatureCollection.getLocalPart());
+    String nof=parser.getAttributeValue(null,"numberOfFeatures");
+    if (nof != null) {
+      try {
+        this.numberOfFeatures=Integer.valueOf(nof);
+      }
+ catch (      NumberFormatException nfe) {
+        LOGGER.warning("Can't parse numberOfFeatures out of " + nof);
+      }
+    }
+  }
+ catch (  XmlPullParserException e) {
+    throw new DataSourceException(e);
+  }
+  expectedProperties=new TreeMap<String,AttributeDescriptor>(String.CASE_INSENSITIVE_ORDER);
+  for (  AttributeDescriptor desc : targetType.getAttributeDescriptors()) {
+    expectedProperties.put(desc.getLocalName(),desc);
+  }
+}

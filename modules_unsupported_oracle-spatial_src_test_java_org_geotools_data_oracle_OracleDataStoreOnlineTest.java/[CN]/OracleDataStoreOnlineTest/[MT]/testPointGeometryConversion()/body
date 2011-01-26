@@ -1,0 +1,19 @@
+{
+  if (conn == null)   return;
+  CompareFilter filter=filterFactory.createCompareFilter(AbstractFilter.COMPARE_EQUALS);
+  Expression left=filterFactory.createAttributeExpression(dstore.getSchema("ORA_TEST_POINTS"),"NAME");
+  Expression right=filterFactory.createLiteralExpression("point 1");
+  filter.addLeftValue(left);
+  filter.addRightValue(right);
+  SimpleFeatureSource fs=dstore.getFeatureSource("ORA_TEST_POINTS");
+  SimpleFeatureCollection fr=fs.getFeatures(filter);
+  assertEquals(1,fr.size());
+  final Iterator iterator=fr.iterator();
+  SimpleFeature feature=(SimpleFeature)iterator.next();
+  fr.close(iterator);
+  Geometry geom=(Geometry)feature.getDefaultGeometry();
+  assertEquals(Point.class.getName(),geom.getClass().getName());
+  Point point=(Point)geom;
+  assertEquals(10.0,point.getX(),0.001);
+  assertEquals(10.0,point.getY(),0.001);
+}

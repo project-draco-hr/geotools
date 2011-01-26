@@ -1,0 +1,50 @@
+{
+  final String typeName=testData.getTempTableName();
+  SimpleFeatureSource fs=store.getFeatureSource(typeName);
+  Query query=new Query(typeName);
+  final String sortAtt="INT32_COL";
+  SortBy[] sortBy;
+  SimpleFeatureIterator features;
+  sortBy=new SortBy[]{ff.sort(sortAtt,ASCENDING)};
+  query.setSortBy(sortBy);
+  features=fs.getFeatures(query).features();
+  try {
+    Integer previous=Integer.valueOf(Integer.MIN_VALUE);
+    while (features.hasNext()) {
+      Integer intVal=(Integer)features.next().getAttribute(sortAtt);
+      assertTrue(previous + " < " + intVal+ "?",previous.intValue() < intVal.intValue());
+      previous=intVal;
+    }
+  }
+  finally {
+    features.close();
+  }
+  sortBy=new SortBy[]{ff.sort(sortAtt,DESCENDING)};
+  query.setSortBy(sortBy);
+  features=fs.getFeatures(query).features();
+  try {
+    Integer previous=Integer.valueOf(Integer.MAX_VALUE);
+    while (features.hasNext()) {
+      Integer intVal=(Integer)features.next().getAttribute(sortAtt);
+      assertTrue(previous + " > " + intVal+ "?",previous.intValue() > intVal.intValue());
+      previous=intVal;
+    }
+  }
+  finally {
+    features.close();
+  }
+  sortBy=new SortBy[]{ff.sort(sortAtt,DESCENDING),ff.sort("FLOAT32_COL",ASCENDING)};
+  query.setSortBy(sortBy);
+  features=fs.getFeatures(query).features();
+  try {
+    Integer previous=Integer.valueOf(Integer.MAX_VALUE);
+    while (features.hasNext()) {
+      Integer intVal=(Integer)features.next().getAttribute(sortAtt);
+      assertTrue(previous + " > " + intVal+ "?",previous.intValue() > intVal.intValue());
+      previous=intVal;
+    }
+  }
+  finally {
+    features.close();
+  }
+}

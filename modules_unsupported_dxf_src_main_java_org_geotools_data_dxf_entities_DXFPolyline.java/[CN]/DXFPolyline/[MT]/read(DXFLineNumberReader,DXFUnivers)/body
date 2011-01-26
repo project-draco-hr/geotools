@@ -1,0 +1,72 @@
+{
+  String name="";
+  int visibility=0, flag=0, c=-1;
+  DXFLineType lineType=null;
+  Vector<DXFVertex> lv=new Vector<DXFVertex>();
+  DXFLayer l=null;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error " + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    if (SEQEND.equals(type)) {
+      doLoop=false;
+    }
+ else     if (VERTEX.equals(type)) {
+      lv.add(DXFVertex.read(br,univers));
+    }
+ else {
+      br.reset();
+      doLoop=false;
+    }
+  break;
+case NAME:
+name=cvp.getStringValue();
+break;
+case LAYER_NAME:
+l=univers.findLayer(cvp.getStringValue());
+break;
+case LINETYPE_NAME:
+lineType=univers.findLType(cvp.getStringValue());
+break;
+case COLOR:
+c=cvp.getShortValue();
+break;
+case INT_1:
+flag=cvp.getShortValue();
+break;
+case VISIBILITY:
+visibility=cvp.getShortValue();
+break;
+default :
+break;
+}
+}
+DXFPolyline e=new DXFPolyline(name,flag,c,l,lv,visibility,lineType,DXFTables.defaultThickness);
+if ((flag & 1) == 1) {
+e.setType(GeometryType.POLYGON);
+}
+ else {
+e.setType(GeometryType.LINE);
+}
+e.setStartingLineNumber(sln);
+e.setUnivers(univers);
+log.debug(e.toString(name,flag,lv.size(),c,visibility,DXFTables.defaultThickness));
+log.debug(">>Exit at line: " + br.getLineNumber());
+return e;
+}

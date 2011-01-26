@@ -1,0 +1,91 @@
+{
+  clearAbortRequest();
+  checkImageIndex(imageIndex);
+  if (imageIndex >= nextImageIndex) {
+    processImageStarted(imageIndex);
+    final BufferedReader reader=getReader();
+    final long origine=getStreamPosition(reader);
+    final long length=getStreamLength(nextImageIndex,imageIndex + 1);
+    long nextProgressPosition=(origine >= 0 && length > 0) ? 0 : Long.MAX_VALUE;
+    for (; nextImageIndex <= imageIndex; nextImageIndex++) {
+      if (seekForwardOnly) {
+        minIndex=nextImageIndex;
+      }
+      if (nextImageIndex != 0 && data != null) {
+        final RecordList records=data[nextImageIndex - 1];
+        if (records != null) {
+          if (seekForwardOnly) {
+            data[nextImageIndex - 1]=null;
+          }
+ else {
+            records.trimToSize();
+          }
+        }
+      }
+      double[] values=null;
+      RecordList records=null;
+      final boolean keep=(nextImageIndex == imageIndex) || !seekForwardOnly;
+      final int xColumn=getCheckedColumnX(nextImageIndex);
+      final int yColumn=getCheckedColumnY(nextImageIndex);
+      final double padValue=getPadValue(nextImageIndex);
+      final LineFormat lineFormat=getLineFormat(nextImageIndex);
+      try {
+        String line;
+        while ((line=reader.readLine()) != null) {
+          if (isComment(line) || lineFormat.setLine(line) == 0) {
+            continue;
+          }
+          values=lineFormat.getValues(values);
+          for (int i=0; i < values.length; i++) {
+            if (i != xColumn && i != yColumn && values[i] == padValue) {
+              values[i]=Double.NaN;
+            }
+          }
+          round(values);
+          if (keep) {
+            if (records == null) {
+              final int expectedLineCount=Math.max(8,Math.min(65536,Math.round(length / (expectedDatumLength * values.length))));
+              records=new RecordList(values.length,expectedLineCount);
+            }
+            records.add(values);
+          }
+          final long position=getStreamPosition(reader) - origine;
+          if (position >= nextProgressPosition) {
+            processImageProgress(position * (100f / length));
+            nextProgressPosition=position + PROGRESS_INTERVAL;
+            if (abortRequested()) {
+              processReadAborted();
+              return records;
+            }
+          }
+        }
+      }
+ catch (      ParseException exception) {
+        throw new IIOException(getPositionString(exception.getLocalizedMessage()),exception);
+      }
+      if (records != null) {
+        final int lineCount=records.getLineCount();
+        if (lineCount < 2) {
+          throw new IIOException(getPositionString(Errors.format(ErrorKeys.FILE_HAS_TOO_FEW_DATA)));
+        }
+        if (data == null) {
+          data=new RecordList[imageIndex + 1];
+        }
+ else         if (data.length <= imageIndex) {
+          data=XArray.resize(data,imageIndex + 1);
+        }
+        data[nextImageIndex]=records;
+        final float meanDatumLength=(getStreamPosition(reader) - origine) / (float)records.getDataCount();
+        if (meanDatumLength > 0)         expectedDatumLength=meanDatumLength;
+      }
+    }
+    processImageComplete();
+  }
+  if (data != null && imageIndex < data.length) {
+    final RecordList records=data[imageIndex];
+    if (records != null) {
+      return records;
+    }
+  }
+  throw new IndexOutOfBoundsException(String.valueOf(imageIndex));
+}

@@ -1,0 +1,34 @@
+{
+  final String base=(parentPath != null) ? new StringBuffer(this.parentPath).append(File.separator).append(coverageName).toString() : coverageName;
+  File file2Parse=new File(new StringBuffer(base).append(".wld").toString());
+  if (file2Parse.exists()) {
+    final WorldFileReader reader=new WorldFileReader(file2Parse);
+    raster2Model=reader.getTransform();
+  }
+ else {
+    final Set<String> ext=WorldImageFormat.getWorldExtension(extension);
+    final Iterator<String> it=ext.iterator();
+    if (!it.hasNext())     throw new DataSourceException("Unable to parse extension " + extension);
+    do {
+      file2Parse=new File(new StringBuffer(base).append((String)it.next()).toString());
+    }
+ while (!file2Parse.exists() && it.hasNext());
+    if (file2Parse.exists()) {
+      final WorldFileReader reader=new WorldFileReader(file2Parse);
+      raster2Model=reader.getTransform();
+      metaFile=false;
+    }
+ else {
+      file2Parse=new File(new StringBuffer(base).append(".meta").toString());
+      if (file2Parse.exists()) {
+        parseMetaFile(file2Parse);
+        metaFile=true;
+      }
+ else {
+        final IOException ex=new IOException("No file with meta information found!");
+        LOGGER.logp(Level.SEVERE,WorldImageReader.class.toString(),"private void prepareWorldImage2Model() throws IOException",ex.getLocalizedMessage(),ex);
+        throw ex;
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  if (name == null) {
+    return null;
+  }
+  name=name.trim();
+  final Collection<? extends CodeList> values;
+synchronized (VALUES) {
+    values=VALUES.get(codeType);
+    if (values == null) {
+      if (codeType == null) {
+        throw new IllegalArgumentException("Code type is null");
+      }
+ else {
+        throw new IllegalStateException("No collection of " + codeType.getSimpleName());
+      }
+    }
+  }
+synchronized (values) {
+    for (    final CodeList code : values) {
+      if (code.matches(name)) {
+        return codeType.cast(code);
+      }
+    }
+    try {
+      final Constructor<T> constructor=codeType.getDeclaredConstructor(CONSTRUCTOR_PARAMETERS);
+      constructor.setAccessible(true);
+      return constructor.newInstance(name);
+    }
+ catch (    Exception exception) {
+      throw new IllegalArgumentException("Can't create code of type " + codeType.getSimpleName(),exception);
+    }
+  }
+}

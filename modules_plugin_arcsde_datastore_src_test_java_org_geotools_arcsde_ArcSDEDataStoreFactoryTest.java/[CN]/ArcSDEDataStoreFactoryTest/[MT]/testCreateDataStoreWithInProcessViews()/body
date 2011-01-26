@@ -1,0 +1,17 @@
+{
+  ISession session=testData.getConnectionPool().getSession(true);
+  try {
+    InProcessViewSupportTestData.setUp(session,testData);
+  }
+  finally {
+    session.dispose();
+  }
+  Map<String,Serializable> workingParamsWithSqlView=new HashMap<String,Serializable>(workingParams);
+  workingParamsWithSqlView.putAll(InProcessViewSupportTestData.registerViewParams);
+  DataStore store=dsFactory.createDataStore(workingParamsWithSqlView);
+  assertNotNull(store);
+  SimpleFeatureType viewType=store.getSchema(InProcessViewSupportTestData.typeName);
+  assertNotNull(viewType);
+  assertEquals(InProcessViewSupportTestData.typeName,viewType.getTypeName());
+  store.dispose();
+}

@@ -1,0 +1,32 @@
+{
+  Connection conn=pool.getConnection();
+  conn.setAutoCommit(true);
+  try {
+    Statement s=conn.createStatement();
+    s.execute("SELECT dropgeometrycolumn( '" + f.schema + "','road','geom')");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("DROP TABLE " + f.schema + ".road CASCADE");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("CREATE TABLE " + f.schema + ".road (fid varchar PRIMARY KEY, id int )");
+    s.execute("SELECT AddGeometryColumn('" + f.schema + "', 'road', 'geom', 4326, 'LINESTRING', 2);");
+    s.execute("ALTER TABLE " + f.schema + ".road add name varchar;");
+    for (int i=0; i < roadFeatures.length; i++) {
+      SimpleFeature feature=roadFeatures[i];
+      String fid=feature.getID().substring("road.".length());
+      String ql="INSERT INTO " + f.schema + ".road (fid,id,geom,name) VALUES ("+ "'"+ fid+ "',"+ feature.getAttribute("id")+ ","+ "GeometryFromText('"+ ((Geometry)feature.getAttribute("geom")).toText()+ "', 4326 ),"+ "'"+ feature.getAttribute("name")+ "')";
+      s.execute(ql);
+    }
+    s.execute("VACUUM ANALYZE " + f.schema + ".road");
+  }
+  finally {
+    conn.close();
+  }
+}

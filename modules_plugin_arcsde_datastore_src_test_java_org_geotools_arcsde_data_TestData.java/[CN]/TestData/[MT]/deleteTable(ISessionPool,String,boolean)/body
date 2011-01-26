@@ -1,0 +1,24 @@
+{
+  final Command<Void> deleteCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeTable table=new SeTable(connection,tableName);
+      try {
+        table.delete();
+      }
+ catch (      SeException ignorable) {
+        if (!ignoreFailure) {
+          throw new ArcSdeException(ignorable);
+        }
+      }
+      return null;
+    }
+  }
+;
+  final ISession session=connPool.getSession();
+  try {
+    session.issue(deleteCmd);
+  }
+  finally {
+    session.dispose();
+  }
+}

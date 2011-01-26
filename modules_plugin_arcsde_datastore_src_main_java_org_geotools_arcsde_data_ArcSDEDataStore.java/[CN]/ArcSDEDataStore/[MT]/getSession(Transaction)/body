@@ -1,0 +1,20 @@
+{
+  if (transaction == null) {
+    throw new NullPointerException("transaction can't be null. Did you mean Transaction.AUTO_COMMIT?");
+  }
+  final ISession session;
+  if (Transaction.AUTO_COMMIT.equals(transaction)) {
+    try {
+      session=connectionPool.getSession(false);
+    }
+ catch (    UnavailableConnectionException e) {
+      throw new RuntimeException("Session pool exhausted",e);
+    }
+  }
+ else {
+    SessionTransactionState state;
+    state=SessionTransactionState.getState(transaction,this.connectionPool);
+    session=state.getConnection();
+  }
+  return session;
+}

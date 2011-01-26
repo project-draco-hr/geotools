@@ -1,0 +1,44 @@
+{
+  if (encoders != null) {
+    while (encoders.hasNext()) {
+      final ImageWriter writer=encoders.next();
+      final ImageWriterSpi spi=writer.getOriginatingProvider();
+      final Class<?>[] outputTypes;
+      if (spi == null) {
+        outputTypes=ImageWriterSpi.STANDARD_OUTPUT_TYPE;
+      }
+ else {
+        final String[] formats=spi.getFormatNames();
+        if (containsFormatName(formats,"gif")) {
+          forceIndexColorModelForGIF(true);
+        }
+ else {
+          tile();
+        }
+        if (!spi.canEncodeImage(image)) {
+          continue;
+        }
+        outputTypes=spi.getOutputTypes();
+      }
+      final ImageOutputStream stream;
+      if (acceptInputType(outputTypes,output.getClass())) {
+        writer.setOutput(output);
+        stream=null;
+      }
+ else       if (acceptInputType(outputTypes,ImageOutputStream.class)) {
+        stream=ImageIO.createImageOutputStream(output);
+        writer.setOutput(stream);
+      }
+ else {
+        continue;
+      }
+      writer.write(image);
+      writer.dispose();
+      if (stream != null) {
+        stream.close();
+      }
+      return this;
+    }
+  }
+  throw new IIOException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+}

@@ -1,0 +1,35 @@
+{
+  GeometryDescriptor defGeom=null;
+  if (this.defaultGeometry != null) {
+    List<AttributeDescriptor> atts=attributes();
+    for (int i=0; i < atts.size(); i++) {
+      AttributeDescriptor att=atts.get(i);
+      if (this.defaultGeometry.equals(att.getName().getLocalPart())) {
+        if (!(att instanceof GeometryDescriptor)) {
+          attributeBuilder.init(att);
+          attributeBuilder.setCRS(crs);
+          GeometryType type=attributeBuilder.buildGeometryType();
+          att=attributeBuilder.buildDescriptor(att.getName(),type);
+          atts.set(i,att);
+        }
+        defGeom=(GeometryDescriptor)att;
+        break;
+      }
+    }
+    if (defGeom == null) {
+      String msg="'" + this.defaultGeometry + " specified as default"+ " but could find no such attribute.";
+      throw new IllegalArgumentException(msg);
+    }
+  }
+  if (defGeom == null) {
+    for (    AttributeDescriptor att : attributes()) {
+      if (att instanceof GeometryDescriptor) {
+        defGeom=(GeometryDescriptor)att;
+        break;
+      }
+    }
+  }
+  SimpleFeatureType built=factory.createSimpleFeatureType(name(),attributes(),defGeom,isAbstract,restrictions(),superType,description);
+  init();
+  return built;
+}

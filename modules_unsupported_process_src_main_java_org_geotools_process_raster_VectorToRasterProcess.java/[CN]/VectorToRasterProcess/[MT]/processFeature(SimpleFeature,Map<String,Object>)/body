@@ -1,0 +1,53 @@
+{
+  Object attribute=input.get(VectorToRasterFactory.ATTRIBUTE.key);
+  Geometry geometry=(Geometry)feature.getDefaultGeometry();
+  if (geometry.intersects(extentGeometry)) {
+    Number value=getFeatureValue(feature,attribute);
+switch (transferType) {
+case FLOAT:
+      if (minAttValue == null) {
+        minAttValue=maxAttValue=Float.valueOf(value.floatValue());
+      }
+ else       if (Float.compare(value.floatValue(),minAttValue.floatValue()) < 0) {
+        minAttValue=value.floatValue();
+      }
+ else       if (Float.compare(value.floatValue(),maxAttValue.floatValue()) > 0) {
+        maxAttValue=value.floatValue();
+      }
+    break;
+case INTEGRAL:
+  if (minAttValue == null) {
+    minAttValue=maxAttValue=Integer.valueOf(value.intValue());
+  }
+ else   if (value.intValue() < minAttValue.intValue()) {
+    minAttValue=value.intValue();
+  }
+ else   if (value.intValue() > maxAttValue.intValue()) {
+    maxAttValue=value.intValue();
+  }
+break;
+}
+graphics.setColor(valueToColor(value));
+if (geometry.getClass().equals(MultiPolygon.class)) {
+MultiPolygon mp=(MultiPolygon)geometry;
+for (int n=0; n < mp.getNumGeometries(); n++) {
+drawGeometry(mp.getGeometryN(n));
+}
+}
+ else if (geometry.getClass().equals(MultiLineString.class)) {
+MultiLineString mp=(MultiLineString)geometry;
+for (int n=0; n < mp.getNumGeometries(); n++) {
+drawGeometry(mp.getGeometryN(n));
+}
+}
+ else if (geometry.getClass().equals(MultiPoint.class)) {
+MultiPoint mp=(MultiPoint)geometry;
+for (int n=0; n < mp.getNumGeometries(); n++) {
+drawGeometry(mp.getGeometryN(n));
+}
+}
+ else {
+drawGeometry(geometry);
+}
+}
+}

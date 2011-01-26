@@ -1,0 +1,44 @@
+{
+  Connection connection=dataSource.getConnection();
+  Logging.getLogger("org.geotools.referencing.factory").config("Creating cached EPSG database.");
+  final Statement statement=connection.createStatement();
+  try {
+    final BufferedReader in=new BufferedReader(new InputStreamReader(HsqlEpsgDatabase.class.getResourceAsStream("EPSG.sql"),"ISO-8859-1"));
+    StringBuilder insertStatement=null;
+    String line;
+    while ((line=in.readLine()) != null) {
+      line=line.trim();
+      final int length=line.length();
+      if (length != 0) {
+        if (line.startsWith("INSERT INTO")) {
+          insertStatement=new StringBuilder(line);
+          continue;
+        }
+        if (insertStatement != null) {
+          final int values=insertStatement.length();
+          insertStatement.append(line);
+          final boolean hasMore=(line.charAt(length - 1) == ',');
+          if (hasMore) {
+            insertStatement.setLength(insertStatement.length() - 1);
+          }
+          line=insertStatement.toString();
+          insertStatement.setLength(values);
+          if (!hasMore) {
+            insertStatement=null;
+          }
+        }
+        statement.execute(line);
+      }
+    }
+    in.close();
+  }
+ catch (  IOException exception) {
+    SQLException e=new SQLException("Can't read the SQL script.");
+    e.initCause(exception);
+    throw e;
+  }
+ finally {
+    statement.close();
+    connection.close();
+  }
+}

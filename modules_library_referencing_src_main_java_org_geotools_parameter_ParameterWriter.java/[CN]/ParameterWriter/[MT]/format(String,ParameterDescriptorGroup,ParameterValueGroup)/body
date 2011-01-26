@@ -1,0 +1,131 @@
+{
+  final String lineSeparator=System.getProperty("line.separator","\n");
+  out.write(' ');
+  out.write(name);
+  out.write(lineSeparator);
+  Collection<GenericName> alias=group.getAlias();
+  if (alias != null) {
+    boolean first=true;
+    for (    final GenericName a : alias) {
+      out.write(first ? " alias " : "       ");
+      out.write(a.toInternationalString().toString(locale));
+      out.write(lineSeparator);
+      first=false;
+    }
+  }
+  final Vocabulary resources=Vocabulary.getResources(locale);
+  final TableWriter table=new TableWriter(out,TableWriter.SINGLE_VERTICAL_LINE);
+  table.setMultiLinesCells(true);
+  table.writeHorizontalSeparator();
+  table.write(resources.getString(VocabularyKeys.NAME));
+  table.nextColumn();
+  table.write(resources.getString(VocabularyKeys.CLASS));
+  table.nextColumn();
+  table.write("Minimum");
+  table.nextColumn();
+  table.write("Maximum");
+  table.nextColumn();
+  table.write(resources.getString((values == null) ? VocabularyKeys.DEFAULT_VALUE : VocabularyKeys.VALUE));
+  table.nextColumn();
+  table.write("Units");
+  table.nextLine();
+  table.nextLine(TableWriter.DOUBLE_HORIZONTAL_LINE);
+  List<Object> deferredGroups=null;
+  final Object[] array1=new Object[1];
+  final Collection<?> elements=(values != null) ? values.values() : group.descriptors();
+  for (  final Object element : elements) {
+    final GeneralParameterValue generalValue;
+    final GeneralParameterDescriptor generalDescriptor;
+    if (values != null) {
+      generalValue=(GeneralParameterValue)element;
+      generalDescriptor=generalValue.getDescriptor();
+    }
+ else {
+      generalValue=null;
+      generalDescriptor=(GeneralParameterDescriptor)element;
+    }
+    if (generalDescriptor instanceof ParameterDescriptorGroup) {
+      if (deferredGroups == null) {
+        deferredGroups=new ArrayList<Object>();
+      }
+      deferredGroups.add(element);
+      continue;
+    }
+    final Identifier identifier=generalDescriptor.getName();
+    table.write(identifier.getCode());
+    alias=generalDescriptor.getAlias();
+    if (alias != null) {
+      for (      final GenericName a : alias) {
+        if (!identifier.equals(a)) {
+          table.write(lineSeparator);
+          table.write(a.tip().toInternationalString().toString(locale));
+        }
+      }
+    }
+    table.nextColumn();
+    if (generalDescriptor instanceof ParameterDescriptor) {
+      final ParameterDescriptor descriptor=(ParameterDescriptor)generalDescriptor;
+      table.write(Classes.getShortName(descriptor.getValueClass()));
+      table.nextColumn();
+      table.setAlignment(TableWriter.ALIGN_RIGHT);
+      Object value=descriptor.getMinimumValue();
+      if (value != null) {
+        table.write(formatValue(value));
+      }
+      table.nextColumn();
+      value=descriptor.getMaximumValue();
+      if (value != null) {
+        table.write(formatValue(value));
+      }
+      table.nextColumn();
+      if (generalValue != null) {
+        value=((ParameterValue)generalValue).getValue();
+      }
+ else {
+        value=descriptor.getDefaultValue();
+      }
+      final Object array;
+      if (value != null && value.getClass().isArray()) {
+        array=value;
+      }
+ else {
+        array=array1;
+        array1[0]=value;
+      }
+      final int length=Array.getLength(array);
+      for (int i=0; i < length; i++) {
+        value=Array.get(array,i);
+        if (value != null) {
+          if (i != 0) {
+            table.write(lineSeparator);
+          }
+          table.write(formatValue(value));
+        }
+      }
+      table.nextColumn();
+      table.setAlignment(TableWriter.ALIGN_LEFT);
+      value=descriptor.getUnit();
+      if (value != null) {
+        table.write(value.toString());
+      }
+    }
+    table.writeHorizontalSeparator();
+  }
+  table.flush();
+  if (deferredGroups != null) {
+    for (    final Object element : deferredGroups) {
+      final ParameterValueGroup value;
+      final ParameterDescriptorGroup descriptor;
+      if (element instanceof ParameterValueGroup) {
+        value=(ParameterValueGroup)element;
+        descriptor=value.getDescriptor();
+      }
+ else {
+        value=null;
+        descriptor=(ParameterDescriptorGroup)element;
+      }
+      out.write(lineSeparator);
+      format(name + '/' + descriptor.getName().getCode(),descriptor,value);
+    }
+  }
+}

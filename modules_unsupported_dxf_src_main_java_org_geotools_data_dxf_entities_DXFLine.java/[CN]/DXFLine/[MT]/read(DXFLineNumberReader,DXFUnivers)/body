@@ -1,0 +1,67 @@
+{
+  DXFLayer l=null;
+  double x1=0, y1=0, x2=0, y2=0, thickness=0;
+  DXFLineType lineType=null;
+  int visibility=1, c=-1;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    br.reset();
+  doLoop=false;
+break;
+case X_1:
+x1=cvp.getDoubleValue();
+break;
+case Y_1:
+y1=cvp.getDoubleValue();
+break;
+case X_2:
+x2=cvp.getDoubleValue();
+break;
+case Y_2:
+y2=cvp.getDoubleValue();
+break;
+case LAYER_NAME:
+l=univers.findLayer(cvp.getStringValue());
+break;
+case COLOR:
+c=cvp.getShortValue();
+break;
+case LINETYPE_NAME:
+lineType=univers.findLType(cvp.getStringValue());
+break;
+case THICKNESS:
+thickness=cvp.getDoubleValue();
+break;
+case VISIBILITY:
+visibility=cvp.getShortValue();
+break;
+default :
+break;
+}
+}
+DXFLine e=new DXFLine(new DXFPoint(x1,y1,c,l,visibility,1),new DXFPoint(x2,y2,c,l,visibility,1),c,l,lineType,thickness,visibility);
+e.setType(GeometryType.LINE);
+e.setStartingLineNumber(sln);
+e.setUnivers(univers);
+log.debug(e.toString(x1,y1,x2,y2,c,visibility,thickness));
+log.debug(">Exit at line: " + br.getLineNumber());
+return e;
+}

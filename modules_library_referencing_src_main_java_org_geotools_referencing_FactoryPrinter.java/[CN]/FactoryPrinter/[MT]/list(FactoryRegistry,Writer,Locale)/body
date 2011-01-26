@@ -1,0 +1,53 @@
+{
+  final List<Class<?>> categories=new ArrayList<Class<?>>();
+  for (final Iterator<Class<?>> it=registry.getCategories(); it.hasNext(); ) {
+    categories.add(it.next());
+  }
+  Collections.sort(categories,this);
+  final Vocabulary resources=Vocabulary.getResources(locale);
+  final TableWriter table=new TableWriter(out,TableWriter.SINGLE_VERTICAL_LINE);
+  table.setMultiLinesCells(true);
+  table.writeHorizontalSeparator();
+  table.write(resources.getString(VocabularyKeys.FACTORY));
+  table.nextColumn();
+  table.write(resources.getString(VocabularyKeys.AUTHORITY));
+  table.nextColumn();
+  table.write(resources.getString(VocabularyKeys.VENDOR));
+  table.nextColumn();
+  table.write(resources.getString(VocabularyKeys.IMPLEMENTATIONS));
+  table.nextLine();
+  table.nextLine(TableWriter.DOUBLE_HORIZONTAL_LINE);
+  final StringBuilder vendors=new StringBuilder();
+  final StringBuilder implementations=new StringBuilder();
+  for (final Iterator<Class<?>> it=categories.iterator(); it.hasNext(); ) {
+    final Class<?> category=it.next();
+    table.write(Classes.getShortName(category));
+    table.nextColumn();
+    final Iterator<?> providers=registry.getServiceProviders(category,null,null);
+    while (providers.hasNext()) {
+      if (implementations.length() != 0) {
+        table.write('\n');
+        vendors.append('\n');
+        implementations.append('\n');
+      }
+      final Factory provider=(Factory)providers.next();
+      final Citation vendor=provider.getVendor();
+      vendors.append(vendor.getTitle().toString(locale));
+      implementations.append(Classes.getShortClassName(provider));
+      if (provider instanceof AuthorityFactory) {
+        final Citation authority=((AuthorityFactory)provider).getAuthority();
+        final Iterator<? extends Identifier> identifiers=authority.getIdentifiers().iterator();
+        final String identifier=identifiers.hasNext() ? identifiers.next().getCode().toString() : authority.getTitle().toString(locale);
+        table.write(identifier);
+      }
+    }
+    table.nextColumn();
+    table.write(vendors.toString());
+    vendors.setLength(0);
+    table.nextColumn();
+    table.write(implementations.toString());
+    implementations.setLength(0);
+    table.writeHorizontalSeparator();
+  }
+  table.flush();
+}

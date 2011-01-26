@@ -1,0 +1,19 @@
+{
+  for (Iterator<NodeIdentifier> iterator=missing.iterator(); iterator.hasNext(); ) {
+    NodeIdentifier nodeid=(NodeIdentifier)iterator.next();
+    try {
+      nodeid.writeLock();
+    }
+ catch (    Exception ex) {
+      iterator.remove();
+      logger.log(Level.SEVERE,"Could not acquire necessary write locks.",ex);
+      continue;
+    }
+    if (nodeid.isValid()) {
+      nodeid.readLock();
+      found.add(nodeid);
+      nodeid.writeUnLock();
+      iterator.remove();
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  if (fids != null && !fids.isEmpty()) {
+    Filter fidFilter=store.buildFidFilter(fids);
+    Filter versionFilter=store.buildVersionedFilter(externalFeatureType.getTypeName(),fidFilter,ri);
+    DefaultQuery query=new DefaultQuery(externalFeatureType.getTypeName(),versionFilter);
+    if (mapper != null) {
+      List sort=new ArrayList(mapper.getColumnCount() - 1);
+      for (int i=0; i < mapper.getColumnCount(); i++) {
+        String colName=mapper.getColumnName(i);
+        if (!"revision".equals(colName))         sort.add(ff.sort(colName,SortOrder.DESCENDING));
+      }
+      query.setSortBy((SortBy[])sort.toArray(new SortBy[sort.size()]));
+    }
+    return store.wrapped.getFeatureReader(query,transaction);
+  }
+ else {
+    return null;
+  }
+}

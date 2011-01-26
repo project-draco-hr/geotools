@@ -1,0 +1,58 @@
+{
+  if (getCoverageGridRange() == null)   setCoverageGridRange(new GridEnvelope2D(new Rectangle(0,0,metadata.getXPixels(),metadata.getYPixels())));
+  final double longitude=metadata.getLongitude();
+  final double latitude=metadata.getLatitude();
+  final Channel channel=metadata.getChannel();
+  final double orientation=metadata.getOrientation();
+  final double xDim=metadata.getXPixelDim();
+  final double yDim=metadata.getYPixelDim();
+  AffineTransform gt=null;
+  try {
+    final CoordinateReferenceSystem crs=UTMUtilities.getProperUTM(longitude,latitude);
+    setCoverageCRS(crs);
+    MathTransform transform=CRS.findMathTransform(org.geotools.referencing.crs.DefaultGeographicCRS.WGS84,crs);
+    double[] dest=new double[2];
+    transform.transform(new double[]{longitude,latitude},0,dest,0,1);
+    double easting=dest[0];
+    double northing=dest[1];
+    final double alpha=(orientation * Math.PI) / 180;
+    final double cosAlpha=Math.cos(alpha);
+    final double sinAlpha=Math.sin(alpha);
+    final double[] dx=new double[2];
+    final double[] dy=new double[2];
+    dx[0]=sinAlpha * xDim;
+    dx[1]=channel == Channel.PORT ? -cosAlpha * yDim : cosAlpha * yDim;
+    dy[0]=cosAlpha * xDim;
+    dy[1]=channel == Channel.PORT ? sinAlpha * yDim : sinAlpha * -yDim;
+    GeneralMatrix gm=new GeneralMatrix(3);
+    gm.setElement(0,0,dx[0]);
+    gm.setElement(0,1,dx[1]);
+    gm.setElement(1,0,dy[0]);
+    gm.setElement(1,1,dy[1]);
+    gm.setElement(0,2,easting);
+    gm.setElement(1,2,northing);
+    gt=gm.toAffineTransform2D();
+    this.raster2Model=ProjectiveTransform.create(gt);
+    MathTransform tempTransform=PixelTranslation.translate(raster2Model,PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER);
+    if (getCoverageEnvelope() == null) {
+      final Envelope gridRange=new GeneralEnvelope(getCoverageGridRange().getBounds2D());
+      final GeneralEnvelope coverageEnvelope=CRS.transform(tempTransform,gridRange);
+      setCoverageEnvelope(coverageEnvelope);
+    }
+  }
+ catch (  IllegalStateException e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    }
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    }
+  }
+catch (  FactoryException e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    }
+  }
+}

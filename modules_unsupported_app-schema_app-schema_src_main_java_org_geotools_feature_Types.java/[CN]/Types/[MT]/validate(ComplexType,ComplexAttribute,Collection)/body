@@ -1,0 +1,37 @@
+{
+  validate((AttributeType)type,(Attribute)attribute,(Object)content,false);
+  if (content == null) {
+    return;
+  }
+  Collection schema=type.getDescriptors();
+  int index=0;
+  for (Iterator itr=content.iterator(); itr.hasNext(); ) {
+    Attribute att=(Attribute)itr.next();
+    if (att == null) {
+      throw new NullPointerException("Attribute at index " + index + " is null. Attributes "+ "can't be null. Do you mean Attribute.get() == null?");
+    }
+    AttributeType attType=att.getType();
+    boolean contains=false;
+    for (Iterator sitr=schema.iterator(); sitr.hasNext(); ) {
+      AttributeDescriptor ad=(AttributeDescriptor)sitr.next();
+      if (ad.getType().equals(attType)) {
+        contains=true;
+        break;
+      }
+    }
+    if (!contains) {
+      throw new IllegalArgumentException("Attribute of type " + attType.getName() + " found at index "+ index+ " but this type is not allowed by this descriptor");
+    }
+    index++;
+  }
+  if (type.getDescriptors().isEmpty()) {
+    if (!content.isEmpty()) {
+      throw new IllegalAttributeException(attribute.getDescriptor(),"Type indicates empty attribute collection, content does not");
+    }
+    return;
+  }
+  validateAll(type,attribute,content);
+  if (type.getSuper() != null) {
+    validate((ComplexType)type.getSuper(),attribute,content);
+  }
+}

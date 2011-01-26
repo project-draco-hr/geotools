@@ -1,0 +1,86 @@
+{
+  super(entry,query);
+  Date beginingOfExcelTime=HSSFDateUtil.getJavaDate(0);
+  dataStore=(ExcelDataStore)entry.getDataStore();
+  sheet=dataStore.getSheet();
+  latCol=dataStore.getLatColumnIndex();
+  lonCol=dataStore.getLonColumnIndex();
+  int rows=sheet.getPhysicalNumberOfRows();
+  int start=dataStore.getHeaderRowIndex() + 1;
+  latCol=dataStore.getLatColumnIndex();
+  lonCol=dataStore.getLonColumnIndex();
+  features=new ArrayList<SimpleFeature>();
+  filteredFeatures=new ArrayList<SimpleFeature>();
+  evaluator=dataStore.workbook.getCreationHelper().createFormulaEvaluator();
+  if (schema == null) {
+    schema=getSchema();
+  }
+  GeometryFactory geometryFactory=dataStore.getGeometryFactory();
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(schema);
+  Row header=sheet.getRow(dataStore.getHeaderRowIndex());
+  for (int i=start; i < rows; i++) {
+    Row data=sheet.getRow(i);
+    double x=0.0;
+    double y=0.0;
+    for (int col=data.getFirstCellNum(); col < data.getLastCellNum(); col++) {
+      final Cell cell=data.getCell(col);
+      CellValue value=evaluator.evaluate(cell);
+      if (col == latCol) {
+        if (value.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+          y=value.getNumberValue();
+        }
+      }
+ else       if (col == lonCol) {
+        if (value.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+          x=value.getNumberValue();
+        }
+      }
+ else {
+        final String name=header.getCell(col).getStringCellValue().trim();
+switch (value.getCellType()) {
+case Cell.CELL_TYPE_NUMERIC:
+          AttributeType type=schema.getType(name);
+        Class<?> clazz=type.getBinding();
+      if (clazz == Double.class) {
+        builder.set(name,value.getNumberValue());
+      }
+ else       if (clazz == java.sql.Date.class) {
+        final java.util.Date javaDate=HSSFDateUtil.getJavaDate(value.getNumberValue());
+        final Calendar cal=Calendar.getInstance();
+        cal.clear();
+        cal.setTime(javaDate);
+        java.sql.Date date=new java.sql.Date(cal.getTimeInMillis());
+        builder.set(name,date);
+      }
+ else       if (clazz == java.util.Date.class) {
+        final java.util.Date javaDate=HSSFDateUtil.getJavaDate(value.getNumberValue());
+        builder.set(name,javaDate);
+      }
+ else       if (clazz == Time.class) {
+        final java.util.Date javaDate=HSSFDateUtil.getJavaDate(value.getNumberValue());
+        final Calendar cal=Calendar.getInstance();
+        cal.clear();
+        cal.setTime(javaDate);
+        cal.set(0,0,0);
+        Time time=new Time(cal.getTimeInMillis());
+        builder.set(name,time);
+      }
+    break;
+case Cell.CELL_TYPE_STRING:
+  builder.set(name,value.getStringValue().trim());
+break;
+case Cell.CELL_TYPE_BOOLEAN:
+builder.set(name,value.getBooleanValue());
+break;
+default :
+System.out.println("We don't handle " + cell.getCellType() + " type cells "+ cell.getStringCellValue());
+}
+}
+}
+Point p=geometryFactory.createPoint(new Coordinate(x,y));
+builder.set("the_geom",p);
+SimpleFeature feature=builder.buildFeature(null);
+features.add(feature);
+}
+filterFeatures(query);
+}

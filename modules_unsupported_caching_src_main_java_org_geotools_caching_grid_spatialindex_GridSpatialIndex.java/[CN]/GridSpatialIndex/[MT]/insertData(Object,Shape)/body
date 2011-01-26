@@ -1,0 +1,29 @@
+{
+  if (shape.getDimension() != dimension) {
+    throw new IllegalArgumentException("insertData: Shape has the wrong number of dimensions.");
+  }
+  if (this.root.getShape().contains(shape)) {
+    if (this.featureCapacity != Integer.MAX_VALUE) {
+      while (this.getStatistics().getNumberOfData() >= this.featureCapacity) {
+        if (!getEvictionPolicy().evict()) {
+          NodeCursor cc=new NodeCursor(getRootNode(),shape);
+          NodeIdentifier next=null;
+          int cnt=0;
+          while ((next=cc.getNext()) != null) {
+            Node n=readNode(next);
+            cnt+=n.getDataCount();
+            n.clear();
+            writeNode(n);
+            getStatistics().addToEvictionCounter(1);
+          }
+          getStatistics().addToDataCounter(-cnt);
+          return;
+        }
+      }
+    }
+    insertData(this.root,data,shape);
+  }
+ else {
+    insertDataOutOfBounds(data,shape);
+  }
+}

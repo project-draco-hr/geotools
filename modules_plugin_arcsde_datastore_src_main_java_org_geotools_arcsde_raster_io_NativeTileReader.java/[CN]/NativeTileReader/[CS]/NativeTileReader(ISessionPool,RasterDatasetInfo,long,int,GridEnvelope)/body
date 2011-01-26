@@ -1,0 +1,20 @@
+{
+  this.sessionPool=sessionPool;
+  this.rasterInfo=rasterInfo;
+  this.rasterId=rasterId;
+  this.pyramidLevel=pyramidLevel;
+  this.requestedTiles=tileRange;
+  final Dimension tileSize=rasterInfo.getTileDimension(rasterId);
+  this.pixelsPerTile=tileSize.width * tileSize.height;
+  this.nativeCellType=rasterInfo.getNativeCellType();
+  this.bitsPerSample=nativeCellType.getBitsPerSample();
+  this.tileDataLength=(int)Math.ceil(((double)pixelsPerTile * (double)bitsPerSample) / 8D);
+  final RasterCellType targetCellType=rasterInfo.getTargetCellType(rasterId);
+  this.dataFetcher=TileDataFetcher.getTileDataFetcher(this.nativeCellType,targetCellType);
+  int rasterIndex=rasterInfo.getRasterIndex(rasterId);
+  int maxTileX=rasterInfo.getNumTilesWide(rasterIndex,pyramidLevel) - 1;
+  int maxTileY=rasterInfo.getNumTilesHigh(rasterIndex,pyramidLevel) - 1;
+  if (tileRange.getLow(0) < 0 || tileRange.getLow(1) < 0 || tileRange.getHigh(0) > maxTileX || tileRange.getHigh(1) > maxTileY) {
+    throw new IllegalArgumentException("Invalid tile range for raster #" + rasterId + "/"+ pyramidLevel+ ": "+ tileRange+ ". Valid range is 0.."+ maxTileX+ " 0.."+ maxTileY);
+  }
+}

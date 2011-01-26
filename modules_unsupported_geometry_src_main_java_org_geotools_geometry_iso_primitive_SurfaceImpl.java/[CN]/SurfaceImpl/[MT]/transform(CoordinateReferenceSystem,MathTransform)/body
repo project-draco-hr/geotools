@@ -1,0 +1,19 @@
+{
+  PrimitiveFactory primitiveFactory=new PrimitiveFactoryImpl(newCRS,getPositionFactory());
+  List<Ring> currentRings=this.getBoundaryRings();
+  Iterator<Ring> iter=currentRings.iterator();
+  Ring newExterior=null;
+  List<Ring> newInteriors=new ArrayList<Ring>();
+  while (iter.hasNext()) {
+    Ring thisRing=(Ring)iter.next();
+    if (newExterior == null) {
+      newExterior=(Ring)thisRing.transform(newCRS,transform);
+    }
+ else {
+      newInteriors.add((Ring)thisRing.transform(newCRS,transform));
+    }
+  }
+  SurfaceBoundaryImpl surfaceBoundary=(SurfaceBoundaryImpl)primitiveFactory.createSurfaceBoundary(newExterior,newInteriors);
+  SurfaceImpl newSurface=(SurfaceImpl)primitiveFactory.createSurface(surfaceBoundary);
+  return newSurface;
+}

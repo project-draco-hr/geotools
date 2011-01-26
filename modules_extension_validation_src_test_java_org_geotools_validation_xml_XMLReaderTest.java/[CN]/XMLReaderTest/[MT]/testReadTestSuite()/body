@@ -1,0 +1,26 @@
+{
+  try {
+    FileReader fr=features();
+    if (fr == null)     return;
+    Map m=new HashMap();
+    PlugInDTO dto=XMLReader.readPlugIn(fr);
+    m.put(dto.getName(),dto);
+    fr=new FileReader("C:/Java/workspace/geoserver/conf/plugins/NameInList.xml");
+    dto=XMLReader.readPlugIn(fr);
+    m.put(dto.getName(),dto);
+    fr=new FileReader("C:/Java/workspace/geoserver/conf/validation/RoadTestSuite.xml");
+    TestSuiteDTO testsuite=XMLReader.readTestSuite("test",fr,m);
+    assertTrue("TestSuite Name read","RoadTestSuite".equals(testsuite.getName()));
+    TestDTO test=(TestDTO)testsuite.getTests().get("NameLookup");
+    assertNotNull("NameLookup does not exist as a test",test);
+    assertNotNull("Should not be null",test.getPlugIn());
+    assertTrue("Test plugInName read","NameInList".equals(test.getPlugIn().getName()));
+    assertNotNull("Should be one arg.",test.getArgs());
+    assertTrue("Should be one arg.",test.getArgs().size() == 2);
+    assertTrue("Arg. name",test.getArgs().containsKey("LUTName"));
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    fail(e.toString());
+  }
+}

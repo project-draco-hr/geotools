@@ -1,0 +1,37 @@
+{
+  RasterInfo pyramid=createPyramid();
+  System.out.println(pyramid);
+  RasterTestData testData=new RasterTestData();
+  testData.setUp();
+  String tableName=testData.getRasterTableName(RasterCellType.TYPE_8BIT_U,1,false);
+  testData.loadTestRaster(tableName,1,1013,1021,RasterCellType.TYPE_8BIT_U,null,true,false,SeRaster.SE_INTERPOLATION_NEAREST,9);
+  ISessionPool pool=testData.getConnectionPool();
+  ISession conn=pool.getSession();
+  final SeQuery q=conn.createAndExecuteQuery(new String[]{"RASTER"},new SeSqlConstruct(tableName));
+  try {
+    pyramid=conn.issue(new Command<RasterInfo>(){
+      @Override public RasterInfo execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeRow r=q.fetch();
+        SeRasterAttr rAttr=r.getRaster(0);
+        SeObjectId rasterColumnId=rAttr.getRasterColumnId();
+        SeRasterColumn rasterColumn=new SeRasterColumn(connection,rasterColumnId);
+        SeCoordinateReference coordRef=rasterColumn.getCoordRef();
+        String coordRefWKT=coordRef.getCoordSysDescription();
+        CoordinateReferenceSystem crs;
+        try {
+          crs=CRS.parseWKT(coordRefWKT);
+        }
+ catch (        FactoryException e) {
+          throw new RuntimeException(e);
+        }
+        RasterInfo pyramid=new RasterInfo(rAttr,crs);
+        return pyramid;
+      }
+    }
+);
+  }
+  finally {
+    conn.dispose();
+  }
+  System.out.println(pyramid);
+}

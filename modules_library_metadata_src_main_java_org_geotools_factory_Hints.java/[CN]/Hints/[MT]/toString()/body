@@ -1,0 +1,23 @@
+{
+  final String lineSeparator=System.getProperty("line.separator","\n");
+  final StringBuilder buffer=new StringBuilder("Hints:");
+  buffer.append(lineSeparator).append(AbstractFactory.toString(this));
+  Map<?,?> extra=null;
+  final boolean changed;
+synchronized (GLOBAL) {
+    changed=ensureSystemDefaultLoaded();
+    if (!GLOBAL.isEmpty()) {
+      extra=new HashMap<Object,Object>(GLOBAL);
+    }
+  }
+  if (changed) {
+    GeoTools.fireConfigurationChanged();
+  }
+  if (extra != null) {
+    extra.keySet().removeAll(keySet());
+    if (!extra.isEmpty()) {
+      buffer.append("System defaults:").append(lineSeparator).append(AbstractFactory.toString(extra));
+    }
+  }
+  return buffer.toString();
+}

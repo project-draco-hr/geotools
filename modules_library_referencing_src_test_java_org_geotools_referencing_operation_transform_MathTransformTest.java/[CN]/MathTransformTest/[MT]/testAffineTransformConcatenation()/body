@@ -1,0 +1,38 @@
+{
+  final MathTransform[] transforms=new MathTransform[2];
+  final int numDim=4;
+  final int numPts=200;
+  for (int pass=0; pass < 100; pass++) {
+    final int dimSource=random.nextInt(numDim) + 1;
+    final int dimTarget=random.nextInt(numDim) + 1;
+    final int dimInterm=random.nextInt(numDim) + 1;
+    final Matrix matrix1=getRandomMatrix(dimSource,dimInterm);
+    final Matrix matrix2=getRandomMatrix(dimInterm,dimTarget);
+    final MathTransform tr1=factory.createAffineTransform(matrix1);
+    final MathTransform tr2=factory.createAffineTransform(matrix2);
+    final double[] sourcePt=new double[dimSource * numPts];
+    final double[] intermPt=new double[dimInterm * numPts];
+    final double[] targetPt=new double[dimTarget * numPts];
+    final double[] compare=new double[dimTarget * numPts];
+    final double[] delta=new double[dimTarget];
+    for (int i=0; i < numPts; i++) {
+      sourcePt[i]=100 * random.nextDouble() - 50;
+    }
+    tr1.transform(sourcePt,0,intermPt,0,numPts);
+    tr2.transform(intermPt,0,targetPt,0,numPts);
+    Arrays.fill(delta,1E-6);
+    transforms[0]=factory.createConcatenatedTransform(tr1,tr2);
+    transforms[1]=ConcatenatedTransform.createConcatenatedTransform(tr1,tr2);
+    assertTrue(transforms[0] instanceof LinearTransform);
+    assertFalse(transforms[1] instanceof LinearTransform);
+    for (int i=0; i < transforms.length; i++) {
+      final MathTransform transform=transforms[i];
+      assertInterfaced(transform);
+      assertEquals("dimSource[" + i + ']',dimSource,transform.getSourceDimensions());
+      assertEquals("dimTarget[" + i + ']',dimTarget,transform.getTargetDimensions());
+      transform.transform(sourcePt,0,compare,0,numPts);
+      String name="transform[" + i + "]("+ dimSource+ " -> "+ dimInterm+ " -> "+ dimTarget+ ')';
+      assertPointsEqual(name,targetPt,compare,delta);
+    }
+  }
+}

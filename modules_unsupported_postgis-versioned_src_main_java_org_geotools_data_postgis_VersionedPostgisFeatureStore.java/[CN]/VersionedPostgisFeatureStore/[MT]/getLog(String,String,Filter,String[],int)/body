@@ -1,0 +1,63 @@
+{
+  if (filter == null)   filter=Filter.INCLUDE;
+  RevisionInfo r1=new RevisionInfo(fromVersion);
+  RevisionInfo r2=new RevisionInfo(toVersion);
+  boolean swapped=false;
+  if (r1.revision > r2.revision) {
+    RevisionInfo tmpr=r1;
+    r1=r2;
+    r2=tmpr;
+    String tmps=toVersion;
+    toVersion=fromVersion;
+    fromVersion=tmps;
+    swapped=true;
+  }
+  ModifiedFeatureIds mfids=store.getModifiedFeatureFIDs(schema.getTypeName(),fromVersion,toVersion,filter,userIds,getTransaction());
+  Set ids=new HashSet(mfids.getCreated());
+  ids.addAll(mfids.getDeleted());
+  ids.addAll(mfids.getModified());
+  r1=mfids.fromRevision;
+  r2=mfids.toRevision;
+  if (ids.isEmpty())   return new EmptyFeatureCollection(schema);
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Filter fidFilter=store.buildFidFilter(ids);
+  Filter transformedFidFilter=store.transformFidFilter(schema.getTypeName(),fidFilter);
+  Filter revGrR1=ff.greater(ff.property("revision"),ff.literal(r1.revision));
+  Filter revLeR2=ff.lessOrEqual(ff.property("revision"),ff.literal(r2.revision));
+  Filter expGrR1=ff.greater(ff.property("expired"),ff.literal(r1.revision));
+  Filter expLeR2=ff.lessOrEqual(ff.property("expired"),ff.literal(r2.revision));
+  Filter versionFilter=ff.and(transformedFidFilter,ff.or(ff.and(revGrR1,revLeR2),ff.and(expGrR1,expLeR2)));
+  DefaultQuery q=new DefaultQuery(schema.getTypeName(),versionFilter,new String[]{"revision","expired"});
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+  SortedSet revisions=new TreeSet();
+  try {
+    fr=store.wrapped.getFeatureReader(q,getTransaction());
+    while (fr.hasNext()) {
+      SimpleFeature f=fr.next();
+      Long revision=(Long)f.getAttribute(0);
+      if (revision.longValue() > r1.revision)       revisions.add(revision);
+      Long expired=(Long)f.getAttribute(1);
+      if (expired.longValue() != Long.MAX_VALUE && expired.longValue() > r1.revision)       revisions.add(expired);
+    }
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Error reading modified revisions from datastore",e);
+  }
+ finally {
+    if (fr != null)     fr.close();
+  }
+  Set revisionIdSet=new HashSet();
+  for (Iterator it=revisions.iterator(); it.hasNext(); ) {
+    Long rev=(Long)it.next();
+    revisionIdSet.add(ff.featureId(VersionedPostgisDataStore.TBL_CHANGESETS + "." + rev.toString()));
+  }
+  if (revisionIdSet.isEmpty())   return new EmptyFeatureCollection(schema);
+  Filter revisionFilter=ff.id(revisionIdSet);
+  SimpleFeatureSource changesets=(SimpleFeatureSource)store.getFeatureSource(VersionedPostgisDataStore.TBL_CHANGESETS);
+  DefaultQuery sq=new DefaultQuery();
+  sq.setFilter(revisionFilter);
+  final SortOrder order=swapped ? SortOrder.ASCENDING : SortOrder.DESCENDING;
+  sq.setSortBy(new SortBy[]{ff.sort("revision",order)});
+  if (maxRows > 0)   sq.setMaxFeatures(maxRows);
+  return changesets.getFeatures(sq);
+}

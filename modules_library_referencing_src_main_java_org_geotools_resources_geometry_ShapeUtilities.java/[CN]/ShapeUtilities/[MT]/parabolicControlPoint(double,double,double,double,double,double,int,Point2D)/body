@@ -1,0 +1,47 @@
+{
+  x1-=x0;
+  y1-=y0;
+  x2-=x0;
+  y2-=y0;
+switch (orientation) {
+case PARALLEL:
+{
+      final double rx2=x2;
+      final double ry2=y2;
+      x2=hypot(x2,y2);
+      y2=(x1 * rx2 + y1 * ry2) / x2;
+      y1=(y1 * rx2 - x1 * ry2) / x2;
+      x1=y2;
+      y2=0;
+      final double x=0.5;
+      final double y=(y1 * x * x2) / (x1 * (x2 - x1));
+      final double check=abs(y);
+      if (!(check <= 1 / EPS))       return null;
+      if (!(check >= EPS))       return null;
+      x1=(x * rx2 - y * ry2) + x0;
+      y1=(y * rx2 + x * ry2) + y0;
+      break;
+    }
+case HORIZONTAL:
+{
+    final double a=(y2 - y1 * x2 / x1) / (x2 - x1);
+    final double check=abs(a);
+    if (!(check <= 1 / EPS))     return null;
+    if (!(check >= EPS))     return null;
+    final double b=y2 / x2 - a;
+    x1=(1 + b / (2 * a)) * x2 - y2 / (2 * a);
+    y1=y0 + b * x1;
+    x1+=x0;
+    break;
+  }
+default :
+throw new IllegalArgumentException();
+}
+if (dest != null) {
+dest.setLocation(x1,y1);
+return dest;
+}
+ else {
+return new Point2D.Double(x1,y1);
+}
+}

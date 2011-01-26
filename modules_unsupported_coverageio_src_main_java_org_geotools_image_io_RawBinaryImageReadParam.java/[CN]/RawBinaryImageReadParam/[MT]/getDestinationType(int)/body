@@ -1,0 +1,40 @@
+{
+  if (targetDataType == DataBuffer.TYPE_UNDEFINED) {
+    return null;
+  }
+  final SampleModel sampleModel;
+  final ColorModel colorModel;
+  final ColorSpace colorSpace=getColorSpace(numBands);
+  if (model != null) {
+    if (numBands != model.getNumBands()) {
+      throw new IllegalArgumentException("Number of bands mismatch");
+    }
+    sampleModel=getStreamSampleModel(model,model,size,targetDataType);
+  }
+ else {
+    final int width, height;
+    if (size != null) {
+      width=size.width;
+      height=size.height;
+    }
+ else {
+      width=height=1;
+    }
+    final int[] bankIndices=new int[numBands];
+    final int[] bandOffsets=new int[numBands];
+    for (int i=numBands; --i >= 0; )     bankIndices[i]=i;
+    if (ContinuousPalette.USE_JAI_MODEL) {
+      sampleModel=new ComponentSampleModelJAI(targetDataType,width,height,1,width,bankIndices,bandOffsets);
+    }
+ else {
+      return ImageTypeSpecifier.createBanded(colorSpace,bankIndices,bandOffsets,targetDataType,false,false);
+    }
+  }
+  if (sampleModel instanceof ComponentSampleModel) {
+    colorModel=new ComponentColorModelJAI(getColorSpace(numBands),false,false,Transparency.OPAQUE,sampleModel.getDataType());
+  }
+ else {
+    colorModel=PlanarImage.createColorModel(sampleModel);
+  }
+  return new ImageTypeSpecifier(colorModel,sampleModel);
+}

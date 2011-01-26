@@ -1,0 +1,36 @@
+{
+  Connection conn=null;
+  Statement st=null;
+  try {
+    conn=pool.getConnection();
+    st=conn.createStatement();
+    st.execute("CREATE TABLE " + VersionedPostgisDataStore.TBL_CHANGESETS + "(ID SERIAL, STUFF VARCHAR(20))");
+    try {
+      buildDataStore();
+      fail("Should have failed because of the pre-existing but alone version support table");
+    }
+ catch (    IOException e) {
+    }
+    SqlTestUtils.dropTable(pool,VersionedPostgisDataStore.TBL_CHANGESETS,true);
+    st.execute("CREATE TABLE " + VersionedPostgisDataStore.TBL_TABLESCHANGED + "(ID SERIAL, STUFF VARCHAR(20))");
+    try {
+      buildDataStore();
+      fail("Should have failed because of the pre-existing but alone version support table");
+    }
+ catch (    IOException e) {
+    }
+    SqlTestUtils.dropTable(pool,VersionedPostgisDataStore.TBL_TABLESCHANGED,false);
+    st.execute("CREATE TABLE " + VersionedPostgisDataStore.TBL_VERSIONEDTABLES + "(ID SERIAL, STUFF VARCHAR(20))");
+    try {
+      buildDataStore();
+      fail("Should have failed because of the pre-existing but alone version support table");
+    }
+ catch (    IOException e) {
+    }
+    SqlTestUtils.dropTable(pool,VersionedPostgisDataStore.TBL_VERSIONEDTABLES,true);
+  }
+  finally {
+    JDBCUtils.close(st);
+    JDBCUtils.close(conn,null,null);
+  }
+}

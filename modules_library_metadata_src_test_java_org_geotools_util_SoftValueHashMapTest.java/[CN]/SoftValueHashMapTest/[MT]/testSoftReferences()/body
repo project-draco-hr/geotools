@@ -1,0 +1,53 @@
+{
+  final Random random=getRandom();
+  final SoftValueHashMap<Integer,Integer> softMap=new SoftValueHashMap<Integer,Integer>();
+  final HashMap<Integer,Integer> strongMap=new HashMap<Integer,Integer>();
+  for (int pass=0; pass < 2; pass++) {
+    int count=0;
+    softMap.clear();
+    strongMap.clear();
+    for (int i=0; i < SAMPLE_SIZE; i++) {
+      final Integer key=new Integer(random.nextInt(SAMPLE_SIZE));
+      final Integer value=new Integer(random.nextInt(SAMPLE_SIZE));
+      if (random.nextBoolean()) {
+        final Integer softPrevious=softMap.put(key,value);
+        final Integer strongPrevious=strongMap.put(key,value);
+        if (softPrevious == null) {
+          assertNull("put:",strongPrevious);
+          count++;
+        }
+ else {
+          assertNotSame(value,softPrevious);
+        }
+        if (strongPrevious != null) {
+          assertSame("put:",strongPrevious,softPrevious);
+        }
+      }
+ else {
+        final Integer softPrevious=softMap.get(key);
+        final Integer strongPrevious=strongMap.remove(key);
+        if (strongPrevious != null) {
+          assertSame("remove:",strongPrevious,softPrevious);
+        }
+      }
+      assertTrue("containsAll:",softMap.entrySet().containsAll(strongMap.entrySet()));
+    }
+    for (int i=0; i < 20; i++) {
+      Runtime.getRuntime().gc();
+      Runtime.getRuntime().runFinalization();
+    }
+    assertTrue(softMap.isValid());
+    assertTrue("size:",softMap.size() <= count);
+    for (final Iterator it=softMap.values().iterator(); it.hasNext(); ) {
+      final Object value;
+      try {
+        value=it.next();
+      }
+ catch (      ConcurrentModificationException e) {
+        break;
+      }
+      assertTrue(value instanceof Integer);
+      assertNotNull(value);
+    }
+  }
+}

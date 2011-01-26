@@ -1,0 +1,49 @@
+{
+  if (canAccessUserViews(cx)) {
+    StringBuffer userSdoSql=new StringBuffer("SELECT SRID FROM MDSYS.USER_SDO_GEOM_METADATA WHERE ");
+    userSdoSql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
+    userSdoSql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
+    Statement userSdoStatement=null;
+    ResultSet userSdoResult=null;
+    try {
+      userSdoStatement=cx.createStatement();
+      LOGGER.log(Level.FINE,"SRID check; {0} ",userSdoSql.toString());
+      userSdoResult=userSdoStatement.executeQuery(userSdoSql.toString());
+      if (userSdoResult.next()) {
+        Object srid=userSdoResult.getObject(1);
+        if (srid != null) {
+          return ((Number)srid).intValue();
+        }
+      }
+    }
+  finally {
+      dataStore.closeSafe(userSdoResult);
+      dataStore.closeSafe(userSdoStatement);
+    }
+  }
+  StringBuffer allSdoSql=new StringBuffer("SELECT SRID FROM MDSYS.ALL_SDO_GEOM_METADATA WHERE ");
+  allSdoSql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
+  allSdoSql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
+  if (schemaName != null)   allSdoSql.append(" AND OWNER='" + schemaName + "'");
+  Statement allSdoStatement=null;
+  ResultSet allSdoResult=null;
+  try {
+    allSdoStatement=cx.createStatement();
+    LOGGER.log(Level.FINE,"SRID check; {0} ",allSdoSql.toString());
+    allSdoResult=allSdoStatement.executeQuery(allSdoSql.toString());
+    if (allSdoResult.next()) {
+      Object srid=allSdoResult.getObject(1);
+      if (srid == null) {
+        return null;
+      }
+      return ((Number)srid).intValue();
+    }
+ else {
+      return null;
+    }
+  }
+  finally {
+    dataStore.closeSafe(allSdoResult);
+    dataStore.closeSafe(allSdoStatement);
+  }
+}

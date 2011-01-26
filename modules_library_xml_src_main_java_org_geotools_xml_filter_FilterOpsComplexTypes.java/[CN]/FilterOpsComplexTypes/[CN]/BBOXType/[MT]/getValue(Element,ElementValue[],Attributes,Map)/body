@@ -1,0 +1,26 @@
+{
+  if (value == null || value.length != 2) {
+    throw new SAXException("ogc:propertyName or gml:box required for bbox filter");
+  }
+  FilterFactory2 factory=FilterSchema.filterFactory(hints);
+  try {
+    Expression geometry1=(Expression)value[0].getValue();
+    Expression geometry2=(Expression)value[1].getValue();
+    if (geometry2 instanceof Literal) {
+      Object literal=((Literal)geometry2).getValue();
+      if (literal instanceof Geometry) {
+        Geometry geometry=(Geometry)literal;
+        Envelope env=geometry.getEnvelopeInternal();
+        return factory.bbox(geometry1,env.getMinX(),env.getMinY(),env.getMaxX(),env.getMaxY(),null);
+      }
+    }
+    Disjoint disjoint=factory.disjoint(geometry1,geometry2);
+    return factory.not(disjoint);
+  }
+ catch (  ClassCastException wrong) {
+    throw new SAXException("ogc:propertyName or gml:box required for bbox filter",wrong);
+  }
+catch (  IllegalFilterException illegalFilterException) {
+    throw new SAXException("Could not create bbox filter",illegalFilterException);
+  }
+}

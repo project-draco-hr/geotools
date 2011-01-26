@@ -1,0 +1,24 @@
+{
+  final OperationRegistry registry=JAI.getDefaultInstance().getOperationRegistry();
+  assertNotNull(registry.getDescriptor("rendered",SampleTranscoder.OPERATION_NAME));
+  final BufferedImage dummy=new BufferedImage(10,10,BufferedImage.TYPE_BYTE_GRAY);
+  final ParameterBlockJAI param=new ParameterBlockJAI(SampleTranscoder.OPERATION_NAME);
+  final ParameterListDescriptor d=param.getParameterListDescriptor();
+  assertTrue(d.getParamClasses()[0].equals(GridSampleDimension[].class));
+  try {
+    JAI.create(SampleTranscoder.OPERATION_NAME,param);
+    fail();
+  }
+ catch (  IllegalArgumentException expected) {
+  }
+  param.addSource(dummy);
+  try {
+    JAI.create(SampleTranscoder.OPERATION_NAME,param);
+    fail();
+  }
+ catch (  IllegalArgumentException expected) {
+  }
+  param.setParameter("sampleDimensions",new GridSampleDimension[]{test});
+  final RenderedOp op=JAI.create(SampleTranscoder.OPERATION_NAME,param);
+  assertTrue(op.getRendering() instanceof SampleTranscoder);
+}

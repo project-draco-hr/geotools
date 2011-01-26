@@ -1,0 +1,27 @@
+{
+  System.gc();
+  System.runFinalization();
+  CoordinateReferenceSystem crs=factory.createCoordinateReferenceSystem("4273");
+  factory.setTimeout(200);
+  crs=factory.createCoordinateReferenceSystem("4273");
+  assertEquals("4273",getIdentifier(crs));
+  try {
+    assertTrue(factory.isConnected());
+    Thread.sleep(800);
+    System.gc();
+    System.runFinalization();
+    Thread.sleep(200);
+    System.gc();
+    System.runFinalization();
+    assertFalse(factory.isConnected());
+  }
+ catch (  InterruptedException e) {
+    fail(e.getLocalizedMessage());
+  }
+  assertFalse(factory.isConnected());
+  assertSame(crs,factory.createCoordinateReferenceSystem("4273"));
+  assertFalse(factory.isConnected());
+  assertEquals("4275",getIdentifier(factory.createCoordinateReferenceSystem("4275")));
+  assertTrue(factory.isConnected());
+  factory.setTimeout(30 * 60 * 1000L);
+}

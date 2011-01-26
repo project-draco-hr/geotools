@@ -1,0 +1,18 @@
+{
+  URL sldUrl=TestData.getResource(this,"remoteOws.sld");
+  StyleFactory factory=CommonFactoryFinder.getStyleFactory(null);
+  SLDParser stylereader=new SLDParser(factory,sldUrl);
+  StyledLayerDescriptor sld=stylereader.parseSLD();
+  assertEquals(1,sld.getStyledLayers().length);
+  assertTrue(sld.getStyledLayers()[0] instanceof UserLayer);
+  UserLayer layer=(UserLayer)sld.getStyledLayers()[0];
+  assertEquals("LayerWithRemoteOWS",layer.getName());
+  assertNotNull(layer.getRemoteOWS());
+  assertEquals("WFS",layer.getRemoteOWS().getService());
+  assertEquals("http://sigma.openplans.org:8080/geoserver/wfs?",layer.getRemoteOWS().getOnlineResource());
+  assertEquals(1,layer.getLayerFeatureConstraints().length);
+  FeatureTypeConstraint ftc=layer.getLayerFeatureConstraints()[0];
+  assertEquals("topp:states",ftc.getFeatureTypeName());
+  assertNotNull(ftc.getFilter());
+  assertTrue(ftc.getFilter() instanceof PropertyIsLessThan);
+}

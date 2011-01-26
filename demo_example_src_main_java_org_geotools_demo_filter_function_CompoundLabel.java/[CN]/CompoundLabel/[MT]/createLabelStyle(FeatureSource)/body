@@ -1,0 +1,26 @@
+{
+  FeatureType schema=featureSource.getSchema();
+  List<String> fieldNames=new ArrayList<String>();
+  for (  PropertyDescriptor desc : schema.getDescriptors()) {
+    if (String.class.isAssignableFrom(desc.getType().getBinding())) {
+      fieldNames.add(desc.getName().getLocalPart());
+    }
+  }
+  if (fieldNames.size() < 2) {
+    JOptionPane.showMessageDialog(null,"This example needs a feature type with at least two String fields","Bummer",JOptionPane.WARNING_MESSAGE);
+    return null;
+  }
+  Style style=null;
+  FieldWizard wizard=new FieldWizard(fieldNames);
+  if (wizard.showModalDialog() == JWizard.FINISH) {
+    String[] fields=wizard.getSelections();
+    style=SLD.createSimpleStyle((SimpleFeatureType)schema,Color.CYAN);
+    StyleFactory sf=CommonFactoryFinder.getStyleFactory(null);
+    FilterFactory ff=CommonFactoryFinder.getFilterFactory2(null);
+    TextSymbolizer sym=sf.createTextSymbolizer();
+    sym.setLabel(ff.function("Concatenate",ff.property(fields[0]),ff.literal(":"),ff.property(fields[1])));
+    SLD.rules(style)[0].symbolizers().add(sym);
+    return style;
+  }
+  return style;
+}

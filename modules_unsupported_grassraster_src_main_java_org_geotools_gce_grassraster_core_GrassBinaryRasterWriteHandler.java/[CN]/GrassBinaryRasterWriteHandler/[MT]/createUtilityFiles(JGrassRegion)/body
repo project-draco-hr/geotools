@@ -1,0 +1,34 @@
+{
+  OutputStreamWriter catsWriter=new OutputStreamWriter(new FileOutputStream(writerGrassEnv.getCATS()));
+  catsWriter.write("# xyz categories\n#\n#\n 0.00 0.00 0.00 0.00");
+  catsWriter.close();
+  OutputStreamWriter cellWriter=new OutputStreamWriter(new FileOutputStream(writerGrassEnv.getCELL()));
+  cellWriter.write("");
+  cellWriter.close();
+  OutputStreamWriter cell_miscFormatWriter=new OutputStreamWriter(new FileOutputStream(writerGrassEnv.getCELLMISC_FORMAT()));
+  if (outputToDiskType * 4 == 8) {
+    cell_miscFormatWriter.write("type: double\nbyte_order: xdr\nlzw_compression_bits: -1");
+  }
+ else {
+    cell_miscFormatWriter.write("type: float\nbyte_order: xdr\nlzw_compression_bits: -1");
+  }
+  cell_miscFormatWriter.close();
+  OutputStreamWriter cell_miscQantWriter=new OutputStreamWriter(new FileOutputStream(writerGrassEnv.getCELLMISC_QUANT()));
+  cell_miscQantWriter.write("round");
+  cell_miscQantWriter.close();
+  OutputStream cell_miscRangeStream=new FileOutputStream(writerGrassEnv.getCELLMISC_RANGE());
+  cell_miscRangeStream.write(double2bytearray(range[0]));
+  cell_miscRangeStream.write(double2bytearray(range[1]));
+  cell_miscRangeStream.close();
+  JGrassRegion tmp=getWriteRegion();
+  createCellhd(tmp.getProj(),tmp.getZone(),dataRegion.getNorth(),dataRegion.getSouth(),dataRegion.getEast(),dataRegion.getWest(),dataRegion.getCols(),dataRegion.getRows(),dataRegion.getNSResolution(),dataRegion.getWEResolution(),-1,1);
+  OutputStreamWriter windFile=new OutputStreamWriter(new FileOutputStream(writerGrassEnv.getHIST()));
+  Date date=new Date();
+  windFile.write(date + "\n");
+  windFile.write(writerGrassEnv.getCELL().getName() + "\n");
+  windFile.write(writerGrassEnv.getMAPSET().getAbsolutePath() + "\n");
+  windFile.write(System.getProperty("user.name") + "\n");
+  windFile.write("DCELL\n");
+  windFile.write("\n\nCreated by imageio-ext enabled JGrass\n");
+  windFile.close();
+}

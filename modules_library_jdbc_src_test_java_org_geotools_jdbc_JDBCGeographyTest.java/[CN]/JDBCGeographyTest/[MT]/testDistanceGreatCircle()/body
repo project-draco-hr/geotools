@@ -1,0 +1,21 @@
+{
+  if (!isGeographySupportAvailable()) {
+    return;
+  }
+  FeatureWriter fw=dataStore.getFeatureWriterAppend(tname("geopoint"),Transaction.AUTO_COMMIT);
+  SimpleFeature f=(SimpleFeature)fw.next();
+  Point point=gf.createPoint(new Coordinate(-21.96,64.15));
+  f.setAttribute("name","Reykjavik");
+  f.setDefaultGeometry(point);
+  fw.write();
+  fw.close();
+  LineString line=gf.createLineString(new Coordinate[]{new Coordinate(-122.33,47.606),new Coordinate(0.0,51.5)});
+  DWithin filter=ff.dwithin(ff.property(aname("geo")),ff.literal(line),130000d,"metre");
+  FeatureCollection features=dataStore.getFeatureSource(tname("geopoint")).getFeatures(filter);
+  assertEquals(1,features.size());
+  FeatureIterator fi=features.features();
+  assertTrue(fi.hasNext());
+  SimpleFeature feature=(SimpleFeature)fi.next();
+  assertEquals("Reykjavik",feature.getAttribute("name"));
+  fi.close();
+}

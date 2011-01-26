@@ -1,0 +1,20 @@
+{
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  FeatureSource fsView=dataStore.getFeatureSource("riverParam");
+  Query q=new Query(Query.ALL);
+  q.setHints(new Hints(Hints.VIRTUAL_TABLE_PARAMETERS,Collections.singletonMap("mul","10")));
+  q.setSortBy(new SortBy[]{ff.sort(aname("mulflow"),SortOrder.ASCENDING)});
+  FeatureIterator fi=null;
+  try {
+    fi=fsView.getFeatures(q).features();
+    assertTrue(fi.hasNext());
+    SimpleFeature f=(SimpleFeature)fi.next();
+    assertEquals(30.0,((Number)f.getAttribute(aname("mulflow"))).doubleValue(),0.1);
+    assertTrue(fi.hasNext());
+    f=(SimpleFeature)fi.next();
+    assertEquals(45.0,((Number)f.getAttribute(aname("mulflow"))).doubleValue(),0.1);
+  }
+  finally {
+    fi.close();
+  }
+}

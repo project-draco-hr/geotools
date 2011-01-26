@@ -1,0 +1,117 @@
+{
+  final char type=fieldTypes[fieldNum];
+  final int fieldLen=fieldLengths[fieldNum];
+  Object object=null;
+  if (fieldLen > 0) {
+switch (type) {
+case 'l':
+case 'L':
+      final char c=(char)bytes[fieldOffset];
+switch (c) {
+case 't':
+case 'T':
+case 'Y':
+case 'y':
+      object=Boolean.TRUE;
+    break;
+case 'f':
+case 'F':
+case 'N':
+case 'n':
+  object=Boolean.FALSE;
+break;
+default :
+object=null;
+}
+break;
+case 'c':
+case 'C':
+if (bytes[fieldOffset] != '\0') {
+if (oneBytePerChar) {
+object=fastParse(bytes,fieldOffset,fieldLen).trim();
+}
+ else {
+object=new String(bytes,fieldOffset,fieldLen,stringCharset.name()).trim();
+}
+}
+break;
+case 'd':
+case 'D':
+for (int i=0; i < 8; i++) {
+if (bytes[fieldOffset + i] != '0') {
+try {
+String tempString=fastParse(bytes,fieldOffset,4);
+final int tempYear=Integer.parseInt(tempString);
+tempString=fastParse(bytes,fieldOffset + 4,2);
+final int tempMonth=Integer.parseInt(tempString) - 1;
+tempString=fastParse(bytes,fieldOffset + 6,2);
+final int tempDay=Integer.parseInt(tempString);
+final Calendar cal=Calendar.getInstance(Locale.US);
+cal.clear();
+cal.set(Calendar.YEAR,tempYear);
+cal.set(Calendar.MONTH,tempMonth);
+cal.set(Calendar.DAY_OF_MONTH,tempDay);
+object=cal.getTime();
+}
+ catch (final NumberFormatException nfe) {
+}
+break;
+}
+}
+break;
+case '@':
+try {
+byte[] timestampBytes={bytes[fieldOffset + 7],bytes[fieldOffset + 6],bytes[fieldOffset + 5],bytes[fieldOffset + 4],bytes[fieldOffset + 3],bytes[fieldOffset + 2],bytes[fieldOffset + 1],bytes[fieldOffset]};
+ByteArrayInputStream i_bytes=new ByteArrayInputStream(timestampBytes);
+DataInputStream i_stream=new DataInputStream(new BufferedInputStream(i_bytes));
+int time=i_stream.readInt();
+int days=i_stream.readInt();
+calendar.setTimeInMillis(days * MILLISECS_PER_DAY + DbaseFileHeader.MILLIS_SINCE_4713 + time);
+object=calendar.getTime();
+}
+ catch (final NumberFormatException nfe) {
+}
+break;
+case 'n':
+case 'N':
+if (bytes[fieldOffset] == '*') {
+break;
+}
+ else {
+final String string=fastParse(bytes,fieldOffset,fieldLen).trim();
+Class clazz=header.getFieldClass(fieldNum);
+if (clazz == Integer.class) {
+try {
+object=Integer.parseInt(string);
+break;
+}
+ catch (NumberFormatException e) {
+clazz=Long.class;
+}
+}
+if (clazz == Long.class) {
+try {
+object=Long.parseLong(string);
+break;
+}
+ catch (final NumberFormatException e2) {
+}
+}
+}
+case 'f':
+case 'F':
+if (bytes[fieldOffset] != '*') {
+try {
+object=Double.parseDouble(fastParse(bytes,fieldOffset,fieldLen));
+}
+ catch (final NumberFormatException e) {
+object=new Double(0.0);
+}
+}
+break;
+default :
+throw new IOException("Invalid field type : " + type);
+}
+}
+return object;
+}

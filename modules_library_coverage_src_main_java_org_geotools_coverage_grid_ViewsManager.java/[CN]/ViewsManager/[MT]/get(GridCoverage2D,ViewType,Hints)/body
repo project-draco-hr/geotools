@@ -1,0 +1,34 @@
+{
+  GridCoverage2D coverage=views.get(type);
+  if (coverage != null) {
+    return coverage;
+  }
+  coverage=views.get(ViewType.NATIVE);
+  if (coverage == null) {
+    throw new IllegalStateException("This coverage has been disposed.");
+  }
+switch (type) {
+case RENDERED:
+    coverage=rendered(caller,userHints);
+  break;
+case PACKED:
+coverage=geophysics(coverage,false,userHints);
+break;
+case GEOPHYSICS:
+coverage=geophysics(coverage,true,userHints);
+break;
+case PHOTOGRAPHIC:
+coverage=photographic(coverage,userHints);
+break;
+default :
+{
+throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"type",type));
+}
+}
+coverage=caller.specialize(coverage);
+if (caller.copyViewsTo(coverage) != this) {
+throw new AssertionError();
+}
+views.put(type,coverage);
+return coverage;
+}

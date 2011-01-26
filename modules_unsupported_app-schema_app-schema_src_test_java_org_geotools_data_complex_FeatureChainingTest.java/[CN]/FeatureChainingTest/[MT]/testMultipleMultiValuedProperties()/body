@@ -1,0 +1,41 @@
+{
+  FeatureIterator<Feature> guIterator=guFeatures.features();
+  Feature guFeature;
+  final String EXPOSURE_COLOR="exposureColor";
+  final String OUTCROP_CHARACTER="outcropCharacter";
+  while (guIterator.hasNext()) {
+    guFeature=(Feature)guIterator.next();
+    String guId=guFeature.getIdentifier().toString();
+    ArrayList realValues=new ArrayList();
+    Collection<Property> nestedTermValues=(Collection<Property>)guFeature.getProperties(EXPOSURE_COLOR);
+    for (    Property property : nestedTermValues) {
+      Object value=property.getValue();
+      assertNotNull(value);
+      assertTrue(value instanceof Collection);
+      assertEquals(1,((Collection)value).size());
+      Feature feature=(Feature)((Collection)value).iterator().next();
+      for (      Property nestedProperty : feature.getProperties("value")) {
+        realValues.add(((Property)((Collection)nestedProperty.getValue()).iterator().next()).getValue());
+      }
+    }
+    String[] values=this.guToExposureColorMap.get(guId).split(";");
+    assertEquals(realValues.size(),values.length);
+    assertTrue(realValues.containsAll(Arrays.asList(values)));
+    nestedTermValues=(Collection<Property>)guFeature.getProperties(OUTCROP_CHARACTER);
+    realValues.clear();
+    for (    Property property : nestedTermValues) {
+      Object value=property.getValue();
+      assertNotNull(value);
+      assertTrue(value instanceof Collection);
+      assertEquals(1,((Collection)value).size());
+      Feature feature=(Feature)((Collection)value).iterator().next();
+      for (      Property nestedProperty : feature.getProperties("value")) {
+        realValues.add(((Property)((Collection)nestedProperty.getValue()).iterator().next()).getValue());
+      }
+    }
+    values=this.guToOutcropCharacterMap.get(guId).split(";");
+    assertEquals(realValues.size(),values.length);
+    assertTrue(realValues.containsAll(Arrays.asList(values)));
+  }
+  guIterator.close();
+}

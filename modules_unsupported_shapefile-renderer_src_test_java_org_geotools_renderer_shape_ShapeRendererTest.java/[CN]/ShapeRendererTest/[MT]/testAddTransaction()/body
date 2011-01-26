@@ -1,0 +1,24 @@
+{
+  final ShapefileDataStore ds=TestUtilites.getDataStore(shp2.getName());
+  Style st=TestUtilites.createTestStyle(null,typename);
+  SimpleFeatureStore store=(SimpleFeatureStore)ds.getFeatureSource();
+  Transaction t=new DefaultTransaction();
+  store.setTransaction(t);
+  SimpleFeatureCollection collection=store.getFeatures();
+  SimpleFeatureIterator iter=collection.features();
+  final SimpleFeature feature=iter.next();
+  collection.close(iter);
+  SimpleFeatureType type=ds.getSchema();
+  store.addFeatures(DataUtilities.collection(sf));
+  MapContext context=new DefaultMapContext();
+  context.addLayer(store,st);
+  ShapefileRenderer renderer=new ShapefileRenderer(context);
+  TestUtilites.CountingRenderListener listener=new TestUtilites.CountingRenderListener(getName());
+  renderer.addRenderListener(listener);
+  Envelope env=context.getLayerBounds();
+  int boundary=7;
+  TestUtilites.INTERACTIVE=INTERACTIVE;
+  env=new Envelope(env.getMinX() - boundary,env.getMaxX() + boundary,env.getMinY() - boundary,env.getMaxY() + boundary);
+  TestUtilites.showRender("testTransaction",renderer,2000,env);
+  assertEquals(4,listener.count);
+}

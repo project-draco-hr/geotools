@@ -1,0 +1,26 @@
+{
+  final ImageReadParam readP=new ImageReadParam();
+  Integer imageChoice=0;
+  if (dim != null)   imageChoice=setReadParams(overviewPolicy,readP,requestedEnvelope,dim);
+  ImageMosaicReader reader=null;
+synchronized (readers) {
+    Object o=readers.get(imageChoice);
+    if (o == null) {
+      final String levelDirName=levelsDirs[imageChoice.intValue()];
+      final URL parentUrl=DataUtilities.getParentUrl(sourceURL);
+      final String extension=new StringBuilder(levelDirName).append("/").append(coverageName).append(".shp").toString();
+      final URL shpFileUrl=DataUtilities.extendURL(parentUrl,extension);
+      if (shpFileUrl.getProtocol() != null && shpFileUrl.getProtocol().equalsIgnoreCase("file") && !DataUtilities.urlToFile(shpFileUrl).exists())       reader=new ImageMosaicReader(DataUtilities.extendURL(parentUrl,levelDirName),hints);
+ else       reader=new ImageMosaicReader(shpFileUrl,hints);
+      readers.put(imageChoice,reader);
+    }
+ else     reader=(ImageMosaicReader)o;
+  }
+  GridCoverage2D mosaicCoverage=reader.read(params);
+  if (mosaicCoverage != null) {
+    return new GridCoverage2D(coverageName,mosaicCoverage);
+  }
+ else {
+    return null;
+  }
+}

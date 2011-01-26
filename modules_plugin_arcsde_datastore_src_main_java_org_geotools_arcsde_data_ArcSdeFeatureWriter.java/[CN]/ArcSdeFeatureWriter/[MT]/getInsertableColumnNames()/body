@@ -1,0 +1,25 @@
+{
+  if (insertableColumnNames == null) {
+    String typeName=this.featureType.getTypeName();
+    final SeColumnDefinition[] columnDefinitions=session.describe(typeName);
+    LinkedHashMap<Integer,String> columnList=new LinkedHashMap<Integer,String>();
+    SeColumnDefinition columnDefinition;
+    String columnName;
+    int usedIndex=0;
+    for (int actualIndex=0; actualIndex < columnDefinitions.length; actualIndex++) {
+      columnDefinition=columnDefinitions[actualIndex];
+      columnName=columnDefinition.getName();
+      if (fidReader instanceof FIDReader.SdeManagedFidReader) {
+        if (columnName.equals(fidReader.getFidColumn()))         continue;
+      }
+      final int sdeType=columnDefinition.getType();
+      if (SeColumnDefinition.TYPE_SHAPE != sdeType && null == ArcSDEAdapter.getJavaBinding(Integer.valueOf(sdeType))) {
+        continue;
+      }
+      columnList.put(Integer.valueOf(usedIndex),columnName);
+      usedIndex++;
+    }
+    this.insertableColumnNames=columnList;
+  }
+  return this.insertableColumnNames;
+}

@@ -1,0 +1,28 @@
+{
+  if (value == null) {
+    return new QName(null);
+  }
+  QName qName=null;
+  try {
+    qName=DatatypeConverterImpl.getInstance().parseQName((String)value,namespaceContext);
+  }
+ catch (  Exception e) {
+  }
+  if (qName != null && (qName.getPrefix() == null || qName.getPrefix().equals(""))) {
+    if (qName.getNamespaceURI() != null && !"".equals(qName.getNamespaceURI())) {
+      String prefix=namespaceContext.getPrefix(qName.getNamespaceURI());
+      if (prefix != null && !"".equals(prefix)) {
+        qName=new QName(qName.getNamespaceURI(),qName.getLocalPart(),prefix);
+      }
+    }
+    return qName;
+  }
+  String s=(String)value;
+  int i=s.indexOf(':');
+  if (i != -1) {
+    String prefix=s.substring(0,i);
+    String local=s.substring(i + 1);
+    return new QName(null,local,prefix);
+  }
+  return new QName(null,s);
+}

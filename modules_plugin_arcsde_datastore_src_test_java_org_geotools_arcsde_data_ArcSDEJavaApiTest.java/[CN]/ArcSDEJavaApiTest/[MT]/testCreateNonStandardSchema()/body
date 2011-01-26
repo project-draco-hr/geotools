@@ -1,0 +1,74 @@
+{
+  Command<Void> createCommand=new Command<Void>(){
+    @SuppressWarnings("deprecation") @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      final SeLayer layer=new SeLayer(connection);
+      final String tableName=(connection.getUser() + ".NOTENDSWITHGEOM");
+      final SeTable table=new SeTable(connection,tableName);
+      try {
+        layer.setTableName("NOTENDSWITHGEOM");
+        try {
+          table.delete();
+        }
+ catch (        Exception e) {
+        }
+        if (LOGGER.isLoggable(Level.FINE)) {
+          System.out.println("\n--> Creating a table using DBMS Default Keyword");
+        }
+        SeColumnDefinition[] tmpCols=new SeColumnDefinition[]{new SeColumnDefinition("tmp",SeColumnDefinition.TYPE_STRING,5,0,true)};
+        table.create(tmpCols,testData.getConfigKeyword());
+        if (LOGGER.isLoggable(Level.FINE)) {
+          System.out.println(" - Done.");
+        }
+        SeColumnDefinition[] colDefs=new SeColumnDefinition[7];
+        boolean isNullable=true;
+        colDefs[0]=new SeColumnDefinition("INT32_COL",SeColumnDefinition.TYPE_INTEGER,10,0,isNullable);
+        colDefs[1]=new SeColumnDefinition("INT16_COL",SeColumnDefinition.TYPE_SMALLINT,4,0,isNullable);
+        colDefs[2]=new SeColumnDefinition("FLOAT32_COL",SeColumnDefinition.TYPE_FLOAT,5,2,isNullable);
+        colDefs[3]=new SeColumnDefinition("FLOAT64_COL",SeColumnDefinition.TYPE_DOUBLE,15,4,isNullable);
+        colDefs[4]=new SeColumnDefinition("STRING_COL",SeColumnDefinition.TYPE_STRING,25,0,isNullable);
+        colDefs[5]=new SeColumnDefinition("DATE_COL",SeColumnDefinition.TYPE_DATE,1,0,isNullable);
+        colDefs[6]=new SeColumnDefinition("INT64_COL",SeColumnDefinition.TYPE_INTEGER,10,0,isNullable);
+        table.addColumn(colDefs[0]);
+        table.addColumn(colDefs[1]);
+        table.addColumn(colDefs[2]);
+        table.addColumn(colDefs[3]);
+        table.dropColumn(tmpCols[0].getName());
+        layer.setSpatialColumnName("SHAPE");
+        layer.setShapeTypes(SeLayer.SE_NIL_TYPE_MASK | SeLayer.SE_POINT_TYPE_MASK | SeLayer.SE_LINE_TYPE_MASK| SeLayer.SE_SIMPLE_LINE_TYPE_MASK| SeLayer.SE_AREA_TYPE_MASK| SeLayer.SE_MULTIPART_TYPE_MASK);
+        layer.setGridSizes(1100.0,0.0,0.0);
+        layer.setDescription("Layer Example");
+        SeExtent ext=new SeExtent(0.0,0.0,10000.0,10000.0);
+        layer.setExtent(ext);
+        SeCoordinateReference coordref=new SeCoordinateReference();
+        coordref.setXY(0D,0D,100D);
+        layer.setCoordRef(coordref);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("\n--> Adding spatial column \"SHAPE\"...");
+        }
+        layer.setCreationKeyword(testData.getConfigKeyword());
+        layer.create(3,4);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine(" - Done.");
+        }
+        table.addColumn(colDefs[4]);
+        table.addColumn(colDefs[5]);
+        table.addColumn(colDefs[6]);
+      }
+  finally {
+        try {
+          table.delete();
+        }
+ catch (        Exception e) {
+        }
+        try {
+          layer.delete();
+        }
+ catch (        Exception e) {
+        }
+      }
+      return null;
+    }
+  }
+;
+  session.issue(createCommand);
+}

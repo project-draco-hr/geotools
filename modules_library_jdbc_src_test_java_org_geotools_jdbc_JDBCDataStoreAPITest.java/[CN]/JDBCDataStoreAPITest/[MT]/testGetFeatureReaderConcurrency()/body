@@ -1,0 +1,56 @@
+{
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader1=reader(tname("road"));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader2=reader(tname("road"));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader3=reader(tname("river"));
+  SimpleFeature feature1;
+  SimpleFeature feature2;
+  SimpleFeature feature3;
+  while (reader1.hasNext() || reader2.hasNext() || reader3.hasNext()) {
+    assertContains(td.roadFeatures,reader1.next());
+    assertTrue(reader2.hasNext());
+    assertContains(td.roadFeatures,reader2.next());
+    if (reader3.hasNext()) {
+      assertContains(td.riverFeatures,reader3.next());
+    }
+  }
+  try {
+    assertFalse(reader1.hasNext());
+    reader1.next();
+    fail("next should fail with an NoSuchElementException");
+  }
+ catch (  Exception expectedNoElement) {
+  }
+  try {
+    reader2.next();
+    fail("next should fail with an NoSuchElementException");
+  }
+ catch (  Exception expectedNoElement) {
+  }
+  try {
+    reader3.next();
+    fail("next should fail with an NoSuchElementException");
+  }
+ catch (  Exception expectedNoElement) {
+  }
+  reader1.close();
+  reader2.close();
+  reader3.close();
+  try {
+    reader1.next();
+    fail("next should fail with an IOException");
+  }
+ catch (  IOException expectedClosed) {
+  }
+  try {
+    reader2.next();
+    fail("next should fail with an IOException");
+  }
+ catch (  IOException expectedClosed) {
+  }
+  try {
+    reader3.next();
+    fail("next should fail with an IOException");
+  }
+ catch (  IOException expectedClosed) {
+  }
+}

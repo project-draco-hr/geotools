@@ -1,0 +1,44 @@
+{
+  String test=testCase.getDescription().replaceAll(" ","_");
+  if (excludes != null && excludes.containsKey(test)) {
+    String value=excludes.getProperty(test);
+    if (value.contains("|")) {
+      String[] strings=value.split("\\|");
+      for (int i=0; i < strings.length; i++) {
+        String operationName=strings[i];
+        String operationValue=strings[++i];
+        GeometryTestOperation op=testCase.findTestOperation(operationName);
+        if (op != null) {
+          testCase.removeTestOperation(op);
+          if (operationValue.equalsIgnoreCase("skipped")) {
+            continue;
+          }
+ else           if (operationValue.equalsIgnoreCase("boundary")) {
+            MultiPrimitive curves=(MultiPrimitive)op.getExpectedResult();
+            Boundary boundary=curves.getBoundary();
+            op.setExpectedResult(boundary);
+          }
+ else           if (operationValue.equalsIgnoreCase("point")) {
+            PointImpl point=(PointImpl)op.getExpectedResult();
+            op.setExpectedResult(point);
+          }
+ else {
+            GeometryBuilder builder=new GeometryBuilder(DefaultGeographicCRS.WGS84);
+            GeometryFactory geomFact=builder.getGeometryFactory();
+            PrimitiveFactory primFact=builder.getPrimitiveFactory();
+            WKTParser wktFactory=new WKTParser(geomFact,primFact,null,builder.getAggregateFactory());
+            try {
+              Object expectedResult=wktFactory.parse(operationValue);
+              op.setExpectedResult(expectedResult);
+              testCase.addTestOperation(op);
+            }
+ catch (            ParseException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    }
+  }
+  return testCase;
+}

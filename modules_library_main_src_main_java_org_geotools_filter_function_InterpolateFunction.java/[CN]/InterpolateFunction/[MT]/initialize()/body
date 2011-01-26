@@ -1,0 +1,25 @@
+{
+  setMode();
+  setMethod();
+  final int numControlParameters=(modeSpecified ? 1 : 0) + (methodSpecified ? 1 : 0);
+  final int numInterpolationParmaters=parameters.size() - numControlParameters - 1;
+  if (numInterpolationParmaters < 2) {
+    throw new IllegalArgumentException("Need at least one interpolation point");
+  }
+  if (numInterpolationParmaters % 2 != 0) {
+    throw new IllegalArgumentException("Missing data or value in interpolation points ?");
+  }
+  List<Expression> sub=parameters.subList(1,parameters.size() - numControlParameters);
+  interpPoints=new ArrayList<InterpPoint>();
+  for (int i=0; i < numInterpolationParmaters; i+=2) {
+    interpPoints.add(new InterpPoint(sub.get(i),sub.get(i + 1)));
+  }
+  if (mode == Mode.CUBIC) {
+    if (interpPoints.size() < 3) {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("Cubic interpolation requested but not enough" + "points supplied. Falling back to linear interpolation");
+      }
+      mode=Mode.LINEAR;
+    }
+  }
+}

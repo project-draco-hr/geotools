@@ -1,0 +1,17 @@
+{
+  LOGGER.info("Getting shared session pool for " + config);
+  if (!instances.containsKey(config)) {
+synchronized (instances) {
+      if (!instances.containsKey(config)) {
+        LOGGER.info("Creating shared session pool for " + config);
+        ISessionPool pool=factory.createPool(config);
+        SharedSessionPool sharedPool=new SharedSessionPool(pool);
+        instances.put(config,sharedPool);
+        LOGGER.info("Created shared pool " + sharedPool);
+      }
+    }
+  }
+  SharedSessionPool sharedPool=instances.get(config);
+  LOGGER.info("Returning shared session pool " + sharedPool);
+  return sharedPool;
+}

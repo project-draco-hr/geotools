@@ -1,0 +1,109 @@
+{
+  if (type == ShapeType.NULL) {
+    return null;
+  }
+  Envelope geomBBox=GeometryHandlerUtilities.readBounds(buffer);
+  if (!bbox.intersects(geomBBox)) {
+    return null;
+  }
+  boolean bboxdecimate=geomBBox.getWidth() <= spanx && geomBBox.getHeight() <= spany;
+  int numParts=buffer.getInt();
+  int numPoints=buffer.getInt();
+  int[] partOffsets=new int[numParts];
+  for (int i=0; i < numParts; i++) {
+    partOffsets[i]=buffer.getInt();
+  }
+  double[][] coords=new double[numParts][];
+  double[][] transformed=new double[numParts][];
+  int finish, start=0;
+  int length=0;
+  if (bboxdecimate) {
+    coords=new double[1][];
+    coords[0]=new double[4];
+    transformed=new double[1][];
+    transformed[0]=new double[8];
+    coords[0][0]=buffer.getDouble();
+    coords[0][1]=buffer.getDouble();
+    try {
+      mt.transform(coords[0],0,transformed[0],0,1);
+    }
+ catch (    Exception e) {
+      ShapefileRenderer.LOGGER.severe("could not transform coordinates " + e.getLocalizedMessage());
+      transformed[0]=coords[0];
+    }
+    transformed[0][2]=transformed[0][0];
+    transformed[0][3]=transformed[0][1] + 0.1;
+    transformed[0][4]=transformed[0][0] + 0.1;
+    transformed[0][5]=transformed[0][1] + 0.1;
+    transformed[0][6]=transformed[0][0];
+    transformed[0][7]=transformed[0][1];
+  }
+ else {
+    Envelope partEnvelope=new Envelope();
+    int partsInBBox=0;
+    for (int part=0; part < numParts; part++) {
+      start=partOffsets[part];
+      partEnvelope.init();
+      if (part == (numParts - 1)) {
+        finish=numPoints;
+      }
+ else {
+        finish=partOffsets[part + 1];
+      }
+      length=finish - start;
+      int totalDoubles=length * 2;
+      coords[part]=new double[totalDoubles];
+      int readDoubles=0;
+      int currentDoubles=0;
+      for (; currentDoubles < totalDoubles; ) {
+        try {
+          coords[part][readDoubles]=buffer.getDouble();
+          readDoubles++;
+          currentDoubles++;
+          coords[part][readDoubles]=buffer.getDouble();
+          readDoubles++;
+          currentDoubles++;
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+        }
+        if (collapsePoints(coords,part,totalDoubles,readDoubles,currentDoubles)) {
+          readDoubles-=2;
+        }
+ else {
+          partEnvelope.expandToInclude(coords[part][readDoubles - 2],coords[part][readDoubles - 1]);
+        }
+      }
+      if (!partEnvelope.intersects(bbox)) {
+        continue;
+      }
+      if (readDoubles < 8)       transformed[partsInBBox]=new double[8];
+ else       transformed[partsInBBox]=new double[readDoubles];
+      if (!mt.isIdentity()) {
+        try {
+          GeometryHandlerUtilities.transform(type,mt,coords[part],transformed[partsInBBox],readDoubles / 2);
+        }
+ catch (        Exception e) {
+          ShapefileRenderer.LOGGER.severe("could not transform coordinates " + e.getLocalizedMessage());
+          transformed[partsInBBox]=coords[part];
+        }
+      }
+ else {
+        System.arraycopy(coords[part],0,transformed[partsInBBox],0,readDoubles / 2);
+      }
+      if (readDoubles < 8) {
+        for (int i=readDoubles; i < transformed[partsInBBox].length; i++) {
+          transformed[partsInBBox][i]=transformed[partsInBBox][i - 2];
+        }
+      }
+      partsInBBox++;
+    }
+    if (partsInBBox == 0)     return null;
+    if (partsInBBox != numParts) {
+      double[][] tmp=new double[partsInBBox][];
+      System.arraycopy(transformed,0,tmp,0,partsInBBox);
+      transformed=tmp;
+    }
+  }
+  return createGeometry(type,geomBBox,transformed);
+}

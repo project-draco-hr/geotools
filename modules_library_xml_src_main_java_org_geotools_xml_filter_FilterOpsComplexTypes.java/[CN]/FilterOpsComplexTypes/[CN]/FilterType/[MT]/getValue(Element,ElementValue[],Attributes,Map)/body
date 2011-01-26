@@ -1,0 +1,37 @@
+{
+  if (value.length == 1)   return value[0].getValue();
+  if (value.length == 0)   return Filter.EXCLUDE;
+  try {
+    FilterFactory2 fac=CommonFactoryFinder.getFilterFactory2(null);
+    List<org.opengis.filter.Filter> filters=new ArrayList<org.opengis.filter.Filter>();
+    Set ids=new HashSet();
+    boolean isOnlyFids=true;
+    for (int i=0; i < value.length; i++) {
+      org.opengis.filter.Filter value2=(org.opengis.filter.Filter)value[i].getValue();
+      if (value2 == Filter.EXCLUDE)       continue;
+      if (value2 instanceof Id) {
+        Id idFilter=(Id)value2;
+        ids.addAll(idFilter.getIdentifiers());
+      }
+ else {
+        isOnlyFids=false;
+      }
+      filters.add(value2);
+    }
+    if (isOnlyFids && !ids.isEmpty()) {
+      return fac.id(ids);
+    }
+ else     if (filters.isEmpty()) {
+      return Filter.EXCLUDE;
+    }
+ else     if (filters.size() == 1) {
+      return filters.iterator().next();
+    }
+ else {
+      return fac.or(filters);
+    }
+  }
+ catch (  IllegalFilterException e) {
+    return value[0].getValue();
+  }
+}

@@ -1,0 +1,34 @@
+{
+  if (eg == null)   return null;
+  String strLocation;
+  try {
+    strLocation=eg.getLocation().toExternalForm();
+  }
+ catch (  MalformedURLException e) {
+    LOGGER.log(Level.INFO,"Malformed URL processing external graphic",e);
+    return null;
+  }
+  Expression location;
+  try {
+    location=ExpressionExtractor.extractCqlExpressions(strLocation);
+  }
+ catch (  IllegalArgumentException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Could not parse cql expressions out of " + strLocation,e);
+    location=ff.literal(strLocation);
+  }
+  Iterator<ExternalGraphicFactory> it=DynamicSymbolFactoryFinder.getExternalGraphicFactories();
+  while (it.hasNext()) {
+    try {
+      Expression formatExpression=ExpressionExtractor.extractCqlExpressions(eg.getFormat());
+      String format=formatExpression.evaluate(feature,String.class);
+      Icon icon=it.next().getIcon((Feature)feature,location,format,toImageSize(size));
+      if (icon != null) {
+        return icon;
+      }
+    }
+ catch (    Exception e) {
+      LOGGER.log(Level.FINE,"Error occurred evaluating external graphic",e);
+    }
+  }
+  return null;
+}

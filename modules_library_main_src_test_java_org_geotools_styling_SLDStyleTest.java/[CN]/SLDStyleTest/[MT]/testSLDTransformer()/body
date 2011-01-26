@@ -1,0 +1,23 @@
+{
+  StyledLayerDescriptor sld=sf.createStyledLayerDescriptor();
+  StyledLayerDescriptor sld2;
+  sld.setName("SLD Name");
+  sld.setTitle("SLD Title");
+  UserLayer layer=sf.createUserLayer();
+  layer.setName("UserLayer Name");
+  Style style=sf.createStyle();
+  style.setName("Style Name");
+  style.setTitle("Style Title");
+  Rule rule1=sb.createRule(sb.createLineSymbolizer(new Color(0),2));
+  FeatureTypeStyle fts1=sf.createFeatureTypeStyle(new Rule[]{rule1});
+  fts1.setSemanticTypeIdentifiers(new String[]{"generic:geometry"});
+  style.setFeatureTypeStyles(new FeatureTypeStyle[]{fts1});
+  layer.setUserStyles(new Style[]{style});
+  sld.setStyledLayers(new UserLayer[]{layer});
+  SLDTransformer aTransformer=new SLDTransformer();
+  String xml=aTransformer.transform(sld);
+  InputStream is=new ByteArrayInputStream(xml.getBytes("UTF-8"));
+  SLDParser stylereader=new SLDParser(sf,is);
+  sld2=stylereader.parseSLD();
+  assertEquals(sld2,sld);
+}

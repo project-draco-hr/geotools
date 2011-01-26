@@ -1,0 +1,36 @@
+{
+  this.rs=rs;
+  this.cx=cx;
+  ResultSetMetaData md=rs.getMetaData();
+  key=dataStore.getPrimaryKey(featureType);
+  int count=md.getColumnCount();
+  columnNames=new String[count];
+  exposePrimaryKeys=featureSource.getState().isExposePrimaryKeyColumns();
+  for (int i=0; i < md.getColumnCount(); i++) {
+    String columnName=md.getColumnName(i + 1);
+    columnNames[i]=columnName;
+    if (!exposePrimaryKeys) {
+      for (      PrimaryKeyColumn col : key.getColumns()) {
+        if (col.getName().equals(columnName)) {
+          count--;
+          break;
+        }
+      }
+    }
+  }
+  values=new Object[count];
+  dirty=new boolean[values.length];
+  index=new HashMap<String,Integer>();
+  int offset=0;
+  O:   for (int i=0; i < md.getColumnCount(); i++) {
+    if (!exposePrimaryKeys) {
+      for (      PrimaryKeyColumn col : key.getColumns()) {
+        if (col.getName().equals(md.getColumnName(i + 1))) {
+          offset++;
+          continue O;
+        }
+      }
+    }
+    index.put(md.getColumnName(i + 1),i - offset);
+  }
+}

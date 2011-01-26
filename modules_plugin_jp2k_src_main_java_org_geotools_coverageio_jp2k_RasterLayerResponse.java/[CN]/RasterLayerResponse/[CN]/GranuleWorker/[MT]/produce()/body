@@ -1,0 +1,48 @@
+{
+  int granuleIndex=0;
+  inputTransparentColor=request.getInputTransparentColor();
+  doInputTransparency=inputTransparentColor != null;
+  boolean firstGranule=true;
+  for (  Future<RenderedImage> future : tasks) {
+    final RenderedImage loadedImage;
+    try {
+      final FutureTask<RenderedImage> task=(FutureTask<RenderedImage>)future;
+      task.run();
+      loadedImage=future.get();
+      if (loadedImage == null) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,"Unable to load the raster for granule " + granuleIndex + " with request "+ request.toString());
+        continue;
+      }
+      if (firstGranule) {
+        final ColorModel cm=loadedImage.getColorModel();
+        alphaIn=cm.hasAlpha();
+        firstGranule=false;
+      }
+    }
+ catch (    InterruptedException e) {
+      if (LOGGER.isLoggable(Level.SEVERE))       LOGGER.log(Level.SEVERE,"Unable to load the raster for granule " + granuleIndex,e);
+      continue;
+    }
+catch (    ExecutionException e) {
+      if (LOGGER.isLoggable(Level.SEVERE))       LOGGER.log(Level.SEVERE,"Unable to load the raster for granule " + granuleIndex,e);
+      continue;
+    }
+catch (    ImagingException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Loading image number " + granuleIndex + " failed, original request was "+ request);
+      continue;
+    }
+catch (    javax.media.jai.util.ImagingException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Loading image number " + granuleIndex + " failed, original request was "+ request);
+      continue;
+    }
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Loading image number " + granuleIndex);
+    final RenderedImage raster=processGranuleRaster(loadedImage,granuleIndex,alphaIn,doInputTransparency,inputTransparentColor);
+    theImage=raster;
+    granuleIndex++;
+  }
+  granulesNumber=granuleIndex;
+  if (granulesNumber == 0) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to load any data ");
+    return;
+  }
+}

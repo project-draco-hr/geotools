@@ -1,0 +1,38 @@
+{
+  Map connectionParameters=new HashMap();
+  connectionParameters.put("WFSDataStoreFactory:GET_CAPABILITIES_URL",getCapabilities);
+  DataStore data=DataStoreFinder.getDataStore(connectionParameters);
+  String typeNames[]=data.getTypeNames();
+  String typeName=typeNames[0];
+  SimpleFeatureType schema=data.getSchema(typeName);
+  System.out.println("Schema Attributes:" + schema.getAttributeCount());
+  SimpleFeatureSource source=data.getFeatureSource(typeName);
+  System.out.println("Metadata Bounds:" + source.getBounds());
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(GeoTools.getDefaultHints());
+  DefaultQuery query=new DefaultQuery(typeName,Filter.INCLUDE);
+  query.setMaxFeatures(2);
+  SimpleFeatureCollection features=source.getFeatures(query);
+  String fid=null;
+  Iterator<SimpleFeature> iterator=features.iterator();
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)iterator.next();
+      fid=feature.getID();
+    }
+  }
+  finally {
+    features.close(iterator);
+  }
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureStore store=(SimpleFeatureStore)source;
+  store.setTransaction(t);
+  Set<Identifier> ids=new HashSet<Identifier>();
+  ids.add(ff.featureId(fid));
+  Filter filter=ff.id(ids);
+  try {
+    store.removeFeatures(filter);
+  }
+  finally {
+    t.rollback();
+  }
+}

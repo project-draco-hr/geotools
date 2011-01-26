@@ -1,0 +1,31 @@
+{
+  if (type == null) {
+    throw new IllegalAttributeException("null type");
+  }
+  if (attributeContent == null) {
+    if (!attribute.isNillable()) {
+      throw new IllegalAttributeException(type.getName() + " not nillable");
+    }
+    return;
+  }
+  if (type.isIdentified() && attribute.getIdentifier() == null) {
+    throw new NullPointerException(type.getName() + " is identified, null id not accepted");
+  }
+  if (!isSuper) {
+    Class clazz=attributeContent.getClass();
+    Class binding=type.getBinding();
+    if (binding != null && binding != clazz && !binding.isAssignableFrom(clazz)) {
+      throw new IllegalAttributeException(clazz.getName() + " is not an acceptable class for " + type.getName()+ " as it is not assignable from "+ binding);
+    }
+  }
+  if (type.getRestrictions() != null) {
+    for (    Filter f : type.getRestrictions()) {
+      if (!f.evaluate(attribute)) {
+        throw new IllegalAttributeException("Attribute instance (" + attribute.getIdentifier() + ")"+ "fails to pass filter: "+ f);
+      }
+    }
+  }
+  if (type.getSuper() != null) {
+    validate(type.getSuper(),attribute,attributeContent,true);
+  }
+}

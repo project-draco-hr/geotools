@@ -1,0 +1,31 @@
+{
+  char esc=filter.getEscape().charAt(0);
+  char multi=filter.getWildCard().charAt(0);
+  char single=filter.getSingleChar().charAt(0);
+  boolean matchCase=filter.isMatchingCase();
+  String literal=filter.getLiteral();
+  Expression att=filter.getExpression();
+  AttributeDescriptor ad=(AttributeDescriptor)att.evaluate(featureType);
+  if (ad != null && Date.class.isAssignableFrom(ad.getType().getBinding())) {
+    literal+=multi;
+  }
+  String pattern=LikeFilterImpl.convertToSQL92(esc,multi,single,matchCase,literal);
+  try {
+    if (!matchCase) {
+      out.write(" UPPER(");
+    }
+    att.accept(this,extraData);
+    if (!matchCase) {
+      out.write(") LIKE '");
+    }
+ else {
+      out.write(" LIKE '");
+    }
+    out.write(pattern);
+    out.write("' ");
+  }
+ catch (  java.io.IOException ioe) {
+    throw new RuntimeException(IO_ERROR,ioe);
+  }
+  return extraData;
+}

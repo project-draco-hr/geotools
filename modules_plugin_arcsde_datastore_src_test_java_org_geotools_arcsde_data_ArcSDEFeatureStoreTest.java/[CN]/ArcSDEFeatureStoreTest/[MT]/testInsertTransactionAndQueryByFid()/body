@@ -1,0 +1,31 @@
+{
+  final String typeName=testData.getTempTableName();
+  final int featureCount=2;
+  final SimpleFeatureCollection testFeatures;
+  testFeatures=testData.createTestFeatures(LineString.class,featureCount);
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureStore fStore;
+  fStore=(SimpleFeatureStore)ds.getFeatureSource(typeName);
+  final Transaction transaction=new DefaultTransaction("testInsertTransactionAndQueryByFid");
+  fStore.setTransaction(transaction);
+  try {
+    final List<FeatureId> addedFids=fStore.addFeatures(testFeatures);
+    final FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+    final Set<FeatureId> fids=new HashSet<FeatureId>();
+    for (    FeatureId fid : addedFids) {
+      fids.add(fid);
+    }
+    final Id newFidsFilter=ff.id(fids);
+    SimpleFeatureCollection features;
+    features=fStore.getFeatures(newFidsFilter);
+    assertEquals(2,features.size());
+    transaction.commit();
+  }
+ catch (  Exception e) {
+    transaction.rollback();
+    throw e;
+  }
+ finally {
+    transaction.close();
+  }
+}

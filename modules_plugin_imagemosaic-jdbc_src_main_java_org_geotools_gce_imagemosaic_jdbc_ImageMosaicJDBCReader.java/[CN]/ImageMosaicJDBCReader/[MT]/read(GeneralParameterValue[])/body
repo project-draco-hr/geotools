@@ -1,0 +1,27 @@
+{
+  logRequestParams(params);
+  ImageMosaicJDBCReaderState state=new ImageMosaicJDBCReaderState();
+  Date start=new Date();
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Reading mosaic from " + coverageName);
+    LOGGER.fine(new StringBuffer("Highest res ").append(highestRes[0]).append(" ").append(highestRes[1]).toString());
+  }
+  Color outputTransparentColor=(Color)ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.getDefaultValue();
+  Rectangle dim=null;
+  if (params != null) {
+    for (    GeneralParameterValue generalParameterValue : params) {
+      Parameter<Object> param=(Parameter<Object>)generalParameterValue;
+      if (param.getDescriptor().getName().getCode().equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName().toString())) {
+        final GridGeometry2D gg=(GridGeometry2D)param.getValue();
+        state.setRequestedEnvelope((GeneralEnvelope)gg.getEnvelope());
+        dim=gg.getGridRange2D().getBounds();
+      }
+ else       if (param.getDescriptor().getName().getCode().equals(ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.getName().toString())) {
+        outputTransparentColor=(Color)param.getValue();
+      }
+    }
+  }
+  GridCoverage2D coverage=loadTiles(outputTransparentColor,dim,state);
+  LOGGER.info("Mosaic Reader needs : " + ((new Date()).getTime() - start.getTime()) + " millisecs");
+  return coverage;
+}

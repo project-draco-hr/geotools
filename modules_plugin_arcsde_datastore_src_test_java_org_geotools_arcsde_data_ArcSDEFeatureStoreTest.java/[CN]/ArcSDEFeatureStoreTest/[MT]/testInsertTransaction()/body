@@ -1,0 +1,70 @@
+{
+  testData.truncateTempTable();
+  final String typeName=testData.getTempTableName();
+  final int featureCount=2;
+  final SimpleFeatureCollection testFeatures;
+  testFeatures=testData.createTestFeatures(LineString.class,featureCount);
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureType ftype=testFeatures.getSchema();
+  final SimpleFeatureIterator iterator=testFeatures.features();
+  final Transaction transaction=new DefaultTransaction();
+  final FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=ds.getFeatureWriter(typeName,transaction);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  final Query query=new Query(typeName);
+  try {
+    try {
+      while (iterator.hasNext()) {
+        SimpleFeature addFeature=iterator.next();
+        SimpleFeature newFeature=writer.next();
+        for (int i=0; i < ftype.getAttributeCount(); i++) {
+          String localName=ftype.getDescriptor(i).getLocalName();
+          newFeature.setAttribute(localName,addFeature.getAttribute(localName));
+        }
+        writer.write();
+      }
+    }
+ catch (    Exception e) {
+      transaction.rollback();
+      transaction.close();
+    }
+ finally {
+      writer.close();
+    }
+    reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+    boolean hasNext;
+    try {
+      hasNext=reader.hasNext();
+    }
+  finally {
+      reader.close();
+    }
+    if (databaseIsMsSqlServer) {
+      assertTrue(hasNext);
+    }
+ else {
+      assertFalse("Features added, transaction not commited",hasNext);
+    }
+    try {
+      transaction.commit();
+    }
+ catch (    Exception e) {
+      transaction.rollback();
+      throw e;
+    }
+  }
+  finally {
+    transaction.close();
+  }
+  try {
+    reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+    for (int i=0; i < featureCount; i++) {
+      assertTrue(reader.hasNext());
+      reader.next();
+    }
+    assertFalse(reader.hasNext());
+  }
+  finally {
+    reader.close();
+  }
+}

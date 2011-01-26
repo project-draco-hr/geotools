@@ -1,0 +1,20 @@
+{
+  FeatureTypeInfo typeInfo=getCachedTypeInfo(typeName);
+  if (typeInfo != null) {
+    return typeInfo;
+  }
+  ISession session;
+  try {
+    session=sessionPool.getSession(false);
+  }
+ catch (  UnavailableConnectionException e) {
+    throw new RuntimeException("Can't get type info for " + typeName + ". Connection pool exhausted",e);
+  }
+  try {
+    typeInfo=getFeatureTypeInfo(typeName,session);
+  }
+  finally {
+    session.dispose();
+  }
+  return typeInfo;
+}

@@ -1,0 +1,34 @@
+{
+  if (event.getType() == FeatureEvent.Type.COMMIT || event.getType() == FeatureEvent.Type.ROLLBACK) {
+    Map<SimpleFeatureSource,FeatureListener[]> map=getListeners(typeName,Transaction.AUTO_COMMIT);
+    for (    Map.Entry entry : map.entrySet()) {
+      FeatureSource featureSource=(FeatureSource)entry.getKey();
+      FeatureListener[] listeners=(FeatureListener[])entry.getValue();
+      event.setFeatureSource(featureSource);
+      for (      FeatureListener listener : listeners) {
+        try {
+          listener.changed(event);
+        }
+ catch (        Throwable t) {
+          LOGGER.log(Level.FINE,"Could not deliver " + event + " to "+ listener+ ":"+ t.getMessage(),t);
+        }
+      }
+    }
+  }
+ else {
+    Map<SimpleFeatureSource,FeatureListener[]> map=getListeners(typeName,transaction);
+    for (    Map.Entry entry : map.entrySet()) {
+      FeatureSource featureSource=(FeatureSource)entry.getKey();
+      FeatureListener[] listeners=(FeatureListener[])entry.getValue();
+      event.setFeatureSource(featureSource);
+      for (      FeatureListener listener : listeners) {
+        try {
+          listener.changed(event);
+        }
+ catch (        Throwable t) {
+          LOGGER.log(Level.FINE,"Could not deliver " + event + " to "+ listener+ ":"+ t.getMessage(),t);
+        }
+      }
+    }
+  }
+}

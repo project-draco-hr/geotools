@@ -1,0 +1,19 @@
+{
+  if (rasterManager.expandMe && granule.getColorModel() instanceof IndexColorModel) {
+    granule=new ImageWorker(granule).forceComponentColorModel().getRenderedImage();
+  }
+  if (doTransparentColor) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Support for alpha on input image number " + granuleIndex);
+    granule=Utils.makeColorTransparent(transparentColor,granule);
+    alphaIndex[0]=granule.getColorModel().getNumComponents() - 1;
+  }
+  if (alphaIn || doTransparentColor) {
+    ImageWorker w=new ImageWorker(granule);
+    if (granule.getSampleModel() instanceof MultiPixelPackedSampleModel)     w.forceComponentColorModel();
+    if (granule.getColorModel() instanceof IndexColorModel) {
+      alphaChannels[granuleIndex]=w.forceComponentColorModel().retainLastBand().getPlanarImage();
+    }
+ else     alphaChannels[granuleIndex]=w.retainBands(alphaIndex).getPlanarImage();
+  }
+  return granule;
+}

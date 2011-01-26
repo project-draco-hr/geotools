@@ -1,0 +1,24 @@
+{
+  boolean changed=false;
+  Iterator iterator=collection.iterator();
+  try {
+    List removedFeatures=new ArrayList(collection.size());
+    while (iterator.hasNext()) {
+      SimpleFeature f=(SimpleFeature)iterator.next();
+      boolean removed=contents.values().remove(f);
+      if (removed) {
+        changed=true;
+        removedFeatures.add(f);
+      }
+    }
+    if (changed) {
+      fireChange(removedFeatures,CollectionEvent.FEATURES_REMOVED);
+    }
+    return changed;
+  }
+  finally {
+    if (collection instanceof FeatureCollection) {
+      ((SimpleFeatureCollection)collection).close(iterator);
+    }
+  }
+}

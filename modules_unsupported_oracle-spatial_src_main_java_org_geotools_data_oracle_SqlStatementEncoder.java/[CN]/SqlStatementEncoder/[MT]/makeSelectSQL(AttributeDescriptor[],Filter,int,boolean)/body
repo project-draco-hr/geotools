@@ -1,0 +1,28 @@
+{
+  LOGGER.finer("Creating sql for Query: mf=" + maxFeatures + " filter="+ filter+ " useMax="+ useMax);
+  StringBuffer sqlBuffer=new StringBuffer();
+  sqlBuffer.append("SELECT ");
+  sqlBuffer.append(fidColumn);
+  for (int i=0; i < attrTypes.length; i++) {
+    sqlBuffer.append(", ");
+    sqlBuffer.append(attrTypes[i].getLocalName());
+  }
+  sqlBuffer.append(" FROM ");
+  sqlBuffer.append(tableName);
+  if (filter != null && filter != org.geotools.filter.Filter.NONE) {
+    String where=whereEncoder.encode(filter);
+    sqlBuffer.append(" ");
+    sqlBuffer.append(where);
+    if (useMax && (maxFeatures > 0)) {
+      sqlBuffer.append(" and ROWNUM <= ");
+      sqlBuffer.append(maxFeatures);
+    }
+  }
+ else   if (useMax && (maxFeatures > 0)) {
+    sqlBuffer.append(" WHERE ROWNUM <= ");
+    sqlBuffer.append(maxFeatures);
+  }
+  String sqlStmt=sqlBuffer.toString();
+  LOGGER.finer("sqlString = " + sqlStmt);
+  return sqlStmt;
+}

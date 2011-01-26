@@ -1,0 +1,55 @@
+{
+  Filter[] split=splitFilter(query.getFilter());
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  DefaultQuery preQuery=new DefaultQuery(query);
+  preQuery.setFilter(preFilter);
+  SimpleFeatureType querySchema;
+  SimpleFeatureType returnedSchema;
+  if (query.getPropertyNames() == Query.ALL_NAMES) {
+    returnedSchema=querySchema=getSchema();
+  }
+ else {
+    returnedSchema=SimpleFeatureTypeBuilder.retype(getSchema(),query.getPropertyNames());
+    FilterAttributeExtractor extractor=new FilterAttributeExtractor(getSchema());
+    postFilter.accept(extractor,null);
+    String[] extraAttributes=extractor.getAttributeNames();
+    if (extraAttributes == null || extraAttributes.length == 0) {
+      querySchema=returnedSchema;
+    }
+ else {
+      List<String> allAttributes=new ArrayList<String>(Arrays.asList(query.getPropertyNames()));
+      for (      String extraAttribute : extraAttributes) {
+        if (!allAttributes.contains(extraAttribute))         allAttributes.add(extraAttribute);
+      }
+      String[] allAttributeArray=(String[])allAttributes.toArray(new String[allAttributes.size()]);
+      querySchema=SimpleFeatureTypeBuilder.retype(getSchema(),allAttributeArray);
+    }
+  }
+  Connection cx=getDataStore().getConnection(getState());
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  try {
+    if (getState().getTransaction() == Transaction.AUTO_COMMIT) {
+      cx.setAutoCommit(false);
+    }
+    SQLDialect dialect=getDataStore().getSQLDialect();
+    if (dialect instanceof PreparedStatementSQLDialect) {
+      PreparedStatement ps=getDataStore().selectSQLPS(querySchema,preQuery,cx);
+      reader=new JDBCFeatureReader(ps,cx,this,querySchema,query.getHints());
+    }
+ else {
+      String sql=getDataStore().selectSQL(querySchema,preQuery);
+      getDataStore().getLogger().fine(sql);
+      reader=new JDBCFeatureReader(sql,cx,this,querySchema,query.getHints());
+    }
+  }
+ catch (  Exception e) {
+    getDataStore().closeSafe(cx);
+    throw (IOException)new IOException().initCause(e);
+  }
+  if (postFilter != null && postFilter != Filter.INCLUDE) {
+    reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,postFilter);
+    if (!returnedSchema.equals(querySchema))     reader=new ReTypeFeatureReader(reader,returnedSchema);
+  }
+  return reader;
+}

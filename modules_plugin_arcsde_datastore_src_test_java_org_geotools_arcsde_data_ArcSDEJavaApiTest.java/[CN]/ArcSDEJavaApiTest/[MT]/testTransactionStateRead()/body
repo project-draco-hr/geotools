@@ -1,0 +1,64 @@
+{
+  final ISession transSession;
+  testData.truncateTempTable();
+{
+    final ISessionPool connPool=testData.getConnectionPool();
+    transSession=connPool.getSession();
+    transSession.startTransaction();
+  }
+  boolean commited=false;
+  try {
+    final String[] columns={"INT32_COL","STRING_COL"};
+    final String tableName=testData.getTempTableName(transSession);
+    transSession.issue(new Command<Void>(){
+      @Override public Void execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeInsert insert=new SeInsert(connection);
+        insert.intoTable(tableName,columns);
+        insert.setWriteMode(true);
+        SeRow row=insert.getRowToSet();
+        row.setInteger(0,Integer.valueOf(50));
+        row.setString(1,"inside transaction");
+        insert.execute();
+        insert.close();
+        return null;
+      }
+    }
+);
+    final SeSqlConstruct sqlConstruct=new SeSqlConstruct(tableName);
+    final SeRow transRow=transSession.issue(new Command<SeRow>(){
+      @Override public SeRow execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeQuery transQuery=new SeQuery(connection,columns,sqlConstruct);
+        transQuery.prepareQuery();
+        transQuery.execute();
+        SeRow transRow=transQuery.fetch();
+        transQuery.close();
+        return transRow;
+      }
+    }
+);
+    assertNotNull(transRow);
+    transSession.commitTransaction();
+    commited=true;
+    final SeRow noTransRow=session.issue(new Command<SeRow>(){
+      @Override public SeRow execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeQuery query=new SeQuery(connection,columns,sqlConstruct);
+        query.prepareQuery();
+        query.execute();
+        SeRow row=query.fetch();
+        query.close();
+        return row;
+      }
+    }
+);
+    assertNotNull(noTransRow);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+ finally {
+    if (!commited) {
+      transSession.rollbackTransaction();
+    }
+    transSession.dispose();
+  }
+}

@@ -1,0 +1,23 @@
+{
+  final boolean tileRecycling=true;
+  final double memoryFactor=0.5;
+  final float memoryThreshold=0.75f;
+  final boolean useImageIOCache=false;
+  final int tileThreads=7;
+  final int tilePriority=5;
+  JAI jaiDef=JAI.getDefaultInstance();
+  jaiDef.setRenderingHint(JAI.KEY_CACHED_TILE_RECYCLING_ENABLED,tileRecycling);
+  final RecyclingTileFactory recyclingFactory=new RecyclingTileFactory();
+  jaiDef.setRenderingHint(JAI.KEY_TILE_FACTORY,recyclingFactory);
+  jaiDef.setRenderingHint(JAI.KEY_TILE_RECYCLER,recyclingFactory);
+  TileCache jaiCache=jaiDef.getTileCache();
+  long jaiMemory=(long)(memoryFactor * Runtime.getRuntime().maxMemory());
+  jaiCache.setMemoryCapacity(jaiMemory);
+  jaiCache.setMemoryThreshold(memoryThreshold);
+  jaiDef.getTileScheduler().setParallelism(tileThreads);
+  jaiDef.getTileScheduler().setPrefetchParallelism(7);
+  jaiDef.getTileScheduler().setPriority(tilePriority);
+  jaiDef.getTileScheduler().setPrefetchPriority(5);
+  ImageIO.setUseCache(useImageIOCache);
+  Registry.setNativeAccelerationAllowed("Mosaic",false,jaiDef);
+}

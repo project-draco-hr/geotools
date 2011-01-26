@@ -1,0 +1,23 @@
+{
+  String baseGeomPropertyName=info.getGeomPropertyName();
+  String backendGeomPropertyName=getBackendGeometryName(fs);
+  String[] originalPropNames=query.getPropertyNames();
+  String[] newPropNames;
+  if (originalPropNames == Query.ALL_NAMES) {
+    newPropNames=new String[getSchema().getAttributeCount()];
+    for (int i=0; i < newPropNames.length; i++) {
+      AttributeDescriptor attrDescr=getSchema().getAttributeDescriptors().get(i);
+      newPropNames[i]=attrDescr.getLocalName().equals(baseGeomPropertyName) ? backendGeomPropertyName : attrDescr.getLocalName();
+    }
+  }
+ else {
+    newPropNames=new String[originalPropNames.length];
+    for (int i=0; i < newPropNames.length; i++) {
+      newPropNames[i]=originalPropNames[i].equals(baseGeomPropertyName) ? backendGeomPropertyName : originalPropNames[i];
+    }
+  }
+  Query newQuery=new Query(query);
+  newQuery.setTypeName(fs.getName().getLocalPart());
+  newQuery.setPropertyNames(newPropNames);
+  return newQuery;
+}

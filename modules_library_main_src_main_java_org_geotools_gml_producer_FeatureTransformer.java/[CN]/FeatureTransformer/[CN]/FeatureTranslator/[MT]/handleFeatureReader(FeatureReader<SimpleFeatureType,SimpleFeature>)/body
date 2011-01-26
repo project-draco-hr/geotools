@@ -1,0 +1,24 @@
+{
+  try {
+    while (reader.hasNext() && running) {
+      SimpleFeature f=(SimpleFeature)reader.next();
+      handleFeature(f);
+      SimpleFeatureType t=f.getFeatureType();
+      for (int i=0, ii=f.getAttributeCount(); i < ii; i++) {
+        AttributeDescriptor descriptor=t.getDescriptor(i);
+        Object value=f.getAttribute(i);
+        handleAttribute(descriptor,value);
+      }
+      endFeature(f);
+    }
+  }
+ catch (  Exception ioe) {
+    throw new RuntimeException("Error reading Features",ioe);
+  }
+ finally {
+    if (reader != null) {
+      LOGGER.finer("closing reader " + reader);
+      reader.close();
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  return new SchemaLocationResolver(this){
+    public String resolveSchemaLocation(    XSDSchema schema,    String uri,    String location){
+      String schemaLocation;
+      if (schema == null) {
+        schemaLocation=getSchemaLocation();
+      }
+ else {
+        schemaLocation=schema.getSchemaLocation();
+      }
+      String locationUri=null;
+      if ((null != schemaLocation) && !("".equals(schemaLocation))) {
+        String schemaLocationFolder=schemaLocation;
+        int lastSlash=schemaLocation.lastIndexOf('/');
+        if (lastSlash > 0) {
+          schemaLocationFolder=schemaLocation.substring(0,lastSlash);
+        }
+        if (schemaLocationFolder.startsWith("file:")) {
+          try {
+            schemaLocationFolder=DataUtilities.urlToFile(new URL(schemaLocationFolder)).getPath();
+          }
+ catch (          MalformedURLException e) {
+            schemaLocationFolder=schemaLocationFolder.substring("file:".length());
+          }
+        }
+        File locationFile=new File(schemaLocationFolder,location);
+        if (locationFile.exists()) {
+          locationUri=locationFile.toURI().toString();
+        }
+      }
+      if ((locationUri == null) && (location != null) && location.startsWith("http:")) {
+        locationUri=location;
+      }
+      return locationUri;
+    }
+  }
+;
+}

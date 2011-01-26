@@ -1,0 +1,40 @@
+{
+  ensureNonNull("sourceCode",sourceCode);
+  ensureNonNull("targetCode",targetCode);
+  final String pair=sourceCode + " \u21E8 " + targetCode;
+  final CoordinateOperationSet set=new CoordinateOperationSet(buffered);
+  try {
+    final String sourceKey=toPrimaryKeyCRS(sourceCode);
+    final String targetKey=toPrimaryKeyCRS(targetCode);
+    boolean searchTransformations=false;
+    do {
+      final String key, sql;
+      if (searchTransformations) {
+        key="TransformationFromCRS";
+        sql="SELECT COORD_OP_CODE" + " FROM [Coordinate_Operation]" + " WHERE SOURCE_CRS_CODE = ?"+ " AND TARGET_CRS_CODE = ?"+ " ORDER BY ABS(DEPRECATED), COORD_OP_ACCURACY";
+      }
+ else {
+        key="ConversionFromCRS";
+        sql="SELECT PROJECTION_CONV_CODE" + " FROM [Coordinate Reference System]" + " WHERE SOURCE_GEOGCRS_CODE = ?"+ " AND COORD_REF_SYS_CODE = ?";
+      }
+      final PreparedStatement stmt=prepareStatement(key,sql);
+      stmt.setString(1,sourceKey);
+      stmt.setString(2,targetKey);
+      final ResultSet result=stmt.executeQuery();
+      while (result.next()) {
+        final String code=getString(result,1,pair);
+        set.addAuthorityCode(code,searchTransformations ? null : targetKey);
+      }
+      result.close();
+    }
+ while ((searchTransformations=!searchTransformations) == true);
+    final String[] codes=set.getAuthorityCodes();
+    sort(codes);
+    set.setAuthorityCodes(codes);
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(CoordinateOperation.class,pair,exception);
+  }
+  set.resolve(1);
+  return set;
+}

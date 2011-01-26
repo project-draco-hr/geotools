@@ -1,0 +1,57 @@
+{
+  Object value=expression.evaluate(feature);
+  if (value != null) {
+    List<Object> values=(List<Object>)value;
+    if (filter instanceof BinaryComparisonAbstract) {
+      BinaryComparisonAbstract compFilter=((BinaryComparisonAbstract)filter);
+      Expression exp1=compFilter.getExpression1();
+      Expression exp2=compFilter.getExpression2();
+      boolean isLeftAttributeExp=false;
+      if (exp1 == null) {
+        if (exp2 == null) {
+          return true;
+        }
+      }
+ else       if (exp2 == null) {
+        isLeftAttributeExp=true;
+      }
+ else {
+        if (!(exp2 instanceof Literal) && !(exp1 instanceof Literal)) {
+          throw new UnsupportedOperationException("Comparison filters involving attributes of nested features are only supported if " + "only one of the expressions compared is a literal.");
+        }
+      }
+      if (exp2 instanceof Literal) {
+        isLeftAttributeExp=true;
+      }
+      if (isLeftAttributeExp) {
+        for (        Object val : values) {
+          compFilter.setExpression1(this.factory.literal(val));
+          if (compFilter.evaluate(null)) {
+            ((BinaryComparisonAbstract)filter).setExpression1(exp1);
+            return true;
+          }
+        }
+        ((BinaryComparisonAbstract)filter).setExpression1(exp1);
+      }
+ else {
+        for (        Object val : values) {
+          compFilter.setExpression2(this.factory.literal(val));
+          if (compFilter.evaluate(null)) {
+            ((BinaryComparisonAbstract)filter).setExpression2(exp2);
+            return true;
+          }
+        }
+        ((BinaryComparisonAbstract)filter).setExpression2(exp2);
+      }
+    }
+ else     if (filter instanceof LikeFilterImpl) {
+      for (      Object val : values) {
+        ((LikeFilterImpl)filter).setExpression(this.factory.literal(val));
+        if (filter.evaluate(null)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}

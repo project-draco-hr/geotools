@@ -1,0 +1,24 @@
+{
+  Element element=parent.pullElement("GEOGCS");
+  String name=element.pullString("name");
+  Map<String,?> properties=parseAuthority(element,name);
+  Unit<Angle> angularUnit=parseUnit(element,SI.RADIAN);
+  PrimeMeridian meridian=parsePrimem(element,angularUnit);
+  GeodeticDatum datum=parseDatum(element,meridian);
+  CoordinateSystemAxis axis0=parseAxis(element,angularUnit,false);
+  CoordinateSystemAxis axis1;
+  try {
+    if (axis0 != null) {
+      axis1=parseAxis(element,angularUnit,true);
+    }
+ else {
+      axis0=createAxis(null,"Lon",AxisDirection.EAST,angularUnit);
+      axis1=createAxis(null,"Lat",AxisDirection.NORTH,angularUnit);
+    }
+    element.close();
+    return crsFactory.createGeographicCRS(properties,datum,csFactory.createEllipsoidalCS(properties,axis0,axis1));
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

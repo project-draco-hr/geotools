@@ -1,0 +1,30 @@
+{
+  if (isMutable()) {
+    CoordinateReferenceSystem myCRS=getCoordinateReferenceSystem();
+    CoordinateReferenceSystem pointCRS=position.getCoordinateReferenceSystem();
+    DirectPosition copy=new DirectPositionImpl(position);
+    if ((myCRS != null) && (pointCRS != null) && (!myCRS.equals(pointCRS))) {
+      try {
+        BasicFactories commonFactory=BasicFactories.getDefault();
+        CoordinateOperationFactory cof=commonFactory.getCoordinateOperationFactory();
+        CoordinateOperation coordOp=cof.createOperation(pointCRS,myCRS);
+        MathTransform mt=coordOp.getMathTransform();
+        mt.transform(position,copy);
+      }
+ catch (      OperationNotFoundException e) {
+        throw new RuntimeException("Unable to find an operation",e);
+      }
+catch (      FactoryException e) {
+        throw new RuntimeException("Factory exception",e);
+      }
+catch (      TransformException e) {
+        throw new RuntimeException("Error transforming",e);
+      }
+    }
+    this.position=copy;
+    invalidateCachedJTSPeer();
+  }
+ else {
+    throw new UnmodifiableGeometryException();
+  }
+}

@@ -1,0 +1,58 @@
+{
+  if (schema == null) {
+    return;
+  }
+  AttributesImpl ai=new AttributesImpl();
+  ai.addAttribute("","targetNamespace","","anyUri",schema.getTargetNamespace().toString());
+  ai.addAttribute("","xmlns","","anyUri",XSISimpleTypes.NAMESPACE.toString());
+  ai.addAttribute("","xmlns:" + schema.getPrefix(),"","anyUri",schema.getTargetNamespace().toString());
+  Schema[] imports=schema.getImports();
+  for (int i=0; i < imports.length; i++) {
+    ai.addAttribute("","xmlns:" + imports[i].getPrefix(),"","anyUri",imports[i].getTargetNamespace().toString());
+  }
+  if ((schema.getId() != null) && (schema.getId() != "")) {
+    ai.addAttribute("","id","","ID",schema.getId());
+  }
+  if ((schema.getVersion() != null) && (schema.getVersion() != "")) {
+    ai.addAttribute("","version","","String",schema.getVersion());
+  }
+  if (schema.isAttributeFormDefault()) {
+    ai.addAttribute("","attributeFormDefault","","NMTOKEN","qualified");
+  }
+  if (schema.isElementFormDefault()) {
+    ai.addAttribute("","elementFormDefault","","NMTOKEN","qualified");
+  }
+  if (schema.getBlockDefault() != Schema.NONE) {
+    ai.addAttribute("","blockDefault","","NMTOKENS",ComplexTypeHandler.writeBlock(schema.getBlockDefault()));
+  }
+  if (schema.getFinalDefault() != Schema.NONE) {
+    ai.addAttribute("","finalDefault","","NMTOKENS",ComplexTypeHandler.writeFinal(schema.getFinalDefault()));
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"schema",ai);
+  for (int i=0; i < imports.length; i++)   writeImport(imports[i],ph);
+  Element[] elems=schema.getElements();
+  if (elems != null) {
+    for (int i=0; i < elems.length; i++)     writeElement(elems[i],schema,ph,hints);
+  }
+  ComplexType[] cts=schema.getComplexTypes();
+  if (elems != null) {
+    for (int i=0; i < cts.length; i++)     writeComplexType(cts[i],schema,ph,hints);
+  }
+  SimpleType[] sts=schema.getSimpleTypes();
+  if (elems != null) {
+    for (int i=0; i < sts.length; i++)     writeSimpleType(sts[i],schema,ph,hints);
+  }
+  Group[] groups=schema.getGroups();
+  if (elems != null) {
+    for (int i=0; i < groups.length; i++)     writeGroup(groups[i],schema,ph,hints);
+  }
+  Attribute[] attrs=schema.getAttributes();
+  if (elems != null) {
+    for (int i=0; i < attrs.length; i++)     writeAttribute(attrs[i],schema,ph,hints);
+  }
+  AttributeGroup[] attrgrps=schema.getAttributeGroups();
+  if (elems != null) {
+    for (int i=0; i < attrgrps.length; i++)     writeAttributeGroup(attrgrps[i],schema,ph,hints);
+  }
+  ph.endElement(XSISimpleTypes.NAMESPACE,"schema");
+}

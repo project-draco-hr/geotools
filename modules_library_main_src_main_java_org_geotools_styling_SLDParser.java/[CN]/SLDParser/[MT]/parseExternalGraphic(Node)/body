@@ -1,0 +1,63 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("processing external graphic ");
+  }
+  String format="";
+  String uri="";
+  Map<String,Object> paramList=new HashMap<String,Object>();
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase("OnLineResource")) {
+      uri=parseOnlineResource(child);
+    }
+    if (childName.equalsIgnoreCase("format")) {
+      LOGGER.finest("format child is " + child);
+      LOGGER.finest("seting ExtGraph format " + getFirstChildValue(child));
+      format=(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("customProperty")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("custom child is " + child);
+      String propName=child.getAttributes().getNamedItem("name").getNodeValue();
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("seting custom property " + propName + " to "+ getFirstChildValue(child));
+      Expression value=parseCssParameter(child);
+      paramList.put(propName,value);
+    }
+  }
+  URL url=null;
+  try {
+    url=new URL(uri);
+  }
+ catch (  MalformedURLException mfe) {
+    LOGGER.fine("Looks like " + uri + " is a relative path..");
+    if (sourceUrl != null) {
+      try {
+        url=new URL(sourceUrl,uri);
+      }
+ catch (      MalformedURLException e) {
+        LOGGER.warning("can't parse " + uri + " as relative to"+ sourceUrl.toExternalForm());
+      }
+    }
+    if (url == null) {
+      url=getClass().getResource(uri);
+      if (url == null)       LOGGER.warning("can't parse " + uri + " as a java resource present in the classpath");
+    }
+  }
+  ExternalGraphic extgraph;
+  if (url == null) {
+    extgraph=factory.createExternalGraphic(uri,format);
+  }
+ else {
+    extgraph=factory.createExternalGraphic(url,format);
+  }
+  extgraph.setCustomProperties(paramList);
+  return extgraph;
+}

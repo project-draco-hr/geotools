@@ -1,0 +1,56 @@
+{
+  int hrWidth=originalGridRange.getSpan(0);
+  int hrHeight=originalGridRange.getSpan(1);
+  final ImageReadParam readP=new ImageReadParam();
+  final Integer imageChoice;
+  try {
+    imageChoice=setReadParams(overviewPolicy,readP,requestedEnvelope,dim);
+  }
+ catch (  TransformException e) {
+    throw new DataSourceException(e);
+  }
+  final int max=stats.getMax();
+  final int min=stats.getMin();
+  final File file=DataUtilities.urlToFile(demURL);
+  final ImageInputStream iis=ImageIO.createImageInputStream(file);
+  if (header.getByteOrder().compareToIgnoreCase("M") == 0) {
+    iis.setByteOrder(ByteOrder.BIG_ENDIAN);
+  }
+ else {
+    iis.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+  }
+  final ColorModel cm=new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_GRAY),false,false,Transparency.OPAQUE,DataBuffer.TYPE_SHORT);
+  final SampleModel sm=cm.createCompatibleSampleModel(hrWidth,hrHeight);
+  final ImageTypeSpecifier its=new ImageTypeSpecifier(cm,sm);
+  final RawImageInputStream raw=new RawImageInputStream(iis,its,new long[]{0},new Dimension[]{new Dimension(hrWidth,hrHeight)});
+  final Dimension tileSize=ImageUtilities.toTileSize(new Dimension(hrWidth,hrHeight));
+  final ImageLayout il=new ImageLayout(0,0,hrWidth / readP.getSourceXSubsampling(),hrHeight / readP.getSourceYSubsampling(),0,0,(int)tileSize.getWidth(),(int)tileSize.getHeight(),sm,cm);
+  final RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,il);
+  final ParameterBlock pbjImageRead=new ParameterBlock();
+  pbjImageRead.add(raw);
+  pbjImageRead.add(imageChoice);
+  pbjImageRead.add(Boolean.FALSE);
+  pbjImageRead.add(Boolean.FALSE);
+  pbjImageRead.add(Boolean.FALSE);
+  pbjImageRead.add(null);
+  pbjImageRead.add(null);
+  pbjImageRead.add(readP);
+  pbjImageRead.add(imageIOSPI.createReaderInstance());
+  RenderedOp image=JAI.create("ImageRead",pbjImageRead,hints);
+  final GridSampleDimension band=getSampleDimension(max,min);
+  final Map<String,Double> metadata=new HashMap<String,Double>();
+  metadata.put("maximum",Double.valueOf(stats.getMax()));
+  metadata.put("minimum",Double.valueOf(stats.getMin()));
+  metadata.put("mean",Double.valueOf(stats.getAverage()));
+  metadata.put("std_dev",Double.valueOf(stats.getStdDev()));
+  metadata.put("nodata",Double.valueOf(-9999.0));
+  String coverageName=(new File(this.coverageName)).getName();
+  final int extension=coverageName.lastIndexOf(".");
+  if (extension != -1) {
+    String ext=coverageName.substring(extension + 1);
+    if ((dmext.compareToIgnoreCase(ext) == 0) || (dhext.compareToIgnoreCase(ext) == 0) || (srext.compareToIgnoreCase(ext) == 0)|| (shext.compareToIgnoreCase(ext) == 0)|| (stext.compareToIgnoreCase(ext) == 0)) {
+      coverageName=coverageName.substring(0,extension);
+    }
+  }
+  return (GridCoverage2D)coverageFactory.create(coverageName,image,new GeneralEnvelope(originalEnvelope),new GridSampleDimension[]{band},null,metadata);
+}

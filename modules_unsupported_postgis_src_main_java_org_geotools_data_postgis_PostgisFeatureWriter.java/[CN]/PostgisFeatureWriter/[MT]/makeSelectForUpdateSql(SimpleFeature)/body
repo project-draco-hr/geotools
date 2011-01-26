@@ -1,0 +1,31 @@
+{
+  FeatureTypeInfo ftInfo=queryData.getFeatureTypeInfo();
+  SimpleFeatureType featureType=ftInfo.getSchema();
+  String tableName=featureType.getTypeName();
+  FilterFactory ff=FilterFactoryFinder.createFilterFactory();
+  Filter fid=ff.createFidFilter(current.getID());
+  StringBuffer sql=new StringBuffer("SELECT ");
+  sqlBuilder.sqlColumns(sql,mapper,new AttributeDescriptor[]{});
+  sqlBuilder.sqlFrom(sql,tableName);
+  try {
+    sqlBuilder.sqlWhere(sql,fid);
+  }
+ catch (  SQLEncoderException e) {
+    e.printStackTrace();
+  }
+  sql.append(" FOR UPDATE");
+  try {
+    int major=queryData.getConnection().getMetaData().getDatabaseMajorVersion();
+    int minor=queryData.getConnection().getMetaData().getDatabaseMinorVersion();
+    if ((major > 8) || ((major == 8) && minor >= 1)) {
+      sql.append(" NOWAIT");
+    }
+ else {
+      LOGGER.warning("To fully support concurrent edits, please upgrade to postgres >= 8.1; the version currently in use will block");
+    }
+  }
+ catch (  SQLException e) {
+    LOGGER.warning("Failed to determine postgres version; assuming < 8.1");
+  }
+  return (sql.toString());
+}

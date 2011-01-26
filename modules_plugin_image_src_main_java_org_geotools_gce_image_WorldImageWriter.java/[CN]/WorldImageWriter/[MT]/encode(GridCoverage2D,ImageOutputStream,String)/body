@@ -1,0 +1,37 @@
+{
+  if (sourceCoverage == null) {
+    throw new IllegalArgumentException("A coverage must be provided in order for write to succeed!");
+  }
+  RenderedImage image=(sourceCoverage).geophysics(false).getRenderedImage();
+  final ImageWorker worker=new ImageWorker(image);
+  if (image.getColorModel() instanceof IndexColorModel && (image.getSampleModel().getNumBands() > 1)) {
+    worker.retainBands(1);
+    image=worker.getRenderedImage();
+  }
+  if (image.getColorModel() instanceof DirectColorModel) {
+    worker.forceComponentColorModel();
+    image=worker.getRenderedImage();
+  }
+  if (extension.compareToIgnoreCase("gif") == 0) {
+    if (image.getColorModel() instanceof IndexColorModel && (image.getSampleModel().getTransferType() != DataBuffer.TYPE_BYTE)) {
+      worker.forceComponentColorModel();
+      image=worker.getRenderedImage();
+    }
+    if (image.getColorModel() instanceof ComponentColorModel) {
+      worker.forceIndexColorModelForGIF(true);
+      image=worker.getRenderedImage();
+    }
+ else     if (image.getColorModel() instanceof IndexColorModel) {
+      worker.forceIndexColorModelForGIF(true);
+      image=worker.getRenderedImage();
+    }
+  }
+  final ParameterBlockJAI pbjImageWrite=new ParameterBlockJAI("ImageWrite");
+  pbjImageWrite.addSource(image);
+  pbjImageWrite.setParameter("Output",outstream);
+  pbjImageWrite.setParameter("VerifyOutput",Boolean.FALSE);
+  pbjImageWrite.setParameter("Format",extension);
+  JAI.create("ImageWrite",pbjImageWrite);
+  outstream.flush();
+  outstream.close();
+}

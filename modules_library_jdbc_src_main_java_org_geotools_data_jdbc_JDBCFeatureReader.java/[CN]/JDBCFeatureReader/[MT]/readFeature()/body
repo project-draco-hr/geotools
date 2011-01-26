@@ -1,0 +1,21 @@
+{
+  queryData.next();
+  for (int i=0; i < fidAttributes.length; i++) {
+    fidAttributes[i]=queryData.readFidColumn(i);
+  }
+  FIDMapper mapper=queryData.getMapper();
+  String fid=mapper.getID(fidAttributes);
+  int attributeCount=queryData.getFeatureType().getAttributeCount();
+  for (int i=0; i < attributeCount; i++) {
+    Object attribute=queryData.read(i);
+    if (attribute instanceof Geometry && queryData.getFeatureType().getDescriptor(i) instanceof GeometryDescriptor) {
+      Geometry geometry=(Geometry)attribute;
+      GeometryDescriptor geometryType=(GeometryDescriptor)queryData.getFeatureType().getDescriptor(i);
+      if (geometryType.getCoordinateReferenceSystem() != null) {
+        geometry.setUserData(geometryType.getCoordinateReferenceSystem());
+      }
+    }
+    builder.add(attribute);
+  }
+  return builder.buildFeature(fid);
+}

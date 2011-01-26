@@ -1,0 +1,53 @@
+{
+  PlugInDTO dto=new PlugInDTO();
+  try {
+    Element elem=null;
+    try {
+      elem=ReaderUtils.loadConfig(inputSource);
+    }
+ catch (    ParserConfigurationException pce) {
+      throw new ValidationException("Cannot parse the inputSource: Cannot configure the parser.",pce);
+    }
+catch (    SAXException se) {
+      throw new ValidationException("Cannot parse the inputSource: Cannot configure the parser.",se);
+    }
+    try {
+      dto.setName(ReaderUtils.getElementText(ReaderUtils.getChildElement(elem,"name",true),true));
+    }
+ catch (    SAXException e) {
+      throw new ValidationException("Error parsing name for this plugin",e);
+    }
+    try {
+      dto.setDescription(ReaderUtils.getElementText(ReaderUtils.getChildElement(elem,"description",true),true));
+    }
+ catch (    SAXException e) {
+      throw new ValidationException("Error parsing description for the " + dto.getName() + " plugin",e);
+    }
+    try {
+      dto.setClassName(ReaderUtils.getElementText(ReaderUtils.getChildElement(elem,"class",true),true));
+    }
+ catch (    SAXException e) {
+      throw new ValidationException("Error parsing class for the " + dto.getName() + " plugin",e);
+    }
+    NodeList nl=elem.getElementsByTagName("argument");
+    if (nl != null) {
+      Map m=new HashMap();
+      dto.setArgs(m);
+      for (int i=0; i < nl.getLength(); i++) {
+        elem=(Element)nl.item(i);
+        ArgumentDTO adto=null;
+        try {
+          adto=loadArg(elem,dto);
+        }
+ catch (        ValidationException e) {
+          e.printStackTrace();
+        }
+        m.put(adto.getName(),adto);
+      }
+    }
+  }
+ catch (  IOException ioe) {
+    throw new ValidationException("Cannot parse the inputSource: Cannot configure the parser.",ioe);
+  }
+  return dto;
+}

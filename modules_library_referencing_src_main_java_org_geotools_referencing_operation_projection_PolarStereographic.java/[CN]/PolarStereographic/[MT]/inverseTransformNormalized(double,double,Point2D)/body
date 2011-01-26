@@ -1,0 +1,27 @@
+{
+  final double rho=hypot(x,y);
+  if (southPole) {
+    y=-y;
+  }
+  final double t=rho / k0;
+  final double halfe=excentricity / 2.0;
+  double phi0=0;
+  for (int i=MAXIMUM_ITERATIONS; ; ) {
+    final double esinphi=excentricity * sin(phi0);
+    final double phi=(PI / 2) - 2.0 * atan(t * pow((1 - esinphi) / (1 + esinphi),halfe));
+    if (abs(phi - phi0) < ITERATION_TOLERANCE) {
+      x=(abs(rho) < EPSILON) ? 0.0 : atan2(x,-y);
+      y=(southPole) ? -phi : phi;
+      break;
+    }
+    phi0=phi;
+    if (--i < 0) {
+      throw new ProjectionException(ErrorKeys.NO_CONVERGENCE);
+    }
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(x,y);
+    return ptDst;
+  }
+  return new Point2D.Double(x,y);
+}

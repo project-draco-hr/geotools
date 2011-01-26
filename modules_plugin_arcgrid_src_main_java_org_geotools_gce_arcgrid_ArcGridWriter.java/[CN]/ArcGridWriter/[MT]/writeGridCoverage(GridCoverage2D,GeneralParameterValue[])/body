@@ -1,0 +1,57 @@
+{
+  try {
+    GeoToolsWriteParams gtParams=null;
+    boolean grass=false;
+    boolean forceCellSize=false;
+    final String grassParam=ArcGridFormat.GRASS.getName().getCode().toString();
+    final String cellSizeParam=ArcGridFormat.FORCE_CELLSIZE.getName().getCode().toString();
+    if (parameters != null) {
+      for (int i=0; i < parameters.length; i++) {
+        Parameter param=(Parameter)parameters[i];
+        String name=param.getDescriptor().getName().toString();
+        if (param.getDescriptor().getName().getCode().equals(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString())) {
+          gtParams=(GeoToolsWriteParams)param.getValue();
+        }
+        if (name.equalsIgnoreCase(grassParam))         grass=param.booleanValue();
+        if (name.equalsIgnoreCase(cellSizeParam))         forceCellSize=param.booleanValue();
+      }
+    }
+    if (gtParams == null)     gtParams=new ArcGridWriteParams();
+    int[] writeBands=gtParams.getSourceBands();
+    writeBand=CoverageUtilities.getVisibleBand(gc.getRenderedImage());
+    if ((writeBands == null || writeBands.length == 0 || writeBands.length > 1) && (writeBand < 0 || writeBand > gc.getNumSampleDimensions()))     throw new IllegalArgumentException("You need to supply a valid index for deciding which band to write.");
+    if (!((writeBands == null || writeBands.length == 0 || writeBands.length > 1)))     writeBand=writeBands[0];
+    final CoordinateReferenceSystem crs=gc.getCoordinateReferenceSystem2D();
+    final int numBands=gc.getNumSampleDimensions();
+    if (numBands > 1) {
+      final int visibleBand;
+      if (writeBand > 0 && writeBand < numBands)       visibleBand=writeBand;
+ else       visibleBand=CoverageUtilities.getVisibleBand(gc);
+      final ParameterValueGroup param=(ParameterValueGroup)ArcGridWriter.bandSelectParams.clone();
+      param.parameter("source").setValue(gc);
+      param.parameter("SampleDimensions").setValue(new int[]{visibleBand});
+      gc=(GridCoverage2D)bandSelectFactory.doOperation(param,null);
+    }
+    if (!grass && forceCellSize)     gc=reShapeData(gc,hints);
+    final Envelope newEnv=gc.getEnvelope2D();
+    final AffineTransform gridToWorld=(AffineTransform)((GridGeometry2D)gc.getGridGeometry()).getGridToCRS2D();
+    final double xl=newEnv.getLowerCorner().getOrdinate(0);
+    final double yl=newEnv.getLowerCorner().getOrdinate(1);
+    final double cellsizeX=Math.abs(gridToWorld.getScaleX());
+    final double cellsizeY=Math.abs(gridToWorld.getScaleY());
+    final RenderedImage source=gc.getRenderedImage();
+    final int cols=source.getWidth();
+    final int rows=source.getHeight();
+    mWriter.setOutput(outStream);
+    double inNoData=getCandidateNoData(gc);
+    mWriter.write(null,new IIOImage(source,null,new AsciiGridsImageMetadata(cols,rows,cellsizeX,cellsizeY,xl,yl,true,grass,inNoData)),null);
+    writeCRSInfo(crs);
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+ finally {
+    mWriter.dispose();
+  }
+}

@@ -1,0 +1,322 @@
+{
+  Stack encoded=null;
+  try {
+    serializer=handler;
+    if (!inline) {
+      serializer.startDocument();
+    }
+    if (namespaceAware) {
+      for (Enumeration e=namespaces.getPrefixes(); e.hasMoreElements(); ) {
+        String prefix=(String)e.nextElement();
+        String uri=namespaces.getURI(prefix);
+        if ("xml".equals(prefix)) {
+          continue;
+        }
+        serializer.startPrefixMapping(prefix,uri);
+      }
+      for (Iterator itr=schema.getQNamePrefixToNamespaceMap().entrySet().iterator(); itr.hasNext(); ) {
+        Map.Entry entry=(Map.Entry)itr.next();
+        String pre=(String)entry.getKey();
+        String ns=(String)entry.getValue();
+        if (XSDUtil.SCHEMA_FOR_SCHEMA_URI_2001.equals(ns)) {
+          continue;
+        }
+        serializer.startPrefixMapping(pre,ns);
+        serializer.endPrefixMapping(pre);
+        namespaces.declarePrefix((pre != null) ? pre : "",ns);
+      }
+      if (namespaces.getURI("") == null) {
+        namespaces.declarePrefix("",schema.getTargetNamespace());
+      }
+    }
+    DocumentBuilderFactory docFactory=DocumentBuilderFactory.newInstance();
+    try {
+      doc=docFactory.newDocumentBuilder().newDocument();
+    }
+ catch (    ParserConfigurationException e) {
+      new IOException().initCause(e);
+    }
+    encoded=new Stack();
+    XSDElementDeclaration root=index.getElementDeclaration(name);
+    if (root == null) {
+      QName typeDefintion=(QName)context.getComponentInstance("http://geotools.org/typeDefinition");
+      if (typeDefintion != null) {
+        XSDTypeDefinition type=index.getTypeDefinition(typeDefintion);
+        if (type == null) {
+          throw new NullPointerException();
+        }
+        root=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+        root.setName(name.getLocalPart());
+        root.setTargetNamespace(name.getNamespaceURI());
+        root.setTypeDefinition(type);
+      }
+    }
+    if (root == null) {
+      String msg="Could not find element declaration for:" + name;
+      throw new IllegalArgumentException(msg);
+    }
+    encoded.add(new EncodingEntry(object,root,null));
+    while (!encoded.isEmpty()) {
+      EncodingEntry entry=(EncodingEntry)encoded.peek();
+      if (entry.encoding != null) {
+        if (!entry.children.isEmpty()) {
+          Object[] child=(Object[])entry.children.get(0);
+          XSDElementDeclaration element=(XSDElementDeclaration)child[0];
+          Iterator itr=(Iterator)child[1];
+          if (itr.hasNext()) {
+            Object next=itr.next();
+            if (next == null) {
+              logger.warning("Iterator returned null for " + element.getName());
+            }
+            if (next instanceof EncoderDelegate) {
+              try {
+                ((EncoderDelegate)next).encode(handler);
+              }
+ catch (              Exception e) {
+                throw new RuntimeException(e);
+              }
+            }
+ else {
+              encoded.push(new EncodingEntry(next,element,entry));
+            }
+          }
+ else {
+            Object source=child[2];
+            closeIterator(itr,source);
+            entry.children.remove(0);
+          }
+        }
+ else {
+          end(entry.encoding);
+          encoded.pop();
+          entry.object=null;
+          entry.element=null;
+          entry.encoding=null;
+          entry.children=null;
+          entry.parent=null;
+        }
+      }
+ else {
+        if (entry.element.isAbstract()) {
+          List sub=entry.element.getSubstitutionGroup();
+          if (sub.size() > 0) {
+            List matches=new ArrayList();
+            for (Iterator s=sub.iterator(); s.hasNext(); ) {
+              XSDElementDeclaration e=(XSDElementDeclaration)s.next();
+              if (e.equals(entry.element)) {
+                continue;
+              }
+              if (e.getName() == null) {
+                continue;
+              }
+              Binding binding=bindingLoader.loadBinding(new QName(e.getTargetNamespace(),e.getName()),context);
+              if (binding == null) {
+                XSDTypeDefinition type=e.getType();
+                if (type.getName() == null) {
+                  continue;
+                }
+                binding=bindingLoader.loadBinding(new QName(type.getTargetNamespace(),type.getName()),context);
+              }
+              if (binding == null) {
+                continue;
+              }
+              if (binding.getType() == null) {
+                logger.warning("Binding: " + binding.getTarget() + " returns null type.");
+                continue;
+              }
+              if (binding.getType().isAssignableFrom(entry.object.getClass())) {
+                matches.add(new Object[]{e,binding});
+              }
+            }
+            if (matches.size() == 1) {
+              entry.element=(XSDElementDeclaration)((Object[])matches.get(0))[0];
+            }
+ else             if (matches.size() > 0) {
+              if (logger.isLoggable(Level.FINE)) {
+                StringBuffer msg=new StringBuffer("Found multiple non-abstract bindings for ");
+                msg.append(entry.element.getName()).append(": ");
+                for (Iterator m=matches.iterator(); m.hasNext(); ) {
+                  msg.append(m.next().getClass().getName());
+                  msg.append(", ");
+                }
+                logger.fine(msg.toString());
+              }
+              Collections.sort(matches,new Comparator(){
+                public int compare(                Object o1,                Object o2){
+                  Object[] match1=(Object[])o1;
+                  Object[] match2=(Object[])o2;
+                  Binding b1=(Binding)match1[1];
+                  Binding b2=(Binding)match2[1];
+                  if (b1.getType() != b2.getType()) {
+                    if (b2.getType().isAssignableFrom(b1.getType())) {
+                      return -1;
+                    }
+                    if (b1.getType().isAssignableFrom(b2.getType())) {
+                      return 1;
+                    }
+                  }
+                  if (b1 instanceof Comparable) {
+                    return ((Comparable)b1).compareTo(b2);
+                  }
+                  if (b2 instanceof Comparable) {
+                    return -1 * ((Comparable)b2).compareTo(b1);
+                  }
+                  return 0;
+                }
+              }
+);
+            }
+            if (matches.size() > 0) {
+              entry.element=(XSDElementDeclaration)((Object[])matches.get(0))[0];
+            }
+          }
+        }
+        if (entry.element.isAbstract()) {
+          logger.fine(entry.element.getName() + " is abstract");
+        }
+        entry.encoding=entry.parent != null ? (Element)encode(entry.object,entry.element,entry.parent.element.getType()) : (Element)encode(entry.object,entry.element);
+        List attributes=index.getAttributes(entry.element);
+        for (Iterator itr=attributes.iterator(); itr.hasNext(); ) {
+          XSDAttributeDeclaration attribute=(XSDAttributeDeclaration)itr.next();
+          String ns=attribute.getTargetNamespace();
+          String local=attribute.getName();
+          if ((entry.encoding.getAttributeNS(ns,local) != null) && !"".equals(entry.encoding.getAttributeNS(ns,local))) {
+            continue;
+          }
+          GetPropertyExecutor executor=new GetPropertyExecutor(entry.object,attribute);
+          BindingVisitorDispatch.walk(object,bindingWalker,entry.element,executor,context);
+          if (executor.getChildObject() != null) {
+            Attr attr=(Attr)encode(executor.getChildObject(),attribute);
+            if (attr != null) {
+              entry.encoding.setAttributeNodeNS(attr);
+            }
+          }
+        }
+        if (schemaLocations != null) {
+          if (!schemaLocations.isEmpty()) {
+            serializer.startPrefixMapping("xsi",XSDUtil.SCHEMA_INSTANCE_URI_2001);
+            serializer.endPrefixMapping("xsi");
+            namespaces.declarePrefix("xsi",XSDUtil.SCHEMA_INSTANCE_URI_2001);
+            StringBuffer schemaLocation=new StringBuffer();
+            for (Iterator e=schemaLocations.entrySet().iterator(); e.hasNext(); ) {
+              Map.Entry tuple=(Map.Entry)e.next();
+              String namespaceURI=(String)tuple.getKey();
+              String location=(String)tuple.getValue();
+              schemaLocation.append(namespaceURI + " " + location);
+              if (e.hasNext()) {
+                schemaLocation.append(" ");
+              }
+            }
+            entry.encoding.setAttributeNS(XSDUtil.SCHEMA_INSTANCE_URI_2001,"xsi:schemaLocation",schemaLocation.toString());
+          }
+          schemaLocations=null;
+        }
+        start(entry.encoding);
+        for (Iterator pe=propertyExtractors.iterator(); pe.hasNext(); ) {
+          PropertyExtractor propertyExtractor=(PropertyExtractor)pe.next();
+          if (propertyExtractor.canHandle(entry.object)) {
+            List extracted=propertyExtractor.properties(entry.object,entry.element);
+            O:             for (Iterator e=extracted.iterator(); e.hasNext(); ) {
+              Object[] tuple=(Object[])e.next();
+              XSDParticle particle=(XSDParticle)tuple[0];
+              XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+              if ((child != null) && (COMMENT.getNamespaceURI().equals(child.getTargetNamespace())) && COMMENT.getLocalPart().equals(child.getName())) {
+                comment(child.getElement());
+                continue;
+              }
+              if (child.isElementDeclarationReference()) {
+                child=child.getResolvedElementDeclaration();
+              }
+              String ns=child.getTargetNamespace();
+              String local=child.getName();
+              for (int i=0; i < entry.encoding.getChildNodes().getLength(); i++) {
+                Node node=entry.encoding.getChildNodes().item(i);
+                if (node instanceof Element) {
+                  if (ns != null) {
+                    if (ns.equals(node.getNamespaceURI()) && local.equals(node.getLocalName())) {
+                      continue O;
+                    }
+                  }
+ else {
+                    if (local.equals(node.getLocalName())) {
+                      continue O;
+                    }
+                  }
+                }
+              }
+              Object obj=tuple[1];
+              if (obj == null) {
+                if (particle.getMinOccurs() == 0) {
+                }
+ else {
+                  logger.fine("Property " + ns + ":"+ local+ " not found but minoccurs > 0 ");
+                }
+                continue;
+              }
+              int maxOccurs=1;
+              if (particle.isSetMaxOccurs()) {
+                maxOccurs=particle.getMaxOccurs();
+              }
+ else {
+                if (particle.eContainer() instanceof XSDModelGroup) {
+                  XSDModelGroup group=(XSDModelGroup)particle.eContainer();
+                  if (group.eContainer() instanceof XSDParticle) {
+                    XSDParticle cParticle=(XSDParticle)group.eContainer();
+                    if (cParticle.isSetMaxOccurs()) {
+                      maxOccurs=cParticle.getMaxOccurs();
+                    }
+                  }
+                }
+              }
+              if ((maxOccurs == -1) || (maxOccurs > 1)) {
+                Iterator iterator=null;
+                if (obj instanceof Iterator) {
+                  iterator=(Iterator)obj;
+                }
+ else                 if (obj.getClass().isArray()) {
+                  Object[] array=(Object[])obj;
+                  iterator=Arrays.asList(array).iterator();
+                }
+ else                 if (obj instanceof Collection) {
+                  Collection collection=(Collection)obj;
+                  iterator=collection.iterator();
+                }
+ else                 if (obj instanceof FeatureCollection) {
+                  FeatureCollection collection=(FeatureCollection)obj;
+                  iterator=collection.iterator();
+                }
+ else {
+                  iterator=new SingleIterator(obj);
+                }
+                entry.children.add(new Object[]{child,iterator,obj});
+              }
+ else {
+                entry.children.add(new Object[]{child,new SingleIterator(obj),obj});
+              }
+            }
+          }
+        }
+      }
+    }
+    if (!inline) {
+      serializer.endDocument();
+    }
+  }
+  finally {
+    index.destroy();
+    if (encoded != null) {
+      while (!encoded.isEmpty()) {
+        EncodingEntry entry=(EncodingEntry)encoded.pop();
+        if (!entry.children.isEmpty()) {
+          Object[] child=(Object[])entry.children.get(0);
+          Iterator itr=(Iterator)child[1];
+          try {
+            closeIterator(itr,child[2]);
+          }
+ catch (          Exception e) {
+          }
+        }
+      }
+    }
+  }
+}

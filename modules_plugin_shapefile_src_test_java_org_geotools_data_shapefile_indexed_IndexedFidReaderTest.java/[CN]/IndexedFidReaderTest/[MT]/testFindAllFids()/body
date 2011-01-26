@@ -1,0 +1,21 @@
+{
+  int expectedCount=0;
+  Set<String> expectedFids=new LinkedHashSet<String>();
+{
+    IndexedShapefileDataStore ds=new IndexedShapefileDataStore(backshp.toURI().toURL(),null,true,true,IndexType.NONE);
+    SimpleFeatureSource featureSource=ds.getFeatureSource();
+    SimpleFeatureIterator features=featureSource.getFeatures().features();
+    while (features.hasNext()) {
+      SimpleFeature next=features.next();
+      expectedCount++;
+      expectedFids.add(next.getID());
+    }
+    ds.dispose();
+  }
+  assertTrue(expectedCount > 0);
+  assertEquals(expectedCount,reader.getCount());
+  for (  String fid : expectedFids) {
+    long offset=reader.findFid(fid);
+    assertFalse(-1 == offset);
+  }
+}

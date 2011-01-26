@@ -1,0 +1,18 @@
+{
+  List attributes=new ArrayList();
+  SimpleFeatureType schema=featureSource.getSchema();
+  for (int i=0; i < schema.getAttributeCount(); i++) {
+    AttributeDescriptor at=schema.getDescriptor(i);
+    if (at instanceof GeometryDescriptorImpl)     attributes.add(at.getLocalName());
+  }
+  DefaultQuery q=new DefaultQuery(query);
+  q.setPropertyNames(attributes);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=((DataStore)featureSource.getDataStore()).getFeatureReader(q,getTransaction());
+  int maxFeatures=query.getMaxFeatures();
+  if (maxFeatures == Integer.MAX_VALUE) {
+    return reader;
+  }
+ else {
+    return new MaxFeatureReader<SimpleFeatureType,SimpleFeature>(reader,maxFeatures);
+  }
+}

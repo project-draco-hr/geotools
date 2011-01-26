@@ -1,0 +1,48 @@
+{
+  String sql="";
+  String whereStmt=null;
+  assertFilter(filter);
+  Filter encodableFilter=sqlBuilder.getPreQueryFilter(filter);
+  Filter unEncodableFilter=sqlBuilder.getPostQueryFilter(filter);
+  PreparedStatement statement=null;
+  Connection conn=null;
+  try {
+    conn=getConnection();
+    if (encodableFilter == null && unEncodableFilter != null) {
+      encodableFilter=getEncodableFilter(unEncodableFilter);
+    }
+    if (encodableFilter != null) {
+      StringBuffer sb=new StringBuffer();
+      sb.append("DELETE FROM");
+      sb.append(sqlBuilder.encodeTableName(tableName));
+      sb.append(" WHERE ");
+      sqlBuilder.encode(sb,encodableFilter);
+      sql=sb.toString();
+      LOGGER.fine("sql statment is " + sql);
+      DefaultQuery query=new DefaultQuery(getSchema().getTypeName(),filter);
+      ReferencedEnvelope bounds=bounds(query);
+      statement=conn.prepareStatement(sql);
+      statement.executeUpdate();
+      if (bounds != null && !bounds.isNull())       getJDBCDataStore().listenerManager.fireFeaturesRemoved(getSchema().getTypeName(),getTransaction(),bounds,false);
+    }
+    close(statement);
+  }
+ catch (  SQLException sqle) {
+    close(conn,getTransaction(),sqle);
+    String message=CONN_ERROR + sqle.getMessage();
+    LOGGER.warning(message);
+    throw new DataSourceException(message,sqle);
+  }
+catch (  SQLEncoderException ence) {
+    String message="error encoding sql from filter " + ence.getMessage();
+    LOGGER.warning(message);
+    throw new DataSourceException(message,ence);
+  }
+catch (  IllegalAttributeException iae) {
+    throw new DataSourceException("attribute problem",iae);
+  }
+ finally {
+    close(statement);
+    close(conn,getTransaction(),null);
+  }
+}

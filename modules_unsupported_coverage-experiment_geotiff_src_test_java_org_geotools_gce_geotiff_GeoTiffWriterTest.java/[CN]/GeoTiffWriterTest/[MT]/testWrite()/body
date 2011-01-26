@@ -1,0 +1,57 @@
+{
+  final File dir=TestData.file(GeoTiffReaderTest.class,"");
+  final File writedir=new File(new StringBuffer(dir.getAbsolutePath()).append("/testWriter/").toString());
+  writedir.mkdir();
+  final File files[]=dir.listFiles();
+  for (  File file : files) {
+    StringBuffer buffer=new StringBuffer();
+    final String path=file.getAbsolutePath().toLowerCase();
+    if (!path.endsWith("tif") && !path.endsWith("tiff"))     continue;
+    buffer.append(file.getAbsolutePath()).append("\n");
+    final URL source=file.toURI().toURL();
+    if (factory.canProcess(DriverOperation.CONNECT,source,null)) {
+      buffer.append("ACCEPTED").append("\n");
+      CoverageAccess access=factory.process(DriverOperation.CONNECT,source,null,null,null);
+      if (access == null)       throw new IOException("");
+      List<Name> names=access.getNames(null);
+      for (      Name name : names) {
+        CoverageSource gridSource=access.access(name,null,AccessType.READ_ONLY,null,null);
+        if (gridSource == null)         throw new IOException("");
+        CoverageResponse response=gridSource.read(new DefaultCoverageReadRequest(),null);
+        if (response == null || response.getStatus() != Status.SUCCESS || !response.getExceptions().isEmpty())         throw new IOException("");
+        Collection<? extends Coverage> results=response.getResults(null);
+        for (        Coverage c : results) {
+          GridCoverage2D coverage=(GridCoverage2D)c;
+          if (TestData.isInteractiveTest()) {
+            buffer.append("CRS: ").append(coverage.getCoordinateReferenceSystem2D().toWKT()).append("\n");
+            buffer.append("GG: ").append(coverage.getGridGeometry().toString()).append("\n");
+          }
+          final DefaultCoverageUpdateRequest request=new DefaultCoverageUpdateRequest();
+          request.setData(Collections.singletonList(coverage));
+          final File writeFile=new File(writedir,coverage.getName().toString() + ".tiff");
+          final GeoTiffAccess storeAccess=(GeoTiffAccess)factory.process(DriverOperation.CREATE,writeFile.toURI().toURL(),null,null,null);
+          final CoverageStore gridStore=(CoverageStore)storeAccess.create(name,null,null,null);
+          gridStore.update(request,null);
+          access=factory.process(DriverOperation.CONNECT,writeFile.toURI().toURL(),null,null,null);
+          if (access == null)           throw new IOException("");
+          names=access.getNames(null);
+          gridSource=access.access(names.iterator().next(),null,AccessType.READ_ONLY,null,null);
+          if (gridSource == null)           throw new IOException("");
+          response=gridSource.read(new DefaultCoverageReadRequest(),null);
+          if (response == null || response.getStatus() != Status.SUCCESS || !response.getExceptions().isEmpty())           throw new IOException("");
+          results=response.getResults(null);
+          for (          Coverage cov : results) {
+            GridCoverage2D coverage1=(GridCoverage2D)cov;
+            if (TestData.isInteractiveTest()) {
+              buffer.append("CRS: ").append(coverage1.getCoordinateReferenceSystem2D().toWKT()).append("\n");
+              buffer.append("GG: ").append(coverage1.getGridGeometry().toString()).append("\n");
+              coverage1.show();
+            }
+          }
+        }
+      }
+    }
+ else     buffer.append("NOT ACCEPTED").append("\n");
+    if (TestData.isInteractiveTest())     LOGGER.info(buffer.toString());
+  }
+}

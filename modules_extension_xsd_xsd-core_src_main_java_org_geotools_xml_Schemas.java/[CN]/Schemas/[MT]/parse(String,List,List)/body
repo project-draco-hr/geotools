@@ -1,0 +1,20 @@
+{
+  location=URLDecoder.decode(location);
+  if (new File(location).exists()) {
+    location=new File(location).getCanonicalFile().toURI().toString();
+  }
+  URI uri=URI.createURI(location);
+  final ResourceSet resourceSet=new ResourceSetImpl();
+  if ((resolvers != null) && !resolvers.isEmpty()) {
+    AdapterFactory adapterFactory=new SchemaLocationResolverAdapterFactory(resolvers);
+    resourceSet.getAdapterFactories().add(adapterFactory);
+  }
+  if ((locators != null) && !locators.isEmpty()) {
+    AdapterFactory adapterFactory=new SchemaLocatorAdapterFactory(locators);
+    resourceSet.getAdapterFactories().add(adapterFactory);
+  }
+  XSDResourceImpl xsdMainResource=(XSDResourceImpl)resourceSet.createResource(URI.createURI(".xsd"));
+  xsdMainResource.setURI(uri);
+  xsdMainResource.load(resourceSet.getLoadOptions());
+  return xsdMainResource.getSchema();
+}

@@ -1,0 +1,65 @@
+{
+  XSDFactory f=XSDFactory.eINSTANCE;
+  Document dom;
+  try {
+    dom=DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+  }
+ catch (  ParserConfigurationException e) {
+    throw new RuntimeException(e);
+  }
+  XSDComplexTypeDefinition type=f.createXSDComplexTypeDefinition();
+  type.setTargetNamespace(featureType.getName().getNamespaceURI());
+  type.setName(featureType.getTypeName() + "Type");
+  type.setDerivationMethod(XSDDerivationMethod.EXTENSION_LITERAL);
+  type.setBaseTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("AbstractFeatureType")));
+  XSDModelGroup group=f.createXSDModelGroup();
+  group.setCompositor(XSDCompositor.SEQUENCE_LITERAL);
+  List attributes=featureType.getAttributeDescriptors();
+  for (int i=0; i < attributes.size(); i++) {
+    AttributeDescriptor attribute=(AttributeDescriptor)attributes.get(i);
+    if (toFilter.contains(attribute.getLocalName())) {
+      continue;
+    }
+    XSDElementDeclaration element=f.createXSDElementDeclaration();
+    element.setName(attribute.getLocalName());
+    element.setNillable(attribute.isNillable());
+    if (attribute instanceof GeometryDescriptor) {
+      Class binding=attribute.getType().getBinding();
+      if (Point.class.isAssignableFrom(binding)) {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("PointPropertyType")));
+      }
+ else       if (LineString.class.isAssignableFrom(binding)) {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("LineStringPropertyType")));
+      }
+ else       if (Polygon.class.isAssignableFrom(binding)) {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("PolygonPropertyType")));
+      }
+ else       if (MultiPoint.class.isAssignableFrom(binding)) {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("MultiPointPropertyType")));
+      }
+ else       if (MultiLineString.class.isAssignableFrom(binding)) {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("MultiLineStringPropertyType")));
+      }
+ else       if (MultiPolygon.class.isAssignableFrom(binding)) {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("MultiPolygonPropertyType")));
+      }
+ else {
+        element.setTypeDefinition(schemaIndex.getTypeDefinition(gml.qName("GeometryPropertyType")));
+      }
+    }
+ else {
+      element.setTypeDefinition(schemaIndex.getTypeDefinition(XS.STRING));
+    }
+    XSDParticle particle=f.createXSDParticle();
+    particle.setMinOccurs(attribute.getMinOccurs());
+    particle.setMaxOccurs(attribute.getMaxOccurs());
+    particle.setContent(element);
+    particle.setElement(dom.createElementNS(XSDConstants.SCHEMA_FOR_SCHEMA_URI_2001,"element"));
+    group.getContents().add(particle);
+  }
+  XSDParticle particle=f.createXSDParticle();
+  particle.setContent(group);
+  particle.setElement(dom.createElementNS(XSDConstants.SCHEMA_FOR_SCHEMA_URI_2001,"sequence"));
+  type.setContent(particle);
+  return type;
+}

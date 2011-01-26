@@ -1,0 +1,59 @@
+{
+  super(source,hints);
+  if (source instanceof File) {
+    urlToUse=((File)source).toURI().toURL();
+  }
+ else   if (source instanceof URL) {
+    urlToUse=(URL)source;
+  }
+ else   if (source instanceof String) {
+    try {
+      urlToUse=new File((String)source).toURI().toURL();
+    }
+ catch (    MalformedURLException e) {
+      urlToUse=new URL((String)source);
+    }
+  }
+ else {
+    throw new IllegalArgumentException("Illegal input argument!");
+  }
+  this.source=source;
+  coverageName="gtopo30_coverage";
+  final String filename;
+  filename=DataUtilities.urlToFile(urlToUse).getName();
+  boolean recognized=false;
+  boolean extUpperCase=false;
+  if (filename.endsWith(dmext) || filename.endsWith(dhext) || filename.endsWith(srext)|| filename.endsWith(shext)|| filename.endsWith(stext)|| filename.endsWith(prjext)) {
+    recognized=true;
+  }
+ else {
+    if (filename.endsWith(dmext.toUpperCase()) || filename.endsWith(dhext.toUpperCase()) || filename.endsWith(srext.toUpperCase())|| filename.endsWith(shext.toUpperCase())|| filename.endsWith(stext.toUpperCase())|| filename.endsWith(prjext.toUpperCase())) {
+      recognized=true;
+      extUpperCase=true;
+    }
+  }
+  if (!recognized) {
+    throw new IOException("Unrecognized file (file extension doesn't match)");
+  }
+  this.coverageName=filename.substring(0,filename.length() - 4);
+  demURL=new URL(urlToUse,this.coverageName + (!extUpperCase ? dmext : dmext.toUpperCase()));
+  prjURL=new URL(urlToUse,this.coverageName + (!extUpperCase ? prjext : prjext.toUpperCase()));
+  demHeaderURL=new URL(urlToUse,this.coverageName + (!extUpperCase ? dhext : dhext.toUpperCase()));
+  statsURL=new URL(urlToUse,this.coverageName + (!extUpperCase ? stext : stext.toUpperCase()));
+  header=new GT30Header(demHeaderURL);
+  originalGridRange=new GridEnvelope2D(new Rectangle(0,0,header.getNCols(),header.getNRows()));
+  stats=new GT30Stats(this.statsURL);
+  final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+  if (tempCRS != null) {
+    this.crs=(CoordinateReferenceSystem)tempCRS;
+    if (LOGGER.isLoggable(Level.WARNING))     LOGGER.log(Level.WARNING,"Using forced coordinate reference system ");
+  }
+ else   crs=initCRS();
+  this.originalEnvelope=getBounds(crs);
+  final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(originalGridRange,originalEnvelope);
+  geMapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+  this.raster2Model=geMapper.createTransform();
+  highestRes=getResolution(originalEnvelope,new Rectangle(0,0,header.getNCols(),header.getNRows()),crs);
+  numOverviews=0;
+  overViewResolutions=null;
+}

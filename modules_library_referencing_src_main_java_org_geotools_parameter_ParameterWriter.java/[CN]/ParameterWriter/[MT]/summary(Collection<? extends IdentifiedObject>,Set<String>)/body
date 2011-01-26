@@ -1,0 +1,114 @@
+{
+  final Map<Object,Integer> titles=new LinkedHashMap<Object,Integer>();
+  final List<String[]> names=new ArrayList<String[]>();
+  final Locale locale=this.locale;
+  String[] descriptions=null;
+  titles.put(null,0);
+  for (  final IdentifiedObject element : parameters) {
+    final Collection<GenericName> aliases=element.getAlias();
+    String[] elementNames=new String[titles.size()];
+    elementNames[0]=element.getName().getCode();
+    if (aliases != null) {
+      int count=0;
+      for (      final GenericName alias : aliases) {
+        final GenericName scope=alias.scope().name();
+        final GenericName name=alias.tip();
+        final Object title;
+        if (scope != null) {
+          if (scopes != null && !scopes.contains(scope.toString())) {
+            continue;
+          }
+          title=scope.toInternationalString().toString(locale);
+        }
+ else {
+          title=count++;
+        }
+        Integer position=titles.get(title);
+        if (position == null) {
+          position=titles.size();
+          titles.put(title,position);
+        }
+        final int index=position.intValue();
+        if (index >= elementNames.length) {
+          elementNames=XArray.resize(elementNames,index + 1);
+        }
+        final String oldName=elementNames[index];
+        final String newName=name.toInternationalString().toString(locale);
+        if (oldName == null || oldName.length() > newName.length()) {
+          elementNames[index]=newName;
+        }
+      }
+    }
+    final InternationalString remarks=element.getRemarks();
+    if (remarks != null) {
+      if (descriptions == null) {
+        descriptions=new String[parameters.size()];
+      }
+      descriptions[names.size()]=remarks.toString(locale);
+    }
+    names.add(elementNames);
+  }
+  final boolean[] hide=new boolean[titles.size()];
+  trim:   for (int column=hide.length; --column >= 1; ) {
+    for (    final String[] alias : names) {
+      if (alias.length > column) {
+        final String name=alias[column];
+        if (name != null && !name.equals(alias[0])) {
+          continue trim;
+        }
+      }
+    }
+    hide[column]=true;
+  }
+  int column=0;
+synchronized (lock) {
+    final TableWriter table=new TableWriter(out,TableWriter.SINGLE_VERTICAL_LINE);
+    table.setMultiLinesCells(true);
+    table.writeHorizontalSeparator();
+    for (    final Object element : titles.keySet()) {
+      if (hide[column++]) {
+        continue;
+      }
+      final String title;
+      if (element == null) {
+        title="Identifier";
+      }
+ else       if (element instanceof String) {
+        title=(String)element;
+      }
+ else {
+        title="Alias " + element;
+      }
+      table.write(title);
+      table.nextColumn();
+    }
+    if (descriptions != null) {
+      table.write("Description");
+    }
+    table.writeHorizontalSeparator();
+    int counter=0;
+    for (    final String[] aliases : names) {
+      for (column=0; column < hide.length; column++) {
+        if (hide[column]) {
+          continue;
+        }
+        if (column < aliases.length) {
+          final String alias=aliases[column];
+          if (alias != null) {
+            table.write(alias);
+          }
+        }
+        table.nextColumn();
+      }
+      if (descriptions != null) {
+        final String remarks=descriptions[counter++];
+        if (remarks != null) {
+          table.write(remarks);
+        }
+      }
+      table.nextLine();
+    }
+    table.writeHorizontalSeparator();
+    table.flush();
+  }
+}

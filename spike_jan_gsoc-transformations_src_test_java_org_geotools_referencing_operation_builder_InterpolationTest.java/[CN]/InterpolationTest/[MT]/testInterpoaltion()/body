@@ -1,0 +1,33 @@
+{
+  BufferedImage bimage=new BufferedImage(100,100,BufferedImage.TYPE_USHORT_GRAY);
+  bimage.setRGB(4,3,4);
+  GridCoverageFactory p=new GridCoverageFactory();
+  float[][] g=new float[10][10];
+  g[0][0]=2;
+  CoordinateReferenceSystem crs=DefaultEngineeringCRS.CARTESIAN_2D;
+  GeneralDirectPosition min=new GeneralDirectPosition(0.0,0.0);
+  GeneralDirectPosition max=new GeneralDirectPosition(100.0,100.0);
+  GeneralEnvelope env=new GeneralEnvelope(min,max);
+  env.setCoordinateReferenceSystem(crs);
+  Hints k;
+  GridCoverageFactory fac=new GridCoverageFactory();
+  GridCoverage2D cov=fac.create("sd",g,env);
+  DirectPosition a=new DirectPosition2D(crs,10,10);
+  DirectPosition b=new DirectPosition2D(crs,80,80);
+  DirectPosition c=new DirectPosition2D(crs,10,90);
+  DirectPosition d=new DirectPosition2D(crs,80,10);
+  Map<DirectPosition,Float> pointsAndValues=new HashMap();
+  pointsAndValues.put(a,new Float(6.5456));
+  pointsAndValues.put(b,new Float(1.541906));
+  pointsAndValues.put(c,new Float(-9.54456));
+  pointsAndValues.put(d,new Float(7.2345));
+  TPSInterpolation interp=new TPSInterpolation(pointsAndValues,100,100,env);
+  GridCoverageFactory gcf=new GridCoverageFactory();
+  GridCoverage2D coverage=gcf.create("Intepolated Coverage",interp.get2DGrid(),env);
+  Assert.assertEquals(coverage.evaluate(a,new float[1])[0],pointsAndValues.get(a).floatValue(),0.01);
+  float myValue=interp.getValue(a);
+  Assert.assertEquals(interp.getValue(a),pointsAndValues.get(a).floatValue(),0.0);
+  Assert.assertEquals(interp.getValue(b),pointsAndValues.get(b).floatValue(),0.0);
+  Assert.assertEquals(interp.getValue(c),pointsAndValues.get(c).floatValue(),0.0);
+  Assert.assertEquals(interp.getValue(d),pointsAndValues.get(d).floatValue(),0.0);
+}

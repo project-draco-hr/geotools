@@ -1,0 +1,30 @@
+{
+  if (obj == null) {
+    return null;
+  }
+  if (obj instanceof SimpleFeatureCollection) {
+    return (SimpleFeatureCollection)obj;
+  }
+  if (obj instanceof Collection<?>) {
+    Collection<?> collection=(Collection<?>)obj;
+    SimpleFeatureCollection simpleFeatureCollection=simpleFeatureCollection(collection);
+    return simpleFeatureCollection;
+  }
+  if (obj instanceof SimpleFeature) {
+    SimpleFeature feature=(SimpleFeature)obj;
+    return DataUtilities.collection(feature);
+  }
+  if (obj instanceof FeatureCollectionType) {
+    FeatureCollectionType collectionType=(FeatureCollectionType)obj;
+    for (    Object entry : collectionType.getFeature()) {
+      SimpleFeatureCollection collection=toFeatureCollection(entry);
+      if (entry != null) {
+        return collection;
+      }
+    }
+    return null;
+  }
+ else {
+    throw new ClassCastException(obj.getClass() + " produced when FeatureCollection expected" + " check schema use of AbstractFeatureCollection");
+  }
+}

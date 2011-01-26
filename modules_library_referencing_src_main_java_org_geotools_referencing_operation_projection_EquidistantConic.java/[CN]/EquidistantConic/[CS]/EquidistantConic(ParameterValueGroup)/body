@@ -1,0 +1,39 @@
+{
+  super(parameters);
+  double n;
+  final Collection<GeneralParameterDescriptor> expected=getParameterDescriptors().descriptors();
+  phi1=doubleValue(expected,Provider.STANDARD_PARALLEL_1,parameters);
+  ensureLatitudeInRange(Provider.STANDARD_PARALLEL_1,phi1,true);
+  phi2=doubleValue(expected,Provider.STANDARD_PARALLEL_2,parameters);
+  if (Double.isNaN(phi2)) {
+    phi2=phi1;
+  }
+  ensureLatitudeInRange(Provider.STANDARD_PARALLEL_2,phi2,true);
+  if (abs(phi1 + phi2) < EPSILON) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.ANTIPODE_LATITUDES_$2,new Latitude(toDegrees(phi1)),new Latitude(toDegrees(phi2))));
+  }
+  double sinphi=n=sin(phi1);
+  double cosphi=cos(phi1);
+  boolean secant=abs(phi1 - phi2) >= EPSILON;
+  if (isSpherical) {
+    if (secant) {
+      n=(cosphi - cos(phi2)) / (phi2 - phi1);
+    }
+    c=phi1 + cos(phi1) / n;
+    rho0=c - latitudeOfOrigin;
+    en0=en1=en2=en3=en4=0.0;
+  }
+ else {
+    double ml1, m1;
+    m1=msfn(sinphi,cosphi);
+    ml1=mlfn(phi1,sinphi,cosphi);
+    if (secant) {
+      sinphi=sin(phi2);
+      cosphi=cos(phi2);
+      n=(m1 - msfn(sinphi,cosphi)) / (mlfn(phi2,sinphi,cosphi) - ml1);
+    }
+    c=ml1 + m1 / n;
+    rho0=c - mlfn(latitudeOfOrigin,sin(latitudeOfOrigin),cos(latitudeOfOrigin));
+  }
+  this.n=n;
+}

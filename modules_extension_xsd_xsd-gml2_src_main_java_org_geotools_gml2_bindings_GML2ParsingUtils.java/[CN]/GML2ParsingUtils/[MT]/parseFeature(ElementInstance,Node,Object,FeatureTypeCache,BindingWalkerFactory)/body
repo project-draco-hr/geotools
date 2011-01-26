@@ -1,0 +1,36 @@
+{
+  XSDElementDeclaration decl=instance.getElementDeclaration();
+  SimpleFeatureType sfType=null;
+  FeatureType fType=null;
+  if (!decl.isAbstract()) {
+    fType=ftCache.get(new NameImpl(decl.getTargetNamespace(),decl.getName()));
+    if (fType == null || fType instanceof SimpleFeatureType) {
+      sfType=(SimpleFeatureType)fType;
+    }
+ else {
+      throw new UnsupportedOperationException("Parsing of non-simple GML features not yet supported.");
+    }
+    if (sfType == null) {
+      sfType=GML2ParsingUtils.featureType(decl,bwFactory);
+      ftCache.put(sfType);
+    }
+  }
+ else {
+    fType=ftCache.get(new NameImpl(node.getComponent().getNamespace(),node.getComponent().getName()));
+    if (fType == null || fType instanceof SimpleFeatureType) {
+      sfType=(SimpleFeatureType)fType;
+    }
+ else {
+      throw new UnsupportedOperationException("Parsing of non-simple GML features not yet supported.");
+    }
+    if (sfType == null) {
+      sfType=GML2ParsingUtils.featureType(node);
+      ftCache.put(sfType);
+    }
+  }
+  String fid=(String)node.getAttributeValue("fid");
+  if (fid == null) {
+    fid=(String)node.getAttributeValue("id");
+  }
+  return GML2ParsingUtils.feature(sfType,fid,node);
+}

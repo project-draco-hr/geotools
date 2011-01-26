@@ -1,0 +1,286 @@
+{
+  final ParameterWriter writer=new ParameterWriter(new StringWriter());
+  final Integer ONE=1;
+  final ParameterDescriptor<Integer> p1, p2, p3, p4;
+  p1=new DefaultParameterDescriptor<Integer>(Collections.singletonMap("name","1"),Integer.class,null,ONE,null,null,null,true);
+  p2=new DefaultParameterDescriptor<Integer>(Collections.singletonMap("name","2"),Integer.class,null,ONE,null,null,null,true);
+  p3=new DefaultParameterDescriptor<Integer>(Collections.singletonMap("name","3"),Integer.class,null,ONE,null,null,null,false);
+  p4=new DefaultParameterDescriptor<Integer>(Collections.singletonMap("name","4"),Integer.class,null,ONE,null,null,null,false){
+    /** 
+ * We are cheating here: <code>maximumOccurs</code> should always be 1 for
+ * <code>ParameterValue</code>. However, the Geotools implementation should
+ * be robust enough to accept other values. We will test that.
+ */
+    @Override public int getMaximumOccurs(){
+      return 2;
+    }
+  }
+;
+  final Parameter v1, v2, v3, v4, v1b, v2b, v3b, v4b;
+  v1=new Parameter<Integer>(p1);
+  v1.setValue(10);
+  v2=new Parameter<Integer>(p2);
+  v2.setValue(20);
+  v3=new Parameter<Integer>(p3);
+  v3.setValue(30);
+  v4=new Parameter<Integer>(p4);
+  v4.setValue(40);
+  v1b=new Parameter<Integer>(p1);
+  v1b.setValue(-10);
+  v2b=new Parameter<Integer>(p2);
+  v2b.setValue(-20);
+  v3b=new Parameter<Integer>(p3);
+  v3b.setValue(-30);
+  v4b=new Parameter<Integer>(p4);
+  v4b.setValue(-40);
+  ParameterDescriptorGroup descriptor;
+  ParameterGroup group;
+  Collection content;
+  Map<String,?> properties;
+  Parameter automatic;
+  properties=Collections.singletonMap("name","group");
+  group=new ParameterGroup(properties,new Parameter[]{v1,v2,v3});
+  descriptor=group.getDescriptor();
+  content=descriptor.descriptors();
+  writer.format(group);
+  assertEquals("name","group",descriptor.getName().getCode());
+  assertEquals("descriptors",3,content.size());
+  assertTrue("contains(p1)",content.contains(p1));
+  assertTrue("contains(p2)",content.contains(p2));
+  assertTrue("contains(p3)",content.contains(p3));
+  assertFalse("contains(p4)",content.contains(p4));
+  assertSame("descriptor(\"1\")",p1,descriptor.descriptor("1"));
+  assertSame("descriptor(\"2\")",p2,descriptor.descriptor("2"));
+  assertSame("descriptor(\"3\")",p3,descriptor.descriptor("3"));
+  content=group.values();
+  assertEquals("values.size()",3,content.size());
+  assertTrue("contains(v1)",content.contains(v1));
+  assertTrue("contains(v2)",content.contains(v2));
+  assertTrue("contains(v3)",content.contains(v3));
+  assertFalse("contains(v4)",content.contains(v4));
+  assertFalse("contains(v1b)",content.contains(v1b));
+  assertFalse("contains(v2b)",content.contains(v2b));
+  assertFalse("contains(v3b)",content.contains(v3b));
+  assertSame("parameter(\"1\")",v1,group.parameter("1"));
+  assertSame("parameter(\"2\")",v2,group.parameter("2"));
+  assertSame("parameter(\"3\")",v3,group.parameter("3"));
+  assertEquals("parameter(\"1\")",10,group.parameter("1").intValue());
+  assertEquals("parameter(\"2\")",20,group.parameter("2").intValue());
+  assertEquals("parameter(\"3\")",30,group.parameter("3").intValue());
+  assertFalse("remove(v1b)",content.remove(v1b));
+  try {
+    assertTrue(content.remove(v1));
+    fail("v1 is a mandatory parameter; it should not be removeable.");
+  }
+ catch (  InvalidParameterCardinalityException e) {
+    assertEquals("1",e.getParameterName());
+    assertNotNull(e.getMessage());
+  }
+  try {
+    assertTrue(content.add(v4));
+    fail("v4 is not a parameter for this group.");
+  }
+ catch (  InvalidParameterNameException e) {
+    assertEquals("4",e.getParameterName());
+    assertNotNull(e.getMessage());
+  }
+  assertTrue("add(v1b)",content.add(v1b));
+  assertTrue("add(v2b)",content.add(v2b));
+  assertTrue("add(v3b)",content.add(v3b));
+  assertFalse("add(v1b)",content.add(v1b));
+  assertFalse("add(v2b)",content.add(v2b));
+  assertFalse("add(v3b)",content.add(v3b));
+  assertEquals("parameter(\"1b\")",-10,group.parameter("1").intValue());
+  assertEquals("parameter(\"2b\")",-20,group.parameter("2").intValue());
+  assertEquals("parameter(\"3b\")",-30,group.parameter("3").intValue());
+  assertEquals("values.size()",3,content.size());
+  assertEquals("new",group,group=new ParameterGroup(descriptor,new Parameter[]{v1b,v2b,v3b}));
+  group=new ParameterGroup(descriptor,new Parameter[]{v1,v2});
+  descriptor=group.getDescriptor();
+  content=group.values();
+  automatic=(Parameter)v3.getDescriptor().createValue();
+  writer.format(group);
+  assertEquals("values.size()",2,content.size());
+  assertTrue("contains(v1)",content.contains(v1));
+  assertTrue("contains(v2)",content.contains(v2));
+  assertFalse("contains(v3)",content.contains(v3));
+  assertFalse("contains(v4)",content.contains(v4));
+  assertFalse("contains(v1b)",content.contains(v1b));
+  assertFalse("contains(v2b)",content.contains(v2b));
+  assertFalse("contains(v3b)",content.contains(v3b));
+  assertSame("parameter(\"1\")",v1,group.parameter("1"));
+  assertSame("parameter(\"2\")",v2,group.parameter("2"));
+  assertFalse("contains(automatic)",content.contains(automatic));
+  assertNotEquals("parameter(\"3\")",v3,group.parameter("3"));
+  assertTrue("contains(automatic)",content.contains(automatic));
+  try {
+    assertNotNull(group.parameter("4"));
+    fail("v4 parameter should not be allowed in this group.");
+  }
+ catch (  ParameterNotFoundException e) {
+    assertEquals("4",e.getParameterName());
+    assertNotNull(e.getMessage());
+  }
+  assertFalse("remove(v1b)",content.remove(v1b));
+  assertEquals("values.size()",3,content.size());
+  assertFalse("remove(v3)",content.remove(v3));
+  assertEquals("values.size()",3,content.size());
+  assertTrue("remove(auto)",content.remove(automatic));
+  assertEquals("values.size()",2,content.size());
+  try {
+    assertTrue(content.remove(v1));
+    fail("v1 is a mandatory parameter; it should not be removeable.");
+  }
+ catch (  InvalidParameterCardinalityException e) {
+    assertEquals("1",e.getParameterName());
+    assertNotNull(e.getMessage());
+  }
+  assertEquals("values.size()",2,content.size());
+  assertTrue("add(v1b)",content.add(v1b));
+  assertTrue("add(v2b)",content.add(v2b));
+  assertTrue("add(v3b)",content.add(v3b));
+  assertFalse("add(v1b)",content.add(v1b));
+  assertFalse("add(v2b)",content.add(v2b));
+  assertFalse("add(v3b)",content.add(v3b));
+  assertEquals("parameter(\"1b\")",-10,group.parameter("1").intValue());
+  assertEquals("parameter(\"2b\")",-20,group.parameter("2").intValue());
+  assertEquals("parameter(\"3b\")",-30,group.parameter("3").intValue());
+  assertEquals("values.size()",3,content.size());
+  try {
+    group=new ParameterGroup(properties,new Parameter[]{v1,v3,v4,v3b});
+    fail("Adding two 'v3' value should not be allowed");
+  }
+ catch (  InvalidParameterCardinalityException e) {
+    assertEquals("3",e.getParameterName());
+    assertNotNull(e.getMessage());
+  }
+  group=new ParameterGroup(properties,new Parameter[]{v1,v4,v3,v4b});
+  descriptor=group.getDescriptor();
+  content=group.values();
+  automatic=(Parameter)v3.getDescriptor().createValue();
+  writer.format(group);
+  assertEquals("values.size()",4,content.size());
+  assertTrue("contains(v1)",content.contains(v1));
+  assertFalse("contains(v2)",content.contains(v2));
+  assertTrue("contains(v3)",content.contains(v3));
+  assertTrue("contains(v4)",content.contains(v4));
+  assertFalse("contains(v1b)",content.contains(v1b));
+  assertFalse("contains(v2b)",content.contains(v2b));
+  assertFalse("contains(v3b)",content.contains(v3b));
+  assertTrue("contains(v4b)",content.contains(v4b));
+  assertSame("parameter(\"1\")",v1,group.parameter("1"));
+  assertSame("parameter(\"3\")",v3,group.parameter("3"));
+  assertSame("parameter(\"4\")",v4,group.parameter("4"));
+  assertTrue("remove(v3)",content.remove(v3));
+  assertFalse("contains(automatic)",content.contains(automatic));
+  assertNotEquals("parameter(\"3\")",v3,group.parameter("3"));
+  assertTrue("contains(automatic)",content.contains(automatic));
+  try {
+    new ParameterGroup(descriptor,new Parameter[]{v4,v3});
+    fail("Parameter 1 was mandatory.");
+  }
+ catch (  InvalidParameterCardinalityException exception) {
+    assertEquals("1",exception.getParameterName());
+  }
+  try {
+    new ParameterGroup(descriptor,new Parameter[]{v1,v4,v3,v3b});
+    fail("Parameter 3 was not allowed to be inserted twice.");
+  }
+ catch (  InvalidParameterCardinalityException exception) {
+    assertEquals("3",exception.getParameterName());
+  }
+  try {
+    new ParameterGroup(descriptor,new Parameter[]{v1,v3,v1b});
+    fail("Parameter 1 was not allowed to be inserted twice.");
+  }
+ catch (  InvalidParameterCardinalityException exception) {
+    assertEquals("1",exception.getParameterName());
+  }
+  group=new ParameterGroup(properties,new Parameter[]{v1,v2});
+  descriptor=group.getDescriptor();
+  content=descriptor.descriptors();
+  writer.format(group);
+  assertEquals("name","group",descriptor.getName().getCode());
+  assertEquals("descriptors.size()",2,content.size());
+  assertTrue("contains(p1)",content.contains(p1));
+  assertTrue("contains(p2)",content.contains(p2));
+  assertFalse("contains(p3)",content.contains(p3));
+  assertSame("descriptor(\"1\")",p1,descriptor.descriptor("1"));
+  assertSame("descriptor(\"2\")",p2,descriptor.descriptor("2"));
+  try {
+    assertSame("p3",p3,descriptor.descriptor("3"));
+    fail("p3 should not exists.");
+  }
+ catch (  ParameterNotFoundException e) {
+    assertEquals("3",e.getParameterName());
+  }
+  content=group.values();
+  assertEquals("values.size()",2,content.size());
+  assertTrue("contains(v1)",content.contains(v1));
+  assertTrue("contains(v2)",content.contains(v2));
+  assertFalse("contains(v3)",content.contains(v3));
+  assertFalse("contains(v1b)",content.contains(v1b));
+  assertFalse("contains(v2b)",content.contains(v2b));
+  assertFalse("contains(v3b)",content.contains(v3b));
+  assertSame("parameter(\"1\")",v1,group.parameter("1"));
+  assertSame("parameter(\"2\")",v2,group.parameter("2"));
+  try {
+    assertSame("parameter(\"3\")",v3,group.parameter("3"));
+    fail("v3 should not exists");
+  }
+ catch (  ParameterNotFoundException e) {
+    assertEquals("3",e.getParameterName());
+  }
+  group=new ParameterGroup(properties,new Parameter[]{v1,v3});
+  descriptor=group.getDescriptor();
+  content=descriptor.descriptors();
+  writer.format(group);
+  assertEquals("name","group",descriptor.getName().getCode());
+  assertEquals("descriptors.size()",2,content.size());
+  assertTrue("contains(p1)",content.contains(p1));
+  assertFalse("contains(p2)",content.contains(p2));
+  assertTrue("contains(p3)",content.contains(p3));
+  assertSame("descriptor(\"1\")",p1,descriptor.descriptor("1"));
+  assertSame("descriptor(\"3\")",p3,descriptor.descriptor("3"));
+  try {
+    assertSame("descriptor(\"2\")",p2,descriptor.descriptor("2"));
+    fail("p2 should not exists");
+  }
+ catch (  ParameterNotFoundException e) {
+    assertEquals("2",e.getParameterName());
+  }
+  content=group.values();
+  assertEquals("values.size()",2,content.size());
+  assertTrue("contains(v1)",content.contains(v1));
+  assertFalse("contains(v2)",content.contains(v2));
+  assertTrue("contains(v3)",content.contains(v3));
+  assertFalse("contains(v1b)",content.contains(v1b));
+  assertFalse("contains(v2b)",content.contains(v2b));
+  assertFalse("contains(v3b)",content.contains(v3b));
+  assertSame("parameter(\"1\")",v1,group.parameter("1"));
+  assertSame("parameter(\"3\")",v3,group.parameter("3"));
+  try {
+    assertSame("parameter(\"2\")",v2,group.parameter("2"));
+    fail("v2 should not exists");
+  }
+ catch (  ParameterNotFoundException e) {
+    assertEquals("2",e.getParameterName());
+  }
+  group=new ParameterGroup(properties,new Parameter[]{v1,v2,v3,v4,v4b});
+  writer.format(group);
+  assertEquals("values.size()",5,group.values().size());
+  try {
+    new ParameterGroup(properties,new Parameter[]{v1,v2,v3,v3b});
+    fail("Parameter 3 was not allowed to be inserted twice.");
+  }
+ catch (  InvalidParameterCardinalityException e) {
+    assertEquals("3",e.getParameterName());
+  }
+  try {
+    new ParameterGroup(properties,new Parameter[]{v1,v3,v1b});
+    fail("Parameter 1 was not allowed to be inserted twice.");
+  }
+ catch (  InvalidParameterCardinalityException e) {
+    assertEquals("1",e.getParameterName());
+  }
+}

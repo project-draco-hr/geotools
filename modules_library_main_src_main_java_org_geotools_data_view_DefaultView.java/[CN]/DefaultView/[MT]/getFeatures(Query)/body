@@ -1,0 +1,39 @@
+{
+  DefaultQuery mergedQuery=makeDefinitionQuery(query);
+  SimpleFeatureCollection results=source.getFeatures(mergedQuery);
+  CoordinateReferenceSystem cCs=constraintQuery.getCoordinateSystem();
+  CoordinateReferenceSystem cCsr=constraintQuery.getCoordinateSystemReproject();
+  CoordinateReferenceSystem qCs=query.getCoordinateSystem();
+  CoordinateReferenceSystem qCsr=query.getCoordinateSystemReproject();
+  try {
+    if (qCsr != null && cCsr != null) {
+      if (cCs != null)       results=new ForceCoordinateSystemFeatureResults(results,cCs);
+      results=new ReprojectFeatureResults(results,cCsr);
+      if (qCs != null)       results=new ForceCoordinateSystemFeatureResults(results,qCs);
+      results=new ReprojectFeatureResults(results,qCsr);
+    }
+ else     if (qCs != null && cCsr != null) {
+      try {
+        if (cCs != null)         results=new ForceCoordinateSystemFeatureResults(results,cCs);
+        results=new ReprojectFeatureResults(source.getFeatures(mergedQuery),cCsr);
+        results=new ForceCoordinateSystemFeatureResults(results,qCs);
+      }
+ catch (      SchemaException e) {
+        throw new DataSourceException("This should not happen",e);
+      }
+    }
+ else {
+      CoordinateReferenceSystem forcedCS=qCs != null ? qCs : cCs;
+      CoordinateReferenceSystem reprojectCS=qCsr != null ? qCsr : cCsr;
+      if (forcedCS != null)       results=new ForceCoordinateSystemFeatureResults(results,forcedCS);
+      if (reprojectCS != null)       results=new ReprojectFeatureResults(results,reprojectCS);
+    }
+  }
+ catch (  IOException e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw new DataSourceException("A problem occurred while handling forced " + "coordinate systems and reprojection",e);
+  }
+  return results;
+}

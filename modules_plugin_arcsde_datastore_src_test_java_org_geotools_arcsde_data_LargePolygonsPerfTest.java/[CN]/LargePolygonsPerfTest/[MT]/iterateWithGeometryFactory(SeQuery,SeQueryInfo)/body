@@ -1,0 +1,41 @@
+{
+  Stopwatch sw=new Stopwatch();
+  query.prepareQueryInfo(seQueryInfo);
+  query.execute();
+  try {
+    log("- Iterating: " + Arrays.asList(seQueryInfo.getColumns()));
+    SeRow row=query.fetch();
+    final int ncols=row.getNumColumns();
+    final int shapeIdx=ncols - 1;
+    Object value;
+    Geometry geom;
+    int numPoints;
+    featureCount=0;
+    totalPoints=0;
+    largerPoints=0;
+    GeometryFactory seGeomFac=new SeToJTSGeometryFactory();
+    sw.start();
+    while (row != null) {
+      featureCount++;
+      for (int i=0; i < ncols; i++) {
+        if (i == shapeIdx) {
+          geom=(Geometry)row.getGeometry(seGeomFac,i);
+          numPoints=geom.getNumPoints();
+          totalPoints+=numPoints;
+          largerPoints=Math.max(largerPoints,numPoints);
+        }
+ else {
+          value=row.getObject(i);
+        }
+      }
+      row=query.fetch();
+    }
+    sw.stop();
+  }
+  finally {
+    query.close();
+  }
+  log("\t- " + featureCount + " features iterated in "+ sw.getTimeString());
+  log("\t\t- total poinst: " + totalPoints + ", larger geometry: "+ largerPoints+ " points, avg points: "+ (totalPoints / featureCount));
+  return sw.getTime();
+}

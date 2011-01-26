@@ -1,0 +1,28 @@
+{
+  String styleExpression="";
+  if (filter instanceof PropertyIsEqualTo) {
+    PropertyIsEqualTo compareFilter=(PropertyIsEqualTo)filter;
+    Expression leftExpression=compareFilter.getExpression1();
+    Expression rightExpression=compareFilter.getExpression2();
+    if ((leftExpression instanceof PropertyName) && (rightExpression instanceof Literal)) {
+      styleExpression=rightExpression.toString();
+    }
+ else     if ((leftExpression instanceof Literal) && (rightExpression instanceof PropertyName)) {
+      styleExpression=leftExpression.toString();
+    }
+ else {
+      throw new IllegalArgumentException("Could not extract an Explicit Style Expression from the CompareFilter");
+    }
+  }
+ else   if (filter instanceof Or) {
+    Or parentFilter=(Or)filter;
+    Iterator iterator=parentFilter.getChildren().iterator();
+    while (iterator.hasNext()) {
+      styleExpression+=toExplicitStyleExpression((Filter)iterator.next());
+      if (iterator.hasNext()) {
+        styleExpression+=", ";
+      }
+    }
+  }
+  return styleExpression;
+}

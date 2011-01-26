@@ -1,0 +1,45 @@
+{
+  if (object instanceof ModifiableMetadata) {
+    return ((ModifiableMetadata)object).unmodifiable();
+  }
+  if (object instanceof Collection) {
+    Collection<?> collection=(Collection)object;
+    if (collection.isEmpty()) {
+      if (collection instanceof List) {
+        collection=Collections.EMPTY_LIST;
+      }
+ else {
+        collection=Collections.EMPTY_SET;
+      }
+    }
+ else {
+      final Object[] array=collection.toArray();
+      for (int i=0; i < array.length; i++) {
+        array[i]=unmodifiable(array[i]);
+      }
+      collection=UnmodifiableArrayList.wrap(array);
+      if (collection instanceof Set) {
+        collection=Collections.unmodifiableSet(new LinkedHashSet<Object>(collection));
+      }
+ else {
+      }
+    }
+    return collection;
+  }
+  if (object instanceof Map) {
+    Map map=(Map)object;
+    if (map.isEmpty()) {
+      return Collections.EMPTY_MAP;
+    }
+    map=new LinkedHashMap(map);
+    for (final Iterator<Map.Entry> it=map.entrySet().iterator(); it.hasNext(); ) {
+      final Map.Entry entry=it.next();
+      entry.setValue(unmodifiable(entry.getValue()));
+    }
+    return Collections.unmodifiableMap(map);
+  }
+  if (object instanceof org.opengis.util.Cloneable) {
+    return ((org.opengis.util.Cloneable)object).clone();
+  }
+  return object;
+}

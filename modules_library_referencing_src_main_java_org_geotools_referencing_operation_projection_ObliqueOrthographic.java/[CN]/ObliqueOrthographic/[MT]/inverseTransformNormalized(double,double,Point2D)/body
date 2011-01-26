@@ -1,0 +1,43 @@
+{
+  final double rho=hypot(x,y);
+  double sinc=rho;
+  if (sinc > 1.0) {
+    if ((sinc - 1.0) > EPSILON) {
+      throw new ProjectionException(ErrorKeys.POINT_OUTSIDE_HEMISPHERE);
+    }
+    sinc=1.0;
+  }
+  final double cosc=sqrt(1.0 - sinc * sinc);
+  if (rho <= EPSILON) {
+    y=latitudeOfOrigin;
+    x=0.0;
+  }
+ else {
+    double phi=(cosc * sinphi0) + (y * sinc * cosphi0 / rho);
+    y=(cosc - sinphi0 * phi) * rho;
+    x*=sinc * cosphi0;
+    if (abs(phi) >= 1.0) {
+      phi=(phi < 0.0) ? -PI / 2 : PI / 2;
+    }
+ else {
+      phi=asin(phi);
+    }
+    if (y == 0.0) {
+      if (x == 0.0) {
+        x=0.0;
+      }
+ else {
+        x=(x < 0.0) ? -PI / 2 : PI / 2;
+      }
+    }
+ else {
+      x=atan2(x,y);
+    }
+    y=phi;
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(x,y);
+    return ptDst;
+  }
+  return new Point2D.Double(x,y);
+}

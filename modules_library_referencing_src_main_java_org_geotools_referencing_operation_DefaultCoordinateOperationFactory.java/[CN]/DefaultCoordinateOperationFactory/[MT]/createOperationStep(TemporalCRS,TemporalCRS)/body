@@ -1,0 +1,19 @@
+{
+  final TemporalDatum sourceDatum=sourceCRS.getDatum();
+  final TemporalDatum targetDatum=targetCRS.getDatum();
+  if (!equalsIgnoreMetadata(sourceDatum,targetDatum)) {
+    throw new OperationNotFoundException(getErrorMessage(sourceDatum,targetDatum));
+  }
+  final TimeCS sourceCS=sourceCRS.getCoordinateSystem();
+  final TimeCS targetCS=targetCRS.getCoordinateSystem();
+  final Unit targetUnit=targetCS.getAxis(0).getUnit();
+  double epochShift=sourceDatum.getOrigin().getTime() - targetDatum.getOrigin().getTime();
+  epochShift=MILLISECOND.getConverterTo(targetUnit).convert(epochShift);
+  final Matrix matrix=swapAndScaleAxis(sourceCS,targetCS);
+  final int translationColumn=matrix.getNumCol() - 1;
+  if (translationColumn >= 0) {
+    final double translation=matrix.getElement(0,translationColumn);
+    matrix.setElement(0,translationColumn,translation + epochShift);
+  }
+  return createFromAffineTransform(AXIS_CHANGES,sourceCRS,targetCRS,matrix);
+}

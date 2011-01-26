@@ -1,0 +1,47 @@
+{
+  FilterFactory2 factory=FilterSchema.filterFactory(hints);
+  String name=element.getName();
+  short type;
+  if ("and".equalsIgnoreCase(name)) {
+    type=FilterType.LOGIC_AND;
+  }
+ else   if ("or".equalsIgnoreCase(name)) {
+    type=FilterType.LOGIC_OR;
+  }
+ else {
+    throw new SAXException("Expected AND or OR logic filter");
+  }
+  try {
+    ArrayList<org.opengis.filter.Filter> children=new ArrayList<org.opengis.filter.Filter>(value.length);
+    Set<Identifier> ids=new HashSet<Identifier>(value.length);
+    boolean fidOnly=true;
+    for (int i=0; i < value.length; i++) {
+      Filter filter=(Filter)value[i];
+      if (filter instanceof Id) {
+        Id id=(Id)filter;
+        ids.addAll(id.getIdentifiers());
+      }
+ else {
+        fidOnly=false;
+      }
+      children.add(filter);
+    }
+    if (type == FilterType.LOGIC_OR) {
+      if (fidOnly) {
+        return factory.id(ids);
+      }
+ else {
+        return factory.or(children);
+      }
+    }
+ else {
+      return factory.and(children);
+    }
+  }
+ catch (  ClassCastException filterRequired) {
+    throw new SAXException("Illegal filter for " + element,filterRequired);
+  }
+catch (  IllegalFilterException e) {
+    throw new SAXException("Illegal filter for " + element);
+  }
+}

@@ -1,0 +1,32 @@
+{
+  final MathTransformFactory mathTransformFactory=factories.getMathTransformFactory();
+  final ImageReferencing referencing=metadata.getReferencing();
+  final String projectionName=referencing.getProjectionName();
+  if (projectionName == null) {
+    throw new MetadataException("Projection name is not defined.");
+  }
+  final ParameterValueGroup paramValueGroup;
+  try {
+    paramValueGroup=mathTransformFactory.getDefaultParameters(projectionName);
+  }
+ catch (  NoSuchIdentifierException e) {
+    throw new MetadataException(e.getLocalizedMessage());
+  }
+  for (  final Parameter parameter : referencing.getParameters()) {
+    final String name=parameter.getName();
+    if (name == null) {
+      continue;
+    }
+    final double value=parameter.getValue();
+    if (Double.isNaN(value)) {
+      continue;
+    }
+    try {
+      paramValueGroup.parameter(name).setValue(value);
+    }
+ catch (    ParameterNotFoundException e) {
+      continue;
+    }
+  }
+  return new DefiningConversion(projectionName,paramValueGroup);
+}

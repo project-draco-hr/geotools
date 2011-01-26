@@ -1,0 +1,47 @@
+{
+  if (defaultStroke == null) {
+    defaultStroke=sb.createStroke();
+  }
+  FeatureTypeStyle fts=sf.createFeatureTypeStyle();
+  int numClasses=classifier.getSize();
+  if (classifier instanceof RangedClassifier) {
+    RangedClassifier ranged=(RangedClassifier)classifier;
+    Object localMin=null;
+    Object localMax=null;
+    for (int i=0; i < ranged.getSize(); i++) {
+      localMin=ranged.getMin(i);
+      localMax=ranged.getMax(i);
+      Rule rule=createRuleRanged(ranged,expression,localMin,localMax,geometryAttrType,i,elseMode,colors,opacity,defaultStroke);
+      fts.addRule(rule);
+    }
+  }
+ else   if (classifier instanceof ExplicitClassifier) {
+    ExplicitClassifier explicit=(ExplicitClassifier)classifier;
+    for (int i=0; i < explicit.getSize(); i++) {
+      Set value=(Set)explicit.getValues(i);
+      Rule rule=createRuleExplicit(explicit,expression,value,geometryAttrType,i,elseMode,colors,opacity,defaultStroke);
+      fts.addRule(rule);
+    }
+  }
+ else {
+    LOGGER.log(Level.SEVERE,"Error: no handler for this Classifier type");
+  }
+  if (elseMode != ELSEMODE_IGNORE) {
+    Symbolizer symb=createSymbolizer(geometryAttrType,getElseColor(elseMode,colors),opacity,defaultStroke);
+    Rule elseRule=sb.createRule(symb);
+    elseRule.setIsElseFilter(true);
+    elseRule.setTitle("Else");
+    elseRule.setName("else");
+    fts.addRule(elseRule);
+  }
+  Rule[] rule=fts.getRules();
+  if (elseMode == ELSEMODE_INCLUDEASMIN) {
+    for (int i=rule.length - 1; i > 0; i--) {
+      Rule tempRule=rule[i];
+      rule[i]=rule[i - 1];
+      rule[i - 1]=tempRule;
+    }
+  }
+  fts.setSemanticTypeIdentifiers(new String[]{"generic:geometry","colorbrewer:" + typeId});
+  return fts;
+}

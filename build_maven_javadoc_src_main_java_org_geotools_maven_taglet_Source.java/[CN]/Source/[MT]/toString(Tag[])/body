@@ -1,0 +1,44 @@
+{
+  if (tags == null || tags.length == 0) {
+    return "";
+  }
+  final StringBuilder buffer=new StringBuilder("\n<DT><B>Module:</B></DT>");
+  for (int i=0; i < tags.length; i++) {
+    final Matcher matchURL=findURL.matcher(tags[i].text());
+    if (!matchURL.matches()) {
+      continue;
+    }
+    final String url=matchURL.group(1).trim();
+    final Matcher matchModule=findModule.matcher(url);
+    if (!matchModule.matches()) {
+      continue;
+    }
+    final String modulePath=matchModule.group(6);
+    int pos=modulePath.indexOf('/');
+    final String module;
+    if (pos == -1) {
+      module=modulePath;
+    }
+ else {
+      module=modulePath.substring(pos + 1);
+    }
+    final String group, category;
+    if (matchModule.group(2).equals("demo")) {
+      group=matchModule.group(2);
+      category=null;
+    }
+ else {
+      group=matchModule.group(4);
+      category=matchModule.group(5);
+    }
+    buffer.append('\n').append(i == 0 ? "<DD>" : "    ").append("<CODE><B>");
+    buffer.append(group).append('/');
+    if (category != null) {
+      buffer.append(category).append('/');
+    }
+    buffer.append(module);
+    buffer.append(" (gt-").append(module).append(".jar)");
+    buffer.append("</B></CODE>");
+  }
+  return buffer.append("</DD>\n").toString();
+}

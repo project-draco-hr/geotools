@@ -1,0 +1,49 @@
+{
+  if (offset < 0 || length < 0 || (offset + length) > cbuf.length) {
+    throw new IndexOutOfBoundsException();
+  }
+  if (length == 0) {
+    return;
+  }
+synchronized (lock) {
+    if (skipCR && cbuf[offset] == '\n') {
+      offset++;
+      length--;
+    }
+    if (!multiLinesCells) {
+      int upper=offset;
+      for (; length != 0; length--) {
+switch (cbuf[upper++]) {
+case '\t':
+{
+            buffer.append(cbuf,offset,upper - offset - 1);
+            nextColumn();
+            offset=upper;
+            break;
+          }
+case '\r':
+{
+          buffer.append(cbuf,offset,upper - offset - 1);
+          nextLine();
+          if (length != 0 && cbuf[upper] == '\n') {
+            upper++;
+            length--;
+          }
+          offset=upper;
+          break;
+        }
+case '\n':
+{
+        buffer.append(cbuf,offset,upper - offset - 1);
+        nextLine();
+        offset=upper;
+        break;
+      }
+  }
+}
+length=upper - offset;
+}
+skipCR=(cbuf[offset + length - 1] == '\r');
+buffer.append(cbuf,offset,length);
+}
+}

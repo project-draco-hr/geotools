@@ -1,0 +1,55 @@
+{
+  try {
+    assertNotNull(getFactory(registry,null));
+    fail("No factory should have been found.");
+  }
+ catch (  FactoryNotFoundException e) {
+  }
+  final FactoryIteratorProvider provider1=new DummyFactoryIteratorProvider(true);
+  try {
+    FactoryIteratorProviders.addFactoryIteratorProvider(provider1);
+    assertNotNull(getFactory(registry,null));
+    DummyFactory factory;
+    factory=getFactory(registry,DummyFactory.Example1.class);
+    assertEquals(DummyFactory.Example1.class,factory.getClass());
+    factory=getFactory(registry,DummyFactory.Example2.class);
+    assertEquals(DummyFactory.Example2.class,factory.getClass());
+    try {
+      assertNotNull(getFactory(registry,DummyFactory.Example3.class));
+      fail("Example #3 should not be registered.");
+    }
+ catch (    FactoryNotFoundException e) {
+    }
+    try {
+      assertNotNull(getFactory(registry,DummyFactory.Example4.class));
+      fail("Example #4 should not be registered.");
+    }
+ catch (    FactoryNotFoundException e) {
+    }
+    final FactoryIteratorProvider provider2=new DummyFactoryIteratorProvider(false);
+    try {
+      FactoryIteratorProviders.addFactoryIteratorProvider(provider2);
+      factory=getFactory(registry,DummyFactory.Example1.class);
+      assertEquals(DummyFactory.Example1.class,factory.getClass());
+      factory=getFactory(registry,DummyFactory.Example2.class);
+      assertEquals(DummyFactory.Example2.class,factory.getClass());
+      factory=getFactory(registry,DummyFactory.Example3.class);
+      assertEquals(DummyFactory.Example3.class,factory.getClass());
+      factory=getFactory(registry,DummyFactory.Example4.class);
+      assertEquals(DummyFactory.Example4.class,factory.getClass());
+    }
+  finally {
+      FactoryIteratorProviders.removeFactoryIteratorProvider(provider2);
+    }
+  }
+  finally {
+    FactoryIteratorProviders.removeFactoryIteratorProvider(provider1);
+  }
+  createRegistry();
+  try {
+    assertNotNull(getFactory(registry,null));
+    fail("The factory should be empty again.");
+  }
+ catch (  FactoryNotFoundException e) {
+  }
+}

@@ -1,0 +1,19 @@
+{
+  FilterFactory ff=FilterFactory.createFilterFactory();
+  CompareFilter cf=ff.createCompareFilter(FilterType.COMPARE_EQUALS);
+  cf.addLeftValue(ff.createAttributeExpression(null,"module"));
+  cf.addRightValue(ff.createLiteralExpression(MODULE));
+  String[] ps=new String[]{"wkb_geometry","polyid"};
+  Query q=new DefaultQuery("pip",cf,ps);
+  FeatureReader fr=ds.getFeatureReader(q,new DefaultTransaction());
+  while (fr.hasNext()) {
+    Feature f=fr.next();
+    BigDecimal polyidBD=(BigDecimal)f.getAttribute(1);
+    Long polyid=new Long(polyidBD.longValue());
+    if (polyid == null)     throw new Exception("PIP  has null polyid");
+    Geometry g=(Geometry)f.getAttribute(0);
+    g.setUserData(polyid);
+    PIP.insert(g.getEnvelopeInternal(),g);
+  }
+  fr.close();
+}

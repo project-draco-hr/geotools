@@ -1,0 +1,22 @@
+{
+  Utilities.ensureNonNull("q",q);
+  final Lock lock=rwLock.readLock();
+  try {
+    lock.lock();
+    checkStore();
+    final Filter filter=q.getFilter();
+    ReferencedEnvelope requestedBBox=extractAndCombineBBox(filter);
+    final List<GranuleDescriptor> features=getIndex(lock).query(requestedBBox);
+    if (q.equals(Query.ALL))     return features;
+    final List<GranuleDescriptor> retVal=new ArrayList<GranuleDescriptor>();
+    for (Iterator<GranuleDescriptor> it=features.iterator(); it.hasNext(); ) {
+      GranuleDescriptor g=it.next();
+      final SimpleFeature originator=g.getOriginator();
+      if (originator != null && filter.evaluate(originator))       retVal.add(g);
+    }
+    return retVal;
+  }
+  finally {
+    lock.unlock();
+  }
+}

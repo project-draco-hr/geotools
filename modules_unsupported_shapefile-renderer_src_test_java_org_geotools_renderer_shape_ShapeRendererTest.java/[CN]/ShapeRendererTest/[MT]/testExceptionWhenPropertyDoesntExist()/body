@@ -1,0 +1,24 @@
+{
+  ShapefileDataStore store=TestUtilites.getDataStore("lakes.shp");
+  StyleBuilder sb=new StyleBuilder();
+  TextSymbolizer ts=sb.createTextSymbolizer(Color.red,sb.createFont("serif",15.),"ELEVaTION");
+  Style styleWithWronglySpelledPropertyName=sb.createStyle(ts);
+{
+    MapContext context=new DefaultMapContext();
+    context.addLayer(store.getFeatureSource(),styleWithWronglySpelledPropertyName);
+    int w=300;
+    int h=300;
+    final BufferedImage image=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);
+    Graphics g=image.getGraphics();
+    g.setColor(Color.white);
+    g.fillRect(0,0,w,h);
+    ShapefileRenderer renderer=new ShapefileRenderer();
+    TestUtilites.ExceptionCollectorRenderListener listenerForEx=new TestUtilites.ExceptionCollectorRenderListener(getName());
+    renderer.addRenderListener(listenerForEx);
+    renderer.setContext(context);
+    renderer.paint((Graphics2D)g,new Rectangle(w,h),context.getLayerBounds());
+    assertEquals("Exactly one exception should have been thrown",1,listenerForEx.exceptions.size());
+    assertTrue("The Exception catched is not of expected type IllegalArgumentException",listenerForEx.exceptions.get(0) instanceof IllegalArgumentException);
+    assertEquals("The IllegalArgumentException catched doesn't have the expected message.","Attribute ELEVaTION does not exist. Maybe it has just been spelled wrongly?",listenerForEx.exceptions.get(0).getMessage());
+  }
+}

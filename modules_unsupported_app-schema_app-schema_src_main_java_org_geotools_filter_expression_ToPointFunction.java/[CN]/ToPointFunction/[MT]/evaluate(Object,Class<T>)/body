@@ -1,0 +1,39 @@
+{
+  Point point;
+  Expression param1=parameters.get(0);
+  if (param1.equals(ToDirectPositionFunction.SRS_NAME)) {
+    if (parameters.size() > 5 || parameters.size() < 4) {
+      throw new IllegalArgumentException("Wrong number of parameters for toPoint function: " + parameters.toString() + ". Usage: toPoint('SRS_NAME'(optional), srsName(optional), point 1, point 2, gml:id(optional))");
+    }
+    CoordinateReferenceSystem crs=null;
+    String srsName=parameters.get(1).evaluate(object,String.class);
+    try {
+      crs=CRS.decode((String)srsName);
+    }
+ catch (    NoSuchAuthorityCodeException e) {
+      throw new IllegalArgumentException("Invalid or unsupported SRS name detected for toPoint function: " + srsName + ". Cause: "+ e.getMessage());
+    }
+catch (    FactoryException e) {
+      throw new RuntimeException("Unable to decode SRS name. Cause: " + e.getMessage());
+    }
+    GeometryFactory fac=new GeometryFactory(new PrecisionModel());
+    point=fac.createPoint(new Coordinate(parameters.get(2).evaluate(object,Double.class),parameters.get(3).evaluate(object,Double.class)));
+    String gmlId=null;
+    if (parameters.size() == 5) {
+      gmlId=parameters.get(4).evaluate(object,String.class);
+    }
+    setUserData(point,crs,gmlId);
+  }
+ else {
+    if (parameters.size() > 3 || parameters.size() < 2) {
+      throw new IllegalArgumentException("Wrong number of parameters for toPoint function: " + parameters.toString() + ". Usage: toPoint('SRS_NAME'(optional), srsName(optional), point 1, point 2, gml:id(optional))");
+    }
+    GeometryFactory fac=new GeometryFactory();
+    point=fac.createPoint(new Coordinate(param1.evaluate(object,Double.class),parameters.get(1).evaluate(object,Double.class)));
+    if (parameters.size() == 3) {
+      String gmlId=parameters.get(2).evaluate(object,String.class);
+      setUserData(point,null,gmlId);
+    }
+  }
+  return (T)point;
+}

@@ -1,0 +1,30 @@
+{
+  NamedLayer layer=new NamedLayerImpl();
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase("Name")) {
+      layer.setName(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("NamedStyle")) {
+      NamedStyle style=parseNamedStyle(child);
+      layer.addStyle(style);
+    }
+ else     if (childName.equalsIgnoreCase("UserStyle")) {
+      Style user=parseStyle(child);
+      layer.addStyle(user);
+    }
+ else     if (childName.equalsIgnoreCase("LayerFeatureConstraints")) {
+      layer.setLayerFeatureConstraints(parseLayerFeatureConstraints(child));
+    }
+  }
+  return layer;
+}

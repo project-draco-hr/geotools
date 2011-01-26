@@ -1,0 +1,65 @@
+{
+  boolean firstChar=false;
+  StringBuilder urlBuilder=new StringBuilder();
+  if (!fnQuery.isMaxFeaturesUnlimited()) {
+    urlBuilder.append(getGlueChar(firstChar));
+    firstChar=false;
+    urlBuilder.append("limit=");
+    urlBuilder.append(fnQuery.getMaxFeatures());
+  }
+  boolean no_geom=true;
+  if (!fnQuery.retrieveAllProperties() && fnQuery.getPropertyNames().length > 0) {
+    urlBuilder.append(getGlueChar(firstChar));
+    firstChar=false;
+    urlBuilder.append("attrs=");
+    for (int i=0; i < fnQuery.getPropertyNames().length; i++) {
+      if (fnQuery.getPropertyNames()[i].equalsIgnoreCase("geometry")) {
+        no_geom=false;
+      }
+      urlBuilder.append(URLEncoder.encode(fnQuery.getPropertyNames()[i],DEFAULT_ENCODING));
+      if (i > 0 && i < fnQuery.getPropertyNames().length - 1) {
+        urlBuilder.append(",");
+      }
+    }
+    urlBuilder.append(getGlueChar(firstChar));
+    urlBuilder.append("no_geom=");
+    urlBuilder.append(no_geom);
+  }
+  if (fnQuery.getStartIndex() != null) {
+    urlBuilder.append(getGlueChar(firstChar));
+    firstChar=false;
+    urlBuilder.append("offset=");
+    urlBuilder.append(fnQuery.getStartIndex());
+  }
+  if (fnQuery.getSortBy() != null && fnQuery.getSortBy().length > 0) {
+    urlBuilder.append(getGlueChar(firstChar));
+    firstChar=false;
+    urlBuilder.append("order_by=");
+    urlBuilder.append(URLEncoder.encode(fnQuery.getSortBy()[0].getPropertyName().getPropertyName(),DEFAULT_ENCODING));
+    urlBuilder.append(getGlueChar(firstChar));
+    urlBuilder.append("dir=");
+    SortOrder order=fnQuery.getSortBy()[0].getSortOrder();
+    urlBuilder.append(URLEncoder.encode(order.name(),DEFAULT_ENCODING));
+  }
+  if (fnQuery.getFilter() != null) {
+    SFSFilterVisitor visitor=new SFSFilterVisitor(false);
+    fnQuery.getFilter().accept(visitor,null);
+    visitor.finish(urlBuilder,!firstChar);
+    firstChar=false;
+  }
+  if (fnQuery.getHints() != null && fnQuery.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS) != null) {
+    Map<String,String> params=(Map<String,String>)fnQuery.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS);
+    urlBuilder.append(getGlueChar(firstChar));
+    firstChar=false;
+    for (Iterator it=params.entrySet().iterator(); it.hasNext(); ) {
+      Map.Entry<String,String> pair=(Map.Entry<String,String>)it.next();
+      urlBuilder.append(URLEncoder.encode(pair.getKey().toString(),DEFAULT_ENCODING));
+      urlBuilder.append(":");
+      urlBuilder.append(URLEncoder.encode(pair.getValue().toString(),DEFAULT_ENCODING));
+      if (it.hasNext()) {
+        urlBuilder.append(";");
+      }
+    }
+  }
+  return urlBuilder.toString();
+}

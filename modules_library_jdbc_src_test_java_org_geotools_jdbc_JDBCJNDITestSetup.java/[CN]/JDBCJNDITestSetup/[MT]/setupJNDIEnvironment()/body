@@ -1,0 +1,27 @@
+{
+  File jndi=new File("target/jndi");
+  jndi.mkdirs();
+  OutputStreamWriter out=new OutputStreamWriter(new FileOutputStream(new File(jndi,"ds.properties")));
+  for (  Map.Entry e : fixture.entrySet()) {
+    out.write(e.getKey().toString() + "=" + e.getValue().toString()+ "\n");
+  }
+  if (!fixture.containsKey("password") && fixture.containsKey("passwd")) {
+    out.write("password=" + fixture.get("passwd") + "\n");
+  }
+  out.write("type=javax.sql.DataSource\n");
+  out.flush();
+  out.close();
+  String IC_FACTORY_PROPERTY="java.naming.factory.initial";
+  String JNDI_ROOT="org.osjava.sj.root";
+  String JNDI_DELIM="org.osjava.jndi.delimiter";
+  if (System.getProperty(IC_FACTORY_PROPERTY) == null) {
+    System.setProperty(IC_FACTORY_PROPERTY,"org.osjava.sj.SimpleContextFactory");
+  }
+  if (System.getProperty(JNDI_ROOT) == null) {
+    System.setProperty(JNDI_ROOT,jndi.getAbsolutePath());
+  }
+  if (System.getProperty(JNDI_DELIM) == null)   System.setProperty(JNDI_DELIM,"/");
+  LOGGER.fine(IC_FACTORY_PROPERTY + " = " + System.getProperty(IC_FACTORY_PROPERTY));
+  LOGGER.fine(JNDI_ROOT + " = " + System.getProperty(JNDI_ROOT));
+  LOGGER.fine(JNDI_DELIM + " = " + System.getProperty(JNDI_DELIM));
+}

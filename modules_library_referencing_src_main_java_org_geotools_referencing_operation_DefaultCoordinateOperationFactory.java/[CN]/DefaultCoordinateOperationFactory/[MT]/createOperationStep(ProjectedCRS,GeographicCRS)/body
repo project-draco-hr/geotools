@@ -1,0 +1,17 @@
+{
+  final GeographicCRS base=sourceCRS.getBaseCRS();
+  CoordinateOperation step1=sourceCRS.getConversionFromBase();
+  CoordinateOperation step2=tryDB(base,targetCRS);
+  if (step2 == null) {
+    step2=createOperationStep(base,targetCRS);
+  }
+  MathTransform transform=step1.getMathTransform();
+  try {
+    transform=transform.inverse();
+  }
+ catch (  NoninvertibleTransformException exception) {
+    throw new OperationNotFoundException(getErrorMessage(sourceCRS,base),exception);
+  }
+  step1=createFromMathTransform(INVERSE_OPERATION,sourceCRS,base,transform);
+  return concatenate(step1,step2);
+}

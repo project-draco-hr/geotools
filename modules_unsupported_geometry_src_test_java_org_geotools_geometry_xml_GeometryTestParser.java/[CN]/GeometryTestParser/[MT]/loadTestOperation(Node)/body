@@ -1,0 +1,28 @@
+{
+  Node node=getNamedChild(testNode,"op");
+  if (node == null) {
+    throw new RuntimeException("<test> element must have <op> subelement");
+  }
+  String operation=getNodeAttribute(node,"name");
+  String arg1=getNodeAttribute(node,"arg1");
+  String arg2=getNodeAttribute(node,"arg2");
+  String arg3=getNodeAttribute(node,"arg3");
+  Object expectedResult;
+  String expectedString=getNodeText(node);
+  if (expectedString.trim().equalsIgnoreCase("true")) {
+    expectedResult=Boolean.TRUE;
+  }
+ else   if (expectedString.trim().equalsIgnoreCase("false")) {
+    expectedResult=Boolean.FALSE;
+  }
+ else {
+    try {
+      expectedResult=wktFactory.parse(expectedString);
+    }
+ catch (    ParseException e) {
+      LOGGER.log(Level.FINE,"Couldn't parse [" + expectedString + "]",e);
+      throw new RuntimeException("Couldn't parse [" + expectedString + "]",e);
+    }
+  }
+  return new GeometryTestOperation(operation,arg1,arg2,arg3,expectedResult);
+}

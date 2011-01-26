@@ -1,0 +1,46 @@
+{
+  final double phi=Math.toRadians(latitude);
+  final double sin_phi=Math.sin(phi);
+  final double sin2_phi=sin_phi * sin_phi;
+  final double rni=Math.sqrt(1.0 - esq * sin2_phi);
+  final double rn=semiMajor / rni;
+  final double t22=(rn + height) * Math.cos(phi);
+  final double x2y2=t22 * t22;
+  final double z1=((rn * (1 - esq)) + height) * sin_phi;
+  final double th=(Math.PI / 2.0) - Math.atan(z1 / Math.sqrt(x2y2));
+  final double y=Math.sin(th);
+  final double t=Math.cos(th);
+  final double f1=semiMajor / Math.sqrt(x2y2 + z1 * z1);
+  final double f2=f1 * f1;
+  final double rlam=Math.toRadians(longitude);
+  final double gravn;
+  if (wgs84) {
+    gravn=grava * (1.0 + star * sin2_phi) / rni;
+  }
+ else {
+    gravn=grava * (1.0 + star * sin2_phi) + 0.000023461 * (sin2_phi * sin2_phi);
+  }
+  sr[0]=0;
+  sr[1]=Math.sin(rlam);
+  cr[0]=1;
+  cr[1]=Math.cos(rlam);
+  for (int j=2; j <= nmax; j++) {
+    sr[j]=(2.0 * cr[1] * sr[j - 1]) - sr[j - 2];
+    cr[j]=(2.0 * cr[1] * cr[j - 1]) - cr[j - 2];
+  }
+  double sht=0, previousSht=0;
+  for (int i=nmax; i >= 0; i--) {
+    for (int j=nmax; j >= i; j--) {
+      final int ll=locatingArray(j) + i;
+      final int ll2=ll + j + 1;
+      final int ll3=ll2 + j + 2;
+      final double ta=aClenshaw[ll2] * f1 * t;
+      final double tb=bClenshaw[ll3] * f2;
+      s11[j]=(ta * s11[j + 1]) - (tb * s11[j + 2]) + cnmGeopCoef[ll];
+      s12[j]=(ta * s12[j + 1]) - (tb * s12[j + 2]) + snmGeopCoef[ll];
+    }
+    previousSht=sht;
+    sht=(-as[i] * y * f1* sht) + (s11[i] * cr[i]) + (s12[i] * sr[i]);
+  }
+  return ((s11[0] + s12[0]) * f1 + (previousSht * SQRT_03 * y* f2)) * rkm / (semiMajor * (gravn - (height * 0.3086e-5)));
+}

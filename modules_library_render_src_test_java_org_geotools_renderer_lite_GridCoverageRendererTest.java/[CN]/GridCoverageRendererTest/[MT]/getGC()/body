@@ -1,0 +1,18 @@
+{
+  final String path;
+  final Rectangle2D bounds;
+  path="TestGridCoverage.tif";
+  final CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
+  bounds=new Rectangle2D.Double(35,-41,45,46);
+  final GeneralEnvelope envelope=new GeneralEnvelope(bounds);
+  final RenderedImage image=ImageIO.read(TestData.getResource(this,path));
+  final int numBands=image.getSampleModel().getNumBands();
+  final GridSampleDimension[] bands=new GridSampleDimension[numBands];
+  for (int i=0; i < numBands; i++) {
+    bands[i]=new GridSampleDimension("band " + i);
+  }
+  final String filename=new File(path).getName();
+  final GridCoverageFactory factory=org.geotools.coverage.CoverageFactoryFinder.getGridCoverageFactory(GeoTools.getDefaultHints());
+  envelope.setCoordinateReferenceSystem(crs);
+  return (GridCoverage2D)factory.create(filename,image,envelope,bands,null,null);
+}

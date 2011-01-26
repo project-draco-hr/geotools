@@ -1,0 +1,21 @@
+{
+  if (o instanceof StyledLayerDescriptor) {
+    encode((StyledLayerDescriptor)o);
+  }
+ else   if (o instanceof Style[]) {
+    encode((Style[])o);
+  }
+ else {
+    Class c=o.getClass();
+    try {
+      java.lang.reflect.Method m=c.getMethod("accept",new Class[]{StyleVisitor.class});
+      m.invoke(o,new Object[]{this});
+    }
+ catch (    NoSuchMethodException nsme) {
+      throw new IllegalArgumentException("Cannot encode " + o);
+    }
+catch (    Exception e) {
+      throw new RuntimeException("Internal transformation exception",e);
+    }
+  }
+}

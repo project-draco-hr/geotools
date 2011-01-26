@@ -1,0 +1,30 @@
+{
+  File home=new File(System.getProperty("user.home"));
+  FilenameFilter directoryFilter=new FilenameFilter(){
+    public boolean accept(    File dir,    String name){
+      File target=new File(dir,name);
+      return target.isDirectory();
+    }
+  }
+;
+  FilenameFilter hiddenFilter=new FilenameFilter(){
+    public boolean accept(    File dir,    String name){
+      File target=new File(dir,name);
+      return target.isHidden();
+    }
+  }
+;
+  List<String> dir=Arrays.asList(home.list(directoryFilter));
+  List<String> hidden=Arrays.asList(home.list(hiddenFilter));
+  FilenameFilter includeFilter=DataUtilities.includeFilters(directoryFilter,hiddenFilter);
+  List<String> include=Arrays.asList(home.list(includeFilter));
+  Set<String> both=new HashSet<String>();
+  both.addAll(dir);
+  both.addAll(hidden);
+  assertEquals(both.size(),include.size());
+  FilenameFilter excludeFilter=DataUtilities.excludeFilters(directoryFilter,hiddenFilter);
+  List<String> exclude=Arrays.asList(home.list(excludeFilter));
+  Set<String> subtract=new HashSet<String>(dir);
+  subtract.removeAll(hidden);
+  assertEquals(subtract.size(),exclude.size());
+}

@@ -1,0 +1,30 @@
+{
+  if (TRACE_ENABLED) {
+    tracer=new Exception();
+    tracer.fillInStackTrace();
+  }
+  this.featureSource=featureSource;
+  this.dataStore=featureSource.getDataStore();
+  this.featureType=featureType;
+  this.tx=featureSource.getTransaction();
+  this.hints=hints;
+  geometryFactory=(GeometryFactory)hints.get(Hints.JTS_GEOMETRY_FACTORY);
+  if (geometryFactory == null) {
+    CoordinateSequenceFactory csFactory=(CoordinateSequenceFactory)hints.get(Hints.JTS_COORDINATE_SEQUENCE_FACTORY);
+    if (csFactory != null) {
+      geometryFactory=new GeometryFactory(csFactory);
+    }
+  }
+  if (geometryFactory == null) {
+    geometryFactory=dataStore.getGeometryFactory();
+  }
+  FeatureFactory ff=(FeatureFactory)hints.get(Hints.FEATURE_FACTORY);
+  if (ff == null)   ff=featureSource.getDataStore().getFeatureFactory();
+  builder=new SimpleFeatureBuilder(featureType,ff);
+  try {
+    pkey=dataStore.getPrimaryKey(featureType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+}

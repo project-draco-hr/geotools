@@ -1,0 +1,17 @@
+{
+  final List expressions=function.getParameters();
+  List arguments=new ArrayList(expressions.size());
+  for (Iterator it=expressions.iterator(); it.hasNext(); ) {
+    Expression mappingExpression=(Expression)it.next();
+    List sourceExpressions=(List)mappingExpression.accept(this,null);
+    if (sourceExpressions.size() > 1) {
+      throw new UnsupportedOperationException("unrolling function arguments " + "that map to more than one source expressions " + "is not supported yet");
+    }
+    Expression unrolledExpression=(Expression)sourceExpressions.get(0);
+    arguments.add(unrolledExpression);
+  }
+  Expression[] unmapped=new Expression[arguments.size()];
+  unmapped=(Expression[])arguments.toArray(unmapped);
+  Function unmappedFunction=ff.function(function.getName(),unmapped);
+  return Collections.singletonList(unmappedFunction);
+}

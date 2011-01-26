@@ -1,0 +1,20 @@
+{
+  pool.put(key,object);
+  int toReplace=pool.size() - maxStrongReferences;
+  if (toReplace > 0) {
+    for (final Iterator it=pool.entrySet().iterator(); it.hasNext(); ) {
+      final Map.Entry entry=(Map.Entry)it.next();
+      final Object value=entry.getValue();
+      if (value instanceof Reference) {
+        if (((Reference)value).get() == null) {
+          it.remove();
+        }
+        continue;
+      }
+      entry.setValue(new WeakReference(value));
+      if (--toReplace == 0) {
+        break;
+      }
+    }
+  }
+}

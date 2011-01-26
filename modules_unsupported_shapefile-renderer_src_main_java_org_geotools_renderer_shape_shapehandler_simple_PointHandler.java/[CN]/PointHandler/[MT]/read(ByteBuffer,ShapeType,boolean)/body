@@ -1,0 +1,31 @@
+{
+  if (type == ShapeType.NULL) {
+    LOGGER.finest("shape type is NULL");
+    return null;
+  }
+  double[][] coords=new double[1][];
+  coords[0]=new double[]{buffer.getDouble(),buffer.getDouble()};
+  Envelope geomBBox=new Envelope(coords[0][0],coords[0][0],coords[0][1],coords[0][1]);
+  if (!bbox.intersects(geomBBox)) {
+    LOGGER.finest("Point doesn't intersect with envelope");
+    return null;
+  }
+  double[][] transformed=new double[1][];
+  transformed[0]=new double[2];
+  if (!mt.isIdentity()) {
+    try {
+      mt.transform(coords[0],0,transformed[0],0,1);
+    }
+ catch (    Exception e) {
+      ShapefileRenderer.LOGGER.severe("could not transform coordinates" + e.getLocalizedMessage());
+    }
+  }
+ else {
+    transformed=coords;
+  }
+  if (screenMap.checkAndSet((int)(transformed[0][0]),(int)transformed[0][1])) {
+    LOGGER.finest("Point already rendered" + transformed[0][0] + " "+ transformed[0][1]);
+    return null;
+  }
+  return createGeometry(type,geomBBox,transformed);
+}

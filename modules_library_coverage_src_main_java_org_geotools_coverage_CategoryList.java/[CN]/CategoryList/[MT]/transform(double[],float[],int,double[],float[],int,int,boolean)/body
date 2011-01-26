@@ -1,0 +1,100 @@
+{
+  final int srcToDst=dstOff - srcOff;
+  Category category=last;
+  double maximum=category.maximum;
+  double minimum=category.minimum;
+  long rawBits=Double.doubleToRawLongBits(minimum);
+  final int direction;
+  if (srcPts != dstPts || srcOff >= dstOff) {
+    direction=+1;
+  }
+ else {
+    direction=-1;
+    dstOff+=numPts - 1;
+    srcOff+=numPts - 1;
+  }
+  for (int peekOff=srcOff; true; peekOff+=direction) {
+    double value=0;
+    if (doublePrecision) {
+      while (--numPts >= 0) {
+        value=srcPts[peekOff];
+        if ((value >= minimum && value <= maximum) || Double.doubleToRawLongBits(value) == rawBits) {
+          peekOff+=direction;
+          continue;
+        }
+        break;
+      }
+    }
+ else {
+      while (--numPts >= 0) {
+        value=srcFloat[peekOff];
+        if ((value >= minimum && value <= maximum) || Double.doubleToRawLongBits(value) == rawBits) {
+          peekOff+=direction;
+          continue;
+        }
+        break;
+      }
+    }
+    if (overflowFallback != null) {
+      if (value > maximum && category == overflowFallback) {
+        continue;
+      }
+      if (value < minimum && category == categories[0]) {
+        continue;
+      }
+    }
+    int count=peekOff - srcOff;
+    if (count < 0) {
+      count=-count;
+      srcOff-=count - 1;
+    }
+    if (doublePrecision) {
+      category.transform.transform(srcPts,srcOff,dstPts,srcOff + srcToDst,count);
+      if (overflowFallback != null) {
+        dstOff=srcOff + srcToDst;
+        final double min=category.inverse.minimum;
+        final double max=category.inverse.maximum;
+        while (--count >= 0) {
+          final double check=dstPts[dstOff];
+          if (check < min) {
+            dstPts[dstOff]=min;
+          }
+ else           if (check > max) {
+            dstPts[dstOff]=max;
+          }
+          dstOff++;
+        }
+      }
+    }
+ else {
+      category.transform.transform(srcFloat,srcOff,dstFloat,srcOff + srcToDst,count);
+      if (overflowFallback != null) {
+        dstOff=srcOff + srcToDst;
+        final float min=(float)category.inverse.minimum;
+        final float max=(float)category.inverse.maximum;
+        while (--count >= 0) {
+          final float check=dstFloat[dstOff];
+          if (check < min) {
+            dstFloat[dstOff]=min;
+          }
+ else           if (check > max) {
+            dstFloat[dstOff]=max;
+          }
+          dstOff++;
+        }
+      }
+    }
+    if (numPts < 0) {
+      break;
+    }
+    category=getCategory(value);
+    if (category == null) {
+      throw new TransformException(Errors.format(ErrorKeys.NO_CATEGORY_FOR_VALUE_$1,value));
+    }
+    maximum=category.maximum;
+    minimum=category.minimum;
+    rawBits=Double.doubleToRawLongBits(minimum);
+    srcOff=peekOff;
+  }
+  last=category;
+}

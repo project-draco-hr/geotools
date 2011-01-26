@@ -1,0 +1,28 @@
+{
+  if (selectItems == null || selectItems.size() == 0) {
+    return null;
+  }
+  SelectItem item;
+  List colNames=new ArrayList(selectItems.size());
+  for (Iterator it=selectItems.iterator(); it.hasNext(); ) {
+    item=(SelectItem)it.next();
+    if (item instanceof AllColumns) {
+      continue;
+    }
+ else     if (item instanceof AllTableColumns) {
+      AllTableColumns allTableCols=(AllTableColumns)item;
+      Table table=allTableCols.getTable();
+      List tableColNames=getTableColumns(session,table);
+      colNames.addAll(tableColNames);
+    }
+ else     if (item instanceof SelectExpressionItem) {
+      String stringItem=item.toString();
+      colNames.add(stringItem);
+    }
+ else {
+      throw new RuntimeException("unknown select item type: " + item);
+    }
+  }
+  String[] columns=(String[])colNames.toArray(new String[colNames.size()]);
+  return columns;
+}

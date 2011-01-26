@@ -1,0 +1,37 @@
+{
+  MemoryDataStore dataStore=new MemoryDataStore();
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.setName(TestData.WATERSAMPLE_TYPENAME.getLocalPart());
+  builder.add("station_no",String.class);
+  builder.add("sitename",String.class);
+  builder.add("anzlic_no",String.class);
+  builder.add("project_no",String.class);
+  builder.add("id",String.class);
+  builder.add("sample_collection_date",String.class);
+  builder.add("determinand_description",String.class);
+  builder.add("results_value",Float.class);
+  builder.add("location",Point.class);
+  SimpleFeatureType type=builder.buildFeatureType();
+  dataStore.createSchema(type);
+  final int NUM_STATIONS=10;
+  GeometryFactory gf=new GeometryFactory();
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(type);
+  for (int groupValue=1; groupValue <= NUM_STATIONS; groupValue++) {
+    for (int measurement=1; measurement <= groupValue; measurement++) {
+      String fid=type.getName().getLocalPart() + "." + groupValue+ "."+ measurement;
+      fb.add("station_no." + groupValue);
+      fb.add("sitename" + groupValue);
+      fb.add("anzlic_no" + groupValue);
+      fb.add("project_no" + groupValue);
+      String sufix="_" + groupValue + "_"+ measurement;
+      fb.add("id" + sufix);
+      fb.add("sample_collection_date" + sufix);
+      fb.add("determinand_description" + sufix);
+      fb.add(new Float(groupValue + "." + measurement));
+      fb.add(gf.createPoint(new Coordinate(groupValue,groupValue)));
+      SimpleFeature f=fb.buildFeature(fid);
+      dataStore.addFeature(f);
+    }
+  }
+  return dataStore;
+}

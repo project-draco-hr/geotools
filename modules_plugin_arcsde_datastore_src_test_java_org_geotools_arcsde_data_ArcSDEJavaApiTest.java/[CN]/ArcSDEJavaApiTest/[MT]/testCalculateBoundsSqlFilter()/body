@@ -1,0 +1,26 @@
+{
+  String typeName=testData.getTempTableName();
+  String where="INT32_COL = 1";
+  String[] cols={"SHAPE"};
+  SeSqlConstruct sqlCons=new SeSqlConstruct(typeName);
+  sqlCons.setWhere(where);
+  final SeQueryInfo seQueryInfo=new SeQueryInfo();
+  seQueryInfo.setColumns(cols);
+  seQueryInfo.setConstruct(sqlCons);
+  SeExtent extent=session.issue(new Command<SeExtent>(){
+    @Override public SeExtent execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeQuery spatialQuery=new SeQuery(connection);
+      SeExtent extent=spatialQuery.calculateLayerExtent(seQueryInfo);
+      return extent;
+    }
+  }
+);
+  double minX=Math.round(extent.getMinX());
+  double minY=Math.round(extent.getMinY());
+  double maxX=Math.round(extent.getMaxX());
+  double maxY=Math.round(extent.getMaxY());
+  assertEquals(0D,minX,1E-9);
+  assertEquals(0D,minY,1E-9);
+  assertEquals(0D,maxX,1E-9);
+  assertEquals(0D,maxY,1E-9);
+}

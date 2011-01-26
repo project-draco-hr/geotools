@@ -1,0 +1,46 @@
+{
+  int level=0;
+  int last=-1;
+  final StringBuilder buffer=new StringBuilder(text);
+  search:   for (int i=0; i < buffer.length(); i++) {
+switch (buffer.charAt(i)) {
+case '{':
+      level++;
+    last=i;
+  break;
+case '}':
+level--;
+last=i;
+break;
+case '\'':
+{
+if (i + 2 < buffer.length() && buffer.charAt(i + 2) == '\'') {
+switch (buffer.charAt(i + 1)) {
+case '{':
+i+=2;
+continue search;
+case '}':
+i+=2;
+continue search;
+}
+}
+if (level <= 0) {
+buffer.insert(i++,'\'');
+continue search;
+}
+if (last >= 0 && buffer.charAt(last) == '{') {
+int scan=last;
+do if (scan >= i) continue search;
+ while (Character.isDigit(buffer.charAt(++scan)));
+final String choice=",choice,";
+final int end=scan + choice.length();
+if (end < buffer.length() && buffer.substring(scan,end).equalsIgnoreCase(choice)) {
+buffer.insert(i++,'\'');
+continue search;
+}
+}
+}
+}
+}
+return buffer.toString();
+}

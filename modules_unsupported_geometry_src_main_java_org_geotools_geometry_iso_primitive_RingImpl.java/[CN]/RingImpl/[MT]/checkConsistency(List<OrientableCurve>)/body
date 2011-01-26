@@ -1,0 +1,15 @@
+{
+  CurveImpl oc0=(CurveImpl)aGenerator.get(0).getPrimitive();
+  CurveImpl oc1=(CurveImpl)aGenerator.get(aGenerator.size() - 1).getPrimitive();
+  if (!oc0.getStartPoint().equals(oc1.getEndPoint()))   throw new IllegalArgumentException("Start point of first element has to be at the same position as end point of last element");
+  CurveImpl newCurve=oc0;
+  for (int i=1; i < aGenerator.size(); i++) {
+    CurveImpl nextCurve=(CurveImpl)aGenerator.get(i);
+    DirectPosition startPoint=nextCurve.getStartPoint();
+    DirectPosition endPoint=newCurve.getEndPoint();
+    if (!endPoint.equals(startPoint))     throw new IllegalArgumentException("The curve segments are not continuous");
+    newCurve=newCurve.merge(nextCurve);
+  }
+  IsSimpleOp isSimple=new IsSimpleOp();
+  if (!isSimple.isSimple(newCurve))   throw new IllegalArgumentException("The curve segments are not simple, but intersect");
+}

@@ -1,0 +1,44 @@
+{
+  int dimPoint=ptSrc.getDimension();
+  final int dimSource=getSourceDimensions();
+  final int dimTarget=getTargetDimensions();
+  if (dimPoint != dimSource) {
+    throw new MismatchedDimensionException(constructMessage("ptSrc",dimPoint,dimSource));
+  }
+  if (ptDst != null) {
+    dimPoint=ptDst.getDimension();
+    if (dimPoint != dimTarget) {
+      throw new MismatchedDimensionException(constructMessage("ptDst",dimPoint,dimTarget));
+    }
+    final double[] array;
+    if (dimSource >= dimTarget) {
+      array=ptSrc.getCoordinate();
+    }
+ else {
+      array=new double[dimTarget];
+      for (int i=dimSource; --i >= 0; ) {
+        array[i]=ptSrc.getOrdinate(i);
+      }
+    }
+    transform(array,0,array,0,1);
+    for (int i=dimTarget; --i >= 0; ) {
+      ptDst.setOrdinate(i,array[i]);
+    }
+  }
+ else {
+    final GeneralDirectPosition destination;
+    ptDst=destination=new GeneralDirectPosition(dimTarget);
+    final double[] source;
+    if (dimSource <= dimTarget) {
+      source=destination.ordinates;
+      for (int i=dimSource; --i >= 0; ) {
+        source[i]=ptSrc.getOrdinate(i);
+      }
+    }
+ else {
+      source=ptSrc.getCoordinate();
+    }
+    transform(source,0,destination.ordinates,0,1);
+  }
+  return ptDst;
+}

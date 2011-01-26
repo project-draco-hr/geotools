@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  SphericalCS cs=(SphericalCS)cache.get(key);
+  if (cs == null) {
+    try {
+      cache.writeLock(key);
+      cs=(SphericalCS)cache.peek(key);
+      if (cs == null) {
+        cs=csAuthority.createSphericalCS(code);
+        cache.put(key,cs);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return cs;
+}

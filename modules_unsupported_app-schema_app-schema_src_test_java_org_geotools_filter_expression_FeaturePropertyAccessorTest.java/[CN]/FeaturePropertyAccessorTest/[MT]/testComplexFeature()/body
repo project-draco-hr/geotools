@@ -1,0 +1,62 @@
+{
+  FeatureType fType=createFeatureType();
+  ComplexType complexAttType=(ComplexType)fType.getDescriptor(COMPLEX_ATTRIBUTE).getType();
+  ComplexType rootAttType=(ComplexType)complexAttType.getDescriptor(ROOT_ATTRIBUTE).getType();
+  Collection<Property> properties=new ArrayList<Property>(fType.getDescriptors().size());
+  AttributeDescriptor attDesc=(AttributeDescriptor)fType.getDescriptor(SIMPLE_ATTRIBUTE);
+  AttributeImpl simpleAttribute=new AttributeImpl("simple value",attDesc,null);
+  properties.add(simpleAttribute);
+  Collection<Property> rootPropertiesOne=new ArrayList<Property>();
+  attDesc=(AttributeDescriptor)rootAttType.getDescriptor(MULTI_LEAF_ATTRIBUTE);
+  AttributeImpl leafOne=new AttributeImpl("multi leaf value 1",attDesc,null);
+  rootPropertiesOne.add(leafOne);
+  AttributeImpl leafTwo=new AttributeImpl("multi leaf value 2",attDesc,null);
+  rootPropertiesOne.add(leafTwo);
+  attDesc=(AttributeDescriptor)rootAttType.getDescriptor(SINGLE_LEAF_ATTRIBUTE);
+  AttributeImpl singleLeaf=new AttributeImpl("single leaf value",attDesc,null);
+  rootPropertiesOne.add(singleLeaf);
+  AttributeDescriptor rootDesc=(AttributeDescriptor)complexAttType.getDescriptor(ROOT_ATTRIBUTE);
+  AttributeImpl rootOne=new ComplexAttributeImpl(rootPropertiesOne,rootDesc,null);
+  Collection<Property> rootPropertiesTwo=new ArrayList<Property>();
+  rootPropertiesTwo.add(leafOne);
+  AttributeImpl rootTwo=new ComplexAttributeImpl(rootPropertiesTwo,rootDesc,null);
+  Collection<Property> rootPropertiesThree=new ArrayList<Property>();
+  rootPropertiesThree.add(singleLeaf);
+  AttributeImpl rootThree=new ComplexAttributeImpl(rootPropertiesThree,rootDesc,null);
+  Collection<Property> complexProperties=new ArrayList<Property>(2);
+  complexProperties.add(rootOne);
+  complexProperties.add(rootTwo);
+  complexProperties.add(rootThree);
+  AttributeImpl complexAttribute=new ComplexAttributeImpl(complexProperties,complexAttType,null);
+  properties.add(complexAttribute);
+  Feature feature=new FeatureImpl(properties,fType,new FeatureIdImpl("test1"));
+  AttributeExpressionImpl ex=new AttributeExpressionImpl("eg:simpleAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(simpleAttribute,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(complexAttribute,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute/eg:rootAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(rootOne,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute/eg:rootAttribute[2]",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(rootTwo,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute/eg:rootAttribute[3]/eg:singleLeafAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(singleLeaf,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute/eg:rootAttribute[3]/eg:multiLeafAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(null,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute/eg:rootAttribute[2]/eg:multiLeafAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(leafOne,ex.evaluate(feature));
+  ex=new AttributeExpressionImpl("eg:complexAttribute/eg:rootAttribute[2]/eg:multiLeafAttribute[2]",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(null,ex.evaluate(feature));
+  boolean exceptionThrown=false;
+  try {
+    ex.setLenient(false);
+    assertEquals(null,ex.evaluate(singleLeaf));
+  }
+ catch (  Exception e) {
+    exceptionThrown=true;
+  }
+  if (!exceptionThrown) {
+    fail("Expecting Exception since object passed in is not a complex attribute.");
+  }
+  ex=new AttributeExpressionImpl("randomAttribute",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,NAMESPACES));
+  assertEquals(null,ex.evaluate(feature));
+}

@@ -1,0 +1,23 @@
+{
+  if (filter != null) {
+    Iterator i=filter.getFilterIterator();
+    while (i.hasNext()) {
+      org.opengis.filter.Filter child=(org.opengis.filter.Filter)i.next();
+      if (child instanceof org.geotools.filter.Filter) {
+        org.geotools.filter.Filter tmp=(org.geotools.filter.Filter)child;
+        tmp.accept(this);
+      }
+ else       if (child instanceof IncludeFilter) {
+        IncludeFilter include=(IncludeFilter)child;
+        visit(include);
+      }
+ else       if (child instanceof ExcludeFilter) {
+        ExcludeFilter exclude=(ExcludeFilter)child;
+        visit(exclude);
+      }
+ else {
+        logger.warning("Unnown filter:" + child);
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  LOGGER.finer("exporting PropertyIsBetween");
+  Expression expr=(Expression)filter.getExpression();
+  Expression lowerbounds=(Expression)filter.getLowerBoundary();
+  Expression upperbounds=(Expression)filter.getUpperBoundary();
+  Class context;
+  AttributeDescriptor attType=(AttributeDescriptor)expr.evaluate(featureType);
+  if (attType != null) {
+    context=attType.getType().getBinding();
+  }
+ else {
+    context=String.class;
+  }
+  try {
+    expr.accept(this,extraData);
+    out.write(" BETWEEN ");
+    lowerbounds.accept(this,context);
+    out.write(" AND ");
+    upperbounds.accept(this,context);
+  }
+ catch (  java.io.IOException ioe) {
+    throw new RuntimeException(IO_ERROR,ioe);
+  }
+  return extraData;
+}

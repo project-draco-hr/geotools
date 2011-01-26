@@ -1,0 +1,27 @@
+{
+  File fileDir=new File(directory);
+  if (fileDir != null && fileDir.isDirectory()) {
+    final File files[]=fileDir.listFiles();
+    if (files != null) {
+      final int numFiles=files.length;
+      for (int i=0; i < numFiles; i++) {
+        final String path=files[i].getAbsolutePath().toLowerCase();
+        if (!path.endsWith("mat"))         continue;
+        File file=files[i];
+        final String fileName=file.getAbsolutePath();
+        final String fileOutputName=new StringBuilder(fileName.substring(0,fileName.length() - 3)).append("tif").toString();
+        final ImageLayout l=new ImageLayout();
+        l.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(512).setTileWidth(512);
+        Hints hints=new Hints();
+        hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,l));
+        final BaseGridCoverage2DReader reader=new MatFile5Reader(file,hints);
+        GridCoverage2D gc=(GridCoverage2D)reader.read(null);
+        GeoTiffWriter writer=new GeoTiffWriter(new File(fileOutputName));
+        writer.write(gc,null);
+        writer.dispose();
+        gc.dispose(true);
+        reader.dispose();
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  final AffineTransform crsToGrid=context.getTransform();
+  final Shape area=context.getAreaOfInterest();
+  final Rectangle gridBounds;
+  if (true) {
+    final Rectangle2D bounds=XAffineTransform.transform(crsToGrid,(area != null) ? area.getBounds2D() : this.bounds,null);
+    final int xmin=(int)Math.round(bounds.getMinX());
+    final int ymin=(int)Math.round(bounds.getMinY());
+    final int xmax=(int)Math.round(bounds.getMaxX());
+    final int ymax=(int)Math.round(bounds.getMaxY());
+    gridBounds=new Rectangle(xmin,ymin,xmax - xmin,ymax - ymin);
+  }
+  final Dimension tileSize=ImageUtilities.toTileSize(gridBounds.getSize());
+  final GridSampleDimension band=GridSampleDimension.wrap(getSampleDimension(VISIBLE_BAND));
+  final ColorModel colorModel=band.getColorModel(VISIBLE_BAND,getNumSampleDimensions());
+  final SampleModel sampleModel=colorModel.createCompatibleSampleModel(tileSize.width,tileSize.height);
+  final PlanarImage image;
+  if ((area == null || area instanceof Rectangle2D) && crsToGrid.getShearX() == 0 && crsToGrid.getShearY() == 0) {
+    image=ImageFunctionDescriptor.create(this,gridBounds.width,gridBounds.height,(float)(1 / crsToGrid.getScaleX()),(float)(1 / crsToGrid.getScaleY()),(float)crsToGrid.getTranslateX(),(float)crsToGrid.getTranslateY(),new RenderingHints(JAI.KEY_IMAGE_LAYOUT,new ImageLayout().setMinX(gridBounds.x).setMinY(gridBounds.y).setTileWidth(tileSize.width).setTileHeight(tileSize.height).setSampleModel(sampleModel).setColorModel(colorModel)));
+  }
+ else {
+    final GeneralDirectPosition coordinate=new GeneralDirectPosition(this.coordinate);
+    final TiledImage tiled=new TiledImage(gridBounds.x,gridBounds.y,gridBounds.width,gridBounds.height,0,0,sampleModel,colorModel);
+    final Point2D.Double point2D=new Point2D.Double();
+    final int numBands=tiled.getNumBands();
+    final double[] samples=new double[numBands];
+    final double[] padNaNs=new double[numBands];
+    Arrays.fill(padNaNs,Double.NaN);
+    final WritableRectIter iterator=RectIterFactory.createWritable(tiled,gridBounds);
+    if (!iterator.finishedLines())     try {
+      int y=gridBounds.y;
+      do {
+        iterator.startPixels();
+        if (!iterator.finishedPixels()) {
+          int x=gridBounds.x;
+          do {
+            point2D.x=x;
+            point2D.y=y;
+            crsToGrid.inverseTransform(point2D,point2D);
+            if (area == null || area.contains(point2D)) {
+              coordinate.ordinates[xAxis]=point2D.x;
+              coordinate.ordinates[yAxis]=point2D.y;
+              iterator.setPixel(evaluate(coordinate,samples));
+            }
+ else {
+              iterator.setPixel(padNaNs);
+            }
+            x++;
+          }
+ while (!iterator.nextPixelDone());
+          assert(x == gridBounds.x + gridBounds.width);
+          y++;
+        }
+      }
+ while (!iterator.nextLineDone());
+      assert(y == gridBounds.y + gridBounds.height);
+    }
+ catch (    NoninvertibleTransformException exception) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$1,"context"),exception);
+    }
+    image=tiled;
+  }
+  try {
+    image.setProperty("gridToCRS",crsToGrid.createInverse());
+  }
+ catch (  NoninvertibleTransformException exception) {
+    Logging.unexpectedException(Renderable.class,"createRendering",exception);
+  }
+  return image;
+}

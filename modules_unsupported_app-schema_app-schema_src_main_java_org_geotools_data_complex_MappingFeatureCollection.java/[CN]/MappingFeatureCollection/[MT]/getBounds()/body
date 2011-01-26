@@ -1,0 +1,23 @@
+{
+  FeatureIterator<Feature> features=features();
+  try {
+    Envelope newBBox=new Envelope();
+    Envelope internal;
+    Feature feature;
+    while (features.hasNext()) {
+      feature=features.next();
+      final Geometry geometry=((Geometry)feature.getDefaultGeometryProperty().getValue());
+      if (geometry != null) {
+        internal=geometry.getEnvelopeInternal();
+        newBBox.expandToInclude(internal);
+      }
+    }
+    return ReferencedEnvelope.reference(newBBox);
+  }
+ catch (  Exception e) {
+    throw new RuntimeException("Exception occurred while computing bounds",e);
+  }
+ finally {
+    features.close();
+  }
+}

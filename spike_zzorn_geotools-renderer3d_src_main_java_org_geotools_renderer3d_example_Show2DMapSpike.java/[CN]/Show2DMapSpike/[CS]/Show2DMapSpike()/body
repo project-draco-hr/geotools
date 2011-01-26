@@ -1,0 +1,51 @@
+{
+  frame=new JFrame("My Map Viewer");
+  frame.setBounds(20,20,450,200);
+  frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+  Container content=frame.getContentPane();
+  myMapPane=new JMapPane();
+  content.setLayout(new BorderLayout());
+  jtb=new JToolBar();
+  JButton load=new JButton("Load file");
+  load.addActionListener(this);
+  jtb.add(load);
+  Action zoomIn=new ZoomInAction(myMapPane);
+  Action zoomOut=new ZoomOutAction(myMapPane);
+  Action pan=new PanAction(myMapPane);
+  Action select=new SelectAction(myMapPane);
+  Action reset=new ResetAction(myMapPane);
+  jtb.add(zoomIn);
+  jtb.add(zoomOut);
+  jtb.add(pan);
+  jtb.addSeparator();
+  jtb.add(reset);
+  jtb.addSeparator();
+  jtb.add(select);
+  final JButton button=new JButton();
+  button.setText("CRS");
+  button.setToolTipText("Change map prjection");
+  button.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      String code=JOptionPane.showInputDialog(button,"Coordinate Reference System:","EPSG:4326");
+      if (code == null) {
+        return;
+      }
+      try {
+        CoordinateReferenceSystem crs=CRS.decode(code);
+        setCRS(crs);
+      }
+ catch (      Exception fe) {
+        fe.printStackTrace();
+        JOptionPane.showMessageDialog(button,fe.getMessage(),fe.getClass().toString(),JOptionPane.ERROR_MESSAGE);
+        return;
+      }
+    }
+  }
+);
+  jtb.add(button);
+  content.add(jtb,BorderLayout.NORTH);
+  myMapPane.setSize(400,200);
+  content.add(myMapPane,BorderLayout.CENTER);
+  content.doLayout();
+  frame.setVisible(true);
+}

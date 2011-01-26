@@ -1,0 +1,29 @@
+{
+  System.out.println("   setLocalValue");
+  final String varName="foo";
+  final int[] values={1,2};
+  final CountDownLatch latch=new CountDownLatch(2);
+class Task implements Runnable {
+    private final int threadIndex;
+    public Task(    int threadIndex){
+      this.threadIndex=threadIndex;
+    }
+    public void run(){
+      EnvFunction.setLocalValue(varName,values[threadIndex]);
+      latch.countDown();
+      try {
+        latch.await();
+      }
+ catch (      InterruptedException ex) {
+        throw new IllegalStateException(ex);
+      }
+      Object result=ff.function("env",ff.literal(varName)).evaluate(null);
+      int value=((Number)result).intValue();
+      assertEquals(values[threadIndex],value);
+    }
+  }
+  Future f1=executor.submit(new Task(0));
+  Future f2=executor.submit(new Task(1));
+  f1.get();
+  f2.get();
+}

@@ -1,0 +1,49 @@
+{
+  ReferencedEnvelope env=new ReferencedEnvelope();
+  CoordinateReferenceSystem crs=null;
+  String typeName="null";
+  if (getSchema() != null) {
+    typeName=getSchema().getTypeName();
+    GeometryDescriptor geomType=getSchema().getGeometryDescriptor();
+    if (query.getFilter() != Filter.EXCLUDE) {
+      String sqlStmt=null;
+      try {
+        DB2SQLBuilder builder=(DB2SQLBuilder)((DB2DataStore)this.getDataStore()).getSqlBuilder(typeName);
+        sqlStmt=builder.buildSQLBoundsQuery(typeName,geomType,query.getFilter());
+      }
+ catch (      SQLEncoderException e) {
+        throw new IOException("SQLEncoderException: " + e);
+      }
+      Connection conn=null;
+      Transaction transaction=null;
+      Statement statement=null;
+      ResultSet results=null;
+      try {
+        conn=getConnection();
+        transaction=getTransaction();
+        statement=conn.createStatement();
+        results=statement.executeQuery(sqlStmt);
+        if (results.next()) {
+          double minx=results.getDouble(1);
+          double miny=results.getDouble(2);
+          double maxx=results.getDouble(3);
+          double maxy=results.getDouble(4);
+          env=new ReferencedEnvelope(minx,maxx,miny,maxy,null);
+        }
+ else {
+          env=new ReferencedEnvelope();
+        }
+      }
+ catch (      SQLException e) {
+        closeAll(results,statement,conn,transaction,e);
+        System.out.println(e);
+        throw new DataSourceException("Could not get bounds " + query.getHandle(),e);
+      }
+      closeAll(results,statement,conn,transaction,null);
+    }
+    crs=geomType.getCoordinateReferenceSystem();
+    env=new ReferencedEnvelope(env,crs);
+  }
+  LOGGER.finer(typeName + " bounds: " + env.toString());
+  return env;
+}

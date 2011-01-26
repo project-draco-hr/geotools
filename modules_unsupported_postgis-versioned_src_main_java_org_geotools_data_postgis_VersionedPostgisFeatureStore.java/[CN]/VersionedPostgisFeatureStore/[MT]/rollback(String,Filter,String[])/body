@@ -1,0 +1,85 @@
+{
+  Transaction t=getTransaction();
+  boolean autoCommit=false;
+  if (Transaction.AUTO_COMMIT.equals(t)) {
+    t=new DefaultTransaction();
+    autoCommit=true;
+  }
+  ModifiedFeatureIds mfids=store.getModifiedFeatureFIDs(schema.getTypeName(),toVersion,null,filter,userIds,t);
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  VersionedJdbcTransactionState state=store.wrapped.getVersionedJdbcTransactionState(t);
+  Set fidsToRemove=new HashSet(mfids.getCreated());
+  fidsToRemove.removeAll(mfids.getDeleted());
+  if (!fidsToRemove.isEmpty()) {
+    removeFeatures(store.buildFidFilter(fidsToRemove));
+    state.setTypeNameDirty(getSchema().getTypeName());
+  }
+  Set fidsToRecreate=new HashSet(mfids.getDeleted());
+  fidsToRecreate.removeAll(mfids.getCreated());
+  if (!fidsToRecreate.isEmpty()) {
+    state.setTypeNameDirty(getSchema().getTypeName());
+    state.setFidsDirty(getSchema().getTypeName(),fidsToRecreate);
+    long revision=store.wrapped.getVersionedJdbcTransactionState(t).getRevision();
+    Filter recreateFilter=store.buildVersionedFilter(schema.getTypeName(),store.buildFidFilter(fidsToRecreate),mfids.fromRevision);
+    FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+    FeatureWriter<SimpleFeatureType,SimpleFeature> fw=null;
+    try {
+      DefaultQuery q=new DefaultQuery(schema.getTypeName(),recreateFilter);
+      fr=store.wrapped.getFeatureReader(q,t);
+      fw=store.wrapped.getFeatureWriterAppend(schema.getTypeName(),t);
+      while (fr.hasNext()) {
+        SimpleFeature original=fr.next();
+        SimpleFeature restored=fw.next();
+        for (int i=0; i < original.getFeatureType().getAttributeCount(); i++) {
+          restored.setAttribute(i,original.getAttribute(i));
+        }
+        restored.setAttribute("revision",new Long(revision));
+        restored.setAttribute("expired",new Long(Long.MAX_VALUE));
+        fw.write();
+      }
+    }
+ catch (    IllegalAttributeException iae) {
+      throw new DataSourceException("Unexpected error occurred while " + "restoring deleted featues",iae);
+    }
+ finally {
+      if (fr != null)       fr.close();
+      if (fw != null)       fw.close();
+    }
+  }
+  if (!mfids.getModified().isEmpty()) {
+    state.setTypeNameDirty(getSchema().getTypeName());
+    state.setFidsDirty(getSchema().getTypeName(),mfids.getModified());
+    Filter modifiedIdFilter=store.buildFidFilter(mfids.getModified());
+    Filter mifCurrent=store.buildVersionedFilter(schema.getTypeName(),modifiedIdFilter,new RevisionInfo());
+    FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+    FeatureWriter<SimpleFeatureType,SimpleFeature> fw=null;
+    try {
+      fw=store.getFeatureWriter(schema.getTypeName(),mifCurrent,t);
+      while (fw.hasNext()) {
+        SimpleFeature current=fw.next();
+        Filter currIdFilter=ff.id(Collections.singleton(ff.featureId(current.getID())));
+        Filter cidToVersion=store.buildVersionedFilter(schema.getTypeName(),currIdFilter,mfids.fromRevision);
+        DefaultQuery q=new DefaultQuery(schema.getTypeName(),cidToVersion);
+        q.setVersion(mfids.fromRevision.toString());
+        fr=store.getFeatureReader(q,t);
+        SimpleFeature original=fr.next();
+        for (int i=0; i < original.getFeatureType().getAttributeCount(); i++) {
+          current.setAttribute(i,original.getAttribute(i));
+        }
+        fr.close();
+        fw.write();
+      }
+    }
+ catch (    IllegalAttributeException iae) {
+      throw new DataSourceException("Unexpected error occurred while " + "restoring deleted featues",iae);
+    }
+ finally {
+      if (fr != null)       fr.close();
+      if (fw != null)       fw.close();
+    }
+  }
+  if (autoCommit) {
+    t.commit();
+    t.close();
+  }
+}

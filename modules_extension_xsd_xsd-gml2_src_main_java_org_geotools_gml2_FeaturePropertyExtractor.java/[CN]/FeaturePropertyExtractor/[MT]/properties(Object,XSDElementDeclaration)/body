@@ -1,0 +1,41 @@
+{
+  SimpleFeature feature=(SimpleFeature)object;
+  if (feature.getUserData().get("xlink:id") != null) {
+    return Collections.EMPTY_LIST;
+  }
+  SimpleFeatureType featureType=feature.getFeatureType();
+  String namespace=featureType.getName().getNamespaceURI();
+  if (namespace == null) {
+    namespace=element.getTargetNamespace();
+  }
+  String typeName=featureType.getTypeName();
+  XSDTypeDefinition type=schemaIndex.getTypeDefinition(new QName(namespace,typeName));
+  if (type == null) {
+    XSDElementDeclaration e=schemaIndex.getElementDeclaration(new QName(namespace,typeName));
+    if (e != null) {
+      type=e.getTypeDefinition();
+    }
+  }
+  if (type == null) {
+    String msg="Could not find element declaration: (" + namespace + ", "+ typeName+ " )";
+    throw new RuntimeException(msg);
+  }
+  List particles=Schemas.getChildElementParticles(type,true);
+  List properties=new ArrayList();
+  for (Iterator p=particles.iterator(); p.hasNext(); ) {
+    XSDParticle particle=(XSDParticle)p.next();
+    XSDElementDeclaration attribute=(XSDElementDeclaration)particle.getContent();
+    if (attribute.isElementDeclarationReference()) {
+      attribute=attribute.getResolvedElementDeclaration();
+    }
+    if (GML.NAMESPACE.equals(attribute.getTargetNamespace())) {
+      continue;
+    }
+    if (featureType.getDescriptor(attribute.getName()) == null) {
+      continue;
+    }
+    Object attributeValue=feature.getAttribute(attribute.getName());
+    properties.add(new Object[]{particle,attributeValue});
+  }
+  return properties;
+}

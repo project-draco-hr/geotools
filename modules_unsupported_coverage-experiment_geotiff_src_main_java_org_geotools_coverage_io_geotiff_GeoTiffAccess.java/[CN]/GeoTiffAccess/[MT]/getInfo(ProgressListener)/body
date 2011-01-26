@@ -1,0 +1,65 @@
+{
+  if (listener == null)   listener=new NullProgressListener();
+  try {
+    return read(new Read<ServiceInfo>(){
+      public ServiceInfo run(      GeoTiffReader reader,      GeoTiffAccess access) throws IOException {
+        DefaultServiceInfo info=new DefaultServiceInfo();
+        info.setTitle(reader.getCoverageName());
+        StringBuffer description=new StringBuffer();
+        Driver driver=getDriver();
+        description.append("Name: ");
+        description.append(reader.getCoverageName());
+        description.append("\nDriver: ");
+        description.append(driver.getName());
+        description.append("/");
+        description.append(getDriver().getTitle());
+        description.append("\nSize is ");
+        GridEnvelope size=reader.getOriginalGridRange();
+        description.append(size.getSpan(0));
+        description.append(", ");
+        description.append(size.getSpan(1));
+        description.append("\nCoordinate System is:\n");
+        CoordinateReferenceSystem crs=reader.getCrs();
+        description.append(crs.toWKT());
+        GeneralEnvelope bbox=reader.getOriginalEnvelope();
+        description.append("\nOrigion = ( ");
+        DirectPosition lower=bbox.getLowerCorner();
+        for (int dimension=0; dimension < crs.getCoordinateSystem().getDimension(); dimension++) {
+          if (dimension != 0) {
+            description.append(", ");
+          }
+          description.append(lower.getOrdinate(dimension));
+        }
+        description.append(" )");
+        info.setDescription(description.toString());
+        try {
+          info.setSource(input.toURI());
+        }
+ catch (        URISyntaxException e1) {
+        }
+        try {
+          info.setSchema(new URI("http://www.remotesensing.org/geotiff/spec/geotiffhome.html"));
+        }
+ catch (        URISyntaxException e) {
+        }
+        try {
+          if (inputClass == File.class) {
+            info.setPublisher(new URI(System.getProperty("user.name")));
+          }
+ else {
+            info.setPublisher(new URI(input.getProtocol() + input.getHost()));
+          }
+        }
+ catch (        URISyntaxException e) {
+          e.printStackTrace();
+        }
+        return info;
+      }
+    }
+);
+  }
+ catch (  IOException problem) {
+    listener.exceptionOccurred(problem);
+    return null;
+  }
+}

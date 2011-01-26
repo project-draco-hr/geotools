@@ -1,0 +1,59 @@
+{
+  LOGGER.finer("asserting filter " + filter);
+  assertFilter(filter);
+  boolean fail=false;
+  Connection conn=null;
+  PreparedStatement statement=null;
+  String fid=null;
+  String whereStmt=null;
+  Filter encodableFilter=sqlBuilder.getPreQueryFilter(filter);
+  Filter unEncodableFilter=sqlBuilder.getPostQueryFilter(filter);
+  try {
+    conn=getConnection();
+    if (encodableFilter == null && unEncodableFilter != null) {
+      FidFilter fidFilter=getEncodableFilter(unEncodableFilter);
+      encodableFilter=fidFilter;
+    }
+    if (encodableFilter != null) {
+      StringBuffer sb=new StringBuffer();
+      sqlBuilder.encode(sb,encodableFilter);
+      whereStmt="WHERE " + sb;
+      final String sql=makeModifySqlStatement(type,value,whereStmt);
+      statement=conn.prepareStatement(sql);
+      LOGGER.finer("encoded modify is " + sql);
+      setModifyPreparedStatementValues(statement,type,value);
+      LOGGER.finer("encoded modify is " + sql);
+      DefaultQuery query=new DefaultQuery(getSchema().getTypeName(),filter);
+      ReferencedEnvelope bounds=bounds(query);
+      statement.executeUpdate();
+      if (bounds != null && !bounds.isNull()) {
+        ReferencedEnvelope afterBounds=bounds(query);
+        if (afterBounds != null)         bounds.expandToInclude(afterBounds);
+      }
+ else {
+        bounds=bounds(query);
+      }
+      if (bounds != null && !bounds.isNull())       getJDBCDataStore().listenerManager.fireFeaturesChanged(getSchema().getTypeName(),getTransaction(),bounds,false);
+    }
+  }
+ catch (  SQLException sqle) {
+    fail=true;
+    close(conn,getTransaction(),sqle);
+    String message=CONN_ERROR + sqle.getMessage();
+    LOGGER.warning(message);
+    throw new DataSourceException(message,sqle);
+  }
+catch (  SQLEncoderException ence) {
+    fail=true;
+    String message="error encoding sql from filter " + ence.getMessage();
+    LOGGER.warning(message);
+    throw new DataSourceException(message,ence);
+  }
+catch (  IllegalAttributeException iae) {
+    throw new DataSourceException("attribute problem",iae);
+  }
+ finally {
+    close(statement);
+    close(conn,getTransaction(),null);
+  }
+}

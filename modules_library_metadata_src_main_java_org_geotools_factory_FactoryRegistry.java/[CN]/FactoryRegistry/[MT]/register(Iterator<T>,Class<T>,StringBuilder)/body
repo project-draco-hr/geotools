@@ -1,0 +1,43 @@
+{
+  boolean newServices=false;
+  final String lineSeparator=System.getProperty("line.separator","\n");
+  while (factories.hasNext()) {
+    T factory;
+    try {
+      factory=factories.next();
+    }
+ catch (    OutOfMemoryError error) {
+      throw error;
+    }
+catch (    NoClassDefFoundError error) {
+      loadingFailure(category,error,false);
+      continue;
+    }
+catch (    ExceptionInInitializerError error) {
+      final Throwable cause=error.getCause();
+      if (cause != null) {
+        loadingFailure(category,cause,true);
+      }
+      throw error;
+    }
+catch (    Error error) {
+      if (!Classes.getShortClassName(error).equals("ServiceConfigurationError")) {
+        throw error;
+      }
+      loadingFailure(category,error,true);
+      continue;
+    }
+    final Class<? extends T> factoryClass=factory.getClass().asSubclass(category);
+    final T replacement=getServiceProviderByClass(factoryClass);
+    if (replacement != null) {
+      factory=replacement;
+    }
+    if (registerServiceProvider(factory,category)) {
+      message.append(lineSeparator);
+      message.append("  ");
+      message.append(factoryClass.getName());
+      newServices=true;
+    }
+  }
+  return newServices;
+}

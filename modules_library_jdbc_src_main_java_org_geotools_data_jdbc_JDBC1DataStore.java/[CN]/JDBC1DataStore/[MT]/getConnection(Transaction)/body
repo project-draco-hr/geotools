@@ -1,0 +1,29 @@
+{
+  if (transaction != Transaction.AUTO_COMMIT) {
+    JDBCTransactionState state;
+synchronized (transaction) {
+      state=(JDBCTransactionState)transaction.getState(this);
+      if (state == null) {
+        try {
+          Connection conn=createConnection();
+          conn.setAutoCommit(requireAutoCommit());
+          if (getTransactionIsolation() != Connection.TRANSACTION_NONE) {
+            conn.setTransactionIsolation(getTransactionIsolation());
+          }
+          state=new JDBCTransactionState(conn);
+          transaction.putState(this,state);
+        }
+ catch (        SQLException eep) {
+          throw new DataSourceException("Connection failed:" + eep,eep);
+        }
+      }
+    }
+    return state.getConnection();
+  }
+  try {
+    return createConnection();
+  }
+ catch (  SQLException sqle) {
+    throw new DataSourceException("Connection failed:" + sqle,sqle);
+  }
+}

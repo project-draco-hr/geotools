@@ -1,0 +1,26 @@
+{
+  geometryFactory=gf;
+  if (channel instanceof FileChannel && useMemoryMappedBuffer) {
+    FileChannel fc=(FileChannel)channel;
+    buffer=fc.map(FileChannel.MapMode.READ_ONLY,0,fc.size());
+    buffer.position(0);
+    this.currentOffset=0;
+  }
+ else {
+    this.useMemoryMappedBuffer=false;
+    buffer=NIOUtilities.allocate(1024);
+    fill(buffer,channel);
+    buffer.flip();
+    this.currentOffset=0;
+  }
+  header=new ShapefileHeader();
+  header.read(buffer,strict);
+  fileShapeType=header.getShapeType();
+  handler=fileShapeType.getShapeHandler(gf);
+  if (handler == null) {
+    throw new IOException("Unsuported shape type:" + fileShapeType);
+  }
+  headerTransfer=ByteBuffer.allocate(8);
+  headerTransfer.order(ByteOrder.BIG_ENDIAN);
+  record.end=this.toFileOffset(buffer.position());
+}

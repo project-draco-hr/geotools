@@ -1,0 +1,37 @@
+{
+switch (colors.length) {
+case 1:
+    Arrays.fill(ARGB,lower,upper,colors[0].getRGB());
+case 0:
+  return;
+}
+switch (upper - lower) {
+case 1:
+ARGB[lower]=colors[0].getRGB();
+case 0:
+return;
+}
+final double scale=(double)(colors.length - 1) / (double)(upper - 1 - lower);
+final int maxBase=colors.length - 2;
+double index=0;
+int base=0;
+for (int i=lower; ; ) {
+final int C0=colors[base + 0].getRGB();
+final int C1=colors[base + 1].getRGB();
+final int A0=(C0 >>> 24) & 0xFF, A1=((C1 >>> 24) & 0xFF) - A0;
+final int R0=(C0 >>> 16) & 0xFF, R1=((C1 >>> 16) & 0xFF) - R0;
+final int G0=(C0 >>> 8) & 0xFF, G1=((C1 >>> 8) & 0xFF) - G0;
+final int B0=(C0) & 0xFF, B1=((C1) & 0xFF) - B0;
+final int oldBase=base;
+do {
+final double delta=index - base;
+ARGB[i]=(roundByte(A0 + delta * A1) << 24) | (roundByte(R0 + delta * R1) << 16) | (roundByte(G0 + delta * G1) << 8)| (roundByte(B0 + delta * B1));
+if (++i == upper) {
+return;
+}
+index=(i - lower) * scale;
+base=Math.min(maxBase,(int)(index + EPS));
+}
+ while (base == oldBase);
+}
+}

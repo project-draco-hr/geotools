@@ -1,0 +1,29 @@
+{
+  if ((g == null) || (g.getNumGeometries() <= 0)) {
+    throw new IOException("Bad GeometryCollection Data");
+  }
+  AttributesImpl ai=new AttributesImpl();
+  if (g.getUserData() != null) {
+    ai.addAttribute("","srsName","","anyURI",g.getUserData().toString());
+  }
+ else {
+    ai=null;
+  }
+  if (e == null) {
+    output.startElement(GMLSchema.NAMESPACE,"MultiGeometry",ai);
+  }
+ else {
+    output.startElement(e.getNamespace(),e.getName(),ai);
+  }
+  for (int i=0; i < g.getNumGeometries(); i++) {
+    output.startElement(GMLSchema.NAMESPACE,"geometryMember",null);
+    encode(null,(Polygon)g.getGeometryN(i),output);
+    output.endElement(GMLSchema.NAMESPACE,"geometryMember");
+  }
+  if (e == null) {
+    output.endElement(GMLSchema.NAMESPACE,"MultiGeometry");
+  }
+ else {
+    output.endElement(e.getNamespace(),e.getName());
+  }
+}

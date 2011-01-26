@@ -1,0 +1,24 @@
+{
+  DatabaseMetaData metaData=cx.getMetaData();
+  LOGGER.log(Level.FINE,"Getting information about primary keys of {0}",tableName);
+  ResultSet primaryKey=metaData.getPrimaryKeys(null,databaseSchema,tableName);
+  try {
+    PrimaryKey pkey=createPrimaryKey(store,primaryKey,metaData,databaseSchema,tableName,cx);
+    if (pkey == null) {
+      if (!store.isView(metaData,databaseSchema,tableName) && store.getVirtualTables().get(tableName) == null) {
+        LOGGER.log(Level.FINE,"Getting information about unique indexes of {0}",tableName);
+        ResultSet uniqueIndex=metaData.getIndexInfo(null,databaseSchema,tableName,true,true);
+        try {
+          pkey=createPrimaryKey(store,uniqueIndex,metaData,databaseSchema,tableName,cx);
+        }
+  finally {
+          store.closeSafe(uniqueIndex);
+        }
+      }
+    }
+    return pkey;
+  }
+  finally {
+    store.closeSafe(primaryKey);
+  }
+}

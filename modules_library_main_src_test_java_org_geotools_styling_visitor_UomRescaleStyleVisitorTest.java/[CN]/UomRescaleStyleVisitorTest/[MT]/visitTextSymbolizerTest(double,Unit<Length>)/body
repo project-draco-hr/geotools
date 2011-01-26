@@ -1,0 +1,33 @@
+{
+  try {
+    UomRescaleStyleVisitor visitor=null;
+    int fontSize=100;
+    double displacementX=13;
+    double displacementY=17;
+    double expectedRescaledFontSize=computeExpectedRescaleSize(fontSize,scaleMetersToPixel,uom);
+    double expectedRescaledDisplacementXSize=computeExpectedRescaleSize(displacementX,scaleMetersToPixel,uom);
+    double expectedRescaledDisplacementYSize=computeExpectedRescaleSize(displacementY,scaleMetersToPixel,uom);
+    StyleBuilder styleBuilder=new StyleBuilder();
+    TextSymbolizerImpl textSymb=(TextSymbolizerImpl)styleBuilder.createTextSymbolizer();
+    textSymb.setUnitOfMeasure(uom);
+    Font font=styleBuilder.createFont(new java.awt.Font("Verdana",java.awt.Font.PLAIN,fontSize));
+    textSymb.setFont(font);
+    PointPlacement placement=styleBuilder.createPointPlacement(0.3,0.3,displacementX,displacementY,10);
+    textSymb.setLabelPlacement(placement);
+    visitor=new UomRescaleStyleVisitor(scaleMetersToPixel);
+    textSymb.accept(visitor);
+    TextSymbolizer rescaledTextSymb=(TextSymbolizer)visitor.getCopy();
+    double rescaledFontSize=rescaledTextSymb.getFont().getSize().evaluate(null,Double.class);
+    PointPlacement rescaledPlacement=(PointPlacement)rescaledTextSymb.getLabelPlacement();
+    double rescaledDisplacementXSize=rescaledPlacement.getDisplacement().getDisplacementX().evaluate(null,Double.class);
+    double rescaledDisplacementYSize=rescaledPlacement.getDisplacement().getDisplacementY().evaluate(null,Double.class);
+    Assert.assertEquals(Math.round(expectedRescaledFontSize),Math.round(rescaledFontSize));
+    Assert.assertEquals(Math.round(expectedRescaledDisplacementXSize),Math.round(rescaledDisplacementXSize));
+    Assert.assertEquals(Math.round(expectedRescaledDisplacementYSize),Math.round(rescaledDisplacementYSize));
+    Assert.assertNotSame(rescaledTextSymb,textSymb);
+  }
+ catch (  Exception e2) {
+    e2.printStackTrace();
+    Assert.fail(e2.getClass().getSimpleName() + " should not be thrown.");
+  }
+}

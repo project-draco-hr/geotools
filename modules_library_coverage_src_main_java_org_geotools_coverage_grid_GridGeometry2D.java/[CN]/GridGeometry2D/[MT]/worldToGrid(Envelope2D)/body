@@ -1,0 +1,18 @@
+{
+  MathTransform2D mt=getCRSToGrid2D(PixelOrientation.UPPER_LEFT);
+  CoordinateReferenceSystem sourceCRS=envelope.getCoordinateReferenceSystem();
+  if (sourceCRS != null) {
+    CoordinateReferenceSystem targetCRS=getCoordinateReferenceSystem();
+    if (!CRS.equalsIgnoreMetadata(sourceCRS,targetCRS)) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_COORDINATE_SYSTEM_FOR_CRS_$2,sourceCRS,targetCRS));
+    }
+  }
+  Point2D lc=toPoint2D(envelope.getLowerCorner());
+  Point lcGrid=new Point();
+  mt.transform(lc,lcGrid);
+  Point2D uc=toPoint2D(envelope.getUpperCorner());
+  Point ucGrid=new Point();
+  mt.transform(uc,ucGrid);
+  GridEnvelope2D gridEnv=new GridEnvelope2D(Math.min(lcGrid.x,ucGrid.x),Math.min(lcGrid.y,ucGrid.y),Math.abs(lcGrid.x - ucGrid.x),Math.abs(lcGrid.y - ucGrid.y));
+  return gridEnv;
+}

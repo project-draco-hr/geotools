@@ -1,0 +1,29 @@
+{
+  final CRSAuthorityFactory factory=ReferencingFactoryFinder.getCRSAuthorityFactory("EPSG",new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
+  assertTrue(factory instanceof AbstractAuthorityFactory);
+  AbstractAuthorityFactory findable=(AbstractAuthorityFactory)factory;
+  final IdentifiedObjectFinder finder=findable.getIdentifiedObjectFinder(CoordinateReferenceSystem.class);
+  finder.setFullScanAllowed(false);
+  assertNull("Should not find the CRS without a scan.",finder.find(DefaultGeographicCRS.WGS84));
+  finder.setFullScanAllowed(true);
+  IdentifiedObject find=finder.find(DefaultGeographicCRS.WGS84);
+  assertNotNull("With scan allowed, should find the CRS.",find);
+  assertTrue(CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,find));
+  assertEquals("Expected a right-handed CS.",+90,getAngle((CoordinateReferenceSystem)find),EPS);
+  final String wkt="GEOGCS[\"WGS 84\",\n" + "  DATUM[\"WGS84\",\n" + "    SPHEROID[\"WGS 84\", 6378137.0, 298.257223563]],\n"+ "  PRIMEM[\"Greenwich\", 0.0],\n"+ "  UNIT[\"degree\", 0.017453292519943295],\n"+ "  AXIS[\"Geodetic latitude\", NORTH],\n"+ "  AXIS[\"Geodetic longitude\", EAST]]";
+  final CoordinateReferenceSystem search=CRS.parseWKT(wkt);
+  final CoordinateReferenceSystem standard=CRS.decode("EPSG:4326",false);
+  assertTrue(CRS.equalsIgnoreMetadata(search,standard));
+  assertFalse("Identifiers should not be the same.",search.equals(standard));
+  finder.setFullScanAllowed(false);
+  assertNull("Should not find the CRS without a scan.",finder.find(search));
+  finder.setFullScanAllowed(true);
+  find=finder.find(search);
+  final CoordinateReferenceSystem crs=(CoordinateReferenceSystem)search;
+  assertNotNull("Should find the CRS despite the different axis order.",find);
+  assertEquals("Expected a left-handed CS.",-90,getAngle(crs),EPS);
+  assertFalse(CRS.equalsIgnoreMetadata(find,DefaultGeographicCRS.WGS84));
+  assertTrue(CRS.equalsIgnoreMetadata(find,search));
+  assertTrue(CRS.equalsIgnoreMetadata(find,standard));
+  assertSame("Expected caching to work.",standard,find);
+}

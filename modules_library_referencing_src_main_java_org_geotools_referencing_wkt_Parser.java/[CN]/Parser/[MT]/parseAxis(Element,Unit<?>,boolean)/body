@@ -1,0 +1,26 @@
+{
+  final Element element;
+  if (required) {
+    element=parent.pullElement("AXIS");
+  }
+ else {
+    element=parent.pullOptionalElement("AXIS");
+    if (element == null) {
+      return null;
+    }
+  }
+  final String name=element.pullString("name");
+  final Element orientation=element.pullVoidElement("orientation");
+  final Map<String,?> properties=parseAuthority(element,name);
+  element.close();
+  final AxisDirection direction=directions.get(orientation.keyword.trim().toUpperCase());
+  if (direction == null) {
+    throw element.parseFailed(null,Errors.format(ErrorKeys.UNKNOW_TYPE_$1,orientation));
+  }
+  try {
+    return createAxis(properties,name,direction,unit);
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

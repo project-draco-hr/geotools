@@ -1,0 +1,22 @@
+{
+  assertTrue("Assertions should be enabled.",MosaicBuilder.class.desiredAssertionStatus());
+  builder=new MosaicBuilder(getTileManagerFactory());
+  assertNull("No initial provider expected.",builder.getTileReaderSpi());
+  builder.setTileReaderSpi("png");
+  final ImageReaderSpi spi=builder.getTileReaderSpi();
+  assertNotNull("Provider should be defined.",spi);
+  final File directory=new File("geodata");
+  final int S=SOURCE_SIZE;
+  sourceTiles=new Tile[]{new Tile(spi,new File(directory,"A1.png"),0,new Rectangle(0 * S,0,S,S)),new Tile(spi,new File(directory,"B1.png"),0,new Rectangle(1 * S,0,S,S)),new Tile(spi,new File(directory,"C1.png"),0,new Rectangle(2 * S,0,S,S)),new Tile(spi,new File(directory,"D1.png"),0,new Rectangle(3 * S,0,S,S)),new Tile(spi,new File(directory,"A2.png"),0,new Rectangle(0 * S,S,S,S)),new Tile(spi,new File(directory,"B2.png"),0,new Rectangle(1 * S,S,S,S)),new Tile(spi,new File(directory,"C2.png"),0,new Rectangle(2 * S,S,S,S)),new Tile(spi,new File(directory,"D2.png"),0,new Rectangle(3 * S,S,S,S))};
+  final Dimension[] subsamplings=new Dimension[Math.max(X_SUBSAMPLING.length,Y_SUBSAMPLING.length)];
+  assertEquals(subsamplings.length,X_SUBSAMPLING.length);
+  assertEquals(subsamplings.length,Y_SUBSAMPLING.length);
+  for (int i=0; i < subsamplings.length; i++) {
+    subsamplings[i]=new Dimension(X_SUBSAMPLING[i],Y_SUBSAMPLING[i]);
+  }
+  builder.setSubsamplings(subsamplings);
+  builder.setTileSize(new Dimension(TARGET_SIZE,TARGET_SIZE));
+  builder.setTileDirectory(new File("S960"));
+  manager=builder.createTileManager(sourceTiles);
+  targetTiles=manager.getTiles().toArray(new Tile[manager.getTiles().size()]);
+}

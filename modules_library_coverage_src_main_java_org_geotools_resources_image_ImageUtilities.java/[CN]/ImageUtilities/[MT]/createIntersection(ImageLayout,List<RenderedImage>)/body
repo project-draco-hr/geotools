@@ -1,0 +1,53 @@
+{
+  ImageLayout result=layout;
+  if (result == null) {
+    result=new ImageLayout();
+  }
+  final int n=sources.size();
+  if (n != 0) {
+    RenderedImage source=(RenderedImage)sources.get(0);
+    int minXL=result.getMinX(source);
+    int minYL=result.getMinY(source);
+    int maxXL=result.getWidth(source) + minXL;
+    int maxYL=result.getHeight(source) + minYL;
+    for (int i=0; i < n; i++) {
+      source=(RenderedImage)sources.get(i);
+      final int minX=source.getMinX();
+      final int minY=source.getMinY();
+      final int maxX=source.getWidth() + minX;
+      final int maxY=source.getHeight() + minY;
+      int mask=0;
+      if (minXL < minX)       mask|=(1 | 4);
+      if (minYL < minY)       mask|=(2 | 8);
+      if (maxXL > maxX)       mask|=(4);
+      if (maxYL > maxY)       mask|=(8);
+      if (mask != 0) {
+        if (layout == result) {
+          result=(ImageLayout)layout.clone();
+        }
+        if ((mask & 1) != 0)         result.setMinX(minXL=minX);
+        if ((mask & 2) != 0)         result.setMinY(minYL=minY);
+        if ((mask & 4) != 0)         result.setWidth((maxXL=maxX) - minXL);
+        if ((mask & 8) != 0)         result.setHeight((maxYL=maxY) - minYL);
+      }
+    }
+    if (result != layout) {
+      source=(RenderedImage)sources.get(0);
+      if (result.isValid(ImageLayout.TILE_WIDTH_MASK)) {
+        final int oldSize=result.getTileWidth(source);
+        final int newSize=toTileSize(result.getWidth(source),oldSize);
+        if (oldSize != newSize) {
+          result.setTileWidth(newSize);
+        }
+      }
+      if (result.isValid(ImageLayout.TILE_HEIGHT_MASK)) {
+        final int oldSize=result.getTileHeight(source);
+        final int newSize=toTileSize(result.getHeight(source),oldSize);
+        if (oldSize != newSize) {
+          result.setTileHeight(newSize);
+        }
+      }
+    }
+  }
+  return result;
+}

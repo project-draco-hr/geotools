@@ -1,0 +1,17 @@
+{
+  Object candidate=ReferencingFactoryFinder.getCRSAuthorityFactory(authority,null);
+  final Set<Factory> guard=new HashSet<Factory>();
+  while (candidate instanceof Factory) {
+    final Factory factory=(Factory)candidate;
+    if (!guard.add(factory)) {
+      break;
+    }
+    final Map hints=factory.getImplementationHints();
+    final Object version=hints.get(Hints.VERSION);
+    if (version instanceof Version) {
+      return (Version)version;
+    }
+    candidate=hints.get(Hints.CRS_AUTHORITY_FACTORY);
+  }
+  return null;
+}

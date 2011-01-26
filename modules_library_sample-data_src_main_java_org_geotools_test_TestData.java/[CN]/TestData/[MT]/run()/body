@@ -1,0 +1,31 @@
+{
+  int iteration=5;
+synchronized (toDelete) {
+    while (!toDelete.isEmpty()) {
+      if (--iteration < 0) {
+        break;
+      }
+      System.gc();
+      System.runFinalization();
+      for (final Iterator<Deletable> it=toDelete.iterator(); it.hasNext(); ) {
+        final Deletable f=it.next();
+        try {
+          if (f.delete()) {
+            it.remove();
+            continue;
+          }
+        }
+ catch (        SecurityException e) {
+          if (iteration == 0) {
+            System.err.print(e.getClass().getName());
+            System.err.print(": ");
+          }
+        }
+        if (iteration == 0 && !f.canIgnore()) {
+          System.err.print("Can't delete ");
+          System.err.println(f);
+        }
+      }
+    }
+  }
+}

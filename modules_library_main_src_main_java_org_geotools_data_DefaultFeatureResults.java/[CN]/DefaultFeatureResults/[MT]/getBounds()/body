@@ -1,0 +1,32 @@
+{
+  ReferencedEnvelope bounds;
+  try {
+    bounds=featureSource.getBounds(query);
+  }
+ catch (  IOException e1) {
+    bounds=new ReferencedEnvelope((CoordinateReferenceSystem)null);
+  }
+  if (bounds == null) {
+    try {
+      SimpleFeature feature;
+      bounds=new ReferencedEnvelope();
+      FeatureReader<SimpleFeatureType,SimpleFeature> reader=boundsReader();
+      try {
+        while (reader.hasNext()) {
+          feature=reader.next();
+          bounds.include(feature.getBounds());
+        }
+      }
+  finally {
+        reader.close();
+      }
+    }
+ catch (    IllegalAttributeException e) {
+      bounds=new ReferencedEnvelope();
+    }
+catch (    IOException e) {
+      bounds=new ReferencedEnvelope();
+    }
+  }
+  return bounds;
+}

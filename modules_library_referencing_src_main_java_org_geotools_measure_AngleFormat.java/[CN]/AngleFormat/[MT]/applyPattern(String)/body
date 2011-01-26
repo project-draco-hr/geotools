@@ -1,0 +1,59 @@
+{
+  widthDecimal=0;
+  decimalSeparator=true;
+  int startPrefix=0;
+  int symbolIndex=0;
+  boolean parseFinished=false;
+  final int length=pattern.length();
+  for (int i=0; i < length; i++) {
+    final char c=pattern.charAt(i);
+    final char upperCaseC=Character.toUpperCase(c);
+    for (int field=DEGREES_FIELD; field < SYMBOLS.length; field++) {
+      if (upperCaseC == SYMBOLS[field]) {
+        if (c == upperCaseC) {
+          symbolIndex++;
+        }
+        if (field != symbolIndex - 1 || parseFinished) {
+          setWidth(DEGREES_FIELD,1);
+          setSuffix(PREFIX_FIELD,null);
+          widthDecimal=0;
+          decimalSeparator=true;
+          throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ANGLE_PATTERN_$1,pattern));
+        }
+        if (c == upperCaseC) {
+          setSuffix(field - 1,(i > startPrefix) ? pattern.substring(startPrefix,i) : null);
+          int w=1;
+          while (++i < length && pattern.charAt(i) == c)           w++;
+          setWidth(field,w);
+        }
+ else {
+switch (i - startPrefix) {
+case 0:
+{
+              decimalSeparator=false;
+              break;
+            }
+case 1:
+{
+            if (pattern.charAt(startPrefix) == '.') {
+              decimalSeparator=true;
+              break;
+            }
+          }
+default :
+{
+          throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ANGLE_PATTERN_$1,pattern));
+        }
+    }
+    int w=1;
+    while (++i < length && pattern.charAt(i) == c)     w++;
+    widthDecimal=w;
+    parseFinished=true;
+  }
+  startPrefix=i--;
+  break;
+}
+}
+}
+setSuffix(symbolIndex - 1,(startPrefix < length) ? pattern.substring(startPrefix) : null);
+}

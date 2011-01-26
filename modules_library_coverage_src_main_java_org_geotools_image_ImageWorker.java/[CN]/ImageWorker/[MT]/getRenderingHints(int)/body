@@ -1,0 +1,21 @@
+{
+  final RenderingHints hints=getRenderingHints();
+  final ImageLayout layout=getImageLayout(hints);
+  if (layout.isValid(ImageLayout.COLOR_MODEL_MASK)) {
+    return hints;
+  }
+  final ColorModel oldCm=image.getColorModel();
+  if (oldCm != null) {
+    final ColorModel newCm=new ComponentColorModel(oldCm.getColorSpace(),oldCm.hasAlpha(),oldCm.isAlphaPremultiplied(),oldCm.getTransparency(),type);
+    layout.setColorModel(newCm);
+    layout.setSampleModel(newCm.createCompatibleSampleModel(image.getWidth(),image.getHeight()));
+  }
+ else {
+    final int numBands=image.getSampleModel().getNumBands();
+    final ColorModel newCm=new ComponentColorModel(new BogusColorSpace(numBands),false,false,Transparency.OPAQUE,type);
+    layout.setColorModel(newCm);
+    layout.setSampleModel(newCm.createCompatibleSampleModel(image.getWidth(),image.getHeight()));
+  }
+  hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+  return hints;
+}

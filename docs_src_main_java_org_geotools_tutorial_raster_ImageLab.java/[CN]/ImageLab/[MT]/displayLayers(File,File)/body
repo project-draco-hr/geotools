@@ -1,0 +1,41 @@
+{
+  AbstractGridFormat format=GridFormatFinder.findFormat(rasterFile);
+  reader=format.getReader(rasterFile);
+  Style rasterStyle=createGreyscaleStyle(1);
+  FileDataStore dataStore=FileDataStoreFinder.getDataStore(shpFile);
+  SimpleFeatureSource shapefileSource=dataStore.getFeatureSource();
+  Style shpStyle=SLD.createPolygonStyle(Color.YELLOW,null,0.0f);
+  final MapContext map=new DefaultMapContext();
+  map.setTitle("ImageLab");
+  map.addLayer(reader,rasterStyle);
+  map.addLayer(shapefileSource,shpStyle);
+  frame=new JMapFrame(map);
+  frame.setSize(800,600);
+  frame.enableStatusBar(true);
+  frame.enableToolBar(true);
+  JMenuBar menuBar=new JMenuBar();
+  frame.setJMenuBar(menuBar);
+  JMenu menu=new JMenu("Raster");
+  menuBar.add(menu);
+  menu.add(new SafeAction("Grayscale display"){
+    public void action(    ActionEvent e) throws Throwable {
+      Style style=createGreyscaleStyle();
+      if (style != null) {
+        map.getLayer(0).setStyle(style);
+        frame.repaint();
+      }
+    }
+  }
+);
+  menu.add(new SafeAction("RGB display"){
+    public void action(    ActionEvent e) throws Throwable {
+      Style style=createRGBStyle();
+      if (style != null) {
+        map.getLayer(0).setStyle(style);
+        frame.repaint();
+      }
+    }
+  }
+);
+  frame.setVisible(true);
+}

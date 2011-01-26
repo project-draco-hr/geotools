@@ -1,0 +1,27 @@
+{
+  final double latitudeOfOrigin=abs(AbstractProvider.doubleValue(LATITUDE_OF_ORIGIN,parameters));
+  final boolean isSpherical=isSpherical(parameters);
+  final ParameterDescriptorGroup descriptor=getParameters();
+  if (abs(latitudeOfOrigin - PI / 2) < EPSILON) {
+    if (isSpherical) {
+      return new PolarStereographic.Spherical(parameters,descriptor,null);
+    }
+ else {
+      return new PolarStereographic(parameters,descriptor,null);
+    }
+  }
+ else   if (latitudeOfOrigin < EPSILON) {
+    if (isSpherical) {
+      return new EquatorialStereographic.Spherical(parameters,descriptor);
+    }
+ else {
+      return createMathTransform(parameters,descriptor);
+    }
+  }
+ else   if (isSpherical) {
+    return new StereographicUSGS.Spherical(parameters,descriptor);
+  }
+ else {
+    return createMathTransform(parameters,descriptor);
+  }
+}

@@ -1,0 +1,26 @@
+{
+  if (s == null) {
+    return null;
+  }
+  if (factory == null) {
+    factory=new GeometryFactory();
+  }
+  String[] split=s.split(":");
+  String srid=split[0];
+  Geometry g=null;
+  try {
+    g=new WKTReader(factory).read(split[1]);
+  }
+ catch (  ParseException e) {
+    throw (IOException)new IOException().initCause(e);
+  }
+  CoordinateReferenceSystem crs;
+  try {
+    crs=CRS.decode("EPSG:" + srid);
+  }
+ catch (  Exception e) {
+    throw (IOException)new IOException().initCause(e);
+  }
+  g.setUserData(crs);
+  return g;
+}

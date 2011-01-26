@@ -1,0 +1,26 @@
+{
+  BindingExecutionChain chain=(BindingExecutionChain)chains.get(component);
+  if (chain == null) {
+    this.container=container;
+    this.component=component;
+    this.context=context;
+    this.bindings=new ArrayList();
+    typeWalker.walk(component.getType(),this);
+    if (component.getName() != null) {
+      QName qName=new QName(component.getTargetNamespace(),component.getName());
+      Binding binding=loader.loadBinding(qName,context);
+      if (binding != null) {
+        if (binding.getExecutionMode() == Binding.OVERRIDE) {
+          bindings.clear();
+          bindings.add(binding);
+        }
+ else {
+          bindings.add(0,binding);
+        }
+      }
+    }
+    chain=new BindingExecutionChain(bindings);
+    chains.put(component,chain);
+  }
+  chain.execute(visitor);
+}

@@ -1,0 +1,17 @@
+{
+  URL url=getIndexURL(attribute);
+  if (url == null) {
+    addIndex(attribute);
+    url=getIndexURL(attribute);
+  }
+synchronized (this) {
+    File f=DataUtilities.urlToFile(url);
+    if (f.exists()) {
+      if (!f.delete())       throw new IOException("File index cannot be deleted. Probably it's locked.");
+    }
+    RandomAccessFile raf=new RandomAccessFile(f,"rw");
+    FileChannel writeChannel=raf.getChannel();
+    AttributeIndexWriter indexWriter=new AttributeIndexWriter(attribute,writeChannel,getDBFChannel(),cacheSize);
+    indexWriter.buildIndex();
+  }
+}

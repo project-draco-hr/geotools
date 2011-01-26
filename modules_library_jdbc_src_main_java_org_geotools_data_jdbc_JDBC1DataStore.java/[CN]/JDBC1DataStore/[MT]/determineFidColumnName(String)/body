@@ -1,0 +1,24 @@
+{
+  final int NAME_COLUMN=4;
+  String fidColumnName=null;
+  ResultSet rs=null;
+  Connection conn=null;
+  try {
+    conn=getConnection(Transaction.AUTO_COMMIT);
+    DatabaseMetaData dbMetadata=conn.getMetaData();
+    rs=dbMetadata.getPrimaryKeys(null,null,typeName);
+    if (rs.next()) {
+      fidColumnName=rs.getString(NAME_COLUMN);
+    }
+  }
+ catch (  SQLException sqlException) {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,sqlException);
+    conn=null;
+    LOGGER.warning("Could not find the primary key - using the default");
+  }
+ finally {
+    JDBCUtils.close(rs);
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+  return fidColumnName;
+}

@@ -1,0 +1,35 @@
+{
+  if (dom == null) {
+    try {
+      javax.xml.parsers.DocumentBuilderFactory dbf=javax.xml.parsers.DocumentBuilderFactory.newInstance();
+      javax.xml.parsers.DocumentBuilder db=dbf.newDocumentBuilder();
+      dom=db.newDocument();
+    }
+ catch (    javax.xml.parsers.ParserConfigurationException pce) {
+      throw new RuntimeException(pce);
+    }
+  }
+  NamedStyle style=factory.createNamedStyle();
+  NodeList children=n.getChildNodes();
+  final int length=children.getLength();
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("" + children.getLength() + " children to process");
+  }
+  for (int j=0; j < length; j++) {
+    Node child=children.item(j);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE) || (child.getFirstChild() == null)) {
+      continue;
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("processing " + child.getLocalName());
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase("Name")) {
+      style.setName(getFirstChildValue(child));
+    }
+  }
+  return style;
+}

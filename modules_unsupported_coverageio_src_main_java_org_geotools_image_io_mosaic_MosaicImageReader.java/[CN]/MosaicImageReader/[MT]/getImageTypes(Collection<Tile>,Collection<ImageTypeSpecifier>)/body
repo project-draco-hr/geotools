@@ -1,0 +1,26 @@
+{
+  int pass=0;
+  final Map<ImageTypeSpecifier,Integer> types=new LinkedHashMap<ImageTypeSpecifier,Integer>();
+  for (  final Tile tile : tiles) {
+    final ImageReader reader=tile.getImageReader(this,true,true);
+    final int imageIndex=tile.getImageIndex();
+    if (rawTypes != null) {
+      rawTypes.add(reader.getRawImageType(imageIndex));
+    }
+    final Iterator<ImageTypeSpecifier> toAdd=reader.getImageTypes(imageIndex);
+    while (toAdd.hasNext()) {
+      final ImageTypeSpecifier type=toAdd.next();
+      final Integer old=types.put(type,pass);
+      if (old == null && pass != 0) {
+        types.remove(type);
+      }
+    }
+    for (final Iterator<Integer> it=types.values().iterator(); it.hasNext(); ) {
+      if (it.next().intValue() != pass) {
+        it.remove();
+      }
+    }
+    pass++;
+  }
+  return types.keySet();
+}

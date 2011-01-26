@@ -1,0 +1,27 @@
+{
+  ImageTypeSpecifier its=queryCache();
+  if (its != null) {
+    return its;
+  }
+  final ColorSpace colorSpace;
+  if (minimum < maximum && !Float.isInfinite(minimum) && !Float.isInfinite(maximum)) {
+    colorSpace=new ScaledColorSpace(numBands,visibleBand,minimum,maximum);
+  }
+ else {
+    colorSpace=ColorSpace.getInstance(ColorSpace.CS_GRAY);
+  }
+  final int[] bankIndices=new int[numBands];
+  final int[] bandOffsets=new int[numBands];
+  for (int i=numBands; --i >= 0; ) {
+    bankIndices[i]=i;
+  }
+  if (USE_JAI_MODEL) {
+    final ColorModel cm=new ComponentColorModelJAI(colorSpace,null,false,false,Transparency.OPAQUE,dataType);
+    its=new ImageTypeSpecifier(cm,new ComponentSampleModelJAI(dataType,1,1,1,1,bankIndices,bandOffsets));
+  }
+ else {
+    its=ImageTypeSpecifier.createBanded(colorSpace,bankIndices,bandOffsets,dataType,false,false);
+  }
+  cache(its);
+  return its;
+}

@@ -1,0 +1,39 @@
+{
+  try {
+    int[] projcsCodelist=PeFactory.projcsCodelist();
+    int[] geogtranCodelist=PeFactory.geogcsCodelist();
+    Map<Integer,String> coordsystems=new TreeMap<Integer,String>();
+    for (    int i : projcsCodelist) {
+      PeProjectedCS coordsys=PeFactory.projcs(i);
+      if (coordsys != null) {
+        coordsystems.put(i,coordsys.toString());
+      }
+ else {
+        System.err.println("No PeProjectedCS found for code " + i);
+      }
+    }
+    for (    int i : geogtranCodelist) {
+      PeGeographicCS coordsys=PeFactory.geogcs(i);
+      if (coordsys != null) {
+        coordsystems.put(i,coordsys.toString());
+      }
+ else {
+        System.err.println("No PeGeographicCS found for code " + i);
+      }
+    }
+    PrintWriter p=new PrintWriter(new File("/Users/groldan/esri.properties"));
+    for (    Map.Entry<Integer,String> e : coordsystems.entrySet()) {
+      p.print(e.getKey());
+      p.print("=");
+      p.println(e.getValue());
+    }
+    p.flush();
+    p.close();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+catch (  PeProjectionException e) {
+    e.printStackTrace();
+  }
+}

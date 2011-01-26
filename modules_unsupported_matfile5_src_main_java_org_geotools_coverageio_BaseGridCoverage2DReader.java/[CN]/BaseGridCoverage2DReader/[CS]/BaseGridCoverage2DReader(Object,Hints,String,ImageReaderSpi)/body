@@ -1,0 +1,47 @@
+{
+  super(input,hints);
+  ImageReader reader=null;
+  FileImageInputStreamExt fiis=null;
+  try {
+    readerSPI=formatSpecificSpi;
+    worldFileExt=worldFileExtension;
+    checkSource(input);
+    reader=readerSPI.createReaderInstance();
+    fiis=new FileImageInputStreamExtImpl(inputFile);
+    reader.setInput(fiis);
+    setCoverageProperties(reader);
+    getResolutionInfo(reader);
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.reset();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+      try {
+        reader.dispose();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+    if (fiis != null) {
+      try {
+        fiis.close();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+}

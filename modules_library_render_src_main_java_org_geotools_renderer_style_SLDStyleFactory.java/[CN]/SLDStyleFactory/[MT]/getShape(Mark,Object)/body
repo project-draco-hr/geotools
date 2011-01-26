@@ -1,0 +1,20 @@
+{
+  if (mark == null)   return null;
+  Expression name=mark.getWellKnownName();
+  if (name instanceof Literal) {
+    String expression=evalToString(name,null,null);
+    if (expression != null)     name=ExpressionExtractor.extractCqlExpressions(expression);
+  }
+  Iterator<MarkFactory> it=DynamicSymbolFactoryFinder.getMarkFactories();
+  while (it.hasNext()) {
+    MarkFactory factory=it.next();
+    try {
+      Shape shape=factory.getShape(null,name,(Feature)feature);
+      if (shape != null)       return shape;
+    }
+ catch (    Exception e) {
+      LOGGER.log(Level.FINE,"Exception while scanning for " + "the appropriate mark factory",e);
+    }
+  }
+  return null;
+}

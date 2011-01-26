@@ -1,0 +1,34 @@
+{
+  final String serverName=config.getServerName();
+  final String portNumber=config.getPortNumber();
+  final String databaseName=config.getDatabaseName();
+  final String userName=config.getUserName();
+  final String userPassword=config.getPassword();
+  NegativeArraySizeException cause=null;
+  SeConnection conn=null;
+  try {
+    for (int i=0; i < 3; i++) {
+      try {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Creating connection for session #" + sessionId + "(try "+ (i + 1)+ " of 3)");
+        }
+        conn=new SeConnection(serverName,portNumber,databaseName,userName,userPassword);
+        break;
+      }
+ catch (      NegativeArraySizeException nase) {
+        LOGGER.warning("Strange failed ArcSDE connection error.  " + "Trying again (try " + (i + 1) + " of 3). SessionId: "+ sessionId);
+        cause=nase;
+      }
+    }
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException("Can't create connection to " + serverName + " for Session #"+ sessionId,e);
+  }
+catch (  RuntimeException e) {
+    throw (IOException)new IOException("Can't create connection to " + serverName + " for Session #"+ sessionId).initCause(e);
+  }
+  if (cause != null) {
+    throw (IOException)new IOException("Couldn't create ArcSDE connection to " + serverName + " for Session #"+ sessionId+ " because of strange SDE internal exception. "+ " Tried 3 times, giving up.").initCause(cause);
+  }
+  return conn;
+}

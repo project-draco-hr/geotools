@@ -1,0 +1,29 @@
+{
+  UserLayer copy=null;
+  Style[] style=layer.getUserStyles();
+  int length=style.length;
+  Style[] styleCopy=new Style[length];
+  for (int i=0; i < length; i++) {
+    if (style[i] != null) {
+      style[i].accept(this);
+      styleCopy[i]=(Style)pages.pop();
+    }
+  }
+  FeatureTypeConstraint[] lfc=layer.getLayerFeatureConstraints();
+  FeatureTypeConstraint[] lfcCopy=new FeatureTypeConstraint[lfc.length];
+  length=lfc.length;
+  for (int i=0; i < length; i++) {
+    if (lfc[i] != null) {
+      lfc[i].accept(this);
+      lfcCopy[i]=(FeatureTypeConstraint)pages.pop();
+    }
+  }
+  copy=sf.createUserLayer();
+  copy.setName(layer.getName());
+  copy.setUserStyles(styleCopy);
+  copy.setLayerFeatureConstraints(lfcCopy);
+  if (STRICT && !copy.equals(layer)) {
+    throw new IllegalStateException("Was unable to duplicate provided UserLayer:" + layer);
+  }
+  pages.push(copy);
+}

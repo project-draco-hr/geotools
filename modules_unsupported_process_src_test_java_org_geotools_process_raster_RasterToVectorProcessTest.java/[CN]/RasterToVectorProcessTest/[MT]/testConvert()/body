@@ -1,0 +1,27 @@
+{
+  System.out.println("   simple grid");
+  final float[][] DATA={{1,1,0,1},{0,1,0,0},{0,1,1,1},{1,0,0,1}};
+  final int PERIMETER=24;
+  final int AREA=9;
+  GridCoverage2D cov=covFactory.create("coverage",DATA,new ReferencedEnvelope(0,DATA[0].length,0,DATA.length,null));
+  int band=0;
+  Set<Double> outsideValues=Collections.singleton(0D);
+  ProgressListener progress=null;
+  SimpleFeatureCollection fc=RasterToVectorProcess.process(cov,band,null,outsideValues,true,progress);
+  double perimeter=0;
+  double area=0;
+  FeatureIterator iter=fc.features();
+  try {
+    while (iter.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)iter.next();
+      Polygon poly=(Polygon)feature.getDefaultGeometry();
+      perimeter+=poly.getLength();
+      area+=poly.getArea();
+    }
+  }
+  finally {
+    iter.close();
+  }
+  assertEquals(AREA,(int)Math.round(area));
+  assertEquals(PERIMETER,(int)Math.round(perimeter));
+}

@@ -1,0 +1,34 @@
+{
+  String typename=query.getTypeName();
+  String schemaname=this.getSchema().getTypeName();
+  if ((query.getTypeName() != null) && (typename != schemaname)) {
+    return new EmptyFeatureCollection(this.getSchema());
+  }
+ else {
+    SimpleFeatureCollection fc=getFeatures(query.getFilter());
+    if (fc.size() == 0) {
+      return new EmptyFeatureCollection(this.getSchema());
+    }
+    query=new DefaultQuery(query.getTypeName(),query.getNamespace(),Filter.INCLUDE,query.getMaxFeatures(),query.getPropertyNames(),query.getHandle());
+    MemoryDataStore md=new MemoryDataStore();
+    ArrayList<SimpleFeature> features=new ArrayList<SimpleFeature>();
+    SimpleFeatureIterator it=fc.features();
+    try {
+      for (; it.hasNext(); ) {
+        SimpleFeature type=(SimpleFeature)it.next();
+        features.add(type);
+      }
+    }
+  finally {
+      it.close();
+    }
+    md.addFeatures(features.toArray(new SimpleFeature[features.size()]));
+    FeatureReader<SimpleFeatureType,SimpleFeature> fr=md.getFeatureReader(query,Transaction.AUTO_COMMIT);
+    SimpleFeatureCollection fc1=new DefaultFeatureCollection("cachedfeaturecollection",(SimpleFeatureType)fr.getFeatureType());
+    while (fr.hasNext()) {
+      fc1.add(fr.next());
+    }
+    fr.close();
+    return fc1;
+  }
+}

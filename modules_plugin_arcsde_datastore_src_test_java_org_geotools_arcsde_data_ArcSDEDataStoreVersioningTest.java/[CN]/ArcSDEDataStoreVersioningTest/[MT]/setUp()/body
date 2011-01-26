@@ -1,0 +1,36 @@
+{
+  testData=new TestData();
+  testData.setUp();
+  typeName=testData.getTempTableName();
+{
+    ISession session=testData.getConnectionPool().getSession();
+    defaultVersion=SeVersion.SE_QUALIFIED_DEFAULT_VERSION_NAME;
+    version1="testMultiVersionSupport 1";
+    version2="testMultiVersionSupport 2";
+    try {
+      testData.deleteVersion(session,version1);
+      testData.deleteVersion(session,version2);
+      testData.createVersion(session,version1,defaultVersion);
+      testData.createVersion(session,version2,defaultVersion);
+    }
+  finally {
+      session.dispose();
+    }
+  }
+  final boolean insertTestData=true;
+  testData.createTempTable(insertTestData);
+  ISession session=testData.getConnectionPool().getSession();
+  try {
+    testData.makeVersioned(session,typeName);
+  }
+  finally {
+    session.dispose();
+  }
+  Map<String,Serializable> params=new HashMap<String,Serializable>(testData.getConProps());
+  ArcSDEDataStoreFactory factory=new ArcSDEDataStoreFactory();
+  defaultVersionDataStore=factory.createDataStore(params);
+  params.put(ArcSDEDataStoreConfig.VERSION_PARAM_NAME,version1);
+  version1DataStore=factory.createDataStore(params);
+  params.put(ArcSDEDataStoreConfig.VERSION_PARAM_NAME,version2);
+  version2DataStore=factory.createDataStore(params);
+}

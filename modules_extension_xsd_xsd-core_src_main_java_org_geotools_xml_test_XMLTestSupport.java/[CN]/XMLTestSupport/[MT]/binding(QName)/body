@@ -1,0 +1,37 @@
+{
+  Configuration configuration=createConfiguration();
+  MutablePicoContainer context=new DefaultPicoContainer();
+  context=configuration.setupContext(context);
+  Map bindings=configuration.setupBindings();
+  BindingLoader bindingLoader=new BindingLoader(bindings);
+  context.registerComponentInstance(new BindingFactoryImpl(bindingLoader));
+  context.registerComponentInstance(new BindingWalkerFactoryImpl(bindingLoader,context));
+  context.registerComponentInstance(logger);
+  NamespaceSupport namespaces=new NamespaceSupport();
+  HashMap mappings=new HashMap();
+  try {
+    for (Iterator d=configuration.getXSD().getDependencies().iterator(); d.hasNext(); ) {
+      XSD xsd=(XSD)d.next();
+      XSDSchema schema=xsd.getSchema();
+      mappings.putAll(schema.getQNamePrefixToNamespaceMap());
+    }
+    mappings.putAll(configuration.getXSD().getSchema().getQNamePrefixToNamespaceMap());
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  for (Iterator m=mappings.entrySet().iterator(); m.hasNext(); ) {
+    Map.Entry mapping=(Map.Entry)m.next();
+    String key=(String)mapping.getKey();
+    if (key == null) {
+      key="";
+    }
+    namespaces.declarePrefix(key,(String)mapping.getValue());
+  }
+  context.registerComponentInstance(namespaces);
+  context.registerComponentInstance(new NamespaceSupportWrapper(namespaces));
+  SchemaIndex index=new SchemaIndexImpl(new XSDSchema[]{configuration.schema()});
+  context.registerComponentInstance(index);
+  context.registerComponentInstance(configuration);
+  return bindingLoader.loadBinding(name,context);
+}

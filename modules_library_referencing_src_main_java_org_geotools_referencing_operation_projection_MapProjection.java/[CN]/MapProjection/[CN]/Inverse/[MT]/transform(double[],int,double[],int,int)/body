@@ -1,0 +1,32 @@
+{
+  final boolean reverse=(src == dest && srcOffset < dstOffset && srcOffset + (2 * numPts) > dstOffset);
+  if (reverse) {
+    srcOffset+=2 * numPts;
+    dstOffset+=2 * numPts;
+  }
+  final Point2D.Double point=new Point2D.Double();
+  ProjectionException firstException=null;
+  while (--numPts >= 0) {
+    try {
+      point.x=src[srcOffset++];
+      point.y=src[srcOffset++];
+      transform(point,point);
+      dest[dstOffset++]=point.x;
+      dest[dstOffset++]=point.y;
+    }
+ catch (    ProjectionException exception) {
+      dest[dstOffset++]=Double.NaN;
+      dest[dstOffset++]=Double.NaN;
+      if (firstException == null) {
+        firstException=exception;
+      }
+    }
+    if (reverse) {
+      srcOffset-=4;
+      dstOffset-=4;
+    }
+  }
+  if (firstException != null) {
+    throw firstException;
+  }
+}

@@ -1,0 +1,30 @@
+{
+  final GridSampleDimension[] sampleDimensions=coverage.getSampleDimensions();
+  final RenderedImage raster=coverage.getRenderedImage();
+  if (raster == null)   return false;
+  final ColorModel cm=raster.getColorModel();
+  if (cm == null)   return false;
+  final ColorInterpretation firstBandCI=TypeMap.getColorInterpretation(cm,0);
+  if (firstBandCI == ColorInterpretation.CYAN_BAND)   return true;
+  if (firstBandCI == ColorInterpretation.HUE_BAND)   return true;
+  if (firstBandCI == ColorInterpretation.RED_BAND)   return sampleDimensions.length == 4;
+  if (firstBandCI == ColorInterpretation.PALETTE_INDEX)   return true;
+  if (firstBandCI == ColorInterpretation.GRAY_INDEX && sampleDimensions.length <= 2) {
+    if (sampleDimensions.length == 2 && TypeMap.getColorInterpretation(cm,1) == ColorInterpretation.ALPHA_BAND)     return true;
+    final Unit<?> uom=sampleDimensions[0].getUnits();
+    if (uom == null || uom.equals(Unit.ONE))     return true;
+    return false;
+  }
+  final ColorSpace cs=cm.getColorSpace();
+  if (cs instanceof IHSColorSpace)   return true;
+switch (cs.getType()) {
+case ColorSpace.TYPE_YCbCr:
+case ColorSpace.TYPE_Luv:
+case ColorSpace.TYPE_Lab:
+case ColorSpace.TYPE_HLS:
+case ColorSpace.CS_CIEXYZ:
+    return true;
+default :
+  return false;
+}
+}

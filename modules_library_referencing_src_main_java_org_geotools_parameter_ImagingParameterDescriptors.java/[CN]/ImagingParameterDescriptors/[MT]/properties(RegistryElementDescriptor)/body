@@ -1,0 +1,58 @@
+{
+  String name=operation.getName();
+  final Map<String,Object> properties=new HashMap<String,Object>();
+  if (operation instanceof OperationDescriptor) {
+    final OperationDescriptor op=(OperationDescriptor)operation;
+    final ResourceBundle bundle=op.getResourceBundle(Locale.getDefault());
+    String vendor=op.getResourceBundle(Locale.US).getString("Vendor");
+    Citation authority=null;
+    if (vendor != null) {
+      vendor=vendor.trim();
+      name=ImagingParameterDescription.trimPrefix(name,vendor);
+      for (int i=0; i < AUTHORITIES.length; i+=2) {
+        if (vendor.equalsIgnoreCase((String)AUTHORITIES[i])) {
+          authority=(Citation)AUTHORITIES[i + 1];
+          break;
+        }
+      }
+    }
+    if (authority == null) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.NO_SUCH_AUTHORITY_CODE_$2,"AUTHORITIES",vendor));
+    }
+    final InternationalString description;
+    description=new ImagingParameterDescription(op,"Description",null);
+    try {
+      final URI uri=new URI(bundle.getString("DocURL"));
+      final OnLineResourceImpl resource=new OnLineResourceImpl(uri);
+      resource.setFunction(OnLineFunction.INFORMATION);
+      resource.setDescription(description);
+      final CitationImpl citation=new CitationImpl(authority);
+      final Collection<ResponsibleParty> parties=citation.getCitedResponsibleParties();
+      final ResponsibleParty oldParty;
+      if (true) {
+        final Iterator<ResponsibleParty> it=parties.iterator();
+        if (it.hasNext()) {
+          oldParty=it.next();
+          it.remove();
+        }
+ else {
+          oldParty=null;
+        }
+      }
+      final ResponsiblePartyImpl party=new ResponsiblePartyImpl(oldParty);
+      party.setRole(Role.RESOURCE_PROVIDER);
+      party.setContactInfo(new ContactImpl(resource));
+      parties.add(party);
+      authority=(Citation)citation.unmodifiable();
+    }
+ catch (    URISyntaxException exception) {
+    }
+    final GenericName alias=NameFactory.create(new InternationalString[]{new ImagingParameterDescription(op,"Vendor",null),new ImagingParameterDescription(op,"LocalName","Vendor")},'.');
+    properties.put(ALIAS_KEY,alias);
+    properties.put(REMARKS_KEY,description);
+    properties.put(ReferenceIdentifier.VERSION_KEY,bundle.getString("Version"));
+    properties.put(Identifier.AUTHORITY_KEY,authority);
+  }
+  properties.put(NAME_KEY,name);
+  return properties;
+}

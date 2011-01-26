@@ -1,0 +1,23 @@
+{
+  Diff diff=diff(typeName);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(store.getFeatureReader(typeName,new DefaultQuery(typeName,filter)),filter);
+  return new DiffFeatureWriter(reader,diff,filter){
+    public void fireNotification(    int eventType,    ReferencedEnvelope bounds){
+switch (eventType) {
+case FeatureEvent.FEATURES_ADDED:
+        store.listenerManager.fireFeaturesAdded(typeName,transaction,bounds,false);
+      break;
+case FeatureEvent.FEATURES_CHANGED:
+    store.listenerManager.fireFeaturesChanged(typeName,transaction,bounds,false);
+  break;
+case FeatureEvent.FEATURES_REMOVED:
+store.listenerManager.fireFeaturesRemoved(typeName,transaction,bounds,false);
+break;
+}
+}
+public String toString(){
+return "<DiffFeatureWriter>(" + reader.toString() + ")";
+}
+}
+;
+}

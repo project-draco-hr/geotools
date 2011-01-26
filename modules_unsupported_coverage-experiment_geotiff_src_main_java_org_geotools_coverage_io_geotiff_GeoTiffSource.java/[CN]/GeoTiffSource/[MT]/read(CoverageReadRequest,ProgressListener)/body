@@ -1,0 +1,47 @@
+{
+  ensureNotDisposed();
+  final DefaultCoverageResponseImpl response=new DefaultCoverageResponseImpl();
+  response.setRequest(request);
+  if (listener == null)   listener=new NullProgressListener();
+  listener.started();
+  try {
+    access.read(new GeoTiffAccess.Read<CoverageResponse>(){
+      public CoverageResponse run(      GeoTiffReader reader,      GeoTiffAccess access) throws IOException {
+        final BoundingBox bbox=request.getGeographicArea();
+        final Rectangle rasterArea=request.getRasterArea();
+        final MathTransform2D g2w=request.getGridToWorldTransform();
+        final GridCoverage2D coverage;
+        if (g2w != null || rasterArea != null || g2w != null) {
+          final ParameterValue<GridGeometry2D> readParameter=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+          if (g2w == null) {
+            if (rasterArea == null) {
+              Info info=getInfo(null);
+              readParameter.setValue(new GridGeometry2D(info.getGeometry().getGridRange2D(),new ReferencedEnvelope(bbox)));
+            }
+ else {
+              readParameter.setValue(new GridGeometry2D(new GridEnvelope2D(rasterArea),new ReferencedEnvelope(bbox)));
+            }
+          }
+ else {
+            readParameter.setValue(new GridGeometry2D(new GridEnvelope2D(rasterArea),PixelInCell.CELL_CENTER,g2w,bbox.getCoordinateReferenceSystem(),null));
+          }
+          coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{readParameter});
+        }
+ else {
+          coverage=(GridCoverage2D)reader.read(null);
+        }
+        response.addResult(coverage);
+        response.setStatus(Status.SUCCESS);
+        return response;
+      }
+    }
+);
+  }
+ catch (  Throwable e) {
+    response.addException(new GeoTiffException(null,"IO error",e));
+  }
+ finally {
+    listener.complete();
+  }
+  return response;
+}

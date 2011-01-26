@@ -1,0 +1,58 @@
+{
+  if (envelope == null) {
+    return null;
+  }
+  if (transform.isIdentity()) {
+    final GeneralEnvelope e=new GeneralEnvelope(envelope);
+    e.setCoordinateReferenceSystem(null);
+    if (targetPt != null) {
+      for (int i=envelope.getDimension(); --i >= 0; ) {
+        targetPt.setOrdinate(i,e.getCenter(i));
+      }
+    }
+    return e;
+  }
+  final int sourceDim=transform.getSourceDimensions();
+  if (envelope.getDimension() != sourceDim) {
+    throw new MismatchedDimensionException(Errors.format(ErrorKeys.MISMATCHED_DIMENSION_$2,sourceDim,envelope.getDimension()));
+  }
+  int coordinateNumber=0;
+  GeneralEnvelope transformed=null;
+  if (targetPt == null) {
+    targetPt=new GeneralDirectPosition(transform.getTargetDimensions());
+  }
+  final GeneralDirectPosition sourcePt=new GeneralDirectPosition(sourceDim);
+  for (int i=sourceDim; --i >= 0; ) {
+    sourcePt.setOrdinate(i,envelope.getMinimum(i));
+  }
+  loop:   while (true) {
+    if (targetPt != transform.transform(sourcePt,targetPt)) {
+      throw new UnsupportedImplementationException(transform.getClass());
+    }
+    if (transformed != null) {
+      transformed.add(targetPt);
+    }
+ else {
+      transformed=new GeneralEnvelope(targetPt,targetPt);
+    }
+    int n=++coordinateNumber;
+    for (int i=sourceDim; --i >= 0; ) {
+switch (n % 3) {
+case 0:
+        sourcePt.setOrdinate(i,envelope.getMinimum(i));
+      n/=3;
+    break;
+case 1:
+  sourcePt.setOrdinate(i,envelope.getMaximum(i));
+continue loop;
+case 2:
+sourcePt.setOrdinate(i,envelope.getCenter(i));
+continue loop;
+default :
+throw new AssertionError(n);
+}
+}
+break;
+}
+return transformed;
+}

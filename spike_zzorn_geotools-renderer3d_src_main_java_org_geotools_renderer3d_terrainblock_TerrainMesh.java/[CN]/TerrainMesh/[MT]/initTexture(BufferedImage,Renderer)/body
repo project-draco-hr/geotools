@@ -1,0 +1,38 @@
+{
+synchronized (myTextureStateLock) {
+    if (textureImage == null) {
+      textureImage=PLACEHOLDER_PICTURE;
+    }
+    if (myPlaceholderTextureInUse) {
+      setTextureCoordinates(WHOLE_TEXTURE_AREA);
+    }
+    if (myTextureGraphics == null) {
+      myTextureGraphics=ImageGraphics.createInstance(textureImage.getWidth(null),textureImage.getHeight(null),0);
+      myTextureGraphics.drawImage(textureImage,0,0,null);
+      myTextureGraphics.update();
+      myTexture=TextureManager.loadTexture(null,createTextureKey(textureImage.hashCode()),myTextureGraphics.getImage());
+      TextureManager.releaseTexture(myTexture);
+      myTexture.setWrap(Texture.WM_ECLAMP_S_ECLAMP_T);
+      myTexture.setMipmapState(Texture.MM_LINEAR_LINEAR);
+      createTextureRenderState(renderer,myTexture);
+      if (myPlaceholderTextureInUse) {
+        myTextureState.setTexture(myTexture,0);
+      }
+    }
+ else {
+      if (!myPlaceholderTextureInUse) {
+        myTextureState.deleteAll(true);
+      }
+ else {
+        myTextureState.setTexture(myTexture,0);
+        myTextureState.deleteAll(true);
+      }
+      myTextureGraphics.drawImage(textureImage,0,0,null);
+      myTextureGraphics.update();
+      myTextureGraphics.update(myTexture);
+      TextureManager.releaseTexture(myTexture);
+      myTexture.setMipmapState(Texture.MM_LINEAR_LINEAR);
+    }
+    myPlaceholderTextureInUse=false;
+  }
+}

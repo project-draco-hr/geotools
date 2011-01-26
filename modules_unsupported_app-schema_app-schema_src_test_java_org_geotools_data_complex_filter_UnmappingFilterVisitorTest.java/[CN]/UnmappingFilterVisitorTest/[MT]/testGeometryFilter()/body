@@ -1,0 +1,21 @@
+{
+  mapping=createSampleDerivedAttributeMappings();
+  visitor=new UnmappingFilterVisitor(mapping);
+  targetDescriptor=mapping.getTargetFeature();
+  targetType=(FeatureType)targetDescriptor.getType();
+  Expression literalGeom=ff.literal(new GeometryFactory().createPoint(new Coordinate(1,1)));
+  Intersects gf=ff.intersects(ff.property("areaOfInfluence"),literalGeom);
+  Filter unrolled=(Filter)gf.accept(visitor,null);
+  assertTrue(unrolled instanceof Intersects);
+  assertNotSame(gf,unrolled);
+  Intersects newFilter=(Intersects)unrolled;
+  Expression left=newFilter.getExpression1();
+  Expression right=newFilter.getExpression2();
+  assertSame(right,literalGeom);
+  assertTrue(left instanceof Function);
+  Function fe=(Function)left;
+  assertEquals("buffer",fe.getName());
+  Expression arg0=(Expression)fe.getParameters().get(0);
+  assertTrue(arg0 instanceof PropertyName);
+  assertEquals("location",((PropertyName)arg0).getPropertyName());
+}

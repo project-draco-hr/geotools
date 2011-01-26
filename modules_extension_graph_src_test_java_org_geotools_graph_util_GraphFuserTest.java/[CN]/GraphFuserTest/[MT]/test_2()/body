@@ -1,0 +1,31 @@
+{
+  final int nnodes=100;
+  final int cyc=50;
+  Node[] ends=GraphTestUtil.buildNoBifurcations(generator(),nnodes);
+  generator().add(new Object[]{String.valueOf(cyc),String.valueOf(cyc + 2)});
+  GraphGenerator fused=createGenerator();
+  GraphFuser fuser=new GraphFuser(generator().getGraph(),generator().getGraphBuilder(),createEdgeMerger());
+  assertTrue(fuser.fuse());
+  assertTrue(generator().getGraph().getNodes().size() == 4);
+  assertTrue(generator().getGraph().getEdges().size() == 4);
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      String id=(String)component.getObject();
+      assertTrue((id.equals("0") || id.equals(String.valueOf(nnodes - 1))) || (id.equals(String.valueOf(cyc)) || id.equals(String.valueOf(cyc + 2))));
+      return (0);
+    }
+  }
+;
+  generator().getGraph().visitNodes(visitor);
+  visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      Edge e=(Edge)component;
+      String id0=(String)e.getNodeA().getObject();
+      String id1=(String)e.getNodeB().getObject();
+      assertTrue((id0.equals("0") && id1.equals(String.valueOf(cyc))) || (id0.equals(String.valueOf(cyc)) && id1.equals("0")) || (id0.equals(String.valueOf(cyc)) && id1.equals(String.valueOf(cyc + 2)))|| (id0.equals(String.valueOf(cyc + 2)) && id1.equals(String.valueOf(cyc)))|| (id0.equals(String.valueOf(cyc + 2)) && id1.equals(String.valueOf(nnodes - 1)))|| (id0.equals(String.valueOf(nnodes - 1)) && id1.equals(String.valueOf(cyc + 2))));
+      return (0);
+    }
+  }
+;
+  generator().getGraph().visitEdges(visitor);
+}

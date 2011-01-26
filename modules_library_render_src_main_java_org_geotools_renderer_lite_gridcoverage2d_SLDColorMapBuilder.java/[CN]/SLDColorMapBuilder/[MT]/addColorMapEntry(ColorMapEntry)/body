@@ -1,0 +1,49 @@
+{
+  ColorMapUtilities.ensureNonNull("colorMapEntry",colorMapEntry);
+  checkIfColorMapCreated();
+  ColorMapUtilities.ensureNonNull("colorMapEntry",colorMapEntry);
+  if (this.numberColorMapEntries == -1 || linearColorMapType == -1 || numberColorMapEntries < colormapElements.size() + 1)   throw new IllegalStateException(Errors.format(ErrorKeys.ILLEGAL_STATE));
+  init();
+  String label=colorMapEntry.getLabel();
+  label=label == null ? "ColorMapEntry" + this.colormapElements.size() : label;
+  final double q=getQuantity(colorMapEntry);
+  Color newColorValue=getColor(colorMapEntry);
+  ColorMapUtilities.ensureNonNull("newColorValue",newColorValue);
+  final double opacityValue=getOpacity(colorMapEntry);
+  newColorValue=new Color(newColorValue.getRed(),newColorValue.getGreen(),newColorValue.getBlue(),(int)(opacityValue * 255 + 0.5));
+  final boolean firstEntry=this.colormapElements.isEmpty();
+  if (firstEntry) {
+switch (linearColorMapType) {
+case ColorMap.TYPE_RAMP:
+      colormapElements.add(LinearColorMapElement.create(label,newColorValue,NumberRange.create(Double.NEGATIVE_INFINITY,false,q,false),0));
+    break;
+case ColorMap.TYPE_VALUES:
+  colormapElements.add(LinearColorMapElement.create(label,newColorValue,q,0));
+break;
+case ColorMap.TYPE_INTERVALS:
+colormapElements.add(LinearColorMapElement.create(label,newColorValue,NumberRange.create(Double.NEGATIVE_INFINITY,false,q,false),0));
+break;
+default :
+throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"ColorMapTransform.type",Double.toString(opacityValue),Integer.valueOf(linearColorMapType)));
+}
+}
+ else {
+final int newColorMapElementIndex=this.colormapElements.size();
+final LinearColorMapElement previous=(LinearColorMapElement)this.colormapElements.get(newColorMapElementIndex - 1);
+switch (linearColorMapType) {
+case ColorMap.TYPE_RAMP:
+colormapElements.add(LinearColorMapElement.create(label,new Color[]{lastColorValue,newColorValue},NumberRange.create(((NumberRange<? extends Number>)previous.getRange()).getMaximum(),true,q,false),NumberRange.create((int)previous.getOutputMaximum(),colorsPerColorMapElement + (int)previous.getOutputMaximum())));
+break;
+case ColorMap.TYPE_VALUES:
+colormapElements.add(LinearColorMapElement.create(label,newColorValue,q,newColorMapElementIndex));
+break;
+case ColorMap.TYPE_INTERVALS:
+colormapElements.add(LinearColorMapElement.create(label,newColorValue,NumberRange.create(((NumberRange<? extends Number>)previous.getRange()).getMaximum(),true,q,false),newColorMapElementIndex));
+break;
+default :
+throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"ColorMapTransform.type",Double.toString(opacityValue),Integer.valueOf(linearColorMapType)));
+}
+}
+lastColorValue=newColorValue;
+return this;
+}

@@ -1,0 +1,33 @@
+{
+  LOGGER.finer("incoming type: " + declaredType);
+  LOGGER.finer("declared type: " + this.declaredType);
+  LOGGER.finer("current state: " + currentState);
+  if (expFactory == null) {
+    this.declaredType=declaredType;
+    if (DefaultExpression.isFunctionExpression(convertType(declaredType))) {
+      expFactory=new ExpressionSAXParser(schema);
+      curExprssn=ff.createFunctionExpression(getFunctionName(atts));
+      LOGGER.finer("is <function> expression");
+    }
+    if (DefaultExpression.isMathExpression(convertType(declaredType))) {
+      expFactory=new ExpressionSAXParser(schema);
+      curExprssn=ff.createMathExpression(convertType(declaredType));
+      LOGGER.finer("is math expression");
+    }
+ else     if (DefaultExpression.isLiteralExpression(convertType(declaredType))) {
+      curExprssn=ff.createLiteralExpression();
+      readChars=true;
+      LOGGER.finer("is literal expression");
+    }
+ else     if (DefaultExpression.isAttributeExpression(convertType(declaredType))) {
+      curExprssn=ff.createAttributeExpression(schema);
+      readChars=true;
+      LOGGER.finer("is attribute expression");
+    }
+    currentState=setInitialState(curExprssn);
+    readyFlag=false;
+  }
+ else {
+    expFactory.start(declaredType,atts);
+  }
+}

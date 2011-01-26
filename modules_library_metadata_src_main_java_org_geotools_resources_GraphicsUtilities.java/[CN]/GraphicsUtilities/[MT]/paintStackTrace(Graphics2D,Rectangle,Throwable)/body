@@ -1,0 +1,33 @@
+{
+  final String message=printStackTrace(exception);
+  double width=0, height=0;
+  final List<GlyphVector> glyphs=new ArrayList<GlyphVector>();
+  final List<Rectangle2D> bounds=new ArrayList<Rectangle2D>();
+  final int length=message.length();
+  final Font font=graphics.getFont();
+  final FontRenderContext context=graphics.getFontRenderContext();
+  for (int i=0; i < length; ) {
+    int ir=message.indexOf('\r',i);
+    int in=message.indexOf('\n',i);
+    if (ir < 0)     ir=length;
+    if (in < 0)     in=length;
+    final int irn=Math.min(ir,in);
+    final GlyphVector line=font.createGlyphVector(context,message.substring(i,irn));
+    final Rectangle2D rect=line.getVisualBounds();
+    final double w=rect.getWidth();
+    if (w > width)     width=w;
+    height+=rect.getHeight();
+    glyphs.add(line);
+    bounds.add(rect);
+    i=(Math.abs(ir - in) <= 1 ? Math.max(ir,in) : irn) + 1;
+  }
+  float xpos=(float)(0.5 * (widgetBounds.width - width));
+  float ypos=(float)(0.5 * (widgetBounds.height - height));
+  final int size=glyphs.size();
+  for (int i=0; i < size; i++) {
+    final GlyphVector line=glyphs.get(i);
+    final Rectangle2D rect=bounds.get(i);
+    ypos+=rect.getHeight();
+    graphics.drawGlyphVector(line,xpos,ypos);
+  }
+}

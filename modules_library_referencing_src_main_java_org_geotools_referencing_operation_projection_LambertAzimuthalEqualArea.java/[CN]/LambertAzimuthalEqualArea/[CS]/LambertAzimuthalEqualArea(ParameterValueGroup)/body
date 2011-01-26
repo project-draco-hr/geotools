@@ -1,0 +1,63 @@
+{
+  super(parameters);
+  final Collection<GeneralParameterDescriptor> expected=getParameterDescriptors().descriptors();
+  latitudeOfOrigin=doubleValue(expected,Provider.LATITUDE_OF_CENTRE,parameters);
+  centralMeridian=doubleValue(expected,Provider.LONGITUDE_OF_CENTRE,parameters);
+  ensureLatitudeInRange(Provider.LATITUDE_OF_CENTRE,latitudeOfOrigin,true);
+  ensureLongitudeInRange(Provider.LONGITUDE_OF_CENTRE,centralMeridian,true);
+  final double t=abs(latitudeOfOrigin);
+  if (abs(t - PI / 2) < EPSILON_LATITUDE) {
+    mode=latitudeOfOrigin < 0.0 ? SOUTH_POLE : NORTH_POLE;
+  }
+ else   if (abs(t) < EPSILON_LATITUDE) {
+    mode=EQUATORIAL;
+  }
+ else {
+    mode=OBLIQUE;
+  }
+  final double es2=excentricitySquared * excentricitySquared;
+  final double es3=excentricitySquared * es2;
+  APA0=P02 * es3 + P01 * es2 + P00 * excentricitySquared;
+  APA1=P11 * es3 + P10 * es2;
+  APA2=P20 * es3;
+  final double sinphi;
+  qp=qsfn(1);
+  rq=sqrt(0.5 * qp);
+  mmf=0.5 / (1 - excentricitySquared);
+  sinphi=sin(latitudeOfOrigin);
+  if (isSpherical) {
+    sinb1=sin(latitudeOfOrigin);
+    cosb1=cos(latitudeOfOrigin);
+  }
+ else {
+    sinb1=qsfn(sinphi) / qp;
+    cosb1=sqrt(1.0 - sinb1 * sinb1);
+  }
+switch (mode) {
+case NORTH_POLE:
+case SOUTH_POLE:
+{
+      dd=1.0;
+      xmf=ymf=rq;
+      break;
+    }
+case EQUATORIAL:
+{
+    dd=1.0 / rq;
+    xmf=1.0;
+    ymf=0.5 * qp;
+    break;
+  }
+case OBLIQUE:
+{
+  dd=cos(latitudeOfOrigin) / (sqrt(1.0 - excentricitySquared * sinphi * sinphi) * rq * cosb1);
+  xmf=rq * dd;
+  ymf=rq / dd;
+  break;
+}
+default :
+{
+throw new AssertionError(mode);
+}
+}
+}

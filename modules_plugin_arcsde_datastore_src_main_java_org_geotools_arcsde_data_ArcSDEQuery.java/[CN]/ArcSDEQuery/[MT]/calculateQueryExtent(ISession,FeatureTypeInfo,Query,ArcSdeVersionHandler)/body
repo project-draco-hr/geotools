@@ -1,0 +1,31 @@
+{
+  final SimpleFeatureType fullSchema=typeInfo.getFeatureType();
+  final GeometryDescriptor geometryDescriptor=fullSchema.getGeometryDescriptor();
+  if (geometryDescriptor == null) {
+    return null;
+  }
+  final String defaultGeomAttName=geometryDescriptor.getLocalName();
+  final Query realQuery=new Query(query);
+  realQuery.setPropertyNames(new String[]{defaultGeomAttName});
+  final ArcSDEQuery boundsQuery;
+  if (typeInfo.isInProcessView()) {
+    final SeQueryInfo definitionQuery=typeInfo.getSdeDefinitionQuery();
+    final PlainSelect viewSelectStatement=typeInfo.getDefinitionQuery();
+    boundsQuery=createInprocessViewQuery(session,fullSchema,realQuery,definitionQuery,viewSelectStatement);
+  }
+ else {
+    final FIDReader fidStrategy=typeInfo.getFidStrategy();
+    boundsQuery=createQuery(session,fullSchema,realQuery,fidStrategy,versioningHandler);
+  }
+  Envelope queryExtent=null;
+  try {
+    Filter unsupportedFilter=boundsQuery.getFilters().getUnsupportedFilter();
+    if (unsupportedFilter == Filter.INCLUDE) {
+      queryExtent=boundsQuery.calculateQueryExtent();
+    }
+  }
+  finally {
+    boundsQuery.close();
+  }
+  return queryExtent;
+}

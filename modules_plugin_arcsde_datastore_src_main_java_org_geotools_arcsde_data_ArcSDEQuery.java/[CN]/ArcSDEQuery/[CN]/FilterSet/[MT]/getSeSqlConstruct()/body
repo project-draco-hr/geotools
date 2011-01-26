@@ -1,0 +1,21 @@
+{
+  if (this.sdeSqlConstruct == null) {
+    final String layerName=this.sdeTable.getQualifiedName();
+    this.sdeSqlConstruct=new SeSqlConstruct(layerName);
+    Filter sqlFilter=getSqlFilter();
+    if (!Filter.INCLUDE.equals(sqlFilter)) {
+      String whereClause=null;
+      FilterToSQLSDE sqlEncoder=getSqlEncoder();
+      try {
+        whereClause=sqlEncoder.encodeToString(sqlFilter);
+      }
+ catch (      FilterToSQLException sqle) {
+        String message="Geometry encoder error: " + sqle.getMessage();
+        throw new DataSourceException(message,sqle);
+      }
+      LOGGER.fine("ArcSDE where clause '" + whereClause + "'");
+      this.sdeSqlConstruct.setWhere(whereClause);
+    }
+  }
+  return this.sdeSqlConstruct;
+}

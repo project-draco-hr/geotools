@@ -1,0 +1,68 @@
+{
+  ensureNonNull("code",code);
+  Datum returnValue=null;
+  try {
+    final String primaryKey=toPrimaryKey(Datum.class,code,"[Datum]","DATUM_CODE","DATUM_NAME");
+    final PreparedStatement stmt;
+    stmt=prepareStatement("Datum","SELECT DATUM_CODE," + " DATUM_NAME," + " DATUM_TYPE,"+ " ORIGIN_DESCRIPTION,"+ " REALIZATION_EPOCH,"+ " AREA_OF_USE_CODE,"+ " DATUM_SCOPE,"+ " REMARKS,"+ " ELLIPSOID_CODE,"+ " PRIME_MERIDIAN_CODE"+ " FROM [Datum]"+ " WHERE DATUM_CODE = ?");
+    stmt.setInt(1,Integer.parseInt(primaryKey));
+    ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final String type=getString(result,3,code).trim().toLowerCase();
+      final String anchor=result.getString(4);
+      final String epoch=result.getString(5);
+      final String area=result.getString(6);
+      final String scope=result.getString(7);
+      final String remarks=result.getString(8);
+      Map<String,Object> properties=createProperties(name,epsg,area,scope,remarks);
+      if (anchor != null) {
+        properties.put(Datum.ANCHOR_POINT_KEY,anchor);
+      }
+      if (epoch != null && epoch.length() != 0)       try {
+        calendar.clear();
+        calendar.set(Integer.parseInt(epoch),0,1);
+        properties.put(Datum.REALIZATION_EPOCH_KEY,calendar.getTime());
+      }
+ catch (      NumberFormatException exception) {
+        Logging.unexpectedException(LOGGER,DirectEpsgFactory.class,"createDatum",exception);
+      }
+      final DatumFactory factory=factories.getDatumFactory();
+      final Datum datum;
+      if (type.equals("geodetic")) {
+        properties=new HashMap<String,Object>(properties);
+        final Ellipsoid ellipsoid=buffered.createEllipsoid(getString(result,9,code));
+        final PrimeMeridian meridian=buffered.createPrimeMeridian(getString(result,10,code));
+        final BursaWolfParameters[] param=createBursaWolfParameters(primaryKey,result);
+        if (param != null) {
+          result=null;
+          properties.put(DefaultGeodeticDatum.BURSA_WOLF_KEY,param);
+        }
+        datum=factory.createGeodeticDatum(properties,ellipsoid,meridian);
+      }
+ else       if (type.equals("vertical")) {
+        datum=factory.createVerticalDatum(properties,VerticalDatumType.GEOIDAL);
+      }
+ else       if (type.equals("engineering")) {
+        datum=factory.createEngineeringDatum(properties);
+      }
+ else {
+        result.close();
+        throw new FactoryException(Errors.format(ErrorKeys.UNKNOW_TYPE_$1,type));
+      }
+      returnValue=ensureSingleton(datum,returnValue,code);
+      if (result == null) {
+        return returnValue;
+      }
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(Datum.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(Datum.class,code);
+  }
+  return returnValue;
+}

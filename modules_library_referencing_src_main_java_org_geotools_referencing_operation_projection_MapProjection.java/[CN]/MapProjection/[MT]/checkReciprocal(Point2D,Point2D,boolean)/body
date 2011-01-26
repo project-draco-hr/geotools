@@ -1,0 +1,30 @@
+{
+  if (!(point instanceof CheckPoint))   try {
+    point=new CheckPoint(point);
+    final double longitude;
+    final double latitude;
+    final double distance;
+    if (inverse) {
+      point=inverse().transform(point,point);
+      distance=orthodromicDistance(point,target);
+      longitude=point.getX();
+      latitude=point.getY();
+    }
+ else {
+      longitude=point.getX();
+      latitude=point.getY();
+      point=transform(point,point);
+      distance=point.distance(target);
+    }
+    if (distance > getToleranceForAssertions(longitude,latitude)) {
+      throw new ProjectionException(Errors.format(ErrorKeys.PROJECTION_CHECK_FAILED_$4,distance,new Longitude(longitude - toDegrees(centralMeridian)),new Latitude(latitude - toDegrees(latitudeOfOrigin)),getName()));
+    }
+  }
+ catch (  ProjectionException exception) {
+    throw exception;
+  }
+catch (  TransformException exception) {
+    throw new ProjectionException(exception);
+  }
+  return true;
+}

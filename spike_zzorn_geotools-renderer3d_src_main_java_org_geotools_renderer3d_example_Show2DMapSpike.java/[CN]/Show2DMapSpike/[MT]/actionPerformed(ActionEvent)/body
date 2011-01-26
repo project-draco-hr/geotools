@@ -1,0 +1,25 @@
+{
+  int returnVal=jfc.showOpenDialog(frame);
+  if (returnVal == JFileChooser.APPROVE_OPTION) {
+    String pathname=jfc.getSelectedFile().getAbsolutePath();
+    URL shape=aquireURL(pathname);
+    if (shape == null) {
+      JOptionPane.showMessageDialog(frame,"could not find file \"" + pathname + "\"","Could not find file",JOptionPane.ERROR_MESSAGE);
+      System.err.println("Could not find shapefile: " + pathname);
+      return;
+    }
+    String filepart=pathname.substring(0,pathname.lastIndexOf("."));
+    URL sld=aquireURL(filepart + ".sld");
+    if (sld == null) {
+      JOptionPane.showMessageDialog(frame,"could not find SLD file \"" + filepart + ".sld\"","Could not find SLD file",JOptionPane.ERROR_MESSAGE);
+      System.err.println("Could not find sld file: " + filepart + ".sld");
+      return;
+    }
+    try {
+      setMapContext(load(shape,sld));
+    }
+ catch (    Exception e1) {
+      e1.printStackTrace();
+    }
+  }
+}

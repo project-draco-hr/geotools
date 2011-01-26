@@ -1,0 +1,40 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if ((group.getId() != null) && (group.getId() != "")) {
+    ai.addAttribute("","id","","ID",group.getId());
+  }
+  boolean nested=false;
+  if (group.getNamespace().equals(schema.getTargetNamespace())) {
+    Group[] groups=schema.getGroups();
+    boolean found=false;
+    for (int i=0; (i < groups.length) && !found; i++)     if (group.getName().equals(groups[i].getName())) {
+      found=true;
+      ai.addAttribute("","ref","","QName",group.getName());
+    }
+    if (!found) {
+      ai.addAttribute("","name","","QName",group.getName());
+      nested=true;
+    }
+  }
+ else {
+    XSISAXHandler.setLogLevel(logger.getLevel());
+    Schema s=SchemaFactory.getInstance(group.getNamespace());
+    ai.addAttribute("","ref","","QName",s.getPrefix() + ":" + group.getName());
+  }
+  if (group.getMaxOccurs() != 1) {
+    ai.addAttribute("","maxOccurs","","Union",(group.getMaxOccurs() == ElementGrouping.UNBOUNDED) ? "unbounded" : ("" + group.getMaxOccurs()));
+  }
+  if (group.getMinOccurs() != 1) {
+    ai.addAttribute("","minOccurs","","ID","" + group.getMinOccurs());
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"group",ai);
+  if (nested) {
+    if (group.getChild().getGrouping() == ElementGrouping.CHOICE) {
+      writeChoice((Choice)group.getChild(),schema,ph,hints);
+    }
+ else {
+      writeSequence((Sequence)group.getChild(),schema,ph,hints);
+    }
+  }
+  ph.endElement(XSISimpleTypes.NAMESPACE,"group");
+}

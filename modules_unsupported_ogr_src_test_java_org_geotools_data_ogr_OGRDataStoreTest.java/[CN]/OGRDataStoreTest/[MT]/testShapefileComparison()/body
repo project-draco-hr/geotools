@@ -1,0 +1,27 @@
+{
+  URL url=TestData.url(STATE_POP);
+  ShapefileDataStore sds=new ShapefileDataStore(url);
+  OGRDataStore ods=new OGRDataStore(getAbsolutePath(STATE_POP),null,null);
+  assertEquals(sds.getSchema(),ods.getSchema(sds.getSchema().getTypeName()));
+  DefaultQuery query=new DefaultQuery(sds.getSchema().getTypeName());
+  FeatureReader sfr=sds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  FeatureReader ofr=ods.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  SimpleFeature sf=null;
+  SimpleFeature of=null;
+  while (true) {
+    if (!sfr.hasNext()) {
+      assertTrue(!ofr.hasNext());
+      break;
+    }
+    sf=(SimpleFeature)sfr.next();
+    of=(SimpleFeature)ofr.next();
+    for (int i=0; i < sds.getSchema().getAttributeCount(); i++) {
+      Object shapeAtt=sf.getAttribute(i);
+      Object ogrAtt=of.getAttribute(i);
+      if (shapeAtt instanceof Geometry)       assertTrue(((Geometry)(shapeAtt)).equals((Geometry)ogrAtt));
+ else       assertEquals(shapeAtt,ogrAtt);
+    }
+  }
+  sfr.close();
+  ofr.close();
+}

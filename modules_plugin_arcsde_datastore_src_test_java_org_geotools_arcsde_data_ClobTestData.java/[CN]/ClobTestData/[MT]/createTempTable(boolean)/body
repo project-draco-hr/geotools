@@ -1,0 +1,28 @@
+{
+  ISessionPool connPool=getConnectionPool();
+  deleteTempTable(connPool);
+  ISession session=connPool.getSession();
+  try {
+    final String tableName=getTempTableName(session);
+    final SeTable tempTable=session.createSeTable(tableName);
+    final SeLayer tempTableLayer=session.issue(new Command<SeLayer>(){
+      @Override public SeLayer execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeLayer tempTableLayer=new SeLayer(connection);
+        tempTableLayer.setTableName(tableName);
+        return tempTableLayer;
+      }
+    }
+);
+    tempTableColumns=createBaseTable(session,tempTable,tempTableLayer,configKeyword);
+    if (insertTestData) {
+      insertData(tempTableLayer,session,tempTableColumns);
+    }
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    session.dispose();
+  }
+}

@@ -1,0 +1,26 @@
+{
+  final Identifier name=info.getName();
+  if (!authorityMatches(name.getAuthority())) {
+    final Collection<GenericName> aliases=info.getAlias();
+    if (aliases != null) {
+      for (      final GenericName alias : aliases) {
+        if (alias instanceof Identifier) {
+          final Identifier candidate=(Identifier)alias;
+          if (authorityMatches(candidate.getAuthority())) {
+            return candidate.getCode();
+          }
+        }
+      }
+      final String title=authority.getTitle().toString(null);
+      for (      final GenericName alias : aliases) {
+        final GenericName scope=alias.scope().name();
+        if (scope != null) {
+          if (title.equalsIgnoreCase(scope.toString())) {
+            return alias.tip().toString();
+          }
+        }
+      }
+    }
+  }
+  return name.getCode();
+}

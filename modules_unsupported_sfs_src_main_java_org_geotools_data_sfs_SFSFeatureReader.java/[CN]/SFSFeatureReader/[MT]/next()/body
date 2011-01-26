@@ -1,0 +1,28 @@
+{
+  try {
+    SimpleFeature sf=(SimpleFeature)featureIterator.next();
+    Geometry fg;
+    if (!layer.isXYOrder()) {
+      fg=(Geometry)sf.getDefaultGeometry();
+      if (fg != null) {
+        SFSDataStoreUtil.flipFeatureYX(fg);
+      }
+      ArrayList al=(ArrayList)sf.getAttribute("boundedBy");
+      if (al != null) {
+        SFSDataStoreUtil.flipYXInsideTheBoundingBox(al);
+      }
+    }
+    for (    AttributeDescriptor at : fbuilder.getFeatureType().getAttributeDescriptors()) {
+      if (at instanceof GeometryDescriptor) {
+        fbuilder.add(sf.getDefaultGeometry());
+      }
+ else {
+        fbuilder.add(sf.getAttribute(at.getLocalName()));
+      }
+    }
+    return fbuilder.buildFeature(sf.getID());
+  }
+  finally {
+    hasNext=null;
+  }
+}

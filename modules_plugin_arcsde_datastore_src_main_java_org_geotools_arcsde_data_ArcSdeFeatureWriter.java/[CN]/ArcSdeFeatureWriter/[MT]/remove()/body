@@ -1,0 +1,56 @@
+{
+  if (isNewlyCreated(feature)) {
+    return;
+  }
+  final boolean handleTransaction=!session.isTransactionActive();
+  if (handleTransaction) {
+    session.startTransaction();
+  }
+  final String id=feature.getID();
+  final long featureId=ArcSDEAdapter.getNumericFid(id);
+  final SeObjectId objectID=new SeObjectId(featureId);
+  final String qualifiedName=featureType.getTypeName();
+  final SeDelete seDelete=(SeDelete)createStream(SeDelete.class);
+  final Command<Void> deleteCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      try {
+        seDelete.byId(qualifiedName,objectID);
+        versionHandler.editOperationWritten(seDelete);
+        if (handleTransaction) {
+          session.commitTransaction();
+        }
+      }
+ catch (      IOException e) {
+        if (handleTransaction) {
+          try {
+            session.rollbackTransaction();
+          }
+ catch (          IOException e1) {
+            LOGGER.log(Level.SEVERE,"Unrecoverable error rolling " + "back delete transaction",e);
+          }
+        }
+        throw new DataSourceException("Error deleting feature with id:" + featureId,e);
+      }
+ finally {
+        if (seDelete != null) {
+          try {
+            seDelete.close();
+          }
+ catch (          SeException e) {
+            LOGGER.log(Level.SEVERE,"Unrecoverable error rolling back delete transaction",e);
+          }
+        }
+      }
+      return null;
+    }
+  }
+;
+  try {
+    session.issue(deleteCmd);
+    fireRemoved(feature);
+  }
+ catch (  IOException e) {
+    versionHandler.editOperationFailed(seDelete);
+    throw e;
+  }
+}

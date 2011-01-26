@@ -1,0 +1,45 @@
+{
+  LOGGER.finer("declared type: " + declaredType);
+  LOGGER.finer("end message: " + message);
+  LOGGER.finer("current state: " + currentState);
+  LOGGER.finest("expression factory: " + expFactory);
+  if (expFactory != null) {
+    expFactory.end(message);
+    if (expFactory.isReady()) {
+      if (currentState.equals("leftValue")) {
+        ((MathExpression)curExprssn).addLeftValue(expFactory.create());
+        currentState="rightValue";
+        expFactory=new ExpressionSAXParser(schema);
+        LOGGER.finer("just added left value: " + currentState);
+      }
+ else       if (currentState.equals("rightValue")) {
+        ((MathExpression)curExprssn).addRightValue(expFactory.create());
+        currentState="complete";
+        expFactory=null;
+        LOGGER.finer("just added right value: " + currentState);
+      }
+ else       if (currentState.equals("accumulate")) {
+        accumalationOfExpressions.add(expFactory.create());
+        expFactory=null;
+        LOGGER.finer("just added a parameter for a function: " + currentState);
+        if (((FunctionExpression)curExprssn).getArgCount() == accumalationOfExpressions.size()) {
+          currentState="complete";
+          ((FunctionExpression)curExprssn).setArgs((Expression[])accumalationOfExpressions.toArray(new Expression[0]));
+        }
+ else {
+          expFactory=new ExpressionSAXParser(schema);
+        }
+      }
+ else {
+        throw new IllegalFilterException("Attempted to add sub expression in a bad state: " + currentState);
+      }
+    }
+  }
+ else   if (declaredType.equals(message) && currentState.equals("complete")) {
+    readChars=false;
+    readyFlag=true;
+  }
+ else {
+    throw new IllegalFilterException("Reached end of unready, non-nested expression: " + currentState);
+  }
+}

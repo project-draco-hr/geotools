@@ -1,0 +1,38 @@
+{
+  try {
+    String spatialTypePrefix="\"DB2GSE\".\"ST_";
+    int dataType=rs.getInt("DATA_TYPE");
+    String typeName=rs.getString("TYPE_NAME");
+    String tableSchema=rs.getString("TABLE_SCHEM");
+    String tableName=rs.getString("TABLE_NAME");
+    String columnName=rs.getString("COLUMN_NAME");
+    if (!typeName.startsWith(spatialTypePrefix)) {
+      return super.buildAttributeType(rs);
+    }
+    String geomTypeName=this.catalog.getDB2GeometryTypeName(tableSchema,tableName,columnName);
+    Class geomClass=(Class)DB2_GEOM_TYPE_MAPPING.get(geomTypeName);
+    if (geomClass != null) {
+      CoordinateReferenceSystem crs;
+      try {
+        crs=this.catalog.getCRS(tableSchema,tableName,columnName);
+      }
+ catch (      Exception e) {
+        throw new IOException("Exception: " + e.getMessage());
+      }
+      AttributeTypeBuilder atb=new AttributeTypeBuilder();
+      atb.setName(columnName);
+      atb.setBinding(geomClass);
+      atb.setNillable(true);
+      atb.setLength(0);
+      atb.setDefaultValue(null);
+      atb.setCRS(crs);
+      GeometryDescriptor geometryAttribute=(GeometryDescriptor)atb.buildDescriptor(columnName);
+      return geometryAttribute;
+    }
+    LOGGER.fine("Type '" + geomTypeName + "' is not recognized");
+    return null;
+  }
+ catch (  SQLException e) {
+    throw new IOException("SQL exception occurred: " + e.getMessage());
+  }
+}

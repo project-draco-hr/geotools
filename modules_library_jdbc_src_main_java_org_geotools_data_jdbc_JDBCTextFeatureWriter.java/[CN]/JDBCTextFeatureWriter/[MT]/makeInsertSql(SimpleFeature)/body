@@ -1,0 +1,74 @@
+{
+  FeatureTypeInfo ftInfo=queryData.getFeatureTypeInfo();
+  SimpleFeatureType featureType=ftInfo.getSchema();
+  String tableName=encodeName(featureType.getTypeName());
+  List<AttributeDescriptor> attributeTypes=featureType.getAttributeDescriptors();
+  String attrValue;
+  StringBuffer statementSQL=new StringBuffer("INSERT INTO " + tableName + " (");
+  Set autoincrementColumns=null;
+  if (!mapper.returnFIDColumnsAsAttributes()) {
+    autoincrementColumns=Collections.EMPTY_SET;
+    for (int i=0; i < mapper.getColumnCount(); i++) {
+      if (!(mapper.isAutoIncrement(i) && feature.getAttribute(mapper.getColumnName(i)) == null)) {
+        statementSQL.append(mapper.getColumnName(i)).append(",");
+      }
+    }
+  }
+ else {
+    autoincrementColumns=new HashSet();
+    for (int i=0; i < mapper.getColumnCount(); i++) {
+      if (mapper.isAutoIncrement(i)) {
+        autoincrementColumns.add(mapper.getColumnName(i));
+      }
+    }
+  }
+  for (int i=0; i < attributeTypes.size(); i++) {
+    String attName=attributeTypes.get(i).getLocalName();
+    if (!autoincrementColumns.contains(attName) || feature.getAttribute(attName) != null) {
+      String colName=encodeColumnName(attName);
+      statementSQL.append(colName).append(",");
+    }
+  }
+  statementSQL.setCharAt(statementSQL.length() - 1,')');
+  statementSQL.append(" VALUES (");
+  if (!mapper.returnFIDColumnsAsAttributes() && !mapper.hasAutoIncrementColumns()) {
+    String FID=mapper.createID(queryData.getConnection(),feature,null);
+    if (current instanceof MutableFIDFeature) {
+      ((MutableFIDFeature)current).setID(FID);
+    }
+    Object[] primaryKey=mapper.getPKAttributes(FID);
+    for (int i=0; i < primaryKey.length; i++) {
+      if (!mapper.isAutoIncrement(i) || primaryKey[i] != null) {
+        attrValue=addQuotes(primaryKey[i]);
+        statementSQL.append(attrValue).append(",");
+      }
+    }
+  }
+  Object[] attributes=feature.getAttributes().toArray();
+  for (int i=0; i < attributeTypes.size(); i++) {
+    attrValue=null;
+    if (attributeTypes.get(i) instanceof GeometryDescriptor) {
+      GeometryDescriptor descriptor=(GeometryDescriptor)attributeTypes.get(i);
+      String geomName=attributeTypes.get(i).getLocalName();
+      int srid=ftInfo.getSRID(geomName);
+      Geometry geometry=(Geometry)attributes[i];
+      int dimension=2;
+      if (descriptor.getUserData().get(Hints.COORDINATE_DIMENSION) instanceof Integer) {
+        dimension=(Integer)descriptor.getUserData().get(Hints.COORDINATE_DIMENSION);
+      }
+ else       if (descriptor.getCoordinateReferenceSystem() != null) {
+        dimension=descriptor.getCoordinateReferenceSystem().getCoordinateSystem().getDimension();
+      }
+      if (geometry == null) {
+        attrValue="NULL";
+      }
+ else       attrValue=getGeometryInsertText(geometry,srid,dimension);
+    }
+ else {
+      if (!autoincrementColumns.contains(attributeTypes.get(i).getLocalName()) || attributes[i] != null)       attrValue=addQuotes(attributes[i]);
+    }
+    if (attrValue != null)     statementSQL.append(attrValue + ",");
+  }
+  statementSQL.setCharAt(statementSQL.length() - 1,')');
+  return (statementSQL.toString());
+}

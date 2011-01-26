@@ -1,0 +1,52 @@
+{
+  List<Coordinate> result;
+  Coordinate pbuf=new Coordinate();
+  int ptcount;
+  Coordinate pt;
+  double sweep=0.0, angle=0.0, increment=0.0;
+  double a1, a2, a3, i;
+  if (radius < 0) {
+    result=new ArrayList<Coordinate>();
+    result.add(p1);
+    result.add(p2);
+    return result;
+  }
+  a1=atan2(p1.y - center.y,p1.x - center.x);
+  a2=atan2(p2.y - center.y,p2.x - center.x);
+  a3=atan2(p3.y - center.y,p3.x - center.x);
+  if (abs(p1.x - p3.x) < EPSILON_SQLMM && abs(p1.y - p3.y) < EPSILON_SQLMM) {
+    sweep=2 * M_PI;
+  }
+ else   if (a1 > a2 && a2 > a3) {
+    sweep=a3 - a1;
+  }
+ else   if (a1 < a2 && a2 < a3) {
+    sweep=a3 - a1;
+  }
+ else   if ((a1 < a2 && a1 > a3) || (a2 < a3 && a1 > a3)) {
+    sweep=a3 - a1 + 2 * M_PI;
+  }
+ else   if ((a1 > a2 && a1 < a3) || (a2 > a3 && a1 < a3)) {
+    sweep=a3 - a1 - 2 * M_PI;
+  }
+ else {
+    sweep=0.0;
+  }
+  ptcount=(int)ceil(abs(perQuad * sweep / M_PI_2));
+  result=new ArrayList<Coordinate>(ptcount);
+  increment=M_PI_2 / perQuad;
+  if (sweep < 0)   increment*=-1.0;
+  angle=a1;
+  result.add(p1);
+  for (i=0; i < ptcount - 1; i++) {
+    pt=new Coordinate();
+    result.add(pt);
+    angle+=increment;
+    if (increment > 0.0 && angle > M_PI)     angle-=2 * M_PI;
+    if (increment < 0.0 && angle < -1 * M_PI)     angle-=2 * M_PI;
+    pt.x=center.x + radius * cos(angle);
+    pt.y=center.y + radius * sin(angle);
+  }
+  result.add(p3);
+  return result;
+}

@@ -1,0 +1,41 @@
+{
+  this.layers.add(layer);
+  if (srsName == null) {
+    if (layer.getBoundingBoxes().size() > 0) {
+      CRSEnvelope envelope=layer.getBoundingBoxes().get(layer.getBoundingBoxes().keySet().iterator().next());
+      srsName=envelope.getEPSGCode();
+    }
+ else     if (layer.getSrs().contains("EPSG:4326")) {
+      srsName="EPSG:4326";
+    }
+ else {
+      srsName=(String)layer.getSrs().iterator().next();
+    }
+    validSRS=layer.getSrs();
+  }
+ else {
+    Set<String> intersection=new HashSet<String>(validSRS);
+    intersection.retainAll(layer.getSrs());
+    if (!intersection.contains(srsName)) {
+      if (intersection.size() == 0) {
+        throw new IllegalArgumentException("The layer being appended does " + "not have any SRS in common with the ones already " + "included in the WMS request, cannot be merged");
+      }
+ else       if (intersection.contains("EPSG:4326")) {
+        srsName="EPSG:4326";
+      }
+ else {
+        srsName=(String)intersection.iterator().next();
+      }
+      this.validSRS=intersection;
+    }
+  }
+  CoordinateReferenceSystem crs=null;
+  try {
+    crs=CRS.decode(srsName);
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.FINE,"Bounds unavailable for layer" + layer);
+  }
+  this.crs=crs;
+  updateBounds();
+}

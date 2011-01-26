@@ -1,0 +1,84 @@
+{
+  Set plugInNames=new HashSet();
+  Iterator i=testSuites.keySet().iterator();
+  while (i.hasNext()) {
+    TestSuiteDTO dto=(TestSuiteDTO)testSuites.get(i.next());
+    Iterator j=dto.getTests().keySet().iterator();
+    while (j.hasNext()) {
+      TestDTO tdto=(TestDTO)dto.getTests().get(j.next());
+      plugInNames.add(tdto.getPlugIn().getName());
+    }
+  }
+  i=plugIns.values().iterator();
+  Map errors=new HashMap();
+  while (i.hasNext())   errors.put(i.next(),Boolean.FALSE);
+  Map defaultPlugIns=new HashMap(plugInNames.size());
+  i=plugInNames.iterator();
+  while (i.hasNext()) {
+    String plugInName=(String)i.next();
+    PlugInDTO dto=(PlugInDTO)plugIns.get(plugInName);
+    Class plugInClass=null;
+    try {
+      plugInClass=Class.forName(dto.getClassName());
+    }
+ catch (    ClassNotFoundException e) {
+      errors.put(dto,e);
+      e.printStackTrace();
+    }
+    if (plugInClass == null) {
+      plugInClass=Validation.class;
+    }
+    Map plugInArgs=dto.getArgs();
+    if (plugInArgs == null) {
+      plugInArgs=new HashMap();
+    }
+    try {
+      PlugIn plugIn=new org.geotools.validation.PlugIn(plugInName,plugInClass,dto.getDescription(),plugInArgs);
+      defaultPlugIns.put(plugInName,plugIn);
+    }
+ catch (    ValidationException e) {
+      e.printStackTrace();
+      errors.put(dto,e);
+      continue;
+    }
+    errors.put(dto,Boolean.TRUE);
+  }
+  i=testSuites.keySet().iterator();
+  while (i.hasNext()) {
+    TestSuiteDTO tdto=(TestSuiteDTO)testSuites.get(i.next());
+    Iterator j=tdto.getTests().keySet().iterator();
+    while (j.hasNext()) {
+      TestDTO dto=(TestDTO)tdto.getTests().get(j.next());
+      Map testArgs=dto.getArgs();
+      if (testArgs == null) {
+        testArgs=new HashMap();
+      }
+ else {
+        Map m=new HashMap();
+        Iterator k=testArgs.keySet().iterator();
+        while (k.hasNext()) {
+          ArgumentDTO adto=(ArgumentDTO)testArgs.get(k.next());
+          m.put(adto.getName(),adto.getValue());
+        }
+        testArgs=m;
+      }
+      try {
+        PlugIn plugIn=(org.geotools.validation.PlugIn)defaultPlugIns.get(dto.getPlugIn().getName());
+        Validation validation=plugIn.createValidation(dto.getName(),dto.getDescription(),testArgs);
+        if (validation instanceof FeatureValidation) {
+          addValidation((FeatureValidation)validation);
+        }
+        if (validation instanceof IntegrityValidation) {
+          addValidation((IntegrityValidation)validation);
+        }
+      }
+ catch (      ValidationException e) {
+        e.printStackTrace();
+        errors.put(dto,e);
+        continue;
+      }
+      errors.put(dto,Boolean.TRUE);
+    }
+    errors.put(tdto,Boolean.TRUE);
+  }
+}

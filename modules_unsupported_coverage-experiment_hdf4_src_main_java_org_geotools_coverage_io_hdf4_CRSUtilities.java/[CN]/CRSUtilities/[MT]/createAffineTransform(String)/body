@@ -1,0 +1,28 @@
+{
+  AffineTransform at=null;
+  if (Utilities.ensureValidString(projToImageTransformation)) {
+    final String[] coefficients=projToImageTransformation.split(",");
+    if (coefficients.length == 6) {
+      final double[] geotCoeff=new double[6];
+      for (int i=0; i < 6; i++) {
+        geotCoeff[i]=Double.parseDouble(coefficients[i]);
+      }
+      final GeneralMatrix gm=new GeneralMatrix(3);
+      gm.setElement(0,0,geotCoeff[3] / 1000);
+      gm.setElement(1,1,geotCoeff[0] / 1000);
+      gm.setElement(0,1,geotCoeff[2] / 1000);
+      gm.setElement(1,0,geotCoeff[1] / 1000);
+      gm.setElement(0,2,geotCoeff[5]);
+      gm.setElement(1,2,geotCoeff[4]);
+      try {
+        final MathTransform inverseTransformation=ProjectiveTransform.create(gm).inverse();
+        final AffineTransform tempTransform=new AffineTransform((AffineTransform)inverseTransformation);
+        at=tempTransform;
+      }
+ catch (      NoninvertibleTransformException e1) {
+        if (LOGGER.isLoggable(Level.WARNING))         LOGGER.log(Level.WARNING,"unable to invert the projection to image affine transformation");
+      }
+    }
+  }
+  return at;
+}

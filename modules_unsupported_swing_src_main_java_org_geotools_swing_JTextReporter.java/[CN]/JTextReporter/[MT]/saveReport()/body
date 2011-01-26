@@ -1,0 +1,37 @@
+{
+  int len=textArea.getDocument().getLength();
+  if (len > 0) {
+    Writer writer=null;
+    try {
+      File file=getFile();
+      if (file != null) {
+        writer=new BufferedWriter(new FileWriter(file));
+        for (int line=0; line < textArea.getLineCount(); line++) {
+          int start=textArea.getLineStartOffset(line);
+          int end=textArea.getLineEndOffset(line);
+          String lineText=textArea.getText(start,end - start);
+          if (lineText.endsWith("\n")) {
+            lineText=lineText.substring(0,lineText.length() - 1);
+          }
+          writer.write(lineText);
+          writer.write(lineSep);
+        }
+      }
+    }
+ catch (    IOException ex) {
+      throw new IllegalStateException(ex);
+    }
+catch (    BadLocationException ex) {
+      throw new IllegalStateException("Internal error getting report to save");
+    }
+ finally {
+      if (writer != null) {
+        try {
+          writer.close();
+        }
+ catch (        IOException ex) {
+        }
+      }
+    }
+  }
+}

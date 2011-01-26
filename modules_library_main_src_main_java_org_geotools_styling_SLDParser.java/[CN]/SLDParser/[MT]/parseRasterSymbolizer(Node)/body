@@ -1,0 +1,59 @@
+{
+  final RasterSymbolizer symbol=factory.getDefaultRasterSymbolizer();
+  NamedNodeMap namedNodeMap=root.getAttributes();
+  Node uomNode=namedNodeMap.getNamedItem(uomString);
+  if (uomNode != null) {
+    UomOgcMapping uomMapping=UomOgcMapping.get(uomNode.getNodeValue());
+    symbol.setUnitOfMeasure(uomMapping.getUnit());
+  }
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase(geomString)) {
+      symbol.setGeometry(parseGeometry(child));
+    }
+    if (childName.equalsIgnoreCase(opacityString)) {
+      try {
+        final String opacityString=getFirstChildValue(child);
+        Expression opacity=parseParameterValueExpression(child,false);
+        symbol.setOpacity(opacity);
+      }
+ catch (      Throwable e) {
+        if (LOGGER.isLoggable(Level.WARNING))         LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+ else     if (childName.equalsIgnoreCase(channelSelectionString)) {
+      symbol.setChannelSelection(parseChannelSelection(child));
+    }
+ else     if (childName.equalsIgnoreCase(overlapBehaviorString)) {
+      try {
+        final String overlapString=child.getFirstChild().getLocalName();
+        symbol.setOverlap(ff.literal(overlapString));
+      }
+ catch (      Throwable e) {
+        if (LOGGER.isLoggable(Level.WARNING))         LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+ else     if (childName.equalsIgnoreCase(colorMapString)) {
+      symbol.setColorMap(parseColorMap(child));
+    }
+ else     if (childName.equalsIgnoreCase(contrastEnhancementString)) {
+      symbol.setContrastEnhancement(parseContrastEnhancement(child));
+    }
+ else     if (childName.equalsIgnoreCase(shadedReliefString)) {
+      symbol.setShadedRelief(parseShadedRelief(child));
+    }
+ else     if (childName.equalsIgnoreCase(imageOutlineString)) {
+      symbol.setImageOutline(parseLineSymbolizer(child));
+    }
+  }
+  return symbol;
+}

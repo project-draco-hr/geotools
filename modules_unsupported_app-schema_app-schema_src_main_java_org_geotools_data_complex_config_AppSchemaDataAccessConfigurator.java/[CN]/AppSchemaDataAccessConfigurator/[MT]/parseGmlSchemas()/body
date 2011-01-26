@@ -1,0 +1,22 @@
+{
+  AppSchemaDataAccessConfigurator.LOGGER.finer("about to parse target schemas");
+  final URL baseUrl=new URL(config.getBaseSchemasUrl());
+  final List schemaFiles=config.getTargetSchemasUris();
+  EmfAppSchemaReader schemaParser;
+  schemaParser=EmfAppSchemaReader.newInstance();
+  schemaParser.setResolver(buildResolver());
+  typeRegistry=new FeatureTypeRegistry(namespaces);
+  schemaURIs=new HashMap<String,String>(schemaFiles.size());
+  String nameSpace;
+  String schemaLocation;
+  for (Iterator it=schemaFiles.iterator(); it.hasNext(); ) {
+    schemaLocation=(String)it.next();
+    final URL schemaUrl=resolveResourceLocation(baseUrl,schemaLocation);
+    AppSchemaDataAccessConfigurator.LOGGER.fine("parsing schema " + schemaUrl.toExternalForm());
+    nameSpace=schemaParser.findSchemaNamespace(schemaUrl);
+    schemaLocation=schemaUrl.toExternalForm();
+    schemaURIs.put(nameSpace,schemaLocation);
+    SchemaIndex schemaIndex=schemaParser.parse(nameSpace,schemaLocation);
+    typeRegistry.addSchemas(schemaIndex);
+  }
+}

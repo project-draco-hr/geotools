@@ -1,0 +1,20 @@
+{
+  URL testURL=new URL("http://office.refractions.net:4001/cgi-bin/mapserv?map=/opt/dra2/orthophotos/tiles.map&");
+  AbstractGetCapabilitiesRequest request=new Request(testURL);
+  URL finalURL=request.getFinalURL();
+  int index=finalURL.toExternalForm().lastIndexOf("?");
+  String urlWithoutQuery=null;
+  urlWithoutQuery=finalURL.toExternalForm().substring(0,index);
+  assertEquals(urlWithoutQuery,"http://office.refractions.net:4001/cgi-bin/mapserv");
+  HashMap map=new HashMap();
+  map.put("VERSION","1.1.1");
+  map.put("MAP","/opt/dra2/orthophotos/tiles.map");
+  map.put("REQUEST","GetCapabilities");
+  map.put("SERVICE","WMS");
+  StringTokenizer tokenizer=new StringTokenizer(finalURL.getQuery(),"&");
+  while (tokenizer.hasMoreTokens()) {
+    String token=tokenizer.nextToken();
+    String[] param=token.split("=");
+    assertEquals((String)map.get(param[0]),param[1]);
+  }
+}

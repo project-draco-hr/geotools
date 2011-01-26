@@ -1,0 +1,32 @@
+{
+  GridCoverage2D coverage=getRandomCoverage();
+  final double PIXEL_SIZE=XAffineTransform.getScale((AffineTransform)((GridGeometry2D)coverage.getGridGeometry()).getGridToCRS());
+  coverage=coverage.view(ViewType.GEOPHYSICS);
+  final Interpolation interpolation=Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
+  coverage=Interpolator2D.create(coverage,new Interpolation[]{interpolation});
+  final int band=0;
+  double[] buffer=null;
+  final BorderExtender be=BorderExtender.createInstance(BorderExtender.BORDER_COPY);
+  Rectangle rectangle=PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getBounds();
+  rectangle=new Rectangle(rectangle.x,rectangle.y,rectangle.width + interpolation.getWidth(),rectangle.height + interpolation.getHeight());
+  final Raster data=PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getExtendedData(rectangle,be);
+  final Envelope envelope=coverage.getEnvelope();
+  final GridEnvelope range=coverage.getGridGeometry().getGridRange();
+  final double left=envelope.getMinimum(0);
+  final double upper=envelope.getMaximum(1);
+  final Point2D.Double point=new Point2D.Double();
+  for (int j=range.getSpan(1); j >= 0; --j) {
+    for (int i=range.getSpan(0); i >= 0; --i) {
+      point.x=left + PIXEL_SIZE * i;
+      point.y=upper - PIXEL_SIZE * j;
+      buffer=coverage.evaluate(point,buffer);
+      double t=buffer[band];
+      double s00=data.getSampleDouble(i + 0,j + 0,band);
+      double s01=data.getSampleDouble(i + 0,j + 1,band);
+      double s10=data.getSampleDouble(i + 1,j + 0,band);
+      double s11=data.getSampleDouble(i + 1,j + 1,band);
+      double s=interpolation.interpolate(s00,s01,s10,s11,0,0);
+      assertEquals(s,t,EPS);
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  final String typeName=testData.getTempTableName();
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureType schema=ds.getSchema(typeName);
+  final int queriedAttributeCount=schema.getAttributeCount();
+  final String[] queryAtts=new String[queriedAttributeCount];
+  for (int i=queryAtts.length, j=0; i > 0; j++) {
+    --i;
+    queryAtts[j]=schema.getDescriptor(i).getLocalName();
+  }
+  final Query query=new Query(typeName,Filter.INCLUDE,queryAtts);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    SimpleFeatureType resultSchema=reader.getFeatureType();
+    assertEquals(queriedAttributeCount,resultSchema.getAttributeCount());
+    for (int i=0; i < queriedAttributeCount; i++) {
+      assertEquals(queryAtts[i],resultSchema.getDescriptor(i).getLocalName());
+    }
+  }
+  finally {
+    reader.close();
+  }
+}

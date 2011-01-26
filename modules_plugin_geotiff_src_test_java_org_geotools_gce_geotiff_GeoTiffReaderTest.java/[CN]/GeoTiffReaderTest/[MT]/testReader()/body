@@ -1,0 +1,34 @@
+{
+  final File file=TestData.file(GeoTiffReaderTest.class,"");
+  final File files[]=file.listFiles();
+  final int numFiles=files.length;
+  final AbstractGridFormat format=new GeoTiffFormat();
+  for (int i=0; i < numFiles; i++) {
+    StringBuilder buffer=new StringBuilder();
+    final String path=files[i].getAbsolutePath().toLowerCase();
+    if (!path.endsWith("tif") && !path.endsWith("tiff") || path.contains("no_crs"))     continue;
+    buffer.append(files[i].getAbsolutePath()).append("\n");
+    Object o;
+    if (i % 2 == 0)     o=files[i];
+ else     o=files[i].toURI().toURL();
+    if (format.accepts(o)) {
+      buffer.append("ACCEPTED").append("\n");
+      GeoTiffReader reader=new GeoTiffReader(o,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
+      if (reader != null) {
+        GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+        if (TestData.isInteractiveTest()) {
+          buffer.append("CRS: ").append(coverage.getCoordinateReferenceSystem2D().toWKT()).append("\n");
+          buffer.append("GG: ").append(coverage.getGridGeometry().toString()).append("\n");
+        }
+        if (org.geotools.TestData.isExtensiveTest()) {
+          IIOMetadataDumper iIOMetadataDumper=new IIOMetadataDumper(((GeoTiffReader)reader).getMetadata().getRootNode());
+          buffer.append("TIFF metadata: ").append(iIOMetadataDumper.getMetadata()).append("\n");
+        }
+        if (TestData.isInteractiveTest())         coverage.show();
+ else         PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getTiles();
+      }
+    }
+ else     buffer.append("NOT ACCEPTED").append("\n");
+    if (TestData.isInteractiveTest())     LOGGER.info(buffer.toString());
+  }
+}

@@ -1,0 +1,25 @@
+{
+  PlanarImage image=(PlanarImage)gc2D.getRenderedImage();
+  final int origDataType=image.getSampleModel().getDataType();
+  if (DataBuffer.TYPE_SHORT == origDataType) {
+    return image;
+  }
+  final GridSampleDimension visibleSD=((GridSampleDimension)gc2D.getSampleDimension(0)).geophysics(true);
+  final List oldCategories=visibleSD.getCategories();
+  Category candidate=null;
+  NumberRange candidateRange=null;
+  final Iterator it=oldCategories.iterator();
+  while (it.hasNext()) {
+    candidate=(Category)it.next();
+    if (candidate.getName().toString().equalsIgnoreCase("no data")) {
+      candidateRange=candidate.getRange();
+      break;
+    }
+  }
+  final double oldNoData=candidateRange.getMinimum();
+  final ParameterBlockJAI pbjM=new ParameterBlockJAI("org.geotools.gce.gtopo30.NoDataReplacer");
+  pbjM.addSource(image);
+  pbjM.setParameter("oldNoData",oldNoData);
+  image=JAI.create("org.geotools.gce.gtopo30.NoDataReplacer",pbjM,hints);
+  return image;
+}

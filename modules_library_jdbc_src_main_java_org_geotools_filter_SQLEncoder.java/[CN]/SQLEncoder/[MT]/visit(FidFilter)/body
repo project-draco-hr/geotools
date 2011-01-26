@@ -1,0 +1,33 @@
+{
+  if (mapper == null) {
+    throw new RuntimeException("Must set a fid mapper before trying to encode FIDFilters");
+  }
+  String[] fids=filter.getFids();
+  LOGGER.finer("Exporting FID=" + Arrays.asList(fids));
+  String[] colNames=new String[mapper.getColumnCount()];
+  for (int i=0; i < colNames.length; i++) {
+    colNames[i]=mapper.getColumnName(i);
+  }
+  for (int i=0; i < fids.length; i++) {
+    try {
+      Object[] attValues=mapper.getPKAttributes(fids[i]);
+      out.write("(");
+      for (int j=0; j < attValues.length; j++) {
+        out.write(escapeName(colNames[j]));
+        out.write(" = '");
+        out.write(attValues[j].toString());
+        out.write("'");
+        if (j < (attValues.length - 1)) {
+          out.write(" AND ");
+        }
+      }
+      out.write(")");
+      if (i < (fids.length - 1)) {
+        out.write(" OR ");
+      }
+    }
+ catch (    java.io.IOException e) {
+      throw new RuntimeException(IO_ERROR,e);
+    }
+  }
+}

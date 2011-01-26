@@ -1,0 +1,31 @@
+{
+  if (seCoordRef == null) {
+    LOGGER.fine("SeCoordinateReference is null, " + "using DefaultEngineeringCRS.CARTESIAN_2D");
+    return DefaultEngineeringCRS.CARTESIAN_2D;
+  }
+  final PeCoordinateSystem coordSys=seCoordRef.getCoordSys();
+  if (coordSys == null) {
+    LOGGER.fine("SeCoordinateReference.getCoordSys() is null, " + "using DefaultEngineeringCRS.CARTESIAN_2D");
+    return DefaultEngineeringCRS.CARTESIAN_2D;
+  }
+  final String peCoordSysName=coordSys.getName();
+  CoordinateReferenceSystem crs=PE_CS_TO_EPSG.get(peCoordSysName);
+  if (crs == null) {
+    Integer epsgCode=findEpsgCode(coordSys);
+    try {
+      if (epsgCode == null) {
+        LOGGER.warning("Couldn't determine EPSG code for this raster." + "  Using SDE's WKT-like coordSysDescription() instead.");
+        crs=CRS.parseWKT(seCoordRef.getCoordSysDescription());
+      }
+ else {
+        crs=CRS.decode("EPSG:" + epsgCode);
+      }
+      PE_CS_TO_EPSG.put(peCoordSysName,crs);
+    }
+ catch (    FactoryException e) {
+      LOGGER.log(Level.SEVERE,"",e);
+      throw new DataSourceException(e);
+    }
+  }
+  return crs;
+}

@@ -1,0 +1,26 @@
+{
+  if (entry == null) {
+    return false;
+  }
+ else {
+    boolean isEqual=entry.getType().equals(geometryType) || (geometryType.equals(GeometryType.ALL) && !entry.getType().equals(GeometryType.UNSUPPORTED));
+    try {
+      if (!entry.getGeometry().isValid()) {
+        if (isEqual) {
+          log.info("Invalid " + entry.getType() + " found while parsing table");
+        }
+        return false;
+      }
+      if (entry.isParseError()) {
+        if (entry instanceof DXFInsert) {
+          return false;
+        }
+      }
+    }
+ catch (    Exception ex) {
+      log.error("Skipping geometry; problem with " + entry.getName() + ": "+ ex.getLocalizedMessage());
+      return false;
+    }
+    return isEqual;
+  }
+}

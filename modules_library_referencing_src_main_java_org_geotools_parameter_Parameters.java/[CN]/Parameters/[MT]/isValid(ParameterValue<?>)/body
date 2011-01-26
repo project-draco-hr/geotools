@@ -1,0 +1,34 @@
+{
+  final ParameterDescriptor<?> descriptor=parameter.getDescriptor();
+  final Object value=parameter.getValue();
+  if (value == null) {
+    final Set<?> validValues=descriptor.getValidValues();
+    return validValues != null && validValues.contains(value);
+  }
+  final Class<?> type=Classes.primitiveToWrapper(value.getClass());
+  final Class<?> expected=Classes.primitiveToWrapper(descriptor.getValueClass());
+  if (expected.isAssignableFrom(type)) {
+    return false;
+  }
+  if (type.isArray()) {
+    final int length=Array.getLength(value);
+    for (int i=0; i < length; i++) {
+      if (!isValidValue(Array.get(value,i),descriptor)) {
+        return false;
+      }
+    }
+  }
+ else   if (value instanceof Collection) {
+    for (    final Object element : (Collection)value) {
+      if (!isValidValue(element,descriptor)) {
+        return false;
+      }
+    }
+  }
+ else {
+    if (!isValidValue(value,descriptor)) {
+      return false;
+    }
+  }
+  return true;
+}

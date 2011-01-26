@@ -1,0 +1,60 @@
+{
+  if (!canEncode(element,value,hints)) {
+    throw new OperationNotSupportedException("Cannot encode " + value);
+  }
+  if (value instanceof ReferencedEnvelope) {
+    ReferencedEnvelope bbox=(ReferencedEnvelope)value;
+    AttributesImpl ai=new AttributesImpl();
+    if (bbox != null && bbox.getCoordinateReferenceSystem() != null) {
+      String srsName=CRS.toSRS(bbox.getCoordinateReferenceSystem());
+      ai.addAttribute("","srsName","","anyURI",srsName);
+    }
+ else {
+      ai=null;
+    }
+    if (bbox == null || bbox.isNull() || bbox.isEmpty()) {
+      return;
+    }
+    if (element != null) {
+      output.startElement(GMLSchema.NAMESPACE,element.getName(),ai);
+    }
+ else {
+      output.startElement(GMLSchema.NAMESPACE,"Box",ai);
+    }
+    Envelope e=bbox;
+    encodeCoords(elements[1],e,output);
+    if (element != null) {
+      output.endElement(GMLSchema.NAMESPACE,element.getName());
+    }
+ else {
+      output.endElement(GMLSchema.NAMESPACE,"Box");
+    }
+  }
+ else {
+    Geometry g=(Geometry)value;
+    AttributesImpl ai=new AttributesImpl();
+    if (g != null && g.getUserData() != null) {
+      ai.addAttribute("","srsName","","anyURI",g.getUserData().toString());
+    }
+ else {
+      ai=null;
+    }
+    if ((g == null) || (g.getNumPoints() == 0) || (g.getCoordinates().length == 0)) {
+      return;
+    }
+    if (element != null) {
+      output.startElement(GMLSchema.NAMESPACE,element.getName(),ai);
+    }
+ else {
+      output.startElement(GMLSchema.NAMESPACE,"Box",ai);
+    }
+    Envelope e=g.getEnvelopeInternal();
+    encodeCoords(elements[1],e,output);
+    if (element != null) {
+      output.endElement(GMLSchema.NAMESPACE,element.getName());
+    }
+ else {
+      output.endElement(GMLSchema.NAMESPACE,"Box");
+    }
+  }
+}

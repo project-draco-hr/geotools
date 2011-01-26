@@ -1,0 +1,39 @@
+{
+  while (owner != null) {
+    if (owner == panel) {
+      throw new IllegalArgumentException();
+    }
+    if (owner instanceof JDesktopPane) {
+      final JInternalFrame frame=new JInternalFrame(title,true,true,true,true);
+      frame.setDefaultCloseOperation(JInternalFrame.DISPOSE_ON_CLOSE);
+      frame.addInternalFrameListener(InternalWindowListener.wrap(listener));
+      ((JDesktopPane)owner).add(frame);
+      frame.getContentPane().add(panel);
+      frame.pack();
+      return frame;
+    }
+    if (owner instanceof Frame) {
+      final JDialog dialog=new JDialog((Frame)owner,title);
+      dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+      dialog.addWindowListener(listener);
+      dialog.getContentPane().add(panel);
+      dialog.pack();
+      return dialog;
+    }
+    if (owner instanceof Dialog) {
+      final JDialog dialog=new JDialog((Dialog)owner,title);
+      dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+      dialog.addWindowListener(listener);
+      dialog.getContentPane().add(panel);
+      dialog.pack();
+      return dialog;
+    }
+    owner=owner.getParent();
+  }
+  final JFrame frame=new JFrame(title);
+  frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+  frame.addWindowListener(listener);
+  frame.getContentPane().add(panel);
+  frame.pack();
+  return frame;
+}

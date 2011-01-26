@@ -1,0 +1,103 @@
+{
+  if (sources == null || sources.length == 0) {
+    return;
+  }
+  final GridCoverage2D primarySource=sources[PRIMARY_SOURCE_INDEX];
+  if (crs2D == null) {
+    if (gridToCrs2D == null && sources.length == 1) {
+      return;
+    }
+    crs2D=primarySource.getCoordinateReferenceSystem2D();
+  }
+ else   try {
+    crs2D=CRSUtilities.getCRS2D(crs2D);
+  }
+ catch (  TransformException exception) {
+    throw new CannotReprojectException("Unsupported CRS: " + crs2D.getName().getCode());
+  }
+  if (gridToCrs2D == null) {
+    gridToCrs2D=primarySource.getGridGeometry().getGridToCRS2D();
+  }
+  final CoverageProcessor processor=CoverageProcessor.getInstance(hints);
+  for (int i=0; i < sources.length; i++) {
+    if (sources[i] == null) {
+      continue;
+    }
+    final GridCoverage2D source=sources[i];
+    final GridGeometry2D geometry=source.getGridGeometry();
+    final CoordinateReferenceSystem srcCrs2D=source.getCoordinateReferenceSystem2D();
+    final CoordinateReferenceSystem sourceCRS=source.getCoordinateReferenceSystem();
+    final CoordinateReferenceSystem targetCRS;
+    if (CRS.equalsIgnoreMetadata(crs2D,srcCrs2D)) {
+      targetCRS=sourceCRS;
+    }
+ else {
+      final int lowerDim=Math.min(geometry.axisDimensionX,geometry.axisDimensionY);
+      final int upperDim=Math.max(geometry.axisDimensionX,geometry.axisDimensionY) + 1;
+      final int sourceDim=sourceCRS.getCoordinateSystem().getDimension();
+      if (upperDim - lowerDim != srcCrs2D.getCoordinateSystem().getDimension()) {
+        throw new InvalidGridGeometryException("Unsupported CRS: " + sourceCRS.getName().getCode());
+      }
+      final CoordinateReferenceSystem headCRS=getSubCRS(sourceCRS,0,lowerDim);
+      final CoordinateReferenceSystem tailCRS=getSubCRS(sourceCRS,upperDim,sourceDim);
+      CoordinateReferenceSystem[] components=new CoordinateReferenceSystem[3];
+      int count=0;
+      if (headCRS != null)       components[count++]=headCRS;
+      components[count++]=crs2D;
+      if (tailCRS != null)       components[count++]=tailCRS;
+      components=XArray.resize(components,count);
+      if (count == 1) {
+        targetCRS=components[0];
+      }
+ else       try {
+        targetCRS=ReferencingFactoryFinder.getCRSFactory(hints).createCompoundCRS(Collections.singletonMap(IdentifiedObject.NAME_KEY,crs2D.getName().getCode()),components);
+      }
+ catch (      FactoryException exception) {
+        throw new CannotReprojectException(exception.getLocalizedMessage(),exception);
+      }
+    }
+    final MathTransform toSource2D=geometry.getGridToCRS2D();
+    final MathTransform toSource=geometry.getGridToCRS();
+    MathTransform toTarget;
+    if (CRS.equalsIgnoreMetadata(gridToCrs2D,toSource2D)) {
+      toTarget=toSource;
+    }
+ else {
+      final int lowerDim=Math.min(geometry.gridDimensionX,geometry.gridDimensionY);
+      final int upperDim=Math.max(geometry.gridDimensionX,geometry.gridDimensionY) + 1;
+      final int sourceDim=toSource.getSourceDimensions();
+      if (upperDim - lowerDim != toSource2D.getSourceDimensions()) {
+        throw new InvalidGridGeometryException("Unsupported math transform.");
+      }
+      final MathTransformFactory factory=ReferencingFactoryFinder.getMathTransformFactory(hints);
+      final DimensionFilter filter=new DimensionFilter(factory);
+      toTarget=gridToCrs2D;
+      try {
+        if (lowerDim != 0) {
+          filter.addSourceDimensionRange(0,lowerDim);
+          MathTransform step=filter.separate(toSource);
+          ensureStableDimensions(filter);
+          step=factory.createPassThroughTransform(0,step,sourceDim - lowerDim);
+          toTarget=factory.createConcatenatedTransform(step,toTarget);
+        }
+        if (upperDim != sourceDim) {
+          filter.clear();
+          filter.addSourceDimensionRange(upperDim,sourceDim);
+          MathTransform step=filter.separate(toSource);
+          ensureStableDimensions(filter);
+          step=factory.createPassThroughTransform(upperDim,step,0);
+          toTarget=factory.createConcatenatedTransform(toTarget,step);
+        }
+      }
+ catch (      FactoryException exception) {
+        throw new CannotReprojectException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,source.getName()),exception);
+      }
+    }
+    final GridGeometry2D targetGeom=new GridGeometry2D(null,toTarget,targetCRS);
+    final ParameterValueGroup param=processor.getOperation("Resample").getParameters();
+    param.parameter("Source").setValue(source);
+    param.parameter("GridGeometry").setValue(targetGeom);
+    param.parameter("CoordinateReferenceSystem").setValue(targetCRS);
+    sources[i]=(GridCoverage2D)processor.doOperation(param);
+  }
+}

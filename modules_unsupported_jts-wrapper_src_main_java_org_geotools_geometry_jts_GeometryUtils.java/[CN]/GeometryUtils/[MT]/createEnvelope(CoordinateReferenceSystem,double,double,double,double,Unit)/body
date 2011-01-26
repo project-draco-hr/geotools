@@ -1,0 +1,20 @@
+{
+  final BasicFactories commonFactory=BasicFactories.getDefault();
+  final GeometryFactory geometryFactory=commonFactory.getGeometryFactory(crs);
+  final CoordinateSystem cs=crs.getCoordinateSystem();
+  final int xIndex=getDirectedAxisIndex(cs,AxisDirection.EAST);
+  final Unit xUnit=getDirectedAxisUnit(cs,AxisDirection.EAST);
+  final int yIndex=getDirectedAxisIndex(cs,AxisDirection.NORTH);
+  final Unit yUnit=getDirectedAxisUnit(cs,AxisDirection.NORTH);
+  UnitConverter xConverter=xUnit.getConverterTo(unit);
+  UnitConverter yConverter=yUnit.getConverterTo(unit);
+  double[] lowerOrdinates=new double[crs.getCoordinateSystem().getDimension()];
+  lowerOrdinates[xIndex]=xConverter.convert(minx);
+  lowerOrdinates[yIndex]=yConverter.convert(miny);
+  double[] upperOrdinates=new double[crs.getCoordinateSystem().getDimension()];
+  upperOrdinates[xIndex]=xConverter.convert(maxx);
+  upperOrdinates[yIndex]=yConverter.convert(maxy);
+  final DirectPosition lowerCorner=geometryFactory.createDirectPosition(lowerOrdinates);
+  final DirectPosition upperCorner=geometryFactory.createDirectPosition(upperOrdinates);
+  return geometryFactory.createEnvelope(lowerCorner,upperCorner);
+}

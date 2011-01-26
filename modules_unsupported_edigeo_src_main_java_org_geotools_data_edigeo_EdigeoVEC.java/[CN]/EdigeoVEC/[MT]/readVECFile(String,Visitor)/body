@@ -1,0 +1,78 @@
+{
+  EdigeoParser vecParser=new EdigeoParser(vecFile);
+  String idObj=null;
+  String buffer="";
+  String att="";
+  String value="";
+  if (obj.equals("PARCELLE_id")) {
+    topo=true;
+  }
+  geoType=EdigeoDataStore.scdObj.get(obj).get("type").toUpperCase();
+  if (logger.isLoggable(Level.INFO)) {
+    logger.info("Creating Edigeo Datastore, please wait, it may take a few minutes...");
+  }
+  while (vecParser.readLine()) {
+    if (vecParser.line.contains(VS + obj) && buffer.contains(objIdDesc)) {
+      HashMap<String,String> atts=new HashMap<String,String>();
+      idObj=getValue(buffer,objIdDesc);
+      List<Coordinate[]> geoms=getRelation(idObj);
+      nbObjs++;
+      while (vecParser.readLine()) {
+        if (vecParser.line.contains(nbAttDesc)) {
+          int nbatt=Integer.parseInt(vecParser.getValue(nbAttDesc));
+          for (int i=0; i < nbatt; i++) {
+            while (vecParser.readLine()) {
+              if (vecParser.line.contains(idAttDesc)) {
+                att=vecParser.getValue(idAttDesc);
+                att=att.substring(att.lastIndexOf(";") + 1);
+                continue;
+              }
+              if (vecParser.line.contains(valAttrDesc)) {
+                value=vecParser.getValue(valAttrDesc);
+                value=getPrecodedValue(att,value);
+                atts.put(att,value);
+                break;
+              }
+            }
+          }
+          break;
+        }
+      }
+      Object[] values=null;
+      int nbAtt;
+      if (!EdigeoDataStore.ftAtt.isEmpty()) {
+        int cpt=0;
+        nbAtt=EdigeoDataStore.ftAtt.size();
+        values=new Object[nbAtt + 1];
+        Iterator<String> it=EdigeoDataStore.ftAtt.keySet().iterator();
+        while (it.hasNext()) {
+          String key=it.next();
+          if (atts.containsKey(key)) {
+            values[cpt]=atts.get(key);
+          }
+ else {
+            values[cpt]=null;
+          }
+          cpt++;
+        }
+      }
+ else {
+        values=new Object[1];
+        nbAtt=0;
+      }
+      Geometry geom=null;
+      if (!geoms.isEmpty()) {
+        geom=createGeometry(geoms,idObj);
+        values[nbAtt]=geom;
+        visitor.visit(values,idObj);
+      }
+ else {
+        if (logger.isLoggable(Level.WARNING)) {
+          logger.warning("Unable to find geometry relation for FID#" + idObj);
+        }
+      }
+    }
+    buffer=vecParser.line;
+  }
+  vecParser.close();
+}

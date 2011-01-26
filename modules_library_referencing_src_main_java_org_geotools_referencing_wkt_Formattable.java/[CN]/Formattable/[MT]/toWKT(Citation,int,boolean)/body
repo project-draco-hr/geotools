@@ -1,0 +1,27 @@
+{
+  if (authority == null) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"authority"));
+  }
+  Formatter formatter=FORMATTER.get();
+  if (formatter == null || formatter.indentation != indentation || formatter.authority != authority) {
+    formatter=new Formatter(Symbols.DEFAULT,indentation);
+    formatter.authority=authority;
+    FORMATTER.set(formatter);
+  }
+  try {
+    if (this instanceof GeneralParameterValue) {
+      formatter.append((GeneralParameterValue)this);
+    }
+ else {
+      formatter.append(this);
+    }
+    if (strict && formatter.isInvalidWKT()) {
+      final Class unformattable=formatter.getUnformattableClass();
+      throw new UnformattableObjectException(formatter.warning,unformattable);
+    }
+    return formatter.toString();
+  }
+  finally {
+    formatter.clear();
+  }
+}

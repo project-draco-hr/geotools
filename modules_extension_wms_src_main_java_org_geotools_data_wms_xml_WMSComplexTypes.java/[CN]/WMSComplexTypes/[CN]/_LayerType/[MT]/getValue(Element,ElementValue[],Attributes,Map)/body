@@ -1,0 +1,81 @@
+{
+  List childLayers=new ArrayList();
+  Layer layer=new Layer();
+  Set crs=new TreeSet();
+  HashMap boundingBoxes=new HashMap();
+  HashMap dimensions=new HashMap();
+  HashMap extents=new HashMap();
+  List styles=new ArrayList();
+  for (int i=0; i < value.length; i++) {
+    if (sameName(elems[0],value[i])) {
+      layer.setName((String)value[i].getValue());
+    }
+    if (sameName(elems[1],value[i])) {
+      layer.setTitle((String)value[i].getValue());
+    }
+    if (sameName(elems[2],value[i])) {
+      layer.set_abstract((String)value[i].getValue());
+    }
+    if (sameName(elems[3],value[i])) {
+      layer.setKeywords((String[])value[i].getValue());
+    }
+    if (sameName(elems[4],value[i]) || sameName(elems[19],value[i])) {
+      String[] crss=((String)value[i].getValue()).split(" ");
+      for (int j=0; j < crss.length; j++) {
+        crs.add(crss[j].toUpperCase());
+      }
+    }
+    if (sameName(elems[5],value[i]) || sameName(elems[20],value[i])) {
+      layer.setLatLonBoundingBox((CRSEnvelope)value[i].getValue());
+    }
+    if (sameName(elems[6],value[i])) {
+      CRSEnvelope bbox=(CRSEnvelope)value[i].getValue();
+      boundingBoxes.put(bbox.getEPSGCode(),bbox);
+    }
+    if (sameName(elems[7],value[i])) {
+      Dimension dim=(Dimension)value[i].getValue();
+      dimensions.put(dim.getName(),dim);
+    }
+    if (sameName(elems[8],value[i])) {
+      Extent ext=(Extent)value[i].getValue();
+      extents.put(ext.getName(),ext);
+    }
+    if (sameName(elems[15],value[i])) {
+      styles.add(value[i].getValue());
+    }
+    if (sameName(elems[16],value[i])) {
+      Double min=(Double)value[i].getValue();
+      layer.setScaleDenominatorMin(min.doubleValue());
+    }
+    if (sameName(elems[17],value[i])) {
+      Double max=(Double)value[i].getValue();
+      layer.setScaleDenominatorMax(max.doubleValue());
+    }
+    if (sameName(elems[18],value[i])) {
+      Layer childLayer=(Layer)value[i].getValue();
+      childLayer.setParent(layer);
+      childLayers.add(childLayer);
+    }
+    if (sameName(elems[21],value[i])) {
+      double[] scaleHint=(double[])value[i].getValue();
+      layer.setScaleHintMin(scaleHint[0]);
+      layer.setScaleHintMax(scaleHint[1]);
+    }
+  }
+  layer.setSrs(crs);
+  layer.setBoundingBoxes(boundingBoxes);
+  layer.setDimensions(dimensions);
+  layer.setExtents(extents);
+  layer.setStyles(styles);
+  layer.setChildren((Layer[])childLayers.toArray(new Layer[childLayers.size()]));
+  String queryable=attrs.getValue("queryable");
+  if (queryable != null) {
+    if ("1".equals(queryable)) {
+      layer.setQueryable(true);
+    }
+ else     if ("0".equals(queryable)) {
+      layer.setQueryable(new Boolean(queryable).booleanValue());
+    }
+  }
+  return layer;
+}

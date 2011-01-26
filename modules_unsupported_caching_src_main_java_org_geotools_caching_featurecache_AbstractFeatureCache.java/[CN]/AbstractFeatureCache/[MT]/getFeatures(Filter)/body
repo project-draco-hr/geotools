@@ -1,0 +1,23 @@
+{
+  BBoxFilterSplitter splitter=new BBoxFilterSplitter();
+  filter.accept(splitter,null);
+  Filter spatial_restrictions=splitter.getFilterPre();
+  Filter other_restrictions=splitter.getFilterPost();
+  if (spatial_restrictions == Filter.EXCLUDE) {
+    return new EmptyFeatureCollection(this.getSchema());
+  }
+ else   if (spatial_restrictions == Filter.INCLUDE) {
+    return this.fs.getFeatures(filter);
+  }
+ else {
+    SimpleFeatureCollection fc;
+    try {
+      fc=_getFeatures(spatial_restrictions);
+    }
+ catch (    UnsupportedOperationException e) {
+      logger.log(Level.WARNING,"Querying cache : " + e.toString());
+      return this.fs.getFeatures(filter);
+    }
+    return fc.subCollection(other_restrictions);
+  }
+}

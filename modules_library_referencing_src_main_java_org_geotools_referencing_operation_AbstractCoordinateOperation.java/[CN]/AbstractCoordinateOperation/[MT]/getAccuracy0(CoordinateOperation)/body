@@ -1,0 +1,52 @@
+{
+  final Collection<PositionalAccuracy> accuracies=operation.getCoordinateOperationAccuracy();
+  if (accuracies != null)   for (  final PositionalAccuracy accuracy : accuracies) {
+    if (accuracy != null)     for (    final Result result : accuracy.getResults()) {
+      if (result instanceof QuantitativeResult) {
+        final QuantitativeResult quantity=(QuantitativeResult)result;
+        final Collection<? extends Record> records=quantity.getValues();
+        if (records != null) {
+          final Unit<?> unit=quantity.getValueUnit();
+          if (unit != null && SI.METER.isCompatible(unit)) {
+            for (            final Record record : records) {
+              for (              final Object value : record.getAttributes().values()) {
+                if (value instanceof Number) {
+                  double v=((Number)value).doubleValue();
+                  v=unit.getConverterTo(SI.METER).convert(v);
+                  return v;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (operation instanceof Conversion) {
+    return 0;
+  }
+  if (operation instanceof Transformation) {
+    if (!accuracies.contains(PositionalAccuracyImpl.DATUM_SHIFT_OMITTED)) {
+      if (accuracies.contains(PositionalAccuracyImpl.DATUM_SHIFT_APPLIED)) {
+        return 25;
+      }
+    }
+    return 1000;
+  }
+  double accuracy=Double.NaN;
+  if (operation instanceof ConcatenatedOperation) {
+    final Collection components=((ConcatenatedOperation)operation).getOperations();
+    for (final Iterator it=components.iterator(); it.hasNext(); ) {
+      final double candidate=Math.abs(getAccuracy((CoordinateOperation)it.next()));
+      if (!Double.isNaN(candidate)) {
+        if (Double.isNaN(accuracy)) {
+          accuracy=candidate;
+        }
+ else {
+          accuracy+=candidate;
+        }
+      }
+    }
+  }
+  return accuracy;
+}

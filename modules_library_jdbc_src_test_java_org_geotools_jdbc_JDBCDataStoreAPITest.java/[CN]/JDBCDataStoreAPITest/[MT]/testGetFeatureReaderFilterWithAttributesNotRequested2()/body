@@ -1,0 +1,19 @@
+{
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureType type=dataStore.getSchema(tname("river"));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  FilterFunction_ceil ceil=new FilterFunction_ceil();
+  ceil.setParameters(Collections.singletonList(ff.property(aname("flow"))));
+  PropertyIsEqualTo f=ff.equals(ceil,ff.literal(5));
+  DefaultQuery q=new DefaultQuery(tname("river"));
+  q.setPropertyNames(new String[]{aname("geom")});
+  q.setFilter(f);
+  reader=dataStore.getFeatureReader(q,t);
+  assertTrue(reader.hasNext());
+  assertEquals(1,reader.getFeatureType().getAttributeCount());
+  reader.next();
+  assertFalse(reader.hasNext());
+  reader.close();
+  t.close();
+}

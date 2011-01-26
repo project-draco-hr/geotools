@@ -1,0 +1,34 @@
+{
+  String prefix=this.prefix + ":";
+  String namespaceUri=this.namespaceUri;
+  if (!namespaceAware) {
+    prefix="";
+    namespaceUri=null;
+  }
+  output.startElement(namespaceUri,"coordinates",prefix + "coordinates",atts);
+  final int coordCount=c.size();
+  final int coordSeqDimension=c.getDimension();
+  double x, y, z;
+  for (int i=0, n=coordCount; i < n; i++) {
+    x=c.getOrdinate(i,0);
+    y=c.getOrdinate(i,1);
+    coordBuff.setLength(0);
+    formatDecimal(x,coordBuff);
+    coordBuff.append(coordinateDelimiter);
+    formatDecimal(y,coordBuff);
+    if (D == 3 || useDummyZ) {
+      z=(D == 3 && coordSeqDimension > 2) ? c.getOrdinate(i,2) : dummyZ;
+      coordBuff.append(coordinateDelimiter);
+      formatDecimal(z,coordBuff);
+    }
+    if (i + 1 < coordCount) {
+      coordBuff.append(tupleDelimiter);
+    }
+    if (coordBuff.length() > buff.length) {
+      buff=new char[coordBuff.length()];
+    }
+    coordBuff.getChars(0,coordBuff.length(),buff,0);
+    output.characters(buff,0,coordBuff.length());
+  }
+  output.endElement(namespaceUri,"coordinates",prefix + "coordinates");
+}

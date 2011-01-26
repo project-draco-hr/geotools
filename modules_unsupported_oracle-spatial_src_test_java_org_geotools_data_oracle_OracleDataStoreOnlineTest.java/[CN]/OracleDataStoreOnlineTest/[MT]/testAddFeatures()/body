@@ -1,0 +1,27 @@
+{
+  if (conn == null)   return;
+  Map fidGen=new HashMap();
+  fidGen.put("ORA_TEST_POINTS",JDBCDataStoreConfig.FID_GEN_MANUAL_INC);
+  JDBCDataStoreConfig config=JDBCDataStoreConfig.createWithSchemaNameAndFIDGenMap(schemaName,fidGen);
+  String name="add_name";
+  BigDecimal intval=new BigDecimal(70);
+  Point point=jtsFactory.createPoint(new Coordinate(-15.0,-25));
+  SimpleFeatureType type=dstore.getSchema("ORA_TEST_POINTS");
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(type);
+  builder.add(name);
+  builder.add(intval);
+  builder.add(point);
+  SimpleFeature feature=builder.buildFeature("fid.1");
+  SimpleFeatureStore fs=(SimpleFeatureStore)dstore.getFeatureSource("ORA_TEST_POINTS");
+  fs.addFeatures(DataUtilities.collection(feature));
+  Connection conn=dstore.getConnection(Transaction.AUTO_COMMIT);
+  Statement statement=conn.createStatement();
+  ResultSet rs=statement.executeQuery("SELECT * FROM ORA_TEST_POINTS WHERE NAME = 'add_name'");
+  if (rs.next()) {
+    assertEquals(rs.getString("NAME"),name);
+    assertEquals(70,rs.getInt("INTVAL"));
+  }
+ else {
+    fail("Feature was not added correctly");
+  }
+}

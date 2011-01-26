@@ -1,0 +1,49 @@
+{
+  MathTransform transform=null;
+  ensureNonNull("operations",operations);
+  for (int i=0; i < operations.length; i++) {
+    ensureNonNull("operations",operations,i);
+    final CoordinateOperation op=operations[i];
+    if (op instanceof SingleOperation) {
+      target.add((SingleOperation)op);
+    }
+ else     if (op instanceof ConcatenatedOperation) {
+      final ConcatenatedOperation cop=(ConcatenatedOperation)op;
+      final List<SingleOperation> cops=cop.getOperations();
+      expand(cops.toArray(new CoordinateOperation[cops.size()]),target,factory,false);
+    }
+ else {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,Classes.getClass(op),SingleOperation.class));
+    }
+    if (i != 0) {
+      final CoordinateReferenceSystem previous=operations[i - 1].getTargetCRS();
+      final CoordinateReferenceSystem next=op.getSourceCRS();
+      if (previous != null && next != null) {
+        final int dim1=previous.getCoordinateSystem().getDimension();
+        final int dim2=next.getCoordinateSystem().getDimension();
+        if (dim1 != dim2) {
+          throw new IllegalArgumentException(Errors.format(ErrorKeys.MISMATCHED_DIMENSION_$2,dim1,dim2));
+        }
+      }
+    }
+    if (wantTransform) {
+      final MathTransform step=op.getMathTransform();
+      if (transform == null) {
+        transform=step;
+      }
+ else       if (factory != null) {
+        transform=factory.createConcatenatedTransform(transform,step);
+      }
+ else {
+        transform=ConcatenatedTransform.create(transform,step);
+      }
+    }
+  }
+  if (wantTransform) {
+    final int size=target.size();
+    if (size <= 1) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.MISSING_PARAMETER_$1,"operations[" + size + ']'));
+    }
+  }
+  return transform;
+}

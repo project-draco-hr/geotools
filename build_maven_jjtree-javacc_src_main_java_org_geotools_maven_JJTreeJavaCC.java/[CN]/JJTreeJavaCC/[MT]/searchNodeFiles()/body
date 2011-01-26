@@ -1,0 +1,21 @@
+{
+  final SuffixMapping mapping=new SuffixMapping(".java",".java");
+  final SuffixMapping mappingCAP=new SuffixMapping(".JAVA",".JAVA");
+  final SourceInclusionScanner scanner=new StaleSourceScanner(staleMillis);
+  scanner.addSourceMapping(mapping);
+  scanner.addSourceMapping(mappingCAP);
+  File directory=new File(nodeDirectory);
+  if (nodePackage != null && nodePackage.trim().length() != 0) {
+    directory=new File(directory,nodePackage.replace('.','/'));
+  }
+  if (!directory.isDirectory()) {
+    return Collections.EMPTY_SET;
+  }
+  final File outDir=new File(timestampDirectory);
+  try {
+    return scanner.getIncludedSources(directory,outDir);
+  }
+ catch (  InclusionScanException e) {
+    throw new MojoExecutionException("Error scanning \"" + directory.getPath() + "\" for Node.java to copy.",e);
+  }
+}

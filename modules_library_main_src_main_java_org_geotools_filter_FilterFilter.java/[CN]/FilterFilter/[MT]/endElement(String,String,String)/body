@@ -1,0 +1,65 @@
+{
+  LOGGER.finer("found end element: " + localName);
+  processCharacters();
+  if (localName.equals("Filter")) {
+    if (isFidFilter && !localName.equals("FeatureId")) {
+      isFidFilter=false;
+      LOGGER.finer("is fid (2): " + isFidFilter);
+      try {
+        if (isLogicFilter) {
+          addFilterToLogicFactory();
+        }
+ else {
+          addFilterToParent();
+        }
+      }
+ catch (      IllegalFilterException e) {
+        throw new SAXException("Attempted to construct illegal filter: " + e.getMessage());
+      }
+    }
+    insideFilter=false;
+  }
+ else   if (insideFilter) {
+    short filterType=convertType(localName);
+    try {
+      if (AbstractFilter.isLogicFilter(filterType)) {
+        LOGGER.finest("found a logic filter end");
+        if (isFidFilter) {
+          addFilterToLogicFactory();
+          isFidFilter=false;
+        }
+        logicFactory.end(filterType);
+        if (logicFactory.isComplete()) {
+          LOGGER.finer("creating logic factory");
+          parent.filter(logicFactory.create());
+        }
+      }
+ else       if (AbstractFilter.isSimpleFilter(filterType) && !isFidFilter) {
+        LOGGER.finest("found a simple filter end");
+        if (isLogicFilter) {
+          addFilterToLogicFactory();
+        }
+ else {
+          addFilterToParent();
+        }
+      }
+ else       if (DefaultExpression.isExpression(filterType)) {
+        LOGGER.finer("found an expression filter end");
+        expressionFactory.end(localName);
+        if (expressionFactory.isReady()) {
+          LOGGER.finer("expression factory is ready");
+          filterFactory.expression(expressionFactory.create());
+        }
+      }
+ else       if (localName.equals("Distance")) {
+        insideDistance=false;
+      }
+    }
+ catch (    IllegalFilterException e) {
+      throw new SAXException("Attempted to construct illegal filter: " + e.getMessage());
+    }
+  }
+ else {
+    parent.endElement(namespaceURI,localName,qName);
+  }
+}

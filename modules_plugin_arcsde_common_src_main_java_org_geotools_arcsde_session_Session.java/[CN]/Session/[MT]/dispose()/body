@@ -1,0 +1,26 @@
+{
+  checkActive();
+  final int refCount=referenceCounter.decrementAndGet();
+  if (refCount > 0) {
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("---------> Ignoring disposal, ref count is still " + refCount + " for "+ this);
+    }
+    return;
+  }
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("  -> RefCount is " + refCount + ". Disposing "+ this);
+  }
+  if (transactionInProgress) {
+    throw new IllegalStateException("Transaction is in progress, should commit or rollback before closing");
+  }
+  if (autoCloseCounter >= AUTO_CLOSE_COUNTER_THRESHOLD) {
+    LOGGER.warning("Auto-closing " + this + " to avoid memory leak in ESRI Java API (see GEOT-3227)");
+    this.destroy();
+  }
+  try {
+    this.pool.returnObject(this);
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+  }
+}

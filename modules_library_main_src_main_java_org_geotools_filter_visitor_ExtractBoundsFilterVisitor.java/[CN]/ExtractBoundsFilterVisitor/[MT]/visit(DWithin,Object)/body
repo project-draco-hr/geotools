@@ -1,0 +1,26 @@
+{
+  ReferencedEnvelope bbox=bbox(data);
+  Literal geometry=null;
+  if (filter.getExpression1() instanceof PropertyName && filter.getExpression2() instanceof Literal) {
+    geometry=(Literal)filter.getExpression2();
+  }
+  if (filter.getExpression2() instanceof PropertyName && filter.getExpression1() instanceof Literal) {
+    geometry=(Literal)filter.getExpression2();
+  }
+  if (geometry == null) {
+    return infinity();
+  }
+  Geometry geom=geometry.evaluate(null,Geometry.class);
+  if (geom == null) {
+    return infinity();
+  }
+  Envelope env=geom.getEnvelopeInternal();
+  env.expandBy(filter.getDistance());
+  if (bbox != null) {
+    bbox.expandToInclude(env);
+    return bbox;
+  }
+ else {
+    return bbox(env);
+  }
+}

@@ -1,0 +1,42 @@
+{
+  String key="";
+  boolean _fixed=false;
+  try {
+    _fixed=ReaderUtils.getBooleanAttribute(elem,"final",false);
+    key=ReaderUtils.getChildText(elem,"name",true);
+  }
+ catch (  SAXException e) {
+    throw new ValidationException("Error reading argument for " + dto.getName() + " :name required");
+  }
+  NodeList nl2=elem.getChildNodes();
+  Element value=null;
+  for (int j=0; j < nl2.getLength(); j++) {
+    if (nl2.item(j).getNodeType() == Node.ELEMENT_NODE) {
+      elem=(Element)nl2.item(j);
+      if (elem.getTagName().trim().equals("name")) {
+        value=elem;
+      }
+ else {
+        value=elem;
+      }
+    }
+  }
+  if (value == null) {
+    throw new ValidationException("Invalid Argument \"" + dto.getName() + "\" for argument \""+ key+ "\"");
+  }
+  ArgumentDTO adto=(ArgumentDTO)dto.getArgs().get(key);
+  Object val=ArgHelper.getArgumentInstance(value.getTagName().trim(),value);
+  if (val == null) {
+    throw new ValidationException("Didn't find a real value for argument " + key);
+  }
+  if (adto == null) {
+    adto=new ArgumentDTO();
+  }
+ else {
+    adto=(ArgumentDTO)adto.clone();
+  }
+  adto.setName(key);
+  adto.setValue(val);
+  adto.setFinal(_fixed);
+  return adto;
+}

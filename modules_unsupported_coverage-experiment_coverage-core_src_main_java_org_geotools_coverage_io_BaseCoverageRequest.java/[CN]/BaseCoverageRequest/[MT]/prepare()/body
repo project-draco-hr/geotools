@@ -1,0 +1,30 @@
+{
+  try {
+    sourceRasterRegion=new Rectangle();
+    adjustedRequestedEnvelope2D=evaluateRequestedParams(requestedEnvelope2D,sourceRasterRegion,requestedRasterDimension,requestedGridToWorld2D);
+    useJAI=requestUsesJaiImageread();
+    if (useMultithreading) {
+      imageReadParam=new DefaultCloneableImageReadParam();
+    }
+ else {
+      imageReadParam=new ImageReadParam();
+    }
+    if (adjustedRequestedEnvelope2D != null) {
+      final GeneralEnvelope req=(adjustedRequestedEnvelope2D.isEmpty()) ? requestedEnvelope2D : adjustedRequestedEnvelope2D;
+      setReadParameters(overviewPolicy,imageReadParam,req,requestedRasterDimension);
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    adjustedRequestedEnvelope2D=null;
+  }
+catch (  TransformException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    adjustedRequestedEnvelope2D=null;
+  }
+  if (adjustedRequestedEnvelope2D != null && sourceRasterRegion != null && !sourceRasterRegion.isEmpty()) {
+    imageReadParam.setSourceRegion(sourceRasterRegion);
+  }
+  needTransformation=(adjustedRequestedEnvelope2D != null && !adjustedRequestedEnvelope2D.isEmpty());
+  emptyRequest=adjustedRequestedEnvelope2D == null;
+}

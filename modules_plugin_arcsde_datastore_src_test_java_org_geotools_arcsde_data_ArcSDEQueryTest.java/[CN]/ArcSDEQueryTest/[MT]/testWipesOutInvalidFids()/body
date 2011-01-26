@@ -1,0 +1,28 @@
+{
+  final String typeName=this.typeName;
+  Set<Identifier> ids=new HashSet<Identifier>();
+  ids.add(ff.featureId(typeName + ".1"));
+  ids.add(ff.featureId(typeName + ".2"));
+  ids.add(ff.featureId(typeName + ".a"));
+  ids.add(ff.featureId("states_.1"));
+  Filter filter=ff.id(ids);
+  filteringQuery=new Query(typeName,filter);
+  ArcSDEQuery sdeQuery=createFilteringQuery();
+  FilterSet filters;
+  try {
+    filters=sdeQuery.getFilters();
+  }
+  finally {
+    sdeQuery.session.dispose();
+    sdeQuery.close();
+  }
+  Filter sqlFilter=filters.getSqlFilter();
+  assertTrue(sqlFilter instanceof Id);
+  Id id=(Id)sqlFilter;
+  Assert.assertEquals(2,id.getIDs().size());
+  Set<Identifier> validFids=new HashSet<Identifier>();
+  validFids.add(ff.featureId(typeName + ".1"));
+  validFids.add(ff.featureId(typeName + ".2"));
+  Id expected=ff.id(validFids);
+  Assert.assertEquals(expected,id);
+}

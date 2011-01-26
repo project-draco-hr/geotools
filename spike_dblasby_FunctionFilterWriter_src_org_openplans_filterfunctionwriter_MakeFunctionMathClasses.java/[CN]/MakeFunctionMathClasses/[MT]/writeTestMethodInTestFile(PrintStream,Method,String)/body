@@ -1,0 +1,69 @@
+{
+  try {
+    int argsCount=method.getParameterTypes().length;
+    double[] values=new double[]{1,-1,2,-2,Math.PI,0.5 * Math.PI};
+    String[] literalNames=new String[]{"literal_1","literal_m1","literal_2","literal_m2","literal_pi","literal_05pi"};
+    ps.println("");
+    ps.println("public void test" + name + "(){");
+    ps.println("	try {");
+    ps.println("");
+    ps.println("		FunctionExpression " + name + "Function = filterFactory.createFunctionExpression(\""+ name+ "\");");
+    ps.println("		assertEquals(\"Name is, \",\"" + name + "\","+ name+ "Function.getName());");
+    ps.println("		assertEquals(\"Number of arguments, \"," + argsCount + ","+ name+ "Function.getArgCount());");
+    ps.println("");
+    ps.println("		Expression[] expressions = new Expression[" + argsCount + "];");
+    if (method.getParameterTypes().length > 0) {
+      for (int i=0; i < 6; i++) {
+        String argument="(" + values[i];
+        ps.println("		expressions[" + 0 + "] = "+ literalNames[i]+ ";");
+        for (int j=1; j < argsCount; j++) {
+          int k=i + j;
+          if (k > 5) {
+            k=0;
+          }
+          argument=argument + "," + values[k];
+          ps.println("		expressions[" + j + "] = "+ literalNames[k]+ ";");
+        }
+        argument=argument + ")";
+        ps.println("                " + name + "Function.setParameters(java.util.Arrays.asList(expressions));");
+        if (isNumber(method.getReturnType())) {
+          if ((method.getReturnType() == int.class)) {
+            ps.println("		assertEquals(\"" + method.getName() + " of "+ argument+ ":\" ,(int)Math."+ method.getName()+ argument+ " ,((Integer) "+ name+ "Function.getValue(null)).intValue(),0.00001);");
+          }
+ else           if ((method.getReturnType() == double.class)) {
+            ps.println("		double good" + i + " = Math."+ method.getName()+ argument+ ";");
+            ps.println("		if(Double.isNaN(good" + i + ")){");
+            ps.println("			assertTrue(\"" + method.getName() + " of "+ argument+ ":\" ,Double.isNaN(((Double) "+ name+ "Function.getValue(null)).doubleValue()));");
+            ps.println("        }else{");
+            ps.println("			assertEquals(\"" + method.getName() + " of "+ argument+ ":\" ,(double)Math."+ method.getName()+ argument+ " ,((Double) "+ name+ "Function.getValue(null)).doubleValue(),0.00001);");
+            ps.println("		}");
+          }
+ else           if ((method.getReturnType() == long.class)) {
+            ps.println("		assertEquals(\"" + method.getName() + " of "+ argument+ ":\" ,(long)Math."+ method.getName()+ argument+ " ,((Long) "+ name+ "Function.getValue(null)).longValue(),0.00001);");
+          }
+ else           if ((method.getReturnType() == float.class)) {
+            ps.println("		assertEquals(\"" + method.getName() + " of "+ argument+ ":\" ,(float)Math."+ method.getName()+ argument+ " ,((Float) "+ name+ "Function.getValue(null)).floatValue(),0.00001);");
+          }
+ else {
+            throw new IllegalArgumentException("dont know how to handle this - " + method.getParameterTypes()[0]);
+          }
+        }
+ else {
+          throw new IllegalArgumentException("dont know how to handle this - " + method.getParameterTypes()[0]);
+        }
+      }
+    }
+    ps.println("} catch (FactoryConfigurationError e) {");
+    ps.println("	e.printStackTrace();");
+    ps.println("	fail(\"Unexpected exception: \"+e.getMessage());");
+    ps.println("}");
+    ps.println("}");
+  }
+ catch (  ArrayIndexOutOfBoundsException e) {
+    System.out.println("Method name: " + method.getName());
+    System.out.println("Parameter Types: " + method.getParameterTypes().length);
+  }
+catch (  Exception e) {
+    e.printStackTrace();
+  }
+}

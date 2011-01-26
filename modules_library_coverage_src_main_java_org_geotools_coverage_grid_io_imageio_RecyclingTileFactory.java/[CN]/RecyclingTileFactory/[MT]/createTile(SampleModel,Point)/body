@@ -1,0 +1,107 @@
+{
+  if (sampleModel == null) {
+    throw new IllegalArgumentException("sampleModel == null!");
+  }
+  if (location == null) {
+    location=new Point(0,0);
+  }
+  DataBuffer db=null;
+  int type=sampleModel.getTransferType();
+  long numBanks=0;
+  long size=0;
+  if (sampleModel instanceof ComponentSampleModel) {
+    ComponentSampleModel csm=(ComponentSampleModel)sampleModel;
+    numBanks=getNumBanksCSM(csm);
+    size=getBufferSizeCSM(csm);
+  }
+ else   if (sampleModel instanceof MultiPixelPackedSampleModel) {
+    MultiPixelPackedSampleModel mppsm=(MultiPixelPackedSampleModel)sampleModel;
+    numBanks=1;
+    int dataTypeSize=DataBuffer.getDataTypeSize(type);
+    size=mppsm.getScanlineStride() * mppsm.getHeight() + (mppsm.getDataBitOffset() + dataTypeSize - 1) / dataTypeSize;
+  }
+ else   if (sampleModel instanceof SinglePixelPackedSampleModel) {
+    SinglePixelPackedSampleModel sppsm=(SinglePixelPackedSampleModel)sampleModel;
+    numBanks=1;
+    size=sppsm.getScanlineStride() * (sppsm.getHeight() - 1) + sppsm.getWidth();
+  }
+  if (size != 0) {
+    Object array=getRecycledArray(type,numBanks,size);
+    if (array != null) {
+switch (type) {
+case DataBuffer.TYPE_BYTE:
+{
+          byte[][] bankData=(byte[][])array;
+          for (int i=0; i < numBanks; i++) {
+            Arrays.fill(bankData[i],(byte)0);
+          }
+          db=new DataBufferByte(bankData,(int)size);
+        }
+      break;
+case DataBuffer.TYPE_USHORT:
+{
+      short[][] bankData=(short[][])array;
+      for (int i=0; i < numBanks; i++) {
+        Arrays.fill(bankData[i],(short)0);
+      }
+      db=new DataBufferUShort(bankData,(int)size);
+    }
+  break;
+case DataBuffer.TYPE_SHORT:
+{
+  short[][] bankData=(short[][])array;
+  for (int i=0; i < numBanks; i++) {
+    Arrays.fill(bankData[i],(short)0);
+  }
+  db=new DataBufferShort(bankData,(int)size);
+}
+break;
+case DataBuffer.TYPE_INT:
+{
+int[][] bankData=(int[][])array;
+for (int i=0; i < numBanks; i++) {
+Arrays.fill(bankData[i],0);
+}
+db=new DataBufferInt(bankData,(int)size);
+}
+break;
+case DataBuffer.TYPE_FLOAT:
+{
+float[][] bankData=(float[][])array;
+for (int i=0; i < numBanks; i++) {
+Arrays.fill(bankData[i],0.0F);
+}
+db=DataBufferUtils.createDataBufferFloat(bankData,(int)size);
+}
+break;
+case DataBuffer.TYPE_DOUBLE:
+{
+double[][] bankData=(double[][])array;
+for (int i=0; i < numBanks; i++) {
+Arrays.fill(bankData[i],0.0);
+}
+db=DataBufferUtils.createDataBufferDouble(bankData,(int)size);
+}
+break;
+default :
+throw new IllegalArgumentException("");
+}
+if (DEBUG) {
+System.out.println(getClass().getName() + " Using a recycled array");
+}
+}
+ else if (DEBUG) {
+System.out.println(getClass().getName() + " No type " + type+ " array["+ numBanks+ "]["+ size+ "] available");
+}
+}
+ else if (DEBUG) {
+System.out.println(getClass().getName() + " Size is zero");
+}
+if (db == null) {
+if (DEBUG) {
+System.out.println(getClass().getName() + " Creating new DataBuffer");
+}
+db=sampleModel.createDataBuffer();
+}
+return Raster.createWritableRaster(sampleModel,db,location);
+}

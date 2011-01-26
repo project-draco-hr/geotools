@@ -1,0 +1,29 @@
+{
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  final GridCoverage2D source=coverage.view(ViewType.NATIVE);
+  final Envelope oldEnvelope=source.getEnvelope();
+  final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{oldEnvelope.getMinimum(0),oldEnvelope.getMinimum(1)},new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0) / 4,oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1)});
+  cropEnvelope.setCoordinateReferenceSystem(oldEnvelope.getCoordinateReferenceSystem());
+  GeometryFactory geometryFactory=JTSFactoryFinder.getGeometryFactory(JTSFactoryFinder.EMPTY_HINTS);
+  CoordinateSequence cs1=new CoordinateArraySequence(4);
+  cs1.setOrdinate(0,0,oldEnvelope.getMaximum(0) + 1);
+  cs1.setOrdinate(0,1,oldEnvelope.getMaximum(1));
+  cs1.setOrdinate(1,0,oldEnvelope.getMaximum(0) + 2);
+  cs1.setOrdinate(1,1,oldEnvelope.getMaximum(1));
+  cs1.setOrdinate(2,0,oldEnvelope.getMaximum(0) + 2);
+  cs1.setOrdinate(2,1,oldEnvelope.getMinimum(1));
+  cs1.setOrdinate(3,0,oldEnvelope.getMaximum(0) + 1);
+  cs1.setOrdinate(3,1,oldEnvelope.getMaximum(1));
+  LinearRing shape1=geometryFactory.createLinearRing(cs1);
+  com.vividsolutions.jts.geom.Polygon poly1=geometryFactory.createPolygon(shape1,null);
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(source);
+  param.parameter("Envelope").setValue(cropEnvelope);
+  param.parameter("ROI").setValue(poly1);
+  try {
+    processor.doOperation(param);
+    fail("Cropping outside bounds");
+  }
+ catch (  CannotCropException _) {
+  }
+}

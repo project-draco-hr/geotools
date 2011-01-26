@@ -1,0 +1,50 @@
+{
+  final int filterCount=100;
+  String filter="<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<GetFeature xmlns=\"http://www.opengis.net/wfs\" xmlns:gml=\"http://www.opengis.net/gml\" xmlns:ogc=\"http://www.opengis.net/ogc\" version=\"1.0.0\" service=\"WFS\" outputFormat=\"GML2\"><Query typeName=\"topp:roadevent_pnt\"><ogc:PropertyName>roadeventid</ogc:PropertyName>" + "<ogc:Filter>"+ "<ogc:Or>";
+  for (int i=0; i < filterCount; i++) {
+    StringBuffer attName=new StringBuffer();
+    for (int repCount=0; repCount <= i; repCount++) {
+      attName.append("eventtype-" + repCount + "_");
+    }
+    filter+="<ogc:PropertyIsEqualTo><ogc:PropertyName>" + attName + "</ogc:PropertyName>"+ "<ogc:Literal>literal-"+ i+ "</ogc:Literal>"+ "</ogc:PropertyIsEqualTo>";
+  }
+  filter+="</ogc:Or>" + "</ogc:Filter>" + "</Query>"+ "</GetFeature>";
+  StringReader reader=new StringReader(filter);
+  InputSource requestSource=new InputSource(reader);
+  MyHandler contentHandler=new MyHandler();
+  FilterFilter filterParser=new FilterFilter(contentHandler,null);
+  GMLFilterGeometry geometryFilter=new GMLFilterGeometry(filterParser);
+  GMLFilterDocument documentFilter=new GMLFilterDocument(geometryFilter);
+  Logger logger=Logging.getLogger("org.geotools.filter");
+  logger.setLevel(Level.INFO);
+  ConsoleHandler consoleHandler=new ConsoleHandler();
+  consoleHandler.setLevel(Level.INFO);
+  logger.addHandler(consoleHandler);
+  SAXParserFactory factory=SAXParserFactory.newInstance();
+  SAXParser parser=factory.newSAXParser();
+  ParserAdapter adapter=new ParserAdapter(parser.getParser());
+  adapter.setContentHandler(documentFilter);
+  adapter.parse(requestSource);
+  assertEquals(1,contentHandler.filters.size());
+  Filter f=(Filter)contentHandler.filters.get(0);
+  assertTrue(f instanceof LogicFilter);
+  assertEquals(FilterType.LOGIC_OR,f.getFilterType());
+  int i=0;
+  for (Iterator filters=((LogicFilter)f).getFilterIterator(); filters.hasNext(); i++) {
+    CompareFilter subFitler=(CompareFilter)filters.next();
+    StringBuffer attName=new StringBuffer();
+    for (int repCount=0; repCount <= i; repCount++) {
+      attName.append("eventtype-" + repCount + "_");
+    }
+    String parsedName=((AttributeExpression)subFitler.getLeftValue()).getAttributePath();
+    try {
+      assertEquals("at index " + i,attName.toString(),parsedName);
+    }
+ catch (    AssertionFailedError e) {
+      Logging.getLogger("org.geotools.filter").warning("expected " + attName + ",\n but was "+ parsedName);
+      throw e;
+    }
+    assertEquals("literal-" + i,((LiteralExpression)subFitler.getRightValue()).getLiteral());
+  }
+  assertEquals(filterCount,i);
+}

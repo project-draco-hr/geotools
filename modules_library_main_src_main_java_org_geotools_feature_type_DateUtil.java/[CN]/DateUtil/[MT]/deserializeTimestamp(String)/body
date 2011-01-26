@@ -1,0 +1,40 @@
+{
+  if (text == null) {
+    return null;
+  }
+ else {
+    int split=text.indexOf('.');
+    int nano=0;
+    if (split > 0) {
+      if (text.indexOf('.',split) > 0) {
+        throw new IllegalArgumentException("Not a valid dateTime value");
+      }
+      int limit=text.length();
+      int scan=split;
+      while (++scan < limit) {
+        char chr=text.charAt(scan);
+        if ((chr < '0') || (chr > '9')) {
+          break;
+        }
+      }
+      int length=scan - split - 1;
+      if (length > 9) {
+        length=9;
+      }
+      nano=parseDigits(text,split + 1,length);
+      while (length < 9) {
+        nano*=10;
+        length++;
+      }
+      if (scan < limit) {
+        text=text.substring(0,split) + text.substring(scan);
+      }
+ else {
+        text=text.substring(0,split);
+      }
+    }
+    Timestamp stamp=new Timestamp(parseDateTime(text));
+    stamp.setNanos(nano);
+    return stamp;
+  }
+}

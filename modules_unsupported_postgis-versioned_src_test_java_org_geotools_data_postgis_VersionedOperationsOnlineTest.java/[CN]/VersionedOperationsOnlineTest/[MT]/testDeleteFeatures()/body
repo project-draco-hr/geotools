@@ -1,0 +1,24 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  ds.setVersioned("road",true,"gimbo","version enabling stuff");
+  Filter filter=ff.id(Collections.singleton(ff.featureId("road.rd1")));
+  Transaction t=createTransaction("gimbo","first change");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> fw=ds.getFeatureWriter("road",filter,t);
+  assertTrue(fw.hasNext());
+  SimpleFeature f=fw.next();
+  Envelope env=((Geometry)f.getDefaultGeometry()).getEnvelopeInternal();
+  fw.remove();
+  fw.close();
+  t.commit();
+  t.close();
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=ds.getFeatureReader(new DefaultQuery("road"),Transaction.AUTO_COMMIT);
+  while (fr.hasNext())   assertFalse(fr.next().getID().equals("road.rd1"));
+  fr.close();
+  DefaultQuery q=new DefaultQuery("changesets");
+  q.setSortBy(new SortBy[]{ff.sort("revision",SortOrder.DESCENDING)});
+  final SimpleFeatureCollection features=ds.getFeatureSource("changesets").getFeatures(q);
+  SimpleFeatureIterator fi=features.features();
+  SimpleFeature lastChangeset=fi.next();
+  fi.close();
+  assertEquals(env,((Geometry)lastChangeset.getDefaultGeometry()).getEnvelopeInternal());
+}

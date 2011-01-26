@@ -1,0 +1,28 @@
+{
+  ImageOutputStream out=null;
+  if (dest instanceof File) {
+    out=ImageIO.createImageOutputStream(new File((File)dest,new StringBuffer(name).append(".GIF").toString()));
+  }
+ else {
+    final ZipOutputStream outZ=(ZipOutputStream)dest;
+    final ZipEntry e=new ZipEntry(gc.getName().toString() + ".GIF");
+    outZ.putNextEntry(e);
+    out=ImageIO.createImageOutputStream(outZ);
+  }
+  final GridCoverage2D gc1=rescaleCoverage(gc);
+  final GridCoverage2D gc2=gc1.geophysics(false);
+  final RenderedImage image=gc2.getRenderedImage();
+  final ParameterBlockJAI pbj=new ParameterBlockJAI("ImageWrite");
+  pbj.addSource(image);
+  pbj.setParameter("Output",out);
+  pbj.setParameter("Format","gif");
+  JAI.create("ImageWrite",pbj,new RenderingHints(JAI.KEY_TILE_CACHE,null));
+  if (dest instanceof File) {
+    out.close();
+  }
+ else {
+    out.flush();
+    ((ZipOutputStream)dest).closeEntry();
+  }
+  gc1.dispose(false);
+}

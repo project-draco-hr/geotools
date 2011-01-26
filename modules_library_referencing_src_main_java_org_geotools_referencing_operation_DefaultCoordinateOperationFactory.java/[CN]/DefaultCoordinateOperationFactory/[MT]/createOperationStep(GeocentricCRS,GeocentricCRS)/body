@@ -1,0 +1,42 @@
+{
+  final GeodeticDatum sourceDatum=sourceCRS.getDatum();
+  final GeodeticDatum targetDatum=targetCRS.getDatum();
+  final CoordinateSystem sourceCS=sourceCRS.getCoordinateSystem();
+  final CoordinateSystem targetCS=targetCRS.getCoordinateSystem();
+  final double sourcePM, targetPM;
+  sourcePM=getGreenwichLongitude(sourceDatum.getPrimeMeridian());
+  targetPM=getGreenwichLongitude(targetDatum.getPrimeMeridian());
+  if (equalsIgnorePrimeMeridian(sourceDatum,targetDatum)) {
+    if (sourcePM == targetPM) {
+      final Matrix matrix=swapAndScaleAxis(sourceCS,targetCS);
+      return createFromAffineTransform(AXIS_CHANGES,sourceCRS,targetCRS,matrix);
+    }
+  }
+  if (sourcePM != targetPM) {
+    throw new OperationNotFoundException("Rotation of prime meridian not yet implemented");
+  }
+  final CartesianCS STANDARD=DefaultCartesianCS.GEOCENTRIC;
+  final XMatrix matrix;
+  ReferenceIdentifier identifier=DATUM_SHIFT;
+  try {
+    Matrix datumShift=DefaultGeodeticDatum.getAffineTransform(TemporaryDatum.unwrap(sourceDatum),TemporaryDatum.unwrap(targetDatum));
+    if (datumShift == null) {
+      if (lenientDatumShift) {
+        datumShift=new Matrix4();
+        identifier=ELLIPSOID_SHIFT;
+      }
+ else {
+        throw new OperationNotFoundException(Errors.format(ErrorKeys.BURSA_WOLF_PARAMETERS_REQUIRED));
+      }
+    }
+    final Matrix normalizeSource=swapAndScaleAxis(sourceCS,STANDARD);
+    final Matrix normalizeTarget=swapAndScaleAxis(STANDARD,targetCS);
+    matrix=new Matrix4(normalizeTarget);
+    matrix.multiply(datumShift);
+    matrix.multiply(normalizeSource);
+  }
+ catch (  SingularMatrixException cause) {
+    throw new OperationNotFoundException(getErrorMessage(sourceDatum,targetDatum),cause);
+  }
+  return createFromAffineTransform(identifier,sourceCRS,targetCRS,matrix);
+}

@@ -1,0 +1,44 @@
+{
+  if (!testingEnabled()) {
+    return;
+  }
+  if (fileName.equalsIgnoreCase("")) {
+    LOGGER.info("==================================================================\n" + " Warning! No valid test File has been specified.\n" + " Please provide a valid sample in the source code and repeat this test!\n"+ "========================================================================");
+    return;
+  }
+  final File file=TestData.file(this,fileName);
+  final MrSIDFormatFactory factory=new MrSIDFormatFactory();
+  final BaseGDALGridFormat format=(BaseGDALGridFormat)factory.createFormat();
+  Assert.assertTrue(format.accepts(file));
+  MrSIDReader reader=(MrSIDReader)format.getReader(file);
+  final int numImages=reader.getGridCoverageCount();
+  final boolean hasMoreGridCoverages=reader.hasMoreGridCoverages();
+  Assert.assertEquals(1,numImages);
+  Assert.assertEquals(false,hasMoreGridCoverages);
+  final ServiceInfo serviceInfo=reader.getInfo();
+  reader.getInfo("coverage");
+  reader.dispose();
+  boolean writersAvailable=true;
+  boolean hasWriteParams=true;
+  try {
+    format.getWriter(new File("test"));
+  }
+ catch (  UnsupportedOperationException uoe) {
+    writersAvailable=false;
+  }
+  Assert.assertFalse(writersAvailable);
+  try {
+    format.getDefaultImageIOWriteParameters();
+  }
+ catch (  UnsupportedOperationException uoe) {
+    hasWriteParams=false;
+  }
+  Assert.assertFalse(hasWriteParams);
+  final URL url=new URL("file://" + file.getAbsolutePath());
+  reader=(MrSIDReader)format.getReader(url);
+  reader.getInfo();
+  reader.dispose();
+  FileImageInputStreamExtImpl fiis=new FileImageInputStreamExtImpl(file);
+  reader=new MrSIDReader(fiis);
+  reader.dispose();
+}

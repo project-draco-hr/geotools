@@ -1,0 +1,66 @@
+{
+  testData.insertTestData();
+  final DataStore ds=testData.getDataStore();
+  final String typeName=testData.getTempTableName();
+  final String fid;
+  final Filter fidFilter;
+{
+    Query query=new Query(typeName);
+    FeatureReader<SimpleFeatureType,SimpleFeature> reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+    try {
+      fid=reader.next().getID();
+    }
+  finally {
+      reader.close();
+    }
+    final FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+    Set<FeatureId> ids=new HashSet<FeatureId>();
+    ids.add(ff.featureId(fid));
+    fidFilter=ff.id(ids);
+  }
+{
+    FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+    writer=ds.getFeatureWriter(typeName,fidFilter,Transaction.AUTO_COMMIT);
+    try {
+      assertTrue(writer.hasNext());
+      SimpleFeature feature=writer.next();
+      assertEquals(fid,feature.getID());
+      writer.remove();
+      assertFalse(writer.hasNext());
+    }
+  finally {
+      writer.close();
+    }
+  }
+  ISessionPool connectionPool=testData.getConnectionPool();
+  ISession session=connectionPool.getSession();
+  SeQuery seQuery;
+  try {
+    int objectId=(int)ArcSDEAdapter.getNumericFid(fid);
+    final String whereClause="ROW_ID=" + objectId;
+    seQuery=session.issue(new Command<SeQuery>(){
+      @Override public SeQuery execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        SeQuery seQuery=new SeQuery(connection,new String[]{"ROW_ID","INT32_COL","STRING_COL"},new SeSqlConstruct(typeName,whereClause));
+        seQuery.prepareQuery();
+        seQuery.execute();
+        return seQuery;
+      }
+    }
+);
+    SdeRow row=session.fetch(seQuery);
+    assertNull(row);
+  }
+  finally {
+    session.dispose();
+  }
+{
+    Query query=new Query(typeName,fidFilter);
+    FeatureReader<SimpleFeatureType,SimpleFeature> reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+    try {
+      assertFalse(reader.hasNext());
+    }
+  finally {
+      reader.close();
+    }
+  }
+}

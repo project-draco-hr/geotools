@@ -1,0 +1,23 @@
+{
+  DocumentBuilder db=DocumentBuilderFactory.newInstance().newDocumentBuilder();
+  File xsd=new File("target/states.xsd");
+  Document schema=db.parse(getClass().getResourceAsStream("states.xsd"));
+  Transformer tx=TransformerFactory.newInstance().newTransformer();
+  tx.transform(new DOMSource(schema),new StreamResult(xsd));
+  Document instance=db.parse(getClass().getResourceAsStream("states.xml"));
+  instance.getDocumentElement().setAttribute("schemaLocation","http://www.openplans.org/topp target/states.xsd");
+  File xml=new File("target/states.xml");
+  tx.transform(new DOMSource(instance),new StreamResult(xml));
+  InputStream in=new FileInputStream(xml);
+  GMLConfiguration gml=new GMLConfiguration();
+  StreamingParser parser=new StreamingParser(gml,in,SimpleFeature.class);
+  int nfeatures=0;
+  SimpleFeature f=null;
+  while ((f=(SimpleFeature)parser.parse()) != null) {
+    nfeatures++;
+    assertNotNull(f.getAttribute("STATE_NAME"));
+    assertNotNull(f.getAttribute("STATE_ABBR"));
+    assertTrue(f.getAttribute("SAMP_POP") instanceof Double);
+  }
+  assertEquals(49,nfeatures);
+}

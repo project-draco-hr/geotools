@@ -1,0 +1,38 @@
+{
+  LOGGER.finer("FeatureTypeCache background process running...");
+  List<String> typeNames;
+  try {
+    typeNames=fetchRegistrations();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,"Updating TypeNameCache failed.",e);
+    return;
+  }
+  final Set<String> removed;
+{
+    cacheLock.readLock().lock();
+    Set<String> added=new TreeSet<String>(typeNames);
+    added.removeAll(availableLayerNames);
+    if (added.size() > 0) {
+      LOGGER.finest("FeatureTypeCache: added the following layers: " + added);
+    }
+    removed=new TreeSet<String>(availableLayerNames);
+    removed.removeAll(typeNames);
+    if (removed.size() > 0) {
+      LOGGER.finest("FeatureTypeCache: the following layers are no " + "longer available: " + removed);
+    }
+    cacheLock.readLock().unlock();
+  }
+  cacheLock.writeLock().lock();
+  availableLayerNames.clear();
+  availableLayerNames.addAll(typeNames);
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("FeatureTypeCache: updated server layer list: " + typeNames);
+  }
+  for (  String typeName : removed) {
+    LOGGER.fine("Removing FeatureTypeInfo for layer " + typeName + " since it does no longer exist on the database");
+    featureTypeInfos.remove(typeName);
+  }
+  LOGGER.finer("Finished updated type name cache");
+  cacheLock.writeLock().unlock();
+}

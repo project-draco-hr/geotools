@@ -1,0 +1,21 @@
+{
+  assertTrue("Assertions should be enabled.",ImageWorker.class.desiredAssertionStatus());
+  final ImageWorker worker=new ImageWorker(getSyntheticRGB(true));
+  show(worker,"Input JPEG");
+  final File outFile=TestData.temp(this,"temp.jpeg");
+  ImageWorker readWorker;
+  if (PackageUtil.isCodecLibAvailable()) {
+    worker.writeJPEG(outFile,"JPEG-LS",0.75f,true);
+    readWorker=new ImageWorker(ImageIO.read(outFile));
+    show(readWorker,"Native JPEG LS");
+  }
+  worker.setImage(worldImage);
+  worker.writeJPEG(outFile,"JPEG",0.75f,true);
+  readWorker=new ImageWorker(ImageIO.read(outFile));
+  show(readWorker,"native JPEG");
+  worker.setImage(worldImage);
+  worker.writeJPEG(outFile,"JPEG",0.75f,false);
+  readWorker.setImage(ImageIO.read(outFile));
+  show(readWorker,"Pure Java JPEG");
+  outFile.delete();
+}

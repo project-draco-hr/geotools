@@ -1,0 +1,47 @@
+{
+  if (delegate instanceof IContentHandler) {
+    ((IContentHandler)delegate).endObject();
+    if (delegate instanceof GeometryHandler) {
+      if (properties != null) {
+        values.add(((IContentHandler<Geometry>)delegate).getValue());
+      }
+ else {
+        geometry=((IContentHandler<Geometry>)delegate).getValue();
+      }
+      delegate=NULL;
+    }
+ else     if (delegate instanceof CRSHandler) {
+      crs=((CRSHandler)delegate).getValue();
+      delegate=UNINITIALIZED;
+    }
+    return true;
+  }
+ else   if (delegate == UNINITIALIZED) {
+    delegate=NULL;
+    return true;
+  }
+ else   if (properties != null) {
+    if (builder == null) {
+      builder=createBuilder();
+    }
+    for (int i=0; i < properties.size(); i++) {
+      String att=properties.get(i);
+      Object val=values.get(i);
+      if (val instanceof String) {
+        val=attio.parse(att,(String)val);
+      }
+      builder.set(att,val);
+    }
+    properties=null;
+    values=null;
+    return true;
+  }
+ else {
+    feature=buildFeature();
+    id=null;
+    geometry=null;
+    properties=null;
+    values=null;
+    return true;
+  }
+}

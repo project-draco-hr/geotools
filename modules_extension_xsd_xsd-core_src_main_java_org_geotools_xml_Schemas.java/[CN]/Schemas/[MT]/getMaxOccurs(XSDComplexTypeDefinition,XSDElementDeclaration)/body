@@ -1,0 +1,21 @@
+{
+  final XSDElementDeclaration fElement=element;
+  final ArrayList maxOccurs=new ArrayList();
+  ElementVisitor visitor=new ElementVisitor(){
+    public void visit(    XSDParticle particle){
+      XSDElementDeclaration decl=(XSDElementDeclaration)particle.getContent();
+      if (decl.isElementDeclarationReference()) {
+        decl=decl.getResolvedElementDeclaration();
+      }
+      if (decl == fElement) {
+        maxOccurs.add(new Integer(particle.getMaxOccurs()));
+      }
+    }
+  }
+;
+  visitElements(type,visitor,true);
+  if (maxOccurs.isEmpty()) {
+    throw new IllegalArgumentException("Element: " + element + " not found in type: "+ type);
+  }
+  return ((Integer)maxOccurs.get(0)).intValue();
+}

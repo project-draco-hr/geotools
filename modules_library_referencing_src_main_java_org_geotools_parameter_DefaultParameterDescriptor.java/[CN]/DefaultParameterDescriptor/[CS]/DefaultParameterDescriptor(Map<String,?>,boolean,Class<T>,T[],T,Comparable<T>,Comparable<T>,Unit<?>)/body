@@ -1,0 +1,32 @@
+{
+  super(properties,required ? 1 : 0,1);
+  this.valueClass=valueClass;
+  this.defaultValue=defaultValue;
+  this.minimum=minimum;
+  this.maximum=maximum;
+  this.unit=unit;
+  ensureNonNull("valueClass",valueClass);
+  AbstractParameter.ensureValidClass(valueClass,defaultValue);
+  AbstractParameter.ensureValidClass(valueClass,minimum);
+  AbstractParameter.ensureValidClass(valueClass,maximum);
+  if (minimum != null && maximum != null) {
+    if (minimum.compareTo(valueClass.cast(maximum)) > 0) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_RANGE_$2,minimum,maximum));
+    }
+  }
+  if (validValues != null) {
+    final Set<T> valids=new HashSet<T>(Math.max(validValues.length * 4 / 3 + 1,8),0.75f);
+    for (int i=0; i < validValues.length; i++) {
+      final T value=validValues[i];
+      AbstractParameter.ensureValidClass(valueClass,value);
+      valids.add(value);
+    }
+    this.validValues=Collections.unmodifiableSet(valids);
+  }
+ else {
+    this.validValues=null;
+  }
+  if (defaultValue != null) {
+    Parameter.ensureValidValue(this,defaultValue);
+  }
+}

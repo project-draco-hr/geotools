@@ -1,0 +1,22 @@
+{
+  if (!properties.containsKey(COORDINATE_OPERATION_ACCURACY_KEY)) {
+    Set<PositionalAccuracy> accuracy=null;
+    for (    final CoordinateOperation op : operations) {
+      if (op instanceof Transformation) {
+        Collection<PositionalAccuracy> candidates=op.getCoordinateOperationAccuracy();
+        if (candidates != null && !candidates.isEmpty()) {
+          if (accuracy == null) {
+            accuracy=new LinkedHashSet<PositionalAccuracy>();
+          }
+          accuracy.addAll(candidates);
+        }
+      }
+    }
+    if (accuracy != null) {
+      final Map<String,Object> merged=new HashMap<String,Object>(properties);
+      merged.put(COORDINATE_OPERATION_ACCURACY_KEY,accuracy.toArray(new PositionalAccuracy[accuracy.size()]));
+      return merged;
+    }
+  }
+  return properties;
+}

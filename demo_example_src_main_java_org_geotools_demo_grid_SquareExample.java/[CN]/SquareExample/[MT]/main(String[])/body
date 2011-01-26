@@ -1,0 +1,21 @@
+{
+  SimpleFeatureTypeBuilder typeBuilder=new SimpleFeatureTypeBuilder();
+  typeBuilder.setName("oblongs");
+  typeBuilder.add("oblong",Polygon.class,(CoordinateReferenceSystem)null);
+  typeBuilder.add("color",Color.class);
+  final SimpleFeatureType TYPE=typeBuilder.buildFeatureType();
+  final ReferencedEnvelope bounds=new ReferencedEnvelope(0,100,0,100,null);
+  GridFeatureBuilder builder=new GridFeatureBuilder(TYPE){
+    public void setAttributes(    GridElement el,    Map<String,Object> attributes){
+      int g=(int)(255 * el.getCenter().x / bounds.getWidth());
+      int b=(int)(255 * el.getCenter().y / bounds.getHeight());
+      attributes.put("color",new Color(0,g,b));
+    }
+  }
+;
+  final double sideLen=10.0;
+  SimpleFeatureSource grid=Grids.createSquareGrid(bounds,sideLen,-1,builder);
+  DefaultMapContext map=new DefaultMapContext();
+  map.addLayer(grid,createStyle("color"));
+  JMapFrame.showMap(map);
+}

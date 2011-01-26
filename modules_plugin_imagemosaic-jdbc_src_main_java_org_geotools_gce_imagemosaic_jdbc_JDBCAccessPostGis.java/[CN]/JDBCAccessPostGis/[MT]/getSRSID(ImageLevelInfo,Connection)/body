@@ -1,0 +1,31 @@
+{
+  Integer result=null;
+  String schema=null;
+  try {
+    schema=getSchemaFromSpatialTable(li.getSpatialTableName());
+    PreparedStatement s=null;
+    if (schema == null) {
+      schema="public";
+    }
+    s=con.prepareStatement(SRSSelect);
+    s.setString(1,schema);
+    s.setString(2,li.getSpatialTableName());
+    s.setString(3,config.getGeomAttributeNameInSpatialTable());
+    ResultSet r=s.executeQuery();
+    if (r.next()) {
+      result=(Integer)r.getObject(1);
+    }
+    r.close();
+    s.close();
+  }
+ catch (  SQLException e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    throw new IOException(e.getMessage());
+  }
+  if (result == null) {
+    String msg=MessageFormat.format("No entry in geometry_columns for {0},{1},{2}",new Object[]{schema,li.getSpatialTableName(),config.getGeomAttributeNameInSpatialTable()});
+    LOGGER.log(Level.SEVERE,msg);
+    throw new IOException(msg);
+  }
+  return result;
+}

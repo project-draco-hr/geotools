@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  Datum datum=(Datum)cache.get(key);
+  if (datum == null) {
+    try {
+      cache.writeLock(key);
+      datum=(Datum)cache.peek(key);
+      if (datum == null) {
+        datum=datumAuthority.createDatum(code);
+        cache.put(key,datum);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return datum;
+}

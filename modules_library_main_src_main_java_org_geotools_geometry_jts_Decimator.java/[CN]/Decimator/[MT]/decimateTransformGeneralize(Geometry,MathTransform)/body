@@ -1,0 +1,34 @@
+{
+  if (geometry instanceof GeometryCollection) {
+    GeometryCollection collection=(GeometryCollection)geometry;
+    final int length=collection.getNumGeometries();
+    for (int i=0; i < length; i++) {
+      decimateTransformGeneralize(collection.getGeometryN(i),transform);
+    }
+  }
+ else   if (geometry instanceof Point) {
+    LiteCoordinateSequence seq=(LiteCoordinateSequence)((Point)geometry).getCoordinateSequence();
+    decimateTransformGeneralize(seq,transform,false);
+  }
+ else   if (geometry instanceof Polygon) {
+    Polygon polygon=(Polygon)geometry;
+    decimateTransformGeneralize(polygon.getExteriorRing(),transform);
+    final int length=polygon.getNumInteriorRing();
+    for (int i=0; i < length; i++) {
+      decimateTransformGeneralize(polygon.getInteriorRingN(i),transform);
+    }
+  }
+ else   if (geometry instanceof LineString) {
+    LineString ls=(LineString)geometry;
+    LiteCoordinateSequence seq=(LiteCoordinateSequence)ls.getCoordinateSequence();
+    boolean loop=ls instanceof LinearRing;
+    if (!loop && seq.size() > 1) {
+      double x0=seq.getOrdinate(0,0);
+      double y0=seq.getOrdinate(0,1);
+      double x1=seq.getOrdinate(seq.size() - 1,0);
+      double y1=seq.getOrdinate(seq.size() - 1,1);
+      loop=Math.abs(x0 - x1) < EPS && Math.abs(y0 - y1) < EPS;
+    }
+    decimateTransformGeneralize(seq,transform,loop);
+  }
+}

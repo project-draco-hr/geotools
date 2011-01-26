@@ -1,0 +1,33 @@
+{
+  final MathTransformFactory mathTransformFactory=getFactoryContainer().getMathTransformFactory();
+  DefinedByConversion conversionDefinition=metaCRS.getDefinedByConversion();
+  String projectionName=conversionDefinition.getIdentification().getName();
+  if (projectionName == null) {
+    throw new MetadataException("Projection name is not defined.");
+  }
+  final ParameterValueGroup paramValueGroup;
+  try {
+    paramValueGroup=mathTransformFactory.getDefaultParameters(projectionName);
+  }
+ catch (  NoSuchIdentifierException e) {
+    throw new MetadataException(e.getLocalizedMessage());
+  }
+  for (int i=0; i < conversionDefinition.numParams(); i++) {
+    final ParameterValue parameter=conversionDefinition.getParameterValue(i);
+    final String name=parameter.getIdentification().getName();
+    if (name == null) {
+      continue;
+    }
+    final double value=parameter.getValue();
+    if (Double.isNaN(value)) {
+      continue;
+    }
+    try {
+      paramValueGroup.parameter(name).setValue(value);
+    }
+ catch (    ParameterNotFoundException e) {
+      continue;
+    }
+  }
+  return new DefiningConversion(projectionName,paramValueGroup);
+}

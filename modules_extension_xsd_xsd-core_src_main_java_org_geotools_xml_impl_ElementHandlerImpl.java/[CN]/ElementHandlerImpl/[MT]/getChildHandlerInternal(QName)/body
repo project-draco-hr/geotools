@@ -1,0 +1,21 @@
+{
+  SchemaIndex index=parser.getSchemaIndex();
+  XSDElementDeclaration element=index.getChildElement(content,qName);
+  if (element != null) {
+    ElementHandler handler=parser.getHandlerFactory().createElementHandler(element,this,parser);
+    return handler;
+  }
+  element=index.getElementDeclaration(qName);
+  if (element != null) {
+    XSDElementDeclaration sub=element.getSubstitutionGroupAffiliation();
+    if (sub != null) {
+      QName subQName=new QName(sub.getTargetNamespace(),sub.getName());
+      Handler handler=getChildHandlerInternal(subQName);
+      if (handler != null) {
+        handler=parser.getHandlerFactory().createElementHandler(element,this,parser);
+        return handler;
+      }
+    }
+  }
+  return null;
+}

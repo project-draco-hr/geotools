@@ -1,0 +1,38 @@
+{
+  for (int i=0; i < arguments.length; i++) {
+    String arg=arguments[i];
+    if (arg != null) {
+      arg=arg.trim();
+      String value="";
+      int split=arg.indexOf('=');
+      if (split >= 0) {
+        value=arg.substring(split + 1).trim();
+        arg=arg.substring(0,split).trim();
+      }
+      if (arg.equalsIgnoreCase(name)) {
+        arguments[i]=null;
+        if (value.length() != 0) {
+          return value;
+        }
+        while (++i < arguments.length) {
+          value=arguments[i];
+          arguments[i]=null;
+          if (value == null) {
+            break;
+          }
+          value=value.trim();
+          if (split >= 0) {
+            return value;
+          }
+          if (!value.equals("=")) {
+            return value.startsWith("=") ? value.substring(1).trim() : value;
+          }
+          split=0;
+        }
+        illegalArgument(new IllegalArgumentException(Errors.getResources(locale).getString(ErrorKeys.MISSING_PARAMETER_VALUE_$1,arg)));
+        return null;
+      }
+    }
+  }
+  return null;
+}

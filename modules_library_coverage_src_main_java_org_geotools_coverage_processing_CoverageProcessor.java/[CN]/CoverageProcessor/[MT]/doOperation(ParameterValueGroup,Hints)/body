@@ -1,0 +1,40 @@
+{
+  Coverage source=getPrimarySource(parameters);
+  final String operationName=getOperationName(parameters);
+  final Operation operation=getOperation(operationName);
+  Interpolation[] interpolations=null;
+  if (!operationName.equalsIgnoreCase("Interpolate")) {
+    for (    final GeneralParameterValue param : parameters.values()) {
+      if (param instanceof ParameterValue) {
+        final Object value=((ParameterValue)param).getValue();
+        if (value instanceof Interpolator2D) {
+          final Interpolation[] interp=((Interpolator2D)value).getInterpolations();
+          if (interpolations == null) {
+            interpolations=interp;
+          }
+ else           if (!Arrays.equals(interpolations,interp)) {
+            interpolations=null;
+            break;
+          }
+        }
+      }
+    }
+  }
+  final AbstractOperation op;
+  try {
+    op=(AbstractOperation)operation;
+  }
+ catch (  ClassCastException cause) {
+    final OperationNotFoundException exception=new OperationNotFoundException(Errors.getResources(getLocale()).getString(ErrorKeys.OPERATION_NOT_FOUND_$1,operationName));
+    exception.initCause(cause);
+    throw exception;
+  }
+  final Hints localMergeHints=this.hints.clone();
+  if (hints != null)   localMergeHints.add(hints);
+  Coverage coverage=op.doOperation(parameters,localMergeHints);
+  if (interpolations != null && (coverage instanceof GridCoverage2D) && !(coverage instanceof Interpolator2D)) {
+    coverage=Interpolator2D.create((GridCoverage2D)coverage,interpolations);
+  }
+  log(source,coverage,operationName,false);
+  return coverage;
+}

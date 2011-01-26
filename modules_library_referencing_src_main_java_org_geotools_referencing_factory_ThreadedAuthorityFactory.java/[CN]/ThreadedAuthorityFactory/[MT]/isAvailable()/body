@@ -1,0 +1,27 @@
+{
+  try {
+    return getBackingStore().isAvailable();
+  }
+ catch (  FactoryNotFoundException exception) {
+  }
+catch (  FactoryException exception) {
+    final Citation citation=getAuthority();
+    final Collection titles=citation.getAlternateTitles();
+    InternationalString title=citation.getTitle();
+    if (titles != null) {
+      for (final Iterator it=titles.iterator(); it.hasNext(); ) {
+        final InternationalString candidate=(InternationalString)it.next();
+        if (candidate.length() > title.length()) {
+          title=candidate;
+        }
+      }
+    }
+    final LogRecord record=Loggings.format(Level.WARNING,LoggingKeys.UNAVAILABLE_AUTHORITY_FACTORY_$1,title);
+    record.setSourceClassName(getClass().getName());
+    record.setSourceMethodName("isAvailable");
+    record.setThrown(exception);
+    record.setLoggerName(LOGGER.getName());
+    LOGGER.log(record);
+  }
+  return false;
+}

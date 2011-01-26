@@ -1,0 +1,43 @@
+{
+  ensureNonNull("code",code);
+  ParameterDescriptor returnValue=null;
+  final PreparedStatement stmt;
+  try {
+    final String primaryKey=toPrimaryKey(ParameterDescriptor.class,code,"[Coordinate_Operation Parameter]","PARAMETER_CODE","PARAMETER_NAME");
+    stmt=prepareStatement("ParameterDescriptor","SELECT PARAMETER_CODE," + " PARAMETER_NAME," + " DESCRIPTION"+ " FROM [Coordinate_Operation Parameter]"+ " WHERE PARAMETER_CODE = ?");
+    stmt.setString(1,primaryKey);
+    ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final String remarks=result.getString(3);
+      final Unit unit;
+      final Class type;
+      final PreparedStatement units=prepareStatement("ParameterUnit","SELECT MIN(UOM_CODE) AS UOM," + " MIN(PARAM_VALUE_FILE_REF) AS FILEREF" + " FROM [Coordinate_Operation Parameter Value]"+ " WHERE (PARAMETER_CODE = ?)"+ " GROUP BY UOM_CODE"+ " ORDER BY COUNT(UOM_CODE) DESC");
+      units.setString(1,epsg);
+      final ResultSet resultUnits=units.executeQuery();
+      if (resultUnits.next()) {
+        String element=resultUnits.getString(1);
+        unit=(element != null) ? createUnit(element) : null;
+        element=resultUnits.getString(2);
+        type=(element != null && element.trim().length() != 0) ? URI.class : double.class;
+      }
+ else {
+        unit=null;
+        type=double.class;
+      }
+      resultUnits.close();
+      final ParameterDescriptor descriptor;
+      final Map<String,Object> properties=generateProperties(name,epsg,remarks);
+      descriptor=new DefaultParameterDescriptor(properties,type,null,null,null,null,unit,true);
+      returnValue=ensureSingleton(descriptor,returnValue,code);
+    }
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(OperationMethod.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(OperationMethod.class,code);
+  }
+  return returnValue;
+}

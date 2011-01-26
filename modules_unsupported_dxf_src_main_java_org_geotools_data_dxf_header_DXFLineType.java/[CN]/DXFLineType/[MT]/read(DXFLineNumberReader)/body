@@ -1,0 +1,56 @@
+{
+  String value="", name="";
+  Vector<Float> spacing=new Vector<Float>();
+  float count=0, length=0;
+  int sln=br.getLineNumber();
+  log.debug(">Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+case VARIABLE_NAME:
+      br.reset();
+    doLoop=false;
+  break;
+case NAME:
+name=cvp.getStringValue();
+break;
+case TEXT_OR_NAME_2:
+value=cvp.getStringValue();
+break;
+case INT_4:
+count=cvp.getShortValue();
+break;
+case DOUBLE_1:
+length=(float)cvp.getDoubleValue();
+break;
+case REPEATED_DOUBLE_VALUE:
+spacing.add((float)cvp.getDoubleValue());
+break;
+default :
+break;
+}
+}
+log.debug(">Exit at line: " + br.getLineNumber());
+if (value.equals("") && name.equals("")) {
+return null;
+}
+ else {
+DXFLineType e=new DXFLineType(name,value,length,count,spacing);
+log.debug(e.toString(name,value,length,count));
+return e;
+}
+}

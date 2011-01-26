@@ -1,0 +1,29 @@
+{
+  LOGGER.fine("getSpatialResolution Method");
+  String sqlSpatialResolution="select sdo_geor.getspatialresolutions(" + getConfig().getGeoRasterAttribute() + ") from "+ getConfig().getMasterTable()+ " where "+ getConfig().getCoverageNameAttribute()+ "=?";
+  LOGGER.fine("Sptial Reso SQL:" + sqlSpatialResolution);
+  double[] spatialResolution=new double[2];
+  PreparedStatement stmt=null;
+  ResultSet rs=null;
+  try {
+    stmt=con.prepareStatement(sqlSpatialResolution);
+    stmt.setString(1,getConfig().getCoverageName());
+    rs=stmt.executeQuery();
+    rs.next();
+    Array array=rs.getArray(1);
+    BigDecimal[] javaArray=(BigDecimal[])array.getArray();
+    spatialResolution[1]=javaArray[0].doubleValue();
+    spatialResolution[0]=javaArray[1].doubleValue();
+    LOGGER.fine("Assigned X Value: " + spatialResolution[0]);
+    LOGGER.fine("Assigned Y Value: " + spatialResolution[1]);
+  }
+ catch (  Exception ex) {
+    LOGGER.severe("Failure getting spatial resolution");
+  }
+ finally {
+    closeResultSet(rs);
+    closePreparedStmt(stmt);
+  }
+  LOGGER.fine("getSpatialResolution Finished");
+  return spatialResolution;
+}

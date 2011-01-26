@@ -1,0 +1,23 @@
+{
+  int nodeCount=XmlXpathUtilites.countXPathNodes(namespaces,itemXpath,doc);
+  List<Integer> validFeatureIndex=null;
+  if (Filter.INCLUDE.equals(postFilter)) {
+    validFeatureIndex=new ArrayList<Integer>(nodeCount);
+    int maxNode=nodeCount < maxFeatures ? nodeCount : maxFeatures;
+    for (int i=1; i <= maxNode; i++) {
+      validFeatureIndex.add(i);
+    }
+  }
+ else {
+    validFeatureIndex=new ArrayList<Integer>();
+    int nodeIndex=1;
+    while (nodeIndex <= nodeCount && validFeatureIndex.size() <= maxFeatures) {
+      XmlXpathFilterData peek=new XmlXpathFilterData(namespaces,doc,nodeIndex,itemXpath);
+      if (postFilter.evaluate(peek)) {
+        validFeatureIndex.add(nodeIndex);
+      }
+      nodeIndex++;
+    }
+  }
+  return validFeatureIndex;
+}

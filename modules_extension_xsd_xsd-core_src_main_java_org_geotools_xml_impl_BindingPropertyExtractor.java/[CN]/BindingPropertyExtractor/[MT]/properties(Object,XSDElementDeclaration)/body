@@ -1,0 +1,135 @@
+{
+  List properties=new ArrayList();
+  List children=encoder.getSchemaIndex().getChildElementParticles(element);
+  O:   for (Iterator itr=children.iterator(); itr.hasNext(); ) {
+    XSDParticle particle=(XSDParticle)itr.next();
+    XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+    if (child.isElementDeclarationReference()) {
+      child=child.getResolvedElementDeclaration();
+    }
+    GetPropertyExecutor executor=new GetPropertyExecutor(object,child);
+    BindingVisitorDispatch.walk(object,encoder.getBindingWalker(),element,executor,context);
+    if (executor.getChildObject() != null) {
+      properties.add(new Object[]{particle,executor.getChildObject()});
+    }
+  }
+  GetPropertiesExecutor executor=new GetPropertiesExecutor(object,element);
+  BindingVisitorDispatch.walk(object,encoder.getBindingWalker(),element,executor,context);
+  if (!executor.getProperties().isEmpty()) {
+    MultiHashMap map=new MultiHashMap();
+    for (Iterator p=executor.getProperties().iterator(); p.hasNext(); ) {
+      Object[] property=(Object[])p.next();
+      map.put(property[0],property[1]);
+    }
+    HashMap particles=new HashMap();
+    for (Iterator e=map.entrySet().iterator(); e.hasNext(); ) {
+      Map.Entry entry=(Map.Entry)e.next();
+      if (entry.getKey() instanceof XSDParticle) {
+        XSDParticle particle=(XSDParticle)entry.getKey();
+        particles.put(Schemas.getParticleName(particle),particle);
+        continue;
+      }
+      QName name=(QName)entry.getKey();
+      Collection values=(Collection)entry.getValue();
+      if (Encoder.COMMENT.equals(name)) {
+        Element comment=encoder.getDocument().createElement(Encoder.COMMENT.getLocalPart());
+        for (Iterator v=values.iterator(); v.hasNext(); ) {
+          comment.appendChild(encoder.getDocument().createTextNode(v.next().toString()));
+        }
+        XSDParticle particle=XSDFactory.eINSTANCE.createXSDParticle();
+        XSDElementDeclaration elementDecl=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+        elementDecl.setTargetNamespace(Encoder.COMMENT.getNamespaceURI());
+        elementDecl.setName(Encoder.COMMENT.getLocalPart());
+        elementDecl.setElement(comment);
+        particle.setContent(elementDecl);
+        particles.put(name,particle);
+        continue;
+      }
+      XSDElementDeclaration elementDecl=encoder.getSchemaIndex().getElementDeclaration(name);
+      if (elementDecl == null) {
+        elementDecl=encoder.getSchema().resolveElementDeclaration(name.getNamespaceURI(),name.getLocalPart());
+      }
+      XSDParticle reference=null;
+      for (Iterator p=Schemas.getChildElementParticles(element.getType(),true).iterator(); p.hasNext(); ) {
+        XSDParticle particle=(XSDParticle)p.next();
+        XSDElementDeclaration el=(XSDElementDeclaration)particle.getContent();
+        if (el.isElementDeclarationReference()) {
+          el=el.getResolvedElementDeclaration();
+        }
+        if (Schemas.isBaseType(elementDecl,el)) {
+          reference=particle;
+          break;
+        }
+      }
+      XSDParticle particle=XSDFactory.eINSTANCE.createXSDParticle();
+      XSDElementDeclaration wrapper=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+      wrapper.setResolvedElementDeclaration(elementDecl);
+      particle.setContent(wrapper);
+      if (reference != null) {
+        particle.setMaxOccurs(reference.getMaxOccurs());
+      }
+ else {
+        if (values.size() > 1) {
+          particle.setMaxOccurs(-1);
+        }
+ else {
+          particle.setMaxOccurs(1);
+        }
+      }
+      particles.put(name,particle);
+    }
+    for (Iterator p=executor.getProperties().iterator(); p.hasNext(); ) {
+      Object[] property=(Object[])p.next();
+      Collection values=(Collection)map.get(property[0]);
+      QName name;
+      if (property[0] instanceof XSDParticle) {
+        name=Schemas.getParticleName((XSDParticle)property[0]);
+      }
+ else {
+        name=(QName)property[0];
+      }
+      XSDParticle particle=(XSDParticle)particles.get(name);
+      if (particle == null) {
+        continue;
+      }
+      if (values.size() > 1) {
+        properties.add(new Object[]{particle,values});
+      }
+ else {
+        properties.add(new Object[]{particle,values.iterator().next()});
+      }
+      particles.remove(name);
+    }
+  }
+  if (properties.size() <= 1) {
+    return properties;
+  }
+  if (object instanceof ComplexAttributeImpl && propertiesSortable(properties,children)) {
+    List sortedProperties=new ArrayList();
+    for (int i=0; i < children.size(); i++) {
+      XSDParticle particle=(XSDParticle)children.get(i);
+      XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+      if (child.getResolvedElementDeclaration() != null) {
+        child=child.getResolvedElementDeclaration();
+      }
+      for (Iterator itr=properties.iterator(); itr.hasNext(); ) {
+        Object[] prop=(Object[])itr.next();
+        XSDParticle part=(XSDParticle)prop[0];
+        XSDElementDeclaration partContent=(XSDElementDeclaration)part.getContent();
+        if (partContent.getResolvedElementDeclaration() != null) {
+          partContent=partContent.getResolvedElementDeclaration();
+        }
+        if (child.getName().equals(partContent.getName()) && ((child.getTargetNamespace() != null && partContent.getTargetNamespace() != null) ? child.getTargetNamespace().equals(partContent.getTargetNamespace()) : true)) {
+          sortedProperties.add(prop);
+          properties.remove(prop);
+          i--;
+          break;
+        }
+      }
+    }
+    return sortedProperties;
+  }
+ else {
+    return properties;
+  }
+}

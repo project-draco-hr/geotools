@@ -1,0 +1,30 @@
+{
+  int k=4;
+  GraphTestUtil.buildPerfectBinaryTree(builder(),k);
+  CountingWalker walker=new CountingWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      element.setCount(getCount());
+      return super.visit(element,traversal);
+    }
+  }
+;
+  BreadthFirstTopologicalIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      String id=component.getObject().toString();
+      for (Iterator itr=builder().getGraph().getNodes().iterator(); itr.hasNext(); ) {
+        Node other=(Node)itr.next();
+        if (other.getObject().toString().length() < id.length()) {
+          assertTrue(other.getCount() > component.getCount());
+        }
+      }
+      return 0;
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == Math.pow(2,k + 1) - 1);
+}

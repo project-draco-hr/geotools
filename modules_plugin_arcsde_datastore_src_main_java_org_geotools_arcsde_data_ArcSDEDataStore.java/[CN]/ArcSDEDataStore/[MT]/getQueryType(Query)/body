@@ -1,0 +1,17 @@
+{
+  final String typeName=query.getTypeName();
+  final String propertyNames[]=query.getPropertyNames();
+  final FeatureTypeInfo typeInfo=typeInfoCache.getFeatureTypeInfo(typeName);
+  final SimpleFeatureType completeSchema=typeInfo.getFeatureType();
+  SimpleFeatureType featureType=completeSchema;
+  if (!query.retrieveAllProperties() || query.getCoordinateSystem() != null) {
+    try {
+      featureType=DataUtilities.createSubType(featureType,propertyNames,query.getCoordinateSystem());
+    }
+ catch (    SchemaException e) {
+      LOGGER.log(Level.FINEST,e.getMessage(),e);
+      throw new DataSourceException("Could not create Feature Type for query",e);
+    }
+  }
+  return featureType;
+}

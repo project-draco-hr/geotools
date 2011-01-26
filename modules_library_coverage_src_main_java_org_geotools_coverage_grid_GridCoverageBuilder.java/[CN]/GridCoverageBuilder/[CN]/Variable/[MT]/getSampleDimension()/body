@@ -1,0 +1,25 @@
+{
+  if (sampleDimension == null) {
+    NumberRange<? extends Number> range=getSampleRange();
+    int lower=(int)Math.floor(range.getMinimum(true));
+    int upper=(int)Math.ceil(range.getMaximum(false));
+    final Category[] categories=new Category[nodata.size() + 1];
+    int i=0;
+    for (    final Map.Entry<Integer,CharSequence> entry : nodata.entrySet()) {
+      final int sample=entry.getKey();
+      if (sample >= lower && sample < upper) {
+        if (sample - lower <= upper - sample) {
+          lower=sample + 1;
+        }
+ else {
+          upper=sample;
+        }
+      }
+      categories[i++]=new Category(entry.getValue(),null,sample);
+    }
+    range=NumberRange.create(lower,true,upper,false);
+    categories[i]=new Category(name,null,range,(transform != null) ? transform : LinearTransform1D.IDENTITY);
+    sampleDimension=new GridSampleDimension(name,categories,units);
+  }
+  return sampleDimension;
+}

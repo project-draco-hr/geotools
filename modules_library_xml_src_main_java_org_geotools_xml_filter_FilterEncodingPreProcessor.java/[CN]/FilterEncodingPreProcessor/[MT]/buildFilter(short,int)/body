@@ -1,0 +1,29 @@
+{
+  if (current.isEmpty()) {
+    return Data.ALL;
+  }
+  if (filterType == FilterType.LOGIC_NOT) {
+    return buildNotFilter(startOfFilterStack);
+  }
+  if (current.size() == (startOfFilterStack + 1)) {
+    return (Data)current.pop();
+  }
+  List<org.opengis.filter.Filter> filterList=new ArrayList<org.opengis.filter.Filter>();
+  while (current.size() > startOfFilterStack) {
+    Data data=(Data)current.pop();
+    if (data.filter != Filter.EXCLUDE) {
+      filterList.add(data.filter);
+    }
+  }
+  org.opengis.filter.Filter f;
+  if (filterType == FilterType.LOGIC_AND) {
+    f=ff.and(filterList);
+  }
+ else   if (filterType == FilterType.LOGIC_OR) {
+    f=ff.or(filterList);
+  }
+ else {
+    f=null;
+  }
+  return new Data(compressFilter(filterType,(LogicFilter)f));
+}

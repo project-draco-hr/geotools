@@ -1,0 +1,36 @@
+{
+  final StringWriter out=new StringWriter();
+  out.write(Classes.getShortClassName(this));
+  out.write("[\"");
+  out.write(String.valueOf(getName()));
+  out.write('"');
+  final Envelope envelope=getEnvelope();
+  if (envelope != null) {
+    out.write(", ");
+    out.write(envelope.toString());
+  }
+  if (crs != null) {
+    out.write(", ");
+    out.write(Classes.getShortClassName(crs));
+    out.write("[\"");
+    out.write(crs.getName().getCode());
+    out.write("\"]");
+  }
+  out.write(']');
+  final String lineSeparator=System.getProperty("line.separator","\n");
+  final LineWriter filter=new LineWriter(out,lineSeparator + "\u2502   ");
+  final int n=getNumSampleDimensions();
+  try {
+    filter.write(lineSeparator);
+    for (int i=0; i < n; i++) {
+      filter.write(getSampleDimension(i).toString());
+    }
+    filter.flush();
+  }
+ catch (  IOException exception) {
+    throw new AssertionError(exception);
+  }
+  final StringBuffer buffer=out.getBuffer();
+  buffer.setLength(buffer.lastIndexOf(lineSeparator) + lineSeparator.length());
+  return buffer.toString();
+}

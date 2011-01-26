@@ -1,0 +1,28 @@
+{
+  SimpleFeature result=null;
+  Iterator iter=columns.iterator();
+  VPFColumn column;
+  boolean textPrimitive=pathName.endsWith(TEXT_PRIMITIVE);
+  int size=columns.size();
+  if (textPrimitive)   size++;
+  Object[] values=new Object[size];
+  try {
+    for (int inx=0; inx < columns.size(); inx++) {
+      column=(VPFColumn)columns.get(inx);
+      if (column.getType().getRestrictions().isEmpty() || column.getType().getRestrictions().contains(org.opengis.filter.Filter.INCLUDE)) {
+        values[inx]=readVariableSizeData(column.getTypeChar());
+      }
+ else {
+        values[inx]=readFixedSizeData(column.getTypeChar(),column.getElementsNumber());
+      }
+    }
+    if (textPrimitive) {
+      values[size - 1]="nam";
+    }
+    result=SimpleFeatureBuilder.build(featureType,values,null);
+  }
+ catch (  EOFException exp) {
+    exp.printStackTrace();
+  }
+  return result;
+}

@@ -1,0 +1,37 @@
+{
+  if ((attributes == null) || (attributes.length == 0)) {
+    LOGGER.warning("Update called with no attributes, doing nothing.");
+    return;
+  }
+  if (dialect instanceof PreparedStatementSQLDialect) {
+    try {
+      PreparedStatement ps=updateSQLPS(featureType,attributes,values,filter,cx);
+      try {
+        ps.execute();
+      }
+  finally {
+        closeSafe(ps);
+      }
+    }
+ catch (    SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+ else {
+    String sql=updateSQL(featureType,attributes,values,filter);
+    LOGGER.log(Level.FINE,"Updating feature: {0}",sql);
+    try {
+      Statement st=cx.createStatement();
+      try {
+        st.execute(sql);
+      }
+  finally {
+        closeSafe(st);
+      }
+    }
+ catch (    SQLException e) {
+      String msg="Error occured updating features";
+      throw (IOException)new IOException(msg).initCause(e);
+    }
+  }
+}

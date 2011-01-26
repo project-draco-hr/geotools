@@ -1,0 +1,93 @@
+{
+  final Class<?>[] paramTypes=setter.getParameterTypes();
+  for (int i=0; i < paramTypes.length; i++) {
+    final Object argument=arguments[i];
+    if (argument == null) {
+      continue;
+    }
+    final Class<?> paramType=paramTypes[i];
+    if (Classes.primitiveToWrapper(paramType).isInstance(argument)) {
+      continue;
+    }
+    final Collection<?> addTo;
+    final Class<?> elementType;
+    if (Collection.class.isAssignableFrom(paramType) && !(argument instanceof Collection)) {
+      addTo=(Collection)get(getter,metadata);
+      if (addTo instanceof CheckedCollection) {
+        elementType=((CheckedCollection)addTo).getElementType();
+      }
+ else {
+        Class<?> c=Classes.boundOfParameterizedAttribute(setter);
+        if (c == null) {
+          c=Classes.boundOfParameterizedAttribute(getter);
+          if (c == null) {
+            c=Object.class;
+          }
+        }
+        elementType=c;
+      }
+    }
+ else {
+      addTo=null;
+      elementType=paramType;
+    }
+    Object parsed=null;
+    Exception failure=null;
+    if (elementType.isInstance(argument)) {
+      parsed=argument;
+    }
+ else     if (argument instanceof CharSequence) {
+      final String text=argument.toString();
+      if (InternationalString.class.isAssignableFrom(elementType)) {
+        parsed=new SimpleInternationalString(text);
+      }
+ else       if (File.class.isAssignableFrom(elementType)) {
+        parsed=new File(text);
+      }
+ else       if (URL.class.isAssignableFrom(elementType))       try {
+        parsed=new URL(text);
+      }
+ catch (      MalformedURLException e) {
+        failure=e;
+      }
+ else       if (URI.class.isAssignableFrom(elementType))       try {
+        parsed=new URI(text);
+      }
+ catch (      URISyntaxException e) {
+        failure=e;
+      }
+ else       try {
+        parsed=Classes.valueOf(elementType,text);
+      }
+ catch (      RuntimeException e) {
+        failure=e;
+      }
+    }
+    if (parsed == null) {
+      final ClassCastException e=new ClassCastException(Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,argument.getClass(),elementType));
+      e.initCause(failure);
+      throw e;
+    }
+    if (addTo != null) {
+      addUnsafe(addTo,parsed);
+      parsed=addTo;
+    }
+    arguments[i]=parsed;
+  }
+  try {
+    setter.invoke(metadata,arguments);
+  }
+ catch (  IllegalAccessException e) {
+    throw new AssertionError(e);
+  }
+catch (  InvocationTargetException e) {
+    final Throwable cause=e.getTargetException();
+    if (cause instanceof RuntimeException) {
+      throw (RuntimeException)cause;
+    }
+    if (cause instanceof Error) {
+      throw (Error)cause;
+    }
+    throw new UndeclaredThrowableException(cause);
+  }
+}

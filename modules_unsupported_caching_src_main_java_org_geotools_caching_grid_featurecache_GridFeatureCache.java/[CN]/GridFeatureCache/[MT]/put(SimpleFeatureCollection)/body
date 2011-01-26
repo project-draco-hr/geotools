@@ -1,0 +1,20 @@
+{
+  isOversized(fc);
+  lock.writeLock().lock();
+  try {
+    SimpleFeatureIterator it=fc.features();
+    try {
+      while (it.hasNext()) {
+        SimpleFeature f=it.next();
+        this.tracker.insertData(f,CacheUtil.convert((Envelope)f.getBounds()));
+      }
+    }
+  finally {
+      fc.close(it);
+    }
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+  this.tracker.flush();
+}

@@ -1,0 +1,26 @@
+{
+  Result resut=getResultStack().popResult();
+  IToken token=resut.getToken();
+  Literal built=(Literal)resut.getBuilt();
+  final String pattern=(String)built.getValue();
+  if (pattern.length() != 9) {
+    throw new CQLException("the pattern DE-9IM must have nine (9) characters",token,getStatement());
+  }
+  String patternUC=pattern.toUpperCase();
+  char[] validFlags=new char[]{'T','F','*','0','1','2'};
+  for (int i=0; i < validFlags.length; i++) {
+    char character=patternUC.charAt(i);
+    boolean found=false;
+    for (int j=0; j < validFlags.length; j++) {
+      if (validFlags[j] == character) {
+        found=true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new CQLException("the pattern DE-9IM must have only the following characters: T, F, *, 0, 1, 2",token,getStatement());
+    }
+  }
+  Literal patternExpr=getFilterFactory().literal(pattern);
+  return patternExpr;
+}

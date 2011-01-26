@@ -1,0 +1,47 @@
+{
+  if (this instanceof PointImpl || this instanceof MultiPointImpl) {
+    CentroidPoint cp=new CentroidPoint(this.crs);
+    cp.add(this);
+    return cp.getCentroid();
+  }
+ else   if (this instanceof CurveBoundaryImpl) {
+    CentroidPoint cp=new CentroidPoint(this.crs);
+    cp.add(((CurveBoundaryImpl)this).getStartPoint());
+    cp.add(((CurveBoundaryImpl)this).getEndPoint());
+    return cp.getCentroid();
+  }
+ else   if (this instanceof CurveImpl || this instanceof MultiCurveImpl || this instanceof RingImpl) {
+    CentroidLine cl=new CentroidLine(this.crs);
+    cl.add(this);
+    return cl.getCentroid();
+  }
+ else   if (this instanceof SurfaceBoundaryImpl) {
+    CentroidLine cl=new CentroidLine(this.crs);
+    cl.add(((SurfaceBoundaryImpl)this).getExterior());
+    Iterator<Ring> interiors=((SurfaceBoundaryImpl)this).getInteriors().iterator();
+    while (interiors.hasNext()) {
+      cl.add((GeometryImpl)interiors.next());
+    }
+    return cl.getCentroid();
+  }
+ else   if (this instanceof SurfaceImpl || this instanceof MultiSurfaceImpl) {
+    CentroidArea2D ca=new CentroidArea2D(this.crs);
+    ca.add(this);
+    return ca.getCentroid();
+  }
+  if (this instanceof MultiPrimitiveImpl) {
+    int maxD=this.getDimension(null);
+    CentroidPoint cp=new CentroidPoint(this.crs);
+    Set<? extends Primitive> elems=((MultiPrimitiveImpl)this).getElements();
+    Iterator<? extends Primitive> iter=elems.iterator();
+    while (iter.hasNext()) {
+      Geometry prim=iter.next();
+      if (prim.getDimension(null) == maxD) {
+        cp.add(new PointImpl(prim.getCentroid()));
+      }
+    }
+    return cp.getCentroid();
+  }
+  Assert.isTrue(false,"The centroid operation is not defined for this geometry object");
+  return null;
+}

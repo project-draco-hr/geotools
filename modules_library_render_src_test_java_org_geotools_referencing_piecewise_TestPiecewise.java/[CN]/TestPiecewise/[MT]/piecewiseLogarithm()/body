@@ -1,0 +1,73 @@
+{
+  final DefaultPiecewiseTransform1DElement zero=DefaultPiecewiseTransform1DElement.create("zero",NumberRange.create(0,0),0);
+  final DefaultPiecewiseTransform1DElement mainElement=new DefaultPiecewiseTransform1DElement("natural logarithm",NumberRange.create(0,false,255,true),new MathTransform1D(){
+    public double derivative(    double arg0) throws TransformException {
+      return 1 / arg0;
+    }
+    public double transform(    double arg0) throws TransformException {
+      return Math.log(arg0);
+    }
+    public Matrix derivative(    DirectPosition arg0) throws MismatchedDimensionException, TransformException {
+      return null;
+    }
+    public int getSourceDimensions(){
+      return 01;
+    }
+    public int getTargetDimensions(){
+      return 1;
+    }
+    public MathTransform1D inverse() throws NoninvertibleTransformException {
+      return null;
+    }
+    public boolean isIdentity(){
+      return false;
+    }
+    public String toWKT() throws UnsupportedOperationException {
+      return null;
+    }
+    public DirectPosition transform(    DirectPosition arg0,    DirectPosition arg1) throws MismatchedDimensionException, TransformException {
+      return null;
+    }
+    public void transform(    double[] arg0,    int arg1,    double[] arg2,    int arg3,    int arg4) throws TransformException {
+    }
+    public void transform(    float[] arg0,    int arg1,    float[] arg2,    int arg3,    int arg4) throws TransformException {
+    }
+    public void transform(    float[] arg0,    int arg1,    double[] arg2,    int arg3,    int arg4) throws TransformException {
+    }
+    public void transform(    double[] arg0,    int arg1,    float[] arg2,    int arg3,    int arg4) throws TransformException {
+    }
+  }
+);
+  DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement> transform=new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement>(new DefaultPiecewiseTransform1DElement[]{zero,mainElement});
+  Assert.assertEquals(0.0,transform.transform(0),0);
+  Assert.assertEquals(0.0,transform.transform(1),0);
+  Assert.assertEquals(Math.log(255.0),transform.transform(255),0);
+  Assert.assertEquals(Math.log(124.0),transform.transform(124),0);
+  try {
+    Assert.assertEquals(Math.log(255.0),transform.transform(256),0);
+    Assert.assertTrue(false);
+  }
+ catch (  TransformException e) {
+  }
+  final DefaultPiecewiseTransform1DElement nodata=DefaultPiecewiseTransform1DElement.create("no-data",NumberRange.create(-1,-1),Double.NaN);
+  transform=new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement>(new DefaultPiecewiseTransform1DElement[]{zero,mainElement,nodata});
+  Assert.assertEquals(0.0,transform.transform(0),0);
+  Assert.assertEquals(0.0,transform.transform(1),0);
+  Assert.assertEquals(Math.log(255.0),transform.transform(255),0);
+  Assert.assertEquals(Math.log(124.0),transform.transform(124),0);
+  try {
+    Assert.assertTrue(Double.isNaN(transform.transform(256)));
+    Assert.assertTrue(false);
+  }
+ catch (  TransformException e) {
+    Assert.assertTrue(true);
+  }
+  final DefaultPiecewiseTransform1DElement overlap=DefaultPiecewiseTransform1DElement.create("overlap",NumberRange.create(-100,12),Double.NaN);
+  try {
+    transform=new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement>(new DefaultPiecewiseTransform1DElement[]{zero,mainElement,overlap,nodata});
+    Assert.assertTrue(false);
+  }
+ catch (  Throwable e) {
+    Assert.assertTrue(true);
+  }
+}

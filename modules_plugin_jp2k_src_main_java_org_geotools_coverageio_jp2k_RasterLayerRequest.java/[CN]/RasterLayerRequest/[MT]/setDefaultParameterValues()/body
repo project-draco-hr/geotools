@@ -1,0 +1,63 @@
+{
+  final ParameterValueGroup readParams=this.rasterManager.parent.getFormat().getReadParameters();
+  if (readParams == null) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("No default values for the read parameters!");
+    return;
+  }
+  final List<GeneralParameterDescriptor> parametersDescriptors=readParams.getDescriptor().descriptors();
+  for (  GeneralParameterDescriptor descriptor : parametersDescriptors) {
+    if (!(descriptor instanceof ParameterDescriptor))     continue;
+    final ParameterDescriptor desc=(ParameterDescriptor)descriptor;
+    final ReferenceIdentifier name=desc.getName();
+    final Object value=desc.getDefaultValue();
+    if (descriptor.getName().equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
+      if (value == null)       continue;
+      final GridGeometry2D gg=(GridGeometry2D)value;
+      requestedBBox=new ReferencedEnvelope((Envelope)gg.getEnvelope2D());
+      requestedRasterArea=gg.getGridRange2D().getBounds();
+      requestedGridToWorld=(AffineTransform)gg.getGridToCRS2D();
+      continue;
+    }
+    if (name.equals(AbstractGridFormat.USE_JAI_IMAGEREAD.getName())) {
+      if (value == null)       continue;
+      readType=((Boolean)value) ? ReadType.JAI_IMAGEREAD : ReadType.DIRECT_READ;
+      continue;
+    }
+    if (name.equals(JP2KFormat.USE_MULTITHREADING.getName())) {
+      if (value == null)       continue;
+      useMultithreading=((Boolean)value).booleanValue();
+      continue;
+    }
+    if (name.equals(AbstractGridFormat.OVERVIEW_POLICY.getName())) {
+      if (value == null)       continue;
+      overviewPolicy=(OverviewPolicy)value;
+      continue;
+    }
+    if (name.equals(JP2KFormat.INPUT_TRANSPARENT_COLOR.getName())) {
+      if (value == null)       continue;
+      inputTransparentColor=(Color)value;
+      inputTransparentColor=new Color(inputTransparentColor.getRed(),inputTransparentColor.getGreen(),inputTransparentColor.getBlue());
+      continue;
+    }
+    if (name.equals(JP2KFormat.SUGGESTED_TILE_SIZE.getName())) {
+      final String suggestedTileSize=(String)value;
+      if ((suggestedTileSize != null) && (suggestedTileSize.trim().length() > 0)) {
+        if (suggestedTileSize.contains(JP2KFormat.TILE_SIZE_SEPARATOR)) {
+          final String[] tilesSize=suggestedTileSize.split(JP2KFormat.TILE_SIZE_SEPARATOR);
+          if (tilesSize.length == 2) {
+            try {
+              final int tileWidth=Integer.valueOf(tilesSize[0].trim());
+              final int tileHeight=Integer.valueOf(tilesSize[1].trim());
+              tileDimensions=new Dimension(tileWidth,tileHeight);
+            }
+ catch (            NumberFormatException nfe) {
+              if (LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.log(Level.WARNING,"Unable to parse " + "suggested tile size parameter");
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

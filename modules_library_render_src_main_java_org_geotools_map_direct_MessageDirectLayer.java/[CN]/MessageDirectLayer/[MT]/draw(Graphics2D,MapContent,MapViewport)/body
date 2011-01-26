@@ -1,0 +1,37 @@
+{
+  if (viewport == null) {
+    viewport=map.getViewport();
+  }
+  if (viewport == null || viewport.getScreenArea() == null) {
+    return;
+  }
+  if (message == null || message.length() == 0) {
+    return;
+  }
+  Rectangle2D screen=rectangle2D(viewport.getScreenArea());
+  Double dx=Converters.convert(getUserData().get(X),Double.class);
+  Double dy=Converters.convert(getUserData().get(Y),Double.class);
+  if (dx == null) {
+    dx=screen.getWidth();
+  }
+  if (dy == null) {
+    dy=screen.getHeight();
+  }
+  FontMetrics fm=graphics.getFontMetrics();
+  Rectangle2D text=fm.getStringBounds(message,graphics);
+  double x=position(screen.getX(),screen.getWidth(),dx,text.getWidth());
+  double y=position(screen.getY(),screen.getHeight(),dy,text.getHeight());
+  Color color=Converters.convert(getUserData().get(COLOR),Color.class);
+  Color previousColor=graphics.getColor();
+  try {
+    if (color != null) {
+      graphics.setColor(color);
+    }
+    graphics.drawString(message,(float)x,(float)y);
+  }
+  finally {
+    if (color != null) {
+      graphics.setColor(previousColor);
+    }
+  }
+}

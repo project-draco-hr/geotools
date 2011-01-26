@@ -1,0 +1,42 @@
+{
+  Statement st=cx.createStatement();
+  try {
+    st=cx.createStatement();
+    boolean initSpatialMetaData=false;
+    try {
+      st.execute("SELECT count(*) from geometry_columns");
+    }
+ catch (    SQLException e) {
+      initSpatialMetaData=true;
+    }
+    if (initSpatialMetaData) {
+      st.execute("SELECT InitSpatialMetaData()");
+      st.close();
+      st=cx.createStatement();
+    }
+    boolean loadSpatialRefSys=false;
+    ResultSet rs=st.executeQuery("SELECT * FROM spatial_ref_sys");
+    try {
+      loadSpatialRefSys=!rs.next();
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+    if (loadSpatialRefSys) {
+      try {
+        BufferedReader in=new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("init_spatialite-2.3.sql")));
+        String line=null;
+        while ((line=in.readLine()) != null) {
+          st.execute(line);
+        }
+        in.close();
+      }
+ catch (      IOException e) {
+        throw new RuntimeException("Error reading spatial ref sys file",e);
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

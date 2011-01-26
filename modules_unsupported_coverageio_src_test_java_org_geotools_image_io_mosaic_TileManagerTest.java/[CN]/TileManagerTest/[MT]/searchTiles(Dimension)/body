@@ -1,0 +1,23 @@
+{
+  tiles=manager.getTiles(regionOfInterest,subsampling,expected != null);
+  final Tile[] array=tiles.toArray(new Tile[tiles.size()]);
+  for (int i=0; i < array.length; i++) {
+    final Tile tile=array[i];
+    if (print) {
+      System.out.println(tile);
+    }
+    final Rectangle bounds=tile.getAbsoluteRegion();
+    assertFalse("Tiles should not be empty.",bounds.isEmpty());
+    assertTrue("Must intersects the ROI.",regionOfInterest.intersects(bounds));
+    for (int j=i + 1; j < array.length; j++) {
+      assertFalse("Expected no overlaps.",bounds.intersects(array[j].getAbsoluteRegion()));
+    }
+  }
+  if (expected == null) {
+    expected=subsampling;
+  }
+  for (int i=0; i < array.length; i++) {
+    assertEquals("Expected uniform subsampling.",expected,array[i].getSubsampling());
+  }
+  print=false;
+}

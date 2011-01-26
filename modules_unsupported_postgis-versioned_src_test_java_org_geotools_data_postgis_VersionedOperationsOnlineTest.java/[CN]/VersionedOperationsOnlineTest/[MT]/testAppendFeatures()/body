@@ -1,0 +1,38 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  ds.setVersioned("road",true,"gimbo","version enabling roads");
+  ds.setVersioned("river",true,"gimbo","version enabling river");
+  Transaction t=createTransaction("mambo","Today I feel like adding fetures, yeah");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> fw=ds.getFeatureWriterAppend("road",t);
+  SimpleFeature f=fw.next();
+  f.setAttribute(0,new Integer(4));
+  f.setAttribute(1,line(new int[]{3,3,4,4,5,10}));
+  f.setAttribute(2,"r4");
+  fw.write();
+  String rd4id=f.getID();
+  fw.close();
+  fw=ds.getFeatureWriterAppend("river",t);
+  f=fw.next();
+  f.setAttribute(0,new Integer(4));
+  f.setAttribute(1,lines(new int[][]{{0,0,1,10}}));
+  f.setAttribute(2,"rv4");
+  f.setAttribute(3,new Double(6.5));
+  fw.write();
+  String rv4id=f.getID();
+  fw.close();
+  t.commit();
+  DefaultQuery q=new DefaultQuery("road",ff.id(Collections.singleton(ff.featureId(rd4id))));
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=ds.getFeatureReader(q,t);
+  assertTrue(fr.hasNext());
+  fr.close();
+  q=new DefaultQuery("river",ff.id(Collections.singleton(ff.featureId(rv4id))));
+  fr=ds.getFeatureReader(q,t);
+  assertTrue(fr.hasNext());
+  fr.close();
+  assertEquals(3,ds.getLastRevision());
+  List types=Arrays.asList(ds.getModifiedFeatureTypes("2","3"));
+  assertEquals(2,types.size());
+  assertTrue(types.contains("river"));
+  assertTrue(types.contains("road"));
+  t.close();
+}

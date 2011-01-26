@@ -1,0 +1,44 @@
+{
+  SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+  ftb.setName("Junk");
+  ftb.add("a",geom.getClass());
+  SimpleFeatureType type=ftb.buildFeatureType();
+  SimpleFeatureCollection features=FeatureCollections.newCollection();
+  SimpleFeatureBuilder build=new SimpleFeatureBuilder(type);
+  for (int i=0, ii=20; i < ii; i++) {
+    build.set(0,(Geometry)geom.clone());
+    SimpleFeature feature=build.buildFeature(null);
+    features.add(feature);
+  }
+  File tmpFile=getTempFile();
+  tmpFile.delete();
+  ShapefileDataStore shapeDataStore=new ShapefileDataStore(tmpFile.toURI().toURL());
+  shapeDataStore.createSchema(type);
+  writeFeatures(shapeDataStore,features);
+  shapeDataStore.dispose();
+  shapeDataStore=new ShapefileDataStore(tmpFile.toURI().toURL());
+  SimpleFeatureCollection fc=loadFeatures(shapeDataStore);
+  SimpleFeatureIterator fci=fc.features();
+  while (fci.hasNext()) {
+    SimpleFeature f=fci.next();
+    Geometry fromShape=(Geometry)f.getDefaultGeometry();
+    if (fromShape instanceof GeometryCollection) {
+      if (!(geom instanceof GeometryCollection)) {
+        fromShape=((GeometryCollection)fromShape).getGeometryN(0);
+      }
+    }
+    try {
+      Coordinate[] c1=geom.getCoordinates();
+      Coordinate[] c2=fromShape.getCoordinates();
+      for (int cc=0, ccc=c1.length; cc < ccc; cc++) {
+        if (d3)         assertTrue(c1[cc].equals3D(c2[cc]));
+ else         assertTrue(c1[cc].equals2D(c2[cc]));
+      }
+    }
+ catch (    Throwable t) {
+      fail("Bogus : " + Arrays.asList(geom.getCoordinates()) + " : "+ Arrays.asList(fromShape.getCoordinates()));
+    }
+  }
+  tmpFile.delete();
+  shapeDataStore.dispose();
+}

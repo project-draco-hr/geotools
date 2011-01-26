@@ -1,0 +1,41 @@
+{
+  com.vividsolutions.jts.geom.Geometry jtsGeom=getJTSGeometry();
+  if (jtsGeom instanceof com.vividsolutions.jts.geom.GeometryCollection) {
+    throw new UnsupportedOperationException("Boundary cannot be computed for multi-primitives.");
+  }
+  com.vividsolutions.jts.geom.Geometry jtsBoundary=jtsGeom.getBoundary();
+  int d=jtsGeom.getDimension();
+  if (d == 0) {
+    return null;
+  }
+ else   if (d == 1) {
+    com.vividsolutions.jts.geom.Coordinate[] coords=jtsBoundary.getCoordinates();
+    if ((coords == null) || (coords.length == 0)) {
+      CurveBoundaryImpl result=new CurveBoundaryImpl(getCoordinateReferenceSystem(),null,null);
+      return result;
+    }
+ else {
+      if (coords.length != 2) {
+        throw new RuntimeException("ERROR: One dimensional " + "primitive had wrong number of boundary points (" + coords.length + ")");
+      }
+      CoordinateReferenceSystem crs=getCoordinateReferenceSystem();
+      CurveBoundaryImpl result=new CurveBoundaryImpl(crs,new PointImpl(JTSUtils.coordinateToDirectPosition(coords[0],crs)),new PointImpl(JTSUtils.coordinateToDirectPosition(coords[1],crs)));
+      return result;
+    }
+  }
+ else   if (d == 2) {
+    com.vividsolutions.jts.geom.MultiLineString mls=(com.vividsolutions.jts.geom.MultiLineString)jtsBoundary;
+    int n=mls.getNumGeometries();
+    CoordinateReferenceSystem crs=getCoordinateReferenceSystem();
+    Ring exteriorRing=JTSUtils.linearRingToRing((com.vividsolutions.jts.geom.LineString)mls.getGeometryN(0),crs);
+    Ring[] interiorRings=new Ring[n - 1];
+    for (int i=1; i < n; i++) {
+      interiorRings[n - 1]=JTSUtils.linearRingToRing((com.vividsolutions.jts.geom.LineString)mls.getGeometryN(i),crs);
+    }
+    SurfaceBoundaryImpl result=new SurfaceBoundaryImpl(crs,exteriorRing,interiorRings);
+    return result;
+  }
+ else {
+    throw new UnsupportedOperationException("Computing the boundary " + "for geometries of dimension larger than 2 is not " + "supported.");
+  }
+}

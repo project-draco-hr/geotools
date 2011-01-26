@@ -1,0 +1,22 @@
+{
+  while (crs instanceof GeneralDerivedCRS) {
+    crs=((GeneralDerivedCRS)crs).getBaseCRS();
+  }
+  if (!(crs instanceof SingleCRS)) {
+    return DefaultGeographicCRS.WGS84;
+  }
+  final Datum datum=((SingleCRS)crs).getDatum();
+  if (!(datum instanceof GeodeticDatum)) {
+    return DefaultGeographicCRS.WGS84;
+  }
+  GeodeticDatum geoDatum=(GeodeticDatum)datum;
+  if (geoDatum.getPrimeMeridian().getGreenwichLongitude() != 0) {
+    geoDatum=new DefaultGeodeticDatum(geoDatum.getName().getCode(),geoDatum.getEllipsoid(),DefaultPrimeMeridian.GREENWICH);
+  }
+ else   if (crs instanceof GeographicCRS) {
+    if (CRS.equalsIgnoreMetadata(DefaultEllipsoidalCS.GEODETIC_2D,crs.getCoordinateSystem())) {
+      return (GeographicCRS)crs;
+    }
+  }
+  return new DefaultGeographicCRS(crs.getName().getCode(),geoDatum,DefaultEllipsoidalCS.GEODETIC_2D);
+}

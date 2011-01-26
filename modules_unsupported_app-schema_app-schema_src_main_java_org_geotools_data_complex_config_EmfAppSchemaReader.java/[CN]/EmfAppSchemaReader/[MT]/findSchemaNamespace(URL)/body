@@ -1,0 +1,32 @@
+{
+  String targetNamespace=null;
+  URL resolvedLocation=new URL(resolver.resolve(location.toExternalForm()));
+  InputStream input=resolvedLocation.openStream();
+  XmlPullParser parser=null;
+  try {
+    XmlPullParserFactory factory=XmlPullParserFactory.newInstance();
+    factory.setNamespaceAware(true);
+    factory.setValidating(false);
+    parser=factory.newPullParser();
+    parser.setInput(input,"UTF-8");
+    parser.nextTag();
+    for (int i=0; i < parser.getAttributeCount(); i++) {
+      if ("targetNamespace".equals(parser.getAttributeName(i))) {
+        targetNamespace=parser.getAttributeValue(i);
+        break;
+      }
+    }
+    parser.setInput(null);
+  }
+ catch (  XmlPullParserException e) {
+    String msg="Cannot find target namespace for schema document " + resolvedLocation;
+    throw (RuntimeException)new RuntimeException(msg).initCause(e);
+  }
+ finally {
+    input.close();
+  }
+  if (targetNamespace == null) {
+    throw new IllegalArgumentException("Input document does not specifies a targetNamespace");
+  }
+  return targetNamespace;
+}

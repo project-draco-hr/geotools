@@ -1,0 +1,58 @@
+{
+  if (eg.getNamespace() == GMLSchema.NAMESPACE && (AbstractFeatureType.getInstance().getChildElements()[0] == eg || AbstractFeatureType.getInstance().getChildElements()[1] == eg || AbstractFeatureType.getInstance().getChildElements()[2] == eg))   return null;
+  Class<?> type=Object.class;
+  if (eg.getType() != null) {
+    if (eg.getType() instanceof SimpleType) {
+      type=eg.getType().getInstanceType();
+    }
+ else {
+      if (Object.class.equals(eg.getType().getInstanceType()) || Object[].class.equals(eg.getType().getInstanceType())) {
+        ElementGrouping child=((ComplexType)eg.getType()).getChild();
+        if (child != null) {
+          List l=getAttributes(eg.getName(),child);
+          if (l.isEmpty()) {
+            type=eg.getType().getInstanceType();
+          }
+ else {
+            if (l.size() == 1) {
+              return (AttributeDescriptor)l.iterator().next();
+            }
+            type=getCommonType(l);
+          }
+        }
+ else {
+          type=eg.getType().getInstanceType();
+        }
+      }
+ else {
+        type=eg.getType().getInstanceType();
+      }
+    }
+  }
+  if (type == null)   type=Object.class;
+  boolean nillable=eg.isNillable() || eg.getMinOccurs() == 0;
+  if (!nillable) {
+    try {
+      Object defaultValue=DataUtilities.defaultValue(type);
+      AttributeTypeBuilder build=new AttributeTypeBuilder();
+      build.setName(eg.getName());
+      build.setBinding(type);
+      build.setNillable(nillable);
+      build.setDefaultValue(defaultValue);
+      return build.buildDescriptor(eg.getName());
+    }
+ catch (    IllegalArgumentException e) {
+      logger.warning("Don't know how to make a default value for: " + type + ". Consider making it nillable.");
+      AttributeTypeBuilder build=new AttributeTypeBuilder();
+      build.setName(eg.getName());
+      build.setBinding(type);
+      build.setNillable(nillable);
+      return build.buildDescriptor(eg.getName());
+    }
+  }
+  AttributeTypeBuilder build=new AttributeTypeBuilder();
+  build.setName(eg.getName());
+  build.setBinding(type);
+  build.setNillable(nillable);
+  return build.buildDescriptor(eg.getName());
+}

@@ -1,0 +1,14 @@
+{
+  MemoryDataStore store=new MemoryDataStore();
+  IndexedShapefileDataStore polys=TestUtilites.getPolygons();
+  SimpleFeatureCollection featureCollection=polys.getFeatureSource().getFeatures();
+  store.createSchema(polys.getSchema());
+  SimpleFeatureSource target=store.getFeatureSource(store.getTypeNames()[0]);
+  ((SimpleFeatureStore)target).addFeatures(featureCollection);
+  Style testStyle=TestUtilites.createTestStyle(target.getSchema().getTypeName(),null);
+  MapLayer layer=new DefaultMapLayer(target,testStyle);
+  MapContext context=new DefaultMapContext(new MapLayer[]{layer},polys.getSchema().getCoordinateReferenceSystem());
+  ShapefileRenderer renderer=new ShapefileRenderer(context);
+  ReferencedEnvelope env=target.getBounds();
+  TestUtilites.showRender("testSimpleRender",renderer,10000,env);
+}

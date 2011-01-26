@@ -1,0 +1,34 @@
+{
+  Filter filter=query.getFilter();
+  Query query2;
+  if (filter == Filter.INCLUDE) {
+    FilterFactory fac=CommonFactoryFinder.getFilterFactory(null);
+    try {
+      SimpleFeatureType schema=store.getSchema(query.getTypeName());
+      String attName=schema.getGeometryDescriptor().getLocalName();
+      List fts=store.capabilities.getFeatureTypes();
+      Iterator i=fts.iterator();
+      String desiredType=query.getTypeName().substring(query.getTypeName().indexOf(":") + 1);
+      Envelope bbox=null;
+      while (i.hasNext()) {
+        FeatureSetDescription fsd=(FeatureSetDescription)i.next();
+        String fsdName=(fsd.getName() == null) ? null : fsd.getName().substring(fsd.getName().indexOf(":") + 1);
+        if (desiredType.equals(fsdName)) {
+          bbox=fsd.getLatLongBoundingBox();
+        }
+      }
+      if (bbox == null) {
+        query2=query;
+      }
+ else {
+        BBOX newFilter=fac.bbox(attName,bbox.getMinX(),bbox.getMinY(),bbox.getMaxX(),bbox.getMaxY(),"EPSG:4326");
+        query2=new DefaultQuery(query.getTypeName(),query.getNamespace(),newFilter,query.getMaxFeatures(),query.getPropertyNames(),query.getHandle());
+      }
+    }
+ catch (    IllegalFilterException e) {
+      query2=query;
+    }
+  }
+ else   query2=query;
+  super.init(transaction,query2,level);
+}

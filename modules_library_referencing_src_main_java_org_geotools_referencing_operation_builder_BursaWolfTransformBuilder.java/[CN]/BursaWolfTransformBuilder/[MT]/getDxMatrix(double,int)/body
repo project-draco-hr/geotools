@@ -1,0 +1,34 @@
+{
+  GeneralMatrix xNew=new GeneralMatrix(7,1);
+  GeneralMatrix xOld=new GeneralMatrix(7,1);
+  GeneralMatrix dxMatrix=new GeneralMatrix(7,1);
+  GeneralMatrix zero=new GeneralMatrix(7,1);
+  zero.setZero();
+  int i=0;
+  do {
+    xOld.set(new double[]{dx,dy,dz,alfa,beta,gamma,q});
+    GeneralMatrix A=getA();
+    GeneralMatrix l=getl();
+    GeneralMatrix AT=A.clone();
+    AT.transpose();
+    GeneralMatrix ATA=new GeneralMatrix(7,7);
+    GeneralMatrix ATl=new GeneralMatrix(7,1);
+    ATA.mul(AT,A);
+    ATA.invert();
+    ATl.mul(AT,l);
+    dxMatrix.mul(ATA,ATl);
+    xOld.negate();
+    xNew.sub(dxMatrix,xOld);
+    dx=xNew.getElement(0,0);
+    dy=xNew.getElement(1,0);
+    dz=xNew.getElement(2,0);
+    alfa=xNew.getElement(3,0);
+    beta=xNew.getElement(4,0);
+    gamma=xNew.getElement(5,0);
+    q=xNew.getElement(6,0);
+    i++;
+  }
+ while ((!dxMatrix.equals(zero,tolerance) & (i < maxSteps)));
+  xNew.transpose();
+  return xNew;
+}

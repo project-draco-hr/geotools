@@ -1,0 +1,23 @@
+{
+  String[] propertyNames=query.getPropertyNames();
+  String defaultGeomName=schema.getGeometryDescriptor().getLocalName();
+  FilterAttributeExtractor extractor=new FilterAttributeExtractor(schema);
+  Filter filter=query.getFilter();
+  filter.accept(extractor,null);
+  String[] filterAttnames=extractor.getAttributeNames();
+  if ((propertyNames != null) && (propertyNames.length == 1) && propertyNames[0].equals(defaultGeomName)&& (filterAttnames.length == 0 || (filterAttnames.length == 1 && filterAttnames[0].equals(defaultGeomName)))) {
+    try {
+      SimpleFeatureType newSchema=DataUtilities.createSubType(schema,propertyNames);
+      return createFeatureReader(typeName,getAttributesReader(false,query),newSchema);
+    }
+ catch (    SchemaException se) {
+      throw new DataSourceException("Error creating schema",se);
+    }
+  }
+  try {
+    return createFeatureReader(getSchema().getTypeName(),getAttributesReader(true,query),schema);
+  }
+ catch (  SchemaException se) {
+    throw new DataSourceException("Error creating schema",se);
+  }
+}

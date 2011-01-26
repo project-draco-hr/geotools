@@ -1,0 +1,29 @@
+{
+  LinkedList queue=new LinkedList();
+  ArrayList includes=new ArrayList();
+  HashSet added=new HashSet();
+  queue.addLast(schema);
+  while (!queue.isEmpty()) {
+    schema=(XSDSchema)queue.removeFirst();
+    List contents=schema.getContents();
+    for (Iterator itr=contents.iterator(); itr.hasNext(); ) {
+      XSDSchemaContent content=(XSDSchemaContent)itr.next();
+      if (content instanceof XSDInclude) {
+        XSDInclude include=(XSDInclude)content;
+        if (!added.contains(include.getSchemaLocation())) {
+          includes.add(include);
+          added.add(include.getSchemaLocation());
+          if (include.getIncorporatedSchema() != null) {
+            queue.addLast(include.getIncorporatedSchema());
+          }
+ else {
+            if (LOGGER.isLoggable(Level.FINE)) {
+              LOGGER.fine("include: " + include + " resulted in null schema");
+            }
+          }
+        }
+      }
+    }
+  }
+  return includes;
+}

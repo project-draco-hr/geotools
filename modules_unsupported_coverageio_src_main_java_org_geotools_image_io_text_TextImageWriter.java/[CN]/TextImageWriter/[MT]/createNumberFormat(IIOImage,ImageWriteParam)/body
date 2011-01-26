@@ -1,0 +1,51 @@
+{
+  final Locale locale=getDataLocale(parameters);
+  final int type=image.hasRaster() ? image.getRaster().getTransferType() : image.getRenderedImage().getSampleModel().getDataType();
+  if (type != DataBuffer.TYPE_FLOAT && type != DataBuffer.TYPE_DOUBLE) {
+    maximum=Short.MAX_VALUE;
+    return (locale != null) ? NumberFormat.getIntegerInstance(locale) : NumberFormat.getIntegerInstance();
+  }
+  int digits=0;
+  double multiple=1;
+  maximum=Double.NEGATIVE_INFINITY;
+  final RectIter iterator=createRectIter(image,parameters);
+  if (!iterator.finishedBands())   do {
+    if (!iterator.finishedLines())     do {
+      if (!iterator.finishedPixels())       do {
+        final double value=Math.abs(iterator.getSampleDouble());
+        if (Double.isInfinite(value)) {
+          continue;
+        }
+        if (value > maximum) {
+          maximum=value;
+        }
+        while (true) {
+          double scaled=value * multiple;
+          if (type == DataBuffer.TYPE_FLOAT) {
+            scaled=(float)scaled;
+          }
+          if (!(StrictMath.abs(scaled - StrictMath.rint(scaled)) >= DELTA_THRESHOLD)) {
+            break;
+          }
+          if (++digits > MAXIMUM_DIGITS) {
+            return NumberFormat.getNumberInstance(locale);
+          }
+          multiple*=10;
+        }
+      }
+ while (!iterator.nextPixelDone());
+      iterator.startPixels();
+    }
+ while (!iterator.nextLineDone());
+    iterator.startLines();
+  }
+ while (!iterator.nextBandDone());
+  final NumberFormat format=(locale != null) ? NumberFormat.getNumberInstance(locale) : NumberFormat.getNumberInstance();
+  if (digits != 0 || maximum >= DELTA_THRESHOLD) {
+    format.setMaximumFractionDigits(digits);
+    if (maximum < NODIGITS_THRESHOLD) {
+      format.setMinimumFractionDigits(digits);
+    }
+  }
+  return format;
+}

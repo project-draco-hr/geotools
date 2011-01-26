@@ -1,0 +1,24 @@
+{
+  if (query.getTypeName() == null) {
+    query=new DefaultQuery(query);
+    ((DefaultQuery)query).setTypeName(this.getSchema().getTypeName());
+  }
+ else   if (!query.getTypeName().equals(this.getSchema().getTypeName())) {
+    return new EmptyFeatureCollection(this.getSchema());
+  }
+  Filter[] filters=splitFilter(query.getFilter());
+  Filter envFilter=filters[0];
+  if (envFilter.equals(Filter.EXCLUDE)) {
+    return new EmptyFeatureCollection(this.getSchema());
+  }
+ else   if (envFilter.equals(Filter.INCLUDE)) {
+    envFilter=createFilterFromBounds();
+    return new GridCachingFeatureCollection((BBOX)envFilter,query,this,this.fs,true);
+  }
+ else   if (envFilter instanceof BBOX) {
+    return new GridCachingFeatureCollection((BBOX)envFilter,query,this,this.fs,true);
+  }
+ else {
+    throw new UnsupportedOperationException("Invalid filter created.");
+  }
+}

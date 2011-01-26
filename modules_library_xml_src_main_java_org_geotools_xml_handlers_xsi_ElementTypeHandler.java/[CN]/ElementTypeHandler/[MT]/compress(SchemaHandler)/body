@@ -1,0 +1,56 @@
+{
+synchronized (this) {
+    if (cache != null)     return cache;
+    cache=new DefaultElement();
+  }
+  cache.id=id;
+  cache.name=name;
+  cache.namespace=parent.getTargetNamespace();
+  cache.defaulT=defaulT;
+  cache.fixed=fixed;
+  cache.block=block;
+  cache.finaL=finaL;
+  cache.abstracT=abstracT;
+  cache.form=form;
+  cache.nillable=nillable;
+  cache.minOccurs=minOccurs;
+  cache.maxOccurs=maxOccurs;
+  if (substitutionGroup != null) {
+    cache.substitutionGroup=parent.lookUpElement(substitutionGroup);
+  }
+  if (child == null) {
+    cache.type=parent.lookUpType(type);
+  }
+ else   if (child instanceof SimpleTypeHandler) {
+    cache.type=((SimpleTypeHandler)child).compress(parent);
+  }
+ else {
+    cache.type=((ComplexTypeHandler)child).compress(parent);
+  }
+  if (ref != null) {
+    Element e=parent.lookUpElement(ref);
+    if (e == null) {
+      throw new SAXException("Element '" + ref + "' was referenced and not found");
+    }
+    cache.name=e.getName();
+    cache.type=e.getType();
+    if ((defaulT == null) || "".equalsIgnoreCase(defaulT)) {
+      cache.defaulT=e.getDefault();
+    }
+    if ((fixed == null) || "".equalsIgnoreCase(fixed)) {
+      cache.fixed=e.getFixed();
+    }
+    if (block == 0) {
+      cache.block=e.getBlock();
+    }
+    if (finaL == 0) {
+      cache.finaL=e.getFinal();
+    }
+    cache.minOccurs=(minOccurs == 1) ? e.getMinOccurs() : minOccurs;
+    cache.maxOccurs=(maxOccurs == 1) ? e.getMaxOccurs() : maxOccurs;
+    if (substitutionGroup != null) {
+      cache.substitutionGroup=e.getSubstitutionGroup();
+    }
+  }
+  return cache;
+}

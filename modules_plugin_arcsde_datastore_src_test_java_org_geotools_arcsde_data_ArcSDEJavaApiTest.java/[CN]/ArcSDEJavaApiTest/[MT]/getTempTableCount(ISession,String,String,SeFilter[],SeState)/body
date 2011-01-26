@@ -1,0 +1,28 @@
+{
+  final Command<Integer> countCmd=new Command<Integer>(){
+    @Override public Integer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      String[] columns={"*"};
+      SeSqlConstruct sql=new SeSqlConstruct(tableName);
+      if (whereClause != null) {
+        sql.setWhere(whereClause);
+      }
+      SeQuery query=new SeQuery(connection,columns,sql);
+      if (state != null) {
+        SeObjectId differencesId=new SeObjectId(SeState.SE_NULL_STATE_ID);
+        query.setState(state.getId(),differencesId,SeState.SE_STATE_DIFF_NOCHECK);
+      }
+      SeQueryInfo qInfo=new SeQueryInfo();
+      qInfo.setConstruct(sql);
+      if (spatFilters != null) {
+        query.setSpatialConstraints(SeQuery.SE_OPTIMIZE,true,spatFilters);
+      }
+      SeTable.SeTableStats tableStats=query.calculateTableStatistics("INT32_COL",SeTable.SeTableStats.SE_COUNT_STATS,qInfo,0);
+      int actualCount=tableStats.getCount();
+      query.close();
+      return new Integer(actualCount);
+    }
+  }
+;
+  final Integer count=session.issue(countCmd);
+  return count.intValue();
+}

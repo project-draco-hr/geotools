@@ -1,0 +1,23 @@
+{
+  PathAttributeList elements=new PathAttributeList();
+  elements.put(rootAttribute.getLabel(),createIndexedItemXpathString(),target);
+  Iterator<TreeAttributeMapping> it=attOrderedTypeList.iterator();
+  while (it.hasNext()) {
+    TreeAttributeMapping attMapping=it.next();
+    final Expression sourceExpression=attMapping.getIdentifierExpression();
+    List<Pair> ls=elements.get(attMapping.getParentLabel());
+    if (ls != null) {
+      for (int i=0; i < ls.size(); i++) {
+        Pair parentAttribute=ls.get(i);
+        int count=1;
+        String countXpath=null;
+        if (attMapping.getInstanceXpath() != null) {
+          countXpath=parentAttribute.getXpath() + XPATH_SEPARATOR + attMapping.getInstanceXpath();
+          count=XmlXpathUtilites.countXPathNodes(mapping.getNamespaces(),countXpath,xmlResponse.getDoc());
+        }
+        createSubFeaturesAndAddToAttributeList(elements,attMapping,sourceExpression,parentAttribute,count,countXpath);
+      }
+    }
+  }
+  return elements;
+}

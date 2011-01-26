@@ -1,0 +1,19 @@
+{
+  assertTrue(operation.getSourceCRS() instanceof ProjectedCRS);
+  assertTrue(operation.getTargetCRS() instanceof GeocentricCRS);
+  assertTrue(operation.getTargetCRS().getCoordinateSystem() instanceof CartesianCS);
+  final MathTransform mt=operation.getMathTransform();
+  final double[] input={41451.73,572227,0};
+  final double[] output=new double[input.length * 2];
+  mt.transform(input,0,output,0,1);
+  input[2]=10000;
+  mt.transform(input,0,output,input.length,1);
+  double distance=0;
+  for (int i=0; i < input.length; i++) {
+    final double delta=output[i] - output[input.length + i];
+    distance+=delta * delta;
+  }
+  distance=Math.sqrt(distance);
+  assertEquals("Distance",10000,distance,1E-5);
+  return output;
+}

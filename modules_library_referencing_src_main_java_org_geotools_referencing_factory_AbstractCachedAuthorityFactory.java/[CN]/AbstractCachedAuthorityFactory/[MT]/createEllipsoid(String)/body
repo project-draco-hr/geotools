@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  Ellipsoid ellipsoid=(Ellipsoid)cache.get(key);
+  if (ellipsoid == null) {
+    try {
+      cache.writeLock(key);
+      ellipsoid=(Ellipsoid)cache.peek(key);
+      if (ellipsoid == null) {
+        ellipsoid=generateEllipsoid(code);
+        cache.put(key,ellipsoid);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return ellipsoid;
+}

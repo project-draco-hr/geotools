@@ -1,0 +1,25 @@
+{
+  GeneralEnvelope env=null;
+  if (1 == getNumRasters()) {
+    env=getGridEnvelope(0,0);
+  }
+ else {
+    for (    RasterInfo raster : subRasterInfo) {
+      int rasterIndex=getRasterIndex(raster.getRasterId());
+      GeneralEnvelope rasterEnvelope=getGridEnvelope(rasterIndex,0);
+      if (env == null) {
+        env=new GeneralEnvelope(rasterEnvelope);
+      }
+ else {
+        env.add(rasterEnvelope);
+      }
+    }
+  }
+  if (PixelInCell.CELL_CENTER.equals(pixelAnchor)) {
+    double[] resolution=getResolution(0,0);
+    double deltaX=resolution[0] / 2;
+    double deltaY=resolution[1] / 2;
+    env.setEnvelope(env.getMinimum(0) + deltaX,env.getMinimum(1) + deltaY,env.getMaximum(0) - deltaX,env.getMaximum(1) - deltaY);
+  }
+  return env;
+}

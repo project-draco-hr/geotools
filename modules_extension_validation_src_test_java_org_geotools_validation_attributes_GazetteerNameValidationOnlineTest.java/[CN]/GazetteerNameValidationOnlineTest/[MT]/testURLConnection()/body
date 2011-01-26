@@ -1,0 +1,34 @@
+{
+  String place="Vancouver";
+  try {
+    URL gazetteerURL=new URL("http://cgdi-dev.geoconnections.org/cgi-bin/prototypes/cgdigaz/cgdigaz.cgi?version=1.0&request=GetPlacenameGeometry&wildcards=false&geomtype=bbox&placename=" + place);
+    HttpURLConnection gazetteerConnection=(HttpURLConnection)gazetteerURL.openConnection();
+    if (!("OK".equals(gazetteerConnection.getResponseMessage())))     throw new Exception("An error occured creating the connection to the Gazetteer.");
+    InputStream gazetteerInputStream=gazetteerConnection.getInputStream();
+    InputStreamReader gazetteerInputStreamReader=new InputStreamReader(gazetteerInputStream);
+    BufferedReader gazetteerBufferedReader=new BufferedReader(gazetteerInputStreamReader);
+    InputSource gazetteerInputSource=new InputSource(gazetteerBufferedReader);
+    DocumentBuilderFactory dfactory=DocumentBuilderFactory.newInstance();
+    dfactory.setNamespaceAware(true);
+    dfactory.setValidating(false);
+    dfactory.setIgnoringComments(true);
+    dfactory.setCoalescing(true);
+    dfactory.setIgnoringElementContentWhitespace(true);
+    Document serviceDoc=dfactory.newDocumentBuilder().parse(gazetteerInputSource);
+    Element elem=serviceDoc.getDocumentElement();
+    elem=getChildElement(elem,"queryInfo");
+    if (elem == null)     throw new NullPointerException("Invalid DOM tree returned by gazetteer.");
+    int number=Integer.parseInt(getChildText(elem,"numberOfResults"));
+    if (number > 0) {
+    }
+ else {
+    }
+  }
+ catch (  ConnectException timedOut) {
+    return;
+  }
+catch (  Exception e) {
+    e.printStackTrace();
+    fail(e.toString());
+  }
+}

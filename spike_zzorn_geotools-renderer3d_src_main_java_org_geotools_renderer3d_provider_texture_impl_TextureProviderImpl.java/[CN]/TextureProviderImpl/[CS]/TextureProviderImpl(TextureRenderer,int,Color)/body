@@ -1,0 +1,29 @@
+{
+  ParameterChecker.checkNotNull(textureRenderer,"textureRenderer");
+  ParameterChecker.checkPositiveNonZeroInteger(textureSize,"textureSize");
+  ParameterChecker.checkNotNull(backgroundColor,"backgroundColor");
+  myTextureSize=textureSize;
+  myTextureRenderer=textureRenderer;
+  myBackgroundColor=backgroundColor;
+  myRenderBufer=new BufferedImage(textureSize,textureSize,BufferedImage.TYPE_4BYTE_ABGR);
+  final Thread renderThread=new Thread(new Runnable(){
+    public void run(){
+      while (true) {
+        final TextureJob paintJob=getNextJob();
+        clearToColor(paintJob.getBuffer(),myBackgroundColor);
+        myTextureRenderer.renderArea(paintJob.getArea(),myRenderBufer);
+synchronized (myTextureJobs) {
+          if (!myCurrentJobWasCanceled) {
+            final Graphics graphics=paintJob.getBuffer().getGraphics();
+            graphics.drawImage(myRenderBufer,0,0,null);
+            notifyListener(paintJob);
+          }
+          myCurrentJobWasCanceled=false;
+        }
+      }
+    }
+  }
+);
+  renderThread.setDaemon(true);
+  renderThread.start();
+}

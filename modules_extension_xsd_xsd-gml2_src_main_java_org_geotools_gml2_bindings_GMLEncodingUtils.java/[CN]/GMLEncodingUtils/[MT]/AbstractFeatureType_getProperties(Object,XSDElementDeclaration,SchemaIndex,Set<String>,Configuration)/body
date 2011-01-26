@@ -1,0 +1,97 @@
+{
+  Feature feature=(Feature)object;
+  if (feature.getUserData().get("xlink:id") != null) {
+    return Collections.EMPTY_LIST;
+  }
+  FeatureType featureType=feature.getType();
+  String namespace=featureType.getName().getNamespaceURI();
+  if (namespace == null) {
+    namespace=element.getTargetNamespace();
+  }
+  String typeName=featureType.getName().getLocalPart();
+  QName qualifiedTypeName=new QName(namespace,typeName);
+  XSDTypeDefinition type=schemaIndex.getTypeDefinition(qualifiedTypeName);
+  if (type == null) {
+    XSDElementDeclaration e=schemaIndex.getElementDeclaration(qualifiedTypeName);
+    if (e != null) {
+      type=e.getTypeDefinition();
+    }
+  }
+  if (type == null) {
+    if (featureType instanceof SimpleFeatureType) {
+      LOGGER.warning("Could find type for " + typeName + " in the schema, generating type from feature.");
+      type=createXmlTypeFromFeatureType((SimpleFeatureType)featureType,schemaIndex,toFilter);
+    }
+ else {
+      XSDElementDeclaration e=(XSDElementDeclaration)feature.getDescriptor().getUserData().get(XSDElementDeclaration.class);
+      if (e != null) {
+        type=e.getTypeDefinition();
+      }
+ else {
+        throw new RuntimeException("Could not find type for " + qualifiedTypeName + " in schema");
+      }
+    }
+  }
+  List particles=Schemas.getChildElementParticles(type,true);
+  List properties=new ArrayList();
+  O:   for (Iterator p=particles.iterator(); p.hasNext(); ) {
+    XSDParticle particle=(XSDParticle)p.next();
+    XSDElementDeclaration attribute=(XSDElementDeclaration)particle.getContent();
+    if (attribute.isElementDeclarationReference()) {
+      attribute=attribute.getResolvedElementDeclaration();
+    }
+    if (gml.qName("boundedBy").equals(new QName(attribute.getTargetNamespace(),attribute.getName()))) {
+      BoundingBox bounds=getBoundedBy(feature,configuration);
+      if (bounds != null) {
+        properties.add(new Object[]{particle,bounds});
+      }
+    }
+ else     if (featureType instanceof SimpleFeatureType) {
+      if (!isValidDescriptor(featureType,new NameImpl(attribute.getName()))) {
+        continue;
+      }
+      Object attributeValue=((SimpleFeature)feature).getAttribute(attribute.getName());
+      if (attributeValue != null && attributeValue instanceof Geometry) {
+        Object obj=((Geometry)attributeValue).getUserData();
+        Map<Object,Object> userData=new HashMap<Object,Object>();
+        if (obj != null && obj instanceof Map) {
+          userData.putAll((Map)obj);
+        }
+        userData.put(CoordinateReferenceSystem.class,featureType.getCoordinateReferenceSystem());
+        ((Geometry)attributeValue).setUserData(userData);
+      }
+      properties.add(new Object[]{particle,attributeValue});
+    }
+ else {
+      Name propertyName=new NameImpl(attribute.getTargetNamespace(),attribute.getName());
+      if (!isValidDescriptor(featureType,propertyName)) {
+        continue;
+      }
+      for (      Property property : feature.getProperties(propertyName)) {
+        Object value;
+        if (property instanceof ComplexAttribute) {
+          value=property;
+        }
+ else         if (property instanceof GeometryAttribute) {
+          value=property.getValue();
+          if (value != null) {
+            Geometry geometry=(Geometry)value;
+            CoordinateReferenceSystem crs=((GeometryAttribute)property).getDescriptor().getCoordinateReferenceSystem();
+            Map<Object,Object> userData=new HashMap<Object,Object>();
+            Object obj=geometry.getUserData();
+            if (obj != null && obj instanceof Map) {
+              userData.putAll((Map)obj);
+            }
+            userData.put(CoordinateReferenceSystem.class,crs);
+            geometry.setUserData(userData);
+          }
+        }
+ else {
+          value=property.getValue();
+        }
+        properties.add(new Object[]{particle,value});
+      }
+    }
+  }
+  return properties;
+}

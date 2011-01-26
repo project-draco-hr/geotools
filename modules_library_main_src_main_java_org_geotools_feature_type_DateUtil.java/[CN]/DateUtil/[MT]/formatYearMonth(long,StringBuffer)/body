@@ -1,0 +1,33 @@
+{
+  long time=value + (306 * LMSPERDAY) + ((LMSPERDAY * 3) / 4);
+  long century=time / MSPERCENTURY;
+  long adjusted=time + ((century - (century / 4)) * MSPERDAY);
+  int year=(int)(adjusted / MSPERAVGYEAR);
+  if (adjusted < 0) {
+    year--;
+  }
+  long yms=(adjusted + (LMSPERDAY / 4)) - (((year * 365) + (year / 4)) * LMSPERDAY);
+  int yday=(int)(yms / LMSPERDAY);
+  if (yday == 0) {
+    boolean bce=year < 0;
+    if (bce) {
+      year--;
+    }
+    int dcnt=((year % 4) == 0) ? 366 : 365;
+    if (!bce) {
+      year--;
+    }
+    yms+=(dcnt * LMSPERDAY);
+    yday+=dcnt;
+  }
+  int month=((5 * yday) + 456) / 153;
+  long rem=yms - BIAS_MONTHMS[month] - LMSPERDAY;
+  if (month > 12) {
+    year++;
+    month-=12;
+  }
+  formatYearNumber(year,buff);
+  buff.append('-');
+  formatTwoDigits(month,buff);
+  return rem;
+}

@@ -1,0 +1,22 @@
+{
+  if (mapPane != null && mapPane.getMapContext() != null) {
+    CoordinateReferenceSystem crs=mapPane.getMapContext().getCoordinateReferenceSystem();
+    String initialSelection=null;
+    try {
+      if (crs != null) {
+        initialSelection=CRS.lookupIdentifier(Citations.EPSG,crs,false);
+      }
+    }
+ catch (    Exception ex) {
+    }
+    CoordinateReferenceSystem newCRS=JCRSChooser.showDialog(mapPane,null,"Choose a projection for the map display",initialSelection);
+    if (newCRS != null && (crs == null || !CRS.equalsIgnoreMetadata(crs,newCRS))) {
+      try {
+        mapPane.getMapContext().setCoordinateReferenceSystem(newCRS);
+      }
+ catch (      Exception ex) {
+        ExceptionMonitor.show(this,ex,"Failed to set the display CRS");
+      }
+    }
+  }
+}

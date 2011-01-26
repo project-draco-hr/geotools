@@ -1,0 +1,41 @@
+{
+  super(parameters);
+  this.esriDefinition=true;
+  final Collection<GeneralParameterDescriptor> expected=getParameterDescriptors().descriptors();
+  latitudeOfOrigin=doubleValue(expected,Provider.LATITUDE_OF_CENTER,parameters);
+  centralMeridian=doubleValue(expected,Provider.LONGITUDE_OF_CENTER,parameters);
+  azimuth=doubleValue(expected,Provider.AZIMUTH,parameters);
+  pseudoStandardParallel=doubleValue(expected,Provider.PSEUDO_STANDARD_PARALLEL,parameters);
+  scaleFactor=doubleValue(expected,Provider.SCALE_FACTOR,parameters);
+  x_scale=doubleValue(expected,Provider.X_SCALE,parameters);
+  y_scale=doubleValue(expected,Provider.Y_SCALE,parameters);
+  xy_plane_rotation=doubleValue(expected,Provider.XY_PLANE_ROTATION,parameters);
+  if (Double.isNaN(doubleValue(expected,Provider.X_SCALE,parameters)) && Double.isNaN(doubleValue(expected,Provider.Y_SCALE,parameters)) && Double.isNaN(doubleValue(expected,Provider.XY_PLANE_ROTATION,parameters))) {
+    this.esriDefinition=false;
+  }
+ else {
+    axisTransform=createAffineTransform(x_scale,y_scale,xy_plane_rotation);
+  }
+  ensureLatitudeInRange(Provider.LATITUDE_OF_CENTER,latitudeOfOrigin,false);
+  ensureLongitudeInRange(Provider.LONGITUDE_OF_CENTER,centralMeridian,false);
+  sinAzim=sin(azimuth);
+  cosAzim=cos(azimuth);
+  n=sin(pseudoStandardParallel);
+  tanS2=tan(pseudoStandardParallel / 2 + s45);
+  final double sinLat, cosLat, cosL2, u0;
+  sinLat=sin(latitudeOfOrigin);
+  cosLat=cos(latitudeOfOrigin);
+  cosL2=cosLat * cosLat;
+  alfa=sqrt(1 + ((excentricitySquared * (cosL2 * cosL2)) / (1 - excentricitySquared)));
+  hae=alfa * excentricity / 2;
+  u0=asin(sinLat / alfa);
+  final double g, esl;
+  esl=excentricity * sinLat;
+  g=pow((1 - esl) / (1 + esl),(alfa * excentricity) / 2);
+  k1=pow(tan(latitudeOfOrigin / 2 + s45),alfa) * g / tan(u0 / 2 + s45);
+  ka=pow(1 / k1,-1 / alfa);
+  final double radius;
+  radius=sqrt(1 - excentricitySquared) / (1 - (excentricitySquared * (sinLat * sinLat)));
+  ro0=scaleFactor * radius / tan(pseudoStandardParallel);
+  rop=ro0 * pow(tanS2,n);
+}

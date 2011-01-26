@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  CoordinateOperation operation=(CoordinateOperation)cache.get(key);
+  if (operation == null) {
+    try {
+      cache.writeLock(key);
+      operation=(CoordinateOperation)cache.peek(key);
+      if (operation == null) {
+        operation=generateCoordinateOperation(code);
+        cache.put(key,operation);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return operation;
+}

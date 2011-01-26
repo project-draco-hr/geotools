@@ -1,0 +1,17 @@
+{
+  final GridCoverage2D gc=getGC();
+  final MapContext context=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+  final Style style=RendererBaseTest.loadStyle(this,"empty.sld");
+  context.addLayer(gc,style);
+  final StreamingRenderer renderer=new StreamingRenderer();
+  CountingRenderListener counter=new CountingRenderListener();
+  renderer.addRenderListener(counter);
+  renderer.setRendererHints(Collections.singletonMap(StreamingRenderer.OPTIMIZED_DATA_LOADING_KEY,Boolean.TRUE));
+  renderer.setContext(context);
+  BufferedImage image=new BufferedImage(300,300,BufferedImage.TYPE_4BYTE_ABGR);
+  Graphics2D g2d=(Graphics2D)image.getGraphics();
+  renderer.paint(g2d,new Rectangle(0,0,300,300),context.getLayerBounds());
+  g2d.dispose();
+  assertEquals(0,counter.errors);
+  assertEquals(1,counter.features);
+}

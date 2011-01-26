@@ -1,0 +1,47 @@
+{
+  if (transform == null || transform instanceof MathTransform2D) {
+    axis[1]=axis[3]=1;
+    return (MathTransform2D)transform;
+  }
+  final DimensionFilter filter=DimensionFilter.getInstance(hints);
+  if (gridRange != null) {
+    final int dimension=gridRange.getDimension();
+    for (int i=0; i < dimension; i++) {
+      if (gridRange.getSpan(i) > 1) {
+        filter.addSourceDimension(i);
+      }
+    }
+  }
+ else {
+    filter.addSourceDimensionRange(0,2);
+  }
+  Exception cause=null;
+  int[] dimensions=filter.getSourceDimensions();
+  MathTransform candidate;
+  if (dimensions.length == 2) {
+    axis[0]=dimensions[0];
+    axis[1]=dimensions[1];
+    try {
+      candidate=filter.separate(transform);
+      if (candidate.getTargetDimensions() != 2) {
+        filter.clear();
+        filter.addSourceDimensions(dimensions);
+        filter.addTargetDimensions(dimensions);
+        candidate=filter.separate(transform);
+      }
+      dimensions=filter.getTargetDimensions();
+      axis[2]=dimensions[0];
+      axis[3]=dimensions[1];
+      try {
+        return (MathTransform2D)candidate;
+      }
+ catch (      ClassCastException exception) {
+        cause=exception;
+      }
+    }
+ catch (    FactoryException exception) {
+      cause=exception;
+    }
+  }
+  throw new IllegalArgumentException(Errors.format(ErrorKeys.NO_TRANSFORM2D_AVAILABLE),cause);
+}

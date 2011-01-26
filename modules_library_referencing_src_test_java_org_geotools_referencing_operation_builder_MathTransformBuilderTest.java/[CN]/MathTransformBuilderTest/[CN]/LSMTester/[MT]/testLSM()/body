@@ -1,0 +1,22 @@
+{
+  this.calculateLSM();
+  GeneralMatrix AT=A.clone();
+  AT.transpose();
+  GeneralMatrix ATP=new GeneralMatrix(AT.getNumRow(),P.getNumCol());
+  GeneralMatrix ATPA=new GeneralMatrix(AT.getNumRow(),A.getNumCol());
+  GeneralMatrix ATPX=new GeneralMatrix(AT.getNumRow(),1);
+  GeneralMatrix x=new GeneralMatrix(A.getNumCol(),1);
+  ATP.mul(AT,P);
+  ATPA.mul(ATP,A);
+  ATPX.mul(ATP,X);
+  GeneralMatrix ATPAI=ATPA.clone();
+  ATPAI.invert();
+  x.mul(ATPAI,ATPX);
+  x.mul(ATPA,x);
+  x.sub(ATPX);
+  double[] tx=new double[x.getNumRow()];
+  x.getColumn(0,tx);
+  for (int i=0; i < tx.length; i++) {
+    assertTrue(tx[i] < 0.001);
+  }
+}

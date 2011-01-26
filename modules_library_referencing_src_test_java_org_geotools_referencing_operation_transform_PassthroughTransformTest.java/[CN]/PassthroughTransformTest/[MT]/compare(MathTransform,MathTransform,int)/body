@@ -1,0 +1,34 @@
+{
+  final int pointCount=200;
+  final int mtDimension=mt.getSourceDimensions();
+  final int atDimension=submt.getSourceDimensions();
+  final double[] atData=new double[pointCount * atDimension];
+  final double[] mtData=new double[pointCount * mtDimension];
+  for (int j=0; j < pointCount; j++) {
+    for (int i=0; i < mtDimension; i++) {
+      mtData[j * mtDimension + i]=100 * random.nextDouble() - 50;
+    }
+    for (int i=0; i < atDimension; i++) {
+      atData[j * atDimension + i]=mtData[j * mtDimension + subOffset + i];
+    }
+  }
+  if (atDimension == mtDimension) {
+    assertTrue("Test arrays are not correctly build.",Arrays.equals(atData,mtData));
+  }
+  final double[] reference=mtData.clone();
+  submt.transform(atData,0,atData,0,pointCount);
+  mt.transform(mtData,0,mtData,0,pointCount);
+  assertTrue("'subOffset' argument too high",subOffset + atDimension <= mtDimension);
+  for (int j=0; j < pointCount; j++) {
+    for (int i=0; i < mtDimension; i++) {
+      final double expected;
+      if (i < subOffset || i >= subOffset + atDimension) {
+        expected=reference[j * mtDimension + i];
+      }
+ else {
+        expected=atData[j * atDimension + i - subOffset];
+      }
+      assertEquals("A transformed value is wrong",expected,mtData[j * mtDimension + i],1E-6);
+    }
+  }
+}

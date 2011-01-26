@@ -1,0 +1,33 @@
+{
+  if (reader == null) {
+    throw new IOException("FeatureWriter has been closed");
+  }
+  SimpleFeatureType featureType=getFeatureType();
+  if (hasNext()) {
+    try {
+      live=reader.next();
+      current=SimpleFeatureBuilder.copy(live);
+      LOGGER.finer("Calling next on writer");
+    }
+ catch (    IllegalAttributeException e) {
+      throw new DataSourceException("Unable to edit " + live.getID() + " of "+ featureType.getTypeName(),e);
+    }
+  }
+ else {
+    live=null;
+    try {
+      SimpleFeature temp=SimpleFeatureBuilder.template(featureType,null);
+      current=new MutableFIDFeature((List)temp.getAttributes(),featureType,null);
+      if (useQueryDataForInsert()) {
+        queryData.startInsert();
+      }
+    }
+ catch (    IllegalAttributeException e) {
+      throw new DataSourceException("Unable to add additional Features of " + featureType.getTypeName(),e);
+    }
+catch (    SQLException e) {
+      throw new DataSourceException("Unable to move to insert row. " + e.getMessage(),e);
+    }
+  }
+  return current;
+}

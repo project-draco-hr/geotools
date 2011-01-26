@@ -1,0 +1,120 @@
+{
+  try {
+    final SpatioTemporalImageReader reader=(SpatioTemporalImageReader)HDF4Driver.spi.createReaderInstance(this.input);
+    reader.setInput(this.input);
+    int numCoverages=0;
+    final Name mainCoverageName=Utilities.buildCoverageName(input);
+    Name coverageName=mainCoverageName;
+    final int numImages=reader.getNumImages(false);
+    Map<Name,Map<String,HDF4ProductFieldType>> fieldsMap=new HashMap<Name,Map<String,HDF4ProductFieldType>>();
+    for (int imageIndex=0; imageIndex < numImages; imageIndex++) {
+      final SpatioTemporalMetadata metadata=reader.getSpatioTemporalMetadata(imageIndex);
+      final SliceDescriptor sd=reader.getSliceDescriptor(imageIndex);
+      if (sd == null)       throw new IllegalStateException("unable to get the required sliceDescriptor");
+      TemporalGeometricPrimitive time=sd.getTemporalExtent();
+      BoundingBox boundingBox=sd.getHorizontalExtent();
+      Band band=metadata.getBand(0);
+      Set<TemporalGeometricPrimitive> temporalExtent;
+      Map<String,HDF4ProductFieldType> fields;
+      if (!coverages2DMap.containsKey(boundingBox)) {
+        coverageName=new NameImpl(mainCoverageName.getLocalPart() + "_" + Integer.toString(numCoverages++));
+        coverageNames.add(coverageName);
+        coverages2DMap.put(boundingBox,coverageName);
+        temporalExtent=new LinkedHashSet<TemporalGeometricPrimitive>();
+        fields=new LinkedHashMap<String,HDF4ProductFieldType>();
+        temporalExtentMap.put(coverageName,temporalExtent);
+        fieldsMap.put(coverageName,fields);
+      }
+ else {
+        coverageName=coverages2DMap.get(boundingBox);
+      }
+      if (!envelopesMap.containsKey(coverageName)) {
+        initOriginalEnvelopeAndCRS(coverageName,sd);
+        final GridGeometry2D gridGeometry2D=buildGridGeometry2D(coverageName,metadata);
+        gridGeometry2DMap.put(coverageName,gridGeometry2D);
+      }
+ else {
+        GeneralEnvelope envelope=envelopesMap.get(coverageName);
+        envelope.add(sd.getGeneralEnvelope());
+        envelopesMap.put(coverageName,envelope);
+      }
+      temporalExtent=(LinkedHashSet<TemporalGeometricPrimitive>)temporalExtentMap.get(coverageName);
+      if (time != null) {
+        if (!temporalExtent.contains(time))         temporalExtent.add(time);
+      }
+      fields=(LinkedHashMap<String,HDF4ProductFieldType>)fieldsMap.get(coverageName);
+      String elementName=band.getName();
+      if (!fields.containsKey(elementName)) {
+        Product product=HDF4ProductFieldType.getProduct(elementName);
+        Unit unit=Unit.ONE;
+        if (product != null) {
+          unit=product.getUoM();
+        }
+ else {
+          String uOm=band.getUoM();
+          if (uOm == null)           unit=Unit.ONE.alternate(uOm);
+ else           try {
+            unit=Unit.valueOf(uOm);
+          }
+ catch (          IllegalArgumentException iae) {
+            try {
+              unit=Unit.ONE.alternate(uOm);
+            }
+ catch (            IllegalArgumentException iae2) {
+              if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE,"Unable to parse the provided unit " + uOm,iae2);
+              }
+            }
+catch (            UnsupportedOperationException uoe) {
+              if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE,"Unable to parse the provided unit " + uOm,uoe);
+              }
+            }
+          }
+        }
+        final Name nameImpl=new NameImpl(coverageName.getLocalPart(),elementName);
+        final InternationalString description=new SimpleInternationalString(product != null ? product.getDescription() : elementName);
+        final GridSampleDimension gridBand=Utilities.buildBands(band,elementName,unit);
+        final HDF4ProductFieldType fd=new HDF4ProductFieldType(nameImpl,description,gridBand);
+        fields.put(elementName,fd);
+      }
+      sliceDescriptorsMap.put(imageIndex,sd);
+      spatioTemporalMetadataMap.put(imageIndex,metadata);
+    }
+    for (    Name covName : coverageNames) {
+      Set<TemporalGeometricPrimitive> temporalExtent=temporalExtentMap.get(covName);
+      if (temporalExtent.size() == 0) {
+        temporalExtent=Collections.emptySet();
+        temporalExtentMap.put(covName,temporalExtent);
+      }
+      Map<String,HDF4ProductFieldType> fields=(LinkedHashMap<String,HDF4ProductFieldType>)fieldsMap.get(covName);
+      if (fields != null && !fields.isEmpty()) {
+        final Set<FieldType> fieldTypes=new LinkedHashSet<FieldType>(fields.size());
+        final StringBuilder sb=new StringBuilder();
+        for (        HDF4ProductFieldType fd : fields.values()) {
+          fieldTypes.add(fd);
+          final InternationalString description=fd.getDescription();
+          sb.append(description != null ? description.toString() + "," : "");
+        }
+        String description=sb.toString();
+        int pos=-1;
+        if (description.length() > 0 && (pos=description.lastIndexOf(",")) != -1) {
+          description=description.substring(0,pos);
+        }
+        DefaultRangeType range=new DefaultRangeType(covName,new SimpleInternationalString(description),fieldTypes);
+        rangeMap.put(covName,range);
+      }
+    }
+    numberOfCoverages=numCoverages;
+    reader.dispose();
+  }
+ catch (  IOException e) {
+    this.numberOfCoverages=1;
+  }
+catch (  FactoryException fe) {
+    this.numberOfCoverages=1;
+  }
+catch (  TransformException fe) {
+    this.numberOfCoverages=1;
+  }
+}

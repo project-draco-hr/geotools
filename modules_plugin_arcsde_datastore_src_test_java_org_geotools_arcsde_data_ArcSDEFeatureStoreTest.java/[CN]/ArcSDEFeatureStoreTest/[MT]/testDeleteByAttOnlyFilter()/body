@@ -1,0 +1,27 @@
+{
+  testData.insertTestData();
+  final DataStore ds=testData.getDataStore();
+  final String typeName=testData.getTempTableName();
+  Filter or=CQL.toFilter("INT32_COL = 1 OR INT32_COL = 2");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=ds.getFeatureWriter(typeName,or,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(writer.hasNext());
+    SimpleFeature feature=writer.next();
+    assertEquals(Integer.valueOf(1),feature.getAttribute("INT32_COL"));
+    writer.remove();
+    feature=writer.next();
+    assertEquals(Integer.valueOf(2),feature.getAttribute("INT32_COL"));
+    writer.remove();
+    assertFalse(writer.hasNext());
+  }
+  finally {
+    writer.close();
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> read=ds.getFeatureReader(new Query(typeName,or),Transaction.AUTO_COMMIT);
+  try {
+    assertFalse(read.hasNext());
+  }
+  finally {
+    read.close();
+  }
+}

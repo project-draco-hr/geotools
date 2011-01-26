@@ -1,0 +1,123 @@
+{
+  if (XSISimpleTypes.NAMESPACE.equals(simpleType.getNamespace())) {
+  }
+  AttributesImpl ai=new AttributesImpl();
+  if ((simpleType.getId() != null) && (simpleType.getId() != "")) {
+    ai.addAttribute("","id","","ID",simpleType.getId());
+  }
+  if ((simpleType.getName() != null) && (simpleType.getName() != "")) {
+    ai.addAttribute("","name","","NCName",simpleType.getName());
+  }
+  if (simpleType.getFinal() != Schema.NONE) {
+    ai.addAttribute("","final","","NMTOKENS",ComplexTypeHandler.writeFinal(simpleType.getFinal()));
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"simpleType",ai);
+switch (simpleType.getChildType()) {
+case SimpleType.RESTRICTION:
+    SimpleType st=simpleType.getParents()[0];
+  ai=null;
+if (schema.getTargetNamespace().equals(st.getNamespace())) {
+  if ((st.getName() != null) && (st.getName() != "")) {
+    SimpleType[] sts=schema.getSimpleTypes();
+    if (sts != null) {
+      for (int i=0; i < sts.length; i++)       if (st.getName().equals(sts[i].getName())) {
+        ai=new AttributesImpl();
+        ai.addAttribute("","base","","QName",st.getName());
+      }
+    }
+  }
+}
+ else {
+  ai=new AttributesImpl();
+  XSISAXHandler.setLogLevel(logger.getLevel());
+  Schema s=SchemaFactory.getInstance(st.getNamespace());
+  ai.addAttribute("","base","","QName",s.getPrefix() + ":" + st.getName());
+}
+ph.startElement(XSISimpleTypes.NAMESPACE,"restriction",ai);
+if (ai == null) {
+writeSimpleType(st,schema,ph,hints);
+}
+Facet[] facets=simpleType.getFacets();
+if (facets != null) {
+for (int i=0; i < facets.length; i++) writeFacet(facets[i],ph);
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"restriction");
+break;
+case SimpleType.LIST:
+st=simpleType.getParents()[0];
+ai=null;
+if (schema.getTargetNamespace().equals(st.getNamespace())) {
+if ((st.getName() != null) && (st.getName() != "")) {
+SimpleType[] sts=schema.getSimpleTypes();
+if (sts != null) {
+for (int i=0; i < sts.length; i++) if (st.getName().equals(sts[i].getName())) {
+ai=new AttributesImpl();
+ai.addAttribute("","itemType","","QName",st.getName());
+}
+}
+}
+}
+ else {
+ai=new AttributesImpl();
+Schema s=SchemaFactory.getInstance(st.getNamespace());
+ai.addAttribute("","itemType","","QName",s.getPrefix() + ":" + st.getName());
+}
+ph.startElement(XSISimpleTypes.NAMESPACE,"list",ai);
+if (ai == null) {
+writeSimpleType(st,schema,ph,hints);
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"list");
+break;
+case SimpleType.UNION:
+SimpleType[] sts=simpleType.getParents();
+String memberTypes=null;
+List childTs=new LinkedList();
+if (sts != null) {
+for (int j=0; j < sts.length; j++) {
+st=sts[j];
+if (schema.getTargetNamespace().equals(st.getNamespace())) {
+boolean found=false;
+if ((st.getName() != null) && (st.getName() != "")) {
+SimpleType[] sts2=schema.getSimpleTypes();
+if (sts2 != null) {
+for (int i=0; i < sts2.length; i++) if (st.getName().equals(sts2[i].getName())) {
+found=true;
+if (memberTypes == null) {
+memberTypes=st.getName();
+}
+ else {
+memberTypes+=(" " + st.getName());
+}
+}
+}
+}
+if (!found) {
+childTs.add(st);
+}
+}
+ else {
+ai=new AttributesImpl();
+Schema s=SchemaFactory.getInstance(st.getNamespace());
+if (memberTypes == null) {
+memberTypes=s.getPrefix() + ":" + st.getName();
+}
+ else {
+memberTypes+=(" " + s.getPrefix() + ":"+ st.getName());
+}
+}
+}
+}
+if (memberTypes != null) {
+ai=new AttributesImpl();
+ai.addAttribute("","memberTypes","","QName",memberTypes);
+}
+ph.startElement(XSISimpleTypes.NAMESPACE,"union",ai);
+if (childTs.size() > 0) {
+Iterator i=childTs.iterator();
+while (i.hasNext()) writeSimpleType((SimpleType)i.next(),schema,ph,hints);
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"union");
+break;
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"simpleType");
+}

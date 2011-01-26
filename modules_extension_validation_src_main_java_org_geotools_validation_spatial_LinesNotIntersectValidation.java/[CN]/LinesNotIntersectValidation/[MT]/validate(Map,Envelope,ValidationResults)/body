@@ -1,0 +1,26 @@
+{
+  ArrayList geoms=new ArrayList();
+  boolean result=true;
+  Iterator it=layers.values().iterator();
+  while (it.hasNext()) {
+    SimpleFeatureSource featureSource=(SimpleFeatureSource)it.next();
+    SimpleFeatureIterator features=featureSource.getFeatures().features();
+    try {
+      while (features.hasNext()) {
+        SimpleFeature feature=features.next();
+        Geometry geom=(Geometry)feature.getDefaultGeometry();
+        for (int i=0; i < geoms.size(); i++) {
+          if (geom.crosses((Geometry)geoms.get(i))) {
+            results.error(feature,"Lines cross when they shouldn't.");
+            result=false;
+          }
+        }
+        geoms.add(geom);
+      }
+    }
+  finally {
+      features.close();
+    }
+  }
+  return result;
+}

@@ -1,0 +1,25 @@
+{
+  SAXParser parser=new SAXParser();
+  parser.setFeature("http://xml.org/sax/features/namespaces",true);
+  if (validate) {
+    parser.setFeature("http://xml.org/sax/features/validation",true);
+    parser.setFeature("http://apache.org/xml/features/validation/schema",true);
+    parser.setFeature("http://apache.org/xml/features/validation/schema-full-checking",true);
+  }
+  StringBuffer schemaLocation=new StringBuffer();
+  for (Iterator d=handler.getConfiguration().allDependencies().iterator(); d.hasNext(); ) {
+    Configuration dependency=(Configuration)d.next();
+    if (XS.NAMESPACE.equals(dependency.getNamespaceURI())) {
+      continue;
+    }
+    if (schemaLocation.length() > 0) {
+      schemaLocation.append(" ");
+    }
+    schemaLocation.append(dependency.getNamespaceURI());
+    schemaLocation.append(" ");
+    schemaLocation.append(dependency.getSchemaFileURL());
+  }
+  parser.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",schemaLocation.toString());
+  parser.setProperty("http://apache.org/xml/properties/schema/external-noNamespaceSchemaLocation",handler.getConfiguration().getSchemaFileURL());
+  return parser;
+}

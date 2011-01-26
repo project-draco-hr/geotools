@@ -1,0 +1,14 @@
+{
+  if (image == null || outputStream == null) {
+    throw new IllegalArgumentException("some parameters are null");
+  }
+  final ImageWriteParam params=gtParams.getAdaptee();
+  final ImageWriter writer=tiffWriterFactory.createWriterInstance();
+  final IIOMetadata metadata=createGeoTiffIIOMetadata(writer,ImageTypeSpecifier.createFromRenderedImage(image),geoTIFFMetadata,params);
+  writer.setOutput(outputStream);
+  writer.write(writer.getDefaultStreamMetadata(params),new IIOImage(image,null,metadata),params);
+  outputStream.flush();
+  if (!(destination instanceof ImageOutputStream))   outputStream.close();
+  writer.dispose();
+  return true;
+}

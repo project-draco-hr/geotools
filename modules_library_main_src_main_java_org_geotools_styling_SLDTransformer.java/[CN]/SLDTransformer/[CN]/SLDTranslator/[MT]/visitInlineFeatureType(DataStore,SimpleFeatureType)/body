@@ -1,0 +1,60 @@
+{
+  start("InlineFeature");
+  try {
+    final String ftName=featureType.getTypeName();
+    final SimpleFeatureSource fs=dataStore.getFeatureSource(ftName);
+    final SimpleFeatureCollection fc=fs.getFeatures();
+    final FeatureTransformer ftrax=new FeatureTransformer();
+    ftrax.setCollectionNamespace(null);
+    ftrax.setCollectionPrefix(null);
+    ftrax.setGmlPrefixing(true);
+    ftrax.setIndentation(2);
+    final CoordinateReferenceSystem crs=featureType.getGeometryDescriptor().getCoordinateReferenceSystem();
+    String srsName=null;
+    if (crs == null) {
+      LOGGER.warning("Null CRS in feature type named [" + ftName + "]. Ignore CRS");
+    }
+ else {
+      srsName=CRS.toSRS(crs,true);
+      if (srsName == null) {
+        Set<ReferenceIdentifier> ids=crs.getIdentifiers();
+        if (ids == null || ids.isEmpty()) {
+          LOGGER.warning("Null or empty set of named identifiers " + "in CRS [" + crs + "] of feature type named ["+ ftName+ "]. Ignore CRS");
+        }
+ else {
+          for (          ReferenceIdentifier id : ids) {
+            if (id != null) {
+              srsName=String.valueOf(id);
+              break;
+            }
+          }
+        }
+      }
+      if (srsName != null) {
+        final int ndx=srsName.indexOf(':');
+        if (ndx > 0) {
+          LOGGER.info("Reducing CRS name [" + srsName + "] to its SRID");
+          srsName=srsName.substring(ndx + 1).trim();
+        }
+      }
+    }
+    if (srsName != null) {
+      ftrax.setSrsName(srsName);
+    }
+    final String defaultNS=this.getDefaultNamespace();
+    ftrax.getFeatureTypeNamespaces().declareDefaultNamespace("",defaultNS);
+    final String ns=featureType.getName().getNamespaceURI();
+    if (ns == null) {
+      LOGGER.info("Null namespace URI in feature type named [" + ftName + "]. Ignore namespace in features");
+    }
+ else {
+      final String prefix=this.nsSupport.getPrefix(ns);
+      if (prefix != null)       ftrax.getFeatureTypeNamespaces().declareNamespace(featureType,prefix,ns);
+    }
+    final Translator t=ftrax.createTranslator(this.contentHandler);
+    t.encode(fc);
+  }
+ catch (  IOException ignored) {
+  }
+  end("InlineFeature");
+}

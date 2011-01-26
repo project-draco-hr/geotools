@@ -1,0 +1,30 @@
+{
+  ObjectCache cache=new WeakObjectCache();
+  cache.writeLock(key1);
+  Runnable thread1=new WriterThread(cache);
+  Thread t1=new Thread(thread1);
+  t1.start();
+  Thread.yield();
+  cache.put(key1,value2);
+  Object[] values=((WriterThread)thread1).getValue();
+  assertEquals(null,values);
+  assertEquals(value2,cache.peek(key1));
+  assertEquals(1,cache.getKeys().size());
+  cache.writeLock(key2);
+  cache.put(key2,value3);
+  cache.writeUnLock(key2);
+  assertEquals(2,cache.getKeys().size());
+  try {
+    cache.writeUnLock(key1);
+  }
+ catch (  Exception e) {
+    fail("couldn't unlock");
+  }
+  t1.join();
+  values=((WriterThread)thread1).getValue();
+  assertNotNull(values);
+  assertEquals(value1,values[0]);
+  assertEquals(2,cache.getKeys().size());
+  assertTrue(cache.getKeys().contains(key1));
+  assertTrue(cache.getKeys().contains(key2));
+}

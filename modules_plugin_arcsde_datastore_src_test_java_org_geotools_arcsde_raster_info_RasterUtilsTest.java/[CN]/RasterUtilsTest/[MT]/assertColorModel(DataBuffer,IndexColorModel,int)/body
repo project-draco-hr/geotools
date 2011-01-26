@@ -1,0 +1,38 @@
+{
+  final int size=expected.getSize();
+  final int numBanks=expected.getNumBanks();
+  assertEquals(bitsPerSample,actual.getPixelSize());
+  assertEquals(bitsPerSample == 8 ? DataBuffer.TYPE_BYTE : DataBuffer.TYPE_USHORT,actual.getTransferType());
+  assertEquals(numBanks,actual.getNumComponents());
+  if (numBanks == 3) {
+    assertEquals(-1,actual.getTransparentPixel());
+    assertFalse(actual.hasAlpha());
+    assertEquals(Transparency.OPAQUE,actual.getTransparency());
+  }
+ else   if (numBanks == 4) {
+    assertTrue(actual.getTransparentPixel() > -1);
+    assertTrue(actual.hasAlpha());
+    assertEquals(Transparency.TRANSLUCENT,actual.getTransparency());
+  }
+  assertEquals(size,actual.getMapSize());
+  for (int elem=0; elem < size; elem++) {
+    for (int bank=0; bank < numBanks; bank++) {
+      int actualValue=0;
+switch (bank) {
+case 0:
+        actualValue=actual.getRed(elem);
+      break;
+case 1:
+    actualValue=actual.getGreen(elem);
+  break;
+case 2:
+actualValue=actual.getBlue(elem);
+break;
+case 3:
+actualValue=actual.getAlpha(elem);
+break;
+}
+assertEquals("at index " + elem + ", bank "+ bank,expected.getElem(bank,elem),actualValue);
+}
+}
+}

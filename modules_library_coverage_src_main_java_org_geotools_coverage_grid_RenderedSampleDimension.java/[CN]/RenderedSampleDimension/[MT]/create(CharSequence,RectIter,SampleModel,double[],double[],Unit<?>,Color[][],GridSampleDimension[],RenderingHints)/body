@@ -1,0 +1,87 @@
+{
+  final int numBands=dst.length;
+  if (min != null && min.length != numBands) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NUMBER_OF_BANDS_MISMATCH_$3,numBands,min.length,"min[i]"));
+  }
+  if (max != null && max.length != numBands) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NUMBER_OF_BANDS_MISMATCH_$3,numBands,max.length,"max[i]"));
+  }
+  if (colors != null && colors.length != numBands) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NUMBER_OF_BANDS_MISMATCH_$3,numBands,colors.length,"colors[i]"));
+  }
+  final SampleDimensionType sourceType=TypeMap.getSampleDimensionType(model,0);
+  final boolean sourceIsFloat=TypeMap.isFloatingPoint(sourceType);
+  SampleDimensionType targetType=null;
+  if (hints != null) {
+    targetType=(SampleDimensionType)hints.get(Hints.SAMPLE_DIMENSION_TYPE);
+  }
+  if (targetType == null) {
+    targetType=sourceIsFloat ? SampleDimensionType.UNSIGNED_8BITS : sourceType;
+  }
+  final boolean targetIsFloat=TypeMap.isFloatingPoint(targetType);
+  NumberRange targetRange=TypeMap.getRange(targetType);
+  Category[] categories=new Category[1];
+  final boolean needScaling;
+  if (targetIsFloat) {
+    needScaling=false;
+  }
+ else   if (sourceIsFloat) {
+    needScaling=true;
+    if (!TypeMap.isSigned(targetType)) {
+      categories=new Category[2];
+      categories[1]=Category.NODATA;
+      targetRange=TypeMap.getPositiveRange(targetType);
+    }
+  }
+ else {
+    needScaling=!targetRange.contains(TypeMap.getRange(sourceType));
+  }
+  if (needScaling && (min == null || max == null)) {
+    final boolean computeMin;
+    final boolean computeMax;
+    if (computeMin=(min == null)) {
+      min=new double[numBands];
+      Arrays.fill(min,Double.POSITIVE_INFINITY);
+    }
+    if (computeMax=(max == null)) {
+      max=new double[numBands];
+      Arrays.fill(max,Double.NEGATIVE_INFINITY);
+    }
+    int b=0;
+    iterator.startBands();
+    if (!iterator.finishedBands())     do {
+      iterator.startLines();
+      if (!iterator.finishedLines())       do {
+        iterator.startPixels();
+        if (!iterator.finishedPixels())         do {
+          final double z=iterator.getSampleDouble();
+          if (computeMin && z < min[b])           min[b]=z;
+          if (computeMax && z > max[b])           max[b]=z;
+        }
+ while (!iterator.nextPixelDone());
+      }
+ while (!iterator.nextLineDone());
+      if (computeMin && computeMax) {
+        if (!(min[b] < max[b])) {
+          min[b]=0;
+          max[b]=1;
+        }
+      }
+      b++;
+    }
+ while (!iterator.nextBandDone());
+  }
+  final InternationalString n=SimpleInternationalString.wrap(name);
+  NumberRange sourceRange=TypeMap.getRange(sourceType);
+  for (int b=0; b < numBands; b++) {
+    final Color[] c=colors != null ? colors[b] : null;
+    if (needScaling) {
+      sourceRange=NumberRange.create(min[b],max[b]).castTo(sourceRange.getElementClass());
+      categories[0]=new Category(n,c,targetRange,sourceRange);
+    }
+ else {
+      categories[0]=new Category(n,c,targetRange,LinearTransform1D.IDENTITY);
+    }
+    dst[b]=new GridSampleDimension(name,categories,units).geophysics(true);
+  }
+}

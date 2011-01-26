@@ -1,0 +1,23 @@
+{
+  int numXTiles=image.getNumXTiles();
+  int numYTiles=image.getNumYTiles();
+  SampleModel sm=RasterFactory.createPixelInterleavedSampleModel(DataBuffer.TYPE_FLOAT,image.getWidth(),image.getHeight(),1);
+  TiledImage destImage=new TiledImage(0,0,image.getWidth(),image.getHeight(),0,0,sm,new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_GRAY),false,false,Transparency.OPAQUE,DataBuffer.TYPE_FLOAT));
+  for (int yt=0; yt < numYTiles; yt++) {
+    for (int xt=0; xt < numXTiles; xt++) {
+      Raster srcTile=image.getTile(xt,yt);
+      WritableRaster destTile=destImage.getWritableTile(xt,yt);
+      int[] data=new int[srcTile.getDataBuffer().getSize()];
+      srcTile.getDataElements(srcTile.getMinX(),srcTile.getMinY(),data);
+      Rectangle bounds=destTile.getBounds();
+      int k=0;
+      for (int dy=bounds.y, drow=0; drow < bounds.height; dy++, drow++) {
+        for (int dx=bounds.x, dcol=0; dcol < bounds.width; dx++, dcol++) {
+          destTile.setSample(dx,dy,0,Float.intBitsToFloat(data[k]));
+        }
+      }
+      destImage.releaseWritableTile(xt,yt);
+    }
+  }
+  image=destImage;
+}

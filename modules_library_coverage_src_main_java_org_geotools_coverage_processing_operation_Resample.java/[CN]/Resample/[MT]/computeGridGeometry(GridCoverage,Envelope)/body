@@ -1,0 +1,50 @@
+{
+  final CoordinateReferenceSystem targetCRS=target.getCoordinateReferenceSystem();
+  final CoordinateReferenceSystem sourceCRS=source.getCoordinateReferenceSystem();
+  final CoordinateReferenceSystem reducedCRS;
+  if (target.getDimension() == 2 && sourceCRS.getCoordinateSystem().getDimension() != 2) {
+    reducedCRS=CoverageUtilities.getCRS2D(source);
+  }
+ else {
+    reducedCRS=sourceCRS;
+  }
+  GridGeometry gridGeometry=source.getGridGeometry();
+  if (targetCRS == null || CRS.equalsIgnoreMetadata(reducedCRS,targetCRS)) {
+    final MathTransform gridToCRS;
+    if (reducedCRS == sourceCRS) {
+      gridToCRS=gridGeometry.getGridToCRS();
+    }
+ else {
+      gridToCRS=GridGeometry2D.wrap(gridGeometry).getGridToCRS2D();
+    }
+    gridGeometry=new GridGeometry2D(PixelInCell.CELL_CENTER,gridToCRS,target,null);
+  }
+ else {
+    GridEnvelope gridRange;
+    try {
+      final GeneralEnvelope transformed;
+      transformed=CRS.transform(CRS.getCoordinateOperationFactory(true).createOperation(targetCRS,reducedCRS),target);
+      final Envelope reduced;
+      final MathTransform gridToCRS;
+      if (reducedCRS == sourceCRS) {
+        reduced=source.getEnvelope();
+        gridToCRS=gridGeometry.getGridToCRS();
+      }
+ else {
+        reduced=CoverageUtilities.getEnvelope2D(source);
+        gridToCRS=GridGeometry2D.wrap(gridGeometry).getGridToCRS2D();
+      }
+      transformed.intersect(reduced);
+      gridGeometry=new GridGeometry2D(PixelInCell.CELL_CENTER,gridToCRS,transformed,null);
+    }
+ catch (    FactoryException exception) {
+      recoverableException("resample",exception);
+    }
+catch (    TransformException exception) {
+      recoverableException("resample",exception);
+    }
+    gridRange=gridGeometry.getGridRange();
+    gridGeometry=new GridGeometry2D(gridRange,target);
+  }
+  return gridGeometry;
+}

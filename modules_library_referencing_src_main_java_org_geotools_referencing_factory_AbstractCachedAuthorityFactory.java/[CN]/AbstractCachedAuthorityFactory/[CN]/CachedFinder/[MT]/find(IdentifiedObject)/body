@@ -1,0 +1,25 @@
+{
+  IdentifiedObject candidate;
+  candidate=(IdentifiedObject)findCache.get(object);
+  if (candidate != null) {
+    return candidate;
+  }
+  try {
+    findCache.writeLock(object);
+    IdentifiedObject found=super.find(object);
+    if (found == null) {
+      return null;
+    }
+    candidate=(IdentifiedObject)findCache.peek(object);
+    if (candidate == null) {
+      findCache.put(object,found);
+      return found;
+    }
+ else {
+      return candidate;
+    }
+  }
+  finally {
+    findCache.writeUnLock(object);
+  }
+}

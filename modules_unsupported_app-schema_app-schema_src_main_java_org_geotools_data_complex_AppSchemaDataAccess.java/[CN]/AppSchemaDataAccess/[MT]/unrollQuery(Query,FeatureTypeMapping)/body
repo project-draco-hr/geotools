@@ -1,0 +1,20 @@
+{
+  Query unrolledQuery=Query.ALL;
+  FeatureSource<FeatureType,Feature> source=mapping.getSource();
+  if (!Query.ALL.equals(query)) {
+    Filter complexFilter=query.getFilter();
+    Filter unrolledFilter=AppSchemaDataAccess.unrollFilter(complexFilter,mapping);
+    List propNames=getSurrogatePropertyNames(query.getPropertyNames(),mapping);
+    DefaultQuery newQuery=new DefaultQuery();
+    String name=source.getName().getLocalPart();
+    newQuery.setTypeName(name);
+    newQuery.setFilter(unrolledFilter);
+    newQuery.setPropertyNames(propNames);
+    newQuery.setCoordinateSystem(query.getCoordinateSystem());
+    newQuery.setCoordinateSystemReproject(query.getCoordinateSystemReproject());
+    newQuery.setHandle(query.getHandle());
+    newQuery.setMaxFeatures(query.getMaxFeatures());
+    unrolledQuery=newQuery;
+  }
+  return unrolledQuery;
+}

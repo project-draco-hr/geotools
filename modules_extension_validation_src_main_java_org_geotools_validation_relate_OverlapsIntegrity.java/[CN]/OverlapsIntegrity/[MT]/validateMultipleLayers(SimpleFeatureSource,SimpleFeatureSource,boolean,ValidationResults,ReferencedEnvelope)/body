@@ -1,0 +1,49 @@
+{
+  boolean success=true;
+  int errors=0;
+  int countInterval=100;
+  int counter=0;
+  SimpleFeatureType ft=featureSourceA.getSchema();
+  Filter filter=filterBBox(bBox,ft);
+  SimpleFeatureCollection collectionA=featureSourceA.getFeatures();
+  SimpleFeatureIterator fr1=null;
+  SimpleFeatureIterator fr2=null;
+  try {
+    fr1=collectionA.features();
+    if (fr1 == null)     return success;
+    while (fr1.hasNext()) {
+      counter++;
+      SimpleFeature f1=fr1.next();
+      Geometry g1=(Geometry)f1.getDefaultGeometry();
+      Filter filter2=filterBBox(ReferencedEnvelope.reference(g1.getEnvelope().getEnvelopeInternal()),ft);
+      SimpleFeatureCollection collectionB=featureSourceB.getFeatures(filter2);
+      fr2=collectionB.features();
+      try {
+        while (fr2 != null && fr2.hasNext()) {
+          SimpleFeature f2=fr2.next();
+          Geometry g2=(Geometry)f2.getDefaultGeometry();
+          if (!usedIDs.contains(f2.getID())) {
+            if (!f1.getID().equals(f2.getID())) {
+              if (g1.overlaps(g2) != expected || g1.contains(g2) != expected) {
+                results.error(f1,getGeomTypeRefA() + "(" + f1.getID()+ ")"+ " overlapped "+ getGeomTypeRefB()+ "("+ f2.getID()+ ")");
+                if (showPrintLines) {
+                }
+                success=false;
+                errors++;
+              }
+            }
+          }
+        }
+        usedIDs.add(f1.getID());
+        if (counter % countInterval == 0 && showPrintLines)         System.out.println("count: " + counter);
+      }
+  finally {
+        collectionB.close(fr2);
+      }
+    }
+  }
+  finally {
+    collectionA.close(fr1);
+  }
+  return success;
+}

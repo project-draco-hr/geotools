@@ -1,0 +1,32 @@
+{
+  if (Utilities.equals(current,expected)) {
+    return gridToCRS;
+  }
+  if (gridToCRS == null) {
+    return null;
+  }
+  final int dimension=gridToCRS.getSourceDimensions();
+  final double offset=getPixelTranslation(expected) - getPixelTranslation(current);
+  final int index;
+  if (offset == -0.5) {
+    index=2 * dimension;
+  }
+ else   if (offset == 0.5) {
+    index=2 * dimension + 1;
+  }
+ else {
+    index=translations.length;
+  }
+  MathTransform mt;
+  if (index >= translations.length) {
+    mt=ProjectiveTransform.createTranslation(dimension,offset);
+  }
+ else synchronized (translations) {
+    mt=translations[index];
+    if (mt == null) {
+      mt=ProjectiveTransform.createTranslation(dimension,offset);
+      translations[index]=mt;
+    }
+  }
+  return ConcatenatedTransform.create(mt,gridToCRS);
+}

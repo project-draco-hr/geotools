@@ -1,0 +1,32 @@
+{
+  ensureNonNull("transform",transform);
+  final int sourceDim=transform.getSourceDimensions();
+  final int targetDim=transform.getTargetDimensions();
+  if (targetDim != sourceDim) {
+    throw new MismatchedDimensionException();
+  }
+  TransformException firstError=null;
+  boolean startPointTransformed=false;
+  for (int i=0; i < src.length; i+=sourceDim) {
+    try {
+      transform.transform(src,i,dest,i,1);
+      if (!startPointTransformed) {
+        startPointTransformed=true;
+        for (int j=0; j < i; j++) {
+          System.arraycopy(dest,j,dest,i,targetDim);
+        }
+      }
+    }
+ catch (    TransformException e) {
+      if (firstError == null) {
+        firstError=e;
+      }
+      if (startPointTransformed) {
+        System.arraycopy(dest,i - targetDim,dest,i,targetDim);
+      }
+    }
+  }
+  if (!startPointTransformed && (firstError != null)) {
+    throw firstError;
+  }
+}

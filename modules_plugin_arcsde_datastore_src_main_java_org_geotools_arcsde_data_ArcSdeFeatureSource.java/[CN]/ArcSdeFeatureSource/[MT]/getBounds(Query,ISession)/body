@@ -1,0 +1,21 @@
+{
+  final String typeName=typeInfo.getFeatureTypeName();
+  final ArcSdeVersionHandler versionHandler=dataStore.getVersionHandler(typeName,transaction);
+  Envelope ev=ArcSDEQuery.calculateQueryExtent(session,typeInfo,namedQuery,versionHandler);
+  if (ev != null) {
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("ArcSDE optimized getBounds call returned: " + ev);
+    }
+    final ReferencedEnvelope envelope;
+    final GeometryDescriptor defaultGeometry=getSchema().getGeometryDescriptor();
+    if (defaultGeometry == null) {
+      envelope=ReferencedEnvelope.reference(ev);
+    }
+ else {
+      envelope=new ReferencedEnvelope(ev,defaultGeometry.getCoordinateReferenceSystem());
+    }
+    return envelope;
+  }
+  LOGGER.finer("ArcSDE couldn't process all filters in this query, " + "so optimized getBounds() returns null.");
+  return null;
+}

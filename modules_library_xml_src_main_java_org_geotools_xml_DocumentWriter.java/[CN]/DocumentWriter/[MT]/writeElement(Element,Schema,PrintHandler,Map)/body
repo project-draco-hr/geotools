@@ -1,0 +1,100 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if ((element.getId() != null) && (element.getId() != "")) {
+    ai.addAttribute("","id","","ID",element.getId());
+  }
+  if (element.getMaxOccurs() != 1) {
+    ai.addAttribute("","maxOccurs","","Union",(element.getMaxOccurs() == ElementGrouping.UNBOUNDED) ? "unbounded" : ("" + element.getMaxOccurs()));
+  }
+  if (element.getMinOccurs() != 1) {
+    ai.addAttribute("","minOccurs","","ID","" + element.getMinOccurs());
+  }
+  boolean nested=false;
+  if (element.getNamespace().equals(schema.getTargetNamespace())) {
+    Element[] elems=schema.getElements();
+    boolean found=false;
+    for (int i=0; (i < elems.length) && !found; i++)     if (element.getName().equals(elems[i].getName())) {
+      found=true;
+      ai.addAttribute("","ref","","QName",element.getName());
+    }
+    if (!found) {
+      if (!element.getType().getNamespace().equals(schema.getTargetNamespace())) {
+        found=true;
+        XSISAXHandler.setLogLevel(logger.getLevel());
+        Schema s=SchemaFactory.getInstance(element.getNamespace());
+        if ((element.getName() != null) && (element.getName() != "")) {
+          ai.addAttribute("","name","","QName",element.getName());
+        }
+        ai.addAttribute("","type","","QName",s.getPrefix() + ":" + element.getType().getName());
+      }
+      Type[] types=schema.getComplexTypes();
+      for (int i=0; (i < types.length) && !found; i++)       if (element.getType().getName().equals(types[i].getName())) {
+        found=true;
+        if ((element.getName() != null) && (element.getName() != "")) {
+          ai.addAttribute("","name","","QName",element.getName());
+        }
+        ai.addAttribute("","type","","QName",element.getType().getName());
+      }
+      types=schema.getSimpleTypes();
+      for (int i=0; (i < types.length) && !found; i++)       if (element.getType().getName().equals(types[i].getName())) {
+        found=true;
+        if ((element.getName() != null) && (element.getName() != "")) {
+          ai.addAttribute("","name","","QName",element.getName());
+        }
+        ai.addAttribute("","type","","QName",element.getType().getName());
+      }
+      if (!found) {
+        nested=true;
+        if ((element.getName() != null) && (element.getName() != "")) {
+          ai.addAttribute("","name","","QName",element.getName());
+        }
+      }
+    }
+  }
+ else {
+    Schema s=SchemaFactory.getInstance(element.getNamespace());
+    ai.addAttribute("","ref","","QName",s.getPrefix() + ":" + element.getName());
+  }
+  if (element.isNillable()) {
+    ai.addAttribute("","nillable","","boolean","true");
+  }
+  if ((element.getDefault() != null) && (element.getDefault() != "")) {
+    ai.addAttribute("","default","","String",element.getDefault());
+  }
+ else {
+    if ((element.getFixed() != null) && (element.getFixed() != "")) {
+      ai.addAttribute("","fixed","","String",element.getFixed());
+    }
+  }
+  if (element.getSubstitutionGroup() != null) {
+    String s="";
+    if (!element.getSubstitutionGroup().getNamespace().equals(schema.getTargetNamespace())) {
+      Schema sss=SchemaFactory.getInstance(element.getSubstitutionGroup().getNamespace());
+      s=sss.getPrefix() + ":";
+    }
+    s+=element.getSubstitutionGroup().getName();
+    ai.addAttribute("","substitutionGroup","","QName",s);
+  }
+  if (element.isForm()) {
+    ai.addAttribute("","form","","NMTOKEN","qualified");
+  }
+  if (element.getFinal() != Schema.NONE) {
+    ai.addAttribute("","final","","NMTOKENS",ComplexTypeHandler.writeFinal(element.getFinal()));
+  }
+  if (element.getBlock() != Schema.NONE) {
+    ai.addAttribute("","block","","NMTOKENS",ComplexTypeHandler.writeBlock(element.getBlock()));
+  }
+  if (element.isAbstract()) {
+    ai.addAttribute("","abstract","","boolean","true");
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"element",ai);
+  if (nested) {
+    if (element.getType() instanceof ComplexType) {
+      writeComplexType((ComplexType)element.getType(),schema,ph,hints);
+    }
+ else {
+      writeSimpleType((SimpleType)element.getType(),schema,ph,hints);
+    }
+  }
+  ph.endElement(XSISimpleTypes.NAMESPACE,"element");
+}

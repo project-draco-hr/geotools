@@ -1,0 +1,36 @@
+{
+  GeographicBoundingBox candidate=null;
+  if (extent != null) {
+    GeographicBoundingBoxImpl modifiable=null;
+    for (    final GeographicExtent element : extent.getGeographicElements()) {
+      final GeographicBoundingBox bounds;
+      if (element instanceof GeographicBoundingBox) {
+        bounds=(GeographicBoundingBox)element;
+      }
+ else       if (element instanceof BoundingPolygon) {
+        continue;
+      }
+ else {
+        continue;
+      }
+      if (candidate == null) {
+        final Boolean inclusion=bounds.getInclusion();
+        ensureNonNull("inclusion",inclusion);
+        if (inclusion.booleanValue()) {
+          candidate=bounds;
+        }
+      }
+ else {
+        if (modifiable == null) {
+          modifiable=new GeographicBoundingBoxImpl(candidate);
+          candidate=modifiable;
+        }
+        modifiable.add(bounds);
+      }
+    }
+    if (modifiable != null) {
+      modifiable.freeze();
+    }
+  }
+  return candidate;
+}

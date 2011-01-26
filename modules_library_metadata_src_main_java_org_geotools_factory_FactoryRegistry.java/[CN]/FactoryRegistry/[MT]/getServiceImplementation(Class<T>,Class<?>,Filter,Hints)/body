@@ -1,0 +1,30 @@
+{
+  for (final Iterator<T> it=getUnfilteredProviders(category); it.hasNext(); ) {
+    final T candidate=it.next();
+    if (implementation != null && !implementation.isInstance(candidate)) {
+      continue;
+    }
+    if (!isAcceptable(candidate,category,hints,filter)) {
+      continue;
+    }
+    return candidate;
+  }
+  final List<Reference<T>> cached=getCachedProviders(category);
+  if (cached != null) {
+    for (final Iterator<Reference<T>> it=cached.iterator(); it.hasNext(); ) {
+      final T candidate=it.next().get();
+      if (candidate == null) {
+        it.remove();
+        continue;
+      }
+      if (implementation != null && !implementation.isInstance(candidate)) {
+        continue;
+      }
+      if (!isAcceptable(candidate,category,hints,filter)) {
+        continue;
+      }
+      return candidate;
+    }
+  }
+  return null;
+}

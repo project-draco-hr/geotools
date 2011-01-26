@@ -1,0 +1,66 @@
+{
+  boolean changed=false;
+  if (crs != null) {
+    final int dimension=ordinates.length / 2;
+    final CoordinateSystem cs=crs.getCoordinateSystem();
+    for (int i=0; i < dimension; i++) {
+      final int j=i + dimension;
+      final CoordinateSystemAxis axis=cs.getAxis(i);
+      final double minimum=axis.getMinimumValue();
+      final double maximum=axis.getMaximumValue();
+      final RangeMeaning rm=axis.getRangeMeaning();
+      if (RangeMeaning.EXACT.equals(rm)) {
+        if (ordinates[i] < minimum) {
+          ordinates[i]=minimum;
+          changed=true;
+        }
+        if (ordinates[j] > maximum) {
+          ordinates[j]=maximum;
+          changed=true;
+        }
+      }
+ else       if (RangeMeaning.WRAPAROUND.equals(rm)) {
+        final double length=maximum - minimum;
+        if (length > 0 && length < Double.POSITIVE_INFINITY) {
+          final double offset=Math.floor((ordinates[i] - minimum) / length) * length;
+          if (offset != 0) {
+            ordinates[i]-=offset;
+            ordinates[j]-=offset;
+            changed=true;
+          }
+          if (ordinates[j] > maximum) {
+            ordinates[i]=minimum;
+            ordinates[j]=maximum;
+            changed=true;
+          }
+        }
+      }
+    }
+    if (crsDomain) {
+      final Envelope domain=CRS.getEnvelope(crs);
+      if (domain != null) {
+        final CoordinateReferenceSystem domainCRS=domain.getCoordinateReferenceSystem();
+        if (domainCRS == null) {
+          intersect(domain);
+        }
+ else {
+          final CoordinateSystem domainCS=domainCRS.getCoordinateSystem();
+          final int domainDimension=domainCS.getDimension();
+          for (int i=0; i < domainDimension; i++) {
+            final double minimum=domain.getMinimum(i);
+            final double maximum=domain.getMaximum(i);
+            final AxisDirection direction=domainCS.getAxis(i).getDirection();
+            for (int j=0; j < dimension; j++) {
+              if (direction.equals(cs.getAxis(j).getDirection())) {
+                final int k=j + dimension;
+                if (ordinates[j] < minimum)                 ordinates[j]=minimum;
+                if (ordinates[k] > maximum)                 ordinates[k]=maximum;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return changed;
+}

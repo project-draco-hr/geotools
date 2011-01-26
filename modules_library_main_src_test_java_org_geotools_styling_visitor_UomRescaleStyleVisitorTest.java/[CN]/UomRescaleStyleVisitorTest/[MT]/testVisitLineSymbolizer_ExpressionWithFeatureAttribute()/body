@@ -1,0 +1,40 @@
+{
+  try {
+    double widthValue=13;
+    double scaleMetersToPixel=17;
+    Unit<Length> uom=SI.METER;
+    StyleBuilder styleBuilder=new StyleBuilder();
+    UomRescaleStyleVisitor visitor=null;
+    SimpleFeatureTypeBuilder featureTypeBuilder=new SimpleFeatureTypeBuilder();
+    featureTypeBuilder.setName("TestType");
+    featureTypeBuilder.add("geom",LineString.class,DefaultGeographicCRS.WGS84);
+    featureTypeBuilder.add("width",Double.class);
+    SimpleFeatureType featureType=featureTypeBuilder.buildFeatureType();
+    GeometryFactory geomFactory=new GeometryFactory();
+    Geometry geom=geomFactory.createLineString(new Coordinate[]{new Coordinate(1,1),new Coordinate(2,2)});
+    SimpleFeatureBuilder featureBuilder=new SimpleFeatureBuilder(featureType);
+    featureBuilder.set("geom",geom);
+    featureBuilder.set("width",widthValue);
+    SimpleFeature feature=featureBuilder.buildFeature("1");
+    Expression color=styleBuilder.colorExpression(Color.RED);
+    Expression width=styleBuilder.attributeExpression("width");
+    Stroke stroke=styleBuilder.createStroke(color,width);
+    LineSymbolizerImpl lineSymb=(LineSymbolizerImpl)styleBuilder.createLineSymbolizer(stroke);
+    lineSymb.setUnitOfMeasure(uom);
+    visitor=new UomRescaleStyleVisitor(scaleMetersToPixel);
+    lineSymb.accept(visitor);
+    LineSymbolizer rescaledLineSymb=(LineSymbolizer)visitor.getCopy();
+    org.opengis.style.Stroke rescaledStroke=rescaledLineSymb.getStroke();
+    Expression rescaledWidth=rescaledStroke.getWidth();
+    double rescaledWidthValue=rescaledWidth.evaluate(feature,Double.class);
+    double expectedRescaledWidthValue=computeExpectedRescaleSize(widthValue,scaleMetersToPixel,uom);
+    Assert.assertEquals(stroke.getColor(),rescaledStroke.getColor());
+    Assert.assertEquals(expectedRescaledWidthValue,rescaledWidthValue);
+    Assert.assertNotSame(SI.METER,rescaledLineSymb.getUnitOfMeasure());
+    Assert.assertNotSame(rescaledLineSymb,lineSymb);
+  }
+ catch (  Exception e2) {
+    e2.printStackTrace();
+    Assert.fail(e2.getClass().getSimpleName() + " should not be thrown.");
+  }
+}

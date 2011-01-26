@@ -1,0 +1,23 @@
+{
+  DataSource candidate=super.createDataSource();
+  if (candidate instanceof BaseDataSource) {
+    return candidate;
+  }
+  final Jdbc3SimpleDataSource source=new Jdbc3SimpleDataSource();
+  final Properties p=load();
+  int portNumber;
+  try {
+    portNumber=Integer.parseInt(p.getProperty("portNumber","5432"));
+  }
+ catch (  NumberFormatException exception) {
+    portNumber=5432;
+    Logging.unexpectedException("org.geotools.referencing.factory",DataSource.class,"<init>",exception);
+  }
+  source.setPortNumber(portNumber);
+  source.setServerName(p.getProperty("serverName","localhost"));
+  source.setDatabaseName(p.getProperty("databaseName","EPSG"));
+  source.setUser(p.getProperty("user","Geotools"));
+  source.setPassword(p.getProperty("password","Geotools"));
+  schema=p.getProperty("schema",null);
+  return source;
+}

@@ -1,0 +1,58 @@
+{
+  this.tileReader=tileReader;
+  this.tileSampleModel=tileSampleModel;
+  super.minX=minX;
+  super.minY=minY;
+  super.width=width;
+  super.height=height;
+  super.tileGridXOffset=tileGridXOffset;
+  super.tileGridYOffset=tileGridYOffset;
+  super.tileWidth=tileReader.getTileWidth();
+  super.tileHeight=tileReader.getTileHeight();
+  super.colorModel=colorModel;
+  super.sampleModel=tileSampleModel;
+{
+    int result=17;
+    result=Utilities.hash(tileReader.getServerName(),result);
+    result=Utilities.hash(tileReader.getRasterTableName(),result);
+    result=Utilities.hash(tileReader.getRasterId(),result);
+    result=Utilities.hash(tileReader.getPyramidLevel(),result);
+    this.hashCode=result;
+  }
+  this.UID=(BigInteger)ImageUtil.generateID(this);
+  int bytesPerPixel;
+switch (tileSampleModel.getDataType()) {
+case DataBuffer.TYPE_BYTE:
+    bytesPerPixel=1;
+  break;
+case DataBuffer.TYPE_DOUBLE:
+bytesPerPixel=8;
+break;
+case DataBuffer.TYPE_FLOAT:
+case DataBuffer.TYPE_INT:
+bytesPerPixel=4;
+break;
+case DataBuffer.TYPE_SHORT:
+case DataBuffer.TYPE_USHORT:
+bytesPerPixel=2;
+break;
+default :
+throw new IllegalArgumentException("Unknown DataBuffer type: " + tileSampleModel.getDataType());
+}
+int numTilesInCache=16;
+long memCapacity=numTilesInCache * bytesPerPixel * tileWidth* tileHeight* tileSampleModel.getNumBands();
+this.tileCache=JAI.createTileCache(memCapacity);
+final JAI jai=JAI.getDefaultInstance();
+TileFactory tileFactory=(TileFactory)jai.getRenderingHint(JAI.KEY_TILE_FACTORY);
+if (tileFactory == null) {
+if (tileCache instanceof Observable) {
+super.tileFactory=new RecyclingTileFactory((Observable)tileCache);
+}
+ else {
+super.tileFactory=new javax.media.jai.RecyclingTileFactory();
+}
+}
+ else {
+super.tileFactory=tileFactory;
+}
+}

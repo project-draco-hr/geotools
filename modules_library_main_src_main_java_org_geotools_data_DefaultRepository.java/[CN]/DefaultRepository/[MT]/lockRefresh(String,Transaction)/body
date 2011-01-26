@@ -1,0 +1,21 @@
+{
+  if (lockID == null) {
+    throw new IllegalArgumentException("lockID required");
+  }
+  if (transaction == null || transaction == Transaction.AUTO_COMMIT) {
+    throw new IllegalArgumentException("Tansaction required (with authorization for " + lockID + ")");
+  }
+  LockingManager lockManager;
+  boolean refresh=false;
+  for (  DataAccess<?,?> access : repository.values()) {
+    DataStore store=(DataStore)access;
+    lockManager=store.getLockingManager();
+    if (lockManager == null) {
+      continue;
+    }
+    if (lockManager.release(lockID,transaction)) {
+      refresh=true;
+    }
+  }
+  return refresh;
+}

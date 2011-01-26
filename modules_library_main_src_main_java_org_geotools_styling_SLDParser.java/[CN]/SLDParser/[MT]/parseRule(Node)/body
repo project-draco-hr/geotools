@@ -1,0 +1,74 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("Parsing rule " + ruleNode.getLocalName());
+  }
+  Rule rule=factory.createRule();
+  List<Symbolizer> symbolizers=new ArrayList<Symbolizer>();
+  NodeList children=ruleNode.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.indexOf(':') != -1) {
+      childName=childName.substring(childName.indexOf(':') + 1);
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("processing " + child.getLocalName());
+    }
+    if (childName.equalsIgnoreCase("Name")) {
+      rule.setName(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("Title")) {
+      rule.setTitle(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("Abstract")) {
+      rule.setAbstract(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("MinScaleDenominator")) {
+      rule.setMinScaleDenominator(Double.parseDouble(getFirstChildValue(child)));
+    }
+ else     if (childName.equalsIgnoreCase("MaxScaleDenominator")) {
+      rule.setMaxScaleDenominator(Double.parseDouble(getFirstChildValue(child)));
+    }
+ else     if (childName.equalsIgnoreCase("Filter")) {
+      Filter filter=parseFilter(child);
+      rule.setFilter(filter);
+    }
+ else     if (childName.equalsIgnoreCase("ElseFilter")) {
+      rule.setElseFilter(true);
+    }
+ else     if (childName.equalsIgnoreCase("LegendGraphic")) {
+      findElements(((Element)child),graphicSt);
+      NodeList g=findElements(((Element)child),graphicSt);
+      List<Graphic> legends=new ArrayList<Graphic>();
+      final int l=g.getLength();
+      for (int k=0; k < l; k++) {
+        legends.add(parseGraphic(g.item(k)));
+      }
+      rule.setLegendGraphic((Graphic[])legends.toArray(new Graphic[0]));
+    }
+ else     if (childName.equalsIgnoreCase("LineSymbolizer")) {
+      symbolizers.add(parseLineSymbolizer(child));
+    }
+ else     if (childName.equalsIgnoreCase("PolygonSymbolizer")) {
+      symbolizers.add(parsePolygonSymbolizer(child));
+    }
+ else     if (childName.equalsIgnoreCase("PointSymbolizer")) {
+      symbolizers.add(parsePointSymbolizer(child));
+    }
+ else     if (childName.equalsIgnoreCase("TextSymbolizer")) {
+      symbolizers.add(parseTextSymbolizer(child));
+    }
+ else     if (childName.equalsIgnoreCase("RasterSymbolizer")) {
+      symbolizers.add(parseRasterSymbolizer(child));
+    }
+  }
+  rule.setSymbolizers((Symbolizer[])symbolizers.toArray(new Symbolizer[0]));
+  return rule;
+}

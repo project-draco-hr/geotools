@@ -1,0 +1,19 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  buildRiverHistory();
+  Connection conn=null;
+  Statement st=null;
+  try {
+    conn=pool.getConnection();
+    st=conn.createStatement();
+    st.execute("drop view river_vfc_view");
+  }
+ catch (  Exception e) {
+  }
+  VersioningFeatureSource fs=(VersioningFeatureSource)ds.getFeatureSource("river");
+  final Id fidFilter=ff.id(Collections.singleton(ff.featureId("river.rv1")));
+  SimpleFeatureCollection vfc=fs.getVersionedFeatures(fidFilter);
+  SimpleFeatureCollection fc=fs.getFeatures(fidFilter);
+  assertEquals(vfc.size(),fc.size());
+  assertEquals(1,vfc.size());
+}

@@ -1,0 +1,40 @@
+{
+  String host=(String)HOST.lookUp(params);
+  String user=(String)USER.lookUp(params);
+  String passwd=(String)PASSWD.lookUp(params);
+  Integer port=(Integer)PORT.lookUp(params);
+  String schema=(String)SCHEMA.lookUp(params);
+  String database=(String)DATABASE.lookUp(params);
+  Boolean wkb_enabled=(Boolean)WKBENABLED.lookUp(params);
+  Boolean is_loose_bbox=(Boolean)LOOSEBBOX.lookUp(params);
+  String namespace=(String)NAMESPACE.lookUp(params);
+  Boolean versionAll=(Boolean)VERSIONALL.lookUp(params);
+  if (!canProcess(params)) {
+    throw new IOException("The parameters map isn't correct!!");
+  }
+  DataSource source=(DataSource)DATASOURCE.lookUp(params);
+  if (source == null) {
+    String url="jdbc:postgresql" + "://" + host + ":"+ port+ "/"+ database;
+    source=DataSourceUtil.buildDefaultDataSource(url,"org.postgresql.Driver",user,passwd,"select now()");
+  }
+  SynchronizedPostgisDataStore dataStore=createDataStoreInternal(source,namespace,schema);
+  if (wkb_enabled != null) {
+    dataStore.setWKBEnabled(wkb_enabled.booleanValue());
+  }
+  if (is_loose_bbox != null) {
+    dataStore.setLooseBbox(is_loose_bbox.booleanValue());
+  }
+  if (versionAll != null && versionAll.booleanValue()) {
+    String[] typeNames=dataStore.getTypeNames();
+    for (int i=0; i < typeNames.length; i++) {
+      if (typeNames[i].equals(VersionedPostgisDataStore.TBL_CHANGESETS))       continue;
+      try {
+        dataStore.setVersioned(typeNames[i],true,null,null);
+      }
+ catch (      IOException e) {
+        LOGGER.log(Level.SEVERE,"Could not version enable: " + typeNames[i],e);
+      }
+    }
+  }
+  return dataStore;
+}

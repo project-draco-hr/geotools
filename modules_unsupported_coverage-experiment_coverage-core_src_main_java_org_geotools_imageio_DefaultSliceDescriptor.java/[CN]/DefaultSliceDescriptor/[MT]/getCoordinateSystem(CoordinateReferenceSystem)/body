@@ -1,0 +1,40 @@
+{
+  String name=metaCRS.getCoordinateSystem().getName();
+  if (name == null) {
+    name="Unknown";
+  }
+  final String type=(metaCRS.getBaseCRS() == null) ? SpatioTemporalMetadataFormat.ELLIPSOIDAL : SpatioTemporalMetadataFormat.CARTESIAN;
+  final CSFactory factory=getFactoryContainer().getCSFactory();
+  final Map<String,String> map=Collections.singletonMap("name",name);
+  final int dimension=metaCRS.getDimension();
+  if (dimension < 2) {
+    throw new MetadataException("Number of dimension error : " + dimension);
+  }
+  try {
+    if (dimension < 3) {
+      CoordinateSystemAxis axis1=getAxis(metaCRS.getAxis(0).getIdentification().getName(),getDirection(metaCRS.getAxis(0).getDirection()),metaCRS.getAxis(0).getUnits());
+      CoordinateSystemAxis axis2=getAxis(metaCRS.getAxis(1).getIdentification().getName(),getDirection(metaCRS.getAxis(1).getDirection()),metaCRS.getAxis(1).getUnits());
+      if (type.equalsIgnoreCase(SpatioTemporalMetadataFormat.CARTESIAN)) {
+        return factory.createCartesianCS(map,axis1,axis2);
+      }
+      if (type.equalsIgnoreCase(SpatioTemporalMetadataFormat.ELLIPSOIDAL)) {
+        return factory.createEllipsoidalCS(map,axis1,axis2);
+      }
+    }
+ else {
+      CoordinateSystemAxis axis1=getAxis(metaCRS.getAxis(0).getIdentification().getName(),getDirection(metaCRS.getAxis(0).getDirection()),metaCRS.getAxis(0).getUnits());
+      CoordinateSystemAxis axis2=getAxis(metaCRS.getAxis(1).getIdentification().getName(),getDirection(metaCRS.getAxis(1).getDirection()),metaCRS.getAxis(1).getUnits());
+      CoordinateSystemAxis axis3=getAxis(metaCRS.getAxis(2).getIdentification().getName(),getDirection(metaCRS.getAxis(2).getDirection()),metaCRS.getAxis(2).getUnits());
+      if (type.equalsIgnoreCase(SpatioTemporalMetadataFormat.CARTESIAN)) {
+        return factory.createCartesianCS(map,axis1,axis2,axis3);
+      }
+      if (type.equalsIgnoreCase(SpatioTemporalMetadataFormat.ELLIPSOIDAL)) {
+        return factory.createEllipsoidalCS(map,axis1,axis2,axis3);
+      }
+    }
+    throw new Exception("Coordinate system type not known : " + type);
+  }
+ catch (  FactoryException e) {
+    throw new Exception(e.getLocalizedMessage());
+  }
+}

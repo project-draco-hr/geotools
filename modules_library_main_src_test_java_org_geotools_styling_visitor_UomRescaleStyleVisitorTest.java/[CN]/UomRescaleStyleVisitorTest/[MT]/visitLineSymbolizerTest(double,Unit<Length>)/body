@@ -1,0 +1,22 @@
+{
+  try {
+    UomRescaleStyleVisitor visitor=null;
+    double size=100;
+    double expectedRescaledSize=computeExpectedRescaleSize(size,scaleMetersToPixel,uom);
+    StyleBuilder styleBuilder=new StyleBuilder();
+    LineSymbolizerImpl lineSymb=(LineSymbolizerImpl)styleBuilder.createLineSymbolizer();
+    lineSymb.setUnitOfMeasure(uom);
+    FilterFactory2 filterFactory=new FilterFactoryImpl();
+    lineSymb.getStroke().setWidth(filterFactory.literal(size));
+    visitor=new UomRescaleStyleVisitor(scaleMetersToPixel);
+    lineSymb.accept(visitor);
+    LineSymbolizer rescaledLineSymb=(LineSymbolizer)visitor.getCopy();
+    double rescaledSize=rescaledLineSymb.getStroke().getWidth().evaluate(null,Double.class);
+    Assert.assertEquals(Math.round(expectedRescaledSize),Math.round(rescaledSize));
+    Assert.assertNotSame(rescaledLineSymb,lineSymb);
+  }
+ catch (  Exception e2) {
+    e2.printStackTrace();
+    Assert.fail(e2.getClass().getSimpleName() + " should not be thrown.");
+  }
+}

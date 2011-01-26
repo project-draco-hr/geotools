@@ -1,0 +1,45 @@
+{
+  LinkedList unpacked=new LinkedList();
+  Stack stack=new Stack();
+  stack.push(this);
+  while (!stack.isEmpty()) {
+    Configuration c=(Configuration)stack.pop();
+    if (!unpacked.contains(c)) {
+      unpacked.addFirst(c);
+      stack.addAll(c.getDependencies());
+    }
+  }
+  if (unpacked.size() < 2) {
+    return unpacked;
+  }
+  DepGraph g=new DepGraph();
+  for (  Configuration c : (List<Configuration>)unpacked) {
+    for (    Configuration d : (List<Configuration>)c.getDependencies()) {
+      g.addEdge(c,d);
+    }
+  }
+  PriorityQueue<DepNode> q=new PriorityQueue<DepNode>(g.nodes.size(),new Comparator<DepNode>(){
+    public int compare(    DepNode o1,    DepNode o2){
+      return Integer.valueOf(o1.outgoing().size()).compareTo(o2.outgoing().size());
+    }
+  }
+);
+  for (  DepNode n : g.nodes.values()) {
+    q.add(n);
+  }
+  unpacked=new LinkedList();
+  while (!q.isEmpty()) {
+    DepNode n=q.remove();
+    if (n.outgoing().size() != 0) {
+      throw new IllegalStateException();
+    }
+    unpacked.add(n.config);
+    for (    DepNode i : n.incoming()) {
+      g.removeEdge(i.config,n.config);
+      q.removeAll(Collections.singletonList(i));
+      ;
+      q.add(i);
+    }
+  }
+  return unpacked;
+}

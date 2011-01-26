@@ -1,0 +1,50 @@
+{
+  closeMe=true;
+  if (input instanceof URL) {
+    final URL sourceURL=((URL)input);
+    if (sourceURL.getProtocol().compareToIgnoreCase("file") == 0) {
+      this.source=input=DataUtilities.urlToFile(sourceURL);
+    }
+  }
+  if (input instanceof File) {
+    final File sourceFile=(File)input;
+    if (!sourceFile.exists() || sourceFile.isDirectory() || !sourceFile.canRead())     throw new DataSourceException("Provided file does not exist or is a directory or is not readable!");
+    this.coverageName=sourceFile.getName();
+    final int dotIndex=coverageName.indexOf(".");
+    gzipped=coverageName.toLowerCase().endsWith("gz");
+    coverageName=(dotIndex == -1) ? coverageName : coverageName.substring(0,dotIndex);
+    if (gzipped)     inStream=ImageIO.createImageInputStream(new GZIPInputStream(new FileInputStream(sourceFile)));
+ else {
+      inStreamSPI=ImageUtilities.getImageInputStreamSPI(sourceFile);
+      if (inStreamSPI == null)       throw new DataSourceException("No input stream for the provided source");
+      inStream=inStreamSPI.createInputStreamInstance(sourceFile,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+    }
+  }
+ else   if (input instanceof URL) {
+    final URL tempURL=((URL)input);
+    input=tempURL.openConnection().getInputStream();
+    GZIPInputStream gzInStream=null;
+    try {
+      gzInStream=new GZIPInputStream((InputStream)input);
+      gzipped=false;
+    }
+ catch (    Exception e) {
+      gzipped=false;
+    }
+    input=tempURL.openConnection().getInputStream();
+    inStream=gzipped ? ImageIO.createImageInputStream(gzInStream) : ImageIO.createImageInputStream(tempURL.openConnection().getInputStream());
+  }
+ else   if (input instanceof InputStream) {
+    closeMe=false;
+    if (ImageIO.getUseCache())     inStream=new FileCacheImageInputStream((InputStream)input,null);
+ else     inStream=new MemoryCacheImageInputStream((InputStream)input);
+    inStream.mark();
+  }
+ else   if (input instanceof ImageInputStream) {
+    closeMe=false;
+    inStream=(ImageInputStream)input;
+    inStream.mark();
+  }
+ else   throw new IllegalArgumentException("Unsupported input type");
+  if (inStream == null)   throw new DataSourceException("No input stream for the provided source");
+}

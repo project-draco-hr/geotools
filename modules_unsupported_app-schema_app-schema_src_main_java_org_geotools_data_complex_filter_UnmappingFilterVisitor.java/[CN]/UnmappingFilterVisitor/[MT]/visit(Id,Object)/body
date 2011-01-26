@@ -1,0 +1,54 @@
+{
+  Set fids=filter.getIdentifiers();
+  Name target=mappings.getTargetFeature().getName();
+  String namespace=target.getNamespaceURI();
+  if (namespace == null) {
+    namespace=XMLConstants.NULL_NS_URI;
+  }
+  String name=target.getLocalPart();
+  Expression fidExpression=null;
+  for (Iterator it=mappings.getAttributeMappings().iterator(); it.hasNext(); ) {
+    AttributeMapping attMapping=(AttributeMapping)it.next();
+    StepList targetXPath=attMapping.getTargetXPath();
+    if (targetXPath.size() > 1) {
+      continue;
+    }
+    Step step=(Step)targetXPath.get(0);
+    QName stepName=step.getName();
+    if (namespace.equals(stepName.getNamespaceURI())) {
+      if (name.equals(stepName.getLocalPart())) {
+        fidExpression=attMapping.getIdentifierExpression();
+        break;
+      }
+    }
+  }
+  if (fidExpression == null) {
+    throw new IllegalStateException("No FID expression found for type " + target + ". Did you mean Expression.NIL?");
+  }
+  if (Expression.NIL.equals(fidExpression)) {
+    return filter;
+  }
+  if (fidExpression instanceof Function) {
+    Function fe=(Function)fidExpression;
+    if ("getID".equalsIgnoreCase(fe.getName())) {
+      LOGGER.finest("Fid mapping points to same ID as source");
+      return filter;
+    }
+  }
+  UnmappingFilterVisitor.LOGGER.finest("fid mapping expression is " + fidExpression);
+  Filter unrolled=null;
+  try {
+    for (Iterator it=fids.iterator(); it.hasNext(); ) {
+      Identifier fid=(Identifier)it.next();
+      Filter comparison=UnmappingFilterVisitor.ff.equals(fidExpression,UnmappingFilterVisitor.ff.literal(fid.toString()));
+      UnmappingFilterVisitor.LOGGER.finest("Adding unmapped fid filter " + comparison);
+      unrolled=unrolled == null ? comparison : UnmappingFilterVisitor.ff.or(unrolled,comparison);
+    }
+  }
+ catch (  Exception e) {
+    UnmappingFilterVisitor.LOGGER.log(Level.SEVERE,"unrolling " + filter,e);
+    throw new RuntimeException(e.getMessage());
+  }
+  UnmappingFilterVisitor.LOGGER.finer("unrolled fid filter is " + unrolled);
+  return unrolled;
+}

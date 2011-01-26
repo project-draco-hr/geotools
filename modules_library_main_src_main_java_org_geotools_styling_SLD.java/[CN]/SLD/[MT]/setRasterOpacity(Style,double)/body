@@ -1,0 +1,31 @@
+{
+  if (style == null) {
+    return;
+  }
+  for (  FeatureTypeStyle featureTypeStyle : style.featureTypeStyles()) {
+    for (int i=0; i < featureTypeStyle.rules().size(); i++) {
+      Rule rule=featureTypeStyle.rules().get(i);
+      DuplicatingStyleVisitor update=new DuplicatingStyleVisitor(){
+        @Override public void visit(        RasterSymbolizer raster){
+          ChannelSelection channelSelection=copy(raster.getChannelSelection());
+          ColorMap colorMap=copy(raster.getColorMap());
+          ContrastEnhancement ce=copy(raster.getContrastEnhancement());
+          String geometryProperty=raster.getGeometryPropertyName();
+          Symbolizer outline=copy(raster.getImageOutline());
+          Expression overlap=copy(raster.getOverlap());
+          ShadedRelief shadedRelief=copy(raster.getShadedRelief());
+          Expression newOpacity=ff.literal(opacity);
+          RasterSymbolizer copy=sf.createRasterSymbolizer(geometryProperty,newOpacity,channelSelection,overlap,colorMap,ce,shadedRelief,outline);
+          if (STRICT && !copy.equals(raster)) {
+            throw new IllegalStateException("Was unable to duplicate provided raster:" + raster);
+          }
+          pages.push(copy);
+        }
+      }
+;
+      rule.accept(update);
+      Rule updatedRule=(Rule)update.getCopy();
+      featureTypeStyle.rules().set(i,updatedRule);
+    }
+  }
+}

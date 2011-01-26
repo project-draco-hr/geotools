@@ -1,0 +1,40 @@
+{
+  List<AttributeDescriptor> atts=(schema == null) ? readAttributes() : schema.getAttributeDescriptors();
+  GeometryFactory geometryFactory;
+  if (q != null) {
+    geometryFactory=getGeometryFactory(q.getHints());
+  }
+ else {
+    geometryFactory=new GeometryFactory();
+  }
+  ShapefileAttributeReader result;
+  ShapefileReader shapeReader=openShapeReader(geometryFactory);
+  if (!readDbf) {
+    LOGGER.fine("The DBF file won't be opened since no attributes will be read from it");
+    atts=new ArrayList(1);
+    atts.add(schema.getGeometryDescriptor());
+    result=new ShapefileAttributeReader(atts,shapeReader,null);
+  }
+ else {
+    result=new ShapefileAttributeReader(atts,shapeReader,openDbfReader());
+  }
+  if (q != null) {
+    Envelope bbox=new ReferencedEnvelope();
+    bbox=(Envelope)q.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,bbox);
+    if (bbox != null && !bbox.isNull()) {
+      result.setTargetBBox(bbox);
+    }
+    Hints hints=q.getHints();
+    if (hints != null) {
+      Number simplificationDistance=(Number)hints.get(Hints.GEOMETRY_DISTANCE);
+      if (simplificationDistance != null) {
+        result.setSimplificationDistance(simplificationDistance.doubleValue());
+      }
+      result.setScreenMap((ScreenMap)hints.get(Hints.SCREENMAP));
+      if (Boolean.TRUE.equals(hints.get(Hints.FEATURE_2D))) {
+        shapeReader.setFlatGeometry(true);
+      }
+    }
+  }
+  return result;
+}

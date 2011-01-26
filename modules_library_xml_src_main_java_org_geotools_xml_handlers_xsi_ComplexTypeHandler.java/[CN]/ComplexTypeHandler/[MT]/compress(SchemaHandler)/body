@@ -1,0 +1,178 @@
+{
+  logger.fine("Start compressing ComplexType " + getName());
+  if (cache != null) {
+    return cache;
+  }
+  DefaultComplexType dct=new DefaultComplexType();
+  dct.abstracT=abstracT;
+  dct.anyAttributeNameSpace=(anyAttribute != null) ? anyAttribute.getNamespace() : null;
+  HashSet attr=new HashSet();
+  if (child instanceof SimpleContentHandler || child instanceof ComplexContentHandler) {
+    if (child instanceof SimpleContentHandler) {
+      logger.finest("SimpleContentHandler");
+      SimpleContentHandler sch=(SimpleContentHandler)child;
+      if (sch.getChild() instanceof ExtensionHandler) {
+        ExtensionHandler ext=(ExtensionHandler)sch.getChild();
+        if (ext.getAttributeDeclarations() != null) {
+          Iterator it=ext.getAttributeDeclarations().iterator();
+          while (it.hasNext()) {
+            Object o=it.next();
+            if (o instanceof AttributeHandler) {
+              AttributeHandler ah=(AttributeHandler)o;
+              attr.add(ah.compress(parent));
+            }
+ else {
+              AttributeGroupHandler agh=(AttributeGroupHandler)o;
+              AttributeGroup ag=agh.compress(parent);
+              attr.addAll(Arrays.asList(ag.getAttributes()));
+            }
+          }
+        }
+        SimpleType st;
+        if ((ext.getBase() == null) || ext.getBase().equalsIgnoreCase("")) {
+          st=((SimpleTypeHandler)ext.getChild()).compress(parent);
+        }
+ else {
+          st=parent.lookUpSimpleType(ext.getBase());
+        }
+        dct.parent=st;
+        dct.simple=true;
+      }
+ else {
+        RestrictionHandler rest=(RestrictionHandler)sch.getChild();
+        if (rest.getAttributeDeclarations() != null) {
+          Iterator it=rest.getAttributeDeclarations().iterator();
+          while (it.hasNext()) {
+            Object o=it.next();
+            if (o instanceof AttributeHandler) {
+              AttributeHandler ah=(AttributeHandler)o;
+              attr.add(ah.compress(parent));
+            }
+ else {
+              AttributeGroupHandler agh=(AttributeGroupHandler)o;
+              AttributeGroup ag=agh.compress(parent);
+              attr.addAll(Arrays.asList(ag.getAttributes()));
+            }
+          }
+        }
+        SimpleType st=new SimpleTypeGT(id,name,parent.getTargetNamespace(),SimpleType.RESTRICTION,SimpleTypeHandler.getSimpleTypes(rest,parent),SimpleTypeHandler.getFacets(rest),finaL);
+        dct.parent=st;
+        dct.simple=true;
+      }
+      dct.mixed=true;
+    }
+ else {
+      ComplexContentHandler cch=(ComplexContentHandler)child;
+      if (cch.getChild() instanceof ExtensionHandler) {
+        ExtensionHandler ext=(ExtensionHandler)cch.getChild();
+        ComplexType ct=parent.lookUpComplexType(ext.getBase());
+        dct.parent=ct;
+        if (ct != null && ct.getAttributes() != null) {
+          Attribute[] it=ct.getAttributes();
+          for (int i=0; i < it.length; i++) {
+            attr.add(it[i]);
+          }
+        }
+        if (ext.getAttributeDeclarations() != null) {
+          Iterator it=ext.getAttributeDeclarations().iterator();
+          while (it.hasNext()) {
+            Object o=it.next();
+            if (o instanceof AttributeHandler) {
+              AttributeHandler ah=(AttributeHandler)o;
+              attr.add(ah.compress(parent));
+            }
+ else {
+              AttributeGroupHandler agh=(AttributeGroupHandler)o;
+              AttributeGroup ag=agh.compress(parent);
+              attr.addAll(Arrays.asList(ag.getAttributes()));
+            }
+          }
+        }
+        if (ct != null && ext.getChild() != null) {
+          logger.finest("Looked up " + ext.getBase() + " and found "+ ((ct == null) ? null : (ct.getName() + ":::" + ct.getNamespace()))+ " for "+ name);
+          ElementGrouping extensionBaseType=ct.getChild();
+          ElementGrouping extensionChild=((ElementGroupingHandler)ext.getChild()).compress(parent);
+          dct.child=loadNewEG(extensionBaseType,extensionChild,parent);
+        }
+ else {
+          if (ct != null)           dct.child=ct.getChild();
+        }
+      }
+ else {
+        RestrictionHandler ext=(RestrictionHandler)cch.getChild();
+        if (ext.getAttributeDeclarations() != null) {
+          Iterator it=ext.getAttributeDeclarations().iterator();
+          while (it.hasNext()) {
+            Object o=it.next();
+            if (o instanceof AttributeHandler) {
+              AttributeHandler ah=(AttributeHandler)o;
+              attr.add(ah.compress(parent));
+            }
+ else {
+              AttributeGroupHandler agh=(AttributeGroupHandler)o;
+              AttributeGroup ag=agh.compress(parent);
+              attr.addAll(Arrays.asList(ag.getAttributes()));
+            }
+          }
+        }
+        if (ext.getChild() == null) {
+          dct.child=null;
+        }
+ else {
+          dct.child=((ElementGroupingHandler)ext.getChild()).compress(parent);
+        }
+        dct.parent=parent.lookUpComplexType(ext.getBase());
+      }
+      if (dct.child == null) {
+        dct.child=new DefaultSequence();
+      }
+      dct.isDerived=true;
+    }
+  }
+ else {
+    if (attrDecs != null) {
+      Iterator it=attrDecs.iterator();
+      while (it.hasNext()) {
+        Object o=it.next();
+        if (o instanceof AttributeHandler) {
+          AttributeHandler ah=(AttributeHandler)o;
+          attr.add(ah.compress(parent));
+        }
+ else {
+          AttributeGroupHandler agh=(AttributeGroupHandler)o;
+          AttributeGroup ag=agh.compress(parent);
+          attr.addAll(Arrays.asList(ag.getAttributes()));
+        }
+      }
+    }
+    if (child != null) {
+      dct.child=((ElementGroupingHandler)child).compress(parent);
+    }
+ else {
+      dct.child=new DefaultSequence();
+    }
+  }
+  dct.attributes=(Attribute[])attr.toArray(new Attribute[attr.size()]);
+  dct.namespace=parent.getTargetNamespace();
+  dct.block=block;
+  dct.finaL=finaL;
+  dct.id=id;
+  if (!dct.mixed) {
+    dct.mixed=mixed;
+  }
+  dct.name=name;
+  cache=dct;
+  if (((cache.getChild() == null) && !abstracT) && !dct.simple) {
+    logger.warning(getName() + " :: " + parent.getTargetNamespace()+ " should have a real child: ");
+    throw new NullPointerException();
+  }
+  if ((dct.parent == null) && dct.simple) {
+    logger.warning(getName() + " :: " + parent.getTargetNamespace()+ " should have a real parent: ");
+    throw new NullPointerException();
+  }
+  logger.fine("End compressing ComplexType " + getName());
+  attrDecs=null;
+  anyAttribute=null;
+  child=null;
+  return cache;
+}

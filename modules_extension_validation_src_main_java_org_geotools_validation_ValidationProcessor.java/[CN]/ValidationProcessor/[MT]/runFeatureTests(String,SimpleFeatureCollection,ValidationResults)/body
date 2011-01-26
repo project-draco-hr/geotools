@@ -1,0 +1,36 @@
+{
+  SimpleFeatureType type=collection.getSchema();
+  ArrayList tests=(ArrayList)featureLookup.get(ANYTYPENAME);
+  String typeRef=dsID + ":" + type.getTypeName();
+  ArrayList FT_tests=(ArrayList)featureLookup.get(typeRef);
+  if (FT_tests != null) {
+    if (tests != null) {
+      Iterator it=FT_tests.iterator();
+      while (it.hasNext())       tests.add((FeatureValidation)it.next());
+    }
+ else {
+      tests=FT_tests;
+    }
+  }
+  if (tests != null) {
+    SimpleFeatureIterator features=collection.features();
+    try {
+      while (features.hasNext()) {
+        SimpleFeature feature=(SimpleFeature)features.next();
+        for (int i=0; i < tests.size(); i++) {
+          FeatureValidation validator=(FeatureValidation)tests.get(i);
+          results.setValidation(validator);
+          try {
+            validator.validate(feature,type,results);
+          }
+ catch (          Throwable e) {
+            results.error(feature,e.getMessage());
+          }
+        }
+      }
+    }
+  finally {
+      collection.close(features);
+    }
+  }
+}

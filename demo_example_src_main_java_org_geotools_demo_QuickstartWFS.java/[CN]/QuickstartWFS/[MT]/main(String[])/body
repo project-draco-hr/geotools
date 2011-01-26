@@ -1,0 +1,23 @@
+{
+  String service=JOptionPane.showInputDialog("WFS Capabilities URL","http://localhost:8080/geoserver/ows?service=WFS&request=GetCapabilities");
+  if (service == null) {
+    return;
+  }
+  URL url=new URL(service);
+  Map connectionParameters=new HashMap();
+  connectionParameters.put(WFSDataStoreFactory.URL.key,url);
+  DataStore store=DataStoreFinder.getDataStore(connectionParameters);
+  if (store == null) {
+    System.out.println("Could not connect to " + url);
+    return;
+  }
+  Object[] selectionValues=store.getTypeNames();
+  String typeName=(String)JOptionPane.showInputDialog(null,"Choose FeatureTypes","WFS Quickstart",JOptionPane.QUESTION_MESSAGE,null,selectionValues,selectionValues[0]);
+  if (typeName == null) {
+    return;
+  }
+  FeatureSource featureSource=store.getFeatureSource(typeName);
+  MapContext map=new DefaultMapContext();
+  map.addLayer(featureSource,null);
+  JMapFrame.showMap(map);
+}

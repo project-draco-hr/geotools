@@ -1,0 +1,31 @@
+{
+  final int inputDimension=numCol - 1;
+  final int outputDimension=numRow - 1;
+  final double[] buffer=new double[numRow];
+  if (srcPts == dstPts) {
+    final int upperSrc=srcOff + numPts * inputDimension;
+    if (upperSrc > dstOff) {
+      if (inputDimension >= outputDimension ? dstOff > srcOff : dstOff + numPts * outputDimension > upperSrc) {
+        srcPts=new double[numPts * inputDimension];
+        System.arraycopy(dstPts,srcOff,srcPts,0,srcPts.length);
+        srcOff=0;
+      }
+    }
+  }
+  while (--numPts >= 0) {
+    int mix=0;
+    for (int j=0; j < numRow; j++) {
+      double sum=elt[mix + inputDimension];
+      for (int i=0; i < inputDimension; i++) {
+        sum+=srcPts[srcOff + i] * elt[mix++];
+      }
+      buffer[j]=sum;
+      mix++;
+    }
+    final double w=buffer[outputDimension];
+    for (int j=0; j < outputDimension; j++) {
+      dstPts[dstOff++]=buffer[j] / w;
+    }
+    srcOff+=inputDimension;
+  }
+}

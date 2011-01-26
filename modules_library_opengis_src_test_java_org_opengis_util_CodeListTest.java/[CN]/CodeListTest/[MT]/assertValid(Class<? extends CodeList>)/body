@@ -1,0 +1,154 @@
+{
+  Method method;
+  int modifiers;
+  String fullName;
+  final String className=classe.getName();
+  fullName=className + ".values()";
+  try {
+    method=classe.getMethod("values",(Class[])null);
+  }
+ catch (  NoSuchMethodException e) {
+    fail(fullName + " method is missing.");
+    return;
+  }
+  assertNotNull(method);
+  modifiers=method.getModifiers();
+  assertTrue(fullName + " is not public.",Modifier.isPublic(modifiers));
+  assertTrue(fullName + " is not static.",Modifier.isStatic(modifiers));
+  final CodeList[] values;
+  try {
+    values=(CodeList[])method.invoke(null,(Object[])null);
+  }
+ catch (  IllegalAccessException e) {
+    fail(fullName + " is not accessible.");
+    return;
+  }
+catch (  InvocationTargetException e) {
+    fail("Call to " + fullName + " failed.\n"+ e.getTargetException());
+    return;
+  }
+  assertNotNull(fullName + " returned null.",values);
+  fullName=className + ".family()";
+  try {
+    method=classe.getMethod("family",(Class[])null);
+  }
+ catch (  NoSuchMethodException e) {
+    fail(fullName + " method is missing.");
+    return;
+  }
+  assertNotNull(method);
+  modifiers=method.getModifiers();
+  assertTrue(fullName + " is not public.",Modifier.isPublic(modifiers));
+  assertFalse(fullName + " is static.",Modifier.isStatic(modifiers));
+  for (  final CodeList value : values) {
+    final String name=value.name();
+    fullName=className + '.' + name;
+    assertTrue(fullName + ": unexpected type.",classe.isInstance(value));
+    final Field field;
+    try {
+      field=classe.getField(name);
+    }
+ catch (    NoSuchFieldException e) {
+      final Class<? extends CodeList> valueClass=value.getClass();
+      if (!classe.equals(valueClass) && classe.isAssignableFrom(valueClass)) {
+        continue;
+      }
+      fail(fullName + " field not found.");
+      continue;
+    }
+    assertNotNull(field);
+    modifiers=field.getModifiers();
+    assertEquals(fullName + ": unexpected name mismatch.",name,field.getName());
+    assertTrue(fullName + " is not public.",Modifier.isPublic(modifiers));
+    assertTrue(fullName + " is not static.",Modifier.isStatic(modifiers));
+    assertTrue(fullName + " is not final.",Modifier.isFinal(modifiers));
+    Object constant;
+    try {
+      constant=field.get(null);
+    }
+ catch (    IllegalAccessException e) {
+      fail(fullName + " is not accessible.");
+      continue;
+    }
+    assertSame(fullName + " is not the expected instance.",value,constant);
+    final CodeList[] family;
+    try {
+      family=(CodeList[])method.invoke(constant,(Object[])null);
+    }
+ catch (    IllegalAccessException e) {
+      fail(className + ".family() is not accessible.");
+      return;
+    }
+catch (    InvocationTargetException e) {
+      fail("Call to " + className + ".family() failed.\n"+ e.getTargetException());
+      return;
+    }
+    assertTrue(className + ".family() mismatch.",Arrays.equals(values,family));
+  }
+  if (classe.getSuperclass().equals(CodeList.class)) {
+    fullName=className + ".VALUES";
+    final Field field;
+    try {
+      field=classe.getDeclaredField("VALUES");
+    }
+ catch (    NoSuchFieldException e) {
+      fail(fullName + " private list is missing.");
+      return;
+    }
+    modifiers=field.getModifiers();
+    assertTrue(Modifier.isStatic(modifiers));
+    assertTrue(Modifier.isFinal(modifiers));
+    assertFalse(Modifier.isPublic(modifiers));
+    assertFalse(Modifier.isProtected(modifiers));
+    field.setAccessible(true);
+    final ArrayList<?> asList;
+    try {
+      final Object candidate=field.get(null);
+      assertEquals(fullName + " is not an ArrayList.",ArrayList.class,candidate.getClass());
+      asList=(ArrayList<?>)candidate;
+    }
+ catch (    IllegalAccessException e) {
+      fail(className + ".VALUES is not accessible.");
+      return;
+    }
+    assertEquals(Arrays.asList(values),asList);
+    if (!capacityFailed) {
+      final int capacity;
+      try {
+        final Field candidate=ArrayList.class.getDeclaredField("elementData");
+        candidate.setAccessible(true);
+        final Object array=candidate.get(asList);
+        capacity=((Object[])array).length;
+      }
+ catch (      Exception e) {
+        capacityFailed=true;
+        final LogRecord record=new LogRecord(Level.WARNING,e.toString());
+        record.setThrown(e);
+        record.setLoggerName(LOGGER.getName());
+        LOGGER.log(record);
+        return;
+      }
+      assertEquals(fullName + " not properly sized.",asList.size(),capacity);
+    }
+  }
+  try {
+    method=classe.getMethod("valueOf",String.class);
+  }
+ catch (  NoSuchMethodException e) {
+    return;
+  }
+  final CodeList value;
+  try {
+    value=classe.cast(method.invoke(null,"Dummy"));
+  }
+ catch (  IllegalAccessException e) {
+    fail(e.toString());
+    return;
+  }
+catch (  InvocationTargetException e) {
+    e.printStackTrace();
+    fail(e.getTargetException().toString());
+    return;
+  }
+  assertEquals("Dummy",value.name());
+}

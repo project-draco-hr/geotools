@@ -1,0 +1,57 @@
+{
+  TransactionResult transactionResult=null;
+  Map copiedActions;
+synchronized (actionMap) {
+    combineActions();
+    copiedActions=copy(actionMap);
+  }
+  Iterator iter=copiedActions.entrySet().iterator();
+  while (iter.hasNext()) {
+    Map.Entry entry=(Entry)iter.next();
+    List actions=(List)entry.getValue();
+    String typeName=(String)entry.getKey();
+    if (actions.isEmpty())     continue;
+    if (transactionResult == null) {
+      try {
+        transactionResult=commitPost(actions);
+      }
+ catch (      OperationNotSupportedException e) {
+        WFS_1_0_0_DataStore.LOGGER.warning(e.toString());
+        transactionResult=null;
+      }
+catch (      SAXException e) {
+        WFS_1_0_0_DataStore.LOGGER.warning(e.toString());
+        transactionResult=null;
+      }
+    }
+    if (transactionResult == null) {
+      throw new IOException("An error occured while committing.");
+    }
+    if (transactionResult.getStatus() == TransactionResult.FAILED) {
+      throw new IOException(transactionResult.getError().toString());
+    }
+    List newFids=transactionResult.getInsertResult();
+    int currentInsertIndex=0;
+    for (Iterator iter2=actions.iterator(); iter2.hasNext(); ) {
+      Object action=iter2.next();
+      if (action instanceof InsertAction) {
+        InsertAction insertAction=(InsertAction)action;
+        if (currentInsertIndex >= newFids.size()) {
+          Logging.getLogger("org.geotools.data.wfs").severe("Expected more fids to be returned by " + "TransactionResponse!");
+          break;
+        }
+        ds.addFidMapping(insertAction.getFeature().getID(),(String)newFids.get(currentInsertIndex));
+        currentInsertIndex++;
+      }
+    }
+synchronized (this.fids) {
+      this.fids.put(typeName,(String[])newFids.toArray(new String[0]));
+    }
+    if (currentInsertIndex != newFids.size()) {
+      Logging.getLogger("org.geotools.data.wfs").severe("number of fids inserted do not match number of fids returned " + "by Transaction Response.  Got:" + newFids.size() + " expected: "+ currentInsertIndex);
+    }
+synchronized (actionMap) {
+      ((List)actionMap.get(typeName)).removeAll(actions);
+    }
+  }
+}

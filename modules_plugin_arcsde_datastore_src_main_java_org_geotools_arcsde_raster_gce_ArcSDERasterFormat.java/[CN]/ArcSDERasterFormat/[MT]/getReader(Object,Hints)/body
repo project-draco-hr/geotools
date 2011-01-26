@@ -1,0 +1,33 @@
+{
+  try {
+    if (source == null) {
+      throw new DataSourceException("No source set to read this coverage.");
+    }
+    final String coverageUrl=parseCoverageUrl(source);
+    readersLock.readLock().lock();
+    ArcSDEGridCoverage2DReaderJAI reader=readerCache.get(coverageUrl);
+    readersLock.readLock().unlock();
+    if (reader == null) {
+      readersLock.writeLock().lock();
+      try {
+        reader=readerCache.get(coverageUrl);
+        if (reader == null) {
+          final ArcSDEConnectionConfig connectionConfig=getConnectionConfig(coverageUrl);
+          final ISessionPool sessionPool=setupConnectionPool(connectionConfig);
+          final RasterDatasetInfo rasterInfo=loadRasterInfo(coverageUrl,sessionPool);
+          final RasterReaderFactory rasterReaderFactory=new RasterReaderFactory(sessionPool);
+          reader=new ArcSDEGridCoverage2DReaderJAI(this,rasterReaderFactory,rasterInfo,hints);
+          readerCache.put(coverageUrl,reader);
+        }
+      }
+  finally {
+        readersLock.writeLock().unlock();
+      }
+    }
+    return reader;
+  }
+ catch (  IOException dse) {
+    LOGGER.log(Level.SEVERE,"Unable to creata ArcSDERasterReader for " + source + ".",dse);
+    throw new RuntimeException(dse);
+  }
+}

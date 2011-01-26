@@ -1,0 +1,32 @@
+{
+  if (!testingEnabled()) {
+    return;
+  }
+  File file=null;
+  try {
+    file=TestData.file(this,"bogota.jp2");
+  }
+ catch (  FileNotFoundException fnfe) {
+    LOGGER.warning("test-data not found: bogota.jp2 \nTests are skipped");
+    return;
+  }
+  final JP2KFormat format=factorySpi.createFormat();
+  assertTrue(format.accepts(file));
+  final AbstractGridCoverage2DReader reader=new JP2KReader(file);
+  final int nCov=reader.getGridCoverageCount();
+  assertEquals(nCov,1);
+  final ParameterValue<GridGeometry2D> gg=JP2KFormat.READ_GRIDGEOMETRY2D.createValue();
+  final ParameterValue<Boolean> useJAI=JP2KFormat.USE_JAI_IMAGEREAD.createValue();
+  useJAI.setValue(false);
+  final GeneralEnvelope oldEnvelope=reader.getOriginalEnvelope();
+  gg.setValue(new GridGeometry2D(reader.getOriginalGridRange(),oldEnvelope));
+  GridCoverage2D gc=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,useJAI});
+  assertNotNull(gc);
+  forceDataLoading(gc);
+  useJAI.setValue(true);
+  final Envelope wgs84Envelope=CRS.transform(oldEnvelope,DefaultGeographicCRS.WGS84);
+  gg.setValue(new GridGeometry2D(reader.getOriginalGridRange(),wgs84Envelope));
+  gc=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,useJAI});
+  assertNotNull(gc);
+  forceDataLoading(gc);
+}

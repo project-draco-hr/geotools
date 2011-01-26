@@ -1,0 +1,31 @@
+{
+  Lock lock=getLock(typeName,featureID);
+  while (lock != null) {
+    if (lock instanceof TransactionLock) {
+      TransactionLock tlock=(TransactionLock)lock;
+      if (transaction == tlock.transaction) {
+        throw new FeatureLockException("Transaction Lock is already held by this Transaction",featureID);
+      }
+ else {
+        try {
+synchronized (tlock) {
+            tlock.wait();
+          }
+          lock=getLock(typeName,featureID);
+        }
+ catch (        InterruptedException interupted) {
+          throw new FeatureLockException("Interupted while waiting for Transaction Lock",featureID,interupted);
+        }
+      }
+    }
+ else     if (lock instanceof MemoryLock) {
+      MemoryLock mlock=(MemoryLock)lock;
+      throw new FeatureLockException("Feature Lock is held by Authorization " + mlock.authID,featureID);
+    }
+ else {
+      throw new FeatureLockException("Lock is already held " + lock,featureID);
+    }
+  }
+  lock=createLock(transaction,featureLock);
+  locks(typeName).put(featureID,lock);
+}

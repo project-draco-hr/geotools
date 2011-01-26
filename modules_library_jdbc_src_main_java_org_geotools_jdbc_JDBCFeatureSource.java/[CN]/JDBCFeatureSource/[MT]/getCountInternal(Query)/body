@@ -1,0 +1,45 @@
+{
+  JDBCDataStore dataStore=getDataStore();
+  Filter[] split=splitFilter(query.getFilter());
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  if ((postFilter != null) && (postFilter != Filter.INCLUDE)) {
+    try {
+      getDataStore().getLogger().fine("Calculating size manually");
+      int count=0;
+      FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(query);
+      try {
+        while (reader.hasNext()) {
+          reader.next();
+          count++;
+        }
+      }
+  finally {
+        reader.close();
+      }
+      return count;
+    }
+ catch (    Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+ else {
+    Connection cx=dataStore.getConnection(getState());
+    try {
+      DefaultQuery q=new DefaultQuery(query);
+      q.setFilter(preFilter);
+      int count=dataStore.getCount(getSchema(),q,cx);
+      if (!dataStore.getSQLDialect().isLimitOffsetSupported()) {
+        if (query.getStartIndex() != null && query.getStartIndex() > 0) {
+          if (query.getStartIndex() > count)           count=0;
+ else           count-=query.getStartIndex();
+        }
+        if (query.getMaxFeatures() > 0 && count > query.getMaxFeatures())         count=query.getMaxFeatures();
+      }
+      return count;
+    }
+  finally {
+      dataStore.releaseConnection(cx,getState());
+    }
+  }
+}

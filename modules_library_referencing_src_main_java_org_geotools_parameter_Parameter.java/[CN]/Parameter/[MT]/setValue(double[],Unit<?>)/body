@@ -1,0 +1,19 @@
+{
+  ensureNonNull("unit",unit);
+  @SuppressWarnings("unchecked") final ParameterDescriptor<T> descriptor=(ParameterDescriptor)this.descriptor;
+  final Unit<?> targetUnit=descriptor.getUnit();
+  if (targetUnit == null) {
+    throw unitlessParameter(descriptor);
+  }
+  final int expectedID=getUnitMessageID(targetUnit);
+  if (getUnitMessageID(unit) != expectedID) {
+    throw new IllegalArgumentException(Errors.format(expectedID,unit));
+  }
+  final double[] converted=values.clone();
+  final UnitConverter converter=unit.getConverterTo(targetUnit);
+  for (int i=0; i < converted.length; i++) {
+    converted[i]=converter.convert(converted[i]);
+  }
+  this.value=ensureValidValue(descriptor,converted);
+  this.unit=unit;
+}

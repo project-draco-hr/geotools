@@ -1,0 +1,20 @@
+{
+  LinkedHashMap obj=new LinkedHashMap();
+  obj.put("type","FeatureCollection");
+  if (encodeFeatureCollectionBounds || encodeFeatureCollectionCRS) {
+    final ReferencedEnvelope bounds=features.getBounds();
+    if (encodeFeatureCollectionBounds) {
+      obj.put("bbox",new JSONStreamAware(){
+        public void writeJSONString(        Writer out) throws IOException {
+          JSONArray.writeJSONString(Arrays.asList(bounds.getMinX(),bounds.getMinY(),bounds.getMaxX(),bounds.getMaxY()),out);
+        }
+      }
+);
+    }
+    if (encodeFeatureCollectionCRS) {
+      obj.put("crs",createCRS(bounds.getCoordinateReferenceSystem()));
+    }
+  }
+  obj.put("features",new FeatureCollectionEncoder(features,gjson));
+  GeoJSONUtil.encode(obj,output);
+}

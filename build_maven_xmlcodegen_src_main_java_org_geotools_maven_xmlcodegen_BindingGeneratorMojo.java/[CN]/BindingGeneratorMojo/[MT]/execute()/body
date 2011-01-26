@@ -1,0 +1,92 @@
+{
+  XSDSchema xsdSchema=schema();
+  if (xsdSchema == null) {
+    return;
+  }
+  BindingGenerator generator=new BindingGenerator();
+  generator.setGenerateAttributes(generateAttributeBindings);
+  generator.setGenerateElements(generateElementBindings);
+  generator.setGenerateTypes(generateTypeBindings);
+  generator.setGenerateConfiguration(generateConfiguration);
+  generator.setGenerateXsd(generateXsd);
+  generator.setGenerateTests(generateTests);
+  generator.setOverwriting(overwriteExistingFiles);
+  generator.setSourceLocation(sourceOutputDirectory.getAbsolutePath());
+  generator.setTestLocation(testOutputDirectory.getAbsolutePath());
+  generator.setResourceLocation(((Resource)project.getBuild().getResources().get(0)).getDirectory());
+  generator.setSchemaSourceDirectory(schemaSourceDirectory);
+  try {
+    Class c=Class.forName(complexBindingBaseClass);
+    generator.setComplexBindingBaseClass(c);
+  }
+ catch (  ClassNotFoundException e) {
+    getLog().error("Could not load class: " + complexBindingBaseClass);
+    return;
+  }
+  try {
+    Class c=Class.forName(simpleBindingBaseClass);
+    generator.setSimpleBindingBaseClass(c);
+  }
+ catch (  ClassNotFoundException e) {
+    getLog().error("Could not load class: " + simpleBindingBaseClass);
+    return;
+  }
+  if (schemaLookupDirectories != null) {
+    generator.setSchemaLookupDirectories(schemaLookupDirectories);
+  }
+  if (destinationPackage != null) {
+    generator.setPackageBase(destinationPackage);
+  }
+  Set urls=new HashSet();
+  try {
+    List l=project.getCompileClasspathElements();
+    for (Iterator i=l.iterator(); i.hasNext(); ) {
+      String element=(String)i.next();
+      File d=new File(element);
+      if (d.exists() && d.isDirectory()) {
+        urls.add(d.toURI().toURL());
+      }
+    }
+    List d=project.getDependencies();
+    for (Iterator i=d.iterator(); i.hasNext(); ) {
+      Dependency dep=(Dependency)i.next();
+      if ("jar".equals(dep.getType())) {
+        Artifact artifact=artifactFactory.createArtifact(dep.getGroupId(),dep.getArtifactId(),dep.getVersion(),dep.getScope(),dep.getType());
+        Set artifacts=project.createArtifacts(artifactFactory,null,null);
+        ArtifactResolutionResult result=artifactResolver.resolveTransitively(artifacts,artifact,remoteRepositories,localRepository,artifactMetadataSource);
+        artifacts=result.getArtifacts();
+        for (Iterator a=artifacts.iterator(); a.hasNext(); ) {
+          Artifact dartifact=(Artifact)a.next();
+          urls.add(dartifact.getFile().toURI().toURL());
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    getLog().error(e);
+    return;
+  }
+  ClassLoader cl=new URLClassLoader((URL[])urls.toArray(new URL[urls.size()]));
+  if (bindingConstructorArguments != null) {
+    HashMap map=new HashMap();
+    for (int i=0; i < bindingConstructorArguments.length; i++) {
+      String name=bindingConstructorArguments[i].getName();
+      String type=bindingConstructorArguments[i].getType();
+      try {
+        bindingConstructorArguments[i].clazz=cl.loadClass(type);
+      }
+ catch (      ClassNotFoundException e) {
+        getLog().error("Could not locate class:" + type);
+        return;
+      }
+    }
+    generator.setBindingConstructorArguments(bindingConstructorArguments);
+  }
+  if (includes != null && includes.length > 0) {
+    HashSet included=new HashSet(Arrays.asList(includes));
+    getLog().info("Including: " + included);
+    generator.setIncluded(included);
+  }
+  getLog().info("Generating bindings...");
+  generator.generate(xsdSchema);
+}

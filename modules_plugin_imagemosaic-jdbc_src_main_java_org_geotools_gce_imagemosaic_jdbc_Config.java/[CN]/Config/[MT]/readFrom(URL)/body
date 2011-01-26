@@ -1,0 +1,41 @@
+{
+  Config result=ConfigMap.get(xmlURL.toString());
+  if (result != null) {
+    return result;
+  }
+  InputStream in=xmlURL.openStream();
+  InputSource input=new InputSource(xmlURL.toString());
+  DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+  dbf.setIgnoringElementContentWhitespace(true);
+  dbf.setIgnoringComments(true);
+  DocumentBuilder db=dbf.newDocumentBuilder();
+  Document dom=db.parse(input);
+  in.close();
+  result=new Config();
+  result.xmlUrl=xmlURL.toString();
+  result.dstype=readValueString(dom,"dstype");
+  result.username=readValueString(dom,"username");
+  result.password=readValueString(dom,"password");
+  result.jdbcUrl=readValueString(dom,"jdbcUrl");
+  result.driverClassName=readValueString(dom,"driverClassName");
+  result.jndiReferenceName=readValueString(dom,"jndiReferenceName");
+  result.maxActive=readValueInteger(dom,"maxActive");
+  result.maxIdle=readValueInteger(dom,"maxIdle");
+  result.coordsys=readNameString(dom.getDocumentElement(),"coordsys");
+  result.coverageName=readNameString(dom.getDocumentElement(),"coverageName");
+  Node tmp=dom.getElementsByTagName("scaleop").item(0);
+  NamedNodeMap map=tmp.getAttributes();
+  String s=map.getNamedItem("interpolation").getNodeValue();
+  result.interpolation=new Integer(s);
+  result.spatialExtension=SpatialExtension.fromString(readNameString(dom.getDocumentElement(),"spatialExtension"));
+  if (SpatialExtension.GEORASTER.equals(result.spatialExtension))   readForOracleGeoRaster(result,dom);
+ else   if (SpatialExtension.CUSTOM.equals(result.spatialExtension)) {
+    readForCustom(result,dom);
+  }
+ else {
+    readMapping(result,dom);
+    result.initStatements();
+  }
+  ConfigMap.put(xmlURL.toString(),result);
+  return result;
+}

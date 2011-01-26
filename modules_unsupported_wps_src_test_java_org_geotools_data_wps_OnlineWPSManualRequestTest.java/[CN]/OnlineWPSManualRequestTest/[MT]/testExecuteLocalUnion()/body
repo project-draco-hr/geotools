@@ -1,0 +1,31 @@
+{
+  if (fixture == null)   return;
+  String processIdenLocal="Union";
+  WPSCapabilitiesType capabilities=wps.getCapabilities();
+  ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
+  EList processes=processOfferings.getProcess();
+  boolean found=false;
+  Iterator iterator=processes.iterator();
+  while (iterator.hasNext()) {
+    ProcessBriefType process=(ProcessBriefType)iterator.next();
+    if (process.getIdentifier().getValue().equalsIgnoreCase(processIdenLocal)) {
+      found=true;
+      break;
+    }
+  }
+  if (!found) {
+    return;
+  }
+  DescribeProcessRequest descRequest=wps.createDescribeProcessRequest();
+  descRequest.setIdentifier(processIdenLocal);
+  DescribeProcessResponse descResponse=wps.issueRequest(descRequest);
+  ProcessDescriptionsType processDesc=descResponse.getProcessDesc();
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(processIdenLocal);
+  setLocalInputDataUnion(exeRequest,processDesc);
+  ExecuteProcessResponse response=wps.issueRequest(exeRequest);
+  assertNotNull(response);
+  assertNotNull(response.getExecuteResponse());
+  ExceptionReportType exceptionResponse=response.getExceptionResponse();
+  assertNull(exceptionResponse);
+}

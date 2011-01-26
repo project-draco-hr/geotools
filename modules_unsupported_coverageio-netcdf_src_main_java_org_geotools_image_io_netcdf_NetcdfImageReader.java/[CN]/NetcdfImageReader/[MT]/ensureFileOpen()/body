@@ -1,0 +1,35 @@
+{
+  if (dataset == null) {
+    lastError=null;
+    clearAbortRequest();
+    final String dodsURL=getInputDODS();
+    if (dodsURL != null) {
+      if (variableNames == null) {
+        final int s=dodsURL.indexOf('?');
+        if (s >= 0) {
+          variableNames=new String[]{dodsURL.substring(s + 1)};
+        }
+      }
+      dataset=new NetcdfDataset(new DODSNetcdfFile(dodsURL,this),false);
+    }
+ else {
+      final File inputFile=getInputFile();
+      dataset=NetcdfDataset.openDataset(inputFile.getPath(),false,this);
+      if (dataset == null) {
+        throw new FileNotFoundException(Errors.format(ErrorKeys.FILE_DOES_NOT_EXIST_$1,inputFile));
+      }
+    }
+    if (variableNames == null) {
+      final List variables=dataset.getVariables();
+      final String[] filtered=new String[variables.size()];
+      int count=0;
+      for (int i=0; i < filtered.length; i++) {
+        final VariableIF candidate=(VariableIF)variables.get(i);
+        if (candidate.getRank() >= 2 && VALID_TYPES.contains(candidate.getDataType()) && !isAxis(candidate,variables)) {
+          filtered[count++]=candidate.getName();
+        }
+      }
+      variableNames=XArray.resize(filtered,count);
+    }
+  }
+}

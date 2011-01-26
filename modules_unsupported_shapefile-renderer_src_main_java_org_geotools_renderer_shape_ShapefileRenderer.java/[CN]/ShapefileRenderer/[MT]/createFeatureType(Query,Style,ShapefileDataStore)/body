@@ -1,0 +1,27 @@
+{
+  SimpleFeatureType schema=ds.getSchema();
+  String[] attributes=findStyleAttributes((query == null) ? Query.ALL : query,style,schema);
+  AttributeDescriptor[] types=new AttributeDescriptor[attributes.length];
+  attributeIndexing=new int[attributes.length];
+  if (attributes.length == 1 && attributes[0].equals(schema.getGeometryDescriptor().getLocalName())) {
+    types[0]=schema.getDescriptor(attributes[0]);
+    if (types[0] == null)     throw new IllegalArgumentException("Attribute " + attributes[0] + " does not exist. Maybe it has just been spelled wrongly?");
+  }
+ else {
+    for (int i=0; i < types.length; i++) {
+      types[i]=schema.getDescriptor(attributes[i]);
+      if (types[i] == null)       throw new IllegalArgumentException("Attribute " + attributes[i] + " does not exist. Maybe it has just been spelled wrongly?");
+      for (int j=0; j < schema.getAttributeCount(); j++) {
+        if (schema.getDescriptor(j).getLocalName().equals(attributes[i])) {
+          attributeIndexing[i]=j - 1;
+          break;
+        }
+      }
+    }
+  }
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName(schema.getName());
+  tb.addAll(types);
+  tb.setDefaultGeometry(schema.getGeometryDescriptor().getLocalName());
+  return tb.buildFeatureType();
+}

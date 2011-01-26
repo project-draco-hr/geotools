@@ -1,0 +1,24 @@
+{
+  final int arrLength=types.length;
+  if (arrLength != values.length) {
+    throw new IllegalArgumentException("length of value array is not " + "same length as type array");
+  }
+  StringBuffer sqlStatement=new StringBuffer("UPDATE ");
+  sqlStatement.append(sqlBuilder.encodeTableName(tableName) + " SET ");
+  for (int i=0; i < arrLength; i++) {
+    AttributeDescriptor curType=types[i];
+    sqlStatement.append(sqlBuilder.encodeColumnName(curType.getLocalName()));
+    sqlStatement.append(" = ");
+    if (curType instanceof GeometryDescriptor) {
+      int srid=getSRID(curType.getLocalName());
+      sqlStatement.append("GeometryFromText( ?, ").append(srid).append(")");
+    }
+ else {
+      sqlStatement.append("?");
+    }
+    sqlStatement.append((i < (arrLength - 1)) ? ", " : " ");
+  }
+  sqlStatement.append(whereStmt);
+  sqlStatement.append(";");
+  return sqlStatement.toString();
+}

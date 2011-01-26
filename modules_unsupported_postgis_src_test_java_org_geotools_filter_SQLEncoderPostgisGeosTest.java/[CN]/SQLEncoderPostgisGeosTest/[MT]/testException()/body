@@ -1,0 +1,18 @@
+{
+  FilterFactory factory=FilterFactoryFinder.createFilterFactory();
+  GeometryFilter gf=factory.createGeometryFilter(AbstractFilter.GEOMETRY_BEYOND);
+  LiteralExpressionImpl right=new BBoxExpressionImpl(new Envelope(10,10,300,300));
+  gf.addRightGeometry(right);
+  AttributeExpressionImpl left=new AttributeExpressionImpl(testSchema,"testGeometry");
+  gf.addLeftGeometry(left);
+  try {
+    SQLEncoderPostgisGeos encoder=new SQLEncoderPostgisGeos(2346);
+    String out=encoder.encode(gf);
+    LOGGER.fine("out is " + out);
+    fail("This filter type should not be supported at the moment?");
+  }
+ catch (  SQLEncoderException e) {
+    LOGGER.fine(e.getMessage());
+    assertEquals("Filter type not supported",e.getMessage());
+  }
+}

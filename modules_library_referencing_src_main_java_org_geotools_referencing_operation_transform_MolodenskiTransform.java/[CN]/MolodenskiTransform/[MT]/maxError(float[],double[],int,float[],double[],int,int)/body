@@ -1,0 +1,27 @@
+{
+  float max=0f;
+  if (inverse == null) {
+    inverse();
+    if (inverse == null) {
+      return max;
+    }
+  }
+  final int sourceDim=getSourceDimensions();
+  final float[] tmp=new float[numPts * sourceDim];
+  inverse.transform(dstPts1,dstPts2,dstOff,tmp,null,0,numPts);
+  for (int i=0; i < tmp.length; i++, srcOff++) {
+    final float expected=(srcPts2 != null) ? (float)srcPts2[srcOff] : srcPts1[srcOff];
+    float error=abs(tmp[i] - expected);
+switch (i % sourceDim) {
+case 0:
+      error-=360 * floor(error / 360);
+    break;
+case 2:
+  continue;
+}
+if (error > max) {
+max=error;
+}
+}
+return max;
+}

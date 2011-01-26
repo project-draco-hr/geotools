@@ -1,0 +1,30 @@
+{
+  BufferedImage image=null;
+  Graphics2D g2D=null;
+  TileQueueElement queueObject=null;
+  try {
+    while ((queueObject=tileQueue.take()).isEndElement() == false) {
+      if (image == null) {
+        image=getStartImage(queueObject.getTileImage());
+        g2D=(Graphics2D)image.getGraphics();
+      }
+      int posx=(int)((queueObject.getEnvelope().getMinimum(0) - requestEnvelope.getMinimum(0)) / levelInfo.getResX());
+      int posy=(int)((requestEnvelope.getMaximum(1) - queueObject.getEnvelope().getMaximum(1)) / levelInfo.getResY());
+      g2D.drawImage(queueObject.getTileImage(),AffineTransform.getTranslateInstance(posx,posy),null);
+    }
+  }
+ catch (  InterruptedException e) {
+    throw new RuntimeException(e);
+  }
+  if (image == null)   image=getStartImage(ImageMosaicJDBCReader.DEFAULT_IMAGE_TYPE);
+  GeneralEnvelope resultEnvelope=null;
+  if (xAxisSwitch) {
+    Rectangle2D tmp=new Rectangle2D.Double(requestEnvelope.getMinimum(1),requestEnvelope.getMinimum(0),requestEnvelope.getSpan(1),requestEnvelope.getSpan(0));
+    resultEnvelope=new GeneralEnvelope(tmp);
+    resultEnvelope.setCoordinateReferenceSystem(requestEnvelope.getCoordinateReferenceSystem());
+  }
+ else {
+    resultEnvelope=requestEnvelope;
+  }
+  gridCoverage2D=coverageFactory.create(config.getCoverageName(),rescaleImage(image),resultEnvelope);
+}

@@ -1,0 +1,41 @@
+{
+  final GCpair couple=prepareFinalImage(gridCoverage,symbolizer);
+  if (couple == null)   return null;
+  final RenderedImage finalImage=couple.getGridCoverage().getRenderedImage();
+  final AffineTransform clonedFinalWorldToGrid=couple.getTransform();
+  boolean hasScaleX=!(Math.abs(clonedFinalWorldToGrid.getScaleX() - 1) < 1E-2 / (finalImage.getWidth() + 1 - finalImage.getMinX()));
+  boolean hasScaleY=!(Math.abs(clonedFinalWorldToGrid.getScaleY() - 1) < 1E-2 / (finalImage.getHeight() + 1 - finalImage.getMinY()));
+  boolean hasShearX=!(clonedFinalWorldToGrid.getShearX() == 0.0);
+  boolean hasShearY=!(clonedFinalWorldToGrid.getShearY() == 0.0);
+  boolean hasTranslateX=!(Math.abs(clonedFinalWorldToGrid.getTranslateX()) < 1E-2);
+  boolean hasTranslateY=!(Math.abs(clonedFinalWorldToGrid.getTranslateY()) < 1E-2);
+  boolean isTranslateXInt=!(Math.abs(clonedFinalWorldToGrid.getTranslateX() - (int)clonedFinalWorldToGrid.getTranslateX()) < 1E-2);
+  boolean isTranslateYInt=!(Math.abs(clonedFinalWorldToGrid.getTranslateY() - (int)clonedFinalWorldToGrid.getTranslateY()) < 1E-2);
+  boolean isIdentity=clonedFinalWorldToGrid.isIdentity() && !hasScaleX && !hasScaleY&& !hasTranslateX&& !hasTranslateY;
+  boolean isScale=hasScaleX && hasScaleY && !hasShearX&& !hasShearY;
+  if (isIdentity) {
+    return finalImage;
+  }
+  ImageLayout layout_=RIFUtil.getImageLayoutHint(hints);
+  if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& isTranslateXInt&& isTranslateYInt&& layout_ == null) {
+    return new TranslateIntOpImage(finalImage,hints,(int)clonedFinalWorldToGrid.getShearX(),(int)clonedFinalWorldToGrid.getShearY());
+  }
+  final ImageLayout layout=new ImageLayout(finalImage);
+  layout.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(tileSizeY).setTileWidth(tileSizeX);
+  final RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+  if (interpolation instanceof InterpolationNearest)   hints.add(new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE));
+  hints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,BorderExtender.createInstance(BorderExtender.BORDER_COPY)));
+  RenderedImage im=null;
+  try {
+    if (isScale) {
+      im=ScaleDescriptor.create(finalImage,(float)clonedFinalWorldToGrid.getScaleX(),(float)clonedFinalWorldToGrid.getScaleY(),(float)clonedFinalWorldToGrid.getTranslateX(),(float)clonedFinalWorldToGrid.getTranslateY(),interpolation,hints);
+    }
+ else {
+      im=AffineDescriptor.create(finalImage,clonedFinalWorldToGrid,interpolation,null,hints);
+    }
+  }
+  finally {
+    if (DEBUG)     writeRenderedImage(im,"postAffine");
+  }
+  return im;
+}

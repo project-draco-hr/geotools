@@ -1,0 +1,50 @@
+{
+  final Number nodata;
+  if (nativeCellType == TYPE_32BIT_REAL) {
+    LOGGER.fine("no data value is Float.NaN");
+    return Float.valueOf(Float.NaN);
+  }
+ else   if (nativeCellType == TYPE_64BIT_REAL) {
+    LOGGER.fine("no data value is Double.NaN");
+    return Double.valueOf(Double.NaN);
+  }
+ else   if (nativeCellType == TYPE_1BIT) {
+    LOGGER.fine("1BIT images no-data value is set to 2," + " regardless of the raster statistics");
+    return Double.valueOf(2);
+  }
+ else   if (nativeCellType == TYPE_4BIT) {
+    LOGGER.fine("4BIT images no-data value is set to 16," + " regardless of the raster statistics");
+    return Double.valueOf(16);
+  }
+ else   if (!isGeoPhysics(numBands,nativeCellType)) {
+    LOGGER.fine("3 or 4 band, 8 bit unsigned image, assumed to be " + "RGB or RGBA respectively and nodata value hardcoded to 255");
+    return (Number)nativeCellType.getSampleValueRange().getMaxValue();
+  }
+  final NumberRange<?> sampleValueRange=nativeCellType.getSampleValueRange();
+  final double minimumSample=sampleValueRange.getMinimum(true);
+  final double maximumSample=sampleValueRange.getMaximum(true);
+  double lower;
+  double greater;
+  if (Double.isNaN(statsMin) || Double.isNaN(statsMax)) {
+    lower=Math.ceil(minimumSample - 1);
+    greater=Math.floor(maximumSample + 1);
+  }
+ else {
+    lower=Math.ceil(statsMin - 1);
+    greater=Math.floor(statsMax + 1);
+  }
+  final boolean isUnsigned=minimumSample == 0;
+  if (sampleValueRange.contains((Number)Double.valueOf(lower))) {
+    nodata=lower;
+  }
+ else   if (sampleValueRange.contains((Number)Double.valueOf(greater))) {
+    nodata=greater;
+  }
+ else   if (isUnsigned) {
+    nodata=greater;
+  }
+ else {
+    nodata=lower;
+  }
+  return nodata;
+}

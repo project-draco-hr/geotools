@@ -1,0 +1,99 @@
+{
+  XSDSimpleTypeDefinition type=null;
+  if (instance.getTypeDefinition() instanceof XSDSimpleTypeDefinition) {
+    type=(XSDSimpleTypeDefinition)instance.getTypeDefinition();
+  }
+ else {
+    XSDComplexTypeDefinition complexType=(XSDComplexTypeDefinition)instance.getTypeDefinition();
+    if (complexType.getContentType() instanceof XSDSimpleTypeDefinition) {
+      type=(XSDSimpleTypeDefinition)complexType.getContentType();
+    }
+  }
+  String text=instance.getText();
+  if (type != null) {
+    if (type.getVariety() == XSDVariety.LIST_LITERAL) {
+      text=Whitespace.COLLAPSE.preparse(text);
+      String[] list=text.split(" +");
+      if (type.getLengthFacet() != null) {
+        XSDLengthFacet length=type.getLengthFacet();
+        if (list.length != length.getValue()) {
+        }
+      }
+      if (type.getMaxLengthFacet() != null) {
+        XSDMaxLengthFacet length=type.getMaxLengthFacet();
+        if (list.length > length.getValue()) {
+        }
+      }
+      if (type.getMinLengthFacet() != null) {
+        XSDMinLengthFacet length=type.getMinLengthFacet();
+        if (list.length < length.getValue()) {
+        }
+      }
+      if (!type.getEnumerationFacets().isEmpty()) {
+        Set values=new HashSet();
+        for (Iterator e=type.getEnumerationFacets().iterator(); e.hasNext(); ) {
+          XSDEnumerationFacet enumeration=(XSDEnumerationFacet)e.next();
+          for (Iterator v=enumeration.getValue().iterator(); v.hasNext(); ) {
+            values.add(v.next());
+          }
+        }
+        for (int i=0; i < list.length; i++) {
+          if (!values.contains(list[i])) {
+          }
+        }
+      }
+      final XSDSimpleTypeDefinition itemType=type.getItemTypeDefinition();
+      List parsed=new ArrayList();
+      final XSDElementDeclaration element=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+      element.setTypeDefinition(itemType);
+      if (instance.getName() != null) {
+        element.setName(instance.getName());
+      }
+      if (instance.getNamespace() != null) {
+        element.setTargetNamespace(instance.getNamespace());
+      }
+      InstanceComponentImpl theInstance=new InstanceComponentImpl(){
+        public XSDTypeDefinition getTypeDefinition(){
+          return itemType;
+        }
+        public XSDNamedComponent getDeclaration(){
+          return element;
+        }
+      }
+;
+      for (int i=0; i < list.length; i++) {
+        theInstance.setText(list[i]);
+        ParseExecutor executor=new ParseExecutor(theInstance,null,context,parser);
+        parser.getBindingWalker().walk(element,executor,context);
+        parsed.add(executor.getValue());
+      }
+      return parsed;
+    }
+ else     if (type.getVariety() == XSDVariety.UNION_LITERAL) {
+      return text;
+    }
+ else {
+      for (Iterator f=type.getFacets().iterator(); f.hasNext(); ) {
+        XSDFacet facet=(XSDFacet)f.next();
+        if (facet instanceof XSDWhiteSpaceFacet) {
+          XSDWhiteSpaceFacet whitespace=(XSDWhiteSpaceFacet)facet;
+          if (whitespace.getValue() == XSDWhiteSpace.REPLACE_LITERAL) {
+            text=Whitespace.REPLACE.preparse(text);
+          }
+          if (whitespace.getValue() == XSDWhiteSpace.COLLAPSE_LITERAL) {
+            text=Whitespace.COLLAPSE.preparse(text);
+          }
+          if (whitespace.getValue() == XSDWhiteSpace.PRESERVE_LITERAL) {
+          }
+        }
+      }
+      return text;
+    }
+  }
+ else {
+    if (instance.getTypeDefinition() instanceof XSDComplexTypeDefinition && ((XSDComplexTypeDefinition)instance.getTypeDefinition()).isMixed()) {
+      text=Whitespace.COLLAPSE.preparse(text);
+    }
+  }
+  return text;
+}

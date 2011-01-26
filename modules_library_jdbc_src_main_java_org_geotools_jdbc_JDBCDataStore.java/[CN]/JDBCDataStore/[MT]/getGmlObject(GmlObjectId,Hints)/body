@@ -1,0 +1,67 @@
+{
+  if (isAssociations()) {
+    Connection cx=createConnection();
+    try {
+      try {
+        Statement st=null;
+        ResultSet rs=null;
+        if (getSQLDialect() instanceof PreparedStatementSQLDialect) {
+          st=selectGeometrySQLPS(id.getID(),cx);
+          rs=((PreparedStatement)st).executeQuery();
+        }
+ else {
+          String sql=selectGeometrySQL(id.getID());
+          LOGGER.log(Level.FINE,"Get GML object: {0}",sql);
+          st=cx.createStatement();
+          rs=st.executeQuery(sql);
+        }
+        try {
+          if (rs.next()) {
+            Geometry g=getSQLDialect().decodeGeometryValue(null,rs,"geometry",getGeometryFactory(),cx);
+            String name=rs.getString("name");
+            String desc=rs.getString("description");
+            setGmlProperties(g,id.getID(),name,desc);
+            return g;
+          }
+        }
+  finally {
+          closeSafe(rs);
+          closeSafe(st);
+        }
+      }
+ catch (      SQLException e) {
+        throw (IOException)new IOException().initCause(e);
+      }
+    }
+  finally {
+      closeSafe(cx);
+    }
+  }
+  int i=id.getID().indexOf('.');
+  if (i == -1) {
+    LOGGER.info("Unable to determine feature type for GmlObjectId:" + id);
+    return null;
+  }
+  String featureTypeName=id.getID().substring(0,i);
+  SimpleFeatureType featureType=getSchema(featureTypeName);
+  if (featureType == null) {
+    throw new IllegalArgumentException("No such feature type: " + featureTypeName);
+  }
+  Id filter=getFilterFactory().id(Collections.singleton(id));
+  DefaultQuery query=new DefaultQuery(featureTypeName);
+  query.setFilter(filter);
+  query.setHints(hints);
+  SimpleFeatureCollection features=getFeatureSource(featureTypeName).getFeatures(query);
+  if (!features.isEmpty()) {
+    SimpleFeatureIterator fi=features.features();
+    try {
+      if (fi.hasNext()) {
+        return fi.next();
+      }
+    }
+  finally {
+      features.close(fi);
+    }
+  }
+  return null;
+}

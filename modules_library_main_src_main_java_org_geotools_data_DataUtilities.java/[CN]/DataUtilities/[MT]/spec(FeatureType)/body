@@ -1,0 +1,24 @@
+{
+  Collection<PropertyDescriptor> types=featureType.getDescriptors();
+  StringBuffer buf=new StringBuffer();
+  for (  PropertyDescriptor type : types) {
+    buf.append(type.getName().getLocalPart());
+    buf.append(":");
+    buf.append(typeMap(type.getType().getBinding()));
+    if (type instanceof GeometryDescriptor) {
+      GeometryDescriptor gd=(GeometryDescriptor)type;
+      if (gd.getCoordinateReferenceSystem() != null && gd.getCoordinateReferenceSystem().getIdentifiers() != null) {
+        for (Iterator<ReferenceIdentifier> it=gd.getCoordinateReferenceSystem().getIdentifiers().iterator(); it.hasNext(); ) {
+          ReferenceIdentifier id=it.next();
+          if ((id.getAuthority() != null) && id.getAuthority().getTitle().equals(Citations.EPSG.getTitle())) {
+            buf.append(":srid=" + id.getCode());
+            break;
+          }
+        }
+      }
+    }
+    buf.append(",");
+  }
+  buf.delete(buf.length() - 1,buf.length());
+  return buf.toString();
+}

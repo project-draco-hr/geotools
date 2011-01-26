@@ -1,0 +1,45 @@
+{
+  CoordinateReferenceSystem crs=null;
+  try {
+    crs=CRS.decode(srs);
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Error parsing CoordinateSystem srs: \"" + srs + "\"");
+  }
+  int SRID=-1;
+  if (crs != null) {
+    try {
+      Set ident=crs.getIdentifiers();
+      if ((ident != null && !ident.isEmpty())) {
+        String code=((NamedIdentifier)ident.toArray()[0]).getCode();
+        SRID=Integer.parseInt(code);
+      }
+    }
+ catch (    Exception e) {
+      log.error("SRID could not be determined from crs!");
+    }
+  }
+  log.info("SRID used by SimpleFeature reader: " + SRID);
+  try {
+    SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+    ftb.setName(typeName);
+    ftb.setSRS(srs);
+    ftb.add("the_geom",Geometry.class);
+    ftb.add("name",String.class);
+    ftb.add("key",String.class);
+    ftb.add("urlLink",String.class);
+    ftb.add("lineType",String.class);
+    ftb.add("color",String.class);
+    ftb.add("layer",String.class);
+    ftb.add("thickness",Double.class);
+    ftb.add("rotation",Double.class);
+    ftb.add("visible",Integer.class);
+    ftb.add("entryLineNumber",Integer.class);
+    ftb.add("parseError",Integer.class);
+    ftb.add("error",String.class);
+    ft=ftb.buildFeatureType();
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Error creating SimpleFeatureType: " + typeName,e);
+  }
+}

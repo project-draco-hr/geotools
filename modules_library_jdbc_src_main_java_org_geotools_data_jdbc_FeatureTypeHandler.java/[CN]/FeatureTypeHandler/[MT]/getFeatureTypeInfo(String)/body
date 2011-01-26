@@ -1,0 +1,21 @@
+{
+  long now=System.currentTimeMillis();
+  Long ftInfoTime=(Long)featureTypeTimeoutMap.get(featureTypeName);
+  FeatureTypeInfo info=(FeatureTypeInfo)featureTypeMap.get(featureTypeName);
+  if ((ftInfoTime == null) || ((now - ftInfoTime.longValue()) > cacheTimeOut)) {
+    FIDMapper mapper=getFIDMapper(featureTypeName);
+    SimpleFeatureType schema=dataStore.buildSchema(featureTypeName,mapper);
+    info=new FeatureTypeInfo(featureTypeName,schema,mapper);
+    for (    AttributeDescriptor ad : schema.getAttributeDescriptors()) {
+      if (ad instanceof GeometryDescriptor) {
+        int srid=dataStore.determineSRID(featureTypeName,ad.getLocalName());
+        info.putSRID(ad.getLocalName(),srid);
+      }
+    }
+    if (cacheTimeOut > 0) {
+      featureTypeMap.put(featureTypeName,info);
+      featureTypeTimeoutMap.put(featureTypeName,new Long(now));
+    }
+  }
+  return info;
+}

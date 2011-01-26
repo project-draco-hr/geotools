@@ -1,0 +1,26 @@
+{
+  if (feature == null) {
+    return new Integer(0);
+  }
+  Expression expr=(Expression)getExpression(0);
+  SimpleFeatureCollection featureCollection=(SimpleFeatureCollection)feature;
+synchronized (featureCollection) {
+    if (featureCollection != previousFeatureCollection) {
+      previousFeatureCollection=featureCollection;
+      max=null;
+      try {
+        CalcResult result=calculateMax(featureCollection,expr);
+        if (result != null) {
+          max=result.getValue();
+        }
+      }
+ catch (      IllegalFilterException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  return max;
+}

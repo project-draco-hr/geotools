@@ -1,0 +1,27 @@
+{
+  final HashSet contents=new HashSet();
+  final ArrayList particles=new ArrayList();
+  TypeWalker.Visitor visitor=new TypeWalker.Visitor(){
+    public boolean visit(    XSDTypeDefinition type){
+      if (type instanceof XSDSimpleTypeDefinition) {
+        return true;
+      }
+      XSDComplexTypeDefinition cType=(XSDComplexTypeDefinition)type;
+      ElementVisitor visitor=new ElementVisitor(){
+        public void visit(        XSDParticle particle){
+          XSDWildcard element=(XSDWildcard)particle.getContent();
+          if (!contents.contains(element)) {
+            contents.add(element);
+            particles.add(particle);
+          }
+        }
+      }
+;
+      visitAnyElements(cType,visitor);
+      return true;
+    }
+  }
+;
+  visitor.visit(type);
+  return new ArrayList(particles);
+}

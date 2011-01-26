@@ -1,0 +1,116 @@
+{
+  Stroke stroke=factory.getDefaultStroke();
+  NodeList list=findElements(((Element)root),"GraphicFill");
+  int length=list.getLength();
+  if (length > 0) {
+    if (LOGGER.isLoggable(Level.FINEST))     LOGGER.finest("stroke: found a graphic fill " + list.item(0));
+    NodeList kids=list.item(0).getChildNodes();
+    for (int i=0; i < kids.getLength(); i++) {
+      Node child=kids.item(i);
+      if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+        continue;
+      }
+      String childName=child.getLocalName();
+      if (childName == null) {
+        childName=child.getNodeName();
+      }
+      if (childName.equalsIgnoreCase(graphicSt)) {
+        Graphic g=parseGraphic(child);
+        if (LOGGER.isLoggable(Level.FINEST))         LOGGER.finest("setting stroke graphicfill with " + g);
+        stroke.setGraphicFill(g);
+      }
+    }
+  }
+  list=findElements(((Element)root),"GraphicStroke");
+  length=list.getLength();
+  if (length > 0) {
+    if (LOGGER.isLoggable(Level.FINEST))     LOGGER.finest("stroke: found a graphic stroke " + list.item(0));
+    NodeList kids=list.item(0).getChildNodes();
+    for (int i=0; i < kids.getLength(); i++) {
+      Node child=kids.item(i);
+      if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+        continue;
+      }
+      String childName=child.getLocalName();
+      if (childName == null) {
+        childName=child.getNodeName();
+      }
+      if (childName.equalsIgnoreCase(graphicSt)) {
+        Graphic g=parseGraphic(child);
+        if (LOGGER.isLoggable(Level.FINEST))         LOGGER.finest("setting stroke graphicStroke with " + g);
+        stroke.setGraphicStroke(g);
+      }
+    }
+  }
+  list=findElements(((Element)root),"CssParameter");
+  length=list.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=list.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("now I am processing " + child);
+    }
+    Element param=(Element)child;
+    org.w3c.dom.NamedNodeMap map=param.getAttributes();
+    final int mapLength=map.getLength();
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("attributes " + map.toString());
+    }
+    for (int k=0; k < mapLength; k++) {
+      String res=map.item(k).getNodeValue();
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.finest("processing attribute " + res);
+      }
+      if (res.equalsIgnoreCase(strokeString)) {
+        Expression color=parseParameterValueExpression(child,false);
+        stroke.setColor(color);
+      }
+ else       if (res.equalsIgnoreCase("width") || res.equalsIgnoreCase("stroke-width")) {
+        Expression width=parseParameterValueExpression(child,false);
+        stroke.setWidth(width);
+      }
+ else       if (res.equalsIgnoreCase(opacityString) || res.equalsIgnoreCase("stroke-opacity")) {
+        Expression opacity=parseParameterValueExpression(child,false);
+        stroke.setOpacity(opacity);
+      }
+ else       if (res.equalsIgnoreCase("linecap") || res.equalsIgnoreCase("stroke-linecap")) {
+        stroke.setLineCap(parseCssParameter(child));
+      }
+ else       if (res.equalsIgnoreCase("linejoin") || res.equalsIgnoreCase("stroke-linejoin")) {
+        stroke.setLineJoin(parseCssParameter(child));
+      }
+ else       if (res.equalsIgnoreCase("dasharray") || res.equalsIgnoreCase("stroke-dasharray")) {
+        String dashString=null;
+        if (child.getChildNodes().getLength() == 1 && child.getFirstChild().getNodeType() == Node.TEXT_NODE) {
+          dashString=getFirstChildValue(child);
+        }
+ else {
+          Expression definition=parseCssParameter(child);
+          if (definition instanceof Literal) {
+            dashString=((Literal)definition).getValue().toString();
+          }
+ else {
+            LOGGER.warning("Only literal stroke-dasharray supported at this time:" + definition);
+          }
+        }
+        if (dashString != null) {
+          StringTokenizer stok=new StringTokenizer(dashString.trim()," ");
+          float[] dashes=new float[stok.countTokens()];
+          for (int l=0; l < dashes.length; l++) {
+            dashes[l]=Float.parseFloat(stok.nextToken());
+          }
+          stroke.setDashArray(dashes);
+        }
+ else {
+          LOGGER.fine("Unable to parse stroke-dasharray");
+        }
+      }
+ else       if (res.equalsIgnoreCase("dashoffset") || res.equalsIgnoreCase("stroke-dashoffset")) {
+        stroke.setDashOffset(parseCssParameter(child));
+      }
+    }
+  }
+  return stroke;
+}

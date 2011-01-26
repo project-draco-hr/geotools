@@ -1,0 +1,37 @@
+{
+  PropertyIsEqualTo eqFilter;
+  final String strWithSpace="ALL PRACTICES";
+  Filter filterWithSpace=CompilerUtil.parseFilter(language,"practice='" + strWithSpace + "'");
+  Assert.assertNotNull(filterWithSpace);
+  Assert.assertTrue(filterWithSpace instanceof PropertyIsEqualTo);
+  eqFilter=(PropertyIsEqualTo)filterWithSpace;
+  Expression spacesLiteral=eqFilter.getExpression2();
+  Assert.assertEquals(strWithSpace,spacesLiteral.toString());
+  Filter emptyFilter=CompilerUtil.parseFilter(language,"MAJOR_WATERSHED_SYSTEM = ''");
+  Assert.assertNotNull(emptyFilter);
+  Assert.assertTrue(emptyFilter instanceof PropertyIsEqualTo);
+  eqFilter=(PropertyIsEqualTo)emptyFilter;
+  Expression emptyLiteral=eqFilter.getExpression2();
+  Assert.assertEquals("",emptyLiteral.toString());
+  final String expectedWithout="ab";
+  Filter filterWithoutQuote=CompilerUtil.parseFilter(language,"MAJOR_WATERSHED_SYSTEM = '" + expectedWithout + "'");
+  Assert.assertNotNull(filterWithoutQuote);
+  Assert.assertTrue(filterWithoutQuote instanceof PropertyIsEqualTo);
+  eqFilter=(PropertyIsEqualTo)filterWithoutQuote;
+  Expression actualWhithoutQuote=eqFilter.getExpression2();
+  Assert.assertEquals(expectedWithout,actualWhithoutQuote.toString());
+  final String expected="cde'' fg";
+  Filter filter=CQL.toFilter("MAJOR_WATERSHED_SYSTEM = '" + expected + "'");
+  Assert.assertNotNull(filter);
+  Assert.assertTrue(filter instanceof PropertyIsEqualTo);
+  eqFilter=(PropertyIsEqualTo)filter;
+  Expression actual=eqFilter.getExpression2();
+  Assert.assertEquals(expected.replaceAll("''","'"),actual.toString());
+  final String otherChars="????";
+  filter=(PropertyIsEqualTo)CompilerUtil.parseFilter(language,"NAME = '" + otherChars + "'");
+  Assert.assertNotNull(filter);
+  Assert.assertTrue(filter instanceof PropertyIsEqualTo);
+  eqFilter=(PropertyIsEqualTo)filter;
+  actual=eqFilter.getExpression2();
+  Assert.assertEquals(otherChars,actual.toString());
+}

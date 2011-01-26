@@ -1,0 +1,42 @@
+{
+  while (!featureAvailable && internalReadersHaveNext()) {
+    record=shp.nextRecord();
+    Envelope envelope=record.envelope();
+    boolean skip=false;
+    if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
+      geometry=null;
+      skip=true;
+    }
+ else     if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
+      try {
+        if (screenMap != null && screenMap.checkAndSet(envelope)) {
+          geometry=null;
+          skip=true;
+        }
+ else {
+          geometry=record.getSimplifiedShape(screenMap);
+        }
+      }
+ catch (      Exception e) {
+        geometry=record.getSimplifiedShape();
+      }
+    }
+ else {
+      geometry=record.shape();
+    }
+    if (dbf != null) {
+      if (skip) {
+        dbf.skip();
+        row=null;
+      }
+ else {
+        row=dbf.readRow();
+      }
+    }
+ else {
+      row=null;
+    }
+    featureAvailable=!skip;
+  }
+  return featureAvailable;
+}

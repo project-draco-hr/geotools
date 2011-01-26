@@ -1,0 +1,39 @@
+{
+  if (expr == null) {
+    return null;
+  }
+  if (STRICT) {
+    return expr.evaluate(null,TYPE);
+  }
+ else   if (expr instanceof Literal) {
+    Literal literal=(Literal)expr;
+    return (T)literal.evaluate(null,TYPE);
+  }
+ else   if (expr instanceof Function) {
+    Function function=(Function)expr;
+    List params=function.getParameters();
+    if (params != null && params.size() != 0) {
+      for (int i=0; i < params.size(); i++) {
+        Expression e=(Expression)params.get(i);
+        T value=asType(e,TYPE);
+        if (value != null) {
+          return value;
+        }
+      }
+    }
+  }
+ else {
+    try {
+      T value=expr.evaluate(null,TYPE);
+      if (TYPE.isInstance(value)) {
+        return value;
+      }
+    }
+ catch (    NullPointerException expected) {
+      return null;
+    }
+catch (    Throwable ignore) {
+    }
+  }
+  return null;
+}

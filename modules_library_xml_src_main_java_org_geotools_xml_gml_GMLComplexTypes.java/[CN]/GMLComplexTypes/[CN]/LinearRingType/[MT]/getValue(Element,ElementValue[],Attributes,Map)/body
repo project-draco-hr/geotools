@@ -1,0 +1,31 @@
+{
+  Element e=value[0].getElement();
+  if (e == null) {
+    if (!element.isNillable())     throw new SAXException("Internal error, ElementValues require an associated Element.");
+    return null;
+  }
+  Object t=value[0].getValue();
+  LinearRing p=null;
+  if (t == null) {
+    throw new SAXException("Invalid coordinate specified");
+  }
+  GeometryFactory gf=new GeometryFactory(DefaultCoordinateSequenceFactory.instance());
+  if (t instanceof Coordinate) {
+    if (value.length < 4) {
+      throw new SAXException("Cannot have more than one coord per " + getName());
+    }
+    Coordinate[] c=new Coordinate[value.length];
+    for (int i=0; i < c.length; i++)     c[i]=(Coordinate)value[i].getValue();
+    p=gf.createLinearRing(c);
+  }
+ else {
+    if (value.length > 1) {
+      throw new SAXException("Cannot have more than one coordinate sequence per " + getName());
+    }
+    CoordinateSequence c=(CoordinateSequence)t;
+    p=gf.createLinearRing(c);
+  }
+  ElementValue[] ev=new ElementValue[1];
+  ev[0]=new DefaultElementValue(element,p);
+  return AbstractGeometryType.getInstance().getValue(element,ev,attrs,hints);
+}

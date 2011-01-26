@@ -1,0 +1,15 @@
+{
+  String xCol=XCoordColumnName;
+  String yCol=YCoordColumnName;
+  BypassSqlFeatureTypeHandler ftHanlder=(BypassSqlFeatureTypeHandler)super.typeHandler;
+  if (ftHanlder.isView(typeName)) {
+    String sqlQeury=ftHanlder.getQuery(typeName);
+    Map aliases=BypassSqlSQLBuilder.parseAliases(sqlQeury);
+    xCol=(String)aliases.get(xCol);
+    yCol=(String)aliases.get(yCol);
+  }
+  SQLEncoderLocationsXY encoder=new SQLEncoderLocationsXY(xCol,yCol);
+  encoder.setFeatureType(ftHanlder.getSchema(typeName));
+  encoder.setFIDMapper(getFIDMapper(typeName));
+  return new LocationsXYSQLBuilder(encoder,geomName,XCoordColumnName,YCoordColumnName,ftHanlder);
+}

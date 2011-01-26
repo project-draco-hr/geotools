@@ -1,0 +1,33 @@
+{
+  CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
+  PicoContainer container=container(crs);
+  PositionFactoryImpl pf=(PositionFactoryImpl)container.getComponentInstanceOfType(PositionFactory.class);
+  AggregateFactoryImpl agf=(AggregateFactoryImpl)container.getComponentInstanceOfType(AggregateFactory.class);
+  DirectPosition one=pf.createDirectPosition(new double[]{280,560});
+  DirectPosition two=pf.createDirectPosition(new double[]{60,180});
+  DirectPosition three=pf.createDirectPosition(new double[]{720,80});
+  LineSegment edge1=new LineSegmentImpl(one,two,0.0);
+  LineSegment edge2=new LineSegmentImpl(two,three,0.0);
+  LineSegment edge3=new LineSegmentImpl(three,one,0.0);
+  DirectPosition one2=pf.createDirectPosition(new double[]{420,360});
+  DirectPosition two2=pf.createDirectPosition(new double[]{200,360});
+  DirectPosition three2=pf.createDirectPosition(new double[]{320,180});
+  LineSegment edge1_1=new LineSegmentImpl(one2,two2,0.0);
+  LineSegment edge2_1=new LineSegmentImpl(two2,three2,0.0);
+  LineSegment edge3_1=new LineSegmentImpl(three2,one2,0.0);
+  List<CurveSegment> curves=new ArrayList<CurveSegment>();
+  curves.add(edge1);
+  curves.add(edge2);
+  curves.add(edge3);
+  Curve s=new CurveImpl(crs,curves);
+  curves=new ArrayList<CurveSegment>();
+  curves.add(edge1_1);
+  curves.add(edge2_1);
+  curves.add(edge3_1);
+  Curve s2=new CurveImpl(crs,curves);
+  Set<Primitive> primitives=new HashSet<Primitive>();
+  primitives.add(s);
+  primitives.add(s2);
+  MultiPrimitiveImpl mp=(MultiPrimitiveImpl)agf.createMultiPrimitive(primitives);
+  assertTrue(mp.equals(new MultiPrimitiveImpl(mp.getCoordinateReferenceSystem(),primitives)));
+}

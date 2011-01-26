@@ -1,0 +1,31 @@
+{
+  URL url=TestData.getResource(LabelingTest.class,"streams.shp");
+  ShapefileDataStore ds=(ShapefileDataStore)new ShapefileDataStoreFactory().createDataStore(url);
+  Envelope env=ds.getFeatureSource().getBounds();
+  MathTransform mt=null;
+  AffineTransform transform=RendererUtilities.worldToScreenTransform(env,new Rectangle(512,512));
+  MathTransform at=ReferencingFactoryFinder.getMathTransformFactory(null).createAffineTransform(new GeneralMatrix(transform));
+  if (mt == null) {
+    mt=at;
+  }
+ else {
+    mt=ReferencingFactoryFinder.getMathTransformFactory(null).createConcatenatedTransform(mt,at);
+  }
+  ShapefileReader reader=new ShapefileReader(ShapefileRendererUtil.getShpFiles(ds),false,false);
+  reader.setHandler(new org.geotools.renderer.shape.shapehandler.simple.MultiLineHandler(reader.getHeader().getShapeType(),env,mt,false,new Rectangle(512,512)));
+  Object shape=reader.nextRecord().shape();
+  assertNotNull(shape);
+  assertTrue(shape instanceof SimpleGeometry);
+  int i=0;
+  while (reader.hasNext()) {
+    i++;
+    shape=reader.nextRecord().shape();
+    assertNotNull(shape);
+    assertTrue(shape instanceof SimpleGeometry);
+    if (i == 0) {
+      SimpleGeometry geom=(SimpleGeometry)shape;
+      assertEquals(13,geom.coords[0].length);
+    }
+  }
+  assertEquals(ds.getFeatureSource().getCount(Query.ALL) - 1,i);
+}

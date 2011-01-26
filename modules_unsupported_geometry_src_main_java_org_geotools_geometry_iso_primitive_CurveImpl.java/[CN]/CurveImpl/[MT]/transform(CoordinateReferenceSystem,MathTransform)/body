@@ -1,0 +1,18 @@
+{
+  PrimitiveFactory primitiveFactory=new PrimitiveFactoryImpl(newCRS,getPositionFactory());
+  GeometryFactory geometryFactory=new GeometryFactoryImpl(newCRS,getPositionFactory());
+  DirectPositionImpl dp1=null;
+  List<DirectPosition> currentpositions=asDirectPositions();
+  Iterator<DirectPosition> iter=currentpositions.iterator();
+  List<Position> newpositions=new ArrayList<Position>();
+  while (iter.hasNext()) {
+    DirectPosition thispos=(DirectPosition)iter.next();
+    dp1=new DirectPositionImpl(newCRS);
+    dp1=(DirectPositionImpl)transform.transform(thispos,dp1);
+    newpositions.add(dp1);
+  }
+  LineString lineString=geometryFactory.createLineString(newpositions);
+  List curveSegmentList=Collections.singletonList(lineString);
+  CurveImpl newCurve=(CurveImpl)primitiveFactory.createCurve(curveSegmentList);
+  return newCurve;
+}

@@ -1,0 +1,19 @@
+{
+  Iterator<FileDataStoreFactorySpi> ps=getAvailableDataStores();
+  while (ps.hasNext()) {
+    FileDataStoreFactorySpi fac=ps.next();
+    if (!fac.isAvailable()) {
+      continue;
+    }
+    try {
+      if (fac.canProcess(url)) {
+        return fac.createDataStore(url);
+      }
+    }
+ catch (    Throwable t) {
+      LOGGER.log(Level.WARNING,"Could not aquire " + fac.getDescription() + ":"+ t,t);
+      continue;
+    }
+  }
+  return null;
+}

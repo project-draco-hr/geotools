@@ -1,0 +1,72 @@
+{
+  FeatureIterator<Feature> mfIterator=mfFeatures.features();
+  FeatureIterator<Feature> guIterator=guFeatures.features();
+  Map<String,Feature> guMap=new HashMap<String,Feature>();
+  Feature guFeature;
+  while (guIterator.hasNext()) {
+    guFeature=(Feature)guIterator.next();
+    String guId=guFeature.getIdentifier().getID();
+    if (!guMap.containsKey(guId)) {
+      guMap.put(guId,guFeature);
+    }
+  }
+  FeatureIterator<Feature> cpIterator=cpFeatures.features();
+  Map<String,Feature> cpMap=new HashMap<String,Feature>();
+  Feature cpFeature;
+  while (cpIterator.hasNext()) {
+    cpFeature=(Feature)cpIterator.next();
+    String cpId=cpFeature.getIdentifier().getID();
+    if (!cpMap.containsKey(cpId)) {
+      cpMap.put(cpId,cpFeature);
+    }
+  }
+  Feature mfFeature;
+  Collection<Property> nestedGuFeatures;
+  String guId;
+  final String NESTED_LINK="specification";
+  Collection<Property> nestedCpFeatures;
+  String cpId;
+  while (mfIterator.hasNext()) {
+    mfFeature=(Feature)mfIterator.next();
+    String mfId=mfFeature.getIdentifier().toString();
+    String[] guIds=this.mfToGuMap.get(mfId).split(";");
+    nestedGuFeatures=(Collection<Property>)mfFeature.getProperties(NESTED_LINK);
+    assertEquals(guIds.length,nestedGuFeatures.size());
+    ArrayList<String> nestedGuIds=new ArrayList<String>();
+    for (    Property property : nestedGuFeatures) {
+      Object value=property.getValue();
+      assertNotNull(value);
+      assertTrue(value instanceof Collection);
+      assertEquals(1,((Collection)value).size());
+      Feature nestedGuFeature=(Feature)((Collection)value).iterator().next();
+      guId=nestedGuFeature.getIdentifier().toString();
+      assertTrue(guMap.containsKey(guId));
+      nestedGuIds.add(guId);
+      guFeature=guMap.get(guId.toString());
+      Collection<Property> guProperties=guFeature.getProperties();
+      assertEquals(nestedGuFeature.getProperties(),guProperties);
+      String[] cpIds=this.guToCpMap.get(guId).split(";");
+      nestedCpFeatures=(Collection<Property>)guFeature.getProperties("composition");
+      assertEquals(cpIds.length,nestedCpFeatures.size());
+      ArrayList<String> nestedCpIds=new ArrayList<String>();
+      for (      Property cpProperty : nestedCpFeatures) {
+        Object cpPropertyValue=cpProperty.getValue();
+        assertNotNull(cpPropertyValue);
+        assertTrue(cpPropertyValue instanceof Collection);
+        assertEquals(1,((Collection)cpPropertyValue).size());
+        Feature nestedCpFeature=(Feature)((Collection)cpPropertyValue).iterator().next();
+        cpId=nestedCpFeature.getIdentifier().toString();
+        assertTrue(cpMap.containsKey(cpId));
+        nestedCpIds.add(cpId);
+        cpFeature=cpMap.get(cpId.toString());
+        Collection<Property> cpProperties=cpFeature.getProperties();
+        assertEquals(nestedCpFeature.getProperties(),cpProperties);
+      }
+      assertTrue(nestedCpIds.containsAll(Arrays.asList(cpIds)));
+    }
+    assertTrue(nestedGuIds.containsAll(Arrays.asList(guIds)));
+  }
+  mfIterator.close();
+  guIterator.close();
+  cpIterator.close();
+}

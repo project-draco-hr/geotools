@@ -1,0 +1,22 @@
+{
+  Set<FeatureTypeMapping> mappings;
+  AppSchemaDataAccess dataStore;
+  URL configFileUrl=(URL)AppSchemaDataAccessFactory.URL.lookUp(params);
+  XMLConfigDigester configReader=new XMLConfigDigester();
+  AppSchemaDataAccessDTO config=configReader.parse(configFileUrl);
+  List<String> includes=config.getIncludes();
+  for (Iterator<String> it=includes.iterator(); it.hasNext(); ) {
+    String parentLocation;
+    parentLocation=DataUtilities.urlToFile(configFileUrl).getParent();
+    File includedConfig=new File(parentLocation,it.next());
+    if (!includedConfig.exists()) {
+      throw new RuntimeException("Please check that the includedTypes location is correct: \n '" + includedConfig.getPath() + "' doesn't exist!");
+    }
+    URL relatedConfigURL=DataUtilities.fileToURL(includedConfig);
+    params.put("url",relatedConfigURL);
+    createDataStore(params);
+  }
+  mappings=AppSchemaDataAccessConfigurator.buildMappings(config);
+  dataStore=new AppSchemaDataAccess(mappings);
+  return dataStore;
+}

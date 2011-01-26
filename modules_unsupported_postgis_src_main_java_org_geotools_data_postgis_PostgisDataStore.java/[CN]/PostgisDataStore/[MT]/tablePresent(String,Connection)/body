@@ -1,0 +1,26 @@
+{
+  final int TABLE_NAME_COL=3;
+  Connection conn=null;
+  try {
+    conn=getConnection(Transaction.AUTO_COMMIT);
+    DatabaseMetaData meta=conn.getMetaData();
+    String[] tableType={"TABLE"};
+    ResultSet tables=meta.getTables(null,config.getDatabaseSchemaName(),"%",tableType);
+    while (tables.next()) {
+      String tableName=tables.getString(TABLE_NAME_COL);
+      if (allowTable(tableName) && (tableName != null) && (tableName.equalsIgnoreCase(table))) {
+        return (true);
+      }
+    }
+    return false;
+  }
+ catch (  SQLException sqlException) {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,sqlException);
+    conn=null;
+    String message="Error querying database for list of tables:" + sqlException.getMessage();
+    throw new DataSourceException(message,sqlException);
+  }
+ finally {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+}

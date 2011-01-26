@@ -1,0 +1,39 @@
+{
+  boolean newServices=false;
+  try {
+    final String classname=System.getProperty(category.getName());
+    if (classname != null)     try {
+      final Class<?> candidate=loader.loadClass(classname);
+      if (category.isAssignableFrom(candidate)) {
+        final Class<? extends T> factoryClass=candidate.asSubclass(category);
+        T factory=getServiceProviderByClass(factoryClass);
+        if (factory == null)         try {
+          factory=factoryClass.newInstance();
+          if (registerServiceProvider(factory,category)) {
+            message.append(System.getProperty("line.separator","\n"));
+            message.append("  ");
+            message.append(factoryClass.getName());
+            newServices=true;
+          }
+        }
+ catch (        IllegalAccessException exception) {
+          throw new FactoryRegistryException(Errors.format(ErrorKeys.CANT_CREATE_FACTORY_$1,classname),exception);
+        }
+catch (        InstantiationException exception) {
+          throw new FactoryRegistryException(Errors.format(ErrorKeys.CANT_CREATE_FACTORY_$1,classname),exception);
+        }
+        for (final Iterator<T> it=getServiceProviders(category,false); it.hasNext(); ) {
+          final T other=it.next();
+          if (other != factory) {
+            setOrdering(category,factory,other);
+          }
+        }
+      }
+    }
+ catch (    ClassNotFoundException exception) {
+    }
+  }
+ catch (  SecurityException exception) {
+  }
+  return newServices;
+}

@@ -1,0 +1,56 @@
+{
+  int maxfeatures=10;
+  resetDatasets();
+  SimpleFeatureType schema=(SimpleFeatureType)cacheDataset.getSchema();
+  ArrayList<String> attributes=new ArrayList<String>();
+  for (int i=0; i < schema.getAttributeCount(); i++) {
+    AttributeDescriptor attr=schema.getDescriptor(i);
+    if (!(attr instanceof GeometryDescriptor)) {
+      attributes.add(attr.getName().getLocalPart());
+    }
+  }
+  DefaultQuery query=new DefaultQuery(schema.getTypeName(),Filter.INCLUDE,maxfeatures,attributes.toArray(new String[0]),null);
+  FeatureCollection features=cacheDataset.getFeatures(query);
+  assertEquals(maxfeatures,features.size());
+  SimpleFeatureType ftype=(SimpleFeatureType)features.getSchema();
+  assertEquals(attributes.size(),ftype.getAttributeCount());
+  Filter f=filterFactory.bbox(schema.getGeometryDescriptor().getLocalName(),0,0,100,100,schema.getCoordinateReferenceSystem().toString());
+  features=cacheDataset.getFeatures(f);
+  int size=features.size();
+  CoordinateReferenceSystem targetCRS=getBCAlbers();
+  query=new DefaultQuery(schema.getTypeName(),f);
+  query.setCoordinateSystem(schema.getCoordinateReferenceSystem());
+  query.setCoordinateSystemReproject(schema.getCoordinateReferenceSystem());
+  query.setFilter(f);
+  features=cacheDataset.getFeatures(query);
+  assertEquals(size,features.size());
+  query=new DefaultQuery(schema.getTypeName(),Filter.INCLUDE);
+  query.setCoordinateSystem(schema.getCoordinateReferenceSystem());
+  query.setCoordinateSystemReproject(targetCRS);
+  query.setFilter(f);
+  features=cacheDataset.getFeatures(query);
+  assertEquals(targetCRS,features.getSchema().getCoordinateReferenceSystem());
+  assertEquals(size,features.size());
+  query=new DefaultQuery(schema.getTypeName());
+  query.setStartIndex(new Integer(4));
+  boolean error=false;
+  try {
+    features=cacheDataset.getFeatures(query);
+  }
+ catch (  IOException ex) {
+    error=true;
+  }
+  assertTrue(error);
+  String prop=schema.getAttributeDescriptors().get(1).getLocalName();
+  SortBy sb=filterFactory.sort(prop,SortOrder.ASCENDING);
+  query=new DefaultQuery(schema.getTypeName());
+  query.setSortBy(new SortBy[]{sb});
+  error=false;
+  try {
+    features=cacheDataset.getFeatures(query);
+  }
+ catch (  IOException ex) {
+    error=true;
+  }
+  assertTrue(error);
+}

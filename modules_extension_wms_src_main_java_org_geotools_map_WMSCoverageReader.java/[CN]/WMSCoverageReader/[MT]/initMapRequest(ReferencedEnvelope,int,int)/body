@@ -1,0 +1,51 @@
+{
+  ReferencedEnvelope gridEnvelope=bbox;
+  String requestSrs=srsName;
+  try {
+    String code=null;
+    Integer epsgCode=CRS.lookupEpsgCode(bbox.getCoordinateReferenceSystem(),false);
+    if (epsgCode != null) {
+      code="EPSG:" + epsgCode;
+    }
+ else {
+      code=CRS.lookupIdentifier(bbox.getCoordinateReferenceSystem(),false);
+    }
+    if (code != null && validSRS.contains(code)) {
+      requestSrs=code;
+    }
+ else {
+      gridEnvelope=bbox.transform(getCrs(),true);
+      if (gridEnvelope.getWidth() < gridEnvelope.getHeight()) {
+        height=(int)Math.round(width * gridEnvelope.getHeight() / gridEnvelope.getWidth());
+      }
+ else {
+        width=(int)Math.round(height * gridEnvelope.getWidth() / gridEnvelope.getHeight());
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw (IOException)new IOException("Could not reproject the request envelope").initCause(e);
+  }
+  GetMapRequest mapRequest=wms.createGetMapRequest();
+  List<Layer> reversed=new ArrayList<Layer>(layers);
+  Collections.reverse(reversed);
+  for (  Layer layer : reversed) {
+    mapRequest.addLayer(layer);
+  }
+  mapRequest.setDimensions(width,height);
+  mapRequest.setFormat(URLEncoder.encode(format,"ASCII"));
+  mapRequest.setSRS(requestSrs);
+  mapRequest.setBBox(gridEnvelope);
+  mapRequest.setTransparent(true);
+  try {
+    this.requestCRS=CRS.decode(requestSrs);
+  }
+ catch (  Exception e) {
+    throw new IOException("Could not decode request SRS " + requestSrs);
+  }
+  this.mapRequest=mapRequest;
+  this.requestedEnvelope=gridEnvelope;
+  this.width=width;
+  this.height=height;
+  return gridEnvelope;
+}

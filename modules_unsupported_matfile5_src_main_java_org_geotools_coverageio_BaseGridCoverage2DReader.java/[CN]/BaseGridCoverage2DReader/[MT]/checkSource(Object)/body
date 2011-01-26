@@ -1,0 +1,40 @@
+{
+  this.source=null;
+  if (input instanceof URL) {
+    final URL sourceURL=((URL)input);
+    this.source=sourceURL;
+    if (sourceURL.getProtocol().compareToIgnoreCase("file") == 0) {
+      this.inputFile=new File(URLDecoder.decode(sourceURL.getFile(),"UTF-8"));
+      input=this.inputFile;
+    }
+ else {
+      throw new IllegalArgumentException("Unsupported input type");
+    }
+  }
+  if (input instanceof FileImageInputStreamExt) {
+    if (source == null) {
+      source=input;
+    }
+    inputFile=((FileImageInputStreamExt)input).getFile();
+    input=inputFile;
+  }
+  if (input instanceof File) {
+    final File sourceFile=(File)input;
+    if (source == null) {
+      source=sourceFile;
+    }
+    if (inputFile == null) {
+      inputFile=sourceFile;
+    }
+    if (!sourceFile.exists() || sourceFile.isDirectory() || !sourceFile.canRead()) {
+      throw new DataSourceException("Provided file does not exist or is a directory or is not readable!");
+    }
+    this.parentPath=sourceFile.getParent();
+    localCoverageName=sourceFile.getName();
+    final int dotIndex=localCoverageName.lastIndexOf(".");
+    localCoverageName=(dotIndex == -1) ? localCoverageName : localCoverageName.substring(0,dotIndex);
+  }
+ else {
+    throw new IllegalArgumentException("Unsupported input type");
+  }
+}

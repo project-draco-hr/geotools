@@ -1,0 +1,35 @@
+{
+  final HashSet contents=new HashSet();
+  final ArrayList particles=new ArrayList();
+  TypeWalker.Visitor visitor=new TypeWalker.Visitor(){
+    public boolean visit(    XSDTypeDefinition type){
+      if (type instanceof XSDSimpleTypeDefinition) {
+        return true;
+      }
+      XSDComplexTypeDefinition cType=(XSDComplexTypeDefinition)type;
+      ElementVisitor visitor=new ElementVisitor(){
+        public void visit(        XSDParticle particle){
+          XSDElementDeclaration element=(XSDElementDeclaration)particle.getContent();
+          if (element.isElementDeclarationReference()) {
+            element=element.getResolvedElementDeclaration();
+          }
+          if (!contents.contains(element)) {
+            contents.add(element);
+            particles.add(particle);
+          }
+        }
+      }
+;
+      visitElements(cType,visitor);
+      return true;
+    }
+  }
+;
+  if (includeParents) {
+    new TypeWalker().rwalk(type,visitor);
+  }
+ else {
+    visitor.visit(type);
+  }
+  return new ArrayList(particles);
+}

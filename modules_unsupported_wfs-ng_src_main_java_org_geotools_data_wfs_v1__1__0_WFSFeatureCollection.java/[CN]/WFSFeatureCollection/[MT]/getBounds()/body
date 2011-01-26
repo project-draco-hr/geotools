@@ -1,0 +1,38 @@
+{
+  if (cachedBounds != null) {
+    return cachedBounds;
+  }
+  ReferencedEnvelope bounds=null;
+  try {
+    bounds=dataStore.getBounds(query);
+    if (bounds == null) {
+      final Name defaultgeom=contentType.getGeometryDescriptor().getName();
+      final DefaultQuery geomQuery=new DefaultQuery(this.query);
+      geomQuery.setPropertyNames(new String[]{defaultgeom.getLocalPart()});
+      FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+      reader=dataStore.getFeatureReader(geomQuery,Transaction.AUTO_COMMIT);
+      bounds=new ReferencedEnvelope(contentType.getCoordinateReferenceSystem());
+      try {
+        BoundingBox featureBounds;
+        int collectionSize=0;
+        while (reader.hasNext()) {
+          featureBounds=reader.next().getBounds();
+          bounds.expandToInclude(featureBounds.getMinX(),featureBounds.getMinY());
+          bounds.expandToInclude(featureBounds.getMaxX(),featureBounds.getMaxY());
+          collectionSize++;
+        }
+        if (this.cachedSize == -1) {
+          this.cachedSize=collectionSize;
+        }
+      }
+  finally {
+        reader.close();
+      }
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.INFO,"Error getting bounds for " + query);
+    bounds=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+  }
+  return bounds;
+}

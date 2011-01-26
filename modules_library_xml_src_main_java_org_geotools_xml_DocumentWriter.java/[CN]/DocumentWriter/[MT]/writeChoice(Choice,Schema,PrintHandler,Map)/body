@@ -1,0 +1,39 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if ((choice.getId() != null) && (choice.getId() != "")) {
+    ai.addAttribute("","id","","ID",choice.getId());
+  }
+  if (choice.getMaxOccurs() != 1) {
+    ai.addAttribute("","maxOccurs","","Union",(choice.getMaxOccurs() == ElementGrouping.UNBOUNDED) ? "unbounded" : ("" + choice.getMaxOccurs()));
+  }
+  if (choice.getMinOccurs() != 1) {
+    ai.addAttribute("","minOccurs","","ID","" + choice.getMinOccurs());
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"choice",ai);
+  ElementGrouping[] egs=choice.getChildren();
+  if (egs != null) {
+    for (int i=0; i < egs.length; i++)     if (egs[i] != null) {
+switch (egs[i].getGrouping()) {
+case ElementGrouping.ALL:
+        writeAll((All)egs[i],schema,ph,hints);
+      break;
+case ElementGrouping.ANY:
+    writeAny((Any)egs[i],ph);
+  break;
+case ElementGrouping.CHOICE:
+writeChoice((Choice)egs[i],schema,ph,hints);
+break;
+case ElementGrouping.ELEMENT:
+writeElement((Element)egs[i],schema,ph,hints);
+break;
+case ElementGrouping.GROUP:
+writeGroup((Group)egs[i],schema,ph,hints);
+break;
+case ElementGrouping.SEQUENCE:
+writeSequence((Sequence)egs[i],schema,ph,hints);
+break;
+}
+}
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"choice");
+}

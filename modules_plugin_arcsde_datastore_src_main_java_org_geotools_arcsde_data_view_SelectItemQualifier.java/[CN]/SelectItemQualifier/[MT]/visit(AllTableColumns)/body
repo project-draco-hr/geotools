@@ -1,0 +1,30 @@
+{
+  AllTableColumns qualified=new AllTableColumns();
+  Table qt=allTableColumns.getTable();
+  Table unaliasedTable=(Table)tableAliases.get(qt.getName());
+  if (unaliasedTable == null) {
+    qt=TableQualifier.qualify(session,allTableColumns.getTable());
+  }
+ else {
+    qt=unaliasedTable;
+  }
+  qualified.setTable(qt);
+  String tableName=qt.getSchemaName() + "." + qt.getName();
+  SeColumnDefinition[] cols;
+  try {
+    cols=session.describe(tableName);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e.getMessage());
+  }
+  qualifiedItems=new ArrayList(cols.length);
+  for (int i=0; i < cols.length; i++) {
+    String colName=cols[i].getName();
+    Column column=new Column();
+    column.setTable(qt);
+    column.setColumnName(colName);
+    SelectExpressionItem item=new SelectExpressionItem();
+    item.setExpression(column);
+    qualifiedItems.add(item);
+  }
+}

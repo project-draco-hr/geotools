@@ -1,0 +1,24 @@
+{
+  final GridCoverage2D output=(GridCoverage2D)super.execute();
+  final GridCoverage2D outputNonGeo=output.geophysics(false);
+  if (outputNonGeo.getRenderedImage().getColorModel() instanceof IndexColorModel)   return output;
+  RenderedImage outputImage=output.getRenderedImage();
+  final SampleModel outputImageSampleModel=outputImage.getSampleModel();
+  final int numBands=outputImageSampleModel.getNumBands();
+  final int dataType=outputImageSampleModel.getDataType();
+  final GridSampleDimension sd[];
+  if (numBands > 4) {
+    final int visibleBand=CoverageUtilities.getVisibleBand(outputImage);
+    outputImage=new ImageWorker(outputImage).setRenderingHints(this.getHints()).retainBands(new int[]{visibleBand}).getRenderedImage();
+    sd=new GridSampleDimension[]{(GridSampleDimension)output.getSampleDimension(visibleBand)};
+  }
+ else   sd=output.getSampleDimensions();
+switch (dataType) {
+case DataBuffer.TYPE_DOUBLE:
+case DataBuffer.TYPE_FLOAT:
+case DataBuffer.TYPE_INT:
+case DataBuffer.TYPE_SHORT:
+    outputImage=new ImageWorker(outputImage).setRenderingHints(this.getHints()).rescaleToBytes().getRenderedImage();
+}
+return this.getCoverageFactory().create(output.getName(),outputImage,(GridGeometry2D)output.getGridGeometry(),sd,new GridCoverage[]{output},output.getProperties());
+}

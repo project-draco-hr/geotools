@@ -1,0 +1,92 @@
+{
+  URL sourceURL=null;
+  File sourceFile=null;
+  if (source instanceof File) {
+    sourceFile=(File)source;
+    sourceURL=DataUtilities.fileToURL(sourceFile);
+  }
+ else   if (source instanceof URL) {
+    sourceURL=(URL)source;
+    if (sourceURL.getProtocol().equals("file")) {
+      sourceFile=DataUtilities.urlToFile(sourceURL);
+    }
+  }
+ else   if (source instanceof String) {
+    final String tempSource=(String)source;
+    File tempFile=new File(tempSource);
+    if (!tempFile.exists()) {
+      try {
+        sourceURL=new URL(tempSource);
+        source=DataUtilities.urlToFile(sourceURL);
+      }
+ catch (      MalformedURLException e) {
+        sourceURL=null;
+        source=null;
+      }
+    }
+ else {
+      sourceURL=DataUtilities.fileToURL(tempFile);
+      sourceFile=tempFile;
+    }
+  }
+  if (sourceFile != null) {
+    if (!sourceFile.isDirectory())     sourceURL=DataUtilities.fileToURL((File)sourceFile);
+ else {
+      final String locationPath=sourceFile.getAbsolutePath();
+      final String defaultIndexName=FilenameUtils.getName(locationPath);
+      boolean datastoreFound=false;
+      boolean buildMosaic=false;
+      File dataStoreProperties=new File(locationPath,"datastore.properties");
+      final File[] properties=sourceFile.listFiles((FilenameFilter)FileFilterUtils.andFileFilter(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("datastore.properties")),FileFilterUtils.makeFileOnly(FileFilterUtils.suffixFileFilter(".properties"))));
+      if (Utils.checkFileReadable(dataStoreProperties)) {
+        datastoreFound=true;
+        boolean found=false;
+        for (        File propFile : properties)         if (Utils.checkFileReadable(propFile)) {
+          if (null != Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),"location")) {
+            found=true;
+            break;
+          }
+        }
+        if (!found)         buildMosaic=true;
+      }
+ else {
+        buildMosaic=true;
+        datastoreFound=false;
+      }
+      File shapeFile=null;
+      if (!datastoreFound) {
+        for (        File propFile : properties) {
+          if (null == Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),Utils.DEFAULT_LOCATION_ATTRIBUTE))           continue;
+          shapeFile=new File(locationPath,FilenameUtils.getBaseName(propFile.getName()) + ".shp");
+          if (!Utils.checkFileReadable(shapeFile) && Utils.checkFileReadable(propFile))           buildMosaic=true;
+ else {
+            buildMosaic=false;
+            break;
+          }
+        }
+      }
+      if (buildMosaic) {
+        createMosaic(locationPath,defaultIndexName,DEFAULT_WILCARD,DEFAULT_PATH_BEHAVIOR,hints);
+        final File propertiesFile=new File(locationPath,defaultIndexName + ".properties");
+        if (!Utils.checkFileReadable(propertiesFile)) {
+          sourceURL=null;
+          return sourceURL;
+        }
+        if (!datastoreFound) {
+          shapeFile=new File(locationPath,defaultIndexName + ".shp");
+          if (!Utils.checkFileReadable(shapeFile))           sourceURL=null;
+ else           sourceURL=DataUtilities.fileToURL(shapeFile);
+        }
+ else {
+          dataStoreProperties=new File(locationPath,"datastore.properties");
+          if (!Utils.checkFileReadable(dataStoreProperties))           sourceURL=null;
+ else           sourceURL=DataUtilities.fileToURL(dataStoreProperties);
+        }
+      }
+ else       sourceURL=datastoreFound ? DataUtilities.fileToURL(dataStoreProperties) : DataUtilities.fileToURL(shapeFile);
+    }
+  }
+ else {
+  }
+  return sourceURL;
+}

@@ -1,0 +1,49 @@
+{
+  ISession session=store.getSession(Transaction.AUTO_COMMIT);
+  SeSqlConstruct sqlConstruct=new SeSqlConstruct();
+  String[] tables={InProcessViewSupportTestData.MASTER,InProcessViewSupportTestData.CHILD};
+  sqlConstruct.setTables(tables);
+  String where=InProcessViewSupportTestData.CHILD + ".MASTER_ID = " + InProcessViewSupportTestData.MASTER+ ".ID";
+  sqlConstruct.setWhere(where);
+  String[] propertyNames={InProcessViewSupportTestData.MASTER + ".ID AS myid2",InProcessViewSupportTestData.MASTER + ".NAME AS MNAME",InProcessViewSupportTestData.CHILD + ".ID",InProcessViewSupportTestData.CHILD + ".NAME",InProcessViewSupportTestData.CHILD + ".DESCRIPTION",InProcessViewSupportTestData.MASTER + ".SHAPE"};
+  final int shapeIndex=5;
+  final int expectedCount=7;
+  final SeQueryInfo queryInfo=new SeQueryInfo();
+  queryInfo.setConstruct(sqlConstruct);
+  queryInfo.setColumns(propertyNames);
+  queryInfo.setByClause(" ORDER BY " + InProcessViewSupportTestData.CHILD + ".ID DESC");
+  final Integer[] expectedChildIds={new Integer(7),new Integer(6),new Integer(5),new Integer(4),new Integer(3),new Integer(2),new Integer(1)};
+  final SeQuery query=session.issue(new Command<SeQuery>(){
+    @Override public SeQuery execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeQuery query=new SeQuery(connection);
+      query.prepareQueryInfo(queryInfo);
+      query.execute();
+      return query;
+    }
+  }
+);
+  try {
+    SdeRow row=session.fetch(query);
+    int count=0;
+    final int childIdIndex=2;
+    while (row != null) {
+      int indicator=row.getIndicator(shapeIndex);
+      Integer childId=row.getInteger(childIdIndex);
+      assertEquals(expectedChildIds[count],childId);
+      if (SeRow.SE_IS_NOT_NULL_VALUE == indicator) {
+        Object shape=row.getObject(shapeIndex);
+        assertTrue(shape.getClass().getName(),shape instanceof SeShape);
+      }
+      count++;
+      row=session.fetch(query);
+    }
+    assertEquals(expectedCount,count);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    session.dispose();
+  }
+}

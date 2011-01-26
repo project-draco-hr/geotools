@@ -1,0 +1,36 @@
+{
+  try {
+    MemoryDataStore ds=new MemoryDataStore();
+    int numdata;
+    if (hardest) {
+      numdata=1000;
+    }
+ else {
+      numdata=100;
+    }
+    dataset=DataUtilities.createUnitsquareDataSet(numdata,1025);
+    ds.createSchema((SimpleFeatureType)dataset.getSchema());
+    ds.addFeatures(dataset);
+    if (hardest) {
+      Properties pset=new Properties();
+      pset.setProperty(BufferedDiskStorage.BUFFER_SIZE_PROPERTY,"10");
+      pset.setProperty(DiskStorage.DATA_FILE_PROPERTY,"cache.tmp");
+      pset.setProperty(DiskStorage.INDEX_FILE_PROPERTY,"cache.idx");
+      pset.setProperty(DiskStorage.PAGE_SIZE_PROPERTY,"1000");
+      grid=new GridFeatureCache(ds.getFeatureSource(ds.getTypeNames()[0]),100,500,DiskStorage.createInstance(pset));
+    }
+ else {
+      grid=new GridFeatureCache(ds.getFeatureSource(ds.getTypeNames()[0]),100,500,BufferedDiskStorage.createInstance());
+    }
+    File filtersrc=new File("filters.data");
+    if (filtersrc.exists()) {
+      loadFilters(filtersrc);
+    }
+ else {
+      createAndSaveFilters(filtersrc);
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+}

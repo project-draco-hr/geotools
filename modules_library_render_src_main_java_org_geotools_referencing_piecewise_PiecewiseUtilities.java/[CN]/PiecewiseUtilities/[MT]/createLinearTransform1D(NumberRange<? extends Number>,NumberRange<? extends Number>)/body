@@ -1,0 +1,18 @@
+{
+  final Class<? extends Number> sType=sourceRange.getElementClass();
+  final Class<? extends Number> dType=destinationRange.getElementClass();
+  int sMinInc=sourceRange.isMinIncluded() ? 0 : +1;
+  int sMaxInc=sourceRange.isMaxIncluded() ? 0 : -1;
+  int dMinInc=destinationRange.isMinIncluded() ? 0 : +1;
+  int dMaxInc=destinationRange.isMaxIncluded() ? 0 : -1;
+  final double minSource=doubleValue(sType,sourceRange.getMinValue(),sMinInc);
+  final double maxSource=doubleValue(sType,sourceRange.getMaxValue(),sMaxInc);
+  final double minDestination=doubleValue(dType,destinationRange.getMinValue(),dMinInc);
+  final double maxDestination=doubleValue(dType,destinationRange.getMaxValue(),dMaxInc);
+  if (PiecewiseUtilities.compare(minDestination,maxDestination) == 0)   return LinearTransform1D.create(0,minDestination);
+  if (PiecewiseUtilities.compare(minSource,maxSource) == 0)   throw new IllegalArgumentException("Impossible to map a single value to a range.");
+  double scale=(maxDestination - minDestination) / (maxSource - minSource);
+  if (Double.isNaN(scale))   scale=0;
+  final double offset=minDestination - scale * minSource;
+  return createLinearTransform1D(scale,offset);
+}

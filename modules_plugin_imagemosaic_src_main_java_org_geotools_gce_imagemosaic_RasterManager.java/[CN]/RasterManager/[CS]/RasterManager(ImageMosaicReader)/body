@@ -1,0 +1,29 @@
+{
+  Utilities.ensureNonNull("ImageMosaicReader",reader);
+  this.parent=reader;
+  this.expandMe=parent.expandMe;
+  this.heterogeneousGranules=parent.heterogeneousGranules;
+  granuleCatalog=parent.catalog;
+  parent.catalog=null;
+  timeAttribute=parent.timeAttribute;
+  elevationAttribute=parent.elevationAttribute;
+  runtimeAttribute=parent.runtimeAttribute;
+  coverageIdentifier=reader.getName();
+  hints=reader.getHints();
+  this.coverageIdentifier=reader.getName();
+  this.coverageFactory=reader.getGridCoverageFactory();
+  this.pathType=parent.pathType;
+  overviewsController=new OverviewsController(reader.getHighestRes(),reader.getNumberOfOvervies(),reader.getOverviewsResolution());
+  try {
+    spatialDomainManager=new SpatialDomainManager(reader.getOriginalEnvelope(),(GridEnvelope2D)reader.getOriginalGridRange(),reader.getCrs(),reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),overviewsController);
+  }
+ catch (  TransformException e) {
+    throw new DataSourceException(e);
+  }
+catch (  FactoryException e) {
+    throw new DataSourceException(e);
+  }
+  extractOverviewPolicy();
+  extractDecimationPolicy();
+  loadSampleImage();
+}

@@ -1,0 +1,59 @@
+{
+  final Arguments arguments=new Arguments(args);
+  final PrintWriter out=arguments.out;
+  Locale.setDefault(arguments.locale);
+  if (arguments.getFlag("-forcexy")) {
+    Hints.putSystemDefault(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE);
+  }
+  if (arguments.getFlag("-help")) {
+    args=arguments.getRemainingArguments(0);
+    help(out);
+    return;
+  }
+  if (arguments.getFlag("-factories")) {
+    args=arguments.getRemainingArguments(0);
+    factories(out);
+    return;
+  }
+  if (arguments.getFlag("-dependencies")) {
+    final boolean colors=arguments.getFlag("-colors");
+    args=arguments.getRemainingArguments(0);
+    printAuthorityFactoryDependencies(out,colors);
+    return;
+  }
+  final String authority=arguments.getOptionalString("-authority");
+  final Command command=new Command(authority);
+  command.formatter.setColorEnabled(arguments.getFlag("-colors"));
+  try {
+    if (arguments.getFlag("-codes")) {
+      args=arguments.getRemainingArguments(0);
+      command.codes(out);
+    }
+ else     if (arguments.getFlag("-bursawolfs")) {
+      args=arguments.getRemainingArguments(Integer.MAX_VALUE,'-');
+      command.bursaWolfs(out,args);
+    }
+ else     if (arguments.getFlag("-operations")) {
+      args=arguments.getRemainingArguments(2,'-');
+      command.operations(out,args);
+    }
+ else     if (arguments.getFlag("-transform")) {
+      args=arguments.getRemainingArguments(2,'-');
+      command.transform(out,args);
+    }
+ else {
+      args=arguments.getRemainingArguments(Integer.MAX_VALUE,'-');
+      command.list(out,args);
+    }
+    out.flush();
+    command.dispose();
+  }
+ catch (  FactoryException exception) {
+    out.flush();
+    arguments.err.println(exception.getLocalizedMessage());
+  }
+catch (  Exception exception) {
+    out.flush();
+    exception.printStackTrace(arguments.err);
+  }
+}

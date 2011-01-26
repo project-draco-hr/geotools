@@ -1,0 +1,34 @@
+{
+  ReferencedEnvelope env=new ReferencedEnvelope(layer.getCoordinateReferenceSystem());
+  Filter[] split=splitFilter(query.getFilter());
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  if ((postFilter != null) && (postFilter != Filter.INCLUDE) || preFilter == Filter.EXCLUDE) {
+    return null;
+  }
+ else {
+    Query tmpPreQ=new Query(fnQuery);
+    tmpPreQ.setFilter(preFilter);
+    String strQuery=SFSDataStoreUtil.encodeQuery(tmpPreQ);
+    String bboxString=ods.resourceToString("data/" + layer.getTypeName().getLocalPart() + "?mode=bounds",strQuery);
+    JSONArray bbox;
+    try {
+      bbox=(JSONArray)new JSONParser().parse(bboxString);
+    }
+ catch (    org.json.simple.parser.ParseException e) {
+      throw (IOException)new IOException("Failed to parse the bbox JSON array:" + bboxString).initCause(e);
+    }
+    if (bbox.size() == 4) {
+      if (layer.isXYOrder()) {
+        env.init(((Number)bbox.get(0)).doubleValue(),((Number)bbox.get(2)).doubleValue(),((Number)bbox.get(1)).doubleValue(),((Number)bbox.get(3)).doubleValue());
+      }
+ else {
+        env.init(((Number)bbox.get(1)).doubleValue(),((Number)bbox.get(3)).doubleValue(),((Number)bbox.get(0)).doubleValue(),((Number)bbox.get(2)).doubleValue());
+      }
+    }
+ else {
+      throw new IOException("The returned bound was not of size 4 but of size: " + bbox.size());
+    }
+  }
+  return env;
+}

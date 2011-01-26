@@ -1,0 +1,77 @@
+{
+  if (searchOrder != null) {
+    return searchOrder;
+  }
+  if (((hints == null) || (hints.get(SCHEMA_ORDER) == null)) && ((schema.getImports() == null) || (schema.getImports().length == 0))) {
+    searchOrder=new Schema[]{schema};
+  }
+ else {
+    List so=new LinkedList();
+    if ((hints != null) && hints.containsKey(SCHEMA_ORDER)) {
+      Object order=hints.get(SCHEMA_ORDER);
+      List targNS=new LinkedList();
+      targNS.add(schema.getTargetNamespace());
+      if (schema.getImports() != null) {
+        for (int i=0; i < schema.getImports().length; i++)         if (!targNS.contains(schema.getImports()[i].getTargetNamespace())) {
+          targNS.add(schema.getImports()[i].getTargetNamespace());
+        }
+      }
+      if (order instanceof Schema[]) {
+        Schema[] sOrder=(Schema[])order;
+        for (int i=0; i < sOrder.length; i++) {
+          int nsIndex=targNS.indexOf(sOrder[i].getTargetNamespace());
+          if (nsIndex >= 0) {
+            so.add(sOrder[i]);
+            targNS.remove(nsIndex);
+          }
+        }
+      }
+ else {
+        String[] stringOrder=(String[])order;
+        for (int i=0; i < stringOrder.length; i++) {
+          int nsIndex=targNS.indexOf(stringOrder[i]);
+          try {
+            if (nsIndex >= 0) {
+              URI uri=new URI(stringOrder[i]);
+              XSISAXHandler.setLogLevel(logger.getLevel());
+              so.add(SchemaFactory.getInstance(uri));
+              targNS.remove(nsIndex);
+            }
+ else {
+              URI uri=new URI(stringOrder[i]);
+              so.add(SchemaFactory.getInstance(uri));
+            }
+          }
+ catch (          URISyntaxException e) {
+            logger.warning(e.toString());
+            IOException t=new IOException(e.toString());
+            t.initCause(e);
+            throw t;
+          }
+        }
+      }
+      if (!targNS.contains(schema.getTargetNamespace())) {
+        so.add(schema);
+      }
+      for (int i=0; i < schema.getImports().length; i++) {
+        int nsIndex=targNS.indexOf(schema.getImports()[i].getTargetNamespace());
+        if (nsIndex >= 0) {
+          so.add(schema.getImports()[i]);
+          targNS.remove(nsIndex);
+        }
+      }
+    }
+ else {
+      if ((hints != null) && hints.containsKey(USE_NEAREST)) {
+        so.add(schema);
+        for (int i=0; i < schema.getImports().length; i++)         so.add(schema.getImports()[i]);
+      }
+ else {
+        so.add(schema);
+        for (int i=0; i < schema.getImports().length; i++)         so.add(schema.getImports()[i]);
+      }
+    }
+    searchOrder=(Schema[])so.toArray(new Schema[so.size()]);
+  }
+  return searchOrder;
+}

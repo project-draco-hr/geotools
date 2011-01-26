@@ -1,0 +1,47 @@
+{
+  ByteBuffer buffer=ByteBuffer.allocate(page_size);
+  e.length=data.length;
+  int rem=data.length;
+  int page;
+  int len;
+  int index=0;
+  int next=0;
+  while (rem > 0) {
+    if ((old != null) && (next < old.pages.size())) {
+      page=old.pages.get(next);
+      next++;
+    }
+ else     if (!emptyPages.isEmpty()) {
+synchronized (emptyPages) {
+        Integer i=emptyPages.first();
+        page=i.intValue();
+        if (!emptyPages.remove(i)) {
+          throw new RuntimeException("buggy here !!!!");
+        }
+      }
+    }
+ else {
+      page=nextPage++;
+    }
+    len=(rem > page_size) ? page_size : rem;
+    buffer.clear();
+    buffer.put(data,index,len);
+    try {
+      buffer.rewind();
+      data_channel.position(page * page_size);
+      data_channel.write(buffer);
+    }
+ catch (    IOException io) {
+      throw new IllegalStateException(io);
+    }
+    rem-=len;
+    index+=len;
+    e.pages.add(new Integer(page));
+  }
+  if (old != null) {
+    while (next < old.pages.size()) {
+      emptyPages.add(new Integer(old.pages.get(next)));
+      next++;
+    }
+  }
+}

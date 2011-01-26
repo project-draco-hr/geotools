@@ -1,0 +1,38 @@
+{
+  FeatureLock lock=FeatureLockFactory.generate(tname("ft1"),60 * 60 * 1000);
+  Transaction tx=new DefaultTransaction();
+  store.setTransaction(tx);
+  store.setFeatureLock(lock);
+  int locked=store.lockFeatures();
+  assertTrue(locked > 0);
+  DefaultQuery query=new DefaultQuery(tname("ft1"));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=dataStore.getFeatureReader(query,tx);
+  int count=0;
+  while (reader.hasNext()) {
+    count++;
+    reader.next();
+  }
+  assertTrue(count > 0);
+  reader.close();
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriter(tname("ft1"),tx);
+  assertTrue(writer.hasNext());
+  SimpleFeature feature=writer.next();
+  feature.setAttribute(aname("intProperty"),new Integer(100));
+  try {
+    writer.write();
+    fail("should have thrown feature lock exception");
+  }
+ catch (  FeatureLockException e) {
+  }
+ finally {
+    writer.close();
+  }
+  tx.addAuthorization(lock.getAuthorization());
+  writer=dataStore.getFeatureWriter(tname("ft1"),tx);
+  assertTrue(writer.hasNext());
+  feature=writer.next();
+  feature.setAttribute(aname("intProperty"),new Integer(100));
+  writer.write();
+  writer.close();
+  tx.close();
+}

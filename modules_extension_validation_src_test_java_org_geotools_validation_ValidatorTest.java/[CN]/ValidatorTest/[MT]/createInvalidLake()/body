@@ -1,0 +1,22 @@
+{
+  SimpleFeatureSource lakes=fixture.repository.source("LAKES","lakes");
+  SimpleFeatureIterator features=lakes.getFeatures(new DefaultQuery("lakes",Filter.INCLUDE,1,null,null)).features();
+  SimpleFeature feature=features.next();
+  features.close();
+  SimpleFeatureType LAKE=lakes.getSchema();
+  Object array[]=new Object[LAKE.getAttributeCount()];
+  for (int i=0; i < LAKE.getAttributeCount(); i++) {
+    AttributeDescriptor attr=LAKE.getDescriptor(i);
+    if (LAKE.getGeometryDescriptor() == attr) {
+      GeometryFactory factory=new GeometryFactory();
+      Coordinate coords[]=new Coordinate[]{new Coordinate(1,1),new Coordinate(2,2),new Coordinate(2,1),new Coordinate(1,2),new Coordinate(1,1)};
+      LinearRing ring=factory.createLinearRing(coords);
+      Polygon poly=factory.createPolygon(ring,null);
+      array[i]=factory.createMultiPolygon(new Polygon[]{poly});
+    }
+ else {
+      array[i]=feature.getAttribute(i);
+    }
+  }
+  return SimpleFeatureBuilder.build(LAKE,array,"splash");
+}

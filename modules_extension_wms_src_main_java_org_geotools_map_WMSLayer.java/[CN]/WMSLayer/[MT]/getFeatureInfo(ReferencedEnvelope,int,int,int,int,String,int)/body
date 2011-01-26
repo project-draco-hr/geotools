@@ -1,0 +1,21 @@
+{
+  try {
+    getReader().initMapRequest(bbox,width,height);
+    AffineTransform at=RendererUtilities.worldToScreenTransform(bbox,new Rectangle(width,height));
+    Point2D screenPos=new Point2D.Double(x,y);
+    Point2D worldPos=new Point2D.Double(x,y);
+    at.inverseTransform(screenPos,worldPos);
+    DirectPosition2D fromPos=new DirectPosition2D(worldPos.getX(),worldPos.getY());
+    DirectPosition2D toPos=new DirectPosition2D();
+    MathTransform mt=CRS.findMathTransform(bbox.getCoordinateReferenceSystem(),getReader().requestCRS,true);
+    mt.transform(fromPos,toPos);
+    GetMapRequest mapRequest=getReader().mapRequest;
+    return getReader().getFeatureInfo(toPos,infoFormat,featureCount,mapRequest);
+  }
+ catch (  IOException e) {
+    throw e;
+  }
+catch (  Throwable t) {
+    throw (IOException)new IOException("Unexpected issue during GetFeatureInfo execution").initCause(t);
+  }
+}

@@ -1,0 +1,48 @@
+{
+  final int length=dimensions.length;
+  final int crsDimension=crs.getCoordinateSystem().getDimension();
+  if (length == 0 || dimensions[0] < 0 || dimensions[length - 1] >= crsDimension || !XArray.isStrictlySorted(dimensions)) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$1,"dimension"));
+  }
+  if (length == crsDimension) {
+    return crs;
+  }
+  if (crs instanceof CompoundCRS) {
+    int count=0, lowerDimension=0, lowerIndex=0;
+    final List<CoordinateReferenceSystem> sources;
+    final CoordinateReferenceSystem[] targets;
+    sources=((CompoundCRS)crs).getCoordinateReferenceSystems();
+    targets=new CoordinateReferenceSystem[sources.size()];
+    search:     for (    final CoordinateReferenceSystem source : sources) {
+      final int upperDimension=lowerDimension + source.getCoordinateSystem().getDimension();
+      if (lowerIndex == dimensions.length) {
+        break search;
+      }
+      while (dimensions[lowerIndex] < lowerDimension) {
+        if (++lowerIndex == dimensions.length) {
+          break search;
+        }
+      }
+      int upperIndex=lowerIndex;
+      while (dimensions[upperIndex] < upperDimension) {
+        if (++upperIndex == dimensions.length) {
+          break;
+        }
+      }
+      if (lowerIndex != upperIndex) {
+        final int[] sub=new int[upperIndex - lowerIndex];
+        for (int j=0; j < sub.length; j++) {
+          sub[j]=dimensions[j + lowerIndex] - lowerDimension;
+        }
+        targets[count++]=separate(source,sub);
+      }
+      lowerDimension=upperDimension;
+      lowerIndex=upperIndex;
+    }
+    if (count == 1) {
+      return targets[0];
+    }
+    return getCRSFactory().createCompoundCRS(getTemporaryName(crs),XArray.resize(targets,count));
+  }
+  throw new FactoryException(Errors.format(ErrorKeys.CANT_SEPARATE_CRS_$1,crs.getName().getCode()));
+}

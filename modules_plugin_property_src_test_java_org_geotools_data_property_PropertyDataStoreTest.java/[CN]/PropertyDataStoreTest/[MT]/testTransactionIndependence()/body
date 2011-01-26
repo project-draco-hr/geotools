@@ -1,0 +1,33 @@
+{
+  SimpleFeatureType ROAD=store.getSchema("road");
+  SimpleFeature chrisFeature=SimpleFeatureBuilder.build(ROAD,new Object[]{new Integer(5),"chris"},"fid5");
+  SimpleFeatureStore roadAuto=(SimpleFeatureStore)store.getFeatureSource("road");
+  SimpleFeatureStore roadFromClient1=(SimpleFeatureStore)store.getFeatureSource("road");
+  Transaction transaction1=new DefaultTransaction("Transaction Used by Client 1");
+  roadFromClient1.setTransaction(transaction1);
+  SimpleFeatureStore roadFromClient2=(SimpleFeatureStore)store.getFeatureSource("road");
+  Transaction transaction2=new DefaultTransaction("Transaction Used by Client 2");
+  roadFromClient2.setTransaction(transaction2);
+  FilterFactory2 ff=(FilterFactory2)CommonFactoryFinder.getFilterFactory(null);
+  Filter selectFid1=ff.id(Collections.singleton(ff.featureId("fid1")));
+  Filter selectFid2=ff.id(Collections.singleton(ff.featureId("fid2")));
+  assertEquals("auto before",4,roadAuto.getFeatures().size());
+  assertEquals("client 1 before",4,roadFromClient1.getFeatures().size());
+  assertEquals("client 2 before",4,roadFromClient2.getFeatures().size());
+  roadFromClient1.removeFeatures(selectFid1);
+  assertEquals("auto after client 1 removes fid1",4,roadAuto.getFeatures().size());
+  assertEquals("client 1 after client 1 removes fid1",3,roadFromClient1.getFeatures().size());
+  assertEquals("client 2 after client 1 removes fid1",4,roadFromClient2.getFeatures().size());
+  roadFromClient2.addFeatures(DataUtilities.collection(chrisFeature));
+  assertEquals("auto after client 1 removes fid1 and client 2 adds fid5",4,roadAuto.getFeatures().size());
+  assertEquals("client 1 after client 1 removes fid1 and client 2 adds fid5",3,roadFromClient1.getFeatures().size());
+  assertEquals("cleint 2 after client 1 removes fid1 and client 2 adds fid5",5,roadFromClient2.getFeatures().size());
+  transaction1.commit();
+  assertEquals("auto after client 1 commits removal of fid1 (client 2 has added fid5)",3,roadAuto.getFeatures().size());
+  assertEquals("client 1 after commiting removal of fid1 (client 2 has added fid5)",3,roadFromClient1.getFeatures().size());
+  assertEquals("client 2 after client 1 commits removal of fid1 (client 2 has added fid5)",4,roadFromClient2.getFeatures().size());
+  transaction2.commit();
+  assertEquals("auto after client 2 commits addition of fid5 (fid1 previously removed)",4,roadAuto.getFeatures().size());
+  assertEquals("client 1 after client 2 commits addition of fid5 (fid1 previously removed)",4,roadFromClient1.getFeatures().size());
+  assertEquals("client 2 after commiting addition of fid5 (fid1 previously removed)",4,roadFromClient2.getFeatures().size());
+}

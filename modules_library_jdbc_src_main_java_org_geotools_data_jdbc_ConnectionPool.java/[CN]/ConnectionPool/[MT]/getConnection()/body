@@ -1,0 +1,27 @@
+{
+  if (closed) {
+    throw new SQLException("The ConnectionPool has been closed.");
+  }
+  Connection conn=null;
+synchronized (mutex) {
+    if (availableConnections.size() > 0) {
+      LOGGER.fine("Getting available connection.");
+      ManagedPooledConnection mConn=(ManagedPooledConnection)availableConnections.removeFirst();
+      conn=mConn.pooledConn.getConnection();
+      mConn.lastUsed=System.currentTimeMillis();
+      mConn.inUse=true;
+      usedConnections.add(mConn);
+    }
+ else {
+      LOGGER.fine("No available connections, creating a new one.");
+      PooledConnection pConn=cpDataSource.getPooledConnection();
+      conn=pConn.getConnection();
+      pConn.addConnectionEventListener(listManager);
+      ManagedPooledConnection mConn=new ManagedPooledConnection(pConn);
+      mConn.inUse=true;
+      mConn.lastUsed=System.currentTimeMillis();
+      usedConnections.add(mConn);
+    }
+  }
+  return conn;
+}

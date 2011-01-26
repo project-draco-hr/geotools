@@ -1,0 +1,23 @@
+{
+  SelectBody select=ViewRegisteringFactoryHelper.parseSqlQuery(InProcessViewSupportTestData.masterChildSql);
+  store.registerView(InProcessViewSupportTestData.typeName,(PlainSelect)select);
+  SimpleFeatureSource fs=store.getFeatureSource(InProcessViewSupportTestData.typeName);
+  Query query=new Query(InProcessViewSupportTestData.typeName,Filter.INCLUDE,Query.ALL_PROPERTIES);
+  SimpleFeatureCollection fc=fs.getFeatures(query);
+  int fcCount=fc.size();
+  int itCount=0;
+  final int expectedCount=7;
+  SimpleFeatureIterator it=fc.features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=(SimpleFeature)it.next();
+      assertNotNull(f);
+      itCount++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  assertEquals(expectedCount,fcCount);
+  assertEquals(expectedCount,itCount);
+}

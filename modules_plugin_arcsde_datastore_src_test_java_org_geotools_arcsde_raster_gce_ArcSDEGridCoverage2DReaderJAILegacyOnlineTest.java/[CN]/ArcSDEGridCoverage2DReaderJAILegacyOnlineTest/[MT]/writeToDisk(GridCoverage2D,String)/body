@@ -1,0 +1,28 @@
+{
+  OutputStream outStream;
+{
+    String file=System.getProperty("user.home");
+    file+=File.separator + "arcsde_test" + File.separator+ fileName+ ".tiff";
+    File path=new File(file);
+    path.getParentFile().mkdirs();
+    outStream=new FileOutputStream(path);
+  }
+  final GeoTiffWriteParams wp=new GeoTiffWriteParams();
+  wp.setCompressionMode(GeoTiffWriteParams.MODE_EXPLICIT);
+  wp.setCompressionType("LZW");
+  wp.setCompressionQuality(0.75F);
+  wp.setTilingMode(GeoToolsWriteParams.MODE_EXPLICIT);
+  wp.setTiling(128,128);
+  GeoTiffFormat format=new GeoTiffFormat();
+  final ParameterValueGroup writerParams=format.getWriteParameters();
+  writerParams.parameter(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString()).setValue(wp);
+  GeoTiffWriter writer=(GeoTiffWriter)format.getWriter(outStream);
+  try {
+    GeneralParameterValue[] params=(GeneralParameterValue[])writerParams.values().toArray(new GeneralParameterValue[1]);
+    writer.write(coverage,params);
+  }
+  finally {
+    writer.dispose();
+    outStream.close();
+  }
+}

@@ -1,0 +1,38 @@
+{
+  final JPanel page=super.createPanel();
+  page.setLayout(new MigLayout());
+  JLabel title=new JLabel(format.getDisplayName());
+  Font titleFont=new Font("Arial",Font.BOLD,14);
+  title.setFont(titleFont);
+  page.add(title,"span");
+  JLabel description=new JLabel(format.getDescription());
+  page.add(description,"grow, span");
+  for (  Param param : format.getParametersInfo()) {
+    if (level != null) {
+      String check=param.metadata == null ? "user" : (String)param.metadata.get(Parameter.LEVEL);
+      if (check == null) {
+        check="user";
+      }
+      if (level.equals(check)) {
+      }
+ else {
+        continue;
+      }
+    }
+    String txt=param.title.toString();
+    if (param.required) {
+      txt+="*";
+    }
+    JLabel label=new JLabel(txt);
+    page.add(label);
+    ParamField field=ParamField.create(param);
+    JComponent component=field.doLayout();
+    page.add(component,"span, wrap");
+    fields.put(param,field);
+    if (param.description != null) {
+      JLabel info=new JLabel(formatDescription(param.description.toString()));
+      page.add(info,"skip, span, wrap");
+    }
+  }
+  return page;
+}

@@ -1,0 +1,32 @@
+{
+  this.line=line;
+  Arrays.fill(data,null);
+  count=0;
+  load:   while (true) {
+    while (true) {
+      if (lower >= upper) {
+        break load;
+      }
+      if (!Character.isWhitespace(line.charAt(lower)))       break;
+      lower++;
+    }
+    position.setIndex(lower);
+    final Object datum=format[Math.min(count,format.length - 1)].parseObject(line,position);
+    final int next=position.getIndex();
+    if (datum == null || next <= lower) {
+      final int error=position.getErrorIndex();
+      int end=error;
+      while (end < upper && !Character.isWhitespace(line.charAt(end)))       end++;
+      throw new ParseException(Errors.format(ErrorKeys.PARSE_EXCEPTION_$2,line.substring(lower,end).trim(),line.substring(error,Math.min(error + 1,end))),error);
+    }
+    if (count >= data.length) {
+      data=XArray.resize(data,count + Math.min(count,256));
+      limits=XArray.resize(limits,data.length + 1);
+    }
+    limits[count]=lower;
+    data[count++]=datum;
+    lower=next;
+  }
+  limits[count]=lower;
+  return count;
+}

@@ -1,0 +1,26 @@
+{
+  LOGGER.fine("Get Extent Method");
+  String extentSelectLBX="select sdo_geometry.get_wkb(sdo_geor.generateSpatialExtent(" + getConfig().getGeoRasterAttribute() + ")) from "+ getConfig().getMasterTable()+ " where "+ getConfig().getCoverageNameAttribute()+ "=?";
+  PreparedStatement s=null;
+  ResultSet r=null;
+  Envelope extent=null;
+  try {
+    s=con.prepareStatement(extentSelectLBX);
+    s.setString(1,getConfig().getCoverageName());
+    r=s.executeQuery();
+    r.next();
+    byte[] wkb=r.getBytes(1);
+    Geometry geom=new WKBReader().read(wkb);
+    extent=geom.getEnvelopeInternal();
+    LOGGER.fine("creating Extent");
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+ finally {
+    closeResultSet(r);
+    closePreparedStmt(s);
+  }
+  LOGGER.fine("returning Extent");
+  return extent;
+}

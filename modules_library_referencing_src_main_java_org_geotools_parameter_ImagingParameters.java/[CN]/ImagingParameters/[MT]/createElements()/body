@@ -1,0 +1,33 @@
+{
+  final ImagingParameterDescriptors descriptor=(ImagingParameterDescriptors)this.descriptor;
+  final ParameterListDescriptor listDescriptor=parameters.getParameterListDescriptor();
+  final String[] names=listDescriptor.getParamNames();
+  final Class[] types=listDescriptor.getParamClasses();
+  final String[] enumerated=listDescriptor.getEnumeratedParameterNames();
+  final List<GeneralParameterDescriptor> descriptors=descriptor.descriptors();
+  final GeneralParameterValue[] values=new GeneralParameterValue[descriptors.size()];
+  for (int i=0; i < values.length; i++) {
+    final ParameterDescriptor d=(ParameterDescriptor)descriptors.get(i);
+    final ParameterValue value;
+    if (compatible(d,listDescriptor,names,types,enumerated)) {
+      value=new ImagingParameter(d,parameters);
+    }
+ else {
+      value=d.createValue();
+    }
+    values[i]=value;
+  }
+  for (int j=0; j < values.length; j++) {
+    final String name=values[j].getDescriptor().getName().getCode().trim();
+    for (int i=0; i < values.length; i++) {
+      if (i != j) {
+        final ParameterDescriptor d=(ParameterDescriptor)values[i].getDescriptor();
+        if (AbstractIdentifiedObject.nameMatches(d,name)) {
+          throw new InvalidParameterNameException(Errors.format(ErrorKeys.PARAMETER_NAME_CLASH_$4,d.getName().getCode(),j,name,i),name);
+        }
+      }
+    }
+  }
+  this.values=UnmodifiableArrayList.wrap(values);
+  return values;
+}

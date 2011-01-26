@@ -1,0 +1,42 @@
+{
+  ReferencedEnvelope ret=null;
+  Set records=new HashSet();
+  Filter filter=query.getFilter();
+  if (filter == Filter.INCLUDE || query == Query.ALL) {
+    return getBounds();
+  }
+  Comparator<Identifier> identifierComparator=new IdentifierComparator();
+  Set<Identifier> fids=(Set<Identifier>)filter.accept(IdCollectorFilterVisitor.IDENTIFIER_COLLECTOR,new TreeSet<Identifier>(identifierComparator));
+  if (!fids.isEmpty()) {
+    List<Data> recordsFound=queryFidIndex(fids);
+    if (recordsFound != null) {
+      records.addAll(recordsFound);
+    }
+  }
+  if (records.isEmpty())   return null;
+  Hints hints=query.getHints();
+  GeometryFactory geometryFactory=(GeometryFactory)hints.get(Hints.JTS_GEOMETRY_FACTORY);
+  if (geometryFactory == null) {
+    CoordinateSequenceFactory csFactory=(CoordinateSequenceFactory)hints.get(Hints.JTS_COORDINATE_SEQUENCE_FACTORY);
+    if (csFactory != null) {
+      geometryFactory=new GeometryFactory(csFactory);
+    }
+  }
+  if (geometryFactory == null) {
+    geometryFactory=new GeometryFactory();
+  }
+  ShapefileReader reader=new ShapefileReader(shpFiles,false,false,geometryFactory);
+  try {
+    ret=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+    for (Iterator iter=records.iterator(); iter.hasNext(); ) {
+      Data data=(Data)iter.next();
+      reader.goTo(((Long)data.getValue(1)).intValue());
+      Record record=reader.nextRecord();
+      ret.expandToInclude(new Envelope(record.minX,record.maxX,record.minY,record.maxY));
+    }
+    return ret;
+  }
+  finally {
+    reader.close();
+  }
+}

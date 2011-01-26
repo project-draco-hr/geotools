@@ -1,0 +1,35 @@
+{
+  if (preStack.isEmpty()) {
+    return Filter.INCLUDE;
+  }
+  if (preStack.size() > 1) {
+    LOGGER.warning("Too many pre stack items after run: " + preStack.size());
+  }
+  Filter f=preStack.isEmpty() ? Filter.INCLUDE : (Filter)preStack.peek();
+  if (transactionAccessor != null && f != null && f != Filter.EXCLUDE) {
+    Filter deleteFilter=transactionAccessor.getDeleteFilter();
+    if (deleteFilter != null) {
+      if (deleteFilter == Filter.EXCLUDE) {
+        f=Filter.EXCLUDE;
+      }
+ else {
+        f=ff.and(f,ff.not(deleteFilter));
+      }
+    }
+  }
+  if (changedStack.isEmpty())   return f;
+  Iterator iter=changedStack.iterator();
+  Filter updateFilter=(Filter)iter.next();
+  while (iter.hasNext()) {
+    Filter next=(Filter)iter.next();
+    if (next == Filter.INCLUDE) {
+      updateFilter=next;
+      break;
+    }
+ else {
+      updateFilter=(Filter)ff.or(updateFilter,next);
+    }
+  }
+  if (updateFilter == Filter.INCLUDE || f == Filter.INCLUDE)   return Filter.INCLUDE;
+  return ff.or(f,updateFilter);
+}

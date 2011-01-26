@@ -1,0 +1,44 @@
+{
+  if (value == null) {
+    return Collections.emptyList();
+  }
+  value=value.trim();
+  if (value.length() == 0) {
+    return Collections.emptyList();
+  }
+  final List<Date> dates=new ArrayList<Date>();
+  if (value.indexOf(',') >= 0) {
+    String[] listDates=value.split(",");
+    for (int i=0; i < listDates.length; i++) {
+      dates.add(getDate(listDates[i].trim()));
+    }
+    return dates;
+  }
+  String[] period=value.split("/");
+  if (period.length == 1) {
+    if (value.equals("current")) {
+      dates.add(Calendar.getInstance(UTC_TZ).getTime());
+    }
+ else {
+      dates.add(getDate(value));
+    }
+    return dates;
+  }
+  if (period.length == 3) {
+    final Date begin=getDate(period[0]);
+    final Date end=getDate(period[1]);
+    final long millisIncrement=parsePeriod(period[2]);
+    final long startTime=begin.getTime();
+    final long endTime=end.getTime();
+    long time;
+    int j=0;
+    while ((time=j * millisIncrement + startTime) <= endTime) {
+      Calendar calendar=Calendar.getInstance(UTC_TZ);
+      calendar.setTimeInMillis(time);
+      dates.add(calendar.getTime());
+      j++;
+    }
+    return dates;
+  }
+  throw new ParseException("Invalid time parameter: " + value,0);
+}

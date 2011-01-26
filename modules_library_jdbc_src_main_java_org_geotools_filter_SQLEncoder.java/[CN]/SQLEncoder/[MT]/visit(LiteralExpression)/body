@@ -1,0 +1,67 @@
+{
+  LOGGER.finer("exporting LiteralExpression");
+  Class target=null;
+  if (context != null) {
+    target=(Class)context;
+  }
+  if (target == null) {
+    short type=expression.getType();
+switch (type) {
+case Expression.LITERAL_DOUBLE:
+      target=Double.class;
+    break;
+case Expression.LITERAL_INTEGER:
+  target=Integer.class;
+break;
+case Expression.LITERAL_LONG:
+target=Long.class;
+break;
+case Expression.LITERAL_STRING:
+target=String.class;
+break;
+case Expression.LITERAL_GEOMETRY:
+target=Geometry.class;
+break;
+default :
+throw new RuntimeException("type: " + type + "not supported");
+}
+}
+try {
+if (target == Geometry.class && expression.getLiteral() instanceof Geometry) {
+visitLiteralGeometry(expression);
+return;
+}
+ else {
+Object literal=null;
+if (Number.class.isAssignableFrom(target)) {
+}
+ else {
+literal=expression.evaluate(null,target);
+}
+if (literal == null) {
+literal=expression.getLiteral().toString();
+}
+if (Geometry.class.isAssignableFrom(target)) {
+visitLiteralGeometry(expression);
+}
+ else if (Number.class.isAssignableFrom(target)) {
+out.write(literal.toString());
+}
+ else if (String.class.isAssignableFrom(target)) {
+String escaped=literal.toString().replaceAll("'","''");
+out.write("'" + escaped + "'");
+return;
+}
+ else {
+String encoding=(String)Converters.convert(literal,String.class,null);
+if (encoding == null) {
+encoding=expression.getLiteral().toString();
+}
+out.write("'" + encoding.replaceAll("'","''") + "'");
+}
+}
+}
+ catch (IOException e) {
+throw new RuntimeException("IO problems writing literal",e);
+}
+}

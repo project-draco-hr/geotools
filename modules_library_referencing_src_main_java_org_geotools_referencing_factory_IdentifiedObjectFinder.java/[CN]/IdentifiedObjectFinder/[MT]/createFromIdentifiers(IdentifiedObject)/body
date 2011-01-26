@@ -1,0 +1,22 @@
+{
+  final Citation authority=getProxy().getAuthorityFactory().getAuthority();
+  final boolean isAll=ReferencingFactory.ALL.equals(authority);
+  for (final Iterator it=object.getIdentifiers().iterator(); it.hasNext(); ) {
+    final Identifier id=(Identifier)it.next();
+    if (!isAll && !Citations.identifierMatches(authority,id.getAuthority())) {
+      continue;
+    }
+    IdentifiedObject candidate;
+    try {
+      candidate=getProxy().create(id.getCode());
+    }
+ catch (    NoSuchAuthorityCodeException e) {
+      continue;
+    }
+    candidate=deriveEquivalent(candidate,object);
+    if (candidate != null) {
+      return candidate;
+    }
+  }
+  return null;
+}

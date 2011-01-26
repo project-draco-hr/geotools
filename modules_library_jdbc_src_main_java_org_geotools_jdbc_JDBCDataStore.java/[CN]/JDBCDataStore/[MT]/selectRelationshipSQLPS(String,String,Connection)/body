@@ -1,0 +1,34 @@
+{
+  PreparedStatementSQLDialect dialect=(PreparedStatementSQLDialect)getSQLDialect();
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  dialect.encodeColumnName("table",sql);
+  sql.append(",");
+  dialect.encodeColumnName("col",sql);
+  sql.append(" FROM ");
+  encodeTableName(FEATURE_RELATIONSHIP_TABLE,sql,null);
+  if (table != null) {
+    sql.append(" WHERE ");
+    dialect.encodeColumnName("table",sql);
+    sql.append(" = ? ");
+  }
+  if (column != null) {
+    if (table == null) {
+      sql.append(" WHERE ");
+    }
+ else {
+      sql.append(" AND ");
+    }
+    dialect.encodeColumnName("col",sql);
+    sql.append(" = ? ");
+  }
+  LOGGER.fine(sql.toString());
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  if (table != null) {
+    ps.setString(1,table);
+  }
+  if (column != null) {
+    ps.setString(table != null ? 2 : 1,column);
+  }
+  return ps;
+}

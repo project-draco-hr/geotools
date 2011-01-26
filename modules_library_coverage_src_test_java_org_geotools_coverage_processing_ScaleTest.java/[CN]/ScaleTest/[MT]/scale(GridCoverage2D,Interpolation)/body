@@ -1,0 +1,36 @@
+{
+  final RenderedImage originalImage=coverage.getRenderedImage();
+  final int w=originalImage.getWidth();
+  final int h=originalImage.getHeight();
+  final ParameterValueGroup param=processor.getOperation("Scale").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("xScale").setValue(Float.valueOf(0.5f));
+  param.parameter("yScale").setValue(Float.valueOf(0.5f));
+  param.parameter("xTrans").setValue(Float.valueOf(0.0f));
+  param.parameter("yTrans").setValue(Float.valueOf(0.0f));
+  param.parameter("Interpolation").setValue(interp);
+  GridCoverage2D scaled=(GridCoverage2D)processor.doOperation(param);
+  assertEnvelopeEquals(coverage,scaled);
+  RenderedImage scaledImage=scaled.getRenderedImage();
+  assertEquals(w / 2.0,scaledImage.getWidth(),EPS);
+  assertEquals(h / 2.0,scaledImage.getHeight(),EPS);
+  if (SHOW) {
+    Viewer.show(coverage);
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(coverage.getRenderedImage().getData());
+    assertNotNull(scaledImage.getData());
+  }
+  scaled=(GridCoverage2D)Operations.DEFAULT.scale(scaled,3,3,0,0,interp);
+  scaledImage=scaled.getRenderedImage();
+  assertEnvelopeEquals(coverage,scaled);
+  assertEquals(w * 1.5,scaledImage.getWidth(),EPS);
+  assertEquals(h * 1.5,scaledImage.getHeight(),EPS);
+  if (SHOW) {
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(scaledImage.getData());
+  }
+}

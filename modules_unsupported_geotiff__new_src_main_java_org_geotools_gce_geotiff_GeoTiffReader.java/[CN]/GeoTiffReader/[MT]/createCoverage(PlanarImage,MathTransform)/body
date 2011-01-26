@@ -1,0 +1,21 @@
+{
+  final SampleModel sm=image.getSampleModel();
+  final ColorModel cm=image.getColorModel();
+  final int numBands=sm.getNumBands();
+  final GridSampleDimension[] bands=new GridSampleDimension[numBands];
+  Category noDataCategory=null;
+  if (!Double.isNaN(noData)) {
+    noDataCategory=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color[]{new Color(0,0,0,0)},NumberRange.create(noData,noData),NumberRange.create(noData,noData));
+  }
+  for (int i=0; i < numBands; i++) {
+    final ColorInterpretation colorInterpretation=TypeMap.getColorInterpretation(cm,i);
+    if (colorInterpretation == null)     throw new IOException("Unrecognized sample dimension type");
+    Category[] categories=null;
+    if (noDataCategory != null)     categories=new Category[]{noDataCategory};
+    bands[i]=new GridSampleDimension(colorInterpretation.name(),categories,null).geophysics(true);
+  }
+  if (raster2Model != null) {
+    return coverageFactory.create(coverageName,image,crs,raster2Model,bands,null,null);
+  }
+  return coverageFactory.create(coverageName,image,new GeneralEnvelope(originalEnvelope),bands,null,null);
+}

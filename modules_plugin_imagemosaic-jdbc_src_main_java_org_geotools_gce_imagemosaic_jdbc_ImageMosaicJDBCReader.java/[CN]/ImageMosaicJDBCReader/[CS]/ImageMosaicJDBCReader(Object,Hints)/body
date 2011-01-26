@@ -1,0 +1,69 @@
+{
+  this.source=source;
+  URL url=ImageMosaicJDBCFormat.getURLFromSource(source);
+  if (url == null) {
+    throw new MalformedURLException(source.toString());
+  }
+  try {
+    config=Config.readFrom(url);
+  }
+ catch (  Exception e) {
+    LOGGER.severe(e.getMessage());
+    throw new IOException(e.getMessage());
+  }
+  if (uHints != null) {
+    this.hints.add(uHints);
+  }
+  coverageName=config.getCoverageName();
+  this.coverageFactory=CoverageFactoryFinder.getGridCoverageFactory(this.hints);
+  try {
+    jdbcAccess=JDBCAccessFactory.getJDBCAcess(config);
+  }
+ catch (  Exception e1) {
+    LOGGER.severe(e1.getLocalizedMessage());
+    throw new IOException(e1.getLocalizedMessage());
+  }
+  final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+  if (tempCRS != null) {
+    this.crs=(CoordinateReferenceSystem)tempCRS;
+    LOGGER.log(Level.WARNING,new StringBuffer("Using forced coordinate reference system ").append(crs.toWKT()).toString());
+  }
+ else   if (config.getCoordsys() != null) {
+    String srsString=config.getCoordsys();
+    try {
+      crs=CRS.decode(srsString,false);
+    }
+ catch (    Exception e) {
+      LOGGER.log(Level.SEVERE,"Could not find " + srsString,e);
+      return;
+    }
+  }
+ else {
+    CoordinateReferenceSystem tempcrs=jdbcAccess.getLevelInfo(0).getCrs();
+    if (tempcrs == null) {
+      crs=AbstractGridFormat.getDefaultCRS();
+      LOGGER.log(Level.WARNING,new StringBuffer("Unable to find a CRS for this coverage, using a default one: ").append(crs.toWKT()).toString());
+    }
+ else {
+      crs=tempcrs;
+    }
+  }
+  if (jdbcAccess.getNumOverviews() == -1) {
+    String msg="No levels found fond for coverage: " + config.getCoverageName();
+    LOGGER.severe(msg);
+    throw new IOException(msg);
+  }
+  Envelope env=jdbcAccess.getLevelInfo(0).getEnvelope();
+  if (env == null) {
+    String msg="Coverage: " + config.getCoverageName() + " is not caluclated";
+    LOGGER.severe(msg);
+    throw new IOException(msg);
+  }
+  this.originalEnvelope=new GeneralEnvelope(new Rectangle2D.Double(env.getMinX(),env.getMinY(),env.getMaxX() - env.getMinX(),env.getMaxY() - env.getMinY()));
+  this.originalEnvelope.setCoordinateReferenceSystem(crs);
+  highestRes=jdbcAccess.getLevelInfo(0).getResolution();
+  numOverviews=jdbcAccess.getNumOverviews();
+  overViewResolutions=new double[numOverviews][];
+  for (int i=0; i < numOverviews; i++)   overViewResolutions[i]=jdbcAccess.getLevelInfo(i + 1).getResolution();
+  originalGridRange=new GridEnvelope2D(new Rectangle((int)Math.round(originalEnvelope.getSpan(0) / highestRes[0]),(int)Math.round(originalEnvelope.getSpan(1) / highestRes[1])));
+}

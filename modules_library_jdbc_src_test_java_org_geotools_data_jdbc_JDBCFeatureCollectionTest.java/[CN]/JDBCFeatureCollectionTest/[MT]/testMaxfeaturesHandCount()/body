@@ -1,0 +1,19 @@
+{
+  DefaultQuery q=new DefaultQuery("roads");
+  q.setMaxFeatures(1);
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=createNiceMock(FeatureReader.class);
+  expect(fr.hasNext()).andReturn(true).times(2).andReturn(false);
+  replay(fr);
+  DataStore ds=createMock(JDBC1DataStore.class);
+  expect(ds.getFeatureReader(q,Transaction.AUTO_COMMIT)).andReturn(fr);
+  replay(ds);
+  SimpleFeatureType type=DataUtilities.createType("roads","_=the_geom:Point,FID:String,NAME:String");
+  JDBCFeatureSource fs=createMock(JDBCFeatureSource.class);
+  expect(fs.getSchema()).andReturn(type).anyTimes();
+  expect(fs.count(q,Transaction.AUTO_COMMIT)).andReturn(-1);
+  expect(fs.getCount(q)).andReturn(-1);
+  expect(fs.getDataStore()).andReturn(ds);
+  replay(fs);
+  JDBCFeatureCollection results=new JDBCFeatureCollection(fs,q);
+  assertEquals(1,results.size());
+}

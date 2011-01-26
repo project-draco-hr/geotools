@@ -1,0 +1,17 @@
+{
+  ensureNotNull(value);
+synchronized (hash) {
+    Object oldValue=hash.put(key,value);
+    if (oldValue instanceof Reference) {
+      oldValue=((Reference)oldValue).getAndClear();
+    }
+ else     if (oldValue != null) {
+      if (!hardCache.remove(key)) {
+        throw new AssertionError(key);
+      }
+    }
+    retainStrongly(key);
+    @SuppressWarnings("unchecked") final V v=(V)oldValue;
+    return v;
+  }
+}

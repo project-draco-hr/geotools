@@ -1,0 +1,30 @@
+{
+  if (dest == null)   dest=createCompatibleDestRaster(src);
+ else {
+    if (dest.getSampleModel().getNumBands() != 1)     throw new IllegalArgumentException("The destination raster for the IverseColorMapRasterOp must one one bad.");
+  }
+  final int w=dest.getWidth();
+  final int h=dest.getHeight();
+  final int srcMinX=src.getMinX();
+  final int srcMinY=src.getMinY();
+  final int srcMaxX=srcMinX + w;
+  final int srcMaxY=srcMinY + h;
+  final int dstMinX=src.getMinX();
+  final int dstMinY=src.getMinY();
+  final int numBands=src.getSampleModel().getNumBands();
+  final boolean sourceHasAlpha=(numBands % 2 == 0);
+  final int alphaBand=sourceHasAlpha ? numBands - 1 : -1;
+  final int rgba[]=new int[numBands];
+  for (int y=srcMinY, y_=dstMinY; y < srcMaxY; y++, y_++) {
+    for (int x=srcMinX, x_=dstMinX; x < srcMaxX; x++, x_++) {
+      src.getPixel(x,y,rgba);
+      if (!sourceHasAlpha || !hasAlpha || (sourceHasAlpha && hasAlpha && rgba[alphaBand] >= this.alphaThreshold)) {
+        int val=invCM.getIndexNearest(rgba[0] & 0xff,rgba[1] & 0xff,rgba[2]);
+        if (hasAlpha && val >= transparencyIndex)         val++;
+        dest.setSample(x_,y_,0,(byte)(val & 0xff));
+      }
+ else       dest.setSample(x_,y_,0,transparencyIndex);
+    }
+  }
+  return dest;
+}

@@ -1,0 +1,48 @@
+{
+  Map<String,String> map=new HashMap<String,String>();
+  map.put("SERVICE","WFS");
+  map.put("VERSION","1.1.0");
+  map.put("REQUEST","GetFeature");
+  map.put("OUTPUTFORMAT",request.getOutputFormat());
+  if (request.getMaxFeatures() != null) {
+    map.put("MAXFEATURES",String.valueOf(request.getMaxFeatures()));
+  }
+  final QueryType query=(QueryType)request.getQuery().get(0);
+  final String typeName=(String)query.getTypeName().get(0);
+  map.put("TYPENAME",typeName);
+  if (query.getPropertyName().size() > 0) {
+    List<String> propertyNames=query.getPropertyName();
+    StringBuilder pnames=new StringBuilder();
+    for (Iterator<String> it=propertyNames.iterator(); it.hasNext(); ) {
+      pnames.append(it.next());
+      if (it.hasNext()) {
+        pnames.append(',');
+      }
+    }
+    map.put("PROPERTYNAME",pnames.toString());
+  }
+  URI srsName=query.getSrsName();
+  if (srsName != null) {
+    map.put("SRSNAME",srsName.toString());
+  }
+  final Filter filter=query.getFilter();
+  if (filter != null && Filter.INCLUDE != filter) {
+    if (filter instanceof Id) {
+      final Set<Identifier> identifiers=((Id)filter).getIdentifiers();
+      StringBuffer idValues=new StringBuffer();
+      for (Iterator<Identifier> it=identifiers.iterator(); it.hasNext(); ) {
+        Object id=it.next().getID();
+        idValues.append(String.valueOf(id));
+        if (it.hasNext()) {
+          idValues.append(",");
+        }
+      }
+      map.put("FEATUREID",idValues.toString());
+    }
+ else {
+      String xmlEncodedFilter=encodeGetFeatureGetFilter(filter);
+      map.put("FILTER",xmlEncodedFilter);
+    }
+  }
+  return map;
+}

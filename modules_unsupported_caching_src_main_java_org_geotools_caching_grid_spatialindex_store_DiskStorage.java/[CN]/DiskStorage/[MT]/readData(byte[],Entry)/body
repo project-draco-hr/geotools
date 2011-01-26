@@ -1,0 +1,28 @@
+{
+  ByteBuffer buffer=ByteBuffer.allocate(page_size);
+  int page=0;
+  int rem=data.length;
+  int len=0;
+  int next=0;
+  int index=0;
+  while (next < e.pages.size()) {
+    page=e.pages.get(next);
+    len=(rem > page_size) ? page_size : rem;
+    try {
+      buffer.clear();
+      data_channel.position(page * page_size);
+      int bytes_read=data_channel.read(buffer);
+      if (bytes_read != page_size) {
+        throw new IllegalStateException("Data file might be corrupted.");
+      }
+      buffer.rewind();
+      buffer.get(data,index,len);
+      rem-=bytes_read;
+      index+=bytes_read;
+      next++;
+    }
+ catch (    IOException io) {
+      throw new IllegalStateException(io);
+    }
+  }
+}

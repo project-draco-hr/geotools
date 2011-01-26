@@ -1,0 +1,31 @@
+{
+  handleCharacters();
+  logger.fine("END: " + qName);
+  XMLElementHandler handler=null;
+  try {
+    handler=(XMLElementHandler)handlers.peek();
+    URI uri=new URI(namespaceURI);
+    handler.endElement(uri,localName,hints);
+  }
+ catch (  Exception e) {
+    processException(e);
+    logger.warning(e.getMessage());
+    logger.warning("Line " + locator.getLineNumber() + " Col "+ locator.getColumnNumber());
+    SAXException exception=new SAXException(e.getMessage() + " at Line " + locator.getLineNumber()+ " Col "+ locator.getColumnNumber()+ " tag is: \n"+ qName,e);
+    exception.initCause(e);
+    throw exception;
+  }
+ finally {
+    handlers.pop();
+    if (handler != null && !handlers.isEmpty()) {
+      XMLElementHandler parent=((XMLElementHandler)handlers.peek());
+      if (parent instanceof ComplexElementHandler) {
+        ComplexElementHandler complexParent=(ComplexElementHandler)parent;
+        String typename=complexParent.getType().getClass().getName();
+        if (typename.equals("org.geotools.xml.wfs.WFSBasicComplexTypes$FeatureCollectionType")) {
+          complexParent.removeElement(handler);
+        }
+      }
+    }
+  }
+}

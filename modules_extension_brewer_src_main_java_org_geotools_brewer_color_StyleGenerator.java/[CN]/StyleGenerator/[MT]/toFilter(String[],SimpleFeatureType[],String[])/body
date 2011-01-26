@@ -1,0 +1,30 @@
+{
+  Filter[] filter=new Filter[styleExpression.length];
+  boolean[] isRangedExpr=new boolean[styleExpression.length];
+  List<String> min=new ArrayList<String>();
+  String[] max=new String[styleExpression.length];
+  for (int i=0; i < styleExpression.length; i++) {
+    if (isRanged(styleExpression[i])) {
+      isRangedExpr[i]=true;
+      String[] exprPart=styleExpression[i].split("\\.\\.");
+      min.add(exprPart[0]);
+      max[i]=exprPart[1];
+    }
+ else {
+      isRangedExpr[i]=false;
+    }
+  }
+  for (int i=0; i < styleExpression.length; i++) {
+    if (isRangedExpr[i]) {
+      boolean upperBoundClosed=true;
+      if (min.contains(max[i])) {
+        upperBoundClosed=false;
+      }
+      filter[i]=toRangedFilter(styleExpression[i],featureType[i],attributeTypeName[i],upperBoundClosed);
+    }
+ else {
+      filter[i]=toExplicitFilter(styleExpression[i],featureType[i],attributeTypeName[i]);
+    }
+  }
+  return filter;
+}

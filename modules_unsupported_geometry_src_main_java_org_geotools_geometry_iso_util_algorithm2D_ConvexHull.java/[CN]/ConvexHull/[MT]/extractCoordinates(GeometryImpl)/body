@@ -1,0 +1,90 @@
+{
+  Collection positions=null;
+  if (geom instanceof PointImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions.add(((PointImpl)geom).getPosition());
+  }
+ else   if (geom instanceof CurveImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions=((CurveImpl)geom).asDirectPositions();
+  }
+ else   if (geom instanceof RingImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions=((RingImplUnsafe)geom).asDirectPositions();
+  }
+ else   if (geom instanceof SurfaceImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions=((RingImplUnsafe)((SurfaceImpl)geom).getBoundary().getExterior()).asDirectPositions();
+  }
+ else   if (geom instanceof MultiPointImpl) {
+    positions=new HashSet<PointImpl>();
+    positions=((MultiPointImpl)geom).getElements();
+  }
+ else   if (geom instanceof MultiCurveImpl) {
+    positions=new HashSet<DirectPositionImpl>();
+    Iterator<OrientableCurve> curveIter=((MultiCurveImpl)geom).getElements().iterator();
+    while (curveIter.hasNext()) {
+      positions.addAll(((CurveImpl)curveIter.next()).asDirectPositions());
+    }
+  }
+ else   if (geom instanceof MultiSurfaceImpl) {
+    positions=new HashSet<DirectPositionImpl>();
+    Iterator<OrientableSurface> surfaceIter=((MultiSurfaceImpl)geom).getElements().iterator();
+    while (surfaceIter.hasNext()) {
+      positions.addAll(((RingImplUnsafe)((SurfaceImpl)surfaceIter.next()).getBoundary().getExterior()).asDirectPositions());
+    }
+  }
+ else   if (geom instanceof MultiPrimitiveImpl) {
+    positions=new HashSet<PointImpl>();
+    Iterator<? extends Primitive> iterator=((MultiPrimitiveImpl)geom).getElements().iterator();
+    while (iterator.hasNext()) {
+      PrimitiveImpl prim=((PrimitiveImpl)iterator.next());
+      if (prim instanceof PointImpl) {
+        positions.add(prim);
+      }
+ else {
+        Geometry hull=prim.getConvexHull();
+        if (hull instanceof CurveImpl) {
+          CurveImpl curve=(CurveImpl)prim.getConvexHull();
+          positions.addAll(((CurveImpl)curve).asDirectPositions());
+        }
+ else         if (hull instanceof SurfaceImpl) {
+          SurfaceImpl surface=(SurfaceImpl)prim.getConvexHull();
+          positions.addAll(((RingImplUnsafe)((SurfaceImpl)surface).getBoundary().getExterior()).asDirectPositions());
+        }
+      }
+    }
+  }
+ else   if (geom instanceof CompositePointImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions.add(((CompositePointImpl)geom).getElements().iterator().next());
+  }
+ else   if (geom instanceof CompositeCurveImpl) {
+    Assert.isTrue(false,"not implemented yet");
+  }
+ else   if (geom instanceof CompositeSurfaceImpl) {
+    Assert.isTrue(false,"not implemented yet");
+  }
+ else   if (geom instanceof CurveBoundaryImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions.add(((CurveBoundaryImpl)geom).getStartPoint());
+    positions.add(((CurveBoundaryImpl)geom).getEndPoint());
+  }
+ else   if (geom instanceof SurfaceBoundaryImpl) {
+    positions=new ArrayList<DirectPositionImpl>();
+    positions=((RingImplUnsafe)((SurfaceBoundaryImpl)geom).getExterior()).asDirectPositions();
+  }
+  UniqueCoordinateArrayFilter filter=new UniqueCoordinateArrayFilter();
+  Iterator posIter=positions.iterator();
+  while (posIter.hasNext()) {
+    Object pos=posIter.next();
+    if (pos instanceof DirectPositionImpl) {
+      filter.filter(new Coordinate(((DirectPositionImpl)pos).getCoordinates()));
+    }
+ else     if (pos instanceof PointImpl) {
+      filter.filter(new Coordinate(((PointImpl)pos).getPosition().getCoordinates()));
+    }
+ else     Assert.isTrue(false,"Invalid coordinate type");
+  }
+  return filter.getCoordinates();
+}

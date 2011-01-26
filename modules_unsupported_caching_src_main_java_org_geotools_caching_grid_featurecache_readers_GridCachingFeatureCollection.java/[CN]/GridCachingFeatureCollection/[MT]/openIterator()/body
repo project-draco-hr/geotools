@@ -1,0 +1,107 @@
+{
+  Iterator<SimpleFeature> it=null;
+  List<NodeIdentifier> missing=null;
+  List<NodeIdentifier> found=null;
+  FeatureReader<SimpleFeatureType,SimpleFeature> cacheFeatureReader=null;
+  FeatureReader<SimpleFeatureType,SimpleFeature> sourceFeatureReader=null;
+  Envelope env=new Envelope(preFilter.getMinX(),preFilter.getMaxX(),preFilter.getMinY(),preFilter.getMaxY());
+  this.grid.readLock();
+  try {
+    List<NodeIdentifier>[] notcached=grid.matchNodeIds(env);
+    missing=notcached[0];
+    found=notcached[1];
+    acquireReadLocks(missing,found);
+    if (missing.size() == 0) {
+      this.grid.readUnLock();
+      cacheFeatureReader=new GridCacheFeatureReader(found,(GridSpatialIndex)grid.getIndex());
+    }
+ else {
+      for (Iterator<NodeIdentifier> iterator=found.iterator(); iterator.hasNext(); ) {
+        NodeIdentifier nodeid=(NodeIdentifier)iterator.next();
+        nodeid.readUnLock();
+      }
+      this.grid.readUnLock();
+      this.grid.writeLock();
+      try {
+        acquireReadLocks(missing,found);
+        if (missing.size() > 0 && fs != null) {
+          acquireWriteLocks(missing,found);
+        }
+        if (missing.size() > 0 && fs != null) {
+          this.grid.register(missing);
+        }
+      }
+  finally {
+        this.grid.writeUnLock();
+      }
+      if (fs != null) {
+        DefaultQuery dq=new DefaultQuery(featureType.getName().getLocalPart(),this.createFilter(missing));
+        dq.setCoordinateSystem(featureType.getCoordinateReferenceSystem());
+        if (query != null) {
+          dq.setHints(query.getHints());
+          dq.setHandle(query.getHandle());
+        }
+ else {
+          dq.setHints(new Hints(Hints.JTS_COORDINATE_SEQUENCE_FACTORY,new LiteCoordinateSequenceFactory()));
+        }
+        try {
+          sourceFeatureReader=((DataStore)fs.getDataStore()).getFeatureReader(dq,Transaction.AUTO_COMMIT);
+        }
+ catch (        Exception ex) {
+          missing.clear();
+          sourceFeatureReader=null;
+        }
+      }
+ else {
+        missing.clear();
+      }
+      if (found.size() > 0) {
+        cacheFeatureReader=new GridCacheFeatureReader(found,(GridSpatialIndex)grid.getIndex());
+      }
+    }
+    boolean localcache=cacheFeatures;
+    if (query != null && query.getMaxFeatures() != Integer.MAX_VALUE) {
+      localcache=false;
+    }
+    FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+    if (sourceFeatureReader != null && cacheFeatureReader != null) {
+      fr=new CombiningCachingFeatureReader(cacheFeatureReader,sourceFeatureReader,false,localcache,grid.getIndex(),this.postFilter);
+    }
+ else     if (sourceFeatureReader != null && cacheFeatureReader == null) {
+      fr=new CombiningCachingFeatureReader(new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>((SimpleFeatureType)featureType),sourceFeatureReader,false,localcache,grid.getIndex(),this.postFilter);
+    }
+ else     if (sourceFeatureReader == null && cacheFeatureReader != null) {
+      fr=new CombiningCachingFeatureReader(cacheFeatureReader,new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>((SimpleFeatureType)featureType),false,false,grid.getIndex(),this.postFilter);
+    }
+ else {
+      fr=new CombiningCachingFeatureReader(new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>((SimpleFeatureType)featureType),new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>((SimpleFeatureType)featureType),false,false,grid.getIndex(),this.postFilter);
+    }
+    it=new FeatureReaderFeatureIterator(wrapFeatureReader(fr),missing,found);
+  }
+ catch (  Exception ex) {
+    logger.log(Level.SEVERE,"Failed to create feature collection iterator.",ex);
+    if (missing != null) {
+      for (Iterator<NodeIdentifier> iterator=missing.iterator(); iterator.hasNext(); ) {
+        NodeIdentifier nodeid=(NodeIdentifier)iterator.next();
+        nodeid.writeUnLock();
+      }
+    }
+    if (found != null) {
+      for (Iterator<NodeIdentifier> iterator=found.iterator(); iterator.hasNext(); ) {
+        NodeIdentifier nodeid=(NodeIdentifier)iterator.next();
+        nodeid.readUnLock();
+      }
+    }
+    if (missing != null) {
+      this.grid.unregister(missing);
+    }
+  }
+ finally {
+    try {
+      this.grid.readUnLock();
+    }
+ catch (    Exception ex) {
+    }
+  }
+  return it;
+}

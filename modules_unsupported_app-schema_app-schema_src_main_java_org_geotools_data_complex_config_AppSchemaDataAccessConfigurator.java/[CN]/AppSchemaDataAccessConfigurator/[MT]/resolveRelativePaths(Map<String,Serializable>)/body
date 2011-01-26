@@ -1,0 +1,44 @@
+{
+  Map<String,Serializable> resolvedParams=new HashMap<String,Serializable>();
+  AppSchemaDataAccessConfigurator.LOGGER.entering(getClass().getName(),"resolveRelativePaths");
+  for (  Map.Entry<String,Serializable> entry : (Set<Map.Entry<String,Serializable>>)datastoreParams.entrySet()) {
+    String key=(String)entry.getKey();
+    String value=(String)entry.getValue();
+    if (value != null && value.startsWith("file:")) {
+      String oldValue=value;
+      String resolvedDataPath=null;
+      String inputDataPath=(String)value.substring("file:".length());
+      File f=new File(inputDataPath);
+      if (!f.isAbsolute()) {
+        AppSchemaDataAccessConfigurator.LOGGER.fine("resolving original parameter " + value + " for datastore parameter "+ key);
+        try {
+          URL mappingFileUrl=new URL(config.getBaseSchemasUrl());
+          AppSchemaDataAccessConfigurator.LOGGER.finer("mapping file URL is " + mappingFileUrl.toString());
+          String mappingFileDirPath=DataUtilities.urlToFile(mappingFileUrl).getParent();
+          AppSchemaDataAccessConfigurator.LOGGER.finer("mapping file parent directory is " + mappingFileDirPath);
+          resolvedDataPath=FilenameUtils.concat(mappingFileDirPath,inputDataPath);
+          if (resolvedDataPath == null) {
+            throw new RuntimeException("Relative path to datastore is incompatible with" + " the base path - check double dot steps.");
+          }
+        }
+ catch (        Exception e) {
+          AppSchemaDataAccessConfigurator.LOGGER.throwing(getClass().getName(),"resolveRelativePaths",e);
+          throw new RuntimeException(e);
+        }
+      }
+ else {
+        resolvedDataPath=inputDataPath;
+      }
+      AppSchemaDataAccessConfigurator.LOGGER.finer("Path to data has been resolved to " + resolvedDataPath);
+      if ("url".equals(key)) {
+        value="file:" + resolvedDataPath;
+      }
+ else {
+        value=resolvedDataPath;
+      }
+      AppSchemaDataAccessConfigurator.LOGGER.fine("Resolved " + oldValue + " -> "+ value);
+    }
+    resolvedParams.put(key,value);
+  }
+  return resolvedParams;
+}

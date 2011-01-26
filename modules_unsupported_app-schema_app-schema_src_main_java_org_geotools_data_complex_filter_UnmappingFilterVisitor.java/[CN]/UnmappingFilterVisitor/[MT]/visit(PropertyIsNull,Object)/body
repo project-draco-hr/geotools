@@ -1,0 +1,15 @@
+{
+  Expression nullCheck=filter.getExpression();
+  List sourceChecks=(List)nullCheck.accept(this,null);
+  List combined=new ArrayList(sourceChecks.size());
+  for (Iterator it=sourceChecks.iterator(); it.hasNext(); ) {
+    Expression sourceValue=(Expression)it.next();
+    Filter newFilter=ff.isNull(sourceValue);
+    if (sourceValue instanceof NestedAttributeExpression) {
+      newFilter=new MultiValuedOrImpl(ff,newFilter,(NestedAttributeExpression)sourceValue);
+    }
+    combined.add(newFilter);
+  }
+  Filter unrolled=combineOred(combined);
+  return unrolled;
+}

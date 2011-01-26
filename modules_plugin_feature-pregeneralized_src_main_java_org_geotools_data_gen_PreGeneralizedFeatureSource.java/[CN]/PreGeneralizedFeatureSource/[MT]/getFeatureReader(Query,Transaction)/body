@@ -1,0 +1,13 @@
+{
+  SimpleFeatureSource fs=getFeatureSourceFor(query);
+  Query newQuery=getProxyObject(query,fs);
+  DataAccess<SimpleFeatureType,SimpleFeature> access=fs.getDataStore();
+  if (access instanceof DataStore) {
+    FeatureReader<SimpleFeatureType,SimpleFeature> backendReader=((DataStore)access).getFeatureReader(newQuery,transaction);
+    String backendGeometryPropertyName=getBackendGeometryName(fs);
+    Generalization di=info.getGeneralizationForDistance(getRequestedDistance(query));
+    if (di != null)     logDistanceInfo(di);
+    return new PreGeneralizedFeatureReader(getSchema(),indexMapping.get(di == null ? 0.0 : di.getDistance()),backendReader,info.getGeomPropertyName(),backendGeometryPropertyName);
+  }
+  return null;
+}

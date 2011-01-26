@@ -1,0 +1,17 @@
+{
+  Utilities.ensureNonNull("index",catalog);
+  final BoundingBox bounds=catalog.getBounds();
+  if (bounds.isEmpty()) {
+    throw new IllegalArgumentException("Cannot create a mosaic out of an empty index");
+  }
+  this.crs=bounds.getCoordinateReferenceSystem();
+  if (envelope == null)   this.originalEnvelope=new GeneralEnvelope(bounds);
+ else {
+    this.originalEnvelope=new GeneralEnvelope(envelope);
+    this.originalEnvelope.setCoordinateReferenceSystem(crs);
+  }
+  originalGridRange=new GridEnvelope2D(new Rectangle((int)Math.round(originalEnvelope.getSpan(0) / highestRes[0]),(int)Math.round(originalEnvelope.getSpan(1) / highestRes[1])));
+  final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(originalGridRange,originalEnvelope);
+  geMapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+  raster2Model=geMapper.createTransform();
+}

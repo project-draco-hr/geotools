@@ -1,0 +1,35 @@
+{
+  assertEquals("Actual feature collection was not the expected size",c1.size(),c2.size());
+  ArrayList<SimpleFeature> al1=new ArrayList<SimpleFeature>(c1);
+  ArrayList<SimpleFeature> al2=new ArrayList<SimpleFeature>(c2);
+  Collections.sort(al1,FEATURE_COMPARATOR);
+  Collections.sort(al2,FEATURE_COMPARATOR);
+  int n=c1.size();
+  for (int i=0; i < n; i++) {
+    Feature f1=al1.get(i);
+    Feature f2=al2.get(i);
+    if (i == 0) {
+      assertEquals("Feature Type",f1.getType(),f2.getType());
+    }
+    assertEquals("Feature[" + i + "] identifiers Equal",f1.getIdentifier().getID(),f2.getIdentifier().getID());
+    if (!f1.equals(f2)) {
+      for (      PropertyDescriptor property : f1.getType().getDescriptors()) {
+        String name=property.getName().getLocalPart();
+        Object value1=f1.getProperty(name).getValue();
+        Object value2=f2.getProperty(name).getValue();
+        if (value1 instanceof Calendar) {
+          continue;
+        }
+        if (value1 instanceof Date) {
+          continue;
+        }
+        if (value1 instanceof Geometry) {
+          assertTrue("Feature[" + i + "]."+ name+ " geometry",((Geometry)value1).equals((Geometry)value2));
+        }
+ else {
+          assertEquals("Feature[" + i + "]."+ name,value1,value2);
+        }
+      }
+    }
+  }
+}

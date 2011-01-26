@@ -1,0 +1,26 @@
+{
+  Geometry geom=(Geometry)feature.getDefaultGeometry();
+  if (geom == null) {
+    return null;
+  }
+  if (geom instanceof LineString) {
+    return (LineString)geom;
+  }
+ else   if (geom instanceof MultiLineString) {
+    MultiLineString lines=(MultiLineString)geom;
+    if (lines.getNumGeometries() == 1) {
+      return (LineString)lines.getGeometryN(0);
+    }
+    throw new ClassCastException("MultiLineString does not contain a single LineString");
+  }
+ else   if (geom instanceof GeometryCollection) {
+    GeometryCollection geoms=(GeometryCollection)geom;
+    if (geoms.getNumGeometries() == 1 && geoms.getGeometryN(0) instanceof LineString) {
+      return (LineString)geoms.getGeometryN(0);
+    }
+    throw new ClassCastException("GeometryCollection does not contain a single LineString");
+  }
+ else {
+    throw new ClassCastException("Cannot convert to LineString");
+  }
+}

@@ -1,0 +1,42 @@
+{
+  final int step, val1, val2;
+  if (vertical) {
+    step=CP_LENGTH * width;
+    val1=width;
+    val2=height;
+  }
+ else {
+    step=CP_LENGTH;
+    val1=height;
+    val2=width;
+  }
+  for (int i=0; i < val1; i++) {
+    final int offset;
+    if (vertical) {
+      offset=computeOffset(i,0) + index;
+    }
+ else {
+      offset=computeOffset(0,i) + index;
+    }
+    int singularityOffset=-1;
+    for (int j=1; j < val2; j++) {
+      final int previousOffset=offset + step * (j - 1);
+      final int currentOffset=previousOffset + step;
+      if (grid[previousOffset] == grid[currentOffset]) {
+        if (singularityOffset == -1) {
+          singularityOffset=(previousOffset == offset) ? previousOffset : previousOffset - step;
+        }
+      }
+ else       if (singularityOffset != -1) {
+        final int num=(currentOffset - singularityOffset) / step + 1;
+        replaceSingularity(grid,singularityOffset,num,step);
+        singularityOffset=-1;
+      }
+    }
+    if (singularityOffset != -1) {
+      final int currentOffset=offset + step * (val2 - 1);
+      final int num=(currentOffset - singularityOffset) / step + 1;
+      replaceSingularity(grid,singularityOffset,num,step);
+    }
+  }
+}

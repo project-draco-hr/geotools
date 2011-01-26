@@ -1,0 +1,55 @@
+{
+  PropertyName value=ff.property(name);
+  String geomName=schema.getGeometryDescriptor().getLocalName();
+  double[] values=new double[fc.size()];
+  Iterator it=fc.iterator();
+  int count=0;
+  while (it.hasNext()) {
+    SimpleFeature f=(SimpleFeature)it.next();
+    values[count++]=((Number)f.getAttribute(name)).doubleValue();
+  }
+  EqualClasses ec=new EqualClasses(colors.length,values);
+  double[] breaks=ec.getBreaks();
+  Style ret=createStyle();
+  Rule[] rules=new Rule[colors.length + 1];
+  PropertyIsLessThan cf1=ff.less(value,ff.literal(breaks[0]));
+  LOGGER.fine(cf1.toString());
+  rules[0]=sf.createRule();
+  rules[0].setFilter(cf1);
+  Color c=this.createColor(colors[0]);
+  PolygonSymbolizer symb1=createPolygonSymbolizer(c,Color.black,1.0);
+  rules[0].setSymbolizers(new Symbolizer[]{symb1});
+  LOGGER.fine("added low class " + breaks[0] + " "+ colors[0]);
+  for (int i=1; i < (colors.length - 1); i++) {
+    rules[i]=sf.createRule();
+    Expression expr=value;
+    Expression lower=ff.literal(breaks[i - 1]);
+    Expression upper=ff.literal(breaks[i]);
+    PropertyIsBetween cf=ff.between(expr,lower,upper);
+    LOGGER.fine(cf.toString());
+    c=this.createColor(colors[i]);
+    LOGGER.fine("color " + c.toString());
+    PolygonSymbolizer symb=createPolygonSymbolizer(c,Color.black,1.0);
+    rules[i].setSymbolizers(new Symbolizer[]{symb});
+    rules[i].setFilter(cf);
+    LOGGER.fine("added class " + breaks[i - 1] + "->"+ breaks[i]+ " "+ colors[i]);
+  }
+  PropertyIsGreaterThan cf2=ff.greater(value,ff.literal(breaks[colors.length - 2]));
+  LOGGER.fine(cf2.toString());
+  rules[colors.length - 1]=sf.createRule();
+  rules[colors.length - 1].setFilter(cf2);
+  rules[colors.length - 1].setName(geomName);
+  c=this.createColor(colors[colors.length - 1]);
+  PolygonSymbolizer symb2=createPolygonSymbolizer(c,Color.black,1.0);
+  rules[colors.length - 1].setSymbolizers(new Symbolizer[]{symb2});
+  LOGGER.fine("added upper class " + breaks[colors.length - 2] + "  "+ colors[colors.length - 1]);
+  rules[colors.length]=sf.createRule();
+  PolygonSymbolizer elsePoly=createPolygonSymbolizer(Color.black,1.0);
+  rules[colors.length].setSymbolizers(new Symbolizer[]{elsePoly});
+  rules[colors.length].setElseFilter(true);
+  FeatureTypeStyle ft=sf.createFeatureTypeStyle(rules);
+  ft.setFeatureTypeName("Feature");
+  ft.setName(name);
+  ret.addFeatureTypeStyle(ft);
+  return ret;
+}

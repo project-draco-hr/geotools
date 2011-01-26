@@ -1,0 +1,53 @@
+{
+  CoordinateSequenceFactory csf=geometryFactory.getCoordinateSequenceFactory();
+  double midx=(minx + maxx) / 2;
+  double midy=(miny + maxy) / 2;
+  double x0=midx - spanX / 2;
+  double x1=midx + spanX / 2;
+  double y0=midy - spanY / 2;
+  double y1=midy + spanY / 2;
+  if (Point.class.isAssignableFrom(geometryType) || MultiPoint.class.isAssignableFrom(geometryType)) {
+    CoordinateSequence cs=csf.create(1,2);
+    cs.setOrdinate(0,0,midx);
+    cs.setOrdinate(0,1,midy);
+    if (Point.class.isAssignableFrom(geometryType)) {
+      return geometryFactory.createPoint(cs);
+    }
+ else {
+      return geometryFactory.createMultiPoint(new Point[]{geometryFactory.createPoint(cs)});
+    }
+  }
+ else   if (LineString.class.isAssignableFrom(geometryType) || MultiLineString.class.isAssignableFrom(geometryType)) {
+    CoordinateSequence cs=csf.create(2,2);
+    cs.setOrdinate(0,0,x0);
+    cs.setOrdinate(0,1,y0);
+    cs.setOrdinate(1,0,x1);
+    cs.setOrdinate(1,1,y1);
+    if (MultiLineString.class.isAssignableFrom(geometryType)) {
+      return geometryFactory.createMultiLineString(new LineString[]{geometryFactory.createLineString(cs)});
+    }
+ else {
+      return geometryFactory.createLineString(cs);
+    }
+  }
+ else {
+    CoordinateSequence cs=csf.create(5,2);
+    cs.setOrdinate(0,0,x0);
+    cs.setOrdinate(0,1,y0);
+    cs.setOrdinate(1,0,x0);
+    cs.setOrdinate(1,1,y1);
+    cs.setOrdinate(2,0,x1);
+    cs.setOrdinate(2,1,y1);
+    cs.setOrdinate(3,0,x1);
+    cs.setOrdinate(3,1,y0);
+    cs.setOrdinate(4,0,x0);
+    cs.setOrdinate(4,1,y0);
+    LinearRing ring=geometryFactory.createLinearRing(cs);
+    if (MultiPolygon.class.isAssignableFrom(geometryType)) {
+      return geometryFactory.createMultiPolygon(new Polygon[]{geometryFactory.createPolygon(ring,null)});
+    }
+ else {
+      return geometryFactory.createPolygon(ring,null);
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  jdbcDataSource dataSource=new jdbcDataSource();
+  final StringBuilder url=new StringBuilder("jdbc:hsqldb:file:");
+  final String path=directory.getAbsolutePath().replace(File.separatorChar,'/');
+  if (path.length() == 0 || path.charAt(0) != '/') {
+    url.append('/');
+  }
+  url.append(path);
+  if (url.charAt(url.length() - 1) != '/') {
+    url.append('/');
+  }
+  url.append(HsqlEpsgDatabase.DATABASE_NAME);
+  dataSource.setDatabase(url.toString());
+  dataSource.setUser("SA");
+  if (!dataExists(dataSource)) {
+    generateData(dataSource);
+    try {
+      forceReadOnly(directory);
+    }
+ catch (    IOException file) {
+      throw (SQLException)new SQLException("Can't read the SQL script.").initCause(file);
+    }
+  }
+  return dataSource;
+}

@@ -1,0 +1,29 @@
+{
+  AttributeDescriptor descriptor=attributeDescriptor(name,type);
+  AttributeType declaredType=(AttributeType)descriptor.getType();
+  if (!declaredType.equals(type)) {
+    boolean argIsSubType=Types.isSuperType(type,declaredType);
+    if (!argIsSubType) {
+      LOGGER.fine("Adding attribute " + name + " of type "+ type.getName()+ " which is not a subtype of "+ declaredType.getName());
+    }
+    int minOccurs=descriptor.getMinOccurs();
+    int maxOccurs=descriptor.getMaxOccurs();
+    boolean nillable=descriptor.isNillable();
+    Object defaultValue=null;
+    if (type instanceof GeometryType) {
+      descriptor=new GeometryDescriptorImpl((GeometryType)type,name,minOccurs,maxOccurs,nillable,defaultValue);
+    }
+ else {
+      descriptor=new AttributeDescriptorImpl(type,name,minOccurs,maxOccurs,nillable,defaultValue);
+    }
+  }
+  Attribute attribute;
+  if (descriptor != null && descriptor.getType() instanceof NonFeatureTypeProxy) {
+    attribute=createComplexAttribute(value,null,descriptor,id);
+  }
+ else {
+    attribute=create(value,null,descriptor,id);
+  }
+  properties().add(attribute);
+  return attribute;
+}

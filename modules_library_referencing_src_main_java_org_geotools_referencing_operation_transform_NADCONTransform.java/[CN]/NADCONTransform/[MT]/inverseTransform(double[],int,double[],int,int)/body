@@ -1,0 +1,36 @@
+{
+  int step=0;
+  if ((srcPts == dstPts) && (srcOff < dstOff) && ((srcOff + (numPts * getSourceDimensions())) > dstOff)) {
+    step=-getSourceDimensions();
+    srcOff-=((numPts - 1) * step);
+    dstOff-=((numPts - 1) * step);
+  }
+  while (--numPts >= 0) {
+    final double x=srcPts[srcOff++];
+    final double y=srcPts[srcOff++];
+    double xtemp=x;
+    double ytemp=y;
+    for (int i=MAX_ITER; ; ) {
+      double[] array={xtemp,ytemp};
+      transform(array,0,array,0,1);
+      double xdif=array[0] - x;
+      double ydif=array[1] - y;
+      if (Math.abs(xdif) > TOL) {
+        xtemp=xtemp - xdif;
+      }
+      if (Math.abs(ydif) > TOL) {
+        ytemp=ytemp - ydif;
+      }
+      if ((Math.abs(xdif) <= TOL) && (Math.abs(ydif) <= TOL)) {
+        dstPts[dstOff++]=xtemp;
+        dstPts[dstOff++]=ytemp;
+        break;
+      }
+      if (--i < 0) {
+        throw new TransformException(Errors.format(ErrorKeys.NO_CONVERGENCE));
+      }
+    }
+    srcOff+=step;
+    dstOff+=step;
+  }
+}

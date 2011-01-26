@@ -1,0 +1,18 @@
+{
+  Filter extraFilter=null;
+  if (ri.isLast()) {
+    extraFilter=ff.equals(ff.property("expired"),ff.literal(Long.MAX_VALUE));
+  }
+ else {
+    Filter revf=ff.lessOrEqual(ff.property("revision"),ff.literal(ri.revision));
+    Filter expf=ff.greater(ff.property("expired"),ff.literal(ri.revision));
+    extraFilter=ff.and(revf,expf);
+  }
+  if (filter.equals(Filter.EXCLUDE)) {
+    return Filter.EXCLUDE;
+  }
+  if (filter.equals(Filter.INCLUDE))   return extraFilter;
+  Filter transformedFidFilter=transformFidFilter(featureTypeName,filter);
+  Filter newFilter=ff.and(transformedFidFilter,extraFilter);
+  return newFilter;
+}

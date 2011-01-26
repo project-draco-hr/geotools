@@ -1,0 +1,29 @@
+{
+  if ((query == null) || (query.getTypeName() == null)) {
+    return super.getBounds(query);
+  }
+  List fts=capabilities.getFeatureTypes();
+  Iterator i=fts.iterator();
+  String desiredType=query.getTypeName().substring(query.getTypeName().indexOf(":") + 1);
+  while (i.hasNext()) {
+    FeatureSetDescription fsd=(FeatureSetDescription)i.next();
+    String fsdName=(fsd.getName() == null) ? null : fsd.getName().substring(fsd.getName().indexOf(":") + 1);
+    if (desiredType.equals(fsdName)) {
+      Envelope env=fsd.getLatLongBoundingBox();
+      ReferencedEnvelope referencedEnvelope=new ReferencedEnvelope(env,DefaultGeographicCRS.WGS84);
+      try {
+        return referencedEnvelope.transform(CRS.decode(fsd.getSRS()),true);
+      }
+ catch (      NoSuchAuthorityCodeException e) {
+        return referencedEnvelope;
+      }
+catch (      TransformException e) {
+        return referencedEnvelope;
+      }
+catch (      FactoryException e) {
+        return referencedEnvelope;
+      }
+    }
+  }
+  return super.getBounds(query);
+}

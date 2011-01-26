@@ -1,0 +1,41 @@
+{
+  int k=4;
+  Object[] obj=GraphTestUtil.buildPerfectBinaryTree(builder(),k);
+  Node root=(Node)obj[0];
+  Map id2node=(Map)obj[1];
+  Node lc=(Node)id2node.get("0.0");
+  Node rc=(Node)id2node.get("0.1");
+  builder().removeNode(root);
+  GraphPartitioner parter=new GraphPartitioner(builder().getGraph());
+  parter.partition();
+  List partitions=parter.getPartitions();
+  assertTrue(partitions.size() == 2);
+  Graph left=(Graph)partitions.get(0);
+  Graph right=(Graph)partitions.get(1);
+  if (!left.getNodes().contains(lc)) {
+    left=(Graph)partitions.get(1);
+    right=(Graph)partitions.get(0);
+  }
+  assertTrue(left.getNodes().contains(lc));
+  assertTrue(right.getNodes().contains(rc));
+  assertTrue(left.getNodes().size() == Math.pow(2,k) - 1);
+  assertTrue(left.getEdges().size() == Math.pow(2,k) - 2);
+  assertTrue(right.getNodes().size() == Math.pow(2,k) - 1);
+  assertTrue(right.getEdges().size() == Math.pow(2,k) - 2);
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      assertTrue(component.getObject().toString().startsWith("0.0"));
+      return 0;
+    }
+  }
+;
+  left.visitNodes(visitor);
+  visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      assertTrue(component.getObject().toString().startsWith("0.1"));
+      return 0;
+    }
+  }
+;
+  right.visitNodes(visitor);
+}

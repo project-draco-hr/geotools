@@ -1,0 +1,24 @@
+{
+  LOGGER.finer("testGetNamedMarks");
+  Mark m;
+  String[] names={"Square","Circle","Triangle","Star","X","Cross"};
+  for (int i=0; i < names.length; i++) {
+    try {
+      Class target=styleFactory.getClass();
+      Method method=target.getMethod("get" + names[i] + "Mark",(Class[])null);
+      m=(Mark)method.invoke(styleFactory,(Object[])null);
+      assertNotNull("Failed to get " + names[i] + " mark ",m);
+      Expression exp=filterFactory.literal(names[i]);
+      assertEquals("Wrong sort of mark returned ",exp,m.getWellKnownName());
+      assertEquals("Wrong size of mark returned ","6",m.getSize().evaluate(feature).toString());
+    }
+ catch (    InvocationTargetException ite) {
+      ite.getTargetException().printStackTrace();
+      fail("InvocationTargetException " + ite.getTargetException());
+    }
+catch (    Exception e) {
+      e.printStackTrace();
+      fail("Exception " + e.toString());
+    }
+  }
+}

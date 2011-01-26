@@ -1,0 +1,67 @@
+{
+  Map dsParams=new HashMap();
+  URL url=getClass().getResource(schemaBase + "FirstParentFeature.xml");
+  assertNotNull(url);
+  dsParams.put("dbtype","app-schema");
+  dsParams.put("url",url.toExternalForm());
+  DataAccess<FeatureType,Feature> dataAccess=DataAccessFinder.getDataStore(dsParams);
+  assertNotNull(dataAccess);
+  Name typeName=Types.typeName("http://example.com","FirstParentFeature");
+  FeatureType featureType=dataAccess.getSchema(typeName);
+  assertNotNull(featureType);
+  FeatureSource fSource=(FeatureSource)dataAccess.getFeatureSource(typeName);
+  FeatureCollection features=(FeatureCollection)fSource.getFeatures();
+  assertEquals(5,size(features));
+  FeatureIterator iterator=features.features();
+  while (iterator.hasNext()) {
+    Feature next=iterator.next();
+    Collection<Property> children=next.getProperties("nestedFeature");
+    if (next.getIdentifier().toString().equals("cc.1")) {
+      assertEquals(2,children.size());
+    }
+ else {
+      assertEquals(0,children.size());
+    }
+    for (    Property nestedFeature : children) {
+      Object value=nestedFeature.getValue();
+      assertNotNull(value);
+      value=((Collection)value).iterator().next();
+      assertTrue(value instanceof FeatureImpl);
+      Feature feature=(Feature)value;
+      assertNotNull(feature.getProperty("someAttribute").getValue());
+    }
+  }
+  dsParams=new HashMap();
+  url=getClass().getResource(schemaBase + "SecondParentFeature.xml");
+  assertNotNull(url);
+  dsParams.put("dbtype","app-schema");
+  dsParams.put("url",url.toExternalForm());
+  dataAccess=DataAccessFinder.getDataStore(dsParams);
+  assertNotNull(dataAccess);
+  typeName=Types.typeName("http://example.com","SecondParentFeature");
+  featureType=dataAccess.getSchema(typeName);
+  assertNotNull(featureType);
+  fSource=(FeatureSource)dataAccess.getFeatureSource(typeName);
+  features=(FeatureCollection)fSource.getFeatures();
+  assertEquals(5,size(features));
+  iterator=features.features();
+  while (iterator.hasNext()) {
+    Feature next=iterator.next();
+    Collection<Property> children=next.getProperties("nestedFeature");
+    if (next.getIdentifier().toString().equals("cc.2")) {
+      assertEquals(3,children.size());
+    }
+ else {
+      assertEquals(0,children.size());
+    }
+    for (    Property nestedFeature : children) {
+      Object value=nestedFeature.getValue();
+      assertNotNull(value);
+      value=((Collection)value).iterator().next();
+      assertTrue(value instanceof FeatureImpl);
+      Feature feature=(Feature)value;
+      assertNotNull(feature.getProperty("someAttribute").getValue());
+    }
+  }
+  dataAccess.dispose();
+}

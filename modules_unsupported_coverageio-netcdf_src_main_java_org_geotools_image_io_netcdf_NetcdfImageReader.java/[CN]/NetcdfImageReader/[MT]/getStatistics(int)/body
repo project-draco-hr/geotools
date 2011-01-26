@@ -1,0 +1,41 @@
+{
+  final double[] fillValues;
+  final GeographicMetadata metadata=getGeographicMetadata(imageIndex);
+  if (metadata != null && metadata.getNumBands() >= 1) {
+    fillValues=metadata.getBand(0).getNoDataValues();
+  }
+ else {
+    fillValues=null;
+  }
+  final Array array=variable.read();
+  final IndexIterator it=array.getIndexIterator();
+  final Statistics stats=new Statistics();
+  if (fillValues == null || fillValues.length == 0) {
+    while (it.hasNext()) {
+      stats.add(it.getDoubleNext());
+    }
+  }
+ else   if (fillValues.length == 1) {
+    final double fillValue=fillValues[0];
+    while (it.hasNext()) {
+      final double value=it.getDoubleNext();
+      if (value != fillValue) {
+        stats.add(value);
+      }
+    }
+  }
+ else {
+    scan:     while (it.hasNext()) {
+      final double value=it.getDoubleNext();
+      if (fillValues != null) {
+        for (int i=0; i < fillValues.length; i++) {
+          if (fillValues[i] == value) {
+            continue scan;
+          }
+        }
+      }
+      stats.add(value);
+    }
+  }
+  return stats;
+}

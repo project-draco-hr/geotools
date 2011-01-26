@@ -1,0 +1,57 @@
+{
+  ReferencedEnvelope env=new ReferencedEnvelope();
+  CoordinateReferenceSystem crs=null;
+  LOGGER.fine("Query: " + query.toString());
+  if (getSchema() != null) {
+    String typeName=getSchema().getTypeName();
+    GeometryDescriptor geomType=getSchema().getGeometryDescriptor();
+    if (geomType != null) {
+      Filter filter=query.getFilter();
+      Class filterClass=filter.getClass();
+      if (filterClass == Intersects.class || filterClass == BBOX.class) {
+        filter=fixNullGeomFilter(filter);
+      }
+      if (filter != Filter.EXCLUDE) {
+        String sqlStmt=null;
+        try {
+          DB2SQLBuilder builder=(DB2SQLBuilder)((DB2DataStore)this.getDataStore()).getSqlBuilder(typeName);
+          LOGGER.fine("Filter: " + filter.toString());
+          sqlStmt=builder.buildSQLBoundsQuery(typeName,geomType,filter);
+        }
+ catch (        SQLEncoderException e) {
+          throw new IOException("SQLEncoderException: " + e);
+        }
+        Connection conn=null;
+        Transaction transaction=null;
+        Statement statement=null;
+        ResultSet results=null;
+        try {
+          conn=getConnection();
+          transaction=getTransaction();
+          statement=conn.createStatement();
+          results=statement.executeQuery(sqlStmt);
+          if (results.next()) {
+            double minx=results.getDouble(1);
+            double miny=results.getDouble(2);
+            double maxx=results.getDouble(3);
+            double maxy=results.getDouble(4);
+            env=new ReferencedEnvelope(minx,maxx,miny,maxy,null);
+          }
+ else {
+            env=new ReferencedEnvelope();
+          }
+        }
+ catch (        SQLException e) {
+          closeAll(results,statement,conn,transaction,e);
+          System.out.println(e);
+          throw new DataSourceException("Could not get bounds " + query.getHandle(),e);
+        }
+        closeAll(results,statement,conn,transaction,null);
+      }
+      crs=geomType.getCoordinateReferenceSystem();
+      env=new ReferencedEnvelope(env,crs);
+    }
+  }
+  LOGGER.fine("Bounds: " + env.toString());
+  return env;
+}

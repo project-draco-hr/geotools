@@ -1,0 +1,41 @@
+{
+  Utilities.ensureNonNull("granuleMetadata",granules);
+  final Lock lock=rwLock.writeLock();
+  try {
+    lock.lock();
+    checkStore();
+    FeatureWriter<SimpleFeatureType,SimpleFeature> fw=null;
+    try {
+      fw=tileIndexStore.getFeatureWriterAppend(typeName,transaction);
+      for (      SimpleFeature f : granules) {
+        final SimpleFeature feature=fw.next();
+        for (int i=f.getAttributeCount() - 1; i >= 0; i--) {
+          Object attribute=f.getAttribute(i);
+          if (spi instanceof PostgisNGJNDIDataStoreFactory || spi instanceof PostgisNGDataStoreFactory) {
+            final AttributeDescriptor descriptor=tileIndexStore.getSchema(typeName).getDescriptor(i);
+            if (descriptor.getType().getBinding().equals(String.class)) {
+              attribute=((String)attribute).replace("\\","\\\\");
+            }
+            if (descriptor.getType().getBinding().equals(Date.class)) {
+              Calendar cal=Calendar.getInstance(UTC_TZ);
+              cal.setTime(((Date)attribute));
+              attribute=cal.getTime();
+            }
+          }
+          feature.setAttribute(i,attribute);
+        }
+        fw.write();
+      }
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.SEVERE))       LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    }
+ finally {
+      if (fw != null)       fw.close();
+    }
+    bounds=tileIndexStore.getFeatureSource(typeName).getBounds(Query.ALL);
+  }
+  finally {
+    lock.unlock();
+  }
+}

@@ -1,0 +1,34 @@
+{
+  final AbstractAuthorityFactory sqlFactory=getFactory(ThreadedEpsgFactory.class);
+  final Vocabulary resources=Vocabulary.getResources(null);
+  out.println(resources.getLabel(VocabularyKeys.COMPARE_WITH));
+  try {
+    final IndentedLineWriter w=new IndentedLineWriter(out);
+    w.setIndentation(4);
+    w.write(sqlFactory.getBackingStoreDescription());
+    w.flush();
+  }
+ catch (  IOException e) {
+    throw new AssertionError(e);
+  }
+  out.println();
+  final Set<String> wktCodes=this.getAuthorityCodes(IdentifiedObject.class);
+  final Set<String> sqlCodes=sqlFactory.getAuthorityCodes(IdentifiedObject.class);
+  final Set<String> duplicated=new TreeSet<String>();
+  for (  String code : wktCodes) {
+    code=code.trim();
+    if (sqlCodes.contains(code)) {
+      duplicated.add(code);
+    }
+  }
+  if (duplicated.isEmpty()) {
+    out.println(resources.getString(VocabularyKeys.NO_DUPLICATION_FOUND));
+  }
+ else {
+    for (    final String code : duplicated) {
+      out.print(resources.getLabel(VocabularyKeys.DUPLICATED_VALUE));
+      out.println(code);
+    }
+  }
+  return duplicated;
+}

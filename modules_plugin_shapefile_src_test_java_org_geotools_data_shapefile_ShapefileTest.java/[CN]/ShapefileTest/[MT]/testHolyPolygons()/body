@@ -1,0 +1,19 @@
+{
+  SimpleFeatureType type=DataUtilities.createType("junk","a:MultiPolygon");
+  SimpleFeatureCollection features=FeatureCollections.newCollection();
+  File tmpFile=getTempFile();
+  tmpFile.delete();
+  ShapefileDataStoreFactory make=new ShapefileDataStoreFactory();
+  DataStore s=make.createDataStore(tmpFile.toURI().toURL());
+  s.createSchema(type);
+  String typeName=type.getTypeName();
+  SimpleFeatureStore store=(SimpleFeatureStore)s.getFeatureSource(typeName);
+  store.addFeatures(features);
+  s.dispose();
+  s=new ShapefileDataStore(tmpFile.toURI().toURL());
+  typeName=s.getTypeNames()[0];
+  SimpleFeatureSource source=s.getFeatureSource(typeName);
+  SimpleFeatureCollection fc=source.getFeatures();
+  ShapefileReadWriteTest.compare(features,fc);
+  s.dispose();
+}

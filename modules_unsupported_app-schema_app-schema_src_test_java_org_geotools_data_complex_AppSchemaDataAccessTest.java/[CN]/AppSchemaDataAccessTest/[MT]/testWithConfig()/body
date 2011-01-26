@@ -1,0 +1,74 @@
+{
+  final String nsUri="http://online.socialchange.net.au";
+  final String localName="RoadSegment";
+  final Name typeName=new NameImpl(nsUri,localName);
+  final URL configUrl=getClass().getResource("/test-data/roadsegments.xml");
+  AppSchemaDataAccessDTO config=new XMLConfigDigester().parse(configUrl);
+  Set mappings=AppSchemaDataAccessConfigurator.buildMappings(config);
+  dataStore=new AppSchemaDataAccess(mappings);
+  FeatureSource<FeatureType,Feature> source=dataStore.getFeatureSource(typeName);
+  FeatureType type=source.getSchema();
+  AttributeDescriptor node;
+  node=(AttributeDescriptor)Types.descriptor(type,Types.typeName(nsUri,"the_geom"));
+  assertNotNull(node);
+  assertEquals("LineStringPropertyType",node.getType().getName().getLocalPart());
+  assertNotNull(Types.descriptor(type,Types.typeName(nsUri,"name")));
+  Name ftNodeName=Types.typeName(nsUri,"fromToNodes");
+  assertNotNull(Types.descriptor(type,ftNodeName));
+  AttributeDescriptor descriptor=(AttributeDescriptor)Types.descriptor(type,ftNodeName);
+  ComplexType fromToNodes=(ComplexType)descriptor.getType();
+  assertFalse(descriptor.isNillable());
+  assertTrue(fromToNodes.isIdentified());
+  Name fromNodeName=Types.typeName(nsUri,"fromNode");
+  AttributeDescriptor fromNode=(AttributeDescriptor)Types.descriptor(fromToNodes,fromNodeName);
+  assertNotNull(fromNode);
+  Name toNodeName=Types.typeName(nsUri,"toNode");
+  AttributeDescriptor toNode=(AttributeDescriptor)Types.descriptor(fromToNodes,toNodeName);
+  assertNotNull(fromNode);
+  assertEquals(Point.class,fromNode.getType().getBinding());
+  assertEquals(Point.class,toNode.getType().getBinding());
+  Name subName=Types.typeName(nsUri,"broadTypeEl");
+  descriptor=(AttributeDescriptor)Types.descriptor(type,subName);
+  ComplexType subbedType=(ComplexType)descriptor.getType();
+  AttributeDescriptor sub=(AttributeDescriptor)Types.descriptor(subbedType,subName);
+  FeatureCollection<FeatureType,Feature> content=source.getFeatures();
+  FeatureIterator<Feature> features=content.features();
+  int count=0;
+  final int expectedCount=5;
+  try {
+    while (features.hasNext()) {
+      Feature f=features.next();
+      LOGGER.finest(String.valueOf(f));
+      ++count;
+    }
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    features.close();
+  }
+  assertEquals("feature count",expectedCount,count);
+  final int expectedCount2=3;
+  DefaultQuery query=new DefaultQuery();
+  query.setMaxFeatures(expectedCount2);
+  FeatureCollection<FeatureType,Feature> content2=source.getFeatures(query);
+  FeatureIterator<Feature> features2=content2.features();
+  int count2=0;
+  try {
+    while (features2.hasNext()) {
+      Feature f=(Feature)features2.next();
+      LOGGER.finest(String.valueOf(f));
+      ++count2;
+    }
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    features2.close();
+  }
+  assertEquals("feature count",expectedCount2,count2);
+}

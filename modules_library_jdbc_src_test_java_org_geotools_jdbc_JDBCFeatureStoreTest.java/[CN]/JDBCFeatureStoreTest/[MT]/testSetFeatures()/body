@@ -1,0 +1,24 @@
+{
+  SimpleFeatureBuilder b=new SimpleFeatureBuilder(featureStore.getSchema());
+  DefaultFeatureCollection collection=new DefaultFeatureCollection(null,featureStore.getSchema());
+  for (int i=3; i < 6; i++) {
+    b.set(aname("intProperty"),new Integer(i));
+    b.set(aname("geometry"),new GeometryFactory().createPoint(new Coordinate(i,i)));
+    collection.add(b.buildFeature(null));
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=new CollectionFeatureReader(collection,collection.getSchema());
+  featureStore.setFeatures(reader);
+  SimpleFeatureCollection features=featureStore.getFeatures();
+  assertEquals(3,features.size());
+  Iterator iterator=features.iterator();
+  HashSet numbers=new HashSet();
+  numbers.add(new Integer(3));
+  numbers.add(new Integer(4));
+  numbers.add(new Integer(5));
+  for (int i=3; iterator.hasNext(); i++) {
+    SimpleFeature feature=(SimpleFeature)iterator.next();
+    assertTrue(numbers.contains(((Number)feature.getAttribute(aname("intProperty"))).intValue()));
+    numbers.remove(feature.getAttribute(aname("intProperty")));
+  }
+  features.close(iterator);
+}

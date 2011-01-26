@@ -1,0 +1,55 @@
+{
+  final ArcSdeVersionHandler versionHandler=getVersionHandler(typeName,transaction);
+  final ISession session=getSession(transaction);
+  try {
+    final FeatureTypeInfo typeInfo=typeInfoCache.getFeatureTypeInfo(typeName,session);
+    if (!typeInfo.isWritable()) {
+      throw new DataSourceException(typeName + " is not writable");
+    }
+    final SimpleFeatureType featureType=typeInfo.getFeatureType();
+    final FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+    if (Filter.EXCLUDE.equals(filter)) {
+      reader=new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(featureType);
+    }
+ else {
+      final Query query=new Query(typeName,filter);
+      final ISession nonDisposableSession=new SessionWrapper(session){
+        @Override public void dispose() throws IllegalStateException {
+        }
+      }
+;
+      reader=getFeatureReader(query,featureType,nonDisposableSession,versionHandler);
+    }
+    final ArcSdeFeatureWriter writer;
+    final FIDReader fidReader=typeInfo.getFidStrategy();
+    final ArcTransactionState state=getState(transaction);
+    if (Transaction.AUTO_COMMIT == transaction) {
+      writer=new AutoCommitFeatureWriter(fidReader,featureType,reader,session,listenerManager,versionHandler);
+    }
+ else {
+      writer=new TransactionFeatureWriter(fidReader,featureType,reader,state,versionHandler,listenerManager);
+    }
+    return writer;
+  }
+ catch (  IOException e) {
+    try {
+      session.rollbackTransaction();
+    }
+  finally {
+      session.dispose();
+    }
+    throw e;
+  }
+catch (  RuntimeException e) {
+    try {
+      session.rollbackTransaction();
+    }
+ catch (    IOException e1) {
+      LOGGER.log(Level.SEVERE,"Error rolling back transaction on " + session,e);
+    }
+ finally {
+      session.dispose();
+    }
+    throw e;
+  }
+}

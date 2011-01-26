@@ -1,0 +1,39 @@
+{
+  XSDFactory factory=XSDFactory.eINSTANCE;
+  XSDSchema xsd=factory.createXSDSchema();
+  xsd.setSchemaForSchemaQNamePrefix("xsd");
+  xsd.getQNamePrefixToNamespaceMap().put("xsd",XSDConstants.SCHEMA_FOR_SCHEMA_URI_2001);
+  xsd.setElementFormDefault(XSDForm.get(XSDForm.QUALIFIED));
+  if (baseURL == null) {
+    throw new IllegalStateException("Please setBaseURL prior to encoding");
+  }
+  if (prefix != null || namespace != null) {
+    xsd.setTargetNamespace(namespace);
+    xsd.getQNamePrefixToNamespaceMap().put(prefix,namespace);
+  }
+  if (simpleFeatureType.getName().getNamespaceURI() != null && simpleFeatureType.getUserData().get("prefix") != null) {
+    String providedNamespace=simpleFeatureType.getName().getNamespaceURI();
+    String providedPrefix=(String)simpleFeatureType.getUserData().get("prefix");
+    xsd.getQNamePrefixToNamespaceMap().put(providedPrefix,providedNamespace);
+  }
+  if (simpleFeatureType.getUserData().get("schemaURI") != null) {
+    throw new IllegalArgumentException("Unable to support app-schema supplied types");
+  }
+  XSDImport gml=factory.createXSDImport();
+  gml.setNamespace(gmlNamespace);
+  gml.setSchemaLocation(baseURL.toString() + "/" + gmlLocation);
+  gml.setResolvedSchema(gmlConfiguration.getXSD().getSchema());
+  xsd.getContents().add(gml);
+  xsd.getQNamePrefixToNamespaceMap().put("gml",gmlNamespace);
+  xsd.getQNamePrefixToNamespaceMap().put("gml","http://www.opengis.net/gml");
+  XSDElementDeclaration element=factory.createXSDElementDeclaration();
+  element.setName(simpleFeatureType.getTypeName());
+  XSDElementDeclaration _FEATURE=xsd.resolveElementDeclaration(gmlNamespace,"_Feature");
+  element.setSubstitutionGroupAffiliation(_FEATURE);
+  XSDComplexTypeDefinition ABSTRACT_FEATURE_TYPE=xsd.resolveComplexTypeDefinition(gmlNamespace,"AbstractFeatureType");
+  XSDComplexTypeDefinition featureType=xsd(xsd,simpleFeatureType,ABSTRACT_FEATURE_TYPE);
+  element.setTypeDefinition(featureType);
+  xsd.getContents().add(element);
+  xsd.updateElement();
+  return xsd;
+}

@@ -1,0 +1,25 @@
+{
+  Long key=new Long(((long)arrayType << 56) | numBanks << 32 | arrayLength);
+  if (DEBUG) {
+    System.out.println("Attempting to get array for: " + arrayType + " "+ numBanks+ " "+ arrayLength);
+  }
+synchronized (recycledArrays) {
+    Object value=recycledArrays.get(key);
+    if (value != null) {
+      ArrayList arrays=(ArrayList)value;
+      for (int idx=arrays.size() - 1; idx >= 0; idx--) {
+        Object array=arrays.remove(idx);
+        memoryUsed-=getDataBankSize(arrayType,(int)numBanks,(int)arrayLength);
+        if (idx == 0) {
+          recycledArrays.remove(key);
+        }
+        if (array != null) {
+          if (DEBUG)           System.out.println("good reference");
+          return array;
+        }
+        if (DEBUG)         System.out.println("null reference");
+      }
+    }
+  }
+  return null;
+}

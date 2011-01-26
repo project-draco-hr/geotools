@@ -1,0 +1,30 @@
+{
+  String search=" where ";
+  String searchIn=sqlQueryDefinition.toLowerCase();
+  int index=searchIn.lastIndexOf(search);
+  StringBuffer where=new StringBuffer();
+  encoder.setFIDMapper(mapper);
+  super.sqlWhere(where,filter);
+  if (index > 0) {
+    int lastIndex=searchIn.lastIndexOf("group by");
+    if (lastIndex == -1) {
+      lastIndex=searchIn.lastIndexOf("order by");
+    }
+    String queryWhere;
+    if (lastIndex == -1) {
+      queryWhere=sqlQueryDefinition.substring(index + search.length());
+    }
+ else {
+      queryWhere=sqlQueryDefinition.substring(index + search.length(),lastIndex);
+    }
+    String filterWhere=where.toString();
+    if (where.length() > 0) {
+      where.insert(7,queryWhere + " AND (");
+      where.append(")");
+    }
+ else {
+      where.append(" WHERE " + queryWhere);
+    }
+  }
+  return where.toString();
+}

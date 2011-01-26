@@ -1,0 +1,44 @@
+{
+  final URL resource=TestData.getResource(this,"TransactionResponseTypeBindingTest.xml");
+  buildDocument(resource);
+  Object parsed=parse(WFS.LockFeatureType);
+  assertTrue(parsed instanceof TransactionResponseType);
+  final TransactionResponseType tr=(TransactionResponseType)parsed;
+  assertEquals("1.1.0",tr.getVersion());
+{
+    TransactionSummaryType summary=tr.getTransactionSummary();
+    assertNotNull(summary);
+    assertNotNull(summary.getTotalInserted());
+    assertNotNull(summary.getTotalDeleted());
+    assertNotNull(summary.getTotalUpdated());
+    assertEquals(3,summary.getTotalInserted().intValue());
+    assertEquals(2,summary.getTotalUpdated().intValue());
+    assertEquals(1,summary.getTotalDeleted().intValue());
+  }
+{
+    TransactionResultsType results=tr.getTransactionResults();
+    assertEquals(2,results.getAction().size());
+{
+      ActionType action1=(ActionType)results.getAction().get(0);
+      assertEquals("locator.1",action1.getLocator());
+      assertNull(action1.getCode());
+      assertEquals("success",action1.getMessage());
+    }
+{
+      ActionType action2=(ActionType)results.getAction().get(1);
+      assertEquals("locator.2",action2.getLocator());
+      assertEquals("errorCode",action2.getCode());
+      assertEquals("failure",action2.getMessage());
+    }
+  }
+{
+    InsertResultsType insertResults=tr.getInsertResults();
+    assertEquals(2,insertResults.getFeature().size());
+    InsertedFeatureType feature1=(InsertedFeatureType)insertResults.getFeature().get(0);
+    assertEquals("handle1",feature1.getHandle());
+    assertEquals(2,feature1.getFeatureId().size());
+    InsertedFeatureType feature2=(InsertedFeatureType)insertResults.getFeature().get(1);
+    assertEquals("handle2",feature2.getHandle());
+    assertEquals(1,feature2.getFeatureId().size());
+  }
+}

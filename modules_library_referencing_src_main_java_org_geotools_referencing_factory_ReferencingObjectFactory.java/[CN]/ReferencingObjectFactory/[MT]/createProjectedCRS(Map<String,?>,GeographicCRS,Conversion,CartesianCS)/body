@@ -1,0 +1,35 @@
+{
+  MathTransform mt;
+  final MathTransform existing=conversionFromBase.getMathTransform();
+  final MathTransformFactory mtFactory=getMathTransformFactory();
+  if (existing != null && mtFactory instanceof DefaultMathTransformFactory) {
+    mt=((DefaultMathTransformFactory)mtFactory).createBaseToDerived(baseCRS,existing,derivedCS);
+  }
+ else {
+    final ParameterValueGroup parameters=conversionFromBase.getParameterValues();
+    mt=mtFactory.createBaseToDerived(baseCRS,parameters,derivedCS);
+    OperationMethod method=conversionFromBase.getMethod();
+    if (!(method instanceof MathTransformProvider)) {
+      if (!properties.containsKey(DefaultProjectedCRS.CONVERSION_TYPE_KEY)) {
+        method=mtFactory.getLastMethodUsed();
+        if (method instanceof MathTransformProvider) {
+          final Map<String,Object> copy=new HashMap<String,Object>(properties);
+          copy.put(DefaultProjectedCRS.CONVERSION_TYPE_KEY,((MathTransformProvider)method).getOperationType());
+          properties=copy;
+        }
+      }
+    }
+    if (existing != null && existing.equals(mt)) {
+      mt=existing;
+    }
+  }
+  ProjectedCRS crs;
+  try {
+    crs=new DefaultProjectedCRS(properties,conversionFromBase,baseCRS,mt,derivedCS);
+  }
+ catch (  IllegalArgumentException exception) {
+    throw new FactoryException(exception);
+  }
+  crs=pool.unique(crs);
+  return crs;
+}

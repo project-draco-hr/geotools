@@ -1,0 +1,55 @@
+{
+  final StringBuilder buffer=new StringBuilder(Classes.getShortClassName(factory)).append('[');
+  if (factory instanceof AuthorityFactory) {
+    final Citation authority=((AuthorityFactory)factory).getAuthority();
+    if (authority != null) {
+      final Collection<? extends Identifier> identifiers=authority.getIdentifiers();
+      if (identifiers != null && !identifiers.isEmpty()) {
+        boolean next=false;
+        for (        final Identifier id : identifiers) {
+          if (next) {
+            buffer.append(", ");
+          }
+          appendIdentifier(buffer,id.getCode());
+          next=true;
+        }
+      }
+ else {
+        appendIdentifier(buffer,authority.getTitle());
+      }
+    }
+  }
+ else {
+    if (colorEnabled)     buffer.append(X364.RED);
+    buffer.append("direct");
+    if (colorEnabled)     buffer.append(X364.DEFAULT);
+  }
+  buffer.append(']');
+  if (attributes) {
+    boolean hasFound=false;
+    for (int i=0; i < TYPES.length; i++) {
+      final Class type=TYPES[i];
+      if (!type.isInstance(factory)) {
+        continue;
+      }
+      if (type.equals(Factory.class)) {
+        if (!ReferencingFactoryFinder.isRegistered(factory)) {
+          continue;
+        }
+      }
+      buffer.append(hasFound ? ", " : " (");
+      if (colorEnabled) {
+        buffer.append(i < FACTORY_COUNT ? X364.GREEN : X364.CYAN);
+      }
+      buffer.append(TYPE_LABELS[i]);
+      if (colorEnabled) {
+        buffer.append(X364.DEFAULT);
+      }
+      hasFound=true;
+    }
+    if (hasFound) {
+      buffer.append(')');
+    }
+  }
+  return OptionalDependencies.createTreeNode(buffer.toString(),factory,true);
+}

@@ -1,0 +1,47 @@
+{
+  System.out.println("Welcome to GeoTools:" + GeoTools.getVersion());
+  File file;
+  if (args.length == 0) {
+    JFileChooser chooser=new JFileChooser();
+    chooser.setFileFilter(new FileFilter(){
+      public boolean accept(      File f){
+        return f.isDirectory() || f.getPath().endsWith("shp") || f.getPath().endsWith("SHP");
+      }
+      public String getDescription(){
+        return "Shapefiles";
+      }
+    }
+);
+    int returnVal=chooser.showOpenDialog(null);
+    if (returnVal != JFileChooser.APPROVE_OPTION) {
+      System.exit(0);
+    }
+    System.out.println("You chose to open this file: " + chooser.getSelectedFile().getName());
+    file=chooser.getSelectedFile();
+  }
+ else {
+    file=new File(args[0]);
+  }
+  if (!file.exists())   System.exit(1);
+  Map connect=new HashMap();
+  connect.put("url",file.toURI().toURL());
+  DataStore dataStore=DataStoreFinder.getDataStore(connect);
+  String[] typeNames=dataStore.getTypeNames();
+  String typeName=typeNames[0];
+  System.out.println("Reading content " + typeName);
+  SimpleFeatureSource featureSource=dataStore.getFeatureSource(typeName);
+  SimpleFeatureCollection collection=featureSource.getFeatures();
+  Iterator iterator=collection.iterator();
+  int length=0;
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)iterator.next();
+      Geometry geometry=(Geometry)feature.getDefaultGeometry();
+      length+=geometry.getLength();
+    }
+  }
+  finally {
+    collection.close(iterator);
+  }
+  System.out.println("Total length " + length);
+}

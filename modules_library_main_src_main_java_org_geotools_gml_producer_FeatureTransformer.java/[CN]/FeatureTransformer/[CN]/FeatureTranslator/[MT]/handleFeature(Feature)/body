@@ -1,0 +1,40 @@
+{
+  try {
+    contentHandler.startElement("","",memberString,NULL_ATTS);
+    FeatureType type=f.getType();
+    String name=type.getName().getLocalPart();
+    String namespaceURI=type.getName().getNamespaceURI();
+    if (namespaceURI != null) {
+      currentPrefix=getNamespaceSupport().getPrefix(namespaceURI);
+      if (currentPrefix == null) {
+        currentPrefix=(String)type.getUserData().get("prefix");
+        if (currentPrefix != null) {
+          getNamespaceSupport().declarePrefix(currentPrefix,namespaceURI);
+        }
+      }
+    }
+    if (currentPrefix == null) {
+      currentPrefix=types.findPrefix(type);
+    }
+    if (currentPrefix == null) {
+      throw new IllegalStateException("FeatureType namespace/prefix unknown for " + name + "look up in: "+ types);
+    }
+ else     if (currentPrefix.length() == 0) {
+    }
+ else {
+      name=currentPrefix + ":" + name;
+    }
+    Attributes fidAtts=encodeFeatureId(f);
+    contentHandler.startElement("","",name,fidAtts);
+    if (featureBounding && f.getBounds() != null && !f.getBounds().isEmpty()) {
+      if (prefixGml && (f.getProperty("boundedBy") != null)) {
+      }
+ else {
+        writeBounds(f.getBounds());
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new IllegalStateException("Could not transform " + f.getIdentifier() + " :"+ e,e);
+  }
+}

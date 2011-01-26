@@ -1,0 +1,71 @@
+{
+  TextSymbolizer symbol=factory.createTextSymbolizer();
+  symbol.setFill(null);
+  NamedNodeMap namedNodeMap=root.getAttributes();
+  Node uomNode=namedNodeMap.getNamedItem(uomString);
+  if (uomNode != null) {
+    UomOgcMapping uomMapping=UomOgcMapping.get(uomNode.getNodeValue());
+    symbol.setUnitOfMeasure(uomMapping.getUnit());
+  }
+  List<Font> fonts=new ArrayList<Font>();
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase(geomString)) {
+      symbol.setGeometry(parseGeometry(child));
+    }
+ else     if (childName.equalsIgnoreCase(fillSt)) {
+      symbol.setFill(parseFill(child));
+    }
+ else     if (childName.equalsIgnoreCase("Label")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("parsing label " + child.getNodeValue());
+      symbol.setLabel(parseCssParameter(child,false));
+      if (symbol.getLabel() == null) {
+        if (LOGGER.isLoggable(Level.WARNING))         LOGGER.warning("parsing TextSymbolizer node - couldnt find anything in the Label element!");
+      }
+    }
+    if (childName.equalsIgnoreCase("Font")) {
+      fonts.add(parseFont(child));
+    }
+ else     if (childName.equalsIgnoreCase("LabelPlacement")) {
+      symbol.setPlacement(parseLabelPlacement(child));
+    }
+ else     if (childName.equalsIgnoreCase("Halo")) {
+      symbol.setHalo(parseHalo(child));
+    }
+ else     if (childName.equalsIgnoreCase("Graphic")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("Parsing non-standard Graphic in TextSymbolizer");
+      if (symbol instanceof TextSymbolizer2) {
+        ((TextSymbolizer2)symbol).setGraphic(parseGraphic(child));
+      }
+    }
+ else     if (childName.equalsIgnoreCase("Snippet")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("Parsing non-standard Abstract in TextSymbolizer");
+      if (symbol instanceof TextSymbolizer2)       ((TextSymbolizer2)symbol).setSnippet(parseCssParameter(child,false));
+    }
+ else     if (childName.equalsIgnoreCase("FeatureDescription")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("Parsing non-standard Description in TextSymbolizer");
+      if (symbol instanceof TextSymbolizer2)       ((TextSymbolizer2)symbol).setFeatureDescription(parseCssParameter(child,false));
+    }
+ else     if (childName.equalsIgnoreCase("OtherText")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("Parsing non-standard OtherText in TextSymbolizer");
+      if (symbol instanceof TextSymbolizer2)       ((TextSymbolizer2)symbol).setOtherText(parseOtherText(child));
+    }
+ else     if (childName.equalsIgnoreCase("priority")) {
+      symbol.setPriority(parseCssParameter(child));
+    }
+ else     if (childName.equalsIgnoreCase("vendoroption")) {
+      parseVendorOption(symbol,child);
+    }
+  }
+  symbol.setFonts((Font[])fonts.toArray(new Font[0]));
+  return symbol;
+}

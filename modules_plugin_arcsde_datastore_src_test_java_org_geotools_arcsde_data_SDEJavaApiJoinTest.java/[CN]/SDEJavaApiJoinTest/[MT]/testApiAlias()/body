@@ -1,0 +1,43 @@
+{
+  ISession session=store.getSession(Transaction.AUTO_COMMIT);
+  SeSqlConstruct sqlConstruct=new SeSqlConstruct();
+  String[] tables={InProcessViewSupportTestData.MASTER + " MASTER",InProcessViewSupportTestData.CHILD + " CHILD"};
+  sqlConstruct.setTables(tables);
+  String where="CHILD.MASTER_ID = MASTER.ID";
+  sqlConstruct.setWhere(where);
+  String[] propertyNames={"MASTER.ID","CHILD.NAME","MASTER.SHAPE"};
+  final int shapeIndex=2;
+  final int expectedCount=7;
+  final SeQueryInfo queryInfo=new SeQueryInfo();
+  queryInfo.setConstruct(sqlConstruct);
+  queryInfo.setColumns(propertyNames);
+  final SeQuery query=session.issue(new Command<SeQuery>(){
+    @Override public SeQuery execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeQuery query=new SeQuery(connection);
+      query.prepareQueryInfo(queryInfo);
+      query.execute();
+      return query;
+    }
+  }
+);
+  try {
+    SdeRow row=session.fetch(query);
+    int count=0;
+    while (row != null) {
+      if (SeRow.SE_IS_NOT_NULL_VALUE == row.getIndicator(shapeIndex)) {
+        Object shape=row.getObject(shapeIndex);
+        assertFalse(shape.getClass().getName(),shape instanceof SeShape);
+      }
+      count++;
+      row=session.fetch(query);
+    }
+    assertEquals(expectedCount,count);
+  }
+ catch (  IOException e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    session.dispose();
+  }
+}

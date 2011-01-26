@@ -1,0 +1,30 @@
+{
+  if (!this.hasNextAlreadyCalled) {
+    try {
+      currentRow=query.fetch();
+      if (currentRow == null) {
+        this.query.close();
+      }
+ else {
+        this.currentFid=fidReader.readFid(currentRow);
+      }
+      hasNextAlreadyCalled=true;
+    }
+ catch (    IOException dse) {
+      this.hasNextAlreadyCalled=true;
+      close();
+      LOGGER.log(Level.SEVERE,dse.getLocalizedMessage(),dse);
+      throw dse;
+    }
+catch (    RuntimeException ex) {
+      this.hasNextAlreadyCalled=true;
+      close();
+      throw new DataSourceException("Fetching row:" + ex.getMessage(),ex);
+    }
+  }
+  boolean hasNext=this.currentRow != null;
+  if (!hasNext) {
+    close();
+  }
+  return hasNext;
+}

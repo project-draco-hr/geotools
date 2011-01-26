@@ -1,0 +1,18 @@
+{
+  Connection conn=pool.getConnection();
+  conn.setAutoCommit(true);
+  try {
+    Statement s=conn.createStatement();
+    s.execute("DROP VIEW " + f.schema + ".synch_outstanding cascade");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("CREATE VIEW synch_outstanding " + "AS SELECT synch_tables.*, " + "synch_units.*, "+ "synch_unit_tables.last_synchronization, "+ "synch_unit_tables.last_failure, "+ "synch_unit_tables.getdiff_central_revision, "+ "synch_unit_tables.last_unit_revision "+ "FROM (synch_units inner join synch_unit_tables  "+ "on synch_units.unit_id = synch_unit_tables.unit_id) "+ "inner join synch_tables "+ "on synch_tables.table_id = synch_unit_tables.table_id "+ "WHERE ((time_start < LOCALTIME AND LOCALTIME < time_end) "+ "OR (time_start IS NULL) OR (time_end IS NULL)) "+ "AND ((now() - last_synchronization > synch_interval *  "+ "interval '1 minute') "+ "OR last_synchronization IS NULL) "+ "AND (last_failure is null  "+ "OR now() - last_failure > synch_retry * interval '1 minute')");
+    s.execute("INSERT INTO geometry_columns VALUES('', 'public', 'synch_outstanding', 'geom', 2, 4326, 'GEOMETRY')");
+  }
+  finally {
+    conn.close();
+  }
+}

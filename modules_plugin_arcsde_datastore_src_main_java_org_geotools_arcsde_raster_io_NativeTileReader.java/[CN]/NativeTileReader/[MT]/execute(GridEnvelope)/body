@@ -1,0 +1,50 @@
+{
+  final int rasterIndex=rasterInfo.getRasterIndex(rasterId);
+  final SeRasterConstraint rConstraint;
+  try {
+    final int numberOfBands;
+    numberOfBands=rasterInfo.getNumBands();
+    int[] bandsToQuery=new int[numberOfBands];
+    for (int bandN=1; bandN <= numberOfBands; bandN++) {
+      bandsToQuery[bandN - 1]=bandN;
+    }
+    int minTileX=requestedTiles.getLow(0);
+    int minTileY=requestedTiles.getLow(1);
+    int maxTileX=requestedTiles.getHigh(0);
+    int maxTileY=requestedTiles.getHigh(1);
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Requesting tiles [x=" + minTileX + "-"+ maxTileX+ ", y="+ minTileY+ "-"+ maxTileY+ "] from tile range [x=0-"+ (rasterInfo.getNumTilesWide(rasterIndex,pyramidLevel) - 1)+ ", y=0-"+ (rasterInfo.getNumTilesHigh(rasterIndex,pyramidLevel) - 1)+ "]");
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Tiled image size: " + requestedTiles);
+    }
+    final int interleaveType=SeRaster.SE_RASTER_INTERLEAVE_BIP;
+    rConstraint=new SeRasterConstraint();
+    rConstraint.setBands(bandsToQuery);
+    rConstraint.setLevel(pyramidLevel);
+    rConstraint.setEnvelope(minTileX,minTileY,maxTileX,maxTileY);
+    rConstraint.setInterleave(interleaveType);
+  }
+ catch (  SeException se) {
+    throw new ArcSdeException(se);
+  }
+  try {
+    if (this.session == null) {
+      final boolean transactional=false;
+      this.session=sessionPool.getSession(transactional);
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("Using " + session + " to read raster #"+ rasterId+ " on Thread "+ Thread.currentThread().getName()+ ". Tile set: "+ requestedTiles);
+      }
+    }
+  }
+ catch (  UnavailableConnectionException e) {
+    throw new RuntimeException(e);
+  }
+  final String rasterTable=rasterInfo.getRasterTable();
+  final String rasterColumn=rasterInfo.getRasterColumns()[0];
+  final QueryRasterCommand queryCommand=new QueryRasterCommand(rConstraint,rasterTable,rasterColumn,rasterId);
+  session.issue(queryCommand);
+  final SeRow row=queryCommand.getSeRow();
+  final SeQuery preparedQuery=queryCommand.getPreparedQuery();
+  return new QueryObjects(preparedQuery,row);
+}

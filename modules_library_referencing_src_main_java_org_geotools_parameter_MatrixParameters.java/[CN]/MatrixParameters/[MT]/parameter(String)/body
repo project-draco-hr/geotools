@@ -1,0 +1,32 @@
+{
+  ensureNonNull("name",name);
+  name=name.trim();
+  final MatrixParameterDescriptors descriptor=((MatrixParameterDescriptors)this.descriptor);
+  final String prefix=descriptor.prefix;
+  RuntimeException cause=null;
+  if (name.regionMatches(true,0,prefix,0,prefix.length())) {
+    final int split=name.indexOf(descriptor.separator,prefix.length());
+    if (split >= 0)     try {
+      final int row=Integer.parseInt(name.substring(prefix.length(),split));
+      final int col=Integer.parseInt(name.substring(split + 1));
+      return parameter(row,col);
+    }
+ catch (    NumberFormatException exception) {
+      cause=exception;
+    }
+catch (    IndexOutOfBoundsException exception) {
+      cause=exception;
+    }
+  }
+  try {
+    return super.parameter(name);
+  }
+ catch (  ParameterNotFoundException exception) {
+    if (cause != null)     try {
+      exception.initCause(cause);
+    }
+ catch (    IllegalStateException ignore) {
+    }
+    throw exception;
+  }
+}

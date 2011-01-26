@@ -1,0 +1,23 @@
+{
+  List<ColumnMetadata> result=new ArrayList<ColumnMetadata>();
+  DatabaseMetaData metaData=cx.getMetaData();
+  ResultSet columns=metaData.getColumns(null,databaseSchema,tableName,"%");
+  try {
+    while (columns.next()) {
+      ColumnMetadata column=new ColumnMetadata();
+      column.name=columns.getString("COLUMN_NAME");
+      column.typeName=columns.getString("TYPE_NAME");
+      column.sqlType=columns.getInt("DATA_TYPE");
+      column.nullable="YES".equalsIgnoreCase(columns.getString("IS_NULLABLE"));
+      column.binding=dialect.getMapping(columns,cx);
+      if (column.sqlType == Types.DISTINCT) {
+        dialect.handleUserDefinedType(columns,column,cx);
+      }
+      result.add(column);
+    }
+  }
+  finally {
+    getDataStore().closeSafe(columns);
+  }
+  return result;
+}

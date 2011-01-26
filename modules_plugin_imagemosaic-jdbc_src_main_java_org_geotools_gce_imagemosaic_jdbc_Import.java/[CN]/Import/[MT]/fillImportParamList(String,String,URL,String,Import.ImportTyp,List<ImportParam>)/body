@@ -1,0 +1,46 @@
+{
+  ImportParam param=new ImportParam(getTableName(spatialTablePrefix,0),getTableName(tileTablePrefix,0),sourceUrl,sourceParam,typ);
+  importParamList.add(param);
+  int level=1;
+  String path=sourceUrl.getPath();
+  while (true) {
+    String pyramidPath=null;
+    int index=path.lastIndexOf('/');
+    if (typ == ImportTyp.CSV || typ == ImportTyp.SHAPE) {
+      if (index == -1)       pyramidPath=level + "/" + path;
+ else {
+        pyramidPath=path.substring(0,index + 1) + level + "/"+ path.substring(index + 1,path.length());
+      }
+      URL pyramidUrl=null;
+      try {
+        pyramidUrl=new URL(sourceUrl.getProtocol(),sourceUrl.getHost(),sourceUrl.getPort(),pyramidPath);
+        pyramidUrl.openStream().close();
+      }
+ catch (      Exception e) {
+        return;
+      }
+      param=new ImportParam(getTableName(spatialTablePrefix,level),getTableName(tileTablePrefix,level),pyramidUrl,sourceParam,typ);
+      importParamList.add(param);
+    }
+    if (typ == ImportTyp.DIR) {
+      pyramidPath=path;
+      if (pyramidPath.endsWith("/") == false)       pyramidPath+="/";
+      pyramidPath+=level;
+      File directory=new File(pyramidPath);
+      if (directory.exists()) {
+        URL directoryURL=null;
+        try {
+          directoryURL=directory.toURI().toURL();
+        }
+ catch (        MalformedURLException e) {
+        }
+        param=new ImportParam(getTableName(spatialTablePrefix,level),getTableName(tileTablePrefix,level),directoryURL,sourceParam,typ);
+        importParamList.add(param);
+      }
+ else {
+        return;
+      }
+    }
+    level++;
+  }
+}

@@ -1,0 +1,46 @@
+{
+  if (params != null) {
+    if (params.get("dbtype") == null || !params.get("dbtype").toString().equalsIgnoreCase("oracle")) {
+      return false;
+    }
+    Param arrayParameters[]=getParametersInfo();
+    for (int i=0; i < arrayParameters.length; i++) {
+      Param param=arrayParameters[i];
+      Object value;
+      if (!params.containsKey(param.key)) {
+        if (param.required) {
+          return false;
+        }
+ else {
+          continue;
+        }
+      }
+      try {
+        value=param.lookUp(params);
+      }
+ catch (      IOException e) {
+        LOGGER.warning(param.key + ":" + e);
+        return false;
+      }
+      if (value == null) {
+        if (param.required) {
+          return (false);
+        }
+      }
+ else {
+        if (!param.type.isInstance(value)) {
+          return false;
+        }
+      }
+    }
+  }
+ else {
+    return (false);
+  }
+  if (!(((String)params.get("dbtype")).equalsIgnoreCase("oracle"))) {
+    return (false);
+  }
+ else {
+    return (true);
+  }
+}

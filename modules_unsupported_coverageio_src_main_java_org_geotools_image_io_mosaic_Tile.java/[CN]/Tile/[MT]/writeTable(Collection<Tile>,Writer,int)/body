@@ -1,0 +1,72 @@
+{
+  int remaining=maximum;
+  final TableWriter table=new TableWriter(out);
+  table.nextLine(TableWriter.DOUBLE_HORIZONTAL_LINE);
+  table.write("Format\tInput\tindex\tx\ty\twidth\theight\tdx\tdy\n");
+  table.nextLine(TableWriter.SINGLE_HORIZONTAL_LINE);
+  table.setMultiLinesCells(true);
+  for (  final Tile tile : tiles) {
+    if (--remaining < 0) {
+      break;
+    }
+    table.setAlignment(TableWriter.ALIGN_LEFT);
+    final String format=tile.getFormatName();
+    if (format != null) {
+      table.write(format);
+    }
+    table.nextColumn();
+    table.write(tile.getInputName());
+    table.nextColumn();
+    table.setAlignment(TableWriter.ALIGN_RIGHT);
+    table.write(String.valueOf(tile.getImageIndex()));
+    table.nextColumn();
+    int x=tile.x;
+    int y=tile.y;
+    int width=tile.width & MASK;
+    int height=tile.height & MASK;
+    int xSubsampling=tile.xSubsampling & MASK;
+    int ySubsampling=tile.ySubsampling & MASK;
+    if (!tile.getClass().equals(Tile.class)) {
+      final Dimension subsampling=tile.getSubsampling();
+      xSubsampling=subsampling.width;
+      ySubsampling=subsampling.height;
+      try {
+        final Rectangle region=tile.getRegion();
+        x=region.x;
+        y=region.y;
+        width=region.width;
+        height=region.height;
+      }
+ catch (      IOException e) {
+        width=0;
+        height=0;
+      }
+    }
+    table.write(String.valueOf(x));
+    table.nextColumn();
+    table.write(String.valueOf(y));
+    if (width != 0 || height != 0) {
+      table.nextColumn();
+      table.write(String.valueOf(width));
+      table.nextColumn();
+      table.write(String.valueOf(height));
+    }
+ else {
+      table.nextColumn();
+      table.nextColumn();
+    }
+    if (xSubsampling != 0 || ySubsampling != 0) {
+      table.nextColumn();
+      table.write(String.valueOf(xSubsampling));
+      table.nextColumn();
+      table.write(String.valueOf(ySubsampling));
+    }
+    table.nextLine();
+  }
+  table.nextLine(TableWriter.DOUBLE_HORIZONTAL_LINE);
+  table.flush();
+  if (remaining < 0) {
+    out.write(Vocabulary.format(VocabularyKeys.MORE_$1,tiles.size() - maximum));
+    out.write(System.getProperty("line.separator","\n"));
+  }
+}

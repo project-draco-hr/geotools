@@ -1,0 +1,36 @@
+{
+  Point2D pixel=gridGeometry.toPoint2D(coord);
+  pixel=gridGeometry.inverseTransform(pixel);
+  final int x=(int)Math.round(pixel.getX());
+  final int y=(int)Math.round(pixel.getY());
+  if (image.getBounds().contains(x,y)) {
+    final int numBands=image.getNumBands();
+    final Raster raster=image.getTile(image.XToTileX(x),image.YToTileY(y));
+    final int datatype=image.getSampleModel().getDataType();
+    final StringBuilder buffer=new StringBuilder();
+    buffer.append('(').append(x).append(',').append(y).append(")=[");
+    for (int band=0; band < numBands; band++) {
+      if (band != 0) {
+        buffer.append(";\u00A0");
+      }
+      final double sample=raster.getSampleDouble(x,y,band);
+switch (datatype) {
+case DataBuffer.TYPE_DOUBLE:
+        buffer.append(sample);
+      break;
+case DataBuffer.TYPE_FLOAT:
+    buffer.append((float)sample);
+  break;
+default :
+buffer.append((int)sample);
+break;
+}
+final String formatted=sampleDimensions[band].getLabel(sample,null);
+if (formatted != null) {
+buffer.append("\u00A0(").append(formatted).append(')');
+}
+}
+return buffer.append(']').toString();
+}
+return null;
+}

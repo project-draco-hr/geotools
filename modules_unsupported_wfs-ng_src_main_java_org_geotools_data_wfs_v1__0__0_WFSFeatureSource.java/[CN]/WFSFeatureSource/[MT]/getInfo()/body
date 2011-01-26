@@ -1,0 +1,52 @@
+{
+  return new ResourceInfo(){
+    public ReferencedEnvelope getBounds(){
+      try {
+        return ds.getBounds(new DefaultQuery(fname));
+      }
+ catch (      IOException e) {
+        return new ReferencedEnvelope();
+      }
+    }
+    public CoordinateReferenceSystem getCRS(){
+      try {
+        return CRS.decode(featureSetDescription.getSRS());
+      }
+ catch (      NoSuchAuthorityCodeException e) {
+        LOGGER.log(Level.INFO,e.getMessage(),e);
+      }
+catch (      FactoryException e) {
+        LOGGER.log(Level.INFO,e.getMessage(),e);
+      }
+      return null;
+    }
+    public String getDescription(){
+      return featureSetDescription.getAbstract();
+    }
+    @SuppressWarnings("unchecked") public Set<String> getKeywords(){
+      return new HashSet<String>(featureSetDescription.getKeywords());
+    }
+    public String getName(){
+      return fname;
+    }
+    public URI getSchema(){
+      try {
+        return ds.protocolHandler.getDescribeFeatureTypeURLGet(fname).toURI();
+      }
+ catch (      MalformedURLException e) {
+        return null;
+      }
+catch (      URISyntaxException e) {
+        return null;
+      }
+    }
+    public String getTitle(){
+      String title=featureSetDescription.getTitle();
+      if (null == title || title.trim().length() == 0) {
+        title=getName();
+      }
+      return title;
+    }
+  }
+;
+}

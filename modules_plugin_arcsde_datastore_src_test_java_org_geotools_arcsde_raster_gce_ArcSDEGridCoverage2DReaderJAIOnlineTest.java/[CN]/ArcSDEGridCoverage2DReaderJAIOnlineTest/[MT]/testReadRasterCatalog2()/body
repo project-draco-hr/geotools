@@ -1,0 +1,19 @@
+{
+  tableName=rasterTestData.loadRasterCatalog();
+  final AbstractGridCoverage2DReader reader=getReader();
+  assertNotNull("Couldn't obtain a reader for " + tableName,reader);
+  final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope();
+  final GridEnvelope originalGridRange=reader.getOriginalGridRange();
+  final int reqWidth=originalGridRange.getSpan(0) / 10;
+  final int reqHeight=originalGridRange.getSpan(1) / 10;
+  GeneralEnvelope reqEnvelope=new GeneralEnvelope(originalEnvelope.getCoordinateReferenceSystem());
+  double minx=originalEnvelope.getMinimum(0);
+  double miny=originalEnvelope.getMinimum(1);
+  double maxx=minx + originalEnvelope.getSpan(0);
+  double maxy=miny + originalEnvelope.getSpan(1);
+  reqEnvelope.setEnvelope(minx,miny,maxx,maxy);
+  assertTrue(originalEnvelope.intersects(reqEnvelope,true));
+  final GridCoverage2D coverage=readCoverage(reader,reqWidth,reqHeight,reqEnvelope);
+  assertNotNull("read coverage returned null",coverage);
+  writeToDisk(coverage,"testReadRasterCatalog2");
+}

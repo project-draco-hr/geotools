@@ -1,0 +1,79 @@
+{
+  String inputDirectory="./src/main/resources/org/geotools/referencing/factory/epsg/";
+  File directory=new File(inputDirectory);
+  File propertyFile=new File(directory,ThreadedHsqlEpsgFactory.DATABASE_NAME + ".properties");
+  File databaseFile=new File(directory,ThreadedHsqlEpsgFactory.DATABASE_NAME + ".data");
+  File backupFile=new File(directory,ThreadedHsqlEpsgFactory.DATABASE_NAME + ".backup");
+  File scriptFile=new File(directory,ThreadedHsqlEpsgFactory.DATABASE_NAME + ".script");
+  File zipFile=new File(directory,ThreadedHsqlEpsgFactory.DATABASE_NAME + ".zip");
+  propertyFile.delete();
+  databaseFile.delete();
+  backupFile.delete();
+  scriptFile.delete();
+  zipFile.delete();
+  final jdbcDataSource source=new jdbcDataSource();
+  final StringBuilder url=new StringBuilder(ThreadedHsqlEpsgFactory.PREFIX);
+  final String path=directory.getAbsolutePath().replace(File.separatorChar,'/');
+  if (path.length() == 0 || path.charAt(0) != '/') {
+    url.append('/');
+  }
+  url.append(path);
+  if (url.charAt(url.length() - 1) != '/') {
+    url.append('/');
+  }
+  url.append(ThreadedHsqlEpsgFactory.DATABASE_NAME);
+  source.setDatabase(url.toString());
+  source.setUser("SA");
+  Connection connection=source.getConnection();
+  System.out.println("Creating the EPSG database");
+  final Statement statement=connection.createStatement();
+  try {
+    executeScript(new File(directory,"EPSG_Tables.sql"),statement);
+    executeScript(new File(directory,"EPSG_Data.sql"),statement);
+    statement.execute("UPDATE EPSG_DATUM SET REALIZATION_EPOCH = NULL WHERE REALIZATION_EPOCH = ''");
+    statement.execute("ALTER TABLE EPSG_DATUM ALTER COLUMN REALIZATION_EPOCH INTEGER");
+    executeScript(new File(directory,"EPSG_FKeys.sql"),statement);
+    executeScript(new File(directory,"EPSG_Indexes.sql"),statement);
+    statement.execute("SHUTDOWN COMPACT");
+  }
+ catch (  IOException exception) {
+    SQLException e=new SQLException("Error occurred while executing " + "the EPSG database creation scripts");
+    e.initCause(exception);
+    throw e;
+  }
+ finally {
+    statement.close();
+    connection.close();
+  }
+  System.out.println("EPSG database created");
+  final InputStream propertyIn=new FileInputStream(propertyFile);
+  final Properties properties=new Properties();
+  properties.load(propertyIn);
+  propertyIn.close();
+  properties.put("epsg.version",ThreadedHsqlEpsgFactory.VERSION.toString());
+  properties.put("readonly","true");
+  final OutputStream out=new FileOutputStream(propertyFile);
+  properties.store(out,"EPSG database on HSQL");
+  out.close();
+  System.out.println("Creating the zipped database");
+  byte[] buf=new byte[1024];
+  ZipOutputStream zos=new ZipOutputStream(new FileOutputStream(zipFile));
+  File[] files=new File[]{databaseFile,propertyFile,scriptFile};
+  for (  File file : files) {
+    FileInputStream in=new FileInputStream(file);
+    zos.putNextEntry(new ZipEntry(file.getName()));
+    int len;
+    while ((len=in.read(buf)) > 0) {
+      zos.write(buf,0,len);
+    }
+    zos.closeEntry();
+    in.close();
+  }
+  zos.close();
+  System.out.println("Cleaning up the unzipped database files");
+  propertyFile.delete();
+  databaseFile.delete();
+  backupFile.delete();
+  scriptFile.delete();
+  System.out.println("Done. The zipped database file is available at " + zipFile.getAbsolutePath());
+}

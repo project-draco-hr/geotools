@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  IdentifiedObject obj=(IdentifiedObject)cache.get(key);
+  if (obj == null) {
+    try {
+      cache.writeLock(key);
+      obj=(IdentifiedObject)cache.peek(key);
+      if (obj == null) {
+        obj=authority.createObject(code);
+        cache.put(key,obj);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return obj;
+}

@@ -1,0 +1,25 @@
+{
+  reader.close();
+  ShpFiles shpFiles=new ShpFiles(fixFile);
+  IndexedFidWriter writer=new IndexedFidWriter(shpFiles);
+  try {
+    writer.next();
+    writer.next();
+    writer.next();
+    writer.remove();
+    while (writer.hasNext()) {
+      writer.next();
+    }
+  }
+  finally {
+    writer.close();
+    reader.close();
+  }
+  reader=new IndexedFidReader(shpFiles);
+  long offset=reader.findFid(TYPE_NAME + ".11");
+  assertEquals(9,offset);
+  offset=reader.findFid(TYPE_NAME + ".4");
+  assertEquals(2,offset);
+  offset=reader.findFid(TYPE_NAME + ".3");
+  assertEquals(-1,offset);
+}

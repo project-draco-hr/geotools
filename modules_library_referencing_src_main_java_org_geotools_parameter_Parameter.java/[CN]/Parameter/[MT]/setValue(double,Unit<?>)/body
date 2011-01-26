@@ -1,0 +1,16 @@
+{
+  ensureNonNull("unit",unit);
+  @SuppressWarnings("unchecked") final ParameterDescriptor<T> descriptor=(ParameterDescriptor)this.descriptor;
+  final Unit<?> targetUnit=descriptor.getUnit();
+  if (targetUnit == null) {
+    throw unitlessParameter(descriptor);
+  }
+  final int expectedID=getUnitMessageID(targetUnit);
+  if (getUnitMessageID(unit) != expectedID) {
+    throw new InvalidParameterValueException(Errors.format(expectedID,unit),descriptor.getName().getCode(),value);
+  }
+  final Double converted=unit.getConverterTo(targetUnit).convert(value);
+  ensureValidValue(descriptor,converted);
+  this.value=descriptor.getValueClass().cast(value);
+  this.unit=unit;
+}

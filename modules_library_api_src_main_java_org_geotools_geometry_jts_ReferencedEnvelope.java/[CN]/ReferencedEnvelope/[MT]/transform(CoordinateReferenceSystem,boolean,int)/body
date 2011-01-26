@@ -1,0 +1,18 @@
+{
+  if (crs == null) {
+    if (isEmpty()) {
+      return new ReferencedEnvelope(targetCRS);
+    }
+ else {
+      throw new NullPointerException("Unable to transform referenced envelope, crs has not yet been provided.");
+    }
+  }
+  CoordinateOperationFactory coordinateOperationFactory=CRS.getCoordinateOperationFactory(lenient);
+  final CoordinateOperation operation=coordinateOperationFactory.createOperation(crs,targetCRS);
+  final GeneralEnvelope transformed=CRS.transform(operation,this);
+  transformed.setCoordinateReferenceSystem(targetCRS);
+  final ReferencedEnvelope target=new ReferencedEnvelope(transformed);
+  final MathTransform transform=operation.getMathTransform();
+  JTS.transform(this,target,transform,numPointsForTransformation);
+  return target;
+}

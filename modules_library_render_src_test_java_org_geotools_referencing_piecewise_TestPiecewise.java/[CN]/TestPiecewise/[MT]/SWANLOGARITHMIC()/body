@@ -1,0 +1,36 @@
+{
+  final RenderedImage image=getSWAN();
+  if (TestData.isInteractiveTest())   RasterSymbolizerTest.visualize(image,"testSWANLOGARITHMIC");
+  final RenderedOp statistics=ExtremaDescriptor.create(image,new ROI(new ImageWorker(image).binarize(0).getRenderedImage()),new Integer(1),new Integer(1),Boolean.FALSE,new Integer(1),null);
+  final double[] minimum=(double[])statistics.getProperty("minimum");
+  final double[] maximum=(double[])statistics.getProperty("maximum");
+  final DefaultPiecewiseTransform1DElement mainElement=new DefaultPiecewiseTransform1DElement("natural logarithm",NumberRange.create(minimum[0],maximum[0]),new MathTransform1DAdapter(){
+    public double derivative(    double arg0) throws TransformException {
+      return 1 / arg0;
+    }
+    public double transform(    double arg0) throws TransformException {
+      return minimum[0] + 1.2 * Math.log(arg0 / minimum[0]) * ((maximum[0] - minimum[0]) / (Math.log(maximum[0] / minimum[0])));
+    }
+    public boolean isIdentity(){
+      return false;
+    }
+  }
+);
+  DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement> transform=new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement>(new DefaultPiecewiseTransform1DElement[]{mainElement},0);
+  final ParameterBlockJAI pbj=new ParameterBlockJAI(GenericPiecewise.OPERATION_NAME);
+  pbj.addSource(image);
+  pbj.setParameter("Domain1D",transform);
+  try {
+    pbj.setParameter("bandIndex",new Integer(2));
+    final RenderedOp d=JAI.create(GenericPiecewise.OPERATION_NAME,pbj);
+    d.getTiles();
+    Assert.assertTrue(false);
+  }
+ catch (  Exception e) {
+  }
+  pbj.setParameter("bandIndex",new Integer(0));
+  final RenderedOp finalImage=JAI.create(GenericPiecewise.OPERATION_NAME,pbj);
+  if (TestData.isInteractiveTest())   RasterSymbolizerTest.visualize(finalImage,"testSWANLOGARITHMIC");
+ else   finalImage.getTiles();
+  finalImage.dispose();
+}

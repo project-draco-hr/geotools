@@ -1,0 +1,39 @@
+{
+  final Random random=new Random();
+  for (int pass=0; pass < 2; pass++) {
+    final WeakValueHashMap<Integer,Integer> weakMap=new WeakValueHashMap<Integer,Integer>();
+    final HashMap<Integer,Integer> strongMap=new HashMap<Integer,Integer>();
+    for (int i=0; i < SAMPLE_SIZE; i++) {
+      final Integer key=new Integer(random.nextInt(SAMPLE_SIZE));
+      final Integer value=new Integer(random.nextInt(SAMPLE_SIZE));
+      if (random.nextBoolean()) {
+        final Integer weakPrevious=weakMap.put(key,value);
+        final Integer strongPrevious=strongMap.put(key,value);
+        if (weakPrevious == null) {
+          assertNull("put:",strongPrevious);
+        }
+ else {
+          assertNotSame(value,weakPrevious);
+        }
+        if (strongPrevious != null) {
+          assertSame("put:",strongPrevious,weakPrevious);
+        }
+      }
+ else {
+        final Integer weakPrevious=weakMap.get(key);
+        final Integer strongPrevious=strongMap.remove(key);
+        if (strongPrevious != null) {
+          assertSame("remove:",strongPrevious,weakPrevious);
+        }
+      }
+      if (false) {
+        assertTrue("containsAll:",weakMap.entrySet().containsAll(strongMap.entrySet()));
+      }
+    }
+    for (int i=0; i < 4; i++) {
+      Thread.sleep(50);
+      System.gc();
+    }
+    assertTrue("equals:",strongMap.equals(weakMap));
+  }
+}

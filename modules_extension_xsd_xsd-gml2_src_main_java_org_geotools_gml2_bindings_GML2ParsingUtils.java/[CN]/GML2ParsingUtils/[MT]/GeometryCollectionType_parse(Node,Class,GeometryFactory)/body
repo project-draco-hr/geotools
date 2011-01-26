@@ -1,0 +1,27 @@
+{
+  List geoms=new ArrayList();
+  for (Iterator itr=node.getChildren().iterator(); itr.hasNext(); ) {
+    Node cnode=(Node)itr.next();
+    if (cnode.getValue() instanceof Geometry) {
+      geoms.add(cnode.getValue());
+    }
+  }
+  GeometryCollection gc=null;
+  if (MultiPoint.class.isAssignableFrom(clazz)) {
+    gc=gFactory.createMultiPoint((Point[])geoms.toArray(new Point[geoms.size()]));
+  }
+ else   if (MultiLineString.class.isAssignableFrom(clazz)) {
+    gc=gFactory.createMultiLineString((LineString[])geoms.toArray(new LineString[geoms.size()]));
+  }
+ else   if (MultiPolygon.class.isAssignableFrom(clazz)) {
+    gc=gFactory.createMultiPolygon((Polygon[])geoms.toArray(new Polygon[geoms.size()]));
+  }
+ else {
+    gc=gFactory.createGeometryCollection((Geometry[])geoms.toArray(new Geometry[geoms.size()]));
+  }
+  CoordinateReferenceSystem crs=crs(node);
+  if (crs != null) {
+    gc.setUserData(crs);
+  }
+  return gc;
+}

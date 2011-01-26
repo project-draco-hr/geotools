@@ -1,0 +1,29 @@
+{
+  Map<String,Serializable> dsParams=new HashMap<String,Serializable>();
+  URL url=DataAccessIntegrationTest.class.getResource(schemaBase + mfMappingFile);
+  assertNotNull(url);
+  dsParams.put("dbtype","app-schema");
+  dsParams.put("url",url.toExternalForm());
+  mfDataAccess=DataAccessFinder.getDataStore(dsParams);
+  assertNotNull(mfDataAccess);
+  FeatureType mappedFeatureType=mfDataAccess.getSchema(MAPPED_FEATURE);
+  assertNotNull(mappedFeatureType);
+  FeatureSource<FeatureType,Feature> mfSource=mfDataAccess.getFeatureSource(MAPPED_FEATURE);
+  FeatureCollection<FeatureType,Feature> mfCollection=mfSource.getFeatures();
+  FeatureIterator<Feature> mfIterator=mfCollection.features();
+  mfFeatures=new ArrayList<Feature>();
+  while (mfIterator.hasNext()) {
+    mfFeatures.add(mfIterator.next());
+  }
+  mfIterator.close();
+  DataAccess<FeatureType,Feature> cpDataAccess=DataAccessRegistry.getDataAccess(COMPOSITION_PART);
+  assertNotNull(cpDataAccess);
+  FeatureSource<FeatureType,Feature> cpSource=cpDataAccess.getFeatureSource(COMPOSITION_PART);
+  FeatureCollection<FeatureType,Feature> cpCollection=cpSource.getFeatures();
+  FeatureIterator<Feature> cpIterator=cpCollection.features();
+  cpFeatures=new ArrayList<Feature>();
+  while (cpIterator.hasNext()) {
+    cpFeatures.add(cpIterator.next());
+  }
+  cpIterator.close();
+}

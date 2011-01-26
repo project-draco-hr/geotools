@@ -1,0 +1,16 @@
+{
+  CoordinateReferenceSystem wsg1=CRS.decode("EPSG:4326");
+  CoordinateReferenceSystem wsg2=CRS.decode("EPSG:4326");
+  MathTransform t=CRS.findMathTransform(wsg1,wsg2);
+  assertTrue("WSG84 transformed to WSG84 should be Identity",t.isIdentity());
+  GeometryBuilder builder=new GeometryBuilder(wsg1);
+  double array[]=new double[]{-123.47009555832284,48.543261561072285,-123.46972894676578,48.55009592117936,-123.45463828850829,48.54973520267305,-123.4550070827961,48.54290089070186,-123.47009555832284,48.543261561072285};
+  PointArray points=builder.createPointArray(array);
+  SurfaceBoundary boundary=builder.createSurfaceBoundary(points);
+  Surface surface=builder.createSurface(boundary);
+  assertNotNull(surface);
+  Surface surface2=(Surface)surface.transform(wsg2,t);
+  assertNotNull(surface2);
+  assertTrue("object equals",surface.equals((Object)surface2));
+  assertTrue("geometry equals",surface.equals(surface2));
+}

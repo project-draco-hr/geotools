@@ -1,0 +1,43 @@
+{
+  if (value instanceof Map) {
+    appendMap(branch,(Map)value);
+    return;
+  }
+  if (value instanceof AbstractMetadata) {
+    appendMap(branch,((AbstractMetadata)value).asMap());
+    return;
+  }
+  if (value != null) {
+    final PropertyAccessor accessor=standard.getAccessorOptional(value.getClass());
+    if (accessor != null) {
+      appendMap(branch,new PropertyMap(value,accessor));
+      return;
+    }
+  }
+  if (value instanceof Collection) {
+    for (final Iterator it=((Collection)value).iterator(); it.hasNext(); ) {
+      final Object element=it.next();
+      if (!PropertyAccessor.isEmpty(element)) {
+        append(branch,element);
+      }
+    }
+    return;
+  }
+  final String asText;
+  if (value instanceof CodeList) {
+    asText=localize((CodeList)value);
+  }
+ else   if (value instanceof Date) {
+    asText=format((Date)value);
+  }
+ else   if (value instanceof Number) {
+    asText=format((Number)value);
+  }
+ else   if (value instanceof InternationalString) {
+    asText=((InternationalString)value).toString(locale);
+  }
+ else {
+    asText=String.valueOf(value);
+  }
+  branch.add(OptionalDependencies.createTreeNode(asText,value,false));
+}

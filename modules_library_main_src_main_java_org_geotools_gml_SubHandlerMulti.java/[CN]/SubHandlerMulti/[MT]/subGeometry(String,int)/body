@@ -1,0 +1,25 @@
+{
+  LOGGER.fine("subGeometry message = " + message + " type = "+ type);
+  if (!internalTypeSet) {
+    if (BASE_GEOMETRY_TYPES.contains(message)) {
+      internalType=message;
+      internalTypeSet=true;
+      LOGGER.fine("Internal type set to " + message);
+    }
+  }
+  if (message.equals(internalType)) {
+    if (type == GEOMETRY_START) {
+      currentHandler=handlerFactory.create(internalType);
+    }
+ else     if (type == GEOMETRY_END) {
+      geometries.add(currentHandler.create(geometryFactory));
+    }
+ else     if (type == GEOMETRY_SUB) {
+      currentHandler.subGeometry(message,type);
+    }
+  }
+ else {
+    currentHandler.subGeometry(message,type);
+    LOGGER.fine(internalType + " != " + message);
+  }
+}

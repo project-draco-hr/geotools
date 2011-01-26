@@ -1,0 +1,69 @@
+{
+  if (compPattern == null) {
+    String pattern1=new String(this.pattern);
+    String wildcardMulti1=new String(this.wildcardMulti);
+    String wildcardSingle1=new String(this.wildcardSingle);
+    String escape1=new String(this.escape);
+    char esc=escape1.charAt(0);
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("wildcard " + wildcardMulti1 + " single "+ wildcardSingle1);
+      LOGGER.finer("escape " + escape1 + " esc "+ esc+ " esc == \\ "+ (esc == '\\'));
+    }
+    String escapedWildcardMulti=fixSpecials(wildcardMulti1);
+    String escapedWildcardSingle=fixSpecials(wildcardSingle1);
+    StringBuffer tmp=new StringBuffer("");
+    boolean escapedMode=false;
+    for (int i=0; i < pattern1.length(); i++) {
+      char chr=pattern1.charAt(i);
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("tmp = " + tmp + " looking at "+ chr);
+      }
+      if (pattern1.regionMatches(false,i,escape1,0,escape1.length())) {
+        LOGGER.finer("escape ");
+        escapedMode=true;
+        i+=escape1.length();
+        chr=pattern1.charAt(i);
+      }
+      if (pattern1.regionMatches(false,i,wildcardMulti1,0,wildcardMulti1.length())) {
+        LOGGER.finer("multi wildcard");
+        if (escapedMode) {
+          LOGGER.finer("escaped ");
+          tmp.append(escapedWildcardMulti);
+        }
+ else {
+          tmp.append(".*");
+        }
+        i+=(wildcardMulti1.length() - 1);
+        escapedMode=false;
+        continue;
+      }
+      if (pattern1.regionMatches(false,i,wildcardSingle1,0,wildcardSingle1.length())) {
+        LOGGER.finer("single wildcard");
+        if (escapedMode) {
+          LOGGER.finer("escaped ");
+          tmp.append(escapedWildcardSingle);
+        }
+ else {
+          tmp.append(".{1}");
+        }
+        i+=(wildcardSingle1.length() - 1);
+        escapedMode=false;
+        continue;
+      }
+      if (isSpecial(chr)) {
+        LOGGER.finer("special");
+        tmp.append(this.escape + chr);
+        escapedMode=false;
+        continue;
+      }
+      tmp.append(chr);
+      escapedMode=false;
+    }
+    pattern1=tmp.toString();
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("final pattern " + pattern1);
+    }
+    compPattern=isMatchingCase() ? Pattern.compile(pattern1) : Pattern.compile(pattern1,Pattern.CASE_INSENSITIVE);
+  }
+  return compPattern.matcher(string);
+}

@@ -1,0 +1,27 @@
+{
+  if (context == null) {
+    context=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+  }
+  this.context=context;
+  MapLayer[] layers=context.getLayers();
+  layerIndexInfo=new IndexInfo[layers.length];
+  int i=0;
+  for (  MapLayer layer : layers) {
+    final FeatureSource fs=layer.getFeatureSource();
+    DataStore ds=(DataStore)fs.getDataStore();
+    if (ds instanceof ShapefileDataStore) {
+      ShapefileDataStore sds=(ShapefileDataStore)ds;
+      try {
+        layerIndexInfo[i]=useIndex(sds);
+      }
+ catch (      Exception e) {
+        layerIndexInfo[i]=new IndexInfo(IndexType.NONE,ShapefileRendererUtil.getShpFiles(sds));
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine("Exception while trying to use index" + e.getLocalizedMessage());
+      }
+    }
+ else {
+      layerIndexInfo[i]=STREAMING_RENDERER_INFO;
+    }
+    i++;
+  }
+}

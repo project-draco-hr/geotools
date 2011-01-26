@@ -1,0 +1,20 @@
+{
+  if (other instanceof LinearTransform) {
+    final LinearTransform1D linear=(LinearTransform1D)other;
+    if (applyOtherFirst) {
+      if (linear.offset == 0 && linear.scale > 0) {
+        return create(base,Math.log(linear.scale) / lnBase + offset);
+      }
+    }
+ else {
+      final double newBase=Math.pow(base,1 / linear.scale);
+      if (!Double.isNaN(newBase)) {
+        return create(newBase,linear.scale * offset + linear.offset);
+      }
+    }
+  }
+ else   if (other instanceof ExponentialTransform1D) {
+    return ((ExponentialTransform1D)other).concatenateLog(this,!applyOtherFirst);
+  }
+  return super.concatenate(other,applyOtherFirst);
+}

@@ -1,0 +1,24 @@
+{
+  FilterFactory2 factory=CommonFactoryFinder.getFilterFactory2(null);
+  Filter nullFilter1=factory.isNull(factory.property("att"));
+  Filter nullFilter2=factory.isNull(factory.property("name"));
+  Filter compareFilter=factory.equals(factory.property("name"),factory.literal(3));
+  Filter filter=factory.and(nullFilter2,nullFilter1);
+  filter=factory.not(filter);
+  filter=factory.or(filter,compareFilter);
+  FilterEncodingPreProcessor visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_LOW);
+  Filters.accept(filter,visitor);
+  assertEquals(filter,visitor.getFilter());
+  assertEquals(createFidFilter(),visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_MEDIUM);
+  Filters.accept(filter,visitor);
+  assertEquals(filter,visitor.getFilter());
+  assertEquals(createFidFilter(),visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+  visitor=new FilterEncodingPreProcessor(XMLHandlerHints.VALUE_FILTER_COMPLIANCE_HIGH);
+  Filters.accept(filter,visitor);
+  assertEquals(filter,visitor.getFilter());
+  assertEquals(createFidFilter(),visitor.getFidFilter());
+  assertFalse(visitor.requiresPostProcessing());
+}

@@ -1,0 +1,41 @@
+{
+  firstChar=true;
+  StringBuilder builder=new StringBuilder(url.toString());
+  if (!query.isMaxFeaturesUnlimited()) {
+    builder.append(getGlueChar());
+    builder.append("limit=");
+    builder.append(query.getMaxFeatures());
+  }
+  if (!query.retrieveAllProperties() && query.getPropertyNames().length > 0) {
+    builder.append(getGlueChar());
+    builder.append("attrs=");
+    for (int i=0; i < query.getPropertyNames().length; i++) {
+      builder.append(query.getPropertyNames()[i]);
+      if (i > 0 && i < query.getPropertyNames().length - 1) {
+        builder.append(",");
+      }
+    }
+  }
+  if (query.getStartIndex() != null) {
+    builder.append(getGlueChar());
+    builder.append("offset=");
+    builder.append(query.getStartIndex());
+  }
+  if (query.getSortBy() != null && query.getSortBy().length > 0) {
+    builder.append(getGlueChar());
+    builder.append("order_by=");
+    builder.append(query.getSortBy()[0].getPropertyName().getPropertyName());
+    builder.append(getGlueChar());
+    builder.append("dir=");
+    SortOrder order=query.getSortBy()[0].getSortOrder();
+    builder.append(order.name());
+  }
+  if (query.getFilter() != null) {
+    GeoRestFilterVisitor visitor=new GeoRestFilterVisitor(false);
+    query.getFilter().accept(visitor,null);
+    visitor.finish(builder,!firstChar);
+  }
+  URL targetUrl=new URL(builder.toString());
+  System.out.println(targetUrl);
+  return targetUrl.openStream();
+}

@@ -1,0 +1,17 @@
+{
+  Connection conn=pool.getConnection();
+  conn.setAutoCommit(true);
+  try {
+    Statement s=conn.createStatement();
+    s.execute("DROP TABLE " + f.schema + ".synch_unit_tables cascade");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("CREATE TABLE synch_unit_tables ( " + "id SERIAL PRIMARY KEY, " + "unit_id INTEGER NOT NULL REFERENCES synch_units(unit_id), "+ "table_id INTEGER NOT NULL REFERENCES synch_tables(table_id), "+ "last_synchronization TIMESTAMP, "+ "last_failure TIMESTAMP, "+ "getdiff_central_revision BIGINT, "+ "last_unit_revision BIGINT, "+ "unique (unit_id, table_id))");
+  }
+  finally {
+    conn.close();
+  }
+}

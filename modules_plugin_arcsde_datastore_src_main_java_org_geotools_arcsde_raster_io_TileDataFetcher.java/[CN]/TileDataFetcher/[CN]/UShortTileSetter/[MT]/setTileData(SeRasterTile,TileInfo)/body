@@ -1,0 +1,28 @@
+{
+  short[] tileData=tileInfo.getTileDataAsUnsignedShorts();
+  final int numPixelsRead=tileInfo.getNumPixelsRead();
+  final int numPixels=tileInfo.getNumPixels();
+  final short nodata=(short)(tileInfo.getNoDataValue().intValue() & 0xFFFF);
+  if (numPixelsRead == 0) {
+    Arrays.fill(tileData,nodata);
+  }
+ else {
+    int[] ints=new int[numPixels];
+    try {
+      tile.getPixels(ints);
+    }
+ catch (    Exception e) {
+      throw new RuntimeException(e);
+    }
+    final boolean hasNoDataPixels=tileInfo.hasNoDataPixels();
+    final byte[] bitmaskData=tileInfo.getBitmaskData();
+    for (int pn=0; pn < numPixels; pn++) {
+      if (hasNoDataPixels && isNoData(pn,bitmaskData)) {
+        tileData[pn]=nodata;
+      }
+ else {
+        tileData[pn]=(short)ints[pn];
+      }
+    }
+  }
+}

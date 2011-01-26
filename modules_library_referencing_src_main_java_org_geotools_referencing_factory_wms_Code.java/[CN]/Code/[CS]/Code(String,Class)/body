@@ -1,0 +1,39 @@
+{
+  String authority="AUTO";
+  int code=0;
+  int unit=9001;
+  double longitude=Double.NaN;
+  double latitude=Double.NaN;
+  String[] parts;
+  if (text.startsWith("AUTO"))   parts=text.replaceAll("AUTO(2)?\\s*:","").split("\\s*,\\s*");
+ else   parts=text.split("\\s*,\\s*");
+  if (parts.length < 3) {
+    throw noSuchAuthorityCode(type,text);
+  }
+  try {
+    if (parts.length < 4) {
+      code=Integer.parseInt(parts[0]);
+      longitude=Double.parseDouble(parts[1]);
+      latitude=Double.parseDouble(parts[2]);
+    }
+ else {
+      code=Integer.parseInt(parts[0]);
+      unit=Integer.parseInt(parts[1]);
+      longitude=Double.parseDouble(parts[2]);
+      latitude=Double.parseDouble(parts[3]);
+    }
+  }
+ catch (  NumberFormatException exception) {
+    NoSuchAuthorityCodeException e=noSuchAuthorityCode(type,text);
+    e.initCause(exception);
+    throw e;
+  }
+  if (!(longitude >= Longitude.MIN_VALUE && longitude <= Longitude.MAX_VALUE && latitude >= Latitude.MIN_VALUE && latitude <= Latitude.MAX_VALUE)) {
+    throw noSuchAuthorityCode(type,text);
+  }
+  this.authority=authority;
+  this.code=code;
+  this.longitude=longitude;
+  this.latitude=latitude;
+  this.type=type;
+}

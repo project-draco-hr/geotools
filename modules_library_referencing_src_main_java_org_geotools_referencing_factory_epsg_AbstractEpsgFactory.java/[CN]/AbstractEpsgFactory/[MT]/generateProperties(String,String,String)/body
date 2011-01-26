@@ -1,0 +1,45 @@
+{
+  properties.clear();
+  final Citation authority=getAuthority();
+  if (name != null) {
+    properties.put(IdentifiedObject.NAME_KEY,new NamedIdentifier(authority,name.trim()));
+  }
+  if (code != null) {
+    final InternationalString edition=authority.getEdition();
+    final String version=(edition != null) ? edition.toString() : null;
+    properties.put(IdentifiedObject.IDENTIFIERS_KEY,new NamedIdentifier(authority,code.trim(),version));
+  }
+  if (remarks != null && (remarks=remarks.trim()).length() != 0) {
+    properties.put(IdentifiedObject.REMARKS_KEY,remarks);
+  }
+  List<GenericName> alias=null;
+  final PreparedStatement stmt;
+  stmt=prepareStatement("Alias","SELECT NAMING_SYSTEM_NAME, ALIAS" + " FROM [Alias] INNER JOIN [Naming System]" + " ON [Alias].NAMING_SYSTEM_CODE ="+ " [Naming System].NAMING_SYSTEM_CODE"+ " WHERE OBJECT_CODE = ?");
+  stmt.setString(1,code);
+  final ResultSet result=stmt.executeQuery();
+  while (result.next()) {
+    final String scope=result.getString(1);
+    final String local=getString(result,2,code);
+    final GenericName generic;
+    if (scope == null) {
+      generic=new LocalName(local);
+    }
+ else {
+      LocalName cached=scopes.get(scope);
+      if (cached == null) {
+        cached=new LocalName(scope);
+        scopes.put(scope,cached);
+      }
+      generic=new ScopedName(cached,local);
+    }
+    if (alias == null) {
+      alias=new ArrayList<GenericName>();
+    }
+    alias.add(generic);
+  }
+  result.close();
+  if (alias != null) {
+    properties.put(IdentifiedObject.ALIAS_KEY,alias.toArray(new GenericName[alias.size()]));
+  }
+  return properties;
+}

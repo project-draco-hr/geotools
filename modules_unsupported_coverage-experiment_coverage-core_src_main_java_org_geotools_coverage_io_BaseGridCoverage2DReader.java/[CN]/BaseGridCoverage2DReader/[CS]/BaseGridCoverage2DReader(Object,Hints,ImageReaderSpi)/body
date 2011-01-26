@@ -1,0 +1,32 @@
+{
+  try {
+    if (this.hints == null)     this.hints=new Hints();
+    if (hints != null)     this.hints.add(hints);
+    this.coverageFactory=CoverageFactoryFinder.getGridCoverageFactory(this.hints);
+    readerSPI=formatSpecificSpi;
+    checkSource(input);
+    final ImageReader reader=readerSPI.createReaderInstance();
+    reader.setInput(inputFile);
+    setCoverageProperties(reader);
+    if (getCoverageCRS() == null) {
+      LOGGER.info("crs not found, proceeding with EPSG:4326");
+      setCoverageCRS(AbstractGridFormat.getDefaultCRS());
+    }
+    if (getCoverageEnvelope() == null) {
+      throw new DataSourceException("Unavailable envelope for this coverage");
+    }
+    originalEnvelope=getCoverageEnvelope();
+    originalGridRange=getCoverageGridRange();
+    crs=getCoverageCRS();
+    getResolutionInfo(reader);
+    reader.reset();
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+}

@@ -1,0 +1,42 @@
+{
+  final Element element=parent.pullElement("PROJECTION");
+  final String classification=element.pullString("name");
+  final Map<String,?> properties=parseAuthority(element,classification);
+  element.close();
+  final ParameterValueGroup parameters;
+  try {
+    parameters=mtFactory.getDefaultParameters(classification);
+  }
+ catch (  NoSuchIdentifierException exception) {
+    throw element.parseFailed(exception,null);
+  }
+  Element param=parent;
+  try {
+    if (ellipsoid != null) {
+      final Unit<Length> axisUnit=ellipsoid.getAxisUnit();
+      parameters.parameter("semi_major").setValue(ellipsoid.getSemiMajorAxis(),axisUnit);
+      parameters.parameter("semi_minor").setValue(ellipsoid.getSemiMinorAxis(),axisUnit);
+    }
+    while ((param=parent.pullOptionalElement("PARAMETER")) != null) {
+      final String paramName=param.pullString("name");
+      final double paramValue=param.pullDouble("value");
+      final ParameterValue<?> parameter=parameters.parameter(paramName);
+      final Unit<?> expected=parameter.getDescriptor().getUnit();
+      if (expected != null && !Unit.ONE.equals(expected)) {
+        if (linearUnit != null && SI.METER.isCompatible(expected)) {
+          parameter.setValue(paramValue,linearUnit);
+          continue;
+        }
+        if (angularUnit != null && SI.RADIAN.isCompatible(expected)) {
+          parameter.setValue(paramValue,angularUnit);
+          continue;
+        }
+      }
+      parameter.setValue(paramValue);
+    }
+  }
+ catch (  ParameterNotFoundException exception) {
+    throw param.parseFailed(exception,Errors.format(ErrorKeys.UNEXPECTED_PARAMETER_$1,exception.getParameterName()));
+  }
+  return parameters;
+}

@@ -1,0 +1,21 @@
+{
+  if (crs instanceof GeographicCRS) {
+    final CoordinateSystem cs=crs.getCoordinateSystem();
+    if (cs.getDimension() == 2 && isStandard(cs.getAxis(0),AxisDirection.EAST) && isStandard(cs.getAxis(1),AxisDirection.NORTH)) {
+      return (GeographicCRS)crs;
+    }
+  }
+  final Datum datum=CRSUtilities.getDatum(crs);
+  if (datum instanceof GeodeticDatum) {
+    return new DefaultGeographicCRS("Geodetic",(GeodeticDatum)datum,DefaultEllipsoidalCS.GEODETIC_2D);
+  }
+  if (crs instanceof CompoundCRS) {
+    for (    final CoordinateReferenceSystem component : ((CompoundCRS)crs).getCoordinateReferenceSystems()) {
+      final GeographicCRS candidate=getGeographicCRS(component);
+      if (candidate != null) {
+        return candidate;
+      }
+    }
+  }
+  throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_COORDINATE_REFERENCE_SYSTEM));
+}

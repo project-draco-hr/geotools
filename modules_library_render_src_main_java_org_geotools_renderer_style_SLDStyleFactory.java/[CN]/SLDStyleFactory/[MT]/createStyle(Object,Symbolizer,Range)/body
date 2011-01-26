@@ -1,0 +1,30 @@
+{
+  Style2D style=null;
+  SymbolizerKey key=new SymbolizerKey(symbolizer,scaleRange);
+  style=(Style2D)staticSymbolizers.get(key);
+  requests++;
+  if (style != null) {
+    hits++;
+  }
+ else {
+    style=createStyleInternal(drawMe,symbolizer,scaleRange);
+    if (style == null) {
+      return null;
+    }
+    if (dynamicSymbolizers.containsKey(key)) {
+      return style;
+    }
+ else {
+      StyleAttributeExtractorTruncated sae=new StyleAttributeExtractorTruncated();
+      sae.visit(symbolizer);
+      Set nameSet=sae.getAttributeNameSet();
+      if ((nameSet == null) || (nameSet.size() == 0)) {
+        staticSymbolizers.put(key,style);
+      }
+ else {
+        dynamicSymbolizers.put(key,Boolean.TRUE);
+      }
+    }
+  }
+  return style;
+}

@@ -1,0 +1,42 @@
+{
+  if (source instanceof File || (source instanceof URL && (((URL)source).getProtocol() == "file"))) {
+    final String sourceAsString;
+    if (source instanceof File)     sourceAsString=((File)source).getAbsolutePath();
+ else     sourceAsString=((URL)source).getFile();
+    int index=sourceAsString.lastIndexOf(".");
+    final StringBuffer prjFileName;
+    if (index == -1)     prjFileName=new StringBuffer(sourceAsString);
+ else     prjFileName=new StringBuffer(sourceAsString.substring(0,index));
+    prjFileName.append(".prj");
+    final File prjFile=new File(prjFileName.toString());
+    if (prjFile.exists()) {
+      PrjFileReader projReader=null;
+      try {
+        FileChannel channel=new FileInputStream(prjFile).getChannel();
+        projReader=new PrjFileReader(channel);
+        crs=projReader.getCoordinateReferenceSystem();
+      }
+ catch (      FileNotFoundException e) {
+        LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+      }
+catch (      FactoryException e) {
+        LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+      }
+ finally {
+        if (projReader != null)         try {
+          projReader.close();
+        }
+ catch (        IOException e) {
+          LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+        }
+      }
+    }
+  }
+  if (crs == null) {
+    crs=AbstractGridFormat.getDefaultCRS();
+    LOGGER.info("Unable to find crs, continuing with default CRS");
+  }
+}

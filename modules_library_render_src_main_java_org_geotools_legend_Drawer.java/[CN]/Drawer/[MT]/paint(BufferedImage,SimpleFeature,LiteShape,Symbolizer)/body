@@ -1,0 +1,81 @@
+{
+  Graphics graphics=bi.getGraphics();
+  Graphics2D g=(Graphics2D)graphics;
+  if (symb instanceof PolygonSymbolizer) {
+    PolygonSymbolizer polySymb=(PolygonSymbolizer)symb;
+    Color stroke=SLD.polyColor(polySymb);
+    double opacity=SLD.polyFillOpacity(polySymb);
+    Color fill=SLD.polyFill(polySymb);
+    int width=SLD.width(SLD.stroke(polySymb));
+    if (width == SLD.NOTFOUND)     width=1;
+    if (Double.isNaN(opacity))     opacity=1.0;
+    if (fill != null) {
+      fill=new Color(fill.getRed(),fill.getGreen(),fill.getBlue(),(int)(255 * opacity));
+      g.setColor(fill);
+      g.fill(shape);
+    }
+    if (stroke != null) {
+      g.setColor(stroke);
+      Stroke str=new BasicStroke(width);
+      g.setStroke(str);
+      g.draw(shape);
+    }
+  }
+  if (symb instanceof LineSymbolizer) {
+    LineSymbolizer lineSymbolizer=(LineSymbolizer)symb;
+    Color c=SLD.color(lineSymbolizer);
+    int w=SLD.width(lineSymbolizer);
+    if (c != null && w > 0) {
+      g.setColor(c);
+      Stroke str=new BasicStroke(w);
+      g.setStroke(str);
+      g.draw(shape);
+    }
+  }
+  if (symb instanceof PointSymbolizer) {
+    PointSymbolizer pointSymbolizer=(PointSymbolizer)symb;
+    Color c=SLD.pointColor(pointSymbolizer);
+    Color fill=SLD.pointFill(pointSymbolizer);
+    int width=SLD.width(SLD.stroke(pointSymbolizer));
+    if (width == SLD.NOTFOUND)     width=1;
+    float[] point=new float[6];
+    shape.getPathIterator(null).currentSegment(point);
+    SLDStyleFactory styleFactory=new SLDStyleFactory();
+    Style2D tmp=styleFactory.createStyle(feature,pointSymbolizer,new NumberRange(Double.MIN_VALUE,Double.MAX_VALUE));
+    if (tmp instanceof MarkStyle2D) {
+      MarkStyle2D style=(MarkStyle2D)tmp;
+      Shape shape2=style.getTransformedShape(point[0],point[1]);
+      if (c == null && fill == null) {
+        g.setColor(Color.GRAY);
+        g.fill(shape2);
+      }
+      if (fill != null) {
+        g.setColor(fill);
+        g.fill(shape2);
+      }
+ else {
+        g.setColor(Color.GRAY);
+        g.fill(shape2);
+      }
+      if (c != null) {
+        Stroke str=new BasicStroke(width);
+        g.setStroke(str);
+        g.setColor(c);
+        g.draw(shape2);
+      }
+ else {
+        Stroke str=new BasicStroke(width);
+        g.setStroke(str);
+        g.setColor(Color.DARK_GRAY);
+        g.draw(shape2);
+      }
+    }
+ else     if (tmp instanceof GraphicStyle2D) {
+      GraphicStyle2D style=(GraphicStyle2D)tmp;
+      float rotation=style.getRotation();
+      g.setTransform(AffineTransform.getRotateInstance(rotation));
+      BufferedImage image=(BufferedImage)style.getImage();
+      g.drawImage(image,(int)(point[0] - ((double)image.getWidth()) / (double)2),(int)(point[1] - ((double)image.getHeight()) / (double)2),null);
+    }
+  }
+}

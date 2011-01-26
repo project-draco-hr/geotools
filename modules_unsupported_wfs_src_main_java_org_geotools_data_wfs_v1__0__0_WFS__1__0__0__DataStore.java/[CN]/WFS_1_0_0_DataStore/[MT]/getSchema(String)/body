@@ -1,0 +1,70 @@
+{
+  if (featureTypeCache.containsKey(typeName)) {
+    return featureTypeCache.get(typeName);
+  }
+  SimpleFeatureType featureType=null;
+  SAXException sax=null;
+  IOException io=null;
+  if (preferredProtocol == POST) {
+    try {
+      featureType=getSchemaPost(typeName);
+    }
+ catch (    SAXException e) {
+      LOGGER.warning(e.toString());
+      sax=e;
+    }
+catch (    IOException e) {
+      LOGGER.warning(e.toString());
+      io=e;
+    }
+  }
+  if (featureType == null) {
+    try {
+      featureType=getSchemaGet(typeName);
+    }
+ catch (    SAXException e) {
+      LOGGER.warning(e.toString());
+      sax=e;
+    }
+catch (    IOException e) {
+      LOGGER.warning(e.toString());
+      io=e;
+    }
+  }
+  if (featureType == null) {
+    if (sax != null) {
+      throw new DataSourceException(sax);
+    }
+    throw io;
+  }
+  FeatureSetDescription fsd=WFSCapabilities.getFeatureSetDescription(capabilities,typeName);
+  String crsName=null;
+  String ftName=null;
+  if (fsd != null) {
+    crsName=fsd.getSRS();
+    ftName=fsd.getName();
+    CoordinateReferenceSystem crs;
+    try {
+      if (crsName != null) {
+        crs=CRS.decode(crsName);
+        featureType=WFSFeatureTypeTransformer.transform(featureType,crs);
+      }
+    }
+ catch (    FactoryException e) {
+      LOGGER.warning(e.getMessage());
+    }
+catch (    SchemaException e) {
+      LOGGER.warning(e.getMessage());
+    }
+  }
+  if (ftName != null) {
+    SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+    build.init(featureType);
+    build.setName(ftName);
+    featureType=build.buildFeatureType();
+  }
+  if (featureType != null) {
+    featureTypeCache.put(typeName,featureType);
+  }
+  return featureType;
+}

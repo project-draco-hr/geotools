@@ -1,0 +1,35 @@
+{
+  final String peCoordSysName=coordSys.getName();
+  Integer epsgCode=null;
+  try {
+    final int[] seEpsgCodes;
+    if (coordSys instanceof PeGeographicCS) {
+      seEpsgCodes=PeFactory.geogcsCodelist();
+    }
+ else     if (coordSys instanceof PeProjectedCS) {
+      seEpsgCodes=PeFactory.projcsCodelist();
+    }
+ else {
+      throw new RuntimeException("Shouldnt happen!: Unnkown SeCoordSys type: " + coordSys.getClass().getName());
+    }
+    int seEpsgCode;
+    PeCoordinateSystem candidate;
+    for (int i=0; i < seEpsgCodes.length; i++) {
+      try {
+        seEpsgCode=seEpsgCodes[i];
+        candidate=(PeCoordinateSystem)PeFactory.factory(seEpsgCode);
+        if (candidate != null && candidate.getName().trim().equals(peCoordSysName)) {
+          epsgCode=seEpsgCode;
+          break;
+        }
+      }
+ catch (      PeProjectionException pe) {
+      }
+    }
+  }
+ catch (  PeProjectionException e) {
+    LOGGER.log(Level.SEVERE,"",e);
+    throw new DataSourceException(e);
+  }
+  return epsgCode;
+}

@@ -1,0 +1,78 @@
+{
+  final CoordinateSystem oldCS=crs.getCoordinateSystem();
+  final CoordinateSystem cs=replace(oldCS);
+  final Datum oldDatum, datum;
+  if (crs instanceof SingleCRS) {
+    oldDatum=((SingleCRS)crs).getDatum();
+    datum=replace(oldDatum);
+  }
+ else {
+    datum=oldDatum=null;
+  }
+  final boolean sameCS=Utilities.equals(cs,oldCS) && Utilities.equals(datum,oldDatum);
+  CoordinateReferenceSystem modified;
+  if (crs instanceof GeneralDerivedCRS) {
+    final GeneralDerivedCRS derivedCRS=(GeneralDerivedCRS)crs;
+    final CoordinateReferenceSystem oldBaseCRS=derivedCRS.getBaseCRS();
+    final CoordinateReferenceSystem baseCRS=replace(oldBaseCRS);
+    if (sameCS && Utilities.equals(baseCRS,oldBaseCRS)) {
+      return crs;
+    }
+    final Map<String,?> properties=getProperties(crs);
+    final ReferencingFactoryContainer factories=getFactoryContainer(true);
+    final CRSFactory crsFactory=factories.getCRSFactory();
+    Conversion fromBase=derivedCRS.getConversionFromBase();
+    fromBase=new DefiningConversion(getProperties(fromBase),fromBase.getMethod(),fromBase.getParameterValues());
+    if (crs instanceof ProjectedCRS) {
+      modified=crsFactory.createProjectedCRS(properties,(GeographicCRS)baseCRS,fromBase,(CartesianCS)cs);
+    }
+ else {
+      throw new FactoryException(Errors.format(ErrorKeys.UNSUPPORTED_CRS_$1,crs.getName().getCode()));
+    }
+  }
+ else   if (sameCS) {
+    return crs;
+  }
+ else {
+    final Map properties=getProperties(crs);
+    final ReferencingFactoryContainer factories=getFactoryContainer(true);
+    final CRSFactory crsFactory=factories.getCRSFactory();
+    if (crs instanceof GeographicCRS) {
+      modified=crsFactory.createGeographicCRS(properties,(GeodeticDatum)datum,(EllipsoidalCS)cs);
+    }
+ else     if (crs instanceof GeocentricCRS) {
+      final GeodeticDatum gd=(GeodeticDatum)datum;
+      if (cs instanceof CartesianCS) {
+        modified=crsFactory.createGeocentricCRS(properties,gd,(CartesianCS)cs);
+      }
+ else {
+        modified=crsFactory.createGeocentricCRS(properties,gd,(SphericalCS)cs);
+      }
+    }
+ else     if (crs instanceof VerticalCRS) {
+      modified=crsFactory.createVerticalCRS(properties,(VerticalDatum)datum,(VerticalCS)cs);
+    }
+ else     if (crs instanceof TemporalCRS) {
+      modified=crsFactory.createTemporalCRS(properties,(TemporalDatum)datum,(TimeCS)cs);
+    }
+ else     if (crs instanceof ImageCRS) {
+      modified=crsFactory.createImageCRS(properties,(ImageDatum)datum,(AffineCS)cs);
+    }
+ else     if (crs instanceof EngineeringCRS) {
+      modified=crsFactory.createEngineeringCRS(properties,(EngineeringDatum)datum,cs);
+    }
+ else     if (crs instanceof CompoundCRS) {
+      final List elements=((CompoundCRS)crs).getCoordinateReferenceSystems();
+      final CoordinateReferenceSystem[] m=new CoordinateReferenceSystem[elements.size()];
+      for (int i=0; i < m.length; i++) {
+        m[i]=replace((CoordinateReferenceSystem)elements.get(i));
+      }
+      modified=crsFactory.createCompoundCRS(properties,m);
+    }
+ else {
+      throw new FactoryException(Errors.format(ErrorKeys.UNSUPPORTED_CRS_$1,crs.getName().getCode()));
+    }
+  }
+  modified=(CoordinateReferenceSystem)pool.unique(modified);
+  return modified;
+}

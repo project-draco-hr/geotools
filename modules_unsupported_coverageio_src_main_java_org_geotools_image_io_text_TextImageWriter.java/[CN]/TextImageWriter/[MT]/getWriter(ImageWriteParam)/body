@@ -1,0 +1,22 @@
+{
+  if (writer == null) {
+    final Object output=getOutput();
+    if (output instanceof BufferedWriter) {
+      writer=(BufferedWriter)output;
+      closeOnReset=null;
+    }
+ else     if (output instanceof Writer) {
+      writer=new BufferedWriter((Writer)output);
+      closeOnReset=null;
+    }
+ else {
+      final OutputStream stream=getOutputStream();
+      final Charset charset=getCharset(parameters);
+      writer=new BufferedWriter((charset != null) ? new OutputStreamWriter(stream,charset) : new OutputStreamWriter(stream));
+      if (closeOnReset == stream) {
+        closeOnReset=writer;
+      }
+    }
+  }
+  return writer;
+}

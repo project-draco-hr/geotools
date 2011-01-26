@@ -1,0 +1,52 @@
+{
+  printstream.println("public Object evaluate(Feature feature){");
+  for (int t=0; t < m.getParameterTypes().length; t++) {
+    printstream.println("      " + formatClassName(m.getParameterTypes()[t]) + "  arg"+ t+ ";");
+  }
+  printstream.println("");
+  printstream.println("");
+  for (int t=0; t < m.getParameterTypes().length; t++) {
+    printstream.println("      try{  //attempt to get value and perform conversion");
+    printstream.print("                arg" + t + " = ");
+    if (isNumber(m.getParameterTypes()[t])) {
+      if ((m.getParameterTypes()[t] == int.class)) {
+        printstream.println("((Number) getExpression(" + t + ").evaluate(feature)).intValue();");
+      }
+ else       if ((m.getParameterTypes()[t] == double.class)) {
+        printstream.println("((Number) getExpression(" + t + ").evaluate(feature)).doubleValue();");
+      }
+ else       throw new IllegalArgumentException("dont know how to handle this - " + m.getParameterTypes()[t]);
+    }
+ else     if ((m.getParameterTypes()[t] == boolean.class)) {
+      printstream.println("((Boolean) getExpression(" + t + ").evaluate(feature)).booleanValue();");
+    }
+ else     if ((m.getParameterTypes()[t] == String.class)) {
+      printstream.println("(getExpression(" + t + ").evaluate(feature)).toString(); // extra protection for strings");
+    }
+ else {
+      printstream.println("(" + formatClassName(m.getParameterTypes()[t]) + ") getExpression("+ t+ ").evaluate(feature);");
+    }
+    printstream.println("      }");
+    printstream.println("      catch (Exception e) // probably a type error");
+    printstream.println("      {");
+    printstream.println("            throw new IllegalArgumentException(\"Filter Function problem for function " + m.getName() + " argument #"+ t+ " - expected type "+ formatClassName(m.getParameterTypes()[t])+ "\");");
+    printstream.println("      }");
+    printstream.println("");
+  }
+  if (isNumber(m.getReturnType())) {
+    if (m.getReturnType() == int.class)     printstream.print("      return new Integer(StaticGeometry." + m.getName() + "(");
+    if (m.getReturnType() == double.class)     printstream.print("      return new Double(StaticGeometry." + m.getName() + "(");
+  }
+ else   if (m.getReturnType() == boolean.class) {
+    printstream.print("      return new Boolean(StaticGeometry." + m.getName() + "(");
+  }
+ else {
+    printstream.print("      return (StaticGeometry." + m.getName() + "(");
+  }
+  for (int t=0; t < m.getParameterTypes().length; t++) {
+    if (t != 0)     printstream.print(",");
+    printstream.print("arg" + (t));
+  }
+  printstream.println(" ));");
+  printstream.println("}");
+}

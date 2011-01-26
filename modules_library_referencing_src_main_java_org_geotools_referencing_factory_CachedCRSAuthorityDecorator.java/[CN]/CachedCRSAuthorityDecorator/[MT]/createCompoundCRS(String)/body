@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  CompoundCRS crs=(CompoundCRS)cache.get(key);
+  if (crs == null) {
+    try {
+      cache.writeLock(key);
+      crs=(CompoundCRS)cache.peek(key);
+      if (crs == null) {
+        crs=crsAuthority.createCompoundCRS(code);
+        cache.put(key,crs);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return crs;
+}

@@ -1,0 +1,26 @@
+{
+  final String typeName=testData.getTempTableName();
+  final SeQuery query=session.createAndExecuteQuery(new String[]{"ROW_ID","INT32_COL"},new SeSqlConstruct(typeName));
+  final int rowId;
+  try {
+    SdeRow row=session.fetch(query);
+    rowId=row.getInteger(0).intValue();
+  }
+  finally {
+    session.close(query);
+  }
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeDelete delete=new SeDelete(connection);
+      delete.byId(typeName,new SeObjectId(rowId));
+      delete.close();
+      return null;
+    }
+  }
+);
+  final String whereClause="ROW_ID=" + rowId;
+  final SeSqlConstruct sqlConstruct=new SeSqlConstruct(typeName,whereClause);
+  final SeQuery deletedQuery=session.createAndExecuteQuery(new String[]{"ROW_ID"},sqlConstruct);
+  SdeRow row=session.fetch(deletedQuery);
+  assertNull(whereClause + " should have returned no records as it was deleted",row);
+}

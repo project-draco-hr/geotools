@@ -1,0 +1,29 @@
+{
+  Ring testRing=testEr.getRing();
+  org.geotools.geometry.iso.coordinate.EnvelopeImpl env=(EnvelopeImpl)testRing.getEnvelope();
+  Envelope testEnv=new Envelope(env.getLowerCorner().getOrdinate(X),env.getUpperCorner().getOrdinate(X),env.getLowerCorner().getOrdinate(Y),env.getUpperCorner().getOrdinate(Y));
+  DirectPosition dp=testRing.getRepresentativePoint();
+  Coordinate testPt=new Coordinate(dp.getCoordinates());
+  EdgeRing minShell=null;
+  Envelope minEnv=null;
+  for (Iterator it=shellList.iterator(); it.hasNext(); ) {
+    EdgeRing tryShell=(EdgeRing)it.next();
+    Ring tryRing=tryShell.getRing();
+    env=(EnvelopeImpl)tryRing.getEnvelope();
+    Envelope tryEnv=new Envelope(env.getLowerCorner().getOrdinate(X),env.getUpperCorner().getOrdinate(X),env.getLowerCorner().getOrdinate(Y),env.getUpperCorner().getOrdinate(Y));
+    if (minShell != null) {
+      env=(EnvelopeImpl)minShell.getRing().getEnvelope();
+      minEnv=new Envelope(env.getLowerCorner().getOrdinate(X),env.getUpperCorner().getOrdinate(X),env.getLowerCorner().getOrdinate(Y),env.getUpperCorner().getOrdinate(Y));
+    }
+    boolean isContained=false;
+    if (tryEnv.contains(testEnv) && CGAlgorithms.isPointInRing(testPt,CoordinateArrays.toCoordinateArray((((RingImplUnsafe)tryRing).asDirectPositions())))) {
+      isContained=true;
+    }
+    if (isContained) {
+      if (minShell == null || minEnv.contains(tryEnv)) {
+        minShell=tryShell;
+      }
+    }
+  }
+  return minShell;
+}

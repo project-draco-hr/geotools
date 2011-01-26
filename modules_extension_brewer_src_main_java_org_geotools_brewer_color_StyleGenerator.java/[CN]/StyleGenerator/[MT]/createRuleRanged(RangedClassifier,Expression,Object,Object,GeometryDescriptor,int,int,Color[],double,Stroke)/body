@@ -1,0 +1,39 @@
+{
+  localMin=chopInteger(localMin);
+  localMax=chopInteger(localMax);
+  String title=classifier.getTitle(i);
+  Filter filter=null;
+  if (localMin == localMax) {
+    filter=ff.equals(expression,ff.literal(localMax));
+  }
+ else {
+    Filter lowBoundFilter=null;
+    Filter hiBoundFilter=null;
+    if (localMin != null) {
+      lowBoundFilter=ff.greaterOrEqual(expression,ff.literal(localMin));
+    }
+    if (localMax != null) {
+      if (i == (classifier.getSize() - 1)) {
+        hiBoundFilter=ff.lessOrEqual(expression,ff.literal(localMax));
+      }
+ else {
+        hiBoundFilter=ff.less(expression,ff.literal(localMax));
+      }
+    }
+    if ((localMin != null) && (localMax != null)) {
+      filter=ff.and(lowBoundFilter,hiBoundFilter);
+    }
+ else     if ((localMin == null) && (localMax != null)) {
+      filter=hiBoundFilter;
+    }
+ else     if ((localMin != null) && (localMax == null)) {
+      filter=lowBoundFilter;
+    }
+  }
+  Symbolizer symb=createSymbolizer(geometryAttrType,getColor(elseMode,colors,i),opacity,defaultStroke);
+  Rule rule=sb.createRule(symb);
+  rule.setFilter(filter);
+  rule.setTitle(title);
+  rule.setName(getRuleName(i + 1));
+  return rule;
+}

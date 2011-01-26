@@ -1,0 +1,60 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("parsing fill ");
+  }
+  Fill fill=factory.getDefaultFill();
+  NodeList list=findElements(((Element)root),"GraphicFill");
+  int length=list.getLength();
+  if (length > 0) {
+    if (LOGGER.isLoggable(Level.FINEST))     LOGGER.finest("fill found a graphic fill " + list.item(0));
+    NodeList kids=list.item(0).getChildNodes();
+    for (int i=0; i < kids.getLength(); i++) {
+      Node child=kids.item(i);
+      if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+        continue;
+      }
+      String childName=child.getLocalName();
+      if (childName == null) {
+        childName=child.getNodeName();
+      }
+      if (childName.equalsIgnoreCase(graphicSt)) {
+        Graphic g=parseGraphic(child);
+        if (LOGGER.isLoggable(Level.FINEST))         LOGGER.finest("setting fill graphic with " + g);
+        fill.setGraphicFill(g);
+      }
+    }
+  }
+  list=findElements(((Element)root),"CssParameter");
+  length=list.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=list.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    Element param=(Element)child;
+    org.w3c.dom.NamedNodeMap map=param.getAttributes();
+    final int mapLength=map.getLength();
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("now I am processing " + child);
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("attributes " + map.toString());
+    }
+    for (int k=0; k < mapLength; k++) {
+      String res=map.item(k).getNodeValue();
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.finest("processing attribute " + res);
+      }
+      if (res.equalsIgnoreCase(fillSt)) {
+        fill.setColor(parseCssParameter(child));
+      }
+ else       if (res.equalsIgnoreCase(opacityString) || res.equalsIgnoreCase("fill-opacity")) {
+        fill.setOpacity(parseCssParameter(child));
+      }
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("fill graphic " + fill.getGraphicFill());
+  }
+  return fill;
+}

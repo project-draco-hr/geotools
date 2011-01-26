@@ -1,0 +1,26 @@
+{
+  final GridCoverage2D source=(GridCoverage2D)parameters.parameter("Source").getValue();
+  final Interpolation interpolation=ImageUtilities.toInterpolation(parameters.parameter("InterpolationType").getValue());
+  CoordinateReferenceSystem targetCRS=(CoordinateReferenceSystem)parameters.parameter("CoordinateReferenceSystem").getValue();
+  if (targetCRS == null) {
+    targetCRS=source.getCoordinateReferenceSystem();
+  }
+  final GridGeometry2D targetGG=GridGeometry2D.wrap((GridGeometry)parameters.parameter("GridGeometry").getValue());
+  final Object bgValueParam=parameters.parameter("BackgroundValues");
+  final double[] bgValues;
+  if (bgValueParam != null && bgValueParam instanceof Parameter<?>) {
+    bgValues=((Parameter<double[]>)bgValueParam).getValue();
+  }
+ else {
+    bgValues=null;
+  }
+  try {
+    return Resampler2D.reproject(source,targetCRS,targetGG,interpolation,(hints instanceof Hints) ? hints : new Hints(hints),bgValues);
+  }
+ catch (  FactoryException exception) {
+    throw new CannotReprojectException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,source.getName()),exception);
+  }
+catch (  TransformException exception) {
+    throw new CannotReprojectException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,source.getName()),exception);
+  }
+}

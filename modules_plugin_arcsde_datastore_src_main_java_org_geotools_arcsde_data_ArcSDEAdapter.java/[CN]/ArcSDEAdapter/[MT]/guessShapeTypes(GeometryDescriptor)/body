@@ -1,0 +1,44 @@
+{
+  if (attribute == null) {
+    throw new NullPointerException("a GeometryAttributeType must be provided, got null");
+  }
+  Class<?> geometryClass=attribute.getType().getBinding();
+  int shapeTypes=0;
+  if (attribute.isNillable()) {
+    shapeTypes|=SeLayer.SE_NIL_TYPE_MASK;
+  }
+  if (GeometryCollection.class.isAssignableFrom(geometryClass)) {
+    shapeTypes|=SeLayer.SE_MULTIPART_TYPE_MASK;
+    if (geometryClass == MultiPoint.class) {
+      shapeTypes|=SeLayer.SE_POINT_TYPE_MASK;
+    }
+ else     if (geometryClass == MultiLineString.class) {
+      shapeTypes|=SeLayer.SE_LINE_TYPE_MASK;
+    }
+ else     if (geometryClass == MultiPolygon.class) {
+      shapeTypes|=SeLayer.SE_AREA_TYPE_MASK;
+    }
+ else {
+      throw new IllegalArgumentException("no SDE geometry mapping for " + geometryClass);
+    }
+  }
+ else {
+    if (geometryClass == Point.class) {
+      shapeTypes|=SeLayer.SE_POINT_TYPE_MASK;
+    }
+ else     if (geometryClass == LineString.class) {
+      shapeTypes|=SeLayer.SE_LINE_TYPE_MASK;
+    }
+ else     if (geometryClass == Polygon.class) {
+      shapeTypes|=SeLayer.SE_AREA_TYPE_MASK;
+    }
+ else     if (geometryClass == Geometry.class) {
+      LOGGER.fine("Creating SeShape types for all types of geometries.");
+      shapeTypes|=(SeLayer.SE_MULTIPART_TYPE_MASK | SeLayer.SE_POINT_TYPE_MASK | SeLayer.SE_LINE_TYPE_MASK| SeLayer.SE_AREA_TYPE_MASK);
+    }
+ else {
+      throw new IllegalArgumentException("no SDE geometry mapping for " + geometryClass);
+    }
+  }
+  return shapeTypes;
+}

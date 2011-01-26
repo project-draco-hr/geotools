@@ -1,0 +1,21 @@
+{
+  Connection conn=pool.getConnection();
+  try {
+    Statement s=conn.createStatement();
+    s.execute("DROP TABLE river");
+  }
+ catch (  Exception ignore) {
+  }
+  try {
+    Statement s=conn.createStatement();
+    s.execute("CREATE TABLE river(fid varchar(255) PRIMARY KEY, id int, geom MULTILINESTRING, river varchar(255) collate latin1_bin, flow double)");
+    for (int i=0; i < riverFeatures.length; i++) {
+      SimpleFeature f=riverFeatures[i];
+      String fid=f.getID().substring("river.".length());
+      s.execute("INSERT INTO river (fid, id, geom, river, flow) VALUES (" + "'" + fid + "',"+ f.getAttribute("id")+ ","+ "GeometryFromText('"+ f.getAttribute("geom").toString()+ "', 0 ),"+ "'"+ f.getAttribute("river")+ "',"+ f.getAttribute("flow")+ ")");
+    }
+  }
+  finally {
+    conn.close();
+  }
+}

@@ -1,0 +1,20 @@
+{
+  PropertyIsEqualTo filter1=createFunctionFilter();
+  FilterFunction_abs filterFunction_abs=new FilterFunction_abs();
+  filterFunction_abs.setParameters(Arrays.asList(new Expression[]{ff.property("name")}));
+  PropertyIsEqualTo filter2=ff.equals(ff.property("name"),filterFunction_abs);
+  Filter filter=ff.and(filter1,filter2);
+  visitor=newVisitor(new FilterCapabilities());
+  filter.accept(visitor,null);
+  assertEquals(Filter.INCLUDE,visitor.getFilterPre());
+  assertEquals(filter,visitor.getFilterPost());
+  FilterCapabilities filterCapabilitiesMask=new FilterCapabilities();
+  filterCapabilitiesMask.addType(FilterFunction_geometryType.class);
+  filterCapabilitiesMask.addType(FilterFunction_abs.class);
+  filterCapabilitiesMask.addAll(FilterCapabilities.SIMPLE_COMPARISONS_OPENGIS);
+  filterCapabilitiesMask.addAll(FilterCapabilities.LOGICAL_OPENGIS);
+  visitor=newVisitor(filterCapabilitiesMask);
+  filter.accept(visitor,null);
+  assertEquals(Filter.INCLUDE,visitor.getFilterPost());
+  assertEquals(filter,visitor.getFilterPre());
+}

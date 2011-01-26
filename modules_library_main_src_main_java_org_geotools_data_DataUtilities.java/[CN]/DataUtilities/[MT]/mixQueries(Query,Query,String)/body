@@ -1,0 +1,57 @@
+{
+  if ((firstQuery == null) && (secondQuery == null)) {
+    return Query.ALL;
+  }
+  if (firstQuery == null || firstQuery.equals(Query.ALL)) {
+    return secondQuery;
+  }
+ else   if (secondQuery == null || secondQuery.equals(Query.ALL)) {
+    return firstQuery;
+  }
+  if ((firstQuery.getTypeName() != null) && (secondQuery.getTypeName() != null)) {
+    if (!firstQuery.getTypeName().equals(secondQuery.getTypeName())) {
+      String msg="Type names do not match: " + firstQuery.getTypeName() + " != "+ secondQuery.getTypeName();
+      throw new IllegalArgumentException(msg);
+    }
+  }
+  String version;
+  if (firstQuery.getVersion() != null) {
+    if (secondQuery.getVersion() != null && !secondQuery.getVersion().equals(firstQuery.getVersion()))     throw new IllegalArgumentException("First and second query refer different versions");
+    version=firstQuery.getVersion();
+  }
+ else {
+    version=secondQuery.getVersion();
+  }
+  int maxFeatures=Math.min(firstQuery.getMaxFeatures(),secondQuery.getMaxFeatures());
+  String[] propNames=joinAttributes(firstQuery.getPropertyNames(),secondQuery.getPropertyNames());
+  Filter filter=firstQuery.getFilter();
+  Filter filter2=secondQuery.getFilter();
+  if ((filter == null) || filter.equals(Filter.INCLUDE)) {
+    filter=filter2;
+  }
+ else   if ((filter2 != null) && !filter2.equals(Filter.INCLUDE)) {
+    filter=ff.and(filter,filter2);
+  }
+  Integer start=0;
+  if (firstQuery.getStartIndex() != null) {
+    start=firstQuery.getStartIndex();
+  }
+  if (secondQuery.getStartIndex() != null) {
+    start+=secondQuery.getStartIndex();
+  }
+  Hints hints=new Hints();
+  if (firstQuery.getHints() != null) {
+    hints.putAll(firstQuery.getHints());
+  }
+  if (secondQuery.getHints() != null) {
+    hints.putAll(secondQuery.getHints());
+  }
+  String typeName=firstQuery.getTypeName() != null ? firstQuery.getTypeName() : secondQuery.getTypeName();
+  Query mixed=new Query(typeName,filter,maxFeatures,propNames,handle);
+  mixed.setVersion(version);
+  mixed.setHints(hints);
+  if (start != 0) {
+    mixed.setStartIndex(start);
+  }
+  return mixed;
+}

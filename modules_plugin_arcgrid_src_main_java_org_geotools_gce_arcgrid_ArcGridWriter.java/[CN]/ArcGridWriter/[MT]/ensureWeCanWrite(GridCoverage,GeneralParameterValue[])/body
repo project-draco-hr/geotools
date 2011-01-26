@@ -1,0 +1,14 @@
+{
+  final AffineTransform gridToWorldTransform=new AffineTransform((AffineTransform)((GridGeometry2D)coverage.getGridGeometry()).getGridToCRS2D());
+  final int swapXY=XAffineTransform.getSwapXY(gridToWorldTransform);
+  XAffineTransform.round(gridToWorldTransform,ROTATION_EPS);
+  final double rotation=XAffineTransform.getRotation(gridToWorldTransform);
+  if (swapXY == -1)   throw new DataSourceException("Impossible to encode this coverage as an ascii grid since its" + "transformation is not a simple scale and translate");
+  if (rotation != 0)   throw new DataSourceException("Impossible to encode this coverage as an ascii grid since its" + "transformation is not a simple scale and translate");
+  final int flip=XAffineTransform.getFlip(gridToWorldTransform);
+  final CoordinateReferenceSystem crs2D=((GridCoverage2D)coverage).getCoordinateReferenceSystem2D();
+  if (flip > 0)   throw new DataSourceException("Impossible to encode this coverage as an ascii grid since its" + "coordinate reference system has strange axes orientation");
+  if (!AxisDirection.NORTH.equals(crs2D.getCoordinateSystem().getAxis(1).getDirection()))   throw new DataSourceException("Impossible to encode this coverage as an ascii grid since its" + "coordinate reference system has strange axes orientation");
+  if (!AxisDirection.EAST.equals(crs2D.getCoordinateSystem().getAxis(0).getDirection()))   throw new DataSourceException("Impossible to encode this coverage as an ascii grid since its" + "coordinate reference system has strange axes orientation");
+  if (coverage instanceof GridCoverage2D && !(coverage.getGridGeometry() instanceof GridGeometry2D))   throw new DataSourceException("The provided coverage is not a GridCoverage2D");
+}

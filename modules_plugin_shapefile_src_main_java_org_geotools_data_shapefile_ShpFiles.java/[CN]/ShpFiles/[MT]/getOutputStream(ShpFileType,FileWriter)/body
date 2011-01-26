@@ -1,0 +1,46 @@
+{
+  final URL url=acquireWrite(type,requestor);
+  try {
+    OutputStream out;
+    if (isLocal()) {
+      File file=DataUtilities.urlToFile(url);
+      out=new FileOutputStream(file);
+    }
+ else {
+      URLConnection connection=url.openConnection();
+      connection.setDoOutput(true);
+      out=connection.getOutputStream();
+    }
+    FilterOutputStream output=new FilterOutputStream(out){
+      private volatile boolean closed=false;
+      @Override public void close() throws IOException {
+        try {
+          super.close();
+        }
+  finally {
+          if (!closed) {
+            closed=true;
+            unlockWrite(url,requestor);
+          }
+        }
+      }
+    }
+;
+    return output;
+  }
+ catch (  Throwable e) {
+    unlockWrite(url,requestor);
+    if (e instanceof IOException) {
+      throw (IOException)e;
+    }
+ else     if (e instanceof RuntimeException) {
+      throw (RuntimeException)e;
+    }
+ else     if (e instanceof Error) {
+      throw (Error)e;
+    }
+ else {
+      throw new RuntimeException(e);
+    }
+  }
+}

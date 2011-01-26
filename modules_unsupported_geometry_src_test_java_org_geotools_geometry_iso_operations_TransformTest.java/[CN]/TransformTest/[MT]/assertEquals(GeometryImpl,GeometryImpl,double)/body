@@ -1,0 +1,70 @@
+{
+  if (!CRS.equalsIgnoreMetadata(geom1.getCoordinateReferenceSystem(),geom2.getCoordinateReferenceSystem())) {
+    assertTrue("CRS of two objects do not match",false);
+  }
+  if (geom1.getCoordinateDimension() != geom2.getCoordinateDimension()) {
+    assertTrue("Coordinate dimension of objects do not match",false);
+  }
+  if (geom1 instanceof PointImpl && geom2 instanceof PointImpl) {
+    PointImpl point1=(PointImpl)geom1;
+    PointImpl point2=(PointImpl)geom2;
+    for (int i=0; i < point1.getPosition().getCoordinates().length; i++) {
+      assertEquals(point1.getPosition().getOrdinate(i),point2.getPosition().getOrdinate(i),epsilon);
+    }
+  }
+ else   if (geom1 instanceof CurveImpl && geom2 instanceof CurveImpl) {
+    CurveImpl curve1=(CurveImpl)geom1;
+    CurveImpl curve2=(CurveImpl)geom2;
+    List<DirectPosition> list1=curve1.asDirectPositions();
+    List<DirectPosition> list2=curve2.asDirectPositions();
+    Iterator<DirectPosition> iterator1=list1.iterator();
+    Iterator<DirectPosition> iterator2=list2.iterator();
+    while (iterator1.hasNext() && iterator2.hasNext()) {
+      PointImpl p1=new PointImpl(iterator1.next());
+      PointImpl p2=new PointImpl(iterator2.next());
+      assertEquals(p1,p2,epsilon);
+    }
+  }
+ else   if (geom1 instanceof RingImpl && geom2 instanceof RingImplUnsafe) {
+    RingImplUnsafe ring1=(RingImplUnsafe)geom1;
+    RingImplUnsafe ring2=(RingImplUnsafe)geom2;
+    List<DirectPosition> list1=ring1.asDirectPositions();
+    List<DirectPosition> list2=ring2.asDirectPositions();
+    Iterator<DirectPosition> iterator1=list1.iterator();
+    Iterator<DirectPosition> iterator2=list2.iterator();
+    while (iterator1.hasNext() && iterator2.hasNext()) {
+      PointImpl p1=new PointImpl(iterator1.next());
+      PointImpl p2=new PointImpl(iterator2.next());
+      assertEquals(p1,p2,epsilon);
+    }
+  }
+ else   if (geom1 instanceof RingImpl && geom2 instanceof RingImpl) {
+    RingImpl ring1=(RingImpl)geom1;
+    RingImpl ring2=(RingImpl)geom2;
+    List<DirectPosition> list1=ring1.asDirectPositions();
+    List<DirectPosition> list2=ring2.asDirectPositions();
+    Iterator<DirectPosition> iterator1=list1.iterator();
+    Iterator<DirectPosition> iterator2=list2.iterator();
+    while (iterator1.hasNext() && iterator2.hasNext()) {
+      PointImpl p1=new PointImpl(iterator1.next());
+      PointImpl p2=new PointImpl(iterator2.next());
+      assertEquals(p1,p2,epsilon);
+    }
+  }
+ else   if (geom1 instanceof SurfaceImpl && geom2 instanceof SurfaceImpl) {
+    SurfaceImpl surface1=(SurfaceImpl)geom1;
+    SurfaceImpl surface2=(SurfaceImpl)geom2;
+    List<Ring> list1=surface1.getBoundaryRings();
+    List<Ring> list2=surface2.getBoundaryRings();
+    Iterator<Ring> iterator1=list1.iterator();
+    Iterator<Ring> iterator2=list2.iterator();
+    while (iterator1.hasNext() && iterator2.hasNext()) {
+      RingImplUnsafe r1=(RingImplUnsafe)iterator1.next();
+      RingImplUnsafe r2=(RingImplUnsafe)iterator2.next();
+      assertEquals(r1,r2,epsilon);
+    }
+  }
+ else {
+    assertTrue("unsupported or unmatching geometries",false);
+  }
+}

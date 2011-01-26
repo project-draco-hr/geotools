@@ -1,0 +1,14 @@
+{
+  Utilities.ensureNonNull("q",q);
+  final Lock lock=rwLock.readLock();
+  try {
+    lock.lock();
+    checkStore();
+    final Filter filter=q.getFilter();
+    ReferencedEnvelope requestedBBox=extractAndCombineBBox(filter);
+    getIndex(lock).query(requestedBBox,new JTSIndexVisitorAdapter(visitor,q));
+  }
+  finally {
+    lock.unlock();
+  }
+}

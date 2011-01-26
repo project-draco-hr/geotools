@@ -1,0 +1,15 @@
+{
+  final RenderedImage image=gc.getRenderedImage();
+  final int width=image.getWidth();
+  final int height=image.getHeight();
+  if ((height < GIF_HEIGHT) && (width < GIF_WIDTH)) {
+    return gc;
+  }
+  final GeneralGridEnvelope newGridrange=new GeneralGridEnvelope(new int[]{0,0},new int[]{GIF_WIDTH,GIF_HEIGHT});
+  final GridGeometry2D newGridGeometry=new GridGeometry2D(newGridrange,gc.getEnvelope());
+  final ParameterValueGroup pvg=resampleFactory.getParameters();
+  pvg.parameter("Source").setValue(gc);
+  pvg.parameter("GridGeometry").setValue(newGridGeometry);
+  pvg.parameter("InterpolationType").setValue(new InterpolationBilinear());
+  return (GridCoverage2D)resampleFactory.doOperation(pvg,hints);
+}

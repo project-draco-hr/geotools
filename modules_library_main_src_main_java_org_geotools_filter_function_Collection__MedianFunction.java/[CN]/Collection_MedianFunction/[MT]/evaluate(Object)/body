@@ -1,0 +1,26 @@
+{
+  if (feature == null) {
+    return new Integer(0);
+  }
+  Expression expr=(Expression)getExpression(0);
+  FeatureCollection<? extends FeatureType,? extends Feature> featureCollection=(SimpleFeatureCollection)feature;
+synchronized (featureCollection) {
+    if (featureCollection != previousFeatureCollection) {
+      previousFeatureCollection=featureCollection;
+      median=null;
+      try {
+        CalcResult result=calculateMedian(featureCollection,expr);
+        if (result != null) {
+          median=result.getValue();
+        }
+      }
+ catch (      IllegalFilterException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  return median;
+}

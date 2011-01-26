@@ -1,0 +1,24 @@
+{
+  if (!testingEnabled()) {
+    return;
+  }
+  final ImageLayout l=new ImageLayout();
+  l.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(512).setTileWidth(512);
+  Hints hints=new Hints();
+  hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,l));
+  final File file=TestData.file(this,fileName);
+  final BaseGDALGridCoverage2DReader reader=new DTEDReader(file,hints);
+  GridCoverage2D gc=(GridCoverage2D)reader.read(null);
+  forceDataLoading(gc);
+  final double cropFactor=2.0;
+  final int oldW=gc.getRenderedImage().getWidth();
+  final int oldH=gc.getRenderedImage().getHeight();
+  final Rectangle range=((GridEnvelope2D)reader.getOriginalGridRange());
+  final GeneralEnvelope oldEnvelope=reader.getOriginalEnvelope();
+  final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{oldEnvelope.getLowerCorner().getOrdinate(0) + (oldEnvelope.getLength(0) / cropFactor),oldEnvelope.getLowerCorner().getOrdinate(1) + (oldEnvelope.getLength(1) / cropFactor)},new double[]{oldEnvelope.getUpperCorner().getOrdinate(0),oldEnvelope.getUpperCorner().getOrdinate(1)});
+  cropEnvelope.setCoordinateReferenceSystem(reader.getCrs());
+  final ParameterValue gg=(ParameterValue)((AbstractGridFormat)reader.getFormat()).READ_GRIDGEOMETRY2D.createValue();
+  gg.setValue(new GridGeometry2D(new GridEnvelope2D(new Rectangle(0,0,(int)(range.width / 2.0 / cropFactor),(int)(range.height / 2.0 / cropFactor))),cropEnvelope));
+  gc=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg});
+  forceDataLoading(gc);
+}

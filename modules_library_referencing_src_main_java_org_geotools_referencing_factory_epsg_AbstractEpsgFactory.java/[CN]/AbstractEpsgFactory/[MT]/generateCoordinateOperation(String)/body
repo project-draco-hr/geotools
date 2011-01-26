@@ -1,0 +1,179 @@
+{
+  ensureNonNull("code",code);
+  CoordinateOperation returnValue=null;
+  try {
+    final String primaryKey=toPrimaryKey(CoordinateOperation.class,code,"[Coordinate_Operation]","COORD_OP_CODE","COORD_OP_NAME");
+    final PreparedStatement stmt;
+    stmt=prepareStatement("CoordinateOperation","SELECT COORD_OP_CODE," + " COORD_OP_NAME," + " COORD_OP_TYPE,"+ " SOURCE_CRS_CODE,"+ " TARGET_CRS_CODE,"+ " COORD_OP_METHOD_CODE,"+ " COORD_TFM_VERSION,"+ " COORD_OP_ACCURACY,"+ " AREA_OF_USE_CODE,"+ " COORD_OP_SCOPE,"+ " REMARKS"+ " FROM [Coordinate_Operation]"+ " WHERE COORD_OP_CODE = ?");
+    stmt.setString(1,primaryKey);
+    ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final String type=getString(result,3,code).trim().toLowerCase();
+      final boolean isTransformation=type.equals("transformation");
+      final boolean isConversion=type.equals("conversion");
+      final boolean isConcatenated=type.equals("concatenated operation");
+      final String sourceCode, targetCode, methodCode;
+      if (isConversion) {
+        sourceCode=result.getString(4);
+        targetCode=result.getString(5);
+      }
+ else {
+        sourceCode=getString(result,4,code);
+        targetCode=getString(result,5,code);
+      }
+      if (isConcatenated) {
+        methodCode=result.getString(6);
+      }
+ else {
+        methodCode=getString(result,6,code);
+      }
+      String version=result.getString(7);
+      double accuracy=result.getDouble(8);
+      if (result.wasNull())       accuracy=Double.NaN;
+      String area=result.getString(9);
+      String scope=result.getString(10);
+      String remarks=result.getString(11);
+      final int sourceDimensions, targetDimensions;
+      final CoordinateReferenceSystem sourceCRS, targetCRS;
+      if (sourceCode != null) {
+        sourceCRS=createCoordinateReferenceSystem(sourceCode);
+        sourceDimensions=sourceCRS.getCoordinateSystem().getDimension();
+      }
+ else {
+        sourceCRS=null;
+        sourceDimensions=2;
+      }
+      if (targetCode != null) {
+        targetCRS=createCoordinateReferenceSystem(targetCode);
+        targetDimensions=targetCRS.getCoordinateSystem().getDimension();
+      }
+ else {
+        targetCRS=null;
+        targetDimensions=2;
+      }
+      final boolean isBursaWolf;
+      OperationMethod method;
+      final ParameterValueGroup parameters;
+      if (methodCode == null) {
+        isBursaWolf=false;
+        method=null;
+        parameters=null;
+      }
+ else {
+        final int num;
+        try {
+          num=Integer.parseInt(methodCode);
+        }
+ catch (        NumberFormatException exception) {
+          result.close();
+          throw new FactoryException(exception);
+        }
+        isBursaWolf=(num >= BURSA_WOLF_MIN_CODE && num <= BURSA_WOLF_MAX_CODE);
+        method=generateOperationMethod(methodCode);
+        if (method.getSourceDimensions() != sourceDimensions || method.getTargetDimensions() != targetDimensions) {
+          method=new DefaultOperationMethod(method,sourceDimensions,targetDimensions);
+        }
+        final String classe=method.getName().getCode();
+        parameters=factories.getMathTransformFactory().getDefaultParameters(classe);
+        fillParameterValues(methodCode,epsg,parameters);
+      }
+      final Map<String,Object> properties=generateProperties(name,epsg,area,scope,remarks);
+      if (version != null && (version=version.trim()).length() != 0) {
+        properties.put(CoordinateOperation.OPERATION_VERSION_KEY,version);
+      }
+      if (!Double.isNaN(accuracy)) {
+        final QuantitativeResultImpl accuracyResult;
+        final AbsoluteExternalPositionalAccuracyImpl accuracyElement;
+        accuracyResult=new QuantitativeResultImpl(new double[]{accuracy});
+        accuracyResult.setValueUnit(SI.METER);
+        accuracyElement=new AbsoluteExternalPositionalAccuracyImpl(accuracyResult);
+        accuracyElement.setMeasureDescription(TRANSFORMATION_ACCURACY);
+        accuracyElement.setEvaluationMethodType(EvaluationMethodType.DIRECT_EXTERNAL);
+        properties.put(CoordinateOperation.COORDINATE_OPERATION_ACCURACY_KEY,new PositionalAccuracy[]{(PositionalAccuracy)accuracyElement.unmodifiable()});
+      }
+      final CoordinateOperation operation;
+      if (isConversion && (sourceCRS == null || targetCRS == null)) {
+        operation=new DefiningConversion(properties,method,parameters);
+      }
+ else       if (isConcatenated) {
+        result.close();
+        result=null;
+        final PreparedStatement cstmt=prepareStatement("ConcatenatedOperation","SELECT SINGLE_OPERATION_CODE" + " FROM [Coordinate_Operation Path]" + " WHERE (CONCAT_OPERATION_CODE = ?)"+ " ORDER BY OP_PATH_STEP");
+        cstmt.setString(1,epsg);
+        final ResultSet cr=cstmt.executeQuery();
+        final List<String> codes=new ArrayList<String>();
+        while (cr.next()) {
+          codes.add(cr.getString(1));
+        }
+        cr.close();
+        final CoordinateOperation[] operations=new CoordinateOperation[codes.size()];
+        if (!safetyGuard.add(epsg)) {
+          throw recursiveCall(ConcatenatedOperation.class,epsg);
+        }
+        try {
+          for (int i=0; i < operations.length; i++) {
+            operations[i]=createCoordinateOperation(codes.get(i));
+          }
+        }
+  finally {
+          safetyGuard.remove(epsg);
+        }
+        try {
+          return new DefaultConcatenatedOperation(properties,operations);
+        }
+ catch (        IllegalArgumentException exception) {
+          throw new FactoryException(exception);
+        }
+      }
+ else {
+        if (isBursaWolf)         try {
+          Ellipsoid ellipsoid=CRSUtilities.getHeadGeoEllipsoid(sourceCRS);
+          if (ellipsoid != null) {
+            final Unit axisUnit=ellipsoid.getAxisUnit();
+            parameters.parameter("src_semi_major").setValue(ellipsoid.getSemiMajorAxis(),axisUnit);
+            parameters.parameter("src_semi_minor").setValue(ellipsoid.getSemiMinorAxis(),axisUnit);
+            parameters.parameter("src_dim").setValue(sourceCRS.getCoordinateSystem().getDimension());
+          }
+          ellipsoid=CRSUtilities.getHeadGeoEllipsoid(targetCRS);
+          if (ellipsoid != null) {
+            final Unit axisUnit=ellipsoid.getAxisUnit();
+            parameters.parameter("tgt_semi_major").setValue(ellipsoid.getSemiMajorAxis(),axisUnit);
+            parameters.parameter("tgt_semi_minor").setValue(ellipsoid.getSemiMinorAxis(),axisUnit);
+            parameters.parameter("tgt_dim").setValue(targetCRS.getCoordinateSystem().getDimension());
+          }
+        }
+ catch (        ParameterNotFoundException exception) {
+          result.close();
+          throw new FactoryException(Errors.format(ErrorKeys.GEOTOOLS_EXTENSION_REQUIRED_$1,method.getName().getCode(),exception));
+        }
+        final Class expected;
+        if (isTransformation) {
+          expected=Transformation.class;
+        }
+ else         if (isConversion) {
+          expected=Conversion.class;
+        }
+ else {
+          result.close();
+          throw new FactoryException(Errors.format(ErrorKeys.UNKNOW_TYPE_$1,type));
+        }
+        final MathTransform mt=factories.getMathTransformFactory().createBaseToDerived(sourceCRS,parameters,targetCRS.getCoordinateSystem());
+        operation=DefaultOperation.create(properties,sourceCRS,targetCRS,mt,method,expected);
+      }
+      returnValue=ensureSingleton(operation,returnValue,code);
+      if (result == null) {
+        return returnValue;
+      }
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(CoordinateOperation.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(CoordinateOperation.class,code);
+  }
+  return returnValue;
+}

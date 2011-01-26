@@ -1,0 +1,109 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("parsingCssParam " + root);
+  }
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  List<Expression> expressions=new ArrayList<Expression>();
+  List<Boolean> cdatas=new ArrayList<Boolean>();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null)) {
+      continue;
+    }
+ else     if (child.getNodeType() == Node.TEXT_NODE) {
+      String value=child.getNodeValue();
+      if (value == null)       continue;
+      if (trimWhiteSpace) {
+        value=value.trim();
+      }
+ else {
+        value=WHITESPACES.matcher(value).replaceAll(" ");
+      }
+      if (value != null && value.length() != 0) {
+        Literal literal=ff.literal(value);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.finest("Built new literal " + literal);
+        }
+        expressions.add(literal);
+        cdatas.add(false);
+      }
+    }
+ else     if (child.getNodeType() == Node.ELEMENT_NODE) {
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.finest("about to parse " + child.getLocalName());
+      }
+      expressions.add(org.geotools.filter.ExpressionDOMParser.parseExpression(child));
+      cdatas.add(false);
+    }
+ else     if (child.getNodeType() == Node.CDATA_SECTION_NODE) {
+      String value=child.getNodeValue();
+      if (value != null && value.length() != 0) {
+        Literal literal=ff.literal(value);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.finest("Built new literal " + literal);
+        }
+        expressions.add(literal);
+        cdatas.add(true);
+      }
+    }
+ else     continue;
+  }
+  if (expressions.size() == 0 && LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("no children in CssParam");
+  }
+  if (!trimWhiteSpace) {
+    while (expressions.size() > 0) {
+      Expression ex=expressions.get(0);
+      if (!(ex instanceof Literal))       break;
+      Literal literal=(Literal)ex;
+      if (!(literal.getValue() instanceof String))       break;
+      String s=(String)literal.getValue();
+      if (!cdatas.get(0)) {
+        if ("".equals(s.trim())) {
+          expressions.remove(0);
+          cdatas.remove(0);
+        }
+ else {
+          if (s.startsWith(" ")) {
+            s=LEADING_WHITESPACES.matcher(s).replaceAll("");
+            expressions.set(0,ff.literal(s));
+          }
+          break;
+        }
+      }
+ else {
+        break;
+      }
+    }
+    while (expressions.size() > 0) {
+      final int idx=expressions.size() - 1;
+      Expression ex=expressions.get(idx);
+      if (!(ex instanceof Literal))       break;
+      Literal literal=(Literal)ex;
+      if (!(literal.getValue() instanceof String))       break;
+      String s=(String)literal.getValue();
+      if (!cdatas.get(idx)) {
+        if ("".equals(s.trim())) {
+          expressions.remove(idx);
+          cdatas.remove(idx);
+        }
+ else {
+          if (s.endsWith(" ")) {
+            s=TRAILING_WHITESPACES.matcher(s).replaceAll("");
+            expressions.set(idx,ff.literal(s));
+          }
+          break;
+        }
+      }
+ else {
+        break;
+      }
+    }
+  }
+  Expression ret=null;
+  for (  Expression expression : expressions) {
+    ret=manageMixed(ret,expression);
+  }
+  return ret;
+}

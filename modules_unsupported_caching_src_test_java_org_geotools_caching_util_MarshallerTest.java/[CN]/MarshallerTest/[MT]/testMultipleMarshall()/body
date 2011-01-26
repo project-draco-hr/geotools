@@ -1,0 +1,21 @@
+{
+  Generator gen=new Generator(1000,1000);
+  int iterations=10;
+  SimpleFeature f=(SimpleFeature)gen.createFeature(0);
+  SimpleFeature original=f;
+  SimpleFeatureMarshaller m=new SimpleFeatureMarshaller();
+  for (int i=0; i < iterations; i++) {
+    ByteArrayOutputStream baos=new ByteArrayOutputStream();
+    ObjectOutputStream oos=new ObjectOutputStream(baos);
+    m.marshall(f,oos);
+    baos.close();
+    byte[] ba=baos.toByteArray();
+    ByteArrayInputStream bais=new ByteArrayInputStream(ba);
+    ObjectInputStream ois=new ObjectInputStream(bais);
+    SimpleFeature newf=m.unmarshall(ois);
+    bais.close();
+    assertTrue(f.equals(newf));
+    f=newf;
+  }
+  assertEquals(original,f);
+}

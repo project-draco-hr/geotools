@@ -1,0 +1,44 @@
+{
+  List<SingleCRS> components=DefaultCompoundCRS.getSingleCRS(crs);
+  final int count=components.size();
+  SingleCRS horizontal=null;
+  VerticalCRS vertical=null;
+  int hi=0, vi=0;
+  for (int i=0; i < count; i++) {
+    final SingleCRS candidate=components.get(i);
+    if (candidate instanceof VerticalCRS) {
+      if (vertical == null) {
+        vertical=(VerticalCRS)candidate;
+        if (VerticalDatumType.ELLIPSOIDAL.equals(vertical.getDatum().getVerticalDatumType())) {
+          vi=i;
+          continue;
+        }
+      }
+      return crs;
+    }
+    if (candidate instanceof GeographicCRS || candidate instanceof ProjectedCRS) {
+      if (horizontal == null) {
+        horizontal=candidate;
+        if (horizontal.getCoordinateSystem().getDimension() == 2) {
+          hi=i;
+          continue;
+        }
+      }
+      return crs;
+    }
+  }
+  if (horizontal != null && vertical != null && Math.abs(vi - hi) == 1) {
+    final boolean xyFirst=(hi < vi);
+    final SingleCRS single=toGeodetic3D(count == 2 ? crs : null,horizontal,vertical,xyFirst);
+    if (count == 2) {
+      return single;
+    }
+    final int i=xyFirst ? hi : vi;
+    components=new ArrayList<SingleCRS>(components);
+    components.remove(i);
+    components.set(i,single);
+    final SingleCRS[] c=components.toArray(new SingleCRS[components.size()]);
+    return crsFactory.createCompoundCRS(AbstractIdentifiedObject.getProperties(crs),c);
+  }
+  return crs;
+}

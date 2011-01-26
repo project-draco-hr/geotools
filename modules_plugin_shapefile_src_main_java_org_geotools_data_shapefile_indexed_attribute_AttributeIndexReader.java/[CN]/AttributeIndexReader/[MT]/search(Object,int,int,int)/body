@@ -1,0 +1,32 @@
+{
+  if (maxRec == minRec) {
+    goTo(minRec);
+    buffer.limit(record_size);
+    IndexRecord currentRecord=next();
+    buffer.limit(buffer.capacity());
+    return (currentRecord != null && currentRecord.getAttribute().equals(desired)) ? firstInstance(minRec,currentRecord) : null;
+  }
+  goTo(predictedRec);
+  buffer.limit(record_size);
+  IndexRecord currentRecord=next();
+  buffer.limit(buffer.capacity());
+  if (currentRecord == null)   return null;
+  int comparison=currentRecord.compareTo(desired);
+  if (comparison == 0) {
+    return firstInstance(predictedRec,currentRecord);
+  }
+  if (maxRec - minRec < 2) {
+    int llimit=(minRec == predictedRec) ? minRec + 1 : minRec;
+    int ulimit=(minRec == predictedRec) ? maxRec : maxRec - 1;
+    int newPrediction=(minRec == predictedRec) ? llimit : ulimit;
+    return search(desired,llimit,ulimit,newPrediction);
+  }
+  if (comparison < 1) {
+    int newPrediction=(maxRec - predictedRec) / 2 + predictedRec;
+    return search(desired,++predictedRec,maxRec,newPrediction);
+  }
+ else {
+    int newPrediction=(predictedRec - minRec) / 2 + minRec;
+    return search(desired,minRec,--predictedRec,newPrediction);
+  }
+}

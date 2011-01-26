@@ -1,0 +1,21 @@
+{
+  CoordinateReferenceSystem srcCRS=null;
+  GeometryFactory fac=new GeometryFactory();
+  Point p=fac.createPoint(new Coordinate(10,10));
+  MemoryDataStore ds=createDatastore(srcCRS,p);
+  SimpleFeatureCollection collection=ds.getFeatureSource(FEATURE_TYPE_NAME).getFeatures();
+  SimpleFeatureIterator original=collection.features();
+  CoordinateReferenceSystem destCRS=DefaultEngineeringCRS.CARTESIAN_2D;
+  ForceCoordinateSystemIterator modified=new ForceCoordinateSystemIterator(collection.features(),collection.getSchema(),destCRS);
+  SimpleFeature f1=original.next();
+  SimpleFeature f2=modified.next();
+  assertEquals(((Geometry)f1.getDefaultGeometry()).getCoordinate(),((Geometry)f2.getDefaultGeometry()).getCoordinate());
+  assertFalse(f2.getFeatureType().getCoordinateReferenceSystem().equals(f1.getFeatureType().getCoordinateReferenceSystem()));
+  assertEquals(srcCRS,f1.getFeatureType().getCoordinateReferenceSystem());
+  assertEquals(srcCRS,f1.getFeatureType().getGeometryDescriptor().getCoordinateReferenceSystem());
+  assertEquals(destCRS,f2.getFeatureType().getCoordinateReferenceSystem());
+  assertEquals(destCRS,f2.getFeatureType().getGeometryDescriptor().getCoordinateReferenceSystem());
+  assertFalse(original.hasNext());
+  assertFalse(modified.hasNext());
+  assertNotNull(modified.builder);
+}

@@ -1,0 +1,38 @@
+{
+  String[] columns=null;
+  String[] tables=null;
+  String where=null;
+  String orderAndOrGroupByClause=null;
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("building SeQueryInfo to reflect " + select);
+  }
+  columns=getColumns(session,select.getSelectItems());
+  tables=getTables(select.getFromItems());
+  Expression whereClause=select.getWhere();
+  if (whereClause != null) {
+    where=whereClause.toString();
+  }
+  if (select.getGroupByColumnReferences() != null && select.getGroupByColumnReferences().size() > 0) {
+    String gb=PlainSelect.getFormatedList(select.getGroupByColumnReferences()," GROUP BY ");
+    orderAndOrGroupByClause=gb;
+  }
+  if (select.getOrderByElements() != null && select.getOrderByElements().size() > 0) {
+    String ob=PlainSelect.orderByToString(select.getOrderByElements());
+    if (orderAndOrGroupByClause == null) {
+      orderAndOrGroupByClause="";
+    }
+    orderAndOrGroupByClause+=" " + ob;
+  }
+  SeQueryInfo qinfo=new SeQueryInfo();
+  qinfo.setColumns(columns);
+  SeSqlConstruct sqlConstruct=new SeSqlConstruct();
+  sqlConstruct.setTables(tables);
+  if (where != null) {
+    sqlConstruct.setWhere(where);
+  }
+  qinfo.setConstruct(sqlConstruct);
+  if (orderAndOrGroupByClause != null) {
+    qinfo.setByClause(orderAndOrGroupByClause);
+  }
+  return qinfo;
+}

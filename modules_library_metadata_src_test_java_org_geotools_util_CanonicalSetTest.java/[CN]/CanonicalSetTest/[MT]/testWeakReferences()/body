@@ -1,0 +1,37 @@
+{
+  final Random random=new Random();
+  for (int pass=0; pass < 2; pass++) {
+    final CanonicalSet<Integer> weakSet=CanonicalSet.newInstance(Integer.class);
+    final HashSet<Integer> strongSet=new HashSet<Integer>();
+    for (int i=0; i < 500; i++) {
+      final Integer value=new Integer(random.nextInt(500));
+      if (random.nextBoolean()) {
+        final boolean weakModified=weakSet.add(value);
+        final boolean strongModified=strongSet.add(value);
+        if (weakModified) {
+          assertTrue("add:",strongModified);
+        }
+ else {
+          assertTrue(value != weakSet.get(value));
+          if (strongModified) {
+            weakSet.remove(value);
+            assertTrue(weakSet.add(value));
+            assertSame(value,weakSet.get(value));
+          }
+        }
+      }
+ else {
+        final boolean c=weakSet.contains(value);
+        if (strongSet.remove(value)) {
+          assertTrue("contains:",c);
+        }
+      }
+      assertTrue("containsAll:",weakSet.containsAll(strongSet));
+    }
+    for (int i=0; i < 20; i++) {
+      Runtime.getRuntime().gc();
+      Runtime.getRuntime().runFinalization();
+    }
+    assertEquals("equals:",strongSet,weakSet);
+  }
+}

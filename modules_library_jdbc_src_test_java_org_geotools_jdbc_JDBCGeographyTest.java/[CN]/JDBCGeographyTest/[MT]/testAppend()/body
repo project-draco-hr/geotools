@@ -1,0 +1,19 @@
+{
+  if (!isGeographySupportAvailable()) {
+    return;
+  }
+  FeatureWriter fw=dataStore.getFeatureWriterAppend(tname("geopoint"),Transaction.AUTO_COMMIT);
+  assertFalse(fw.hasNext());
+  SimpleFeature f=(SimpleFeature)fw.next();
+  Point point=gf.createPoint(new Coordinate(10,10));
+  f.setAttribute("name","append");
+  f.setDefaultGeometry(point);
+  fw.write();
+  Filter filter=ff.equals(ff.property("name"),ff.literal("append"));
+  Query q=new Query(tname("geopoint"),filter);
+  FeatureReader fr=dataStore.getFeatureReader(q,Transaction.AUTO_COMMIT);
+  assertTrue(fr.hasNext());
+  f=(SimpleFeature)fr.next();
+  assertTrue(point.equals((Point)f.getDefaultGeometry()));
+  fr.close();
+}

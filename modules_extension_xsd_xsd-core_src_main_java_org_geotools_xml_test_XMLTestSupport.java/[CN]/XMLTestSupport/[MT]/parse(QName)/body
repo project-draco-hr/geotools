@@ -1,0 +1,20 @@
+{
+  Element root=document.getDocumentElement();
+  if (root == null) {
+    throw new IllegalStateException("Document has no root element");
+  }
+  Configuration config=createConfiguration();
+  if (type != null) {
+    config.getContext().registerComponentInstance("http://geotools.org/typeDefinition",type);
+  }
+  registerNamespaces(root);
+  for (Iterator e=namespaceMappings.entrySet().iterator(); e.hasNext(); ) {
+    Map.Entry mapping=(Map.Entry)e.next();
+    String prefix=(String)mapping.getKey();
+    String uri=(String)mapping.getValue();
+    root.setAttribute("xmlns:" + prefix,uri);
+  }
+  root.setAttribute("xsi:schemaLocation",config.getNamespaceURI() + " " + config.getSchemaFileURL());
+  DOMParser parser=new DOMParser(config,document);
+  return parser.parse();
+}

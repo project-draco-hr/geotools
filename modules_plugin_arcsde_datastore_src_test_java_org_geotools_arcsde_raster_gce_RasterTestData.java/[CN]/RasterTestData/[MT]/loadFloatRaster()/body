@@ -1,0 +1,17 @@
+{
+  final String tableName=getRasterTableName(TYPE_32BIT_REAL,1);
+  testData.deleteTable(tableName);
+  ISession session=getConnectionPool().getSession();
+  try {
+    createRasterBusinessTempTable(tableName,session);
+  }
+  finally {
+    session.dispose();
+  }
+  SeExtent imgExtent=new SeExtent(245900,899600,246300,900000);
+  SeCoordinateReference crs=getSeCRSFromPeProjectedCSId(PePCSDefs.PE_PCS_NAD_1983_HARN_MA_M);
+  String rasterFilename=(String)testData.getConProps().get("sampledata.floatraster");
+  ArcSDERasterProducer prod=new ArcSDERasterFloatProducerImpl();
+  importRasterImage(tableName,crs,rasterFilename,SeRaster.SE_PIXEL_TYPE_32BIT_REAL,imgExtent,prod);
+  return tableName;
+}

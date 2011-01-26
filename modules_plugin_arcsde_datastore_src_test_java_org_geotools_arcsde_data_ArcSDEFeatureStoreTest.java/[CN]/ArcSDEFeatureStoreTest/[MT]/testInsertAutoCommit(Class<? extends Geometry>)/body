@@ -1,0 +1,25 @@
+{
+  final String typeName=testData.getTempTableName();
+  final int insertCount=2;
+  final SimpleFeatureCollection testFeatures;
+  testFeatures=testData.createTestFeatures(geometryClass,insertCount);
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureSource fsource=ds.getFeatureSource(typeName);
+  final int initialCount=fsource.getCount(Query.ALL);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=ds.getFeatureWriterAppend(typeName,Transaction.AUTO_COMMIT);
+  SimpleFeature source;
+  SimpleFeature dest;
+  try {
+    for (SimpleFeatureIterator fi=testFeatures.features(); fi.hasNext(); ) {
+      source=fi.next();
+      dest=writer.next();
+      dest.setAttributes(source.getAttributes());
+      writer.write();
+    }
+  }
+  finally {
+    writer.close();
+  }
+  int fcount=fsource.getCount(Query.ALL);
+  assertEquals(testFeatures.size() + initialCount,fcount);
+}

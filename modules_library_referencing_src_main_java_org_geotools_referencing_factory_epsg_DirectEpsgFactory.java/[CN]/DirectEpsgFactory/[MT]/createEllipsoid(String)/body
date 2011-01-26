@@ -1,0 +1,50 @@
+{
+  ensureNonNull("code",code);
+  Ellipsoid returnValue=null;
+  try {
+    final String primaryKey=toPrimaryKey(Ellipsoid.class,code,"[Ellipsoid]","ELLIPSOID_CODE","ELLIPSOID_NAME");
+    final PreparedStatement stmt;
+    stmt=prepareStatement("Ellipsoid","SELECT ELLIPSOID_CODE," + " ELLIPSOID_NAME," + " SEMI_MAJOR_AXIS,"+ " INV_FLATTENING,"+ " SEMI_MINOR_AXIS,"+ " UOM_CODE,"+ " REMARKS"+ " FROM [Ellipsoid]"+ " WHERE ELLIPSOID_CODE = ?");
+    stmt.setInt(1,Integer.parseInt(primaryKey));
+    final ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final double semiMajorAxis=getDouble(result,3,code);
+      final double inverseFlattening=result.getDouble(4);
+      final double semiMinorAxis=result.getDouble(5);
+      final String unitCode=getString(result,6,code);
+      final String remarks=result.getString(7);
+      final Unit unit=buffered.createUnit(unitCode);
+      final Map<String,Object> properties=createProperties(name,epsg,remarks);
+      final Ellipsoid ellipsoid;
+      if (inverseFlattening == 0) {
+        if (semiMinorAxis == 0) {
+          final String column=result.getMetaData().getColumnName(3);
+          result.close();
+          throw new FactoryException(Errors.format(ErrorKeys.NULL_VALUE_IN_TABLE_$3,code,column));
+        }
+ else {
+          ellipsoid=factories.getDatumFactory().createEllipsoid(properties,semiMajorAxis,semiMinorAxis,unit);
+        }
+      }
+ else {
+        if (semiMinorAxis != 0) {
+          final LogRecord record=Loggings.format(Level.WARNING,LoggingKeys.AMBIGUOUS_ELLIPSOID,code);
+          record.setLoggerName(LOGGER.getName());
+          LOGGER.log(record);
+        }
+        ellipsoid=factories.getDatumFactory().createFlattenedSphere(properties,semiMajorAxis,inverseFlattening,unit);
+      }
+      returnValue=ensureSingleton(ellipsoid,returnValue,code);
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(Ellipsoid.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(Ellipsoid.class,code);
+  }
+  return returnValue;
+}

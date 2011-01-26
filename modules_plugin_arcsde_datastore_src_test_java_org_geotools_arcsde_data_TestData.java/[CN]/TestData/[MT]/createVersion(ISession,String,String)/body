@@ -1,0 +1,31 @@
+{
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      final SeVersion parentVersion=session.issue(new GetVersionCommand(parentVersionName));
+      SeVersion version=null;
+      try {
+        version=session.issue(new GetVersionCommand(versionName));
+      }
+ catch (      ArcSdeException e) {
+      }
+      if (version != null) {
+        return null;
+      }
+      SeVersion newVersion=new SeVersion(connection,parentVersionName);
+      newVersion.setName(versionName);
+      newVersion.setOwner(session.getUser());
+      newVersion.setParentName(parentVersionName);
+      newVersion.setDescription(parentVersion.getName() + " child for GeoTools ArcSDE unit tests");
+      boolean uniqueName=false;
+      try {
+        newVersion.create(uniqueName,newVersion);
+        newVersion.getInfo();
+      }
+ catch (      SeException e) {
+        throw new ArcSdeException(e);
+      }
+      return null;
+    }
+  }
+);
+}

@@ -1,0 +1,25 @@
+{
+  if (typeName == null)   throw new NullPointerException("typeName");
+  if (select == null)   throw new NullPointerException("select");
+  if (Arrays.asList(getTypeNames()).contains(typeName)) {
+    throw new IllegalArgumentException(typeName + " already exists as a FeatureType");
+  }
+  verifyQueryIsSupported(select);
+  final ISession session=getSession(Transaction.AUTO_COMMIT);
+  try {
+    final PlainSelect qualifiedSelect=SelectQualifier.qualify(session,select);
+    final SeQueryInfo queryInfo;
+    try {
+      LOGGER.fine("creating definition query info");
+      queryInfo=QueryInfoParser.parse(session,qualifiedSelect);
+    }
+ catch (    SeException e) {
+      throw new ArcSdeException("Error Parsing select: " + qualifiedSelect,e);
+    }
+    FeatureTypeInfo typeInfo=ArcSDEAdapter.createInprocessViewSchema(session,typeName,typeInfoCache.getNamesapceURI(),qualifiedSelect,queryInfo);
+    typeInfoCache.addInprocessViewInfo(typeInfo);
+  }
+  finally {
+    session.dispose();
+  }
+}

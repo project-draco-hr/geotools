@@ -1,0 +1,21 @@
+{
+  super(null,results.getSchema());
+  SimpleFeatureIterator reader=null;
+  bounds=new Envelope();
+  count=0;
+  try {
+    reader=results.features();
+    SimpleFeature f;
+    Envelope env;
+    while (reader.hasNext()) {
+      f=reader.next();
+      env=((Geometry)f.getDefaultGeometry()).getEnvelopeInternal();
+      bounds.expandToInclude(env);
+      count++;
+      index.insert(env,f);
+    }
+  }
+  finally {
+    if (reader != null)     reader.close();
+  }
+}

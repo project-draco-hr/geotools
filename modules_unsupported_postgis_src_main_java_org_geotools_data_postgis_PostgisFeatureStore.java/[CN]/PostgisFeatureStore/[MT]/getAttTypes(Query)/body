@@ -1,0 +1,22 @@
+{
+  AttributeDescriptor[] schemaTypes=(AttributeDescriptor[])getSchema().getAttributeDescriptors().toArray(new AttributeDescriptor[getSchema().getAttributeDescriptors().size()]);
+  if (query.retrieveAllProperties()) {
+    return schemaTypes;
+  }
+ else {
+    List attNames=Arrays.asList(query.getPropertyNames());
+    AttributeDescriptor[] retAttTypes=new AttributeDescriptor[attNames.size()];
+    int retPos=0;
+    for (int i=0, n=schemaTypes.length; i < n; i++) {
+      String schemaTypeName=schemaTypes[i].getLocalName();
+      if (attNames.contains(schemaTypeName)) {
+        retAttTypes[retPos++]=schemaTypes[i];
+      }
+    }
+    if (attNames.size() != retPos) {
+      String msg="attempted to request a property, " + attNames.get(0) + " that is not part of the schema ";
+      throw new IOException(msg);
+    }
+    return retAttTypes;
+  }
+}

@@ -1,0 +1,40 @@
+{
+  if (stream == null) {
+    final Object input=getInput();
+    if (input == null) {
+      throw new IllegalStateException(getErrorResources().getString(ErrorKeys.NO_IMAGE_INPUT));
+    }
+    if (input instanceof InputStream) {
+      stream=(InputStream)input;
+      closeOnReset=null;
+    }
+ else     if (input instanceof ImageInputStream) {
+      stream=new InputStreamAdapter((ImageInputStream)input);
+      closeOnReset=null;
+    }
+ else     if (input instanceof String) {
+      stream=new FileInputStream((String)input);
+      closeOnReset=stream;
+    }
+ else     if (input instanceof File) {
+      stream=new FileInputStream((File)input);
+      closeOnReset=stream;
+    }
+ else     if (input instanceof URI) {
+      stream=((URI)input).toURL().openStream();
+      closeOnReset=stream;
+    }
+ else     if (input instanceof URL) {
+      stream=((URL)input).openStream();
+      closeOnReset=stream;
+    }
+ else     if (input instanceof URLConnection) {
+      stream=((URLConnection)input).getInputStream();
+      closeOnReset=stream;
+    }
+ else {
+      throw new IllegalStateException(getErrorResources().getString(ErrorKeys.ILLEGAL_CLASS_$2,Classes.getClass(input),InputStream.class));
+    }
+  }
+  return stream;
+}

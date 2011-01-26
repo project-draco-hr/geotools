@@ -1,0 +1,24 @@
+{
+  String[] propNames=null;
+  if (query.retrieveAllProperties()) {
+    propNames=new String[schema.getAttributeCount()];
+    for (int i=0; i < schema.getAttributeCount(); i++) {
+      propNames[i]=schema.getDescriptor(i).getLocalName();
+    }
+  }
+ else {
+    String[] queriedAtts=query.getPropertyNames();
+    int queriedAttCount=queriedAtts.length;
+    List allowedAtts=new LinkedList();
+    for (int i=0; i < queriedAttCount; i++) {
+      if (schema.getDescriptor(queriedAtts[i]) != null) {
+        allowedAtts.add(queriedAtts[i]);
+      }
+ else {
+        LOGGER.info("queried a not allowed property: " + queriedAtts[i] + ". Ommitting it from query");
+      }
+    }
+    propNames=(String[])allowedAtts.toArray(new String[allowedAtts.size()]);
+  }
+  return propNames;
+}

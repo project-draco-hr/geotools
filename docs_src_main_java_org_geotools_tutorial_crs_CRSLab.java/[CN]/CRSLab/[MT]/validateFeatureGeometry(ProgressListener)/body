@@ -1,0 +1,17 @@
+{
+  final SimpleFeatureCollection featureCollection=featureSource.getFeatures();
+class ValidationVisitor implements FeatureVisitor {
+    public int numInvalidGeometries=0;
+    public void visit(    Feature f){
+      SimpleFeature feature=(SimpleFeature)f;
+      Geometry geom=(Geometry)feature.getDefaultGeometry();
+      if (geom != null && !geom.isValid()) {
+        numInvalidGeometries++;
+        System.out.println("Invalid Geoemtry: " + feature.getID());
+      }
+    }
+  }
+  ValidationVisitor visitor=new ValidationVisitor();
+  featureCollection.accepts(visitor,progress);
+  return visitor.numInvalidGeometries;
+}

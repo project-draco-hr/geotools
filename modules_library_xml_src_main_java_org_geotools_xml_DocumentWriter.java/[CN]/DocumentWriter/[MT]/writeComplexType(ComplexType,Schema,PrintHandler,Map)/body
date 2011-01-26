@@ -1,0 +1,50 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if ((complexType.getId() != null) && (complexType.getId() != "")) {
+    ai.addAttribute("","id","","ID",complexType.getId());
+  }
+  if ((complexType.getName() != null) && (complexType.getName() != "")) {
+    ai.addAttribute("","name","","NCName",complexType.getName());
+  }
+  if (complexType.isAbstract()) {
+    ai.addAttribute("","abstract","","boolean","true");
+  }
+  if (complexType.getFinal() != Schema.NONE) {
+    ai.addAttribute("","final","","NMTOKENS",ComplexTypeHandler.writeFinal(complexType.getFinal()));
+  }
+  if (complexType.getBlock() != Schema.NONE) {
+    ai.addAttribute("","block","","NMTOKENS",ComplexTypeHandler.writeBlock(complexType.getBlock()));
+  }
+  if (complexType.isMixed()) {
+    ai.addAttribute("","mixed","","boolean","true");
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"complexType",ai);
+  ElementGrouping egs=complexType.getChild();
+  complexType.getChild();
+  if (egs != null) {
+switch (egs.getGrouping()) {
+case ElementGrouping.ALL:
+      writeAll((All)egs,schema,ph,hints);
+    break;
+case ElementGrouping.CHOICE:
+  writeChoice((Choice)egs,schema,ph,hints);
+break;
+case ElementGrouping.GROUP:
+writeGroup((Group)egs,schema,ph,hints);
+break;
+case ElementGrouping.SEQUENCE:
+writeSequence((Sequence)egs,schema,ph,hints);
+break;
+}
+}
+if (complexType.getAnyAttributeNameSpace() != null) {
+ai=new AttributesImpl();
+ai.addAttribute("","namespace","","special",complexType.getAnyAttributeNameSpace());
+ph.element(XSISimpleTypes.NAMESPACE,"anyAttribute",ai);
+}
+if (complexType.getAttributes() != null) {
+Attribute[] attrs=complexType.getAttributes();
+for (int i=0; i < attrs.length; i++) writeAttribute(attrs[i],schema,ph,hints);
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"complexType");
+}

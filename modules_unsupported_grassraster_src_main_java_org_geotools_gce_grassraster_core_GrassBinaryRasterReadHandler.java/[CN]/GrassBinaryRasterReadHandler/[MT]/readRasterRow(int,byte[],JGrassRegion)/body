@@ -1,0 +1,65 @@
+{
+  ByteBuffer rowBuffer=ByteBuffer.wrap(rowDataCache);
+  double activeewres=activeReadRegion.getWEResolution();
+  double activewest=activeReadRegion.getWest();
+  double filewest=nativeRasterRegion.getWest();
+  double fileewres=nativeRasterRegion.getWEResolution();
+  ByteBuffer rowCache=ByteBuffer.allocate(nativeRasterRegion.getCols() * ((readerMapType == -2) ? 8 : 4));
+  getMapRow(currentfilerow,rowCache);
+  for (double col=0; col < activeReadRegion.getCols(); col++) {
+    double x=(((activewest + (col * activeewres)) - filewest) / fileewres);
+    x=Math.round(x);
+    if (x < 0 || x >= nativeRasterRegion.getCols()) {
+      if (readerMapType > 0) {
+        rowBuffer.putInt(Integer.MAX_VALUE);
+      }
+ else       if (readerMapType == -1) {
+        rowBuffer.putFloat(Float.NaN);
+      }
+ else       if (readerMapType == -2) {
+        rowBuffer.putDouble(Double.NaN);
+      }
+    }
+ else     if (readNullValueAtRowCol(currentfilerow,(int)x)) {
+      if (readerMapType > 0) {
+        rowBuffer.putInt(Integer.MAX_VALUE);
+      }
+ else       if (readerMapType == -1) {
+        rowBuffer.putFloat(Float.NaN);
+      }
+ else       if (readerMapType == -2) {
+        rowBuffer.putDouble(Double.NaN);
+      }
+    }
+ else {
+      rowCache.position((int)x * numberOfBytesPerValue);
+      if (readerMapType > 0) {
+        int cell=rowCache.getInt();
+        if (cell == 0 && isOldIntegerMap) {
+          rowBuffer.putInt(Integer.MAX_VALUE);
+        }
+ else {
+          if (reclassTable != null) {
+            cell=((Integer)reclassTable.elementAt(cell)).intValue();
+          }
+          rowBuffer.putInt(cell);
+        }
+      }
+ else       if (readerMapType == -1) {
+        float cell=rowCache.getFloat();
+        if (reclassTable != null) {
+          cell=((Integer)reclassTable.elementAt((int)cell)).floatValue();
+        }
+        rowBuffer.putFloat(cell);
+      }
+ else       if (readerMapType == -2) {
+        double cell=rowCache.getDouble();
+        if (reclassTable != null) {
+          cell=((Integer)reclassTable.elementAt((int)cell)).doubleValue();
+        }
+        rowBuffer.putDouble(cell);
+      }
+    }
+  }
+  return true;
+}

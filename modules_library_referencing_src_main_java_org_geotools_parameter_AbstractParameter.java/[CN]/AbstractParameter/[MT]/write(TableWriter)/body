@@ -1,0 +1,37 @@
+{
+  table.write(getName(descriptor));
+  table.nextColumn();
+  if (this instanceof ParameterValue) {
+    table.write('=');
+    table.nextColumn();
+    append(table,((ParameterValue)this).getValue());
+  }
+ else   if (this instanceof ParameterValueGroup) {
+    table.write(':');
+    table.nextColumn();
+    TableWriter inner=null;
+    for (final Iterator it=((ParameterValueGroup)this).values().iterator(); it.hasNext(); ) {
+      final GeneralParameterValue value=(GeneralParameterValue)it.next();
+      if (value instanceof AbstractParameter) {
+        if (inner == null) {
+          inner=new TableWriter(table,1);
+        }
+        ((AbstractParameter)value).write(inner);
+      }
+ else {
+        if (inner != null) {
+          inner.flush();
+          inner=null;
+        }
+        table.write(value.toString());
+        table.write(System.getProperty("line.separator","\r"));
+      }
+    }
+    if (inner != null) {
+      inner.flush();
+    }
+  }
+ else {
+  }
+  table.nextLine();
+}

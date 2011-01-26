@@ -1,0 +1,33 @@
+{
+  if (gc.getNumGeometries() == 1) {
+    return clip(gc.getGeometryN(0),ensureValid);
+  }
+ else {
+    List<Geometry> result=new ArrayList<Geometry>(gc.getNumGeometries());
+    for (int i=0; i < gc.getNumGeometries(); i++) {
+      Geometry clipped=clip(gc.getGeometryN(i),ensureValid);
+      if (clipped != null) {
+        result.add(clipped);
+      }
+    }
+    if (result.size() == 0) {
+      return null;
+    }
+ else     if (result.size() == 1) {
+      return result.get(0);
+    }
+    flattenCollection(result);
+    if (gc instanceof MultiPoint) {
+      return gc.getFactory().createMultiPoint((Point[])result.toArray(new Point[result.size()]));
+    }
+ else     if (gc instanceof MultiLineString) {
+      return gc.getFactory().createMultiLineString((LineString[])result.toArray(new LineString[result.size()]));
+    }
+ else     if (gc instanceof MultiPolygon) {
+      return gc.getFactory().createMultiPolygon((Polygon[])result.toArray(new Polygon[result.size()]));
+    }
+ else {
+      return gc.getFactory().createGeometryCollection((Geometry[])result.toArray(new Geometry[result.size()]));
+    }
+  }
+}

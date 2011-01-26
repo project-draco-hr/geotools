@@ -1,0 +1,58 @@
+{
+  final int minCol=0;
+  final int minRow=0;
+  final int maxCol=width - 2;
+  final int maxRow=height - 2;
+  int postIncrement=0;
+  if (srcOff < dstOff) {
+    if ((srcPts2 != null) ? srcPts2 == dstPts2 : srcPts1 == dstPts1) {
+      srcOff+=(numPts - 1) * 2;
+      dstOff+=(numPts - 1) * 2;
+      postIncrement=-4;
+    }
+  }
+  while (--numPts >= 0) {
+    final double xi, yi;
+    if (srcPts2 != null) {
+      xi=srcPts2[srcOff++];
+      yi=srcPts2[srcOff++];
+    }
+ else {
+      xi=srcPts1[srcOff++];
+      yi=srcPts1[srcOff++];
+    }
+    final int col=Math.max(Math.min((int)xi,maxCol),minCol);
+    final int row=Math.max(Math.min((int)yi,maxRow),minRow);
+    final int offset00=(col + row * width) * CP_LENGTH;
+    final int offset01=offset00 + CP_LENGTH * width;
+    final int offset10=offset00 + CP_LENGTH;
+    final int offset11=offset01 + CP_LENGTH;
+    final double x0=linearInterpolation(col + 0,grid[offset00 + X_OFFSET],col + 1,grid[offset10 + X_OFFSET],xi);
+    final double y0=linearInterpolation(col + 0,grid[offset00 + Y_OFFSET],col + 1,grid[offset10 + Y_OFFSET],xi);
+    final double x1=linearInterpolation(col + 0,grid[offset01 + X_OFFSET],col + 1,grid[offset11 + X_OFFSET],xi);
+    final double y1=linearInterpolation(col + 0,grid[offset01 + Y_OFFSET],col + 1,grid[offset11 + Y_OFFSET],xi);
+    final double xf=linearInterpolation(row,x0,row + 1,x1,yi);
+    final double yf=linearInterpolation(row,y0,row + 1,y1,yi);
+    if (dstPts2 != null) {
+      dstPts2[dstOff++]=xf;
+      dstPts2[dstOff++]=yf;
+    }
+ else {
+      dstPts1[dstOff++]=(float)xf;
+      dstPts1[dstOff++]=(float)yf;
+    }
+    srcOff+=postIncrement;
+    dstOff+=postIncrement;
+    if (false) {
+      final java.io.PrintStream out=System.out;
+      out.print("TD  ==> xi : ");
+      out.print(xi);
+      out.print(" / yi : ");
+      out.print(yi);
+      out.print("  --->  xo : ");
+      out.print(xf);
+      out.print(" / yo : ");
+      out.println(yf);
+    }
+  }
+}

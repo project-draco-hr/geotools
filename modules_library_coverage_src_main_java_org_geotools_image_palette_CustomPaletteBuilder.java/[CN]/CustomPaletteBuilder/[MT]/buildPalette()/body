@@ -1,0 +1,61 @@
+{
+  reduceList=new ColorNode[maxLevel + 1];
+  for (int i=0; i < reduceList.length; i++) {
+    reduceList[i]=null;
+  }
+  numNodes=0;
+  maxNodes=0;
+  root=null;
+  currSize=0;
+  currLevel=maxLevel;
+  final int numBands=src.getSampleModel().getNumBands();
+  final int rgba[]=new int[numBands];
+  final boolean discriminantTransparency=transparency != Transparency.OPAQUE;
+  final int transpBand=numBands - 1;
+  final int minx_=src.getMinX();
+  final int miny_=src.getMinY();
+  final int srcW_=src.getWidth();
+  final int srcH_=src.getHeight();
+  final int maxx_=minx_ + srcW_;
+  final int maxy_=miny_ + srcH_;
+  final int minTileX=src.getMinTileX();
+  final int minTileY=src.getMinTileY();
+  final int tileW=src.getTileWidth();
+  final int tileH=src.getTileHeight();
+  final int maxTileX=minTileX + src.getNumXTiles();
+  final int maxTileY=minTileY + src.getNumYTiles();
+  for (int ty=minTileY; ty < maxTileY; ty++) {
+    for (int tx=minTileX; tx < maxTileX; tx++) {
+      final Raster r=src.getTile(tx,ty);
+      int minx=r.getMinX();
+      int miny=r.getMinY();
+      minx=minx < minx_ ? minx_ : minx;
+      miny=miny < miny_ ? miny_ : miny;
+      int maxx=minx + tileW;
+      int maxy=miny + tileH;
+      maxx=maxx > maxx_ ? maxx_ : maxx;
+      maxy=maxy > maxy_ ? maxy_ : maxy;
+      for (int j=miny; j < maxy; j++) {
+        if ((subsampley > 1) && ((j % subsampley) != 0)) {
+          continue;
+        }
+        for (int i=minx; i < maxx; i++) {
+          if ((subsampleX > 1) && ((i % subsampleX) != 0)) {
+            continue;
+          }
+          r.getPixel(i,j,rgba);
+          if (discriminantTransparency && (rgba[transpBand] < alphaThreshold)) {
+            transColor=insertNode(transColor,rgba,0);
+          }
+ else {
+            root=insertNode(root,rgba,0);
+          }
+          if (currSize > requiredSize) {
+            reduceTree();
+          }
+        }
+      }
+    }
+  }
+  return this;
+}

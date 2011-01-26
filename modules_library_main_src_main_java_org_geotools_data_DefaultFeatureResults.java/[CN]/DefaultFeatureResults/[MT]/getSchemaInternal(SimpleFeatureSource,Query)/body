@@ -1,0 +1,29 @@
+{
+  SimpleFeatureType originalType=featureSource.getSchema();
+  SimpleFeatureType schema=null;
+  CoordinateReferenceSystem cs=null;
+  if (query.getCoordinateSystemReproject() != null) {
+    cs=query.getCoordinateSystemReproject();
+  }
+ else   if (query.getCoordinateSystem() != null) {
+    cs=query.getCoordinateSystem();
+  }
+  try {
+    if (cs == null) {
+      if (query.retrieveAllProperties()) {
+        schema=featureSource.getSchema();
+      }
+ else {
+        schema=DataUtilities.createSubType(featureSource.getSchema(),query.getPropertyNames());
+      }
+    }
+ else {
+      schema=DataUtilities.createSubType(originalType,query.getPropertyNames(),cs,query.getTypeName(),null);
+    }
+  }
+ catch (  SchemaException e) {
+    LOGGER.log(Level.WARNING,"Could not change projection to " + cs,e);
+    schema=null;
+  }
+  return schema;
+}

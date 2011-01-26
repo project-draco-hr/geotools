@@ -1,0 +1,47 @@
+{
+  if (transformation == null) {
+    final Map<String,Object> properties=new HashMap<String,Object>();
+    properties.put(Transformation.NAME_KEY,getName());
+    final CoordinateReferenceSystem sourceCRS=getSourceCRS();
+    final CoordinateReferenceSystem targetCRS=getTargetCRS();
+    final GeographicBoundingBox sourceBox=CRS.getGeographicBoundingBox(sourceCRS);
+    final GeographicBoundingBox targetBox=CRS.getGeographicBoundingBox(targetCRS);
+    final GeographicBoundingBox validArea;
+    if (sourceBox == null) {
+      validArea=targetBox;
+    }
+ else     if (targetBox == null) {
+      validArea=sourceBox;
+    }
+ else {
+      final GeneralEnvelope area=new GeneralEnvelope(sourceBox);
+      area.intersect(new GeneralEnvelope(sourceBox));
+      try {
+        validArea=new GeographicBoundingBoxImpl(area);
+      }
+ catch (      TransformException e) {
+        throw new AssertionError(e);
+      }
+    }
+    if (validArea != null) {
+      final ExtentImpl extent=new ExtentImpl();
+      extent.getGeographicElements().add(validArea);
+      properties.put(Transformation.DOMAIN_OF_VALIDITY_KEY,extent.unmodifiable());
+    }
+    final double error=getErrorStatistics().rms();
+    if (!Double.isNaN(error)) {
+      final InternationalString description=Vocabulary.formatInternational(VocabularyKeys.ROOT_MEAN_SQUARED_ERROR);
+      final QuantitativeResultImpl result=new QuantitativeResultImpl();
+      result.setValues(new double[]{error});
+      result.setValueUnit(CRSUtilities.getUnit(targetCRS.getCoordinateSystem()));
+      result.setErrorStatistic(description);
+      final PositionalAccuracyImpl accuracy=new PositionalAccuracyImpl(result);
+      accuracy.setEvaluationMethodType(EvaluationMethodType.DIRECT_INTERNAL);
+      accuracy.setEvaluationMethodDescription(description);
+      properties.put(Transformation.COORDINATE_OPERATION_ACCURACY_KEY,accuracy.unmodifiable());
+    }
+    final MathTransform transform=getMathTransform();
+    transformation=new DefaultTransformation(properties,sourceCRS,targetCRS,transform,new DefaultOperationMethod(transform));
+  }
+  return transformation;
+}

@@ -1,0 +1,42 @@
+{
+  Utilities.ensureNonNull("footprintStore",footprintStore);
+  Utilities.ensureNonNull("footprintsMap",footprintsMap);
+  final String[] typeNames=footprintStore.getTypeNames();
+  if (typeNames.length <= 0)   throw new IllegalArgumentException("Problems when opening the footprint, no typenames for the schema are defined");
+  final String typeName=typeNames[0];
+  final FeatureSource<SimpleFeatureType,SimpleFeature> featureSource=footprintStore.getFeatureSource(typeName);
+  final FeatureCollection<SimpleFeatureType,SimpleFeature> features=featureSource.getFeatures();
+  if (features == null) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("No features found in the footprint");
+    }
+    return;
+  }
+  FeatureIterator<SimpleFeature> it=null;
+  try {
+    it=features.features();
+    if (!it.hasNext()) {
+      throw new IllegalArgumentException("The provided FeatureCollection<SimpleFeatureType, SimpleFeature>  or empty, it's impossible to create an index!");
+    }
+    while (it.hasNext()) {
+      final SimpleFeature feature=it.next();
+      final Geometry g=(Geometry)feature.getDefaultGeometry();
+      final String location=(String)feature.getAttribute("location");
+      footprintsMap.put(location,g);
+    }
+  }
+  finally {
+    try {
+      if (it != null) {
+        it.close();
+      }
+    }
+ catch (    Throwable e) {
+    }
+    try {
+      it.close();
+    }
+ catch (    Throwable e) {
+    }
+  }
+}

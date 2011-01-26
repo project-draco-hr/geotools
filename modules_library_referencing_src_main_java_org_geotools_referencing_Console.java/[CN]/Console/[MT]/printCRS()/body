@@ -1,0 +1,44 @@
+{
+  final Locale locale=null;
+  final Vocabulary resources=Vocabulary.getResources(locale);
+  final TableWriter table=new TableWriter(out,TableWriter.SINGLE_VERTICAL_LINE);
+  table.setMultiLinesCells(true);
+  char separator=TableWriter.SINGLE_HORIZONTAL_LINE;
+  if (sourceCRS != null || targetCRS != null) {
+    table.writeHorizontalSeparator();
+    table.write(resources.getString(VocabularyKeys.SOURCE_CRS));
+    table.nextColumn();
+    table.write(resources.getString(VocabularyKeys.TARGET_CRS));
+    table.nextLine();
+    table.writeHorizontalSeparator();
+    if (sourceCRS != null) {
+      table.write(parser.format(sourceCRS));
+    }
+    table.nextColumn();
+    if (targetCRS != null) {
+      table.write(parser.format(targetCRS));
+    }
+    table.nextLine();
+    separator=TableWriter.DOUBLE_HORIZONTAL_LINE;
+  }
+  update();
+  if (transform != null) {
+    table.nextLine(separator);
+    table.write(resources.getString(VocabularyKeys.MATH_TRANSFORM));
+    table.nextColumn();
+    table.write(resources.getString(VocabularyKeys.INVERSE_TRANSFORM));
+    table.nextLine();
+    table.writeHorizontalSeparator();
+    table.write(parser.format(transform));
+    table.nextColumn();
+    try {
+      table.write(parser.format(transform.inverse()));
+    }
+ catch (    NoninvertibleTransformException exception) {
+      table.write(exception.getLocalizedMessage());
+    }
+    table.nextLine();
+  }
+  table.writeHorizontalSeparator();
+  table.flush();
+}

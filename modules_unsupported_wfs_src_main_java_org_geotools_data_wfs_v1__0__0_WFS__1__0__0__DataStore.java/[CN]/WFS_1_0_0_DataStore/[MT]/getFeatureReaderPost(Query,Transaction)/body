@@ -1,0 +1,46 @@
+{
+  URL postUrl=capabilities.getGetFeature().getPost();
+  if (postUrl == null) {
+    return null;
+  }
+  HttpURLConnection hc=protocolHandler.getConnectionFactory().getConnection(postUrl,POST);
+  Writer w=getOutputStream(hc);
+  Map hints=new HashMap();
+  hints.put(DocumentWriter.BASE_ELEMENT,WFSSchema.getInstance().getElements()[2]);
+  hints.put(DocumentWriter.ENCODING,protocolHandler.getEncoding());
+  try {
+    DocumentWriter.writeDocument(query,WFSSchema.getInstance(),w,hints);
+  }
+ catch (  OperationNotSupportedException e) {
+    LOGGER.warning(e.toString());
+    throw new SAXException(e);
+  }
+ finally {
+    w.flush();
+    w.close();
+  }
+  InputStream is=protocolHandler.getConnectionFactory().getInputStream(hc);
+  WFSTransactionState ts=null;
+  if (!(transaction == Transaction.AUTO_COMMIT)) {
+    ts=(WFSTransactionState)transaction.getState(this);
+    if (ts == null) {
+      ts=new WFSTransactionState(this);
+      transaction.putState(this,ts);
+    }
+  }
+  SimpleFeatureType schema=getSchema(query.getTypeName());
+  SimpleFeatureType featureType;
+  try {
+    featureType=DataUtilities.createSubType(schema,query.getPropertyNames(),query.getCoordinateSystem());
+  }
+ catch (  SchemaException e) {
+    featureType=schema;
+  }
+  schema.getUserData().put("lenient",true);
+  WFSFeatureReader ft=WFSFeatureReader.getFeatureReader(is,bufferSize,timeout,ts,schema);
+  if (!featureType.equals(ft.getFeatureType())) {
+    LOGGER.fine("Recasting feature type to subtype by using a ReTypeFeatureReader");
+    return new ReTypeFeatureReader(ft,featureType,false);
+  }
+ else   return ft;
+}

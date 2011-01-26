@@ -1,0 +1,15 @@
+{
+  final String namespaceUri="http://online.socialchange.net.au";
+  final String localName="RoadSegment";
+  final Name typeName=Types.typeName(namespaceUri,localName);
+  URL configUrl=getClass().getResource("/test-data/roadsegments.xml");
+  AppSchemaDataAccessDTO config=new XMLConfigDigester().parse(configUrl);
+  Set<FeatureTypeMapping> mappings=AppSchemaDataAccessConfigurator.buildMappings(config);
+  dataStore=new AppSchemaDataAccess(mappings);
+  FeatureSource<FeatureType,Feature> source=dataStore.getFeatureSource(typeName);
+  FeatureTypeMapping mapping=(FeatureTypeMapping)mappings.iterator().next();
+  FeatureSource<?,?> mappedSource=mapping.getSource();
+  Envelope expected=getBounds(mappedSource);
+  Envelope actual=getBounds(source);
+  assertEquals(expected,actual);
+}

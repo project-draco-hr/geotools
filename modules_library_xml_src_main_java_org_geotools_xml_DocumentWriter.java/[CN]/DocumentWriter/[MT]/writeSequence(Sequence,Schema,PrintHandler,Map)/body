@@ -1,0 +1,36 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if ((sequence.getId() != null) && (sequence.getId() != "")) {
+    ai.addAttribute("","id","","ID",sequence.getId());
+  }
+  if (sequence.getMaxOccurs() != 1) {
+    ai.addAttribute("","maxOccurs","","Union",(sequence.getMaxOccurs() == ElementGrouping.UNBOUNDED) ? "unbounded" : ("" + sequence.getMaxOccurs()));
+  }
+  if (sequence.getMinOccurs() != 1) {
+    ai.addAttribute("","minOccurs","","ID","" + sequence.getMinOccurs());
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"sequence",ai);
+  ElementGrouping[] egs=sequence.getChildren();
+  if (egs != null) {
+    for (int i=0; i < egs.length; i++)     if (egs[i] != null) {
+switch (egs[i].getGrouping()) {
+case ElementGrouping.ANY:
+        writeAny((Any)egs[i],ph);
+      break;
+case ElementGrouping.CHOICE:
+    writeChoice((Choice)egs[i],schema,ph,hints);
+  break;
+case ElementGrouping.ELEMENT:
+writeElement((Element)egs[i],schema,ph,hints);
+break;
+case ElementGrouping.GROUP:
+writeGroup((Group)egs[i],schema,ph,hints);
+break;
+case ElementGrouping.SEQUENCE:
+writeSequence((Sequence)egs[i],schema,ph,hints);
+break;
+}
+}
+}
+ph.endElement(XSISimpleTypes.NAMESPACE,"sequence");
+}

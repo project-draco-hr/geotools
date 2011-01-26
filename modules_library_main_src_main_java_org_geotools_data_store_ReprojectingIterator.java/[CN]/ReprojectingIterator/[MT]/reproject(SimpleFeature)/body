@@ -1,0 +1,23 @@
+{
+  List attributes=feature.getAttributes();
+  for (int i=0; i < attributes.size(); i++) {
+    Object object=attributes.get(i);
+    if (object instanceof Geometry) {
+      Geometry geometry=(Geometry)object;
+      try {
+        attributes.set(i,tx.transform(geometry));
+      }
+ catch (      TransformException e) {
+        String msg="Error occured transforming " + geometry.toString();
+        throw (IOException)new IOException(msg).initCause(e);
+      }
+    }
+  }
+  try {
+    return SimpleFeatureBuilder.build(schema,attributes,feature.getID());
+  }
+ catch (  IllegalAttributeException e) {
+    String msg="Error creating reprojeced feature";
+    throw (IOException)new IOException(msg).initCause(e);
+  }
+}

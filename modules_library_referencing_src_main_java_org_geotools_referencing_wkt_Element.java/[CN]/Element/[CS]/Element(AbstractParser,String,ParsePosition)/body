@@ -1,0 +1,55 @@
+{
+  int lower=position.getIndex();
+  final int length=text.length();
+  while (lower < length && Character.isWhitespace(text.charAt(lower))) {
+    lower++;
+  }
+  offset=lower;
+  int upper=lower;
+  while (upper < length && Character.isUnicodeIdentifierPart(text.charAt(upper))) {
+    upper++;
+  }
+  if (upper <= lower) {
+    position.setErrorIndex(lower);
+    throw unparsableString(text,position);
+  }
+  keyword=text.substring(lower,upper).toUpperCase(parser.symbols.locale);
+  position.setIndex(upper);
+  int bracketIndex=-1;
+  do {
+    if (++bracketIndex >= parser.symbols.openingBrackets.length) {
+      list=null;
+      return;
+    }
+  }
+ while (!parseOptionalSeparator(text,position,parser.symbols.openingBrackets[bracketIndex]));
+  list=new LinkedList<Object>();
+  do {
+    if (position.getIndex() >= length) {
+      throw missingCharacter(parser.symbols.close,length);
+    }
+    if (parseOptionalSeparator(text,position,parser.symbols.quote)) {
+      lower=position.getIndex();
+      upper=text.indexOf(parser.symbols.quote,lower);
+      if (upper < lower) {
+        position.setErrorIndex(++lower);
+        throw missingCharacter(parser.symbols.quote,lower);
+      }
+      list.add(text.substring(lower,upper).trim());
+      position.setIndex(upper + 1);
+      continue;
+    }
+    lower=position.getIndex();
+    if (!Character.isUnicodeIdentifierStart(text.charAt(lower))) {
+      final Number number=parser.parseNumber(text,position);
+      if (number == null) {
+        throw unparsableString(text,position);
+      }
+      list.add(number);
+      continue;
+    }
+    list.add(new Element(parser,text,position));
+  }
+ while (parseOptionalSeparator(text,position,parser.symbols.separator));
+  parseSeparator(text,position,parser.symbols.closingBrackets[bracketIndex]);
+}

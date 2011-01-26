@@ -1,0 +1,33 @@
+{
+  if (canEncode(element,value,hints)) {
+    Query query=(Query)value;
+    AttributesImpl attributes=new AttributesImpl();
+    if ((query.getHandle() != null) && !"".equals(query.getHandle())) {
+      attributes.addAttribute(WFSSchema.NAMESPACE.toString(),attrs[0].getName(),null,"string",query.getHandle());
+    }
+    attributes.addAttribute(WFSSchema.NAMESPACE.toString(),attrs[1].getName(),null,"string",query.getTypeName());
+    try {
+      if ((query.getVersion() != null) && !"".equals(query.getVersion())) {
+        attributes.addAttribute(WFSSchema.NAMESPACE.toString(),attrs[2].getName(),null,"string",query.getVersion());
+      }
+    }
+ catch (    Throwable t) {
+    }
+    output.startElement(element.getNamespace(),element.getName(),attributes);
+    String[] propNames=query.getPropertyNames();
+    if (Query.ALL_NAMES != propNames) {
+      if (propNames != null) {
+        for (int i=0; i < propNames.length; i++)         elems[0].getType().encode(elems[0],propNames[i],output,hints);
+      }
+    }
+    if (Filter.INCLUDE != query.getFilter()) {
+      if ((query.getFilter() != null) && elems[1].getType().canEncode(elems[1],query.getFilter(),hints)) {
+        elems[1].getType().encode(elems[1],query.getFilter(),output,hints);
+      }
+    }
+    output.endElement(element.getNamespace(),element.getName());
+  }
+ else {
+    throw new OperationNotSupportedException("not a valid value/element for a DescribeFeatureTypeType.");
+  }
+}

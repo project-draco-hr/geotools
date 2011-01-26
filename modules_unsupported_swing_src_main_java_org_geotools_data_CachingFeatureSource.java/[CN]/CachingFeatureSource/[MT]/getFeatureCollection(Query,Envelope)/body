@@ -1,0 +1,21 @@
+{
+  try {
+    SimpleFeatureType alternate=cachedSchema;
+    if (query.getPropertyNames() != Query.ALL_NAMES) {
+      alternate=SimpleFeatureTypeBuilder.retype(cachedSchema,query.getPropertyNames());
+      if (alternate.equals(cachedSchema))       alternate=cachedSchema;
+    }
+    Filter f;
+    if (query.getFilter() != null && query.getFilter().equals(Filter.EXCLUDE)) {
+      f=null;
+    }
+ else {
+      f=query.getFilter();
+    }
+    List featureList=index.query(bounds);
+    return new CachingFeatureCollection(featureList,cachedSchema,alternate,f);
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Error occurred extracting features from the spatial index",e);
+  }
+}

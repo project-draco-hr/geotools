@@ -1,0 +1,47 @@
+{
+  final WfsFactory factory=WfsFactory.eINSTANCE;
+  GetFeatureType getFeature=factory.createGetFeatureType();
+  getFeature.setService("WFS");
+  getFeature.setVersion(wfs.getServiceVersion().toString());
+  getFeature.setOutputFormat(query.getOutputFormat());
+  getFeature.setHandle("GeoTools " + GeoTools.getVersion() + " WFS DataStore");
+  Integer maxFeatures=query.getMaxFeatures();
+  if (maxFeatures != null) {
+    getFeature.setMaxFeatures(BigInteger.valueOf(maxFeatures.intValue()));
+  }
+  ResultType resultType=query.getResultType();
+  getFeature.setResultType(RESULTS == resultType ? RESULTS_LITERAL : HITS_LITERAL);
+  QueryType wfsQuery=factory.createQueryType();
+  wfsQuery.setTypeName(Collections.singletonList(query.getTypeName()));
+  Filter serverFilter=query.getFilter();
+  if (!Filter.INCLUDE.equals(serverFilter)) {
+    wfsQuery.setFilter(serverFilter);
+  }
+  String srsName=query.getSrsName();
+  try {
+    wfsQuery.setSrsName(new URI(srsName));
+  }
+ catch (  URISyntaxException e) {
+    throw new RuntimeException("Can't create a URI from the query CRS: " + srsName,e);
+  }
+  String[] propertyNames=query.getPropertyNames();
+  boolean retrieveAllProperties=propertyNames == null;
+  if (!retrieveAllProperties) {
+    List propertyName=wfsQuery.getPropertyName();
+    for (    String propName : propertyNames) {
+      propertyName.add(propName);
+    }
+  }
+  SortBy[] sortByList=query.getSortBy();
+  if (sortByList != null) {
+    for (    SortBy sortBy : sortByList) {
+      wfsQuery.getSortBy().add(sortBy);
+    }
+  }
+  getFeature.getQuery().add(wfsQuery);
+  RequestComponents reqParts=new RequestComponents();
+  reqParts.setServerRequest(getFeature);
+  Map<String,String> parametersForGet=buildGetFeatureParametersForGet(getFeature);
+  reqParts.setKvpParameters(parametersForGet);
+  return reqParts;
+}

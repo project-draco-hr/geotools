@@ -1,0 +1,29 @@
+{
+  SimpleFeatureType schema=featureSource.getSchema();
+  CoordinateReferenceSystem crs=schema.getCoordinateReferenceSystem();
+  ReferencedEnvelope bounds=featureSource.getBounds();
+  MapContext context=new DefaultMapContext(crs);
+  Style style=new BasicPolygonStyle();
+  context.addLayer(featureSource,style);
+  context.setAreaOfInterest(bounds);
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setContext(context);
+  BufferedImage image=new BufferedImage(800,600,BufferedImage.TYPE_INT_ARGB);
+  Graphics2D graphics=image.createGraphics();
+  Rectangle paintArea=new Rectangle(800,600);
+  ReferencedEnvelope mapArea=bounds;
+  Stopwatch sw=new Stopwatch();
+  long totalTime=0;
+  for (int i=0; i < numRuns; i++) {
+    sw.start();
+    renderer.paint(graphics,paintArea,mapArea);
+    sw.stop();
+    totalTime+=sw.getTime();
+    log("Layer rendered in " + sw.getTimeString());
+    sw.reset();
+    File output=new File("testRender.png");
+    log("writing rendered image to " + output.getAbsolutePath());
+    ImageIO.write(image,"png",output);
+  }
+  log("-- Average rendering time after " + numRuns + " runs: "+ ((totalTime / numRuns) / 1000)+ "s");
+}

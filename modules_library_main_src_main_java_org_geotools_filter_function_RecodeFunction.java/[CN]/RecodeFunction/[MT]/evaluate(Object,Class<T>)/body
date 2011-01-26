@@ -1,0 +1,16 @@
+{
+  if (parameters.size() % 2 != 1) {
+    throw new IllegalArgumentException("There must be an equal number of lookup data and return values");
+  }
+  final Expression lookupExp=parameters.get(0);
+  final List<Expression> pairList=parameters.subList(1,parameters.size());
+  for (int i=0; i < pairList.size(); i+=2) {
+    Expression keyExpr=pairList.get(i);
+    Expression valueExpr=pairList.get(i + 1);
+    org.opengis.filter.Filter compareFilter=ff.equal(lookupExp,keyExpr,false);
+    if (compareFilter.evaluate(object)) {
+      return valueExpr.evaluate(object,context);
+    }
+  }
+  return null;
+}

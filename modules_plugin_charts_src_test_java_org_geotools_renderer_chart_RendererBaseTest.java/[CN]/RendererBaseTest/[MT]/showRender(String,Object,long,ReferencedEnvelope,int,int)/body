@@ -1,0 +1,49 @@
+{
+  final BufferedImage image=new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);
+  Graphics g=image.getGraphics();
+  g.setColor(Color.white);
+  g.fillRect(0,0,w,h);
+  render(renderer,g,new Rectangle(w,h),bounds);
+  final String headless=System.getProperty("java.awt.headless","false");
+  if (!headless.equalsIgnoreCase("true") && TestData.isInteractiveTest()) {
+    try {
+      Frame frame=new Frame(testName);
+      frame.addWindowListener(new WindowAdapter(){
+        public void windowClosing(        WindowEvent e){
+          e.getWindow().dispose();
+        }
+      }
+);
+      Panel p=new Panel(){
+        /** 
+ * <code>serialVersionUID</code> field 
+ */
+        private static final long serialVersionUID=1L;
+{
+          setPreferredSize(new Dimension(w,h));
+        }
+        public void paint(        Graphics g){
+          g.drawImage(image,0,0,this);
+        }
+      }
+;
+      frame.add(p);
+      frame.pack();
+      frame.setVisible(true);
+      Thread.sleep(timeOut);
+      frame.dispose();
+    }
+ catch (    HeadlessException exception) {
+      return;
+    }
+  }
+  boolean hasData=false;
+  for (int y=0; y < h; y++) {
+    for (int x=0; x < w; x++) {
+      if (image.getRGB(x,y) != -1) {
+        hasData=true;
+      }
+    }
+  }
+  assert(hasData);
+}

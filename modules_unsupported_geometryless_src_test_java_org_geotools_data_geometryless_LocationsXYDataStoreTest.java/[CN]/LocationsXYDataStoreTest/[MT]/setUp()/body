@@ -1,0 +1,33 @@
+{
+  HashMap local=new HashMap();
+  local.put("dbtype","jdbc");
+  PropertyResourceBundle resource=new PropertyResourceBundle(this.getClass().getResourceAsStream("fixture.properties"));
+  String namespace=resource.getString("namespace");
+  String user=resource.getString("user");
+  local.put("user",user);
+  String password=resource.getString("password");
+  local.put("passwd",password);
+  String dbschema=resource.getString("schema");
+  local.put("schema",dbschema);
+  String driver=resource.getString("driver");
+  local.put("driver",driver);
+  String urlprefix=resource.getString("urlprefix");
+  local.put("urlprefix",urlprefix);
+  String xcolumn=resource.getString("xcolumn");
+  local.put("xcolumn",xcolumn);
+  String ycolumn=resource.getString("ycolumn");
+  local.put("ycolumn",ycolumn);
+  if (namespace.equals("http://www.geotools.org/data/postgis")) {
+    throw new IllegalStateException("The fixture.properties file needs to be configured for your own database");
+  }
+  try {
+    DataSource dataSource=DataSourceUtil.buildDefaultDataSource(urlprefix,driver,user,password,null);
+    setupTestTable(dataSource.getConnection());
+    dstore=new LocationsXYDataStore(dataSource,dbschema,TEST_NS,xcolumn,ycolumn,GEOM_NAME);
+    dstore.setFIDMapper("testset",new TypedFIDMapper(new BasicFIDMapper("gid",255,true),"testset"));
+    schema=dstore.getSchema(FEATURE_TABLE);
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.INFO,"exception while making schema",e);
+  }
+}

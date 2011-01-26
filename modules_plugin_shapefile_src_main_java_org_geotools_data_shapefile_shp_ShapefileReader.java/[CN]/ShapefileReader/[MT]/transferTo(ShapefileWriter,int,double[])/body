@@ -1,0 +1,32 @@
+{
+  buffer.position(this.toBufferOffset(record.end));
+  buffer.order(ByteOrder.BIG_ENDIAN);
+  buffer.getInt();
+  int rl=buffer.getInt();
+  int mark=buffer.position();
+  int len=rl * 2;
+  buffer.order(ByteOrder.LITTLE_ENDIAN);
+  ShapeType recordType=ShapeType.forID(buffer.getInt());
+  if (recordType.isMultiPoint()) {
+    for (int i=0; i < 4; i++) {
+      bounds[i]=buffer.getDouble();
+    }
+  }
+ else   if (recordType != ShapeType.NULL) {
+    bounds[0]=bounds[1]=buffer.getDouble();
+    bounds[2]=bounds[3]=buffer.getDouble();
+  }
+  headerTransfer.position(0);
+  headerTransfer.putInt(recordNum).putInt(rl).position(0);
+  writer.shpChannel.write(headerTransfer);
+  headerTransfer.putInt(0,writer.offset).position(0);
+  writer.offset+=rl + 4;
+  writer.shxChannel.write(headerTransfer);
+  int oldLimit=buffer.limit();
+  buffer.position(mark).limit(mark + len);
+  writer.shpChannel.write(buffer);
+  buffer.limit(oldLimit);
+  record.end=this.toFileOffset(buffer.position());
+  record.number++;
+  return len;
+}

@@ -1,0 +1,45 @@
+{
+  if ((args.length != 2) && (args.length != 3)) {
+    System.out.println("usage: \"host=myHost port=myPort  dbname=myDB user=myUser password=myPassword\" <module name> ");
+    System.out.println("dont forget to:");
+    System.out.println("1. put quotes around the postgresql connection string");
+    System.out.println("2. pre-create the output database table:");
+    return;
+  }
+  County THIS=new County();
+  PostgisDataStoreFactory pgdsf=new PostgisDataStoreFactory();
+  try {
+    Map param=parsePG(args[0]);
+    param.put("wkb enabled","true");
+    param.put("loose bbox","true");
+    param.put("dbtype","postgis");
+    THIS.ds=pgdsf.createDataStore(param);
+    THIS.MODULE=args[1];
+    THIS.parseModule();
+    System.out.println("start state = " + THIS.state + " county="+ THIS.county);
+    System.out.println("loading rows...");
+    THIS.getrows();
+    System.out.println("loaded rows");
+    System.out.println("Processing...");
+    THIS.process();
+    System.out.println("Saving...");
+    THIS.save();
+    System.out.println("Done!");
+  }
+ catch (  SchemaNotFoundException ee) {
+    System.out.println("you need to have major_roads in your database:");
+    System.out.println("		create table poly_county (");
+    System.out.println("               module text, ");
+    System.out.println("               gen_full geometry,");
+    System.out.println("               gen_1 geometry,");
+    System.out.println("               gen_2 geometry,");
+    System.out.println("               gen_3 geometry) with oids;");
+    System.out.println("insert into geometry_columns values ('','','poly_county','gen_full',2,1,'GEOMETRY');");
+    System.out.println("insert into geometry_columns values ('','','poly_county','gen_1',2,1,'GEOMETRY');");
+    System.out.println("insert into geometry_columns values ('','','poly_county','gen_2',2,1,'GEOMETRY');");
+    System.out.println("insert into geometry_columns values ('','','poly_county','gen_3',2,1,'GEOMETRY');");
+  }
+catch (  Exception e) {
+    e.printStackTrace();
+  }
+}

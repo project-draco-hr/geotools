@@ -1,0 +1,63 @@
+{
+  if (type == ShapeType.NULL) {
+    return null;
+  }
+  Envelope geomBBox=GeometryHandlerUtilities.readBounds(buffer);
+  if (!bbox.intersects(geomBBox)) {
+    return null;
+  }
+  boolean bboxdecimate=geomBBox.getWidth() <= spanx && geomBBox.getHeight() <= spany;
+  int numParts=buffer.getInt();
+  double[][] coords=new double[numParts][];
+  double[][] transformed=new double[numParts][];
+  if (bboxdecimate) {
+    coords=new double[1][];
+    coords[0]=new double[2];
+    transformed=new double[1][];
+    transformed[0]=new double[2];
+    coords[0][0]=buffer.getDouble();
+    coords[0][1]=buffer.getDouble();
+    try {
+      mt.transform(coords[0],0,transformed[0],0,1);
+    }
+ catch (    Exception e) {
+      ShapefileRenderer.LOGGER.severe("could not transform coordinates " + e.getLocalizedMessage());
+      transformed[0]=coords[0];
+    }
+    if (screenMap.checkAndSet((int)transformed[0][0],(int)transformed[0][1])) {
+      LOGGER.finest("Point already rendered" + transformed[0][0] + " "+ transformed[0][1]);
+      return null;
+    }
+  }
+ else {
+    int partsInBBox=0;
+    for (int part=0; part < numParts; part++) {
+      coords[part]=new double[2];
+      coords[part][0]=buffer.getDouble();
+      coords[part][1]=buffer.getDouble();
+      if (!bbox.contains(coords[part][0],coords[part][1]))       continue;
+      if (!mt.isIdentity()) {
+        try {
+          transformed[partsInBBox]=new double[2];
+          mt.transform(coords[part],0,transformed[partsInBBox],0,1);
+        }
+ catch (        Exception e) {
+          ShapefileRenderer.LOGGER.severe("could not transform coordinates " + e.getLocalizedMessage());
+          transformed[partsInBBox]=coords[part];
+        }
+      }
+ else {
+        transformed[partsInBBox]=new double[2];
+        System.arraycopy(coords[part],0,transformed[partsInBBox],0,1);
+      }
+      if (!screenMap.get((int)transformed[partsInBBox][0],(int)transformed[partsInBBox][1]))       partsInBBox++;
+    }
+    if (partsInBBox == 0)     return null;
+    if (partsInBBox != numParts) {
+      double[][] tmp=new double[partsInBBox][];
+      System.arraycopy(transformed,0,tmp,0,partsInBBox);
+      transformed=tmp;
+    }
+  }
+  return createGeometry(type,geomBBox,transformed);
+}

@@ -1,0 +1,35 @@
+{
+  UserLayer layer=new UserLayerImpl();
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase("InlineFeature")) {
+      parseInlineFeature(child,layer);
+    }
+ else     if (childName.equalsIgnoreCase("UserStyle")) {
+      Style user=parseStyle(child);
+      layer.addUserStyle(user);
+    }
+ else     if (childName.equalsIgnoreCase("Name")) {
+      String layerName=getFirstChildValue(child);
+      layer.setName(layerName);
+      if (LOGGER.isLoggable(Level.INFO))       LOGGER.info("layer name: " + layer.getName());
+    }
+ else     if (childName.equalsIgnoreCase("RemoteOWS")) {
+      RemoteOWS remoteOws=parseRemoteOWS(child);
+      layer.setRemoteOWS(remoteOws);
+    }
+ else     if (childName.equalsIgnoreCase("LayerFeatureConstraints")) {
+      layer.setLayerFeatureConstraints(parseLayerFeatureConstraints(child));
+    }
+  }
+  return layer;
+}

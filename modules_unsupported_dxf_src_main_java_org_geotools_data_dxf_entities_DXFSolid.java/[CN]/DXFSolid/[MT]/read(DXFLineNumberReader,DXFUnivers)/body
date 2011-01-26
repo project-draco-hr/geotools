@@ -1,0 +1,80 @@
+{
+  double p1_x=0, p2_x=0, p3_x=0, p4_x=0, p1_y=0, p2_y=0, p3_y=0, p4_y=0;
+  double thickness=0;
+  int visibility=0, c=-1;
+  DXFLayer l=null;
+  DXFLineType lineType=null;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    br.reset();
+  doLoop=false;
+break;
+case X_1:
+p1_x=cvp.getDoubleValue();
+break;
+case X_2:
+p2_x=cvp.getDoubleValue();
+break;
+case X_3:
+p3_x=cvp.getDoubleValue();
+break;
+case X_4:
+p4_x=cvp.getDoubleValue();
+break;
+case Y_1:
+p1_y=cvp.getDoubleValue();
+break;
+case Y_2:
+p2_y=cvp.getDoubleValue();
+break;
+case Y_3:
+p3_y=cvp.getDoubleValue();
+break;
+case Y_4:
+p4_y=cvp.getDoubleValue();
+break;
+case THICKNESS:
+thickness=cvp.getDoubleValue();
+break;
+case LAYER_NAME:
+l=univers.findLayer(cvp.getStringValue());
+break;
+case COLOR:
+c=cvp.getShortValue();
+break;
+case LINETYPE_NAME:
+lineType=univers.findLType(cvp.getStringValue());
+break;
+case VISIBILITY:
+visibility=cvp.getShortValue();
+break;
+default :
+break;
+}
+}
+DXFSolid e=new DXFSolid(new DXFPoint(p1_x,p1_y,c,null,visibility,1),new DXFPoint(p2_x,p2_y,c,null,visibility,1),new DXFPoint(p3_x,p3_y,c,null,visibility,1),new DXFPoint(p4_x,p4_y,c,null,visibility,1),thickness,c,l,visibility,lineType);
+e.setType(GeometryType.POLYGON);
+e.setStartingLineNumber(sln);
+e.setUnivers(univers);
+log.debug(e.toString(p1_x,p2_x,p3_x,p4_x,p1_y,p2_y,p3_y,p4_y,thickness,c,visibility));
+log.debug(">>Exit at line: " + br.getLineNumber());
+return e;
+}

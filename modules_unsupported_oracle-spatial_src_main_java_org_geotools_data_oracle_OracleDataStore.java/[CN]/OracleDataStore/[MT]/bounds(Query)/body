@@ -1,0 +1,64 @@
+{
+  Filter filter=query.getFilter();
+  if (filter == Filter.EXCLUDE) {
+    return new ReferencedEnvelope(new Envelope(),query.getCoordinateSystem());
+  }
+  SimpleFeatureType schema=getSchema(query.getTypeName());
+  SQLBuilder sqlBuilder=getSqlBuilder(schema.getTypeName());
+  Filter postQueryFilter=sqlBuilder.getPostQueryFilter(query.getFilter());
+  if (postQueryFilter != null && !postQueryFilter.equals(Filter.INCLUDE)) {
+    return null;
+  }
+  Connection conn=null;
+  try {
+    conn=getConnection(Transaction.AUTO_COMMIT);
+    Envelope retEnv=new Envelope();
+    Filter preFilter=sqlBuilder.getPreQueryFilter(query.getFilter());
+    SimpleFeatureType schemaNew=schema;
+    if (!query.retrieveAllProperties()) {
+      try {
+        schemaNew=DataUtilities.createSubType(schema,query.getPropertyNames());
+        if (schemaNew.getGeometryDescriptor() == null) {
+          if (schema.getGeometryDescriptor() != null) {
+            ArrayList al=new ArrayList(Arrays.asList(query.getPropertyNames()));
+            al.add(schema.getGeometryDescriptor().getName());
+            schemaNew=DataUtilities.createSubType(schema,(String[])al.toArray(new String[1]));
+          }
+        }
+      }
+ catch (      SchemaException e1) {
+        throw new DataSourceException("Could not create subtype",e1);
+      }
+    }
+    List<AttributeDescriptor> attributeTypes=schemaNew.getAttributeDescriptors();
+    for (int j=0, n=schemaNew.getAttributeCount(); j < n; j++) {
+      if (Geometry.class.isAssignableFrom(attributeTypes.get(j).getType().getBinding())) {
+        String attName=attributeTypes.get(j).getLocalName();
+        Envelope curEnv=getEnvelope(conn,schemaNew,attName,sqlBuilder,filter);
+        if (curEnv == null) {
+          return null;
+        }
+        retEnv.expandToInclude(curEnv);
+      }
+    }
+    LOGGER.finer("returning bounds " + retEnv);
+    if ((schemaNew != null) && (schemaNew.getGeometryDescriptor() != null))     return new ReferencedEnvelope(retEnv,schemaNew.getGeometryDescriptor().getCoordinateReferenceSystem());
+    if (query.getCoordinateSystem() != null)     return new ReferencedEnvelope(retEnv,query.getCoordinateSystem());
+    return new ReferencedEnvelope(retEnv,null);
+  }
+ catch (  SQLException sqlException) {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,sqlException);
+    conn=null;
+    throw new DataSourceException("Could not count " + query.getHandle(),sqlException);
+  }
+catch (  SQLEncoderException e) {
+    return null;
+  }
+catch (  ParseException parseE) {
+    String message="Could not read geometry: " + parseE.getMessage();
+    return null;
+  }
+ finally {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+}

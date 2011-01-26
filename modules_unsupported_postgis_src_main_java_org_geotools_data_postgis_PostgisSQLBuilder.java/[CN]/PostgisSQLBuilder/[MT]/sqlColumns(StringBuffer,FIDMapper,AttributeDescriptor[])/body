@@ -1,0 +1,33 @@
+{
+  for (int i=0; i < mapper.getColumnCount(); i++) {
+    sql.append("\"" + mapper.getColumnName(i) + "\"");
+    if ((attributes.length > 0) || (i < (mapper.getColumnCount() - 1))) {
+      sql.append(", ");
+    }
+  }
+  for (int i=0; i < attributes.length; i++) {
+    AttributeDescriptor attribute=attributes[i];
+    if (attribute instanceof GeometryDescriptor) {
+      GeometryDescriptor geometryAttribute=(GeometryDescriptor)attribute;
+      CoordinateReferenceSystem crs=geometryAttribute.getCoordinateReferenceSystem();
+      final int D=isForce2D() ? 2 : -1;
+      if (WKBEnabled) {
+        if (byteaEnabled) {
+          columnGeometryByteaWKB(sql,geometryAttribute,D);
+        }
+ else {
+          columnGeometryWKB(sql,geometryAttribute,D);
+        }
+      }
+ else {
+        columnGeometry(sql,geometryAttribute,D);
+      }
+    }
+ else {
+      columnAttribute(sql,attribute);
+    }
+    if (i < (attributes.length - 1)) {
+      sql.append(", ");
+    }
+  }
+}

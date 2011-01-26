@@ -1,0 +1,35 @@
+{
+  if (prefixedName == null) {
+    throw new NullPointerException("prefixedName");
+  }
+  QName name=null;
+  final String prefix;
+  final String namespaceUri;
+  final String localName;
+  int prefixIdx=prefixedName.indexOf(':');
+  if (prefixIdx == -1) {
+    localName=prefixedName;
+    final Name rootName=root.getName();
+    final String defaultNamespace=(isXmlAttribute || localName.equals(ComplexFeatureConstants.FEATURE_CHAINING_LINK_NAME.getLocalPart()) || rootName.getNamespaceURI() == null) ? XMLConstants.NULL_NS_URI : rootName.getNamespaceURI();
+    namespaceUri=defaultNamespace;
+    if (XMLConstants.NULL_NS_URI.equals(defaultNamespace)) {
+      prefix=XMLConstants.DEFAULT_NS_PREFIX;
+    }
+ else {
+      if (!localName.equals(rootName.getLocalPart())) {
+        LOGGER.warning("Using root's namespace " + defaultNamespace + " for step named '"+ localName+ "', as no prefix was stated");
+      }
+      prefix=namespaces.getPrefix(defaultNamespace);
+      if (prefix == null) {
+        throw new IllegalStateException("Default namespace is not mapped to a prefix: " + defaultNamespace);
+      }
+    }
+  }
+ else {
+    prefix=prefixedName.substring(0,prefixIdx);
+    localName=prefixedName.substring(prefixIdx + 1);
+    namespaceUri=namespaces.getURI(prefix);
+  }
+  name=new QName(namespaceUri,localName,prefix);
+  return name;
+}

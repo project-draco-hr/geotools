@@ -1,0 +1,43 @@
+{
+  CoordinateReferenceSystem mapCrs=getCoordinateReferenceSystem();
+  ReferencedEnvelope maxBounds=null;
+  if (layerList != null) {
+    for (    Layer layer : layerList) {
+      if (layer == null) {
+        continue;
+      }
+      ReferencedEnvelope layerBounds=layer.getBounds();
+      if (layerBounds == null || layerBounds.isEmpty() || layerBounds.isNull()) {
+        continue;
+      }
+      if (mapCrs == null) {
+        maxBounds=new ReferencedEnvelope(layerBounds);
+        mapCrs=layerBounds.getCoordinateReferenceSystem();
+        continue;
+      }
+      ReferencedEnvelope normalized;
+      if (CRS.equalsIgnoreMetadata(mapCrs,layerBounds.getCoordinateReferenceSystem())) {
+        normalized=layerBounds;
+      }
+ else {
+        try {
+          normalized=layerBounds.transform(mapCrs,true);
+        }
+ catch (        Exception e) {
+          LOGGER.log(Level.FINE,"Unable to transform: {0}",e);
+          continue;
+        }
+      }
+      if (maxBounds == null) {
+        maxBounds=normalized;
+      }
+ else {
+        maxBounds.expandToInclude(normalized);
+      }
+    }
+  }
+  if (maxBounds == null && mapCrs != null) {
+    maxBounds=new ReferencedEnvelope(mapCrs);
+  }
+  return maxBounds;
+}

@@ -1,0 +1,30 @@
+{
+  int startLoc=Location.NONE;
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    DirectedEdge nextOut=(DirectedEdge)it.next();
+    DirectedEdge nextIn=nextOut.getSym();
+    if (!nextOut.isLineEdge()) {
+      if (nextOut.isInResult()) {
+        startLoc=Location.INTERIOR;
+        break;
+      }
+      if (nextIn.isInResult()) {
+        startLoc=Location.EXTERIOR;
+        break;
+      }
+    }
+  }
+  if (startLoc == Location.NONE)   return;
+  int currLoc=startLoc;
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    DirectedEdge nextOut=(DirectedEdge)it.next();
+    DirectedEdge nextIn=nextOut.getSym();
+    if (nextOut.isLineEdge()) {
+      nextOut.getEdge().setCovered(currLoc == Location.INTERIOR);
+    }
+ else {
+      if (nextOut.isInResult())       currLoc=Location.EXTERIOR;
+      if (nextIn.isInResult())       currLoc=Location.INTERIOR;
+    }
+  }
+}

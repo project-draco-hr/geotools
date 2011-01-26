@@ -1,0 +1,32 @@
+{
+  BufferedReader reader=null;
+  PrintWriter writer=null;
+  String relativePath;
+  String absolutePath=null;
+  try {
+    reader=new BufferedReader(new FileReader(filePathIn));
+    writer=new PrintWriter(new FileWriter(filePathOut));
+    String line;
+    while ((line=reader.readLine()) != null) {
+      if (line.trim().startsWith("<value>file:")) {
+        relativePath=line.split("<value>file:|</value>")[1];
+        String resolvedPath=extendFilename(testDir.getPath(),relativePath);
+        absolutePath=(new File(resolvedPath)).getAbsolutePath();
+        line=line.replace(relativePath,absolutePath);
+      }
+      if (line.trim().startsWith("<OCQL>")) {
+        line=line.replace("if_then_else(equalTo(CAT_DESC, 'No Name'), " + "Expression.Nil , CAT_DESC)","CAT_DESC");
+      }
+      writer.println(line);
+    }
+  }
+  finally {
+    if (reader != null) {
+      reader.close();
+    }
+    if (writer != null) {
+      writer.close();
+    }
+  }
+  return absolutePath;
+}

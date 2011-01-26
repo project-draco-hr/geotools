@@ -1,0 +1,94 @@
+{
+  if (edges == null)   edges=new ArrayList<Edge2D>();
+  if (triangles == null)   triangles=new ArrayList<Triangle2D>();
+  for (Iterator<Triangle2D> it=triangles.iterator(); it.hasNext(); ) {
+    Triangle2D tri=it.next();
+    tri.linkSimplex(0,null);
+    tri.linkSimplex(1,null);
+    tri.linkSimplex(2,null);
+    Node2D n[]=tri.getPoints();
+    for (int i=0; i < 3; ++i) {
+      n[i].linkSimplex(tri);
+      if (!(n[i].object instanceof TN))       n[i].object=new TN(n[i].object);
+      ((TN)n[i].object).tri.add(tri);
+    }
+  }
+  for (Iterator<Triangle2D> it=triangles.iterator(); it.hasNext(); ) {
+    Triangle2D tri=it.next();
+    Node2D n[]=tri.getPoints();
+    for (int i=0; i < 3; ++i) {
+      if (tri.hasNeighbour(i))       continue;
+      TN tn=((TN)n[i].object);
+      for (Iterator<Triangle2D> itt=tn.tri.iterator(); itt.hasNext(); ) {
+        Triangle2D t=itt.next();
+        if (t == tri)         continue;
+        int side=t.getSide(n[i],n[(i + 1) % 3]);
+        if (side != -1) {
+          tri.linkSimplex(i,t);
+          t.linkSimplex(side,tri);
+          break;
+        }
+      }
+    }
+  }
+  for (Iterator<Edge2D> it=edges.iterator(); it.hasNext(); ) {
+    Edge2D e=it.next();
+    Node2D n0=e.getNode1();
+    Node2D n1=e.getNode2();
+    TN tn0=(TN)n0.object;
+    TN tn1=(TN)n1.object;
+    int side0=-1;
+    int side1=-1;
+    Triangle2D tri0=null;
+    Triangle2D tri1=null;
+    for (Iterator<Triangle2D> it0=tn0.tri.iterator(); it0.hasNext(); ) {
+      Triangle2D t0=it0.next();
+      Node2D p0[]=t0.getPoints();
+      for (int i=0; i < 3; ++i) {
+        if (p0[i] == n0 && p0[(i + 1) % 3] == n1) {
+          side0=i;
+          tri0=t0;
+          break;
+        }
+      }
+      if (tri0 != null)       break;
+    }
+    for (Iterator<Triangle2D> it1=tn1.tri.iterator(); it1.hasNext(); ) {
+      Triangle2D t1=it1.next();
+      Node2D p1[]=t1.getPoints();
+      for (int i=0; i < 3; ++i) {
+        if (p1[i] == n1 && p1[(i + 1) % 3] == n0) {
+          side1=i;
+          tri1=t1;
+          break;
+        }
+      }
+      if (tri1 != null)       break;
+    }
+    assert((side0 != -1) && (side1 != -1));
+    if (side0 != -1) {
+      e.surfaceLeft=tri0;
+      tri0.linkEdge(side0,e);
+    }
+    if (side1 != -1) {
+      e.surfaceRight=tri1;
+      tri1.linkEdge(side1,e);
+    }
+  }
+  for (Iterator<Edge2D> it=edges.iterator(); it.hasNext(); ) {
+    Edge2D e=it.next();
+    e.surfaceRight=null;
+    e.surfaceLeft=null;
+    Node2D n1=e.getNode1();
+    Node2D n2=e.getNode2();
+    n1.linkEdge(e);
+    n2.linkEdge(e);
+  }
+  for (Iterator<Triangle2D> it=triangles.iterator(); it.hasNext(); ) {
+    Triangle2D tri=it.next();
+    Node2D n[]=tri.getPoints();
+    for (int i=0; i < 3; ++i) {
+      if ((n[i].object instanceof TN))       n[i].object=((TN)n[i].object).nodeObject;
+    }
+  }
+}

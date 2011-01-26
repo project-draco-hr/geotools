@@ -1,0 +1,48 @@
+{
+  CloseableIterator<Data> tmp=null;
+  createSpatialIndex(false);
+  if (cachedTree == null) {
+    boolean canCache=false;
+    URL treeURL=shpFiles.acquireRead(QIX,this);
+    try {
+      File treeFile=DataUtilities.urlToFile(treeURL);
+      if (treeFile.exists() && treeFile.length() < 1024 * maxQixCacheSize) {
+        canCache=true;
+      }
+    }
+  finally {
+      shpFiles.unlockRead(treeURL,this);
+    }
+    if (canCache) {
+      QuadTree quadTree=openQuadTree();
+      if (quadTree != null) {
+        LOGGER.warning("Experimental: loading in memory the quadtree for " + shpFiles.get(SHP));
+        cachedTree=new CachedQuadTree(quadTree);
+        quadTree.close();
+      }
+    }
+  }
+  if (cachedTree != null) {
+    if (!bbox.contains(cachedTree.getBounds())) {
+      return cachedTree.search(bbox);
+    }
+ else {
+      return null;
+    }
+  }
+ else {
+    try {
+      QuadTree quadTree=openQuadTree();
+      if ((quadTree != null) && !bbox.contains(quadTree.getRoot().getBounds())) {
+        tmp=quadTree.search(bbox);
+      }
+      if (tmp == null && quadTree != null) {
+        quadTree.close();
+      }
+    }
+ catch (    Exception e) {
+      throw new DataSourceException("Error querying QuadTree",e);
+    }
+  }
+  return tmp;
+}

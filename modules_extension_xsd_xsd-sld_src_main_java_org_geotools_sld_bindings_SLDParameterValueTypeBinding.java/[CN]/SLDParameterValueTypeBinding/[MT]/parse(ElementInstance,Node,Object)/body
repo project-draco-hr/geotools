@@ -1,0 +1,21 @@
+{
+  List<Expression> expressions=new ArrayList();
+  for (Iterator itr=node.getChildren().iterator(); itr.hasNext(); ) {
+    Node child=(Node)itr.next();
+    if (child.getValue() instanceof Expression) {
+      expressions.add((Expression)child.getValue());
+    }
+ else     if (child.getValue() instanceof Text) {
+      expressions.add(filterFactory.literal(((Text)child.getValue()).getValue()));
+    }
+  }
+  if (expressions.isEmpty()) {
+    return null;
+  }
+  if (expressions.size() == 1)   return (Expression)expressions.get(0);
+  Expression e=expressions.get(0);
+  for (int i=1; i < expressions.size(); i++) {
+    e=filterFactory.function("strConcat",new Expression[]{e,expressions.get(i)});
+  }
+  return e;
+}

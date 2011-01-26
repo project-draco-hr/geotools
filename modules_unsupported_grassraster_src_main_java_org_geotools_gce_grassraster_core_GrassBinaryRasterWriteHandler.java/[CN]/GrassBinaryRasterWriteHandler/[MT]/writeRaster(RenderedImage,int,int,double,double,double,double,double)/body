@@ -1,0 +1,16 @@
+{
+  boolean hasListeners=false;
+  if (!checkStructure())   throw new IOException("Inconsistent output structure for grass map. Check your paths.");
+  imageOS=ImageIO.createImageOutputStream(writerGrassEnv.getFCELL());
+  imageNullFileOS=ImageIO.createImageOutputStream(writerGrassEnv.getCELLMISC_NULL());
+  double east=west + ((double)columns) * xRes;
+  double north=south + ((double)rows) * yRes;
+  JGrassRegion dataWindow=new JGrassRegion(west,east,south,north,rows,columns);
+  createEmptyHeader(rows);
+  if (hasListeners && abortRequired) {
+    return;
+  }
+  CompressesRasterWriter crwriter=new CompressesRasterWriter(outputToDiskType,noDataValue,jump,range,pointerInFilePosition,addressesOfRows,dataWindow,monitor,writerGrassEnv.getMapName());
+  crwriter.compressAndWrite(imageOS,imageNullFileOS,renderedImage);
+  createUtilityFiles(dataWindow);
+}

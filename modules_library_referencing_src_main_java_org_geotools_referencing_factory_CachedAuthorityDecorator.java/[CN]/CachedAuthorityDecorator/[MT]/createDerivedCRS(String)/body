@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  DerivedCRS crs=(DerivedCRS)cache.get(key);
+  if (crs == null) {
+    try {
+      cache.writeLock(key);
+      crs=(DerivedCRS)cache.peek(key);
+      if (crs == null) {
+        crs=crsAuthority.createDerivedCRS(code);
+        cache.put(key,crs);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return crs;
+}

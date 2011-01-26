@@ -1,0 +1,58 @@
+{
+  Statement st=cx.createStatement();
+  String tableName=featureType.getTypeName();
+  try {
+    for (    PropertyDescriptor ad : featureType.getDescriptors()) {
+      if (ad instanceof GeometryDescriptor) {
+        GeometryDescriptor gd=(GeometryDescriptor)ad;
+        Class binding=ad.getType().getBinding();
+        String propertyName=ad.getName().getLocalPart();
+        int epsg=-1;
+        try {
+          CoordinateReferenceSystem crs=gd.getCoordinateReferenceSystem();
+          if (crs == null) {
+            continue;
+          }
+          epsg=CRS.lookupEpsgCode(crs,true);
+        }
+ catch (        FactoryException e) {
+          LOGGER.log(Level.FINER,"Unable to look epsg code",e);
+        }
+        StringBuffer sql=new StringBuffer();
+        sql.append("CALL AddGeometryColumn(");
+        if (schemaName != null) {
+          sql.append("'").append(schemaName).append("'");
+        }
+ else {
+          sql.append("NULL");
+        }
+        sql.append(", '").append(tableName).append("'");
+        sql.append(", '").append(gd.getLocalName()).append("'");
+        sql.append(", ").append(epsg);
+        sql.append(", '").append(Geometries.getForBinding(binding).getName()).append("'");
+        sql.append(", ").append(2);
+        sql.append(")");
+        LOGGER.fine(sql.toString());
+        st.execute(sql.toString());
+        if (epsg != -1) {
+          sql=new StringBuffer();
+          sql.append("CALL CreateSpatialIndex(");
+          if (schemaName == null) {
+            sql.append("NULL");
+          }
+ else {
+            sql.append("'").append(schemaName).append("'");
+          }
+          sql.append(",'").append(tableName).append("'");
+          sql.append(",'").append(propertyName).append("'");
+          sql.append(",'").append(epsg).append("')");
+          LOGGER.fine(sql.toString());
+          st.execute(sql.toString());
+        }
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

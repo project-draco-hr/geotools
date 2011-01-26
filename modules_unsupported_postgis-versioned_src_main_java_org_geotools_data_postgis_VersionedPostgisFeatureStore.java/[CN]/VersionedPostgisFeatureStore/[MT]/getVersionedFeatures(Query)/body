@@ -1,0 +1,16 @@
+{
+  final SimpleFeatureType ft=getSchema();
+  final String typeName=ft.getTypeName();
+  if (query.getTypeName() != null && !query.getTypeName().equals(typeName))   throw new IOException("Incompatible type, this class can access only " + typeName);
+  if (!Arrays.asList(store.wrapped.getTypeNames()).contains(store.getVFCViewName(typeName)))   store.createVersionedFeatureCollectionView(typeName);
+  DefaultQuery vq=new DefaultQuery(query);
+  vq.setTypeName(VersionedPostgisDataStore.getVFCViewName(typeName));
+  vq=store.buildVersionedQuery(vq);
+  SimpleFeatureCollection fc=store.wrapped.getFeatureSource(VersionedPostgisDataStore.getVFCViewName(typeName)).getFeatures(vq);
+  final SimpleFeatureType fcSchema=fc.getSchema();
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.init(ft);
+  builder.setAttributes(fc.getSchema().getAttributeDescriptors());
+  SimpleFeatureType renamedFt=builder.buildFeatureType();
+  return new ReTypingFeatureCollection(fc,renamedFt);
+}

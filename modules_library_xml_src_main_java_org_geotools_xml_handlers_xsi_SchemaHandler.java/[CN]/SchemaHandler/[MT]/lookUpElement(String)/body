@@ -1,0 +1,66 @@
+{
+  int index=qname.indexOf(":");
+  String localName, prefix1;
+  localName=prefix1=null;
+  if (index >= 0) {
+    localName=qname.substring(index + 1);
+    prefix1=qname.substring(0,index);
+  }
+ else {
+    prefix1="";
+    localName=qname;
+  }
+  logger.finest("prefix is " + prefix1);
+  logger.finest("localName is " + localName);
+  Iterator it;
+  if ((this.prefix == null && prefix1 == null) || (this.prefix != null && this.prefix.equals(prefix1))) {
+    if (schema != null)     return lookupElement(localName,schema,new TreeSet());
+  }
+ else {
+    if (imports != null) {
+      it=imports.iterator();
+      while (it.hasNext()) {
+        Schema s=(Schema)it.next();
+        String ns=s.getTargetNamespace().toString();
+        String prefixLookup=prefixCache != null ? (String)prefixCache.get(ns) : null;
+        if (prefix1 == null || prefixLookup == null || prefix1.equals(prefixLookup)) {
+          Element ct=lookupElement(localName,s,new TreeSet());
+          if (ct != null) {
+            return ct;
+          }
+        }
+      }
+    }
+    if (includes != null) {
+      it=includes.iterator();
+      while (it.hasNext()) {
+        Schema s=(Schema)it.next();
+        String ns=s.getTargetNamespace().toString();
+        String prefixLookup=prefixCache != null ? (String)prefixCache.get(ns) : null;
+        if (prefix1 == null || prefixLookup == null || prefix1.equals(prefixLookup)) {
+          Element ct=lookupElement(localName,s,new TreeSet());
+          if (ct != null) {
+            return ct;
+          }
+        }
+      }
+    }
+  }
+  it=elements.iterator();
+  while (it.hasNext()) {
+    Object o=it.next();
+    if (o instanceof ElementTypeHandler) {
+      ElementTypeHandler sst=(ElementTypeHandler)o;
+      if (localName.equalsIgnoreCase(sst.getName())) {
+        return (Element)sst.compress(this);
+      }
+    }
+ else {
+      Element sst=(Element)o;
+      if (localName.equalsIgnoreCase(sst.getName())) {
+        return sst;
+      }
+    }
+  }
+  return null;
+}

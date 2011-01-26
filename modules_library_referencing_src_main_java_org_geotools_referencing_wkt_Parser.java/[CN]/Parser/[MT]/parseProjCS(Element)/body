@@ -1,0 +1,27 @@
+{
+  Element element=parent.pullElement("PROJCS");
+  String name=element.pullString("name");
+  Map<String,?> properties=parseAuthority(element,name);
+  GeographicCRS geoCRS=parseGeoGCS(element);
+  Ellipsoid ellipsoid=geoCRS.getDatum().getEllipsoid();
+  Unit<Length> linearUnit=parseUnit(element,SI.METER);
+  Unit<Angle> angularUnit=geoCRS.getCoordinateSystem().getAxis(0).getUnit().asType(Angle.class);
+  ParameterValueGroup projection=parseProjection(element,ellipsoid,linearUnit,angularUnit);
+  CoordinateSystemAxis axis0=parseAxis(element,linearUnit,false);
+  CoordinateSystemAxis axis1;
+  try {
+    if (axis0 != null) {
+      axis1=parseAxis(element,linearUnit,true);
+    }
+ else {
+      axis0=createAxis(null,"X",AxisDirection.EAST,linearUnit);
+      axis1=createAxis(null,"Y",AxisDirection.NORTH,linearUnit);
+    }
+    element.close();
+    final Conversion conversion=new DefiningConversion(name,projection);
+    return crsFactory.createProjectedCRS(properties,geoCRS,conversion,csFactory.createCartesianCS(properties,axis0,axis1));
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

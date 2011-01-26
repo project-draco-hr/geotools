@@ -1,0 +1,28 @@
+{
+  CoordinateReferenceSystem crs=super.createCRS(srid,cx);
+  if (crs != null)   return crs;
+  String sql="SELECT WKTEXT FROM MDSYS.CS_SRS WHERE SRID = " + srid;
+  Statement st=null;
+  ResultSet rs=null;
+  try {
+    st=cx.createStatement();
+    rs=st.executeQuery(sql.toString());
+    if (rs.next()) {
+      String wkt=rs.getString(1);
+      if (wkt != null) {
+        try {
+          return CRS.parseWKT(wkt);
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.FINE))           LOGGER.log(Level.FINE,"Could not parse WKT " + wkt,e);
+          return null;
+        }
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(rs);
+    dataStore.closeSafe(st);
+  }
+  return null;
+}

@@ -1,0 +1,30 @@
+{
+  computeEdgeEndLabels();
+  propagateSideLabels(0);
+  propagateSideLabels(1);
+  boolean[] hasDimensionalCollapseEdge={false,false};
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    EdgeEnd e=(EdgeEnd)it.next();
+    Label label=e.getLabel();
+    for (int geomi=0; geomi < 2; geomi++) {
+      if (label.isLine(geomi) && label.getLocation(geomi) == Location.BOUNDARY)       hasDimensionalCollapseEdge[geomi]=true;
+    }
+  }
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    EdgeEnd e=(EdgeEnd)it.next();
+    Label label=e.getLabel();
+    for (int geomi=0; geomi < 2; geomi++) {
+      if (label.isAnyNull(geomi)) {
+        int loc=Location.NONE;
+        if (hasDimensionalCollapseEdge[geomi]) {
+          loc=Location.EXTERIOR;
+        }
+ else {
+          Coordinate p=e.getCoordinate();
+          loc=getLocation(geomi,p,geom);
+        }
+        label.setAllLocationsIfNull(geomi,loc);
+      }
+    }
+  }
+}

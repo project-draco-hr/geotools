@@ -1,0 +1,40 @@
+{
+  if (maxx - minx < 4 || maxy - miny < 4) {
+    throw new ExcessiveDepthException("Warp grid getting as dense as the original data");
+  }
+ else   if (rowDepth + colDepth > 20) {
+    throw new ExcessiveDepthException("Warp grid getting too large to fit in memory, bailing out");
+  }
+  final double midx=(minx + maxx) / 2;
+  final double midy=(miny + maxy) / 2;
+  boolean withinTolVertical=isWithinTolerance(mt,minx,miny,minx,midy,minx,maxy) && isWithinTolerance(mt,maxx,miny,maxx,midy,maxx,maxy);
+  boolean withinTolHorizontal=isWithinTolerance(mt,minx,miny,midx,miny,maxx,miny) && isWithinTolerance(mt,minx,maxy,midx,maxy,maxx,maxy);
+  if (withinTolVertical && withinTolHorizontal) {
+    if (!isWithinTolerance(mt,minx,miny,midx,midy,maxx,maxy) || !isWithinTolerance(mt,minx,maxy,midx,midy,maxx,miny)) {
+      withinTolVertical=false;
+      withinTolHorizontal=false;
+    }
+  }
+  if (!withinTolHorizontal && !withinTolVertical) {
+    rowDepth++;
+    colDepth++;
+    int[] d1=computeOptimalDepths(mt,minx,midx,miny,midy,rowDepth,colDepth);
+    int[] d2=computeOptimalDepths(mt,minx,midx,midy,maxy,rowDepth,colDepth);
+    int[] d3=computeOptimalDepths(mt,midx,maxx,miny,midy,rowDepth,colDepth);
+    int[] d4=computeOptimalDepths(mt,midx,maxx,midy,maxy,rowDepth,colDepth);
+    return new int[]{max(max(d1[0],d2[0]),max(d3[0],d4[0])),max(max(d1[1],d2[1]),max(d3[1],d4[1]))};
+  }
+ else   if (!withinTolHorizontal) {
+    colDepth++;
+    int[] d1=computeOptimalDepths(mt,minx,midx,miny,maxy,rowDepth,colDepth);
+    int[] d2=computeOptimalDepths(mt,midx,maxx,miny,maxy,rowDepth,colDepth);
+    return new int[]{max(d1[0],d2[0]),max(d1[1],d2[1])};
+  }
+ else   if (!withinTolVertical) {
+    rowDepth++;
+    int[] d1=computeOptimalDepths(mt,minx,maxx,miny,midy,rowDepth,colDepth);
+    int[] d2=computeOptimalDepths(mt,minx,maxx,midy,maxy,rowDepth,colDepth);
+    return new int[]{max(d1[0],d2[0]),max(d1[1],d2[1])};
+  }
+  return new int[]{rowDepth,colDepth};
+}

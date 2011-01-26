@@ -1,0 +1,25 @@
+{
+  URL url=TestData.getResource(LabelingTest.class,"lakes.shp");
+  ShapefileDataStore ds=(ShapefileDataStore)new ShapefileDataStoreFactory().createDataStore(url);
+  ReferencedEnvelope env=(ReferencedEnvelope)ds.getFeatureSource().getBounds();
+  AffineTransform transform=RendererUtilities.worldToScreenTransform(env,new Rectangle(500,500));
+  MathTransform mt=ReferencingFactoryFinder.getMathTransformFactory(null).createAffineTransform(new GeneralMatrix(transform));
+  ShapefileReader reader=new ShapefileReader(ShapefileRendererUtil.getShpFiles(ds),false,false);
+  reader.setHandler(new org.geotools.renderer.shape.shapehandler.jts.PolygonHandler(reader.getHeader().getShapeType(),env,mt,false));
+  Object shape=reader.nextRecord().shape();
+  assertNotNull(shape);
+  assertTrue(shape instanceof Geometry);
+  Coordinate[] coords=((Geometry)shape).getCoordinates();
+  for (int i=0; i < coords.length; i++) {
+    Coordinate coordinate=coords[i];
+    assertNotNull(coordinate);
+  }
+  int i=0;
+  while (reader.hasNext()) {
+    i++;
+    shape=reader.nextRecord().shape();
+    assertNotNull(shape);
+    assertTrue(shape instanceof Geometry);
+  }
+  assertEquals(ds.getFeatureSource().getCount(Query.ALL) - 1,i);
+}

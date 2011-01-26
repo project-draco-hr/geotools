@@ -1,0 +1,29 @@
+{
+  int nnodes=100;
+  GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  CountingWalker walker=new CountingWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      element.setCount(getCount());
+      return super.visit(element,traversal);
+    }
+  }
+;
+  DepthFirstTopologicalIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  assertTrue(walker.getCount() == nnodes);
+  boolean flip=false;
+  for (Iterator itr=builder().getGraph().getNodes().iterator(); itr.hasNext(); ) {
+    Node node=(Node)itr.next();
+    if (node.getID() == 0 && node.getCount() != 0) {
+      flip=true;
+      break;
+    }
+  }
+  for (Iterator itr=builder().getGraph().getNodes().iterator(); itr.hasNext(); ) {
+    Node node=(Node)itr.next();
+    if (flip)     assertTrue(node.getCount() == 100 - 1 - node.getID());
+ else     assertTrue(node.getCount() == node.getID());
+  }
+}

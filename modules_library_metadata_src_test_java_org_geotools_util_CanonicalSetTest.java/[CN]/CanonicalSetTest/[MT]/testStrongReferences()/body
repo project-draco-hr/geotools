@@ -1,0 +1,29 @@
+{
+  final Random random=new Random();
+  for (int pass=0; pass < 20; pass++) {
+    final CanonicalSet<Integer> weakSet=CanonicalSet.newInstance(Integer.class);
+    final HashSet<Integer> strongSet=new HashSet<Integer>();
+    for (int i=0; i < 1000; i++) {
+      final Integer value=random.nextInt(500);
+      if (random.nextBoolean()) {
+        final boolean weakModified=weakSet.add(value);
+        final boolean strongModified=strongSet.add(value);
+        assertEquals("add:",strongModified,weakModified);
+        if (strongModified) {
+          assertSame("get:",value,weakSet.get(value));
+        }
+ else {
+          assertEquals("get:",value,weakSet.get(value));
+        }
+      }
+ else {
+        final boolean weakModified=weakSet.remove(value);
+        final boolean strongModified=strongSet.remove(value);
+        assertEquals("remove:",strongModified,weakModified);
+        assertNull("get:",weakSet.get(value));
+      }
+      assertEquals("contains:",strongSet.contains(value),weakSet.contains(value));
+      assertEquals("equals:",strongSet,weakSet);
+    }
+  }
+}

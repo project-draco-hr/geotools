@@ -1,0 +1,96 @@
+{
+  final RenderedImage sourceImage=sourceCoverage.getRenderedImage();
+  final GridGeometry2D sourceGridGeometry=((GridGeometry2D)sourceCoverage.getGridGeometry());
+  final GridEnvelope2D sourceGridRange=sourceGridGeometry.getGridRange2D();
+  final boolean isSimpleTransform=CoverageUtilities.isSimpleGridToWorldTransform(sourceGridToWorldTransform,EPS);
+  int actionTaken=0;
+  final RenderingHints targetHints=new RenderingHints(null);
+  if (hints != null)   targetHints.add(hints);
+  final ImageLayout layout=initLayout(sourceImage,targetHints);
+  targetHints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+  final JAI processor=OperationJAI.getJAI(targetHints);
+  final boolean useProvidedProcessor=!processor.equals(JAI.getDefaultInstance());
+  try {
+    if (cropROI != null) {
+      final Polygon modelSpaceROI=FeatureUtilities.getPolygon(cropEnvelope,GFACTORY);
+      Geometry intersection=IntersectUtils.intersection(cropROI,modelSpaceROI);
+      Envelope2D e2d=JTS.getEnvelope2D(intersection.getEnvelopeInternal(),cropEnvelope.getCoordinateReferenceSystem());
+      GeneralEnvelope ge=new GeneralEnvelope((org.opengis.geometry.Envelope)e2d);
+      cropEnvelope.setEnvelope(ge);
+    }
+    final AffineTransform sourceWorldToGridTransform=sourceGridToWorldTransform.createInverse();
+    final Rectangle2D finalRasterAreaDouble=XAffineTransform.transform(sourceWorldToGridTransform,cropEnvelope.toRectangle2D(),null);
+    final Rectangle finalRasterArea=finalRasterAreaDouble.getBounds();
+    Rectangle.intersect(finalRasterArea,sourceGridRange,finalRasterArea);
+    if (finalRasterArea.isEmpty())     throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
+    if (finalRasterArea.equals(sourceGridRange) && isSimpleTransform && cropROI == null)     return sourceCoverage;
+    final double minX=finalRasterArea.getMinX();
+    final double minY=finalRasterArea.getMinY();
+    final double width=finalRasterArea.getWidth();
+    final double height=finalRasterArea.getHeight();
+    final PlanarImage croppedImage;
+    final ParameterBlock pbj=new ParameterBlock();
+    pbj.addSource(sourceImage);
+    java.awt.Polygon rasterSpaceROI=null;
+    String operatioName=null;
+    if (!isSimpleTransform || cropROI != null) {
+      Polygon modelSpaceROI=FeatureUtilities.getPolygon(cropEnvelope,GFACTORY);
+      final List<Point2D> points=new ArrayList<Point2D>(5);
+      rasterSpaceROI=FeatureUtilities.convertPolygonToPointArray(modelSpaceROI,ProjectiveTransform.create(sourceWorldToGridTransform),points);
+      if (rasterSpaceROI == null || rasterSpaceROI.getBounds().isEmpty())       if (finalRasterArea.isEmpty())       throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
+      final boolean doMosaic=decideJAIOperation(roiTolerance,rasterSpaceROI.getBounds2D(),points);
+      if (doMosaic || cropROI != null) {
+        final ROI[] roiarr;
+        try {
+          if (cropROI != null) {
+            final Shape cropRoiLS2=new LiteShape2(cropROI,ProjectiveTransform.create(sourceWorldToGridTransform),null,false);
+            final ROIShape cropRS=new ROIShape(cropRoiLS2);
+            roiarr=new ROI[]{cropRS};
+          }
+ else {
+            final ROIShape roi=new ROIShape(rasterSpaceROI);
+            roiarr=new ROI[]{roi};
+          }
+        }
+ catch (        FactoryException ex) {
+          throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP),ex);
+        }
+        pbj.add(MosaicDescriptor.MOSAIC_TYPE_OVERLAY);
+        pbj.add(null);
+        pbj.add(roiarr);
+        pbj.add(null);
+        pbj.add(CoverageUtilities.getBackgroundValues(sourceCoverage));
+        final Rectangle bounds=rasterSpaceROI.getBounds2D().getBounds();
+        Rectangle.intersect(bounds,sourceGridRange,bounds);
+        if (bounds.isEmpty())         throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
+        if (bounds.getBounds().equals(sourceGridRange) && isSimpleTransform)         return sourceCoverage;
+        final Rectangle boundsInt=bounds.getBounds();
+        layout.setMinX(boundsInt.x);
+        layout.setWidth(boundsInt.width);
+        layout.setMinY(boundsInt.y);
+        layout.setHeight(boundsInt.height);
+        operatioName="Mosaic";
+      }
+    }
+    if (operatioName == null) {
+      pbj.add((float)minX);
+      pbj.add((float)minY);
+      pbj.add((float)width);
+      pbj.add((float)height);
+      operatioName="Crop";
+    }
+    if (!useProvidedProcessor) {
+      croppedImage=JAI.create(operatioName,pbj,targetHints);
+    }
+ else {
+      croppedImage=processor.createNS(operatioName,pbj,targetHints);
+    }
+    return new GridCoverageFactory(hints).create(sourceCoverage.getName(),croppedImage,new GridGeometry2D(new GridEnvelope2D(croppedImage.getBounds()),sourceGridGeometry.getGridToCRS2D(PixelOrientation.CENTER),sourceCoverage.getCoordinateReferenceSystem()),(GridSampleDimension[])(actionTaken == 1 ? null : sourceCoverage.getSampleDimensions().clone()),new GridCoverage[]{sourceCoverage},rasterSpaceROI != null ? Collections.singletonMap("GC_ROI",rasterSpaceROI) : null);
+  }
+ catch (  TransformException e) {
+    throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP),e);
+  }
+catch (  NoninvertibleTransformException e) {
+    throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP),e);
+  }
+}

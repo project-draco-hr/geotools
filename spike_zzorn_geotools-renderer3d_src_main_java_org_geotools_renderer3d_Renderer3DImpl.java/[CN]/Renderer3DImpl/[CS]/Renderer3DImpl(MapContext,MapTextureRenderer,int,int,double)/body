@@ -1,0 +1,22 @@
+{
+  ParameterChecker.checkNotNull(mapContextToRender,"mapContextToRender");
+  ParameterChecker.checkPositiveNonZeroInteger(terrainBlockSizeInGrids,"terrainBlockSizeInGrids");
+  ParameterChecker.checkPositiveNonZeroInteger(textureSize,"textureSize");
+  ParameterChecker.checkPositiveNonZeroNormalNumber(visibilityDistance_m,"visibilityDistance_m");
+  myTextureSize=textureSize;
+  myVisibilityDistance=visibilityDistance_m;
+  myCanvas3D.setViewDistance((float)myVisibilityDistance);
+  final TextureProvider mapTextureProvider=new TextureProviderImpl(textureRenderer,textureSize,Color.WHITE);
+  myTerrainBlockFactory=new TerrainBlockFactory(terrainBlockSizeInGrids,mapTextureProvider,myTextureSize);
+  setMapContext(mapContextToRender);
+  myQuadTree.addQuadTreeListener(new QuadTreeListener<TerrainBlock>(){
+    public void onRootChanged(    final QuadTreeNode<TerrainBlock> newRoot){
+      if (myTerrainNode != null) {
+        update3DModel();
+      }
+    }
+  }
+);
+  LoggingSystem.getLoggingSystem().setLevel(Level.WARNING);
+  initExpansionAndCollapsionHandler();
+}

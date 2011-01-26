@@ -1,0 +1,23 @@
+{
+  int step=0;
+  if ((srcPts == dstPts) && (srcOff < dstOff) && ((srcOff + (numPts * getSourceDimensions())) > dstOff)) {
+    step=-getSourceDimensions();
+    srcOff-=((numPts - 1) * step);
+    dstOff-=((numPts - 1) * step);
+  }
+  while (--numPts >= 0) {
+    double x=srcPts[srcOff++];
+    double y=srcPts[srcOff++];
+    if (((x < xmin) || (x > xmax)) || ((y < ymin) || (y > ymax))) {
+      throw new TransformException(Errors.format(ErrorKeys.POINT_OUTSIDE_GRID));
+    }
+    final double xgrid=(x - xmin) / dx;
+    final double ygrid=(y - ymin) / dy;
+    double[] array=new double[]{xgrid,ygrid};
+    gridShiftTransform.transform(array,0,array,0,1);
+    dstPts[dstOff++]=x - (array[0] / SEC_2_DEG);
+    dstPts[dstOff++]=y + (array[1] / SEC_2_DEG);
+    srcOff+=step;
+    dstOff+=step;
+  }
+}

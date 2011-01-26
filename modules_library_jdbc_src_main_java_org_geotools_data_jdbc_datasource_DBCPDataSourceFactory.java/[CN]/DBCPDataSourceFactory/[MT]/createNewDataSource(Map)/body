@@ -1,0 +1,25 @@
+{
+  BasicDataSource dataSource=new BasicDataSource();
+  dataSource.setDriverClassName((String)DRIVERCLASS.lookUp(params));
+  dataSource.setUrl((String)JDBC_URL.lookUp(params));
+  dataSource.setUsername((String)USERNAME.lookUp(params));
+  dataSource.setPassword((String)PASSWORD.lookUp(params));
+  dataSource.setAccessToUnderlyingConnectionAllowed(true);
+  dataSource.setMaxActive(((Integer)MAXACTIVE.lookUp(params)).intValue());
+  dataSource.setMaxIdle(((Integer)MAXIDLE.lookUp(params)).intValue());
+  Connection conn=null;
+  try {
+    conn=dataSource.getConnection();
+  }
+ catch (  SQLException e) {
+    throw new DataSourceException("Connection pool improperly set up: " + e.getMessage(),e);
+  }
+ finally {
+    if (conn != null)     try {
+      conn.close();
+    }
+ catch (    SQLException e) {
+    }
+  }
+  return dataSource;
+}

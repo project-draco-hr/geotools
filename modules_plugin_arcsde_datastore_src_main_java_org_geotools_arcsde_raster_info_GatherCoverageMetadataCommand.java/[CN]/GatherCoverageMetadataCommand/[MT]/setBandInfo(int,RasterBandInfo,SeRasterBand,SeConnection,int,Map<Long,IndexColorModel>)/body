@@ -1,0 +1,54 @@
+{
+  bandInfo.bandId=band.getId().longValue();
+  bandInfo.bandNumber=band.getBandNumber();
+  bandInfo.bandName="Band " + bandInfo.bandNumber;
+  final boolean hasColorMap=band.hasColorMap();
+  if (hasColorMap) {
+    IndexColorModel colorMap=colorMaps.get(Long.valueOf(bandInfo.bandId));
+    LOGGER.finest("Setting band's color map: " + colorMap);
+    bandInfo.nativeColorMap=colorMap;
+    bandInfo.colorMap=RasterUtils.ensureNoDataPixelIsAvailable(colorMap);
+  }
+ else {
+    bandInfo.nativeColorMap=null;
+  }
+  bandInfo.compressionType=CompressionType.valueOf(band.getCompressionType());
+  bandInfo.cellType=RasterCellType.valueOf(band.getPixelType());
+  bandInfo.interleaveType=InterleaveType.valueOf(band.getInterleave());
+  bandInfo.interpolationType=InterpolationType.valueOf(band.getInterpolation());
+  bandInfo.hasStats=band.hasStats();
+  if (bandInfo.hasStats) {
+    try {
+      bandInfo.statsMin=band.getStatsMin();
+      bandInfo.statsMax=band.getStatsMax();
+      bandInfo.statsMean=band.getStatsMean();
+      bandInfo.statsStdDev=band.getStatsStdDev();
+    }
+ catch (    SeException e) {
+      throw new ArcSdeException(e);
+    }
+  }
+ else {
+    bandInfo.statsMin=java.lang.Double.NaN;
+    bandInfo.statsMax=java.lang.Double.NaN;
+    bandInfo.statsMean=java.lang.Double.NaN;
+    bandInfo.statsStdDev=java.lang.Double.NaN;
+  }
+  if (bandInfo.getColorMap() != null) {
+    bandInfo.noDataValue=RasterUtils.determineNoDataValue(bandInfo.getColorMap());
+  }
+ else {
+    double statsMin=bandInfo.getStatsMin();
+    double statsMax=bandInfo.getStatsMax();
+    RasterCellType nativeCellType=bandInfo.getCellType();
+    bandInfo.noDataValue=RasterUtils.determineNoDataValue(numBands,statsMin,statsMax,nativeCellType);
+  }
+  SDEPoint tOrigin;
+  try {
+    tOrigin=band.getTileOrigin();
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException(e);
+  }
+  bandInfo.tileOrigin=new Point((int)tOrigin.getX(),(int)tOrigin.getY());
+}

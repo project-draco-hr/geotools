@@ -1,0 +1,59 @@
+{
+  try {
+    if (EMFUtils.has(eObject,property)) {
+      if (lax && EMFUtils.isSet(eObject,property)) {
+        return;
+      }
+      try {
+        if (EMFUtils.isCollection(eObject,property)) {
+          EMFUtils.add(eObject,property,value);
+        }
+ else {
+          EMFUtils.set(eObject,property,value);
+        }
+      }
+ catch (      ClassCastException e) {
+        EStructuralFeature feature=EMFUtils.feature(eObject,property);
+        Class target=feature.getEType().getInstanceClass();
+        Object converted=convert(value,target,e);
+        try {
+          EMFUtils.set(eObject,property,converted);
+        }
+ catch (        ClassCastException e1) {
+          try {
+            Method g=eObject.getClass().getMethod("get" + property.substring(0,1).toUpperCase() + property.substring(1),null);
+            if (g == null) {
+              throw e;
+            }
+            target=g.getReturnType();
+            converted=convert(value,target,e);
+            EMFUtils.set(eObject,property,converted);
+          }
+ catch (          Exception e2) {
+            throw e;
+          }
+        }
+      }
+    }
+ else {
+      if (lax && value != null) {
+        List features=EMFUtils.features(eObject,value.getClass());
+        if (features.size() == 1) {
+          EStructuralFeature feature=(EStructuralFeature)features.get(0);
+          if (EMFUtils.isCollection(eObject,feature)) {
+            EMFUtils.add(eObject,feature,value);
+          }
+ else {
+            if (!eObject.eIsSet(feature)) {
+              eObject.eSet(feature,value);
+            }
+          }
+        }
+      }
+    }
+  }
+ catch (  RuntimeException e) {
+    String msg="Unable to set property: " + property + " for eobject: "+ getTarget();
+    throw new RuntimeException(msg,e);
+  }
+}

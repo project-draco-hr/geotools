@@ -1,0 +1,42 @@
+{
+  WFSStrategy strategy=null;
+  NodeList childNodes=capabilitiesDoc.getChildNodes();
+  for (int i=0; i < childNodes.getLength(); i++) {
+    Node child=childNodes.item(i);
+    if (child.getNodeType() == Node.COMMENT_NODE) {
+      String nodeValue=child.getNodeValue();
+      nodeValue=nodeValue.toLowerCase();
+      if (nodeValue.contains("cubewerx")) {
+        strategy=new CubeWerxStrategy();
+        break;
+      }
+    }
+  }
+  if (strategy == null) {
+    Element root=capabilitiesDoc.getDocumentElement();
+    String ionicNs=root.getAttribute("xmlns:ionic");
+    if (ionicNs != null) {
+      if (ionicNs.equals("http://www.ionicsoft.com/versions/4")) {
+        strategy=new IonicStrategy();
+      }
+ else       if (ionicNs.startsWith("http://www.ionicsoft.com/versions")) {
+        logger.warning("Found a Ionic server but the version may not match the strategy " + "we have (v.4). Ionic namespace url: " + ionicNs);
+        strategy=new IonicStrategy();
+      }
+    }
+  }
+  if (strategy == null) {
+    String uri=getCapabilitiesRequest.toExternalForm();
+    if (uri.contains("geoserver")) {
+      strategy=new GeoServerStrategy();
+    }
+ else     if (uri.contains("/ArcGIS/services/")) {
+      strategy=new ArcGISServerStrategy();
+    }
+  }
+  if (strategy == null) {
+    strategy=new DefaultWFSStrategy();
+  }
+  logger.info("Using WFS Strategy: " + strategy.getClass().getName());
+  return strategy;
+}

@@ -1,0 +1,23 @@
+{
+  Utilities.ensureNonNull("query",query);
+  final Lock lock=rwLock.writeLock();
+  try {
+    lock.lock();
+    checkStore();
+    SimpleFeatureStore fs=null;
+    try {
+      fs=(SimpleFeatureStore)tileIndexStore.getFeatureSource(typeName);
+      final int retVal=fs.getCount(query);
+      fs.removeFeatures(query.getFilter());
+      bounds=tileIndexStore.getFeatureSource(typeName).getBounds();
+      return retVal;
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.SEVERE))       LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+      return -1;
+    }
+  }
+  finally {
+    lock.unlock();
+  }
+}

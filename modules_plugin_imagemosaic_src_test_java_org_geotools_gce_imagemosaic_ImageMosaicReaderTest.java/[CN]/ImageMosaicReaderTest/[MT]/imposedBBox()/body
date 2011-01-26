@@ -1,0 +1,20 @@
+{
+  final AbstractGridFormat format=getFormat(imposedEnvelopeURL);
+  final ImageMosaicReader reader=getReader(imposedEnvelopeURL,format);
+  final GeneralEnvelope envelope=reader.getOriginalEnvelope();
+  assertNotNull(envelope);
+  assertEquals(envelope.getMinimum(0),-180.0,1E-6);
+  assertEquals(envelope.getMinimum(1),-90.0,1E-6);
+  assertEquals(envelope.getMaximum(0),180.0,1E-6);
+  assertEquals(envelope.getMaximum(1),90.0,1E-6);
+  final ParameterValue<GridGeometry2D> gg=ImageMosaicFormat.READ_GRIDGEOMETRY2D.createValue();
+  final Dimension dim=new Dimension();
+  dim.setSize(reader.getOriginalGridRange().getSpan(0) / 3.0,reader.getOriginalGridRange().getSpan(1) / 3.0);
+  final Rectangle rasterArea=((GridEnvelope2D)reader.getOriginalGridRange());
+  rasterArea.setSize(dim);
+  final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+  gg.setValue(new GridGeometry2D(range,envelope));
+  final ParameterValue<Boolean> useJai=ImageMosaicFormat.USE_JAI_IMAGEREAD.createValue();
+  useJai.setValue(false);
+  checkCoverage(reader,new GeneralParameterValue[]{gg,useJai},"Imposed BBox");
+}

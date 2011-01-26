@@ -1,0 +1,31 @@
+{
+  if (change.getType() == Type.ADDED) {
+    if (change.getFilter() instanceof Id) {
+      Id newFeatureIds=(Id)change.getFilter();
+      fids.addAll(newFeatureIds.getIdentifiers());
+    }
+ else {
+    }
+  }
+  if (filter == Filter.INCLUDE || bounds == ReferencedEnvelope.EVERYTHING) {
+    return;
+  }
+  if (change.getFilter() == Filter.INCLUDE || change.getBounds() == ReferencedEnvelope.EVERYTHING) {
+    filter=Filter.INCLUDE;
+    bounds=ReferencedEnvelope.EVERYTHING;
+    return;
+  }
+  bounds.expandToInclude(change.getBounds());
+  if (filter == Filter.EXCLUDE) {
+    filter=change.getFilter();
+  }
+ else   if (filter instanceof And) {
+    And and=(And)filter;
+    List<Filter> children=and.getChildren();
+    children.add(change.getFilter());
+  }
+ else {
+    FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+    filter=ff.and(filter,change.getFilter());
+  }
+}

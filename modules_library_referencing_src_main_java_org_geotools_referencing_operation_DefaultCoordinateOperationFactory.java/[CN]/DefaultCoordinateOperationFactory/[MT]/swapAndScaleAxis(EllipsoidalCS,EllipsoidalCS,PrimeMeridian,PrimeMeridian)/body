@@ -1,0 +1,20 @@
+{
+  final Matrix matrix=swapAndScaleAxis(sourceCS,targetCS);
+  for (int i=targetCS.getDimension(); --i >= 0; ) {
+    final CoordinateSystemAxis axis=targetCS.getAxis(i);
+    final AxisDirection direction=axis.getDirection();
+    if (AxisDirection.EAST.equals(direction.absolute())) {
+      final Unit<Angle> unit=axis.getUnit().asType(Angle.class);
+      final double sourceLongitude=getGreenwichLongitude(sourcePM,unit);
+      final double targetLongitude=getGreenwichLongitude(targetPM,unit);
+      final int lastMatrixColumn=matrix.getNumCol() - 1;
+      double rotate=sourceLongitude - targetLongitude;
+      if (AxisDirection.WEST.equals(direction)) {
+        rotate=-rotate;
+      }
+      rotate+=matrix.getElement(i,lastMatrixColumn);
+      matrix.setElement(i,lastMatrixColumn,rotate);
+    }
+  }
+  return matrix;
+}

@@ -1,0 +1,51 @@
+{
+  String xLine;
+  String longLine;
+  StringTokenizer xSt;
+  StringTokenizer longSt;
+  InputStreamReader xIsr=new InputStreamReader(xGridUrl.openStream());
+  BufferedReader xBr=new BufferedReader(xIsr);
+  InputStreamReader longIsr=new InputStreamReader(longGridUrl.openStream());
+  BufferedReader longBr=new BufferedReader(longIsr);
+  xLine=xBr.readLine();
+  xLine=xBr.readLine();
+  xSt=new StringTokenizer(xLine," ");
+  if (xSt.countTokens() > 8) {
+    throw new FactoryException(Errors.format(ErrorKeys.HEADER_UNEXPECTED_LENGTH_$1,String.valueOf(xSt.countTokens())));
+  }
+  int nc=Integer.parseInt(xSt.nextToken());
+  int nr=Integer.parseInt(xSt.nextToken());
+  int nz=Integer.parseInt(xSt.nextToken());
+  float xStart=Float.parseFloat(xSt.nextToken());
+  float xStep=Float.parseFloat(xSt.nextToken());
+  float yStart=Float.parseFloat(xSt.nextToken());
+  float yStep=Float.parseFloat(xSt.nextToken());
+  float xmax=xStart + ((nc - 1) * xStart);
+  float ymax=yStart + ((nr - 1) * yStep);
+  longLine=longBr.readLine();
+  longLine=longBr.readLine();
+  longSt=new StringTokenizer(longLine," ");
+  if (longSt.countTokens() > 8) {
+    throw new FactoryException(Errors.format(ErrorKeys.HEADER_UNEXPECTED_LENGTH_$1,String.valueOf(longSt.countTokens())));
+  }
+  if ((nc != Integer.parseInt(longSt.nextToken())) || (nr != Integer.parseInt(longSt.nextToken())) || (nz != Integer.parseInt(longSt.nextToken()))|| (xStart != Float.parseFloat(longSt.nextToken()))|| (xStep != Float.parseFloat(longSt.nextToken()))|| (yStart != Float.parseFloat(longSt.nextToken()))|| (yStep != Float.parseFloat(longSt.nextToken()))) {
+    throw new FactoryException(Errors.format(ErrorKeys.GRID_LOCATIONS_UNEQUAL));
+  }
+  int i=0;
+  int j=0;
+  float[] warpPos=new float[2 * (nc) * (nr)];
+  for (i=0; i < nr; i++) {
+    for (j=0; j < nc; ) {
+      xLine=xBr.readLine();
+      xSt=new StringTokenizer(xLine," ");
+      longLine=longBr.readLine();
+      longSt=new StringTokenizer(longLine," ");
+      while (xSt.hasMoreTokens() && longSt.hasMoreTokens()) {
+        warpPos[(2 * j) + (nc * i * 2)]=xStart + (j * xStep) + (float)-Float.parseFloat(xSt.nextToken());
+        warpPos[(2 * j) + (nc * i * 2) + 1]=yStart + (i * yStep) + (float)Float.parseFloat(longSt.nextToken());
+        ++j;
+      }
+    }
+  }
+  return new WarpGridTransform2D((int)xStart,(int)xStep,nc - 1,(int)yStart,(int)yStep,nr - 1,warpPos);
+}

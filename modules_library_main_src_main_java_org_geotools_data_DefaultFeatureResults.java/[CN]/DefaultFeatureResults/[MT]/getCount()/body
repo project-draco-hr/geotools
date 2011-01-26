@@ -1,0 +1,24 @@
+{
+  int count;
+  count=featureSource.getCount(query);
+  if (count != -1) {
+    int maxFeatures=query.getMaxFeatures();
+    return (count < maxFeatures) ? count : maxFeatures;
+  }
+  try {
+    count=0;
+    FeatureReader<SimpleFeatureType,SimpleFeature> reader=reader();
+    try {
+      for (; reader.hasNext(); count++) {
+        reader.next();
+      }
+    }
+  finally {
+      reader.close();
+    }
+    return count;
+  }
+ catch (  IllegalAttributeException e) {
+    throw new DataSourceException("Could not read feature ",e);
+  }
+}

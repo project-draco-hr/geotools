@@ -1,0 +1,45 @@
+{
+  PreparedStatement ps=null;
+  CallableStatement cs=null;
+  ResultSet r=null;
+  try {
+    ps=conn.prepareStatement(stmtPixel);
+    ps.setInt(1,level);
+    ps.setDouble(2,envelope.getMinimum(0));
+    ps.setDouble(3,envelope.getMaximum(1));
+    ps.setInt(4,level);
+    ps.setDouble(5,envelope.getMaximum(0));
+    ps.setDouble(6,envelope.getMinimum(1));
+    ps.setString(7,getConfig().getCoverageName());
+    r=ps.executeQuery();
+    BigDecimal[] pixelCoords1=null;
+    BigDecimal[] pixelCoords2=null;
+    if (r.next()) {
+      pixelCoords1=(BigDecimal[])r.getArray(1).getArray();
+      pixelCoords2=(BigDecimal[])r.getArray(2).getArray();
+    }
+ else {
+      throw new RuntimeException("No cell/pixel coordinates for world Envelope " + envelope);
+    }
+    r.close();
+    ps.close();
+    cs=conn.prepareCall(stmtExport);
+    cs.setString(1,getConfig().getCoverageName());
+    String params=String.format("pLevel=%d cropArea=(%d,%d,%d,%d)",level,pixelCoords1[0].intValue(),pixelCoords1[1].intValue(),pixelCoords2[0].intValue(),pixelCoords2[1].intValue());
+    cs.setString(2,params);
+    cs.registerOutParameter(3,Types.BLOB);
+    cs.execute();
+    Blob blob=cs.getBlob(3);
+    byte[] bytes=blob.getBytes(1,(int)blob.length());
+    cs.close();
+    return bytes;
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+ finally {
+    closeResultSet(r);
+    closeStmt(ps);
+    closeStmt(cs);
+  }
+}

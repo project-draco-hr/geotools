@@ -1,0 +1,27 @@
+{
+  try {
+    FileOutputStream os=new FileOutputStream(indexFile);
+    ObjectOutputStream oos=new ObjectOutputStream(os);
+    try {
+      oos.writeInt(this.page_size);
+      oos.writeInt(this.nextPage);
+      oos.writeObject(this.emptyPages);
+      oos.writeObject(this.pageIndex);
+      oos.writeObject(this.bounds);
+      oos.writeInt(this.featureTypes.size());
+      for (Iterator<FeatureType> iterator=featureTypes.iterator(); iterator.hasNext(); ) {
+        FeatureType type=(FeatureType)iterator.next();
+        String rep=DataUtilities.spec((SimpleFeatureType)type);
+        oos.writeObject(type.getName().getNamespaceURI() + "." + type.getName().getLocalPart());
+        oos.writeObject(rep);
+      }
+    }
+  finally {
+      oos.close();
+      os.close();
+    }
+  }
+ catch (  IOException e) {
+    logger.log(Level.WARNING,"Cannot close DiskStorage normally : " + e,e);
+  }
+}

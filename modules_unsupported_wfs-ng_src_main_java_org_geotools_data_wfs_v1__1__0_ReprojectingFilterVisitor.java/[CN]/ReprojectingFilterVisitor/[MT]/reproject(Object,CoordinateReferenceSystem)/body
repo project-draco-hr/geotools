@@ -1,0 +1,17 @@
+{
+  if (value == null) {
+    return null;
+  }
+  if (!(value instanceof Geometry))   throw new IllegalArgumentException("Binary geometry filter, but second expression " + "is not a geometry literal? (it's a " + value.getClass() + ")");
+  Geometry geom=(Geometry)value;
+  if (geom.getUserData() == null || !(geom.getUserData() instanceof CoordinateReferenceSystem))   return geom;
+  try {
+    CoordinateReferenceSystem geomCRS=(CoordinateReferenceSystem)geom.getUserData();
+    Geometry transformed=JTS.transform(geom,CRS.findMathTransform(geomCRS,propertyCrs,true));
+    transformed.setUserData(propertyCrs);
+    return transformed;
+  }
+ catch (  Exception e) {
+    throw new RuntimeException("Could not reproject geometry " + value,e);
+  }
+}

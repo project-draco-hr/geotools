@@ -1,0 +1,15 @@
+{
+  final CoordinateReferenceSystem mapCRS=CRS.parseWKT(WKT.UTM_10N);
+  final CoordinateReferenceSystem WGS84=DefaultGeographicCRS.WGS84;
+  final MathTransform crsTransform=CRS.findMathTransform(WGS84,mapCRS,true);
+  assertFalse(crsTransform.isIdentity());
+  final GeneralEnvelope firstEnvelope, transformedEnvelope, oldEnvelope;
+  firstEnvelope=new GeneralEnvelope(new double[]{-124,42},new double[]{-122,43});
+  firstEnvelope.setCoordinateReferenceSystem(WGS84);
+  transformedEnvelope=CRS.transform(crsTransform,firstEnvelope);
+  transformedEnvelope.setCoordinateReferenceSystem(mapCRS);
+  oldEnvelope=CRS.transform(crsTransform.inverse(),transformedEnvelope);
+  oldEnvelope.setCoordinateReferenceSystem(WGS84);
+  assertTrue(oldEnvelope.contains(firstEnvelope,true));
+  assertTrue(oldEnvelope.equals(firstEnvelope,0.02,true));
+}

@@ -1,0 +1,25 @@
+{
+  Logger logger=getDataStore().getLogger();
+  String typeName=getSchema().getTypeName();
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(filter);
+  try {
+    int locked=0;
+    while (reader.hasNext()) {
+      SimpleFeature feature=reader.next();
+      try {
+        getDataStore().getLockingManager().lockFeatureID(typeName,feature.getID(),transaction,lock);
+        logger.fine("Locked feature: " + feature.getID());
+        locked++;
+      }
+ catch (      FeatureLockException e) {
+        String msg="Unable to lock feature:" + feature.getID() + "."+ " Change logging to FINEST for stack trace";
+        logger.fine(msg);
+        logger.log(Level.FINEST,"Unable to lock feature: " + feature.getID(),e);
+      }
+    }
+    return locked;
+  }
+  finally {
+    reader.close();
+  }
+}

@@ -1,0 +1,47 @@
+{
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    if (type.equals(ENDSEC)) {
+      br.reset();
+      doLoop=false;
+      break;
+    }
+ else     if (type.equals(ENDTAB)) {
+      doLoop=false;
+      break;
+    }
+ else     if (type.equals(LAYER)) {
+      DXFLayer layer=DXFLayer.read(br);
+      sLayers.add(layer);
+    }
+ else     if (type.equals(LTYPE)) {
+      DXFLineType lt=DXFLineType.read(br);
+      sLineTypes.add(lt);
+    }
+ else     if (type.equals(BLOCK_RECORD)) {
+      log.info("Blockrecord at " + br.getLineNumber());
+    }
+  break;
+default :
+break;
+}
+}
+}

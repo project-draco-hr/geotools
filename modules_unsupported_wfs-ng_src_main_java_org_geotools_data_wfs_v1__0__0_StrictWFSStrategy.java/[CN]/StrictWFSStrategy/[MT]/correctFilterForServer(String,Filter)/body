@@ -1,0 +1,35 @@
+{
+  FeatureSetDescription fsd=WFSCapabilities.getFeatureSetDescription(store.capabilities,typeName);
+  Envelope maxbbox=null;
+  CoordinateReferenceSystem dataCRS=null;
+  if (fsd.getSRS() != null) {
+    try {
+      dataCRS=CRS.decode(fsd.getSRS());
+      MathTransform toDataCRS=CRS.findMathTransform(DefaultGeographicCRS.WGS84,dataCRS);
+      maxbbox=JTS.transform(fsd.getLatLongBoundingBox(),null,toDataCRS,10);
+    }
+ catch (    FactoryException e) {
+      WFS_1_0_0_DataStore.LOGGER.warning(e.getMessage());
+      maxbbox=null;
+    }
+catch (    MismatchedDimensionException e) {
+      WFS_1_0_0_DataStore.LOGGER.warning(e.getMessage());
+      maxbbox=null;
+    }
+catch (    TransformException e) {
+      WFS_1_0_0_DataStore.LOGGER.warning(e.getMessage());
+      maxbbox=null;
+    }
+  }
+ else {
+    maxbbox=fsd.getLatLongBoundingBox();
+  }
+  if (maxbbox != null) {
+    WFSBBoxFilterVisitor clipVisitor=new WFSBBoxFilterVisitor(maxbbox);
+    Filters.accept(serverFilter,clipVisitor);
+  }
+ else {
+    WFS_1_0_0_DataStore.LOGGER.log(Level.FINE,"Unable to clip your query against the latlongboundingbox element");
+  }
+  return dataCRS;
+}

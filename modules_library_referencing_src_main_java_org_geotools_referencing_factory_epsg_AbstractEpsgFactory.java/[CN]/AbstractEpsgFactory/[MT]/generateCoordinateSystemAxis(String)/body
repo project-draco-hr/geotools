@@ -1,0 +1,49 @@
+{
+  ensureNonNull("code",code);
+  CoordinateSystemAxis returnValue=null;
+  try {
+    final String primaryKey=trimAuthority(code);
+    final PreparedStatement stmt;
+    stmt=prepareStatement("Axis","SELECT COORD_AXIS_CODE," + " COORD_AXIS_NAME_CODE," + " COORD_AXIS_ORIENTATION,"+ " COORD_AXIS_ABBREVIATION,"+ " UOM_CODE"+ " FROM [Coordinate Axis]"+ " WHERE COORD_AXIS_CODE = ?");
+    stmt.setString(1,code);
+    ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String nameCode=getString(result,2,code);
+      final String orientation=getString(result,3,code);
+      final String abbreviation=getString(result,4,code);
+      final String unit=getString(result,5,code);
+      AxisDirection direction;
+      try {
+        direction=DefaultCoordinateSystemAxis.getDirection(orientation);
+      }
+ catch (      NoSuchElementException exception) {
+        if (orientation.equalsIgnoreCase("Geocentre > equator/PM")) {
+          direction=AxisDirection.OTHER;
+        }
+ else         if (orientation.equalsIgnoreCase("Geocentre > equator/90dE")) {
+          direction=AxisDirection.EAST;
+        }
+ else         if (orientation.equalsIgnoreCase("Geocentre > north pole")) {
+          direction=AxisDirection.NORTH;
+        }
+ else {
+          throw new FactoryException(exception);
+        }
+      }
+      final AxisName an=getAxisName(nameCode);
+      final Map<String,Object> properties=generateProperties(an.name,epsg,an.description);
+      final CSFactory factory=factories.getCSFactory();
+      final CoordinateSystemAxis axis=factory.createCoordinateSystemAxis(properties,abbreviation,direction,createUnit(unit));
+      returnValue=ensureSingleton(axis,returnValue,code);
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(CoordinateSystemAxis.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(CoordinateSystemAxis.class,code);
+  }
+  return returnValue;
+}

@@ -1,0 +1,37 @@
+{
+  final File jarFile=new File(outputDirectory,jarName + ".jar");
+  if (!jarFile.isFile()) {
+    return;
+  }
+  File collect=new File(collectDirectory);
+  if (!collect.exists()) {
+    if (!collect.mkdir()) {
+      throw new MojoExecutionException("Failed to create target directory: " + collect.getAbsolutePath());
+    }
+  }
+  if (collect.getCanonicalFile().equals(jarFile.getParentFile().getCanonicalFile())) {
+    return;
+  }
+  collect=new File(collect,SUB_DIRECTORY);
+  if (!collect.exists()) {
+    if (!collect.mkdir()) {
+      throw new MojoExecutionException("Failed to create binaries directory.");
+    }
+  }
+  FileUtils.copyFileToDirectory(jarFile,collect);
+  if (dependencies != null) {
+    for (    final Artifact artifact : dependencies) {
+      final String scope=artifact.getScope();
+      if (scope != null && (scope.equalsIgnoreCase(Artifact.SCOPE_COMPILE) || scope.equalsIgnoreCase(Artifact.SCOPE_RUNTIME))) {
+        final File file=artifact.getFile();
+        if (!artifact.getGroupId().startsWith("org.geotools")) {
+          final File copy=new File(collect,file.getName());
+          if (copy.exists()) {
+            continue;
+          }
+        }
+        FileUtils.copyFileToDirectory(file,collect);
+      }
+    }
+  }
+}

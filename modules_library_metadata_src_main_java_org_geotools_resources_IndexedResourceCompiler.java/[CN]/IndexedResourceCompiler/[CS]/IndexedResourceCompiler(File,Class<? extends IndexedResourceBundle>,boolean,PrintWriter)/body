@@ -1,0 +1,27 @@
+{
+  this.sourceDirectory=sourceDirectory;
+  this.out=out;
+  if (!renumber)   try {
+    final String classname=toKeyClass(bundleClass.getName());
+    final Field[] fields=Class.forName(classname).getFields();
+    out.print("Loading ");
+    out.println(classname);
+    Field.setAccessible(fields,true);
+    for (int i=fields.length; --i >= 0; ) {
+      final Field field=fields[i];
+      final String key=field.getName();
+      try {
+        final Object ID=field.get(null);
+        if (ID instanceof Integer) {
+          allocatedIDs.put((Integer)ID,key);
+        }
+      }
+ catch (      IllegalAccessException exception) {
+        final File source=new File(classname.replace('.','/') + ".class");
+        warning(source,key,"Access denied",exception);
+      }
+    }
+  }
+ catch (  ClassNotFoundException exception) {
+  }
+}

@@ -1,0 +1,28 @@
+{
+  if (!(metadata instanceof JP2KStreamMetadata)) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Metadata should be an instance of the expected class:" + " JP2KStreamMetadata.");
+    return;
+  }
+  final List<IIOMetadataNode> uuidBoxMetadataNodes=((JP2KStreamMetadata)metadata).searchOccurrencesNode(UUIDBox.BOX_TYPE);
+  UUIDBoxMetadataNode geoJP2uuid=null;
+  UUIDBoxMetadataNode worldBoxuuid=null;
+  if (uuidBoxMetadataNodes != null && !uuidBoxMetadataNodes.isEmpty()) {
+    for (    IIOMetadataNode node : uuidBoxMetadataNodes) {
+      if (node instanceof UUIDBoxMetadataNode) {
+        final UUIDBoxMetadataNode uuid=(UUIDBoxMetadataNode)node;
+        final byte[] id=uuid.getUuid();
+        if (isGeoJP2(id)) {
+          geoJP2uuid=uuid;
+          continue;
+        }
+        if (isWorldBox(id)) {
+          worldBoxuuid=uuid;
+        }
+      }
+    }
+  }
+  if (geoJP2uuid != null)   getGeoJP2(geoJP2uuid);
+  if (worldBoxuuid != null && crs != null) {
+    getWorldBox(worldBoxuuid);
+  }
+}

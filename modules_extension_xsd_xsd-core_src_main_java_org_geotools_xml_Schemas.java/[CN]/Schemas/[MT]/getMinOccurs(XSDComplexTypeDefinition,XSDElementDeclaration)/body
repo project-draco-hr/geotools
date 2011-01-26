@@ -1,0 +1,21 @@
+{
+  final XSDElementDeclaration fElement=element;
+  final ArrayList minOccurs=new ArrayList();
+  ElementVisitor visitor=new ElementVisitor(){
+    public void visit(    XSDParticle particle){
+      XSDElementDeclaration decl=(XSDElementDeclaration)particle.getContent();
+      if (decl.isElementDeclarationReference()) {
+        decl=decl.getResolvedElementDeclaration();
+      }
+      if (decl == fElement) {
+        minOccurs.add(new Integer(particle.getMinOccurs()));
+      }
+    }
+  }
+;
+  visitElements(type,visitor,true);
+  if (minOccurs.isEmpty()) {
+    throw new IllegalArgumentException("Element: " + element + " not found in type: "+ type);
+  }
+  return ((Integer)minOccurs.get(0)).intValue();
+}

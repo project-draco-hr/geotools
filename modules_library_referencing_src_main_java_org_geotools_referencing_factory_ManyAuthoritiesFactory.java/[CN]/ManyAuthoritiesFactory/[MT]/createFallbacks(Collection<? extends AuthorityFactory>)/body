@@ -1,0 +1,54 @@
+{
+  int authorityCount=0;
+  final Citation[] authorities=new Citation[factories.size()];
+  @SuppressWarnings("unchecked") final List<AuthorityFactory>[] factoriesByAuthority=new List[authorities.length];
+  for (  final AuthorityFactory factory : factories) {
+    Citation authority=factory.getAuthority();
+    int authorityIndex;
+    for (authorityIndex=0; authorityIndex < authorityCount; authorityIndex++) {
+      final Citation candidate=authorities[authorityIndex];
+      if (Citations.identifierMatches(candidate,authority)) {
+        authority=candidate;
+        break;
+      }
+    }
+    final List<AuthorityFactory> list;
+    if (authorityIndex == authorityCount) {
+      authorities[authorityCount++]=authority;
+      factoriesByAuthority[authorityIndex]=list=new ArrayList<AuthorityFactory>(4);
+    }
+ else {
+      list=factoriesByAuthority[authorityIndex];
+    }
+    if (!list.contains(factory)) {
+      list.add(factory);
+    }
+  }
+  final ArrayList<AuthorityFactory> result=new ArrayList<AuthorityFactory>();
+  final List<AuthorityFactory> buffer=new ArrayList<AuthorityFactory>(4);
+  for (int i=0; i < authorityCount; i++) {
+    final Collection<AuthorityFactory> list=factoriesByAuthority[i];
+    while (!list.isEmpty()) {
+      AuthorityFactory primary=null;
+      boolean needOtherChains=false;
+      for (final Iterator<AuthorityFactory> it=list.iterator(); it.hasNext(); ) {
+        final AuthorityFactory fallback=it.next();
+        if (primary == null) {
+          primary=fallback;
+        }
+ else         if (!FallbackAuthorityFactory.chainable(primary,fallback)) {
+          needOtherChains=true;
+          continue;
+        }
+        buffer.add(fallback);
+        if (!needOtherChains) {
+          it.remove();
+        }
+      }
+      result.add(FallbackAuthorityFactory.create(buffer));
+      buffer.clear();
+    }
+  }
+  result.trimToSize();
+  return result;
+}

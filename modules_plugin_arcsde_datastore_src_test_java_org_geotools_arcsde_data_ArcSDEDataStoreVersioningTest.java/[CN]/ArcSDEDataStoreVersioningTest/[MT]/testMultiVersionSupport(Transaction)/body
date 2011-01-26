@@ -1,0 +1,24 @@
+{
+  final int initialCount=8;
+  SimpleFeatureStore storeDefault;
+  SimpleFeatureStore storeV1;
+  SimpleFeatureStore storeV2;
+  storeDefault=store(defaultVersionDataStore,typeName,transaction);
+  storeV1=store(version1DataStore,typeName,transaction);
+  storeV2=store(version2DataStore,typeName,transaction);
+  assertEquals(initialCount,count(storeDefault));
+  assertEquals(initialCount,count(storeV1));
+  assertEquals(initialCount,count(storeV2));
+  delete(storeDefault,"INT32_COL = 1");
+  delete(storeV1,"INT32_COL = 1 OR INT32_COL = 2");
+  delete(storeV2,"INT32_COL = 1 OR INT32_COL = 2 OR INT32_COL = 3");
+  assertEquals(initialCount - 1,count(storeDefault));
+  assertEquals(initialCount - 2,count(storeV1));
+  assertEquals(initialCount - 3,count(storeV2));
+  if (!Transaction.AUTO_COMMIT.equals(transaction)) {
+    transaction.commit();
+    assertEquals(initialCount - 1,count(storeDefault));
+    assertEquals(initialCount - 2,count(storeV1));
+    assertEquals(initialCount - 3,count(storeV2));
+  }
+}

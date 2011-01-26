@@ -1,0 +1,33 @@
+{
+  final ArcSDEDataStore dataStore=testData.getDataStore();
+  final SimpleFeatureSource source;
+  final SimpleFeatureStore store;
+  source=dataStore.getFeatureSource(tableName);
+  store=(SimpleFeatureStore)dataStore.getFeatureSource(tableName);
+  ArcSdeResourceInfo info=(ArcSdeResourceInfo)store.getInfo();
+  assertTrue(info.isVersioned());
+  final SimpleFeatureType schema=store.getSchema();
+  assertNull(schema.getDescriptor("ROW_ID"));
+  final int initialCount=store.getCount(Query.ALL);
+  assertEquals(0,initialCount);
+  final WKTReader reader=new WKTReader();
+  Object[] content=new Object[2];
+  SimpleFeature feature;
+  SimpleFeatureCollection collection;
+  int count;
+  content[0]="Feature name 1";
+  content[1]=reader.read("POINT (0 0)");
+  feature=SimpleFeatureBuilder.build(schema,content,(String)null);
+  collection=DataUtilities.collection(feature);
+  store.addFeatures(collection);
+  count=store.getCount(Query.ALL);
+  assertEquals(1,count);
+  content[0]="Feature name 2";
+  content[1]=reader.read("POINT (1 1)");
+  feature=SimpleFeatureBuilder.build(schema,content,(String)null);
+  collection=DataUtilities.collection(feature);
+  store.addFeatures(collection);
+  count=store.getCount(Query.ALL);
+  assertEquals(2,count);
+  assertEquals(2,source.getCount(Query.ALL));
+}

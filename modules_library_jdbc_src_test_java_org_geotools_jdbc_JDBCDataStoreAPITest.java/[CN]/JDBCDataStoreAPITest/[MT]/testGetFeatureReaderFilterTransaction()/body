@@ -1,0 +1,47 @@
+{
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureType type=dataStore.getSchema(tname("road"));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),Filter.EXCLUDE),t);
+  assertFalse(reader.hasNext());
+  assertEquals(type,reader.getFeatureType());
+  assertEquals(0,count(reader));
+  reader.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),Filter.INCLUDE),t);
+  assertEquals(type,reader.getFeatureType());
+  assertEquals(td.roadFeatures.length,count(reader));
+  reader.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),td.rd1Filter),t);
+  assertEquals(type,reader.getFeatureType());
+  assertEquals(1,count(reader));
+  reader.close();
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriter(tname("road"),Filter.INCLUDE,t);
+  SimpleFeature feature;
+  while (writer.hasNext()) {
+    feature=(SimpleFeature)writer.next();
+    if (feature.getID().equals(td.roadFeatures[0].getID())) {
+      writer.remove();
+    }
+  }
+  writer.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),Filter.EXCLUDE),t);
+  assertEquals(0,count(reader));
+  reader.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),Filter.INCLUDE),t);
+  assertEquals(td.roadFeatures.length - 1,count(reader));
+  reader.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),td.rd1Filter),t);
+  assertEquals(0,count(reader));
+  reader.close();
+  t.rollback();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),Filter.EXCLUDE),t);
+  assertEquals(0,count(reader));
+  reader.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),Filter.INCLUDE),t);
+  assertEquals(td.roadFeatures.length,count(reader));
+  reader.close();
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),td.rd1Filter),t);
+  assertEquals(1,count(reader));
+  reader.close();
+  t.close();
+}

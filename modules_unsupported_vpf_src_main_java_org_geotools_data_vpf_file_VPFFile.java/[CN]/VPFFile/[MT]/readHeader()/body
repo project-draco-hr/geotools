@@ -1,0 +1,33 @@
+{
+  byte[] fourBytes=new byte[4];
+  inputStream.readFully(fourBytes);
+  byteOrder=readChar();
+  char ctrl=byteOrder;
+  if (byteOrder == VPF_RECORD_SEPARATOR) {
+    byteOrder=LITTLE_ENDIAN_ORDER;
+  }
+ else {
+    ctrl=readChar();
+  }
+  if (byteOrder == LITTLE_ENDIAN_ORDER) {
+    fourBytes=DataUtils.toBigEndian(fourBytes);
+  }
+  headerLength=DataUtils.decodeInt(fourBytes);
+  if (ctrl != VPF_RECORD_SEPARATOR) {
+    throw new VPFHeaderFormatException("Header format does not fit VPF file definition.");
+  }
+  description=readString(new String() + VPF_RECORD_SEPARATOR);
+  narrativeTable=readString(new String() + VPF_RECORD_SEPARATOR);
+  VPFColumn column=readColumn();
+  while (column != null) {
+    columns.add(column);
+    ctrl=readChar();
+    if (ctrl != VPF_FIELD_SEPARATOR) {
+      throw new VPFHeaderFormatException("Header format does not fit VPF file definition.");
+    }
+    column=readColumn();
+  }
+  if (getRecordSize() < 0) {
+    variableIndex=new VariableIndexInputStream(getVariableIndexFileName(),getByteOrder());
+  }
+}

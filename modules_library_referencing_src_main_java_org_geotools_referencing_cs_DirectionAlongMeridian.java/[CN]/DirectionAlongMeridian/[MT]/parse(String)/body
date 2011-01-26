@@ -1,0 +1,34 @@
+{
+  final Matcher m=EPSG.matcher(name);
+  if (!m.matches()) {
+    return null;
+  }
+  String group=m.group(1);
+  final AxisDirection baseDirection=findDirection(BASE_DIRECTIONS,group);
+  if (baseDirection == null || !AxisDirection.NORTH.equals(baseDirection.absolute())) {
+    return null;
+  }
+  group=m.group(2);
+  double meridian;
+  try {
+    meridian=Double.parseDouble(group);
+  }
+ catch (  NumberFormatException exception) {
+    return null;
+  }
+  if (!(meridian >= -180 && meridian <= 180)) {
+    return null;
+  }
+  group=m.group(4);
+  if (group != null) {
+    final AxisDirection sign=findDirection(BASE_DIRECTIONS,group);
+    final AxisDirection abs=sign.absolute();
+    if (sign == null || !AxisDirection.EAST.equals(abs)) {
+      return null;
+    }
+    if (sign != abs) {
+      meridian=-meridian;
+    }
+  }
+  return new DirectionAlongMeridian(baseDirection,meridian);
+}

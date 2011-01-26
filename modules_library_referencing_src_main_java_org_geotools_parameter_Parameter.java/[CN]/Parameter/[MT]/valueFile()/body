@@ -1,0 +1,29 @@
+{
+  if (value instanceof URI) {
+    return (URI)value;
+  }
+  if (value instanceof File) {
+    return ((File)value).toURI();
+  }
+  Exception cause=null;
+  try {
+    if (value instanceof URL) {
+      return ((URL)value).toURI();
+    }
+    if (value instanceof String) {
+      return new URI((String)value);
+    }
+  }
+ catch (  URISyntaxException exception) {
+    cause=exception;
+  }
+  final String name=getName(descriptor);
+  if (value == null) {
+    throw new IllegalStateException(Errors.format(ErrorKeys.MISSING_PARAMETER_$1,name));
+  }
+  final InvalidParameterTypeException exception=new InvalidParameterTypeException(getClassTypeError(),name);
+  if (cause != null) {
+    exception.initCause(cause);
+  }
+  throw exception;
+}

@@ -1,0 +1,20 @@
+{
+  FileDataStore store=FileDataStoreFinder.getDataStore(file);
+  FeatureSource featureSource=store.getFeatureSource();
+  MapContext map=new DefaultMapContext();
+  map.setTitle("Style Function Lab");
+  FeatureType type=featureSource.getSchema();
+  PropertyDescriptor geomDesc=type.getGeometryDescriptor();
+  List<String> attributeNames=new ArrayList<String>();
+  for (  PropertyDescriptor desc : type.getDescriptors()) {
+    if (!desc.equals(geomDesc)) {
+      attributeNames.add(desc.getName().getLocalPart());
+    }
+  }
+  Object selection=JOptionPane.showInputDialog(null,"Unique values of the attribute will be used to create a colour lookup table","Select feature attribute",JOptionPane.PLAIN_MESSAGE,null,attributeNames.toArray(),null);
+  if (selection != null) {
+    Style style=createStyle(featureSource,(String)selection);
+    map.addLayer(featureSource,style);
+    JMapFrame.showMap(map);
+  }
+}

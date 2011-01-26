@@ -1,0 +1,18 @@
+{
+  TestRunnable runners[]=new TestRunnable[RUNNER_COUNT];
+  for (int i=0; i < RUNNER_COUNT; i++) {
+    ClientThread thread=new HsqlDialectEpsgMediatorStressTest.ClientThread(i,mediator);
+    thread.iterations=ITERATIONS;
+    runners[i]=thread;
+  }
+  MultiThreadedTestRunner mttr=new MultiThreadedTestRunner(runners,null);
+  mttr.runTestRunnables(MAX_TIME);
+  int exceptions=0;
+  for (int i=0; i < RUNNER_COUNT; i++) {
+    ClientThread thread=(ClientThread)runners[i];
+    exceptions+=thread.exceptions;
+  }
+  mediator.dispose();
+  assertEquals(0,datasource.getNumActive());
+  assertEquals(0,exceptions);
+}

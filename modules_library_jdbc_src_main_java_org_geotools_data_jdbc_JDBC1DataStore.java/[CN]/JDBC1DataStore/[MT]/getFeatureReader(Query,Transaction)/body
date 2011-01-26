@@ -1,0 +1,77 @@
+{
+  String typeName=query.getTypeName();
+  SimpleFeatureType featureType=getSchema(typeName);
+  FeatureTypeInfo typeInfo=typeHandler.getFeatureTypeInfo(typeName);
+  SQLBuilder sqlBuilder=getSqlBuilder(typeName);
+  Filter preFilter=(Filter)sqlBuilder.getPreQueryFilter(query.getFilter());
+  Filter postFilter=(Filter)sqlBuilder.getPostQueryFilter(query.getFilter());
+  SimplifyingFilterVisitor simplifier=new SimplifyingFilterVisitor();
+  preFilter=(Filter)preFilter.accept(simplifier,null);
+  postFilter=(Filter)postFilter.accept(simplifier,null);
+  Filter originalFilter=(Filter)query.getFilter();
+  ((DefaultQuery)query).setFilter(preFilter);
+  String[] requestedNames=propertyNames(query);
+  String[] propertyNames;
+  if (allSameOrder(requestedNames,featureType)) {
+    propertyNames=requestedNames;
+  }
+ else   if (requestedNames.length <= featureType.getAttributeCount()) {
+    String[] filterNames=DataUtilities.attributeNames(postFilter,featureType);
+    List list=new ArrayList();
+    list.addAll(Arrays.asList(requestedNames));
+    for (int i=0; i < filterNames.length; i++) {
+      if (!list.contains(filterNames[i])) {
+        list.add(filterNames[i]);
+      }
+    }
+    if (list.size() == requestedNames.length) {
+      propertyNames=requestedNames;
+    }
+ else {
+      propertyNames=(String[])list.toArray(new String[list.size()]);
+    }
+    try {
+      typeInfo=new FeatureTypeInfo(typeInfo.getFeatureTypeName(),DataUtilities.createSubType(typeInfo.getSchema(),propertyNames),typeInfo.getFIDMapper());
+    }
+ catch (    SchemaException e1) {
+      throw new DataSourceException("Could not create subtype",e1);
+    }
+  }
+ else {
+    throw new DataSourceException(typeName + " does not contain requested properties:" + query);
+  }
+  AttributeDescriptor[] attrTypes=null;
+  try {
+    attrTypes=getAttributeTypes(typeName,propertyNames,query.getHints());
+  }
+ catch (  SchemaException schemaException) {
+    throw new DataSourceException("Some Attribute Names were specified that" + " do not exist in the FeatureType " + typeName + ". "+ "Requested names: "+ Arrays.asList(propertyNames)+ ", "+ "FeatureType: "+ featureType,schemaException);
+  }
+  String sqlQuery=constructQuery(query,attrTypes);
+  LOGGER.fine(sqlQuery);
+  ((DefaultQuery)query).setFilter(originalFilter);
+  QueryData queryData=executeQuery(typeInfo,typeName,sqlQuery,trans,false,query.getHints());
+  SimpleFeatureType schema;
+  try {
+    SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+    ftb.setName(typeName);
+    ftb.addAll(attrTypes);
+    ftb.setNamespaceURI(getNameSpace());
+    schema=ftb.buildFeatureType();
+  }
+ catch (  FactoryRegistryException e) {
+    throw new DataSourceException("Schema Factory Error when creating schema for FeatureReader",e);
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=createFeatureReader(schema,postFilter,queryData);
+  try {
+    SimpleFeatureType requestType=DataUtilities.createSubType(schema,requestedNames);
+    if (!FeatureTypes.equalsExact(requestType,reader.getFeatureType())) {
+      reader=new ReTypeFeatureReader(reader,requestType,false);
+    }
+  }
+ catch (  SchemaException schemaException) {
+    throw new DataSourceException("Could not handle query",schemaException);
+  }
+  return reader;
+}

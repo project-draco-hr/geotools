@@ -1,0 +1,52 @@
+{
+  String attName;
+  boolean isNilable;
+  int fieldLen;
+  Object defValue;
+  CoordinateReferenceSystem metadata=null;
+  final int nCols=seColumns.length;
+  List<AttributeDescriptor> attDescriptors=new ArrayList<AttributeDescriptor>(nCols);
+  Class<?> typeClass=null;
+  for (int i=0; i < nCols; i++) {
+    SeColumnDefinition colDef=seColumns[i];
+    attName=colDef.getName();
+    isNilable=colDef.allowsNulls();
+    defValue=null;
+    fieldLen=colDef.getSize();
+    final Integer sdeType=Integer.valueOf(colDef.getType());
+    if (sdeType.intValue() == SeColumnDefinition.TYPE_SHAPE) {
+      CoordinateReferenceSystem crs=null;
+      crs=parseCRS(sdeLayer);
+      metadata=crs;
+      int seShapeType=sdeLayer.getShapeTypes();
+      typeClass=getGeometryTypeFromLayerMask(seShapeType);
+      isNilable=(seShapeType & SeLayer.SE_NIL_TYPE_MASK) == SeLayer.SE_NIL_TYPE_MASK;
+      defValue=isNilable ? null : ArcSDEGeometryBuilder.defaultValueFor(typeClass);
+    }
+ else {
+      typeClass=getJavaBinding(sdeType);
+      if (typeClass == null) {
+        LOGGER.info("Found an unsupported ArcSDE data type: " + sdeType + " for column "+ attName+ ". Ignoring it.");
+        continue;
+      }
+    }
+    final int rowIdType=colDef.getRowIdType();
+    if (rowIdType == SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE) {
+      continue;
+    }
+    AttributeTypeBuilder b=new AttributeTypeBuilder();
+    b.setDefaultValue(defValue);
+    b.setBinding(typeClass);
+    b.setName(attName);
+    b.setNillable(isNilable);
+    if (fieldLen > 0) {
+      b.setLength(fieldLen);
+    }
+    if (Geometry.class.isAssignableFrom(typeClass)) {
+      b.setCRS(metadata);
+    }
+    AttributeDescriptor buildDescriptor=b.buildDescriptor(attName);
+    attDescriptors.add(buildDescriptor);
+  }
+  return attDescriptors;
+}

@@ -1,0 +1,26 @@
+{
+  Hints hints1=GeoTools.getDefaultHints();
+  hints1.put(Hints.CRS,DefaultGeographicCRS.WGS84);
+  hints1.put(Hints.GEOMETRY_VALIDATE,true);
+  GeometryBuilder builder_validate=new GeometryBuilder(hints1);
+  Hints hints2=GeoTools.getDefaultHints();
+  hints2.put(Hints.CRS,DefaultGeographicCRS.WGS84);
+  hints2.put(Hints.GEOMETRY_VALIDATE,false);
+  GeometryBuilder builder_novalid=new GeometryBuilder(hints2);
+  Surface validated=createSurface(builder_validate);
+  Surface not_validated=createSurface(builder_novalid);
+  assertTrue(validated instanceof SurfaceImpl);
+  assertTrue(not_validated instanceof SurfaceImpl);
+  try {
+    Surface v2=(Surface)validated.transform(DefaultGeographicCRS.WGS84);
+  }
+ catch (  TransformException e) {
+    assertTrue("Validated Surface transform failed",false);
+  }
+  try {
+    Surface nv2=(Surface)not_validated.transform(DefaultGeographicCRS.WGS84);
+  }
+ catch (  TransformException e) {
+    assertTrue("Unvalidated Surface transform failed",false);
+  }
+}

@@ -1,0 +1,55 @@
+{
+  GeometryFactory factory=g.getFactory();
+  Geometry transformed=null;
+  if (g instanceof Point) {
+    transformed=transformPoint((Point)g,factory);
+  }
+ else   if (g instanceof MultiPoint) {
+    MultiPoint mp=(MultiPoint)g;
+    Point[] points=new Point[mp.getNumGeometries()];
+    for (int i=0; i < points.length; i++) {
+      points[i]=transformPoint((Point)mp.getGeometryN(i),factory);
+    }
+    transformed=factory.createMultiPoint(points);
+  }
+ else   if (g instanceof LineString) {
+    transformed=transformLineString((LineString)g,factory);
+  }
+ else   if (g instanceof MultiLineString) {
+    MultiLineString mls=(MultiLineString)g;
+    LineString[] lines=new LineString[mls.getNumGeometries()];
+    for (int i=0; i < lines.length; i++) {
+      lines[i]=transformLineString((LineString)mls.getGeometryN(i),factory);
+    }
+    transformed=factory.createMultiLineString(lines);
+  }
+ else   if (g instanceof Polygon) {
+    transformed=transformPolygon((Polygon)g,factory);
+  }
+ else   if (g instanceof MultiPolygon) {
+    MultiPolygon mp=(MultiPolygon)g;
+    Polygon[] polygons=new Polygon[mp.getNumGeometries()];
+    for (int i=0; i < polygons.length; i++) {
+      polygons[i]=transformPolygon((Polygon)mp.getGeometryN(i),factory);
+    }
+    transformed=factory.createMultiPolygon(polygons);
+  }
+ else   if (g instanceof GeometryCollection) {
+    GeometryCollection gc=(GeometryCollection)g;
+    Geometry[] geoms=new Geometry[gc.getNumGeometries()];
+    for (int i=0; i < geoms.length; i++) {
+      geoms[i]=transform(gc.getGeometryN(i));
+    }
+    transformed=factory.createGeometryCollection(geoms);
+  }
+ else {
+    throw new IllegalArgumentException("Unsupported geometry type " + g.getClass());
+  }
+  transformed.setUserData(g.getUserData());
+  if ((g.getUserData() == null) || g.getUserData() instanceof CoordinateReferenceSystem) {
+    if (crs != null) {
+      transformed.setUserData(crs);
+    }
+  }
+  return transformed;
+}

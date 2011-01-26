@@ -1,0 +1,94 @@
+{
+  if ((dsm == null) || (dsm.size() == 0)) {
+    System.out.println("No Datastores were defined.");
+    return;
+  }
+  if (v == null) {
+    System.err.println("An error occured: Cannot run without a ValidationProcessor.");
+    return;
+  }
+  Iterator it=dsm.keySet().iterator();
+  while (it.hasNext()) {
+    String typeRef=it.next().toString();
+    DataStore ds=(DataStore)dsm.get(typeRef);
+    try {
+      dataRepository.register(typeRef,ds);
+    }
+ catch (    IOException e) {
+      e.printStackTrace();
+    }
+  }
+  validator=new Validator(dataRepository,v);
+  for (  DataStore store : dataRepository.getDataStores()) {
+    String typeNames[]=null;
+    try {
+      typeNames=store.getTypeNames();
+    }
+ catch (    IOException e) {
+      e.printStackTrace();
+    }
+    for (int p=0; p < typeNames.length; p++) {
+      try {
+        validator.featureValidation(typeNames[p],store.getFeatureSource(typeNames[p]).getFeatures(),null);
+      }
+ catch (      IOException e1) {
+        e1.printStackTrace();
+      }
+catch (      Exception e1) {
+        e1.printStackTrace();
+      }
+    }
+  }
+  ReferencedEnvelope envelope=makeEnvelope();
+  try {
+    validator.integrityValidation(dsm,envelope,null);
+  }
+ catch (  IOException e1) {
+    e1.printStackTrace();
+  }
+catch (  Exception e1) {
+    e1.printStackTrace();
+  }
+  if (true)   return;
+  it=dsm.keySet().iterator();
+  while (it.hasNext()) {
+    Map sources=new HashMap();
+    String key=it.next().toString();
+    DataStore ds=(DataStore)dsm.get(key);
+    String t=transProp.getProperty(key + ".Sources");
+    String[] ss=t.split(",");
+    for (int j=0; j < ss.length; j++) {
+      ss[j]=ss[j].trim();
+      try {
+        SimpleFeatureSource fs=ds.getFeatureSource(ss[j]);
+        sources.put(ss,fs);
+      }
+ catch (      Exception e) {
+        e.printStackTrace();
+      }
+    }
+    Envelope env=null;
+    try {
+      double minx=Double.parseDouble(transProp.getProperty("Bounds.minX"));
+      double miny=Double.parseDouble(transProp.getProperty("Bounds.maxX"));
+      double maxx=Double.parseDouble(transProp.getProperty("Bounds.maxX"));
+      double maxy=Double.parseDouble(transProp.getProperty("Bounds.maxY"));
+      env=new Envelope(minx,miny,maxx,maxy);
+    }
+ catch (    Exception e) {
+      System.err.println("Envelope not specified in Transaction.properties.");
+      env=new Envelope();
+    }
+    if (env == null) {
+      env=new Envelope(Integer.MIN_VALUE,Integer.MIN_VALUE,Integer.MAX_VALUE,Integer.MAX_VALUE);
+    }
+    try {
+      BatchValidationResults vr=new BatchValidationResults();
+      System.out.println("Feature Integrety Test Results");
+      System.out.println(vr.toString());
+    }
+ catch (    Exception e) {
+      e.printStackTrace();
+    }
+  }
+}

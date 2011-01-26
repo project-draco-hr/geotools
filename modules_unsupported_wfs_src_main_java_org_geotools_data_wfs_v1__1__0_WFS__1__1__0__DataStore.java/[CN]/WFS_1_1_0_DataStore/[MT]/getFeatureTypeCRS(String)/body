@@ -1,0 +1,25 @@
+{
+  final String defaultCRS=wfs.getDefaultCRS(typeName);
+  CoordinateReferenceSystem crs=null;
+  try {
+    crs=CRS.decode(defaultCRS);
+  }
+ catch (  NoSuchAuthorityCodeException e) {
+    LOGGER.info("Authority not found for " + typeName + " CRS: "+ defaultCRS);
+    if (defaultCRS.toUpperCase().startsWith("URN")) {
+      String code=defaultCRS.substring(defaultCRS.lastIndexOf(":") + 1);
+      String epsgCode="EPSG:" + code;
+      try {
+        crs=CRS.decode(epsgCode);
+      }
+ catch (      Exception e1) {
+        LOGGER.log(Level.WARNING,"can't decode CRS " + epsgCode + " for "+ typeName+ ". Assigning DefaultEngineeringCRS.GENERIC_2D: "+ DefaultEngineeringCRS.GENERIC_2D);
+        crs=DefaultEngineeringCRS.GENERIC_2D;
+      }
+    }
+  }
+catch (  FactoryException e) {
+    LOGGER.log(Level.WARNING,"Error creating CRS " + typeName + ": "+ defaultCRS,e);
+  }
+  return crs;
+}

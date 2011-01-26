@@ -1,0 +1,21 @@
+{
+  final DescribeFeatureTypeType dft=factory.createDescribeFeatureTypeType();
+  dft.setService("WFS");
+  dft.setVersion("1.1.0");
+  dft.setHandle("bar");
+  dft.setOutputFormat("foo");
+  final QName name1=new QName("http://www.geotools.org/test","Type1");
+  final QName name2=new QName("http://www.geotools.org/test","Type2");
+  dft.getTypeName().add(name1);
+  dft.getTypeName().add(name2);
+  final Document dom=encode(dft,WFS.DescribeFeatureType);
+  final Element root=dom.getDocumentElement();
+  assertEquals("WFS",root.getAttribute("service"));
+  assertEquals("1.1.0",root.getAttribute("version"));
+  assertEquals("bar",root.getAttribute("handle"));
+  assertEquals("foo",root.getAttribute("outputFormat"));
+  String typeName=getElementValueByQName(dom,new QName(WFS.NAMESPACE,"TypeName"),0);
+  assertEquals(name1.getLocalPart(),typeName);
+  typeName=getElementValueByQName(dom,new QName(WFS.NAMESPACE,"TypeName"),1);
+  assertEquals(name2.getLocalPart(),typeName);
+}

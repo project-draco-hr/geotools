@@ -1,0 +1,40 @@
+{
+  SimpleFeatureType featureType=writer.getFeatureType();
+  final String typeName=featureType.getTypeName();
+  return new DelegatingFeatureWriter<SimpleFeatureType,SimpleFeature>(){
+    SimpleFeature live=null;
+    public FeatureWriter<SimpleFeatureType,SimpleFeature> getDelegate(){
+      return writer;
+    }
+    public SimpleFeatureType getFeatureType(){
+      return writer.getFeatureType();
+    }
+    public SimpleFeature next() throws IOException {
+      live=writer.next();
+      return live;
+    }
+    public void remove() throws IOException {
+      if (live != null) {
+        assertAccess(typeName,live.getID(),transaction);
+      }
+      writer.remove();
+      live=null;
+    }
+    public void write() throws IOException {
+      if (live != null) {
+        assertAccess(typeName,live.getID(),transaction);
+      }
+      writer.write();
+      live=null;
+    }
+    public boolean hasNext() throws IOException {
+      live=null;
+      return writer.hasNext();
+    }
+    public void close() throws IOException {
+      live=null;
+      if (writer != null)       writer.close();
+    }
+  }
+;
+}

@@ -1,0 +1,32 @@
+{
+  Connection conn=pool.getConnection();
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=data.getFeatureReader(new DefaultQuery("river",Filter.INCLUDE),Transaction.AUTO_COMMIT);
+  ReferencedEnvelope bounds=new ReferencedEnvelope();
+  try {
+    SimpleFeature f;
+    while (reader.hasNext()) {
+      f=reader.next();
+      int index=((Integer)f.getAttribute("id")).intValue() - 1;
+      riverFeatures[index]=f;
+      bounds.expandToInclude((Envelope)f.getBounds());
+    }
+  }
+  finally {
+    reader.close();
+    conn.close();
+  }
+  if (!riverBounds.equals(bounds)) {
+    System.out.println("warning! Database changed bounds of river");
+    System.out.println("was:" + riverBounds);
+    System.out.println("now:" + bounds);
+    riverBounds=bounds;
+  }
+  FilterFactory factory=FilterFactoryFinder.createFilterFactory();
+  CompareFilter tFilter=factory.createCompareFilter(AbstractFilter.COMPARE_EQUALS);
+  Expression rvLiteral=factory.createLiteralExpression("rv1");
+  tFilter.addLeftValue(rvLiteral);
+  SimpleFeatureType schema=riverFeatures[0].getFeatureType();
+  Expression rvNameAtt=factory.createAttributeExpression(schema,"river");
+  tFilter.addRightValue(rvNameAtt);
+  rv1Filter=tFilter;
+}

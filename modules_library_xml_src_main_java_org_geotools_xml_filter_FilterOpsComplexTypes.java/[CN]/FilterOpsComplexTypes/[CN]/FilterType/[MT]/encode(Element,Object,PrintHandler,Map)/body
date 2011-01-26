@@ -1,0 +1,29 @@
+{
+  if (!canEncode(element,value,hints)) {
+    return;
+  }
+  Filter filter=(Filter)value;
+  if (filter == null) {
+    return;
+  }
+  if (filter == org.geotools.filter.Filter.NONE) {
+    return;
+  }
+  if (filter == org.geotools.filter.Filter.ALL) {
+    return;
+  }
+  if (element != null) {
+    output.startElement(element.getNamespace(),element.getName(),null);
+  }
+  FilterEncodingPreProcessor visitor=getFilterEncodingPreProcessor(hints);
+  filter.accept(visitor);
+  if (!visitor.getFilter().equals(Filter.EXCLUDE)) {
+    encodeFilter(visitor.getFilter(),output,hints);
+  }
+  if (!visitor.getFidFilter().getIDs().isEmpty()) {
+    encodeFilter(visitor.getFidFilter(),output,hints);
+  }
+  if (element != null) {
+    output.endElement(element.getNamespace(),element.getName());
+  }
+}

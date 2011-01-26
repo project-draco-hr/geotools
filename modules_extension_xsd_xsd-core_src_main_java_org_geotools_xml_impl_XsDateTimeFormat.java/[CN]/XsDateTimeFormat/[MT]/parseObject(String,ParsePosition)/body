@@ -1,0 +1,159 @@
+{
+  if (pString == null) {
+    throw new NullPointerException("The String argument must not be null.");
+  }
+  if (pParsePosition == null) {
+    throw new NullPointerException("The ParsePosition argument must not be null.");
+  }
+  int offset=pParsePosition.getIndex();
+  int length=pString.length();
+  boolean isMinus=false;
+  StringBuffer digits=new StringBuffer();
+  int year, month, mday;
+  if (parseDate) {
+    if (offset < length) {
+      char c=pString.charAt(offset);
+      if (c == '+') {
+        ++offset;
+      }
+ else       if (c == '-') {
+        ++offset;
+        isMinus=true;
+      }
+    }
+    offset=parseInt(pString,offset,digits);
+    if (digits.length() < 4) {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    year=Integer.parseInt(digits.toString());
+    if (offset < length && pString.charAt(offset) == '-') {
+      ++offset;
+    }
+ else {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    offset=parseInt(pString,offset,digits);
+    if (digits.length() != 2) {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    month=Integer.parseInt(digits.toString());
+    if (offset < length && pString.charAt(offset) == '-') {
+      ++offset;
+    }
+ else {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    offset=parseInt(pString,offset,digits);
+    if (digits.length() != 2) {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    mday=Integer.parseInt(digits.toString());
+    if (parseTime) {
+      if (offset < length && pString.charAt(offset) == 'T') {
+        ++offset;
+      }
+ else {
+        pParsePosition.setErrorIndex(offset);
+        return null;
+      }
+    }
+  }
+ else {
+    year=month=mday=0;
+  }
+  int hour, minute, second, millis;
+  if (parseTime) {
+    offset=parseInt(pString,offset,digits);
+    if (digits.length() != 2) {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    hour=Integer.parseInt(digits.toString());
+    if (offset < length && pString.charAt(offset) == ':') {
+      ++offset;
+    }
+ else {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    offset=parseInt(pString,offset,digits);
+    if (digits.length() != 2) {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    minute=Integer.parseInt(digits.toString());
+    if (offset < length && pString.charAt(offset) == ':') {
+      ++offset;
+    }
+ else {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    offset=parseInt(pString,offset,digits);
+    if (digits.length() != 2) {
+      pParsePosition.setErrorIndex(offset);
+      return null;
+    }
+    second=Integer.parseInt(digits.toString());
+    if (offset < length && pString.charAt(offset) == '.') {
+      ++offset;
+      offset=parseInt(pString,offset,digits);
+      if (digits.length() > 0) {
+        millis=Integer.parseInt(digits.toString());
+        if (millis > 999) {
+          pParsePosition.setErrorIndex(offset);
+          return null;
+        }
+        for (int i=digits.length(); i < 3; i++) {
+          millis*=10;
+        }
+      }
+ else {
+        millis=0;
+      }
+    }
+ else {
+      millis=0;
+    }
+  }
+ else {
+    hour=minute=second=millis=0;
+  }
+  digits.setLength(0);
+  digits.append("GMT");
+  if (offset < length) {
+    char c=pString.charAt(offset);
+    if (c == 'Z') {
+      ++offset;
+    }
+ else     if (c == '+' || c == '-') {
+      digits.append(c);
+      ++offset;
+      for (int i=0; i < 5; i++) {
+        if (offset >= length) {
+          pParsePosition.setErrorIndex(offset);
+          return null;
+        }
+        c=pString.charAt(offset);
+        if ((i != 2 && Character.isDigit(c)) || (i == 2 && c == ':')) {
+          digits.append(c);
+        }
+ else {
+          pParsePosition.setErrorIndex(offset);
+          return null;
+        }
+        ++offset;
+      }
+    }
+  }
+  Calendar cal=Calendar.getInstance(TimeZone.getTimeZone(digits.toString()));
+  cal.set(isMinus ? -year : year,parseDate ? month - 1 : month,mday,hour,minute,second);
+  cal.set(Calendar.MILLISECOND,millis);
+  pParsePosition.setIndex(offset);
+  return cal;
+}

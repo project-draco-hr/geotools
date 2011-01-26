@@ -1,0 +1,25 @@
+{
+  double[] requestedRes=null;
+  if (overviewPolicy == null) {
+    overviewPolicy=OverviewPolicy.NEAREST;
+  }
+  readParam.setSourceSubsampling(1,1,0,0);
+  if (overviewPolicy.equals(OverviewPolicy.IGNORE)) {
+    return;
+  }
+  if (requestedEnvelope != null) {
+    final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper();
+    geMapper.setEnvelope(requestedEnvelope);
+    geMapper.setGridRange(new GeneralGridEnvelope(requestedDim,2));
+    geMapper.setPixelAnchor(pixelInCell);
+    final AffineTransform transform=geMapper.createAffineTransform();
+    requestedRes=CoverageUtilities.getResolution(transform);
+  }
+  if (requestedRes == null) {
+    return;
+  }
+  if (highestRes == null)   throw new IllegalArgumentException("Unspecified highest Resolution");
+  if ((requestedRes[0] > highestRes[0]) || (requestedRes[1] > highestRes[1])) {
+    Utilities.setDecimationParameters(readParam,gridRange,requestedRes,highestRes);
+  }
+}

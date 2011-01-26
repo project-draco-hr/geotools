@@ -1,0 +1,40 @@
+{
+  final int numPts=200;
+  final double[] sourcePt=new double[numPts];
+  final double[] targetPt=new double[numPts];
+  final double[] compare=new double[numPts];
+  final double[] delta=new double[numPts];
+  for (int pass=0; pass < 100; pass++) {
+    for (int i=0; i < numPts; i++) {
+      sourcePt[i]=20 * random.nextDouble() + 0.1;
+    }
+    MathTransform ctr=getRandomTransform1D();
+    ctr.transform(sourcePt,0,targetPt,0,numPts);
+    for (int i=random.nextInt(2) + 1; --i >= 0; ) {
+      final MathTransform1D step=getRandomTransform1D();
+      ctr=(MathTransform1D)factory.createConcatenatedTransform(ctr,step);
+      step.transform(targetPt,0,targetPt,0,numPts);
+    }
+    ctr.transform(sourcePt,0,compare,0,numPts);
+    final double EPS=Math.pow(10,-5 + countNonlinear(ctr));
+    for (int i=0; i < numPts; i++) {
+      delta[i]=Math.max(1E-9,Math.abs(targetPt[i] * EPS));
+      if (targetPt[i] >= +1E+300)       targetPt[i]=Double.POSITIVE_INFINITY;
+      if (targetPt[i] <= -1E+300)       targetPt[i]=Double.NEGATIVE_INFINITY;
+    }
+    assertPointsEqual("transform[" + ctr + ']',targetPt,compare,delta);
+    try {
+      final MathTransform inv=ctr.inverse();
+      Arrays.fill(delta,Math.pow(10,countNonlinear(inv)));
+      inv.transform(targetPt,0,compare,0,numPts);
+      for (int i=0; i < numPts; i++) {
+        if (!isReal(targetPt[i]) || !isReal(compare[i])) {
+          sourcePt[i]=Double.NaN;
+        }
+      }
+      assertPointsEqual("inverse[" + inv + ']',sourcePt,compare,delta);
+    }
+ catch (    NoninvertibleTransformException exception) {
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  Envelope requestedEnvelope=null;
+  int width=-1;
+  int height=-1;
+  if (parameters != null) {
+    for (    GeneralParameterValue param : parameters) {
+      final ReferenceIdentifier name=param.getDescriptor().getName();
+      if (name.equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
+        final GridGeometry2D gg=(GridGeometry2D)((ParameterValue)param).getValue();
+        requestedEnvelope=gg.getEnvelope();
+        width=gg.getGridRange().getHigh(0) + 1;
+        height=gg.getGridRange().getHigh(1) + 1;
+        break;
+      }
+    }
+  }
+  if (requestedEnvelope == null) {
+    requestedEnvelope=getOriginalEnvelope();
+    width=640;
+    height=(int)Math.round(requestedEnvelope.getSpan(1) / requestedEnvelope.getSpan(0) * 640);
+  }
+  if (grid != null && grid.getGridGeometry().getGridRange2D().getWidth() == width && grid.getGridGeometry().getGridRange2D().getHeight() == height && grid.getEnvelope().equals(requestedEnvelope))   return grid;
+  grid=getMap(reference(requestedEnvelope),width,height);
+  return grid;
+}

@@ -1,0 +1,48 @@
+{
+  QName bindingName=null;
+  if (type.getName() != null) {
+    bindingName=new QName(type.getTargetNamespace(),type.getName());
+  }
+ else {
+    for (Iterator e=type.getSchema().getElementDeclarations().iterator(); e.hasNext(); ) {
+      XSDElementDeclaration element=(XSDElementDeclaration)e.next();
+      if (type.equals(element.getAnonymousTypeDefinition())) {
+        bindingName=new QName(type.getTargetNamespace(),"_" + element.getName());
+        break;
+      }
+    }
+    if (bindingName == null) {
+      if (container != null) {
+        XSDNamedComponent base=container;
+        if (container.getName() == null) {
+          if (container.getContainer() instanceof XSDElementDeclaration) {
+            XSDElementDeclaration e=(XSDElementDeclaration)container.getContainer();
+            if (e.isGlobal()) {
+              base=e;
+            }
+          }
+        }
+        if (type.getContainer() instanceof XSDElementDeclaration) {
+          XSDElementDeclaration anonymous=(XSDElementDeclaration)type.getContainer();
+          XSDParticle particle=Schemas.getChildElementParticle(container,anonymous.getName(),true);
+          if (particle != null) {
+            bindingName=new QName(base.getTargetNamespace(),base.getName() + "_" + anonymous.getName());
+          }
+        }
+      }
+    }
+    if ((bindingName == null) || (loader.getBinding(bindingName) == null)) {
+      if (type instanceof XSDComplexTypeDefinition && type.getBaseType() instanceof XSDSimpleTypeDefinition) {
+        bindingName=XS.ANYTYPE;
+      }
+    }
+  }
+  Binding binding=loader.loadBinding(bindingName,context);
+  if (binding != null) {
+    bindings.add(binding);
+    if (binding.getExecutionMode() == Binding.OVERRIDE) {
+      return false;
+    }
+  }
+  return true;
+}

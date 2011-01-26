@@ -1,0 +1,50 @@
+{
+  final int width=tileSize.width;
+  final int height=tileSize.height;
+  final int[][] divisors=new int[2][];
+  final int xmax=imageBounds.width / width;
+  final int ymax=imageBounds.height / height;
+  final int maxScale=Math.min(tileSize.width,tileSize.height) / MIN_TILE_SIZE;
+  int scale=1;
+  boolean oldTileDivideImage=false;
+  do {
+    final int[] oldX=divisors[0];
+    final int[] oldY=divisors[1];
+    final long dx=scale * (long)imageBounds.width;
+    final long dy=scale * (long)imageBounds.height;
+    final int nx=(int)Fraction.round(dx,width);
+    final int ny=(int)Fraction.round(dy,height);
+    final boolean tileDivideImage=(nx * width == dx) && (ny * height == dy);
+    if (oldTileDivideImage && !tileDivideImage) {
+      continue;
+    }
+    int[] sx=XMath.divisors(nx);
+    int[] sy;
+    if (nx == ny) {
+      sx=XArray.resize(sx,decimate(sx,Math.min(xmax,ymax),multiples));
+      divisors[0]=divisors[1]=sy=sx;
+    }
+ else {
+      sy=XMath.divisors(ny);
+      divisors[0]=sx=XArray.resize(sx,decimate(sx,xmax,multiples));
+      divisors[1]=sy=XArray.resize(sy,decimate(sy,ymax,multiples));
+      reduceLargest(divisors);
+    }
+    final int length=divisors[0].length;
+    if (tileDivideImage && length >= preferredCount) {
+      break;
+    }
+    if (oldX != null) {
+      if (tileDivideImage && !oldTileDivideImage) {
+        oldTileDivideImage=true;
+        continue;
+      }
+      if (length <= oldX.length) {
+        divisors[0]=oldX;
+        divisors[1]=oldY;
+      }
+    }
+  }
+ while (++scale <= maxScale);
+  return divisors;
+}

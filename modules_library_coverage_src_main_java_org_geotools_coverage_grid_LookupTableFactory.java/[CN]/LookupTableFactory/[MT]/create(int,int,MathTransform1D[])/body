@@ -1,0 +1,129 @@
+{
+  final int nbands=transforms.length;
+  for (int i=0; i < nbands; i++) {
+    if (transforms[i] == null) {
+      return null;
+    }
+  }
+synchronized (pool) {
+    final LookupTableFactory key=new LookupTableFactory(sourceType,targetType,transforms);
+    LookupTableJAI table=pool.get(key);
+    if (table != null) {
+      return table;
+    }
+    final int length;
+    final int offset;
+switch (sourceType) {
+default :
+{
+        return null;
+      }
+case DataBuffer.TYPE_BYTE:
+{
+      length=0x100;
+      offset=0;
+      break;
+    }
+case DataBuffer.TYPE_SHORT:
+case DataBuffer.TYPE_USHORT:
+{
+    if (targetType != DataBuffer.TYPE_BYTE) {
+      return null;
+    }
+    length=0x10000;
+    offset=(sourceType == DataBuffer.TYPE_SHORT) ? Short.MIN_VALUE : 0;
+    break;
+  }
+}
+switch (targetType) {
+default :
+{
+  return null;
+}
+case DataBuffer.TYPE_DOUBLE:
+{
+final double[][] data=new double[nbands][];
+final double[] buffer=new double[length];
+for (int i=length; --i >= 0; ) {
+  buffer[i]=i;
+}
+for (int i=nbands; --i >= 0; ) {
+  final double[] array=(i == 0) ? buffer : buffer.clone();
+  transforms[i].transform(array,0,array,0,array.length);
+  data[i]=array;
+}
+table=new LookupTableJAI(data,offset);
+break;
+}
+case DataBuffer.TYPE_FLOAT:
+{
+final float[][] data=new float[nbands][];
+final float[] buffer=new float[length];
+for (int i=length; --i >= 0; ) {
+buffer[i]=i;
+}
+for (int i=transforms.length; --i >= 0; ) {
+final float[] array=(i == 0) ? buffer : buffer.clone();
+transforms[i].transform(array,0,array,0,length);
+data[i]=array;
+}
+table=new LookupTableJAI(data,offset);
+break;
+}
+case DataBuffer.TYPE_INT:
+{
+final int[][] data=new int[nbands][];
+for (int i=nbands; --i >= 0; ) {
+final MathTransform1D tr=transforms[i];
+final int[] array=new int[length];
+for (int j=length; --j >= 0; ) {
+array[j]=(int)min(max(round(tr.transform(j + offset)),Integer.MIN_VALUE),Integer.MAX_VALUE);
+}
+data[i]=array;
+}
+table=new LookupTableJAI(data,offset);
+break;
+}
+case DataBuffer.TYPE_SHORT:
+case DataBuffer.TYPE_USHORT:
+{
+final int minimum, maximum;
+if (targetType == DataBuffer.TYPE_SHORT) {
+minimum=Short.MIN_VALUE;
+maximum=Short.MAX_VALUE;
+}
+ else {
+minimum=0;
+maximum=0xFFFF;
+}
+final short[][] data=new short[nbands][];
+for (int i=nbands; --i >= 0; ) {
+final MathTransform1D tr=transforms[i];
+final short[] array=new short[length];
+for (int j=length; --j >= 0; ) {
+array[j]=(short)min(max(round(tr.transform(j + offset)),minimum),maximum);
+}
+data[i]=array;
+}
+table=new LookupTableJAI(data,offset,minimum != 0);
+break;
+}
+case DataBuffer.TYPE_BYTE:
+{
+final byte[][] data=new byte[nbands][];
+for (int i=nbands; --i >= 0; ) {
+final MathTransform1D tr=transforms[i];
+final byte[] array=new byte[length];
+for (int j=length; --j >= 0; ) {
+array[j]=(byte)min(max(round(tr.transform(j + offset)),0),0xFF);
+}
+data[i]=array;
+}
+table=new LookupTableJAI(data,offset);
+break;
+}
+}
+pool.put(key,table);
+return table;
+}
+}

@@ -1,0 +1,23 @@
+{
+  FeatureLock lock=FeatureLockFactory.generate(tname("ft1"),60 * 60 * 1000);
+  Transaction tx=new DefaultTransaction();
+  store.setTransaction(tx);
+  store.setFeatureLock(lock);
+  tx.addAuthorization(lock.getAuthorization());
+  FilterFactory ff=dataStore.getFilterFactory();
+  Filter f1=ff.id(Collections.singleton(ff.featureId(tname("ft1") + ".1")));
+  assertEquals(1,store.lockFeatures(f1));
+  Transaction tx1=new DefaultTransaction();
+  store.setTransaction(tx1);
+  try {
+    store.removeFeatures(f1);
+    fail("Locked feature should not be deleted.");
+  }
+ catch (  FeatureLockException e) {
+  }
+  tx1.close();
+  store.setTransaction(tx);
+  store.removeFeatures(f1);
+  tx.commit();
+  tx.close();
+}

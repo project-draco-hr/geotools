@@ -1,0 +1,38 @@
+{
+  final int EXPECTED_RESULT_COUNT=1;
+  SimpleFeatureSource fs=store.getFeatureSource(testData.getTempTableName());
+  SimpleFeatureType schema=fs.getSchema();
+  Filter bboxFilter=ff.bbox(schema.getGeometryDescriptor().getLocalName(),-60,-55,-40,-20,schema.getCoordinateReferenceSystem().getName().getCode());
+  Filter sqlFilter=CQL.toFilter("INT32_COL < 5");
+  LOGGER.fine("Geometry filter: " + bboxFilter);
+  LOGGER.fine("SQL filter: " + sqlFilter);
+  And mixedFilter=ff.and(sqlFilter,bboxFilter);
+  Not not=ff.not(ff.id(Collections.singleton(ff.featureId(testData.getTempTableName() + ".90000"))));
+  mixedFilter=ff.and(mixedFilter,not);
+  LOGGER.fine("Mixed filter: " + mixedFilter);
+  try {
+    testFilter(mixedFilter,fs,EXPECTED_RESULT_COUNT);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+  SimpleFeatureIterator reader=null;
+  SimpleFeatureCollection results=fs.getFeatures(mixedFilter);
+  Envelope bounds=results.getBounds();
+  assertNotNull(bounds);
+  LOGGER.fine("results bounds: " + bounds);
+  reader=results.features();
+  try {
+    reader.next();
+    bounds=results.getBounds();
+    assertNotNull(bounds);
+    LOGGER.fine("results bounds when reading: " + bounds);
+    int count=results.size();
+    assertEquals(EXPECTED_RESULT_COUNT,count);
+    LOGGER.fine("wooohoooo...");
+  }
+  finally {
+    reader.close();
+  }
+}

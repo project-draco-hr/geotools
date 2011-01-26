@@ -1,0 +1,62 @@
+{
+  List atts=new ArrayList();
+  for (int i=0; i < attributes.getLength(); i++) {
+    String rawAttQName=attributes.getQName(i);
+    if (rawAttQName != null) {
+      if (rawAttQName.startsWith("xmlns:")) {
+        continue;
+      }
+      if (rawAttQName.endsWith("schemaLocation")) {
+        String prefix="";
+        if (rawAttQName.indexOf(':') != -1) {
+          prefix=rawAttQName.substring(0,rawAttQName.indexOf(':'));
+        }
+        String uri=parser.getNamespaceSupport().getURI(prefix);
+        if ((uri != null) && uri.equals(XSDConstants.SCHEMA_INSTANCE_URI_2001)) {
+          continue;
+        }
+      }
+    }
+    String uri=attributes.getURI(i);
+    String name=attributes.getLocalName(i);
+    QName attQName=new QName(uri,name);
+    XSDAttributeDeclaration decl=Schemas.getAttributeDeclaration(content,attQName);
+    if (decl == null) {
+      if (!parser.isStrict()) {
+        if (parser.getLogger().isLoggable(Level.FINE)) {
+          parser.getLogger().fine("Parsing unknown attribute: " + attQName);
+        }
+        decl=XSDFactory.eINSTANCE.createXSDAttributeDeclaration();
+        decl.setName(attQName.getLocalPart());
+        decl.setTargetNamespace(attQName.getNamespaceURI());
+        XSDSimpleTypeDefinition type=(XSDSimpleTypeDefinition)XSDUtil.getSchemaForSchema(XSDUtil.SCHEMA_FOR_SCHEMA_URI_2001).getSimpleTypeIdMap().get("string");
+        decl.setTypeDefinition(type);
+      }
+    }
+    if (decl != null) {
+      AttributeInstance att=new AttributeImpl(decl);
+      att.setNamespace(decl.getTargetNamespace());
+      att.setName(decl.getName());
+      att.setText(attributes.getValue(i));
+      atts.add(att);
+    }
+ else {
+      parser.getLogger().warning("Could not find attribute declaration: " + attQName);
+    }
+  }
+  element=new ElementImpl(content);
+  element.setNamespace(qName.getNamespaceURI());
+  element.setName(qName.getLocalPart());
+  element.setAttributes((AttributeInstance[])atts.toArray(new AttributeInstance[atts.size()]));
+  node=new NodeImpl(element);
+  for (int i=0; i < element.getAttributes().length; i++) {
+    AttributeInstance attribute=element.getAttributes()[i];
+    ParseExecutor executor=new ParseExecutor(attribute,null,parent.getContext(),parser);
+    parser.getBindingWalker().walk(attribute.getAttributeDeclaration(),executor,parent.getContext());
+    Object parsed=executor.getValue();
+    node.addAttribute(new NodeImpl(attribute,parsed));
+  }
+  setContext(new DefaultPicoContainer(parent.getContext()));
+  ((BindingFactoryImpl)parser.getBindingFactory()).setContext(getContext());
+  parent.startChildHandler(this);
+}

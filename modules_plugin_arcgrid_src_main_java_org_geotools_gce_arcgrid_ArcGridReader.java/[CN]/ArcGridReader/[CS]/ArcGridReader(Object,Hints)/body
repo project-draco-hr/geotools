@@ -1,0 +1,29 @@
+{
+  super(input,hints);
+  coverageName="AsciiGrid";
+  try {
+    checkSource(input,hints);
+    final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+    if (tempCRS != null) {
+      this.crs=(CoordinateReferenceSystem)tempCRS;
+      LOGGER.log(Level.WARNING,"Using default coordinate reference system ");
+    }
+ else     getCoordinateReferenceSystem();
+    final ImageReader reader=readerSPI.createReaderInstance();
+    reader.setInput(inStream);
+    final Object metadata=reader.getImageMetadata(0);
+    if (!(metadata instanceof AsciiGridsImageMetadata))     throw new DataSourceException("Unexpected error! Metadata are not of the expected class.");
+    final AsciiGridsImageMetadata gridMetadata=(AsciiGridsImageMetadata)metadata;
+    parseMetadata(gridMetadata);
+    getResolutionInfo(reader);
+    finalStreamPreparation();
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+}

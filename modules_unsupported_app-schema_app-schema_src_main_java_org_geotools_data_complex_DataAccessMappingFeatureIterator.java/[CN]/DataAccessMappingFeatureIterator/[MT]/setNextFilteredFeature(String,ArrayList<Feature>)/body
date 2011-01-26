@@ -1,0 +1,30 @@
+{
+  FeatureCollection<FeatureType,Feature> matchingFeatures;
+  FeatureId featureId=namespaceAwareFilterFactory.featureId(fId);
+  Query query=new Query();
+  if (reprojection != null) {
+    if (sourceFeatures.getSchema().getGeometryDescriptor() != null) {
+      query.setCoordinateSystemReproject(reprojection);
+    }
+  }
+  if (mapping.getFeatureIdExpression().equals(Expression.NIL)) {
+    Set<FeatureId> ids=new HashSet<FeatureId>();
+    ids.add(featureId);
+    query.setFilter(namespaceAwareFilterFactory.id(ids));
+    matchingFeatures=this.mappedSource.getFeatures(query);
+  }
+ else {
+    query.setFilter(namespaceAwareFilterFactory.equals(mapping.getFeatureIdExpression(),namespaceAwareFilterFactory.literal(featureId)));
+    matchingFeatures=this.mappedSource.getFeatures(query);
+  }
+  Iterator<Feature> iterator=matchingFeatures.iterator();
+  while (iterator.hasNext()) {
+    features.add(iterator.next());
+  }
+  if (features.size() < 1) {
+    LOGGER.warning("This shouldn't have happened." + "There should be at least 1 features with id='" + fId + "'.");
+  }
+  filteredFeatures.add(fId);
+  matchingFeatures.close(iterator);
+  curSrcFeature=null;
+}

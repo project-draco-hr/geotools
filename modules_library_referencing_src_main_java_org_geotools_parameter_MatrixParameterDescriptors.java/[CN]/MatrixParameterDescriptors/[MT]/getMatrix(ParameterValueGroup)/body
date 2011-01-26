@@ -1,0 +1,42 @@
+{
+  if (parameters instanceof MatrixParameters) {
+    return ((MatrixParameters)parameters).getMatrix();
+  }
+  final ParameterValue numRowParam=parameters.parameter(numRow.getName().toString());
+  final ParameterValue numColParam=parameters.parameter(numCol.getName().toString());
+  final int numRow=numRowParam.intValue();
+  final int numCol=numColParam.intValue();
+  final Matrix matrix=MatrixFactory.create(numRow,numCol);
+  final List<GeneralParameterValue> params=parameters.values();
+  if (params != null) {
+    for (    final GeneralParameterValue param : params) {
+      if (param == numRowParam || param == numColParam) {
+        continue;
+      }
+      RuntimeException cause=null;
+      final String name=param.getDescriptor().getName().toString();
+      if (name.regionMatches(true,0,prefix,0,prefix.length())) {
+        final int split=name.indexOf(separator,prefix.length());
+        if (split >= 0)         try {
+          final int row=Integer.parseInt(name.substring(prefix.length(),split));
+          final int col=Integer.parseInt(name.substring(split + 1));
+          matrix.setElement(row,col,((ParameterValue)param).doubleValue());
+          continue;
+        }
+ catch (        NumberFormatException exception) {
+          cause=exception;
+        }
+catch (        IndexOutOfBoundsException exception) {
+          cause=exception;
+        }
+      }
+      final InvalidParameterNameException exception;
+      exception=new InvalidParameterNameException(Errors.format(ErrorKeys.UNEXPECTED_PARAMETER_$1,name),name);
+      if (cause != null) {
+        exception.initCause(cause);
+      }
+      throw exception;
+    }
+  }
+  return matrix;
+}

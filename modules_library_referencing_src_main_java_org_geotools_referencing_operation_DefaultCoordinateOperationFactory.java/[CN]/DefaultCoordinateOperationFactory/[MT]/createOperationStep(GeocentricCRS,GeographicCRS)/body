@@ -1,0 +1,17 @@
+{
+  final GeographicCRS normTargetCRS=normalize(targetCRS,true);
+  final GeodeticDatum datum=normTargetCRS.getDatum();
+  final GeocentricCRS normSourceCRS=normalize(sourceCRS,datum);
+  final Ellipsoid ellipsoid=datum.getEllipsoid();
+  final Unit unit=ellipsoid.getAxisUnit();
+  final ParameterValueGroup param;
+  param=getMathTransformFactory().getDefaultParameters("Geocentric_To_Ellipsoid");
+  param.parameter("semi_major").setValue(ellipsoid.getSemiMajorAxis(),unit);
+  param.parameter("semi_minor").setValue(ellipsoid.getSemiMinorAxis(),unit);
+  param.parameter("dim").setValue(getDimension(normTargetCRS));
+  final CoordinateOperation step1, step2, step3;
+  step1=createOperationStep(sourceCRS,normSourceCRS);
+  step2=createFromParameters(GEOCENTRIC_CONVERSION,normSourceCRS,normTargetCRS,param);
+  step3=createOperationStep(normTargetCRS,targetCRS);
+  return concatenate(step1,step2,step3);
+}

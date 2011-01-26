@@ -1,0 +1,57 @@
+{
+  final String name0="Nouvelle Triangulation Francaise (Paris)";
+  final String name1="Nouvelle_Triangulation_Francaise_Paris";
+  final String name2="D_NTF";
+  final String name3="NTF (Paris meridian)";
+  final Ellipsoid ellipsoid=DefaultEllipsoid.WGS84;
+  final PrimeMeridian meridian=DefaultPrimeMeridian.GREENWICH;
+  DatumFactory factory=new ReferencingObjectFactory();
+  final Map<String,?> properties=Collections.singletonMap("name",name1);
+  GeodeticDatum datum=factory.createGeodeticDatum(properties,ellipsoid,meridian);
+  assertTrue(datum.getAlias().isEmpty());
+  for (int i=0; i < 3; i++) {
+switch (i) {
+case 0:
+      factory=new DatumAliases(factory);
+    break;
+case 1:
+  factory=ReferencingFactoryFinder.getDatumFactory(null);
+break;
+case 2:
+((DatumAliases)factory).freeUnused();
+break;
+default :
+throw new AssertionError();
+}
+final String pass="Pass #" + i;
+datum=factory.createGeodeticDatum(properties,ellipsoid,meridian);
+final GenericName[] aliases=datum.getAlias().toArray(new GenericName[0]);
+assertEquals(pass,4,aliases.length);
+assertEquals(pass,name0,aliases[0].tip().toString());
+assertEquals(pass,name1,aliases[1].tip().toString());
+assertEquals(pass,name2,aliases[2].tip().toString());
+assertEquals(pass,name3,aliases[3].tip().toString());
+assertTrue(pass,aliases[0] instanceof ScopedName);
+assertTrue(pass,aliases[1] instanceof ScopedName);
+assertTrue(pass,aliases[2] instanceof ScopedName);
+assertTrue(pass,aliases[3] instanceof ScopedName);
+}
+datum=factory.createGeodeticDatum(Collections.singletonMap("name","Tokyo"),ellipsoid,meridian);
+Collection<GenericName> aliases=datum.getAlias();
+assertEquals(4,aliases.size());
+((DatumAliases)factory).freeUnused();
+datum=factory.createGeodeticDatum(Collections.singletonMap("name","_toKyo  _"),ellipsoid,meridian);
+assertEquals(4,datum.getAlias().size());
+assertTrue(aliases.equals(datum.getAlias()));
+datum=factory.createGeodeticDatum(Collections.singletonMap("name","D_Tokyo"),ellipsoid,meridian);
+assertEquals(4,datum.getAlias().size());
+datum=factory.createGeodeticDatum(Collections.singletonMap("name","Luxembourg 1930"),ellipsoid,meridian);
+assertEquals(3,datum.getAlias().size());
+datum=factory.createGeodeticDatum(Collections.singletonMap("name","Dummy"),ellipsoid,meridian);
+assertTrue("Non existing datum should have no alias.",datum.getAlias().isEmpty());
+datum=factory.createGeodeticDatum(Collections.singletonMap("name","WGS 84"),ellipsoid,meridian);
+assertTrue(AbstractIdentifiedObject.nameMatches(datum,"WGS 84"));
+assertTrue(AbstractIdentifiedObject.nameMatches(datum,"WGS_1984"));
+assertTrue(AbstractIdentifiedObject.nameMatches(datum,"World Geodetic System 1984"));
+assertFalse(AbstractIdentifiedObject.nameMatches(datum,"WGS 72"));
+}

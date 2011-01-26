@@ -1,0 +1,51 @@
+{
+  if (parameter instanceof ParameterValueGroup) {
+    for (    final GeneralParameterValue param : ((ParameterValueGroup)parameter).values()) {
+      append(param);
+    }
+  }
+  if (parameter instanceof ParameterValue) {
+    final ParameterValue<?> param=(ParameterValue)parameter;
+    final ParameterDescriptor<?> descriptor=param.getDescriptor();
+    final Unit<?> valueUnit=descriptor.getUnit();
+    Unit<?> unit=valueUnit;
+    if (unit != null && !Unit.ONE.equals(unit)) {
+      if (linearUnit != null && unit.isCompatible(linearUnit)) {
+        unit=linearUnit;
+      }
+ else       if (angularUnit != null && unit.isCompatible(angularUnit)) {
+        unit=angularUnit;
+      }
+    }
+    appendSeparator(true);
+    final int start=buffer.length();
+    buffer.append("PARAMETER");
+    final int stop=buffer.length();
+    buffer.append(symbols.open);
+    setColor(PARAMETER_COLOR);
+    buffer.append(symbols.quote).append(getName(descriptor)).append(symbols.quote);
+    resetColor();
+    buffer.append(symbols.separator).append(symbols.space);
+    if (unit != null) {
+      double value;
+      try {
+        value=param.doubleValue(unit);
+      }
+ catch (      IllegalStateException exception) {
+        if (colorEnabled) {
+          buffer.insert(stop,X364.BACKGROUND_DEFAULT).insert(start,ERROR_COLOR);
+        }
+        warning=exception.getLocalizedMessage();
+        value=Double.NaN;
+      }
+      if (!unit.equals(valueUnit)) {
+        value=XMath.trimDecimalFractionDigits(value,4,9);
+      }
+      format(value);
+    }
+ else {
+      appendObject(param.getValue());
+    }
+    buffer.append(symbols.close);
+  }
+}

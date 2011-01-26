@@ -1,0 +1,48 @@
+{
+  checkOpen();
+  try {
+    Session connection=null;
+    if (transactional) {
+      LOGGER.finest("Borrowing session from pool for transactional access");
+      connection=(Session)pool.borrowObject();
+    }
+ else {
+synchronized (openSessionsNonTransactional) {
+        try {
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("Grabbing session from pool on " + Thread.currentThread().getName());
+          }
+          connection=(Session)pool.borrowObject();
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("Got session from the pool on " + Thread.currentThread().getName());
+          }
+        }
+ catch (        NoSuchElementException e) {
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("No available sessions in the pool, falling back to queued session");
+          }
+          connection=openSessionsNonTransactional.remove();
+        }
+        openSessionsNonTransactional.add(connection);
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.finer("Got session from the in use queue on " + Thread.currentThread().getName());
+        }
+      }
+    }
+    connection.markActive();
+    return connection;
+  }
+ catch (  NoSuchElementException e) {
+    LOGGER.log(Level.WARNING,"Out of connections: " + e.getMessage() + ". Config: "+ this.config);
+    throw new UnavailableConnectionException(config.getMaxConnections(),this.config);
+  }
+catch (  SeException se) {
+    ArcSdeException sdee=new ArcSdeException(se);
+    LOGGER.log(Level.WARNING,"ArcSDE error getting connection for " + config,sdee);
+    throw sdee;
+  }
+catch (  Exception e) {
+    LOGGER.log(Level.WARNING,"Unknown problem getting connection: " + e.getMessage(),e);
+    throw (IOException)new IOException("Unknown problem fetching connection from connection pool").initCause(e);
+  }
+}

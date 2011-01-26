@@ -1,0 +1,26 @@
+{
+  pathName=cPathName;
+  inputStream=new RandomAccessFile(cPathName,ACCESS_MODE);
+  readHeader();
+  GeometryDescriptor gat=null;
+  VPFColumn geometryColumn=null;
+  Iterator iter=columns.iterator();
+  while (iter.hasNext()) {
+    geometryColumn=(VPFColumn)iter.next();
+    if (geometryColumn.isGeometry()) {
+      gat=geometryColumn.getGeometryAttributeType();
+      break;
+    }
+  }
+  SimpleFeatureType superType=null;
+  if (pathName.endsWith(TEXT_PRIMITIVE)) {
+    superType=AnnotationFeatureType.ANNOTATION;
+  }
+  SimpleFeatureTypeBuilder b=new SimpleFeatureTypeBuilder();
+  b.setName(cPathName);
+  b.setNamespaceURI("VPF");
+  b.setSuperType(superType);
+  b.addAll(columns);
+  b.setDefaultGeometry(gat.getLocalName());
+  featureType=b.buildFeatureType();
+}

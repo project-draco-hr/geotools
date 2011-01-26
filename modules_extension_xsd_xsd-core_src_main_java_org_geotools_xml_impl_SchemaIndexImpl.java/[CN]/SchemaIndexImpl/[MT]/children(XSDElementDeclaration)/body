@@ -1,0 +1,33 @@
+{
+  OrderedMap children=(OrderedMap)element2children.get(parent);
+  if (children == null) {
+synchronized (this) {
+      if (children == null) {
+        children=new ListOrderedMap();
+        for (Iterator i=Schemas.getChildElementParticles(parent.getType(),true).iterator(); i.hasNext(); ) {
+          XSDParticle particle=(XSDParticle)i.next();
+          XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+          if (child.isElementDeclarationReference()) {
+            child=child.getResolvedElementDeclaration();
+          }
+          QName childName=null;
+          if (child.getTargetNamespace() != null) {
+            childName=new QName(child.getTargetNamespace(),child.getName());
+          }
+ else           if (parent.getTargetNamespace() != null) {
+            childName=new QName(parent.getTargetNamespace(),child.getName());
+          }
+ else           if (parent.getType().getTargetNamespace() != null) {
+            childName=new QName(parent.getType().getTargetNamespace(),child.getName());
+          }
+ else {
+            childName=new QName(null,child.getName());
+          }
+          children.put(childName,particle);
+        }
+        element2children.put(parent,children);
+      }
+    }
+  }
+  return children;
+}

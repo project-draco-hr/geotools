@@ -1,0 +1,28 @@
+{
+  if (this.query == null) {
+    throw new IllegalStateException("query closed or not yet executed");
+  }
+  final SeQuery seQuery=getSeQuery();
+  try {
+    currentRow=session.fetch(seQuery);
+  }
+ catch (  IOException e) {
+    close();
+    String msg="Error fetching row for " + this.schema.getTypeName() + "[";
+    msg+="\nFilter: " + filters.sourceFilter;
+    msg+="\n where clause sent: " + filters.sdeSqlConstruct.getWhere();
+    msg+="\ngeometry filter:" + filters.geometryFilter;
+    LOGGER.log(Level.WARNING,msg,e);
+    throw e;
+  }
+catch (  Exception e) {
+    close();
+    LOGGER.log(Level.SEVERE,"fetching row: " + e.getMessage(),e);
+    throw new DataSourceException("fetching row: " + e.getMessage(),e);
+  }
+  if (currentRow != null) {
+    currentRow.setPreviousValues(this.previousRowValues);
+    previousRowValues=currentRow.getAll();
+  }
+  return currentRow;
+}

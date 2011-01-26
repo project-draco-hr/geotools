@@ -1,0 +1,29 @@
+{
+  int level=Integer.parseInt(info.getTileTableName());
+  BufferedImage bimg=null;
+  GeneralEnvelope envelope=new GeneralEnvelope(envelopeOrig);
+  GeneralEnvelope intersectEnvelope=new GeneralEnvelope(new double[]{info.getExtentMinX(),info.getExtentMinY()},new double[]{info.getExtentMaxX(),info.getExtentMaxY()});
+  intersectEnvelope.setCoordinateReferenceSystem(envelope.getCoordinateReferenceSystem());
+  envelope.intersect(intersectEnvelope);
+  try {
+    LOGGER.fine("Starting to Retrieve GeoRaster Image");
+    byte[] bytes=getImageBytesUsingSDOExport(envelope,level,conn);
+    SeekableStream stream=new ByteArraySeekableStream(bytes);
+    String decoderName=null;
+    for (    String dn : ImageCodec.getDecoderNames(stream)) {
+      decoderName=dn;
+      break;
+    }
+    ImageDecoder decoder=ImageCodec.createImageDecoder(decoderName,stream,null);
+    RenderedImage rimage=decoder.decodeAsRenderedImage();
+    ColorModel cm=rimage.getColorModel();
+    if (cm == null)     cm=PlanarImage.createColorModel(rimage.getSampleModel());
+    PlanarImage pimage=PlanarImage.wrapRenderedImage(rimage);
+    bimg=pimage.getAsBufferedImage(null,cm);
+    LOGGER.fine("Creating BufferedImage from GeoRaster Object");
+    return new TileQueueElement(getConfig().getCoverageName(),bimg,envelope);
+  }
+ catch (  Exception ex) {
+    throw new RuntimeException(ex);
+  }
+}

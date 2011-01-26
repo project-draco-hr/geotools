@@ -1,0 +1,21 @@
+{
+  this.destinationSize=screenSize;
+  this.destinationCRS=CRS.getHorizontalCRS(destinationCRS);
+  if (this.destinationCRS == null)   throw new TransformException(Errors.format(ErrorKeys.CANT_SEPARATE_CRS_$1,destinationCRS));
+  destinationEnvelope=new GeneralEnvelope(new ReferencedEnvelope(envelope,destinationCRS));
+  if (worldToScreen != null && XAffineTransform.getRotation(worldToScreen) != 0.0) {
+    finalWorldToGrid=new AffineTransform(worldToScreen);
+    finalGridToWorld=finalWorldToGrid.createInverse();
+  }
+ else {
+    final GridToEnvelopeMapper gridToEnvelopeMapper=new GridToEnvelopeMapper();
+    gridToEnvelopeMapper.setPixelAnchor(PixelInCell.CELL_CORNER);
+    gridToEnvelopeMapper.setGridRange(new GridEnvelope2D(destinationSize));
+    gridToEnvelopeMapper.setEnvelope(destinationEnvelope);
+    finalGridToWorld=new AffineTransform(gridToEnvelopeMapper.createAffineTransform());
+    finalWorldToGrid=finalGridToWorld.createInverse();
+  }
+  if (hints != null)   this.hints.add(hints);
+  this.hints.put(Hints.LENIENT_DATUM_SHIFT,Boolean.TRUE);
+  this.hints.add(ImageUtilities.DONT_REPLACE_INDEX_COLOR_MODEL);
+}

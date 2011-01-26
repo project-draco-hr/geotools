@@ -1,0 +1,16 @@
+{
+  Coordinate coord=new Coordinate(10,10);
+  AffineTransform at=AffineTransform.getScaleInstance(0.5,1);
+  MathTransform2D t=(MathTransform2D)ReferencingFactoryFinder.getMathTransformFactory(null).createAffineTransform(new GeneralMatrix(at));
+  coord=JTS.transform(coord,coord,t);
+  assertEquals(new Coordinate(5,10),coord);
+  coord=JTS.transform(coord,coord,t.inverse());
+  assertEquals(new Coordinate(10,10),coord);
+  CoordinateReferenceSystem crs=ReferencingFactoryFinder.getCRSFactory(null).createFromWKT(UTM_ZONE_10N);
+  t=(MathTransform2D)ReferencingFactoryFinder.getCoordinateOperationFactory(null).createOperation(DefaultGeographicCRS.WGS84,crs).getMathTransform();
+  coord=new Coordinate(-123,55);
+  coord=JTS.transform(coord,coord,t);
+  coord=JTS.transform(coord,coord,t.inverse());
+  assertEquals(-123,coord.x,EPS);
+  assertEquals(55,coord.y,EPS);
+}

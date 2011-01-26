@@ -1,0 +1,156 @@
+{
+  MigLayout layout=new MigLayout();
+  JPanel panel=new JPanel(layout);
+  controls=new HashMap<Component,ControlCategory>();
+  JLabel label=null;
+  JButton btn=null;
+  label=new JLabel("Feature type");
+  label.setForeground(Color.BLUE);
+  panel.add(label,"wrap");
+  typeLabel=new JLabel();
+  panel.add(typeLabel,"gapbefore indent, span, wrap");
+  label=new JLabel("Line");
+  label.setForeground(Color.BLUE);
+  panel.add(label,"wrap");
+  btn=new JButton("Color...");
+  btn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      chooseLineColor();
+    }
+  }
+);
+  panel.add(btn,"gapbefore indent");
+  controls.put(btn,ControlCategory.LINE);
+  lineColorIcon=new JColorIcon(COLOR_ICON_SIZE,COLOR_ICON_SIZE,DEFAULT_LINE_COLOR);
+  lineColorLabel=new JLabel(lineColorIcon);
+  panel.add(lineColorLabel,"gapafter 20px");
+  label=new JLabel("Width");
+  panel.add(label,"split 2");
+  Object[] widths=new Object[5];
+  for (int i=1; i <= widths.length; i++) {
+    widths[i - 1]=Integer.valueOf(i);
+  }
+  final JComboBox lineWidthCBox=new JComboBox(widths);
+  lineWidthCBox.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      lineWidth=((Number)lineWidthCBox.getModel().getSelectedItem()).intValue();
+    }
+  }
+);
+  panel.add(lineWidthCBox,"wrap");
+  controls.put(lineWidthCBox,ControlCategory.LINE);
+  label=new JLabel("Fill");
+  label.setForeground(Color.BLUE);
+  panel.add(label,"wrap");
+  btn=new JButton("Color...");
+  btn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      chooseFillColor();
+    }
+  }
+);
+  panel.add(btn,"gapbefore indent");
+  controls.put(btn,ControlCategory.FILL);
+  fillColorIcon=new JColorIcon(COLOR_ICON_SIZE,COLOR_ICON_SIZE,DEFAULT_FILL_COLOR);
+  fillColorLabel=new JLabel(fillColorIcon);
+  panel.add(fillColorLabel,"gapafter 20px");
+  label=new JLabel("% opacity");
+  panel.add(label,"split 2");
+  fillOpacitySlider=new JSlider(0,100,100);
+  fillOpacitySlider.setPaintLabels(true);
+  fillOpacitySlider.setMajorTickSpacing(20);
+  fillOpacitySlider.addChangeListener(new ChangeListener(){
+    public void stateChanged(    ChangeEvent e){
+      opacity=(float)fillOpacitySlider.getValue() / 100;
+    }
+  }
+);
+  panel.add(fillOpacitySlider,"span, wrap");
+  controls.put(fillOpacitySlider,ControlCategory.FILL);
+  label=new JLabel("Point");
+  label.setForeground(Color.BLUE);
+  panel.add(label,"wrap");
+  label=new JLabel("Size");
+  panel.add(label,"gapbefore indent, split 2");
+  Object[] sizes=new Object[10];
+  for (int i=1; i <= sizes.length; i++) {
+    sizes[i - 1]=Integer.valueOf(i * 5);
+  }
+  pointSizeCBox=new JComboBox(sizes);
+  pointSizeCBox.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      pointSize=((Number)pointSizeCBox.getModel().getSelectedItem()).intValue();
+    }
+  }
+);
+  panel.add(pointSizeCBox);
+  controls.put(pointSizeCBox,ControlCategory.POINT);
+  label=new JLabel("Symbol");
+  panel.add(label,"skip, split 2");
+  final Object[] marks=new Object[WELL_KNOWN_SYMBOL_NAMES.length];
+  for (int i=0; i < marks.length; i++) {
+    marks[i]=WELL_KNOWN_SYMBOL_NAMES[i];
+  }
+  pointSymbolCBox=new JComboBox(marks);
+  pointSymbolCBox.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      pointSymbolName=marks[pointSymbolCBox.getSelectedIndex()].toString();
+    }
+  }
+);
+  panel.add(pointSymbolCBox,"wrap");
+  controls.put(pointSymbolCBox,ControlCategory.POINT);
+  label=new JLabel("Labels");
+  label.setForeground(Color.BLUE);
+  panel.add(label,"wrap");
+  final JButton fontBtn=new JButton("Font...");
+  fontBtn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      chooseLabelFont();
+    }
+  }
+);
+  labelCBox=new JComboBox();
+  labelCBox.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      labelField=labelCBox.getModel().getSelectedItem().toString();
+    }
+  }
+);
+  final JCheckBox checkBox=new JCheckBox();
+  checkBox.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      labelFeatures=checkBox.isSelected();
+      labelCBox.setEnabled(labelFeatures);
+      fontBtn.setEnabled(labelFeatures);
+    }
+  }
+);
+  panel.add(checkBox,"gapbefore indent, span, split 3");
+  label=new JLabel("Field");
+  panel.add(label);
+  labelCBox.setEnabled(checkBox.isSelected());
+  panel.add(labelCBox,"wrap");
+  fontBtn.setEnabled(checkBox.isSelected());
+  panel.add(fontBtn,"wrap");
+  btn=new JButton("Apply");
+  btn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      completed=true;
+      setVisible(false);
+    }
+  }
+);
+  panel.add(btn,"span, split 2, align right");
+  btn=new JButton("Cancel");
+  btn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      geomType=GeomType.UNDEFINED;
+      setVisible(false);
+    }
+  }
+);
+  panel.add(btn);
+  getContentPane().add(panel);
+  pack();
+}

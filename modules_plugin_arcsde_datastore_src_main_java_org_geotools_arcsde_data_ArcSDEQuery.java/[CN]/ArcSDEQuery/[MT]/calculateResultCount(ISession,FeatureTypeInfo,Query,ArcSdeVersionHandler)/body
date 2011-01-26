@@ -1,0 +1,23 @@
+{
+  ArcSDEQuery countQuery=null;
+  final int count;
+  try {
+    final SimpleFeatureType fullSchema=typeInfo.getFeatureType();
+    if (typeInfo.isInProcessView()) {
+      final SeQueryInfo definitionQuery=typeInfo.getSdeDefinitionQuery();
+      final PlainSelect viewSelectStatement=typeInfo.getDefinitionQuery();
+      countQuery=createInprocessViewQuery(session,fullSchema,query,definitionQuery,viewSelectStatement);
+    }
+ else {
+      final FIDReader fidStrategy=typeInfo.getFidStrategy();
+      countQuery=createQuery(session,fullSchema,query,fidStrategy,versioningHandler);
+    }
+    count=countQuery.calculateResultCount();
+  }
+  finally {
+    if (countQuery != null) {
+      countQuery.close();
+    }
+  }
+  return count;
+}

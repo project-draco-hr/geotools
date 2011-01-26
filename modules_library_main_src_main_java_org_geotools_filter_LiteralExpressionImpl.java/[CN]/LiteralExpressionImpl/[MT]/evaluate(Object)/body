@@ -1,0 +1,31 @@
+{
+  if (parsedValue != null)   return parsedValue;
+  if (literal == null || !(literal instanceof String)) {
+    parsedValue=literal;
+  }
+ else {
+    String s=(String)literal;
+    try {
+      BigDecimal bd=new BigDecimal(s);
+      if (bd.scale() > 0) {
+        double d=bd.doubleValue();
+        if (!Double.isInfinite(d))         parsedValue=d;
+ else         parsedValue=bd;
+      }
+ else {
+        if (bd.compareTo(MIN_LONG) >= 0 && bd.compareTo(MAX_LONG) <= 0) {
+          long l=bd.longValue();
+          if ((int)l == l)           parsedValue=new Integer((int)l);
+ else           parsedValue=new Long(l);
+        }
+ else {
+          parsedValue=bd.toBigInteger();
+        }
+      }
+    }
+ catch (    Exception e) {
+      parsedValue=literal;
+    }
+  }
+  return parsedValue;
+}

@@ -1,0 +1,22 @@
+{
+  if (FeatureTypes.equalsExact(origional,target)) {
+    throw new IllegalArgumentException("FeatureReader allready produces contents with the correct schema");
+  }
+  if (target.getAttributeCount() > origional.getAttributeCount()) {
+    throw new IllegalArgumentException("Unable to retype  FeatureReader<SimpleFeatureType, SimpleFeature> (origional does not cover requested type)");
+  }
+  String xpath;
+  AttributeDescriptor[] types=new AttributeDescriptor[target.getAttributeCount()];
+  for (int i=0; i < target.getAttributeCount(); i++) {
+    AttributeDescriptor attrib=target.getDescriptor(i);
+    xpath=attrib.getLocalName();
+    types[i]=attrib;
+    AttributeDescriptor check=origional.getDescriptor(xpath);
+    Class<?> targetBinding=attrib.getType().getBinding();
+    Class<?> checkBinding=check.getType().getBinding();
+    if (!targetBinding.isAssignableFrom(checkBinding)) {
+      throw new IllegalArgumentException("Unable to retype FeatureReader for " + xpath + " as "+ Classes.getShortName(checkBinding)+ " cannot be assigned to "+ Classes.getShortName(targetBinding));
+    }
+  }
+  return types;
+}

@@ -1,0 +1,40 @@
+{
+  Graphics graphics=bi.getGraphics();
+  if (symbolizer instanceof RasterSymbolizer) {
+  }
+ else {
+    Geometry g=findGeometry(feature,symbolizer);
+    if (g == null)     return;
+    if (mathTransform != null) {
+      try {
+        g=JTS.transform(g,mathTransform);
+      }
+ catch (      Exception e) {
+      }
+    }
+    shape.setGeometry(g);
+    paint(bi,feature,shape,symbolizer);
+    if (drawVertices) {
+      double averageDistance=0;
+      Coordinate[] coords=g.getCoordinates();
+      java.awt.Point oldP=worldToPixel(coords[0],worldToScreenTransform);
+      for (int i=1; i < coords.length; i++) {
+        Coordinate coord=coords[i];
+        java.awt.Point p=worldToPixel(coord,worldToScreenTransform);
+        averageDistance+=p.distance(oldP) / i;
+        oldP=p;
+      }
+      int pixels=1;
+      if (averageDistance > 20)       pixels=3;
+      if (averageDistance > 60)       pixels=5;
+      if (pixels > 1) {
+        graphics.setColor(Color.RED);
+        for (int i=0; i < coords.length; i++) {
+          Coordinate coord=coords[i];
+          java.awt.Point p=worldToPixel(coord,worldToScreenTransform);
+          graphics.fillRect(p.x - (pixels - 1) / 2,p.y - (pixels - 1) / 2,pixels,pixels);
+        }
+      }
+    }
+  }
+}

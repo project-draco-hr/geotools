@@ -1,0 +1,41 @@
+{
+  super.paintComponent(g);
+  if (acceptRepaintRequests) {
+    if (curPaintArea == null || context == null || context.getLayerCount() == 0 || renderer == null) {
+      return;
+    }
+    if (needNewBaseImage) {
+      baseImage=new BufferedImage(curPaintArea.width + 1,curPaintArea.height + 1,BufferedImage.TYPE_INT_ARGB);
+      if (baseImageGraphics != null) {
+        baseImageGraphics.dispose();
+      }
+      baseImageGraphics=baseImage.createGraphics();
+      needNewBaseImage=false;
+      redrawBaseImage=true;
+      clearLabelCache=true;
+    }
+    final ReferencedEnvelope mapAOI=context.getAreaOfInterest();
+    if (mapAOI == null) {
+      return;
+    }
+    if (redrawBaseImage) {
+      if (baseImageMoved) {
+        afterImageMove(mapAOI,curPaintArea);
+        baseImageMoved=false;
+        clearLabelCache=true;
+      }
+      if (renderingExecutor.submit(mapAOI,curPaintArea,baseImageGraphics)) {
+        MapPaneEvent ev=new MapPaneEvent(this,MapPaneEvent.Type.RENDERING_STARTED);
+        publishEvent(ev);
+      }
+ else {
+        onRenderingRejected();
+      }
+    }
+ else {
+      Graphics2D g2=(Graphics2D)g;
+      g2.drawImage(baseImage,imageOrigin.x,imageOrigin.y,null);
+    }
+    redrawBaseImage=true;
+  }
+}

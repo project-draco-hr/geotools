@@ -1,0 +1,31 @@
+{
+  if (filter instanceof BBOX) {
+    Expression left=(Expression)filter.getExpression1();
+    Expression right=(Expression)filter.getExpression2();
+    PropertyName propertyExpr;
+    Literal geomLiteralExpr;
+    try {
+      if (left instanceof PropertyName && right instanceof Literal) {
+        propertyExpr=(PropertyName)left;
+        geomLiteralExpr=(Literal)right;
+      }
+ else       if (right instanceof PropertyName && left instanceof Literal) {
+        propertyExpr=(PropertyName)right;
+        geomLiteralExpr=(Literal)left;
+      }
+ else {
+        String err="LocationsXY currently supports one geometry and one " + "attribute expr.  You gave: " + left + ", "+ right;
+        throw new DataSourceException(err);
+      }
+      visitLiteralGeometry(geomLiteralExpr);
+    }
+ catch (    java.io.IOException ioe) {
+      LOGGER.warning("Unable to export filter" + ioe);
+    }
+  }
+ else {
+    LOGGER.warning("exporting unknown filter type, only bbox supported");
+    throw new RuntimeException("Only BBox is currently supported");
+  }
+  return extraData;
+}

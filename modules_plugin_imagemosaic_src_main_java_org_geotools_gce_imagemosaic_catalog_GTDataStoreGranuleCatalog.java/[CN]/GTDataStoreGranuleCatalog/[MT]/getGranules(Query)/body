@@ -1,0 +1,33 @@
+{
+  Utilities.ensureNonNull("q",q);
+  FeatureIterator<SimpleFeature> it=null;
+  final Lock lock=rwLock.readLock();
+  try {
+    lock.lock();
+    checkStore();
+    final SimpleFeatureSource featureSource=tileIndexStore.getFeatureSource(this.typeName);
+    if (featureSource == null)     throw new NullPointerException("The provided SimpleFeatureSource is null, it's impossible to create an index!");
+    final SimpleFeatureCollection features=featureSource.getFeatures(q);
+    if (features == null)     throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Index Loaded");
+    it=features.features();
+    if (!it.hasNext()) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("The provided SimpleFeatureCollection  or empty, it's impossible to create an index!");
+      return Collections.emptyList();
+    }
+    final ArrayList<GranuleDescriptor> retVal=new ArrayList<GranuleDescriptor>(features.size());
+    while (it.hasNext()) {
+      final SimpleFeature sf=it.next();
+      final GranuleDescriptor granule=new GranuleDescriptor(sf,suggestedSPI,pathType,locationAttribute,parentLocation,heterogeneous);
+      retVal.add(granule);
+    }
+    return retVal;
+  }
+ catch (  Throwable e) {
+    throw new IllegalArgumentException(e);
+  }
+ finally {
+    lock.unlock();
+    if (it != null)     it.close();
+  }
+}

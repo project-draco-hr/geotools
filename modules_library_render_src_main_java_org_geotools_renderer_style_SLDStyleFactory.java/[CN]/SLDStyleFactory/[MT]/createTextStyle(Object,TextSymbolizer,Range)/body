@@ -1,0 +1,79 @@
+{
+  TextStyle2D ts2d=new TextStyle2D();
+  setScaleRange(ts2d,scaleRange);
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("creating text style");
+  }
+  String geomName=symbolizer.getGeometryPropertyName();
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("geomName = " + geomName);
+  }
+  String label=evalToString(symbolizer.getLabel(),feature,"");
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("label is " + label);
+  }
+  ts2d.setLabel(label);
+  Font[] fonts=symbolizer.getFonts();
+  java.awt.Font javaFont=getFont(feature,fonts);
+  ts2d.setFont(javaFont);
+  LabelPlacement placement=symbolizer.getLabelPlacement();
+  double anchorX=0;
+  double anchorY=0;
+  double rotation=0;
+  double dispX=0;
+  double dispY=0;
+  if (placement instanceof PointPlacement) {
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("setting pointPlacement");
+    }
+    PointPlacement p=(PointPlacement)placement;
+    if (p.getAnchorPoint() != null) {
+      anchorX=evalToDouble(p.getAnchorPoint().getAnchorPointX(),feature,0);
+      anchorY=evalToDouble(p.getAnchorPoint().getAnchorPointY(),feature,0.5);
+    }
+    if (p.getDisplacement() != null) {
+      dispX=evalToDouble(p.getDisplacement().getDisplacementX(),feature,0);
+      dispY=evalToDouble(p.getDisplacement().getDisplacementY(),feature,0);
+      ;
+    }
+    if ((symbolizer instanceof TextSymbolizer2) && (((TextSymbolizer2)symbolizer).getGraphic() != null)) {
+      rotation=0.0;
+    }
+ else {
+      rotation=evalToDouble(p.getRotation(),feature,0);
+      rotation*=(Math.PI / 180.0);
+    }
+    ts2d.setPointPlacement(true);
+  }
+ else   if (placement instanceof LinePlacement) {
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("setting pointPlacement");
+    }
+    ts2d.setPointPlacement(false);
+    LinePlacement p=(LinePlacement)placement;
+    int displace=evalToInt(p.getPerpendicularOffset(),feature,0);
+    ts2d.setPerpendicularOffset(displace);
+  }
+  ts2d.setAnchorX(anchorX);
+  ts2d.setAnchorY(anchorY);
+  ts2d.setRotation((float)rotation);
+  ts2d.setDisplacementX(dispX);
+  ts2d.setDisplacementY(dispY);
+  ts2d.setFill(getPaint(symbolizer.getFill(),feature));
+  ts2d.setComposite(getComposite(symbolizer.getFill(),feature));
+  Halo halo=symbolizer.getHalo();
+  if (halo != null) {
+    ts2d.setHaloFill(getPaint(halo.getFill(),feature));
+    ts2d.setHaloComposite(getComposite(halo.getFill(),feature));
+    ts2d.setHaloRadius(evalToFloat(halo.getRadius(),feature,1));
+  }
+  Graphic graphicShield=null;
+  if (symbolizer instanceof TextSymbolizer2) {
+    graphicShield=((TextSymbolizer2)symbolizer).getGraphic();
+    if (graphicShield != null) {
+      Style2D shieldStyle=createPointStyle(feature,graphicShield,scaleRange,true);
+      ts2d.setGraphic(shieldStyle);
+    }
+  }
+  return ts2d;
+}

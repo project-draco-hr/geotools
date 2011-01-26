@@ -1,0 +1,38 @@
+{
+  int featureId=notification.getFeatureID(target.getClass());
+  if (featureId != XSDPackage.XSD_ELEMENT_DECLARATION__SUBSTITUTION_GROUP) {
+    return;
+  }
+  if (notification.getEventType() != Notification.ADD) {
+    return;
+  }
+  if (!(notification.getNewValue() instanceof XSDElementDeclaration)) {
+    return;
+  }
+  XSDElementDeclaration el=(XSDElementDeclaration)notification.getNewValue();
+  XSDElementDeclaration e=target;
+  while (e != null) {
+synchronized (e) {
+      ArrayList<Integer> toremove=new ArrayList();
+      for (int i=0; i < e.getSubstitutionGroup().size(); i++) {
+        XSDElementDeclaration se=(XSDElementDeclaration)e.getSubstitutionGroup().get(i);
+        if (se == null || (Utilities.equals(el.getTargetNamespace(),se.getTargetNamespace()) && Utilities.equals(el.getName(),se.getName()))) {
+          toremove.add(i);
+        }
+      }
+      ArrayList<XSDElementDeclaration> removed=new ArrayList();
+      for (int i=toremove.size() - 2; i > -1; i--) {
+        XSDElementDeclaration se=(XSDElementDeclaration)e.getSubstitutionGroup().remove(toremove.get(i).intValue());
+        removed.add(e);
+      }
+      for (      XSDElementDeclaration se : removed) {
+        if (se != null && e.equals(se.getSubstitutionGroupAffiliation())) {
+          XSDElementDeclaration clone=(XSDElementDeclaration)e.cloneConcreteComponent(false,false);
+          clone.setTargetNamespace(GML.NAMESPACE);
+          se.setSubstitutionGroupAffiliation(clone);
+        }
+      }
+    }
+    e=e.getSubstitutionGroupAffiliation();
+  }
+}

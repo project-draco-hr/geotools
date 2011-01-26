@@ -1,0 +1,28 @@
+{
+  String functionName=null;
+  List<Expression> argList=new LinkedList<Expression>();
+  while (!resultStack.empty()) {
+    Result node=resultStack.peek();
+    if (node.getNodeType() == functionNode) {
+      Result funcNameNode=resultStack.popResult();
+      functionName=funcNameNode.getToken().toString();
+      break;
+    }
+    resultStack.popResult();
+    Expression arg=resultStack.popExpression();
+    argList.add(arg);
+  }
+  Collections.reverse(argList);
+  Expression[] args=(Expression[])argList.toArray(new Expression[argList.size()]);
+  Function function=null;
+  try {
+    function=filterFactory.function(functionName,args);
+    if (function == null) {
+      throw new CQLException("Function not found.",this.cqlSource);
+    }
+  }
+ catch (  Exception ex) {
+    throw new CQLException("Function not found.",this.cqlSource);
+  }
+  return function;
+}

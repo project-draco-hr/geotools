@@ -1,0 +1,34 @@
+{
+  StringBuffer sql=new StringBuffer();
+  boolean offsetLimit=checkLimitOffset(query);
+  if (offsetLimit) {
+    sql.append(" SELECT *");
+  }
+ else {
+    sql.append("SELECT ");
+    buildEnvelopeAggregates(featureType,sql);
+  }
+  sql.append(" FROM ");
+  encodeTableName(featureType.getTypeName(),sql,query.getHints());
+  Filter filter=query.getFilter();
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    try {
+      FilterToSQL toSQL=createFilterToSQL(featureType);
+      sql.append(" ").append(toSQL.encodeToString(filter));
+    }
+ catch (    FilterToSQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  if (offsetLimit) {
+    applyLimitOffset(sql,query);
+    StringBuffer sb=new StringBuffer();
+    sb.append("SELECT ");
+    buildEnvelopeAggregates(featureType,sb);
+    sb.append("FROM (");
+    sql.insert(0,sb.toString());
+    sql.append(")");
+    dialect.encodeTableAlias("GT2_BOUNDS_",sql);
+  }
+  return sql.toString();
+}

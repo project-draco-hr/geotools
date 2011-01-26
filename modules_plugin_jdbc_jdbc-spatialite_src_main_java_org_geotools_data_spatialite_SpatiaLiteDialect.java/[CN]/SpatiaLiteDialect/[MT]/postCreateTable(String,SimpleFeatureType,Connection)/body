@@ -1,0 +1,38 @@
+{
+  for (  AttributeDescriptor ad : featureType.getAttributeDescriptors()) {
+    if (ad instanceof GeometryDescriptor) {
+      GeometryDescriptor gd=(GeometryDescriptor)ad;
+      StringBuffer sql=new StringBuffer("INSERT INTO geometry_columns VALUES (");
+      sql.append("'").append(featureType.getTypeName()).append("',");
+      sql.append("'").append(gd.getLocalName()).append("',");
+      String gType=Geometries.getForBinding((Class<? extends Geometry>)gd.getType().getBinding()).getName();
+      if (gType == null) {
+        throw new IOException("Unknown geometry type: " + gd.getType().getBinding());
+      }
+      sql.append("'").append(gType).append("',");
+      sql.append(2).append(",");
+      Integer epsgCode=null;
+      if (gd.getCoordinateReferenceSystem() != null) {
+        CoordinateReferenceSystem crs=gd.getCoordinateReferenceSystem();
+        try {
+          epsgCode=CRS.lookupEpsgCode(crs,true);
+        }
+ catch (        Exception e) {
+        }
+      }
+      if (epsgCode == null) {
+        throw new IOException("Unable to find epsg code code.");
+      }
+      sql.append(epsgCode).append(",");
+      sql.append(0).append(")");
+      LOGGER.fine(sql.toString());
+      Statement st=cx.createStatement();
+      try {
+        st.executeUpdate(sql.toString());
+      }
+  finally {
+        dataStore.closeSafe(st);
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  String message=record.getMessage();
+  final ResourceBundle resources=record.getResourceBundle();
+  if (resources instanceof IndexedResourceBundle) {
+    int key=-1;
+    try {
+      key=Integer.parseInt(message);
+    }
+ catch (    NumberFormatException e) {
+      unexpectedException(e);
+    }
+    if (key >= 0) {
+      final Object[] parameters=record.getParameters();
+      return ((IndexedResourceBundle)resources).getString(key,parameters);
+    }
+  }
+  if (resources != null) {
+    try {
+      message=resources.getString(message);
+    }
+ catch (    MissingResourceException e) {
+      unexpectedException(e);
+    }
+    final Object[] parameters=record.getParameters();
+    if (parameters != null && parameters.length != 0) {
+      final int offset=message.indexOf('{');
+      if (offset >= 0 && offset < message.length() - 1) {
+        final char c=message.charAt(offset);
+        if (c >= '0' && c <= '9')         try {
+          return MessageFormat.format(message,parameters);
+        }
+ catch (        IllegalArgumentException e) {
+          unexpectedException(e);
+        }
+      }
+    }
+  }
+  return message;
+}

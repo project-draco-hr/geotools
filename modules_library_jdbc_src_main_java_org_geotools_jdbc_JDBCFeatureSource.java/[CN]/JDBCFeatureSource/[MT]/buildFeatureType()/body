@@ -1,0 +1,138 @@
+{
+  PrimaryKey pkey=getDataStore().getPrimaryKey(entry);
+  VirtualTable virtualTable=getDataStore().getVirtualTables().get(entry.getTypeName());
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  AttributeTypeBuilder ab=new AttributeTypeBuilder();
+  boolean readOnly=false;
+  if (pkey == null || pkey instanceof NullPrimaryKey || virtualTable != null) {
+    readOnly=true;
+  }
+  String tableName=entry.getName().getLocalPart();
+  tb.setName(tableName);
+  if (entry.getName().getNamespaceURI() != null) {
+    tb.setNamespaceURI(entry.getName().getNamespaceURI());
+  }
+ else {
+    tb.setNamespaceURI(getDataStore().getNamespaceURI());
+  }
+  JDBCState state=getState();
+  String databaseSchema=getDataStore().getDatabaseSchema();
+  Connection cx=getDataStore().getConnection(state);
+  SQLDialect dialect=getDataStore().getSQLDialect();
+  try {
+    DatabaseMetaData metaData=cx.getMetaData();
+    List<ColumnMetadata> columns;
+    if (virtualTable != null) {
+      columns=getColumnMetadata(cx,virtualTable,dialect,getDataStore());
+    }
+ else {
+      columns=getColumnMetadata(cx,databaseSchema,tableName,dialect);
+    }
+    for (    ColumnMetadata column : columns) {
+      String name=column.name;
+      boolean pkColumn=false;
+      for (      PrimaryKeyColumn pkeycol : pkey.getColumns()) {
+        if (name.equals(pkeycol.getName())) {
+          if (!state.isExposePrimaryKeyColumns()) {
+            name=null;
+            break;
+          }
+ else {
+            pkColumn=true;
+          }
+        }
+        if (pkeycol.type == null) {
+          pkeycol.type=column.binding;
+        }
+      }
+      if (name == null) {
+        continue;
+      }
+      if (getDataStore().isAssociations()) {
+        getDataStore().ensureAssociationTablesExist(cx);
+        Statement st=null;
+        ResultSet relationships=null;
+        if (getDataStore().getSQLDialect() instanceof PreparedStatementSQLDialect) {
+          st=getDataStore().selectRelationshipSQLPS(tableName,name,cx);
+          relationships=((PreparedStatement)st).executeQuery();
+        }
+ else {
+          String sql=getDataStore().selectRelationshipSQL(tableName,name);
+          getDataStore().getLogger().fine(sql);
+          st=cx.createStatement();
+          relationships=st.executeQuery(sql);
+        }
+        try {
+          if (relationships.next()) {
+            tb.add(name,Association.class);
+            continue;
+          }
+        }
+  finally {
+          getDataStore().closeSafe(relationships);
+          getDataStore().closeSafe(st);
+        }
+      }
+      Class binding=column.binding;
+      if (binding == null) {
+        binding=getDataStore().getMapping(column.typeName);
+      }
+      if (binding == null) {
+        binding=getDataStore().getMapping(column.sqlType);
+      }
+      if (binding == null) {
+        getDataStore().getLogger().warning("Could not find mapping for '" + name + "', ignoring the column and setting the feature type read only");
+        readOnly=true;
+        continue;
+      }
+      ab.addUserData(JDBCDataStore.JDBC_NATIVE_TYPENAME,column.typeName);
+      if (!column.nullable) {
+        ab.nillable(false);
+        ab.minOccurs(1);
+      }
+      AttributeDescriptor att=null;
+      if (Geometry.class.isAssignableFrom(binding)) {
+        Integer srid=null;
+        CoordinateReferenceSystem crs=null;
+        try {
+          if (virtualTable != null) {
+            srid=virtualTable.getNativeSrid(name);
+          }
+ else {
+            srid=dialect.getGeometrySRID(databaseSchema,tableName,name,cx);
+          }
+          if (srid != null)           crs=dialect.createCRS(srid,cx);
+        }
+ catch (        Exception e) {
+          String msg="Error occured determing srid for " + tableName + "."+ name;
+          getDataStore().getLogger().log(Level.WARNING,msg,e);
+        }
+        ab.setBinding(binding);
+        ab.setName(name);
+        ab.setCRS(crs);
+        if (srid != null)         ab.addUserData(JDBCDataStore.JDBC_NATIVE_SRID,srid);
+        att=ab.buildDescriptor(name,ab.buildGeometryType());
+      }
+ else {
+        ab.setName(name);
+        ab.setBinding(binding);
+        att=ab.buildDescriptor(name,ab.buildType());
+      }
+      dialect.postCreateAttribute(att,tableName,databaseSchema,cx);
+      tb.add(att);
+    }
+    SimpleFeatureType ft=tb.buildFeatureType();
+    if (readOnly) {
+      ft.getUserData().put(JDBCDataStore.JDBC_READ_ONLY,Boolean.TRUE);
+    }
+    dialect.postCreateFeatureType(ft,metaData,databaseSchema,cx);
+    return ft;
+  }
+ catch (  SQLException e) {
+    String msg="Error occurred building feature type";
+    throw (IOException)new IOException(msg).initCause(e);
+  }
+ finally {
+    getDataStore().releaseConnection(cx,state);
+  }
+}

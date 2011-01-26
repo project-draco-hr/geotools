@@ -1,0 +1,44 @@
+{
+  SimpleFeatureSource river=data.getFeatureSource("river");
+  org.opengis.filter.FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  DefaultQuery query=new DefaultQuery(riverType.getTypeName());
+  SimpleFeatureCollection features;
+  SimpleFeature f1, f2;
+  query.setStartIndex(0);
+  query.setMaxFeatures(1);
+  features=river.getFeatures(query);
+  Iterator<SimpleFeature> iterator=features.iterator();
+  try {
+    f1=iterator.next();
+    assertEquals(1,((Integer)f1.getAttribute("id")).intValue());
+    assertFalse(iterator.hasNext());
+  }
+  finally {
+    features.close(iterator);
+  }
+  query.setStartIndex(1);
+  query.setMaxFeatures(1);
+  features=river.getFeatures(query);
+  iterator=features.iterator();
+  try {
+    f1=iterator.next();
+    assertEquals(2,((Integer)f1.getAttribute("id")).intValue());
+    assertFalse(iterator.hasNext());
+  }
+  finally {
+    features.close(iterator);
+  }
+  query.setStartIndex(1);
+  query.setMaxFeatures(1);
+  query.setSortBy(new SortBy[]{ff.sort("id",SortOrder.DESCENDING)});
+  features=river.getFeatures(query);
+  iterator=features.iterator();
+  try {
+    f1=iterator.next();
+    assertEquals(1,((Integer)f1.getAttribute("id")).intValue());
+    assertFalse(iterator.hasNext());
+  }
+  finally {
+    features.close(iterator);
+  }
+}

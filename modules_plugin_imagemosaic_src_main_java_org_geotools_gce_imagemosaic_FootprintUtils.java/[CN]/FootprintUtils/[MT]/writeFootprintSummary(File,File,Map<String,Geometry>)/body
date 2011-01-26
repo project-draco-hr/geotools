@@ -1,0 +1,73 @@
+{
+  Utilities.ensureNonNull("footprintSummaryFile",footprintSummaryFile);
+  Utilities.ensureNonNull("indexFile",indexFile);
+  Utilities.ensureNonNull("footprintsLocationGeometryMap",footprintsLocationGeometryMap);
+  if (footprintsLocationGeometryMap.isEmpty())   return;
+  final ShapefileDataStore store=new ShapefileDataStore(indexFile.toURI().toURL());
+  if (footprintsLocationGeometryMap.isEmpty())   return;
+  final String[] typeNames=store.getTypeNames();
+  if (typeNames.length <= 0) {
+    throw new IllegalArgumentException("Problems when opening the shapefile, no typenames for the schema are defined");
+  }
+  final String typeName=typeNames[0];
+  FileWriter footprintWriter=null;
+  FeatureIterator<SimpleFeature> it=null;
+  try {
+    final FeatureSource<SimpleFeatureType,SimpleFeature> featureSource=store.getFeatureSource(typeName);
+    final FeatureCollection<SimpleFeatureType,SimpleFeature> features=featureSource.getFeatures();
+    if (features == null) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("No features found in the shapefile");
+      }
+      return;
+    }
+    it=features.features();
+    if (!it.hasNext())     throw new IllegalArgumentException("The provided FeatureCollection<SimpleFeatureType, SimpleFeature>  or empty, it's impossible to create an index!");
+    footprintWriter=new FileWriter(footprintSummaryFile);
+    final BufferedWriter writer=new BufferedWriter(footprintWriter);
+    final WKTWriter geometryWriter=new WKTWriter();
+    while (it.hasNext()) {
+      final SimpleFeature feature=it.next();
+      final String location=(String)feature.getAttribute("location");
+      if (location != null && location.trim().length() > 0) {
+        final String locationKey=location;
+        if (footprintsLocationGeometryMap.containsKey(locationKey)) {
+          final String idGeometryPair=FootprintUtils.buildIDGeometryPair(footprintsLocationGeometryMap,feature.getID(),locationKey,geometryWriter);
+          writer.write(idGeometryPair);
+        }
+      }
+    }
+    writer.flush();
+    writer.close();
+  }
+ catch (  Throwable e) {
+    if (LOGGER.isLoggable(Level.FINEST))     LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+  }
+ finally {
+    try {
+      if (it != null) {
+        it.close();
+      }
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+    try {
+      if (footprintWriter != null) {
+        footprintWriter.flush();
+        footprintWriter.close();
+      }
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+      IOUtils.closeQuietly(footprintWriter);
+    }
+    footprintWriter=null;
+    try {
+      store.dispose();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+  }
+}

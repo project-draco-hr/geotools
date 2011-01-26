@@ -1,0 +1,31 @@
+{
+  final int[] lower=new int[]{0,0,2};
+  final int[] upper=new int[]{100,200,4};
+  final MathTransform identity=IdentityTransform.create(3);
+  GridGeometry2D gg;
+  try {
+    gg=new GridGeometry2D(new GeneralGridEnvelope(lower,upper,false),identity,null);
+    fail();
+  }
+ catch (  IllegalArgumentException e) {
+  }
+  upper[2]=3;
+  gg=new GridGeometry2D(new GeneralGridEnvelope(lower,upper,false),identity,null);
+  assertTrue(identity.isIdentity());
+  assertTrue(gg.getGridToCRS().isIdentity());
+  assertTrue(gg.getGridToCRS2D().isIdentity());
+  assertEquals(3,gg.getGridToCRS().getSourceDimensions());
+  assertEquals(2,gg.getGridToCRS2D().getSourceDimensions());
+  assertTrue(gg.getGridToCRS2D() instanceof AffineTransform);
+  AffineTransform tr=(AffineTransform)gg.getGridToCRS2D(PixelOrientation.CENTER);
+  assertTrue(tr.isIdentity());
+  tr=(AffineTransform)gg.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  assertFalse(tr.isIdentity());
+  assertEquals(AffineTransform.TYPE_TRANSLATION,tr.getType());
+  assertEquals(-0.5,tr.getTranslateX(),0);
+  assertEquals(-0.5,tr.getTranslateY(),0);
+  tr=(AffineTransform)gg.getGridToCRS2D(PixelOrientation.valueOf("LOWER"));
+  assertEquals(AffineTransform.TYPE_TRANSLATION,tr.getType());
+  assertEquals(0.0,tr.getTranslateX(),0);
+  assertEquals(0.5,tr.getTranslateY(),0);
+}

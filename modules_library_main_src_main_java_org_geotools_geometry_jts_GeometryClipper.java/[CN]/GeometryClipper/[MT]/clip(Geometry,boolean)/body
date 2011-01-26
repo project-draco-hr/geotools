@@ -1,0 +1,34 @@
+{
+  if (g == null) {
+    return null;
+  }
+  Envelope geomEnvelope=g.getEnvelopeInternal();
+  if (geomEnvelope.isNull()) {
+    return null;
+  }
+  if (bounds.contains(geomEnvelope)) {
+    return g;
+  }
+ else   if (!bounds.intersects(geomEnvelope)) {
+    return null;
+  }
+  if (g instanceof LineString) {
+    return clipLineString((LineString)g);
+  }
+ else   if (g instanceof Polygon) {
+    if (ensureValid) {
+      GeometryFactory gf=g.getFactory();
+      CoordinateSequenceFactory csf=gf.getCoordinateSequenceFactory();
+      return g.intersection(gf.createPolygon(buildBoundsString(gf,csf),null));
+    }
+ else {
+      return clipPolygon((Polygon)g);
+    }
+  }
+ else   if (g instanceof GeometryCollection) {
+    return clipCollection((GeometryCollection)g,ensureValid);
+  }
+ else {
+    return g;
+  }
+}

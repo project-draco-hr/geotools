@@ -1,0 +1,66 @@
+{
+  final int ncols=row.getNumColumns();
+  if (this.nCols != ncols) {
+    this.nCols=ncols;
+    values=new Object[nCols];
+    colStatusIndicator=new int[nCols];
+  }
+  int i=0;
+  int statusIndicator=0;
+  try {
+    for (i=0; i < nCols; i++) {
+      statusIndicator=row.getIndicator(i);
+      colStatusIndicator[i]=statusIndicator;
+      if (statusIndicator == SeRow.SE_IS_ALREADY_FETCHED || statusIndicator == SeRow.SE_IS_REPEATED_FEATURE || statusIndicator == SeRow.SE_IS_NULL_VALUE) {
+      }
+ else {
+        if (this.geometryFactory != null && this.geometryIndex == i) {
+          values[i]=row.getGeometry(geometryFactory,i);
+        }
+ else {
+          values[i]=row.getObject(i);
+        }
+        if (values[i] == null) {
+          ByteArrayInputStream clobIn=null;
+          BufferedReader reader=null;
+          try {
+            int type=row.getColumnDef(i).getType();
+            if (type == SeColumnDefinition.TYPE_NCLOB) {
+              clobIn=row.getNClob(i);
+            }
+ else             if (type == SeColumnDefinition.TYPE_CLOB) {
+              clobIn=row.getClob(i);
+            }
+            if (clobIn != null) {
+              reader=new BufferedReader(new InputStreamReader(clobIn,"UTF-16"));
+              StringBuffer buf=new StringBuffer();
+              String snip=reader.readLine();
+              while (snip != null) {
+                if (buf.length() != 0)                 buf.append('\n');
+                buf.append(snip);
+                snip=reader.readLine();
+              }
+              if (buf.length() > 0)               values[i]=buf.toString();
+            }
+          }
+ catch (          IOException e) {
+            LOGGER.log(Level.FINEST,"Issue decoding CLOB/NCLOB into a String:" + e,e);
+          }
+ finally {
+            if (reader != null) {
+              try {
+                reader.close();
+              }
+ catch (              IOException ignore) {
+                LOGGER.log(Level.FINEST,"Issue cleaning up after CLOB/NCLOB:" + ignore,ignore);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException("getting property #" + i,e);
+  }
+}

@@ -1,0 +1,75 @@
+{
+  int object_x[]=null;
+  int object_y[]=null;
+  int object_type=0;
+  int scale=3;
+  if (object instanceof CurveImpl) {
+    Coords coordArray=getCoordsFromCurve((CurveImpl)object);
+    object_x=coordArray.getXArray();
+    object_y=coordArray.getYArray();
+    object_type=PaintGMObject.TYPE_LINESTRING;
+  }
+ else   if (object instanceof PointImpl) {
+    object_x=new int[1];
+    object_y=new int[1];
+    DirectPositionImpl pos=((PointImpl)object).getPosition();
+    object_x[0]=(int)pos.getX();
+    object_y[0]=(int)pos.getY();
+    object_type=PaintGMObject.TYPE_POINT;
+  }
+ else   if (object instanceof SurfaceImpl) {
+    object_type=PaintGMObject.TYPE_LINES;
+    SurfaceBoundary sb=((SurfaceImpl)object).getBoundary();
+    Ring exterior=sb.getExterior();
+    LineList coords=new LineList();
+    coords.addRingToCoords((RingImplUnsafe)exterior);
+    List<Ring> interiors=sb.getInteriors();
+    for (int i=0; i < interiors.size(); i++) {
+      coords.addRingToCoords((RingImplUnsafe)interiors.get(i));
+    }
+    object_x=new int[coords.size() * 2];
+    object_y=new int[coords.size() * 2];
+    int z=0;
+    for (int i=0; i < coords.size(); i++) {
+      object_x[z]=coords.getXFrom(i);
+      object_y[z]=coords.getYFrom(i);
+      z++;
+      object_x[z]=coords.getXTo(i);
+      object_y[z]=coords.getYTo(i);
+      z++;
+    }
+  }
+ else   if (object instanceof MultiSurfaceImpl) {
+    object_type=PaintGMObject.TYPE_LINES;
+    Iterator surfaces=((MultiSurfaceImpl)object).getElements().iterator();
+    LineList coords=new LineList();
+    while (surfaces.hasNext()) {
+      SurfaceBoundary sb=((SurfaceImpl)surfaces.next()).getBoundary();
+      Ring exterior=sb.getExterior();
+      coords.addRingToCoords((RingImplUnsafe)exterior);
+      List<Ring> interiors=sb.getInteriors();
+      for (int i=0; i < interiors.size(); i++) {
+        coords.addRingToCoords((RingImplUnsafe)interiors.get(i));
+      }
+    }
+    object_x=new int[coords.size() * 2];
+    object_y=new int[coords.size() * 2];
+    int z=0;
+    for (int i=0; i < coords.size(); i++) {
+      object_x[z]=coords.getXFrom(i);
+      object_y[z]=coords.getYFrom(i);
+      z++;
+      object_x[z]=coords.getXTo(i);
+      object_y[z]=coords.getYTo(i);
+      z++;
+    }
+  }
+  Envelope objEnvelope=object.getEnvelope();
+  int height=(int)((DirectPositionImpl)objEnvelope.getUpperCorner()).getY();
+  int width=(int)((DirectPositionImpl)objEnvelope.getUpperCorner()).getX();
+  ObjectScreen app1=new ObjectScreen();
+  app1.pack();
+  app1.paintObject(object_x,object_y,object_type,scale);
+  app1.setSize(width * scale + 15 * scale + 20,height * scale + 35 * scale + 20);
+  app1.setVisible(true);
+}

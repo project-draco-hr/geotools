@@ -1,0 +1,163 @@
+{
+  Map<String,String> map=getAttributesMap(reader);
+  final String gridTypeS=map.get(GRIB1ImageMetadata.GRID_TYPE);
+  String projectionNameS="";
+  CoordinateReferenceSystem crs=getCRS();
+  int gridType=0;
+  if (gridTypeS != null)   gridType=Integer.parseInt(gridTypeS);
+switch (gridType) {
+case 0:
+    crs.setIdentification(new Identification("WGS 84",null,null,"EPSG:4326"));
+  crs.setCoordinateSystem(new Identification("WGS 84",null,null,null));
+break;
+case 10:
+projectionNameS="RotatedLatLon";
+crs.setIdentification(new Identification("WGS 84",null,null,"EPSG:4326"));
+crs.setCoordinateSystem(new Identification("WGS 84",null,null,null));
+break;
+case 3:
+projectionNameS="LambertConformalConic";
+final String latin1S=map.get(GRIB1ImageMetadata.GRID_LATIN_1);
+final String latin2S=map.get(GRIB1ImageMetadata.GRID_LATIN_2);
+final String lovS=map.get(GRIB1ImageMetadata.GRID_LOV);
+final String startXs=map.get(GRIB1ImageMetadata.GRID_STARTX);
+final String startYs=map.get(GRIB1ImageMetadata.GRID_STARTY);
+if (latin1S != null && latin2S != null && lovS != null && startXs != null && startYs != null) {
+final double latin1=Double.parseDouble(latin1S);
+final double latin2=Double.parseDouble(latin2S);
+final double lov=Double.parseDouble(lovS);
+final double startX=Double.parseDouble(startXs);
+final double startY=Double.parseDouble(startYs);
+final boolean sp2=latin1 != latin2;
+projectionNameS=sp2 ? "Lambert_Conformal_Conic_2SP" : "Lambert_Conformal_Conic_1SP";
+crs.setDefinedByConversion(new Identification(projectionNameS),null,null,null);
+if (sp2) {
+crs.addParameterValue(new Identification("standard_parallel_1"),Double.toString(Math.toRadians(latin1)));
+crs.addParameterValue(new Identification("standard_parallel_2"),Double.toString(Math.toRadians(latin2)));
+crs.addParameterValue(new Identification("longitude_of_origin"),Double.toString(Math.toRadians(lov)));
+}
+crs.addParameterValue(new Identification("latitude_of_origin"),Double.toString(latin1));
+crs.addParameterValue(new Identification("false_easting"),Double.toString(-startX));
+crs.addParameterValue(new Identification("false_northing"),Double.toString(-startY));
+}
+break;
+}
+crs.setDatum(Datum.GEODETIC_DATUM,new Identification("WGS_1984","World Geodetic System 1984",null,"EPSG:6326"));
+crs.addPrimeMeridian("0.0",new Identification("Greenwich",null,null,"EPSG:8901"));
+crs.addEllipsoid("6378137.0",null,"298.257223563","meter",new Identification("WGS 84",null,null,"EPSG:7030"));
+crs.addAxis(new Identification("longitude"),"east","degrees",null);
+crs.addAxis(new Identification("latitude"),"north","degrees",null);
+final String pdsLevelId=map.get(GRIB1ImageMetadata.PDSL_ID);
+final String pdsIsNumeric=map.get(GRIB1ImageMetadata.PDSL_ISNUMERIC);
+final String pdsLevelName=map.get(GRIB1ImageMetadata.PDSL_NAME);
+final String pdsLevelDescription=map.get(GRIB1ImageMetadata.PDSL_DESCRIPTION);
+String pdsUnits=map.get(GRIB1ImageMetadata.PDSL_UNITS);
+if (pdsUnits == null || pdsUnits.length() == 0) pdsUnits="m";
+if (Integer.parseInt(pdsLevelId) >= 0) {
+setHasVerticalCRS(true);
+VerticalCRS vCRS=getVerticalCRS();
+if (pdsLevelId != null) {
+final int levelID=Integer.parseInt(pdsLevelId);
+if ((levelID >= 1 && levelID <= 9) || (levelID >= 204 && levelID <= 254)) {
+vCRS.setIdentification(new Identification(pdsLevelDescription,null,null,null));
+vCRS.setDatum(new Identification(pdsLevelName,null,null,null));
+vCRS.addVerticalDatumType("other_surface");
+vCRS.addAxis(new Identification(pdsLevelName),"up","m",null);
+}
+ else if (levelID == 100) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification("Isobaric Pressure",null,null,null));
+vCRS.addVerticalDatumType("barometric");
+vCRS.addAxis(new Identification("pressure"),"down",pdsUnits,null);
+}
+ else if (levelID == 101) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification("Layer between two isobaric levels",null,null,null));
+vCRS.addVerticalDatumType("barometric");
+vCRS.addAxis(new Identification("pressure"),"down",pdsUnits,null);
+}
+ else if (levelID == 102) {
+vCRS.setDatum(new Identification("Mean Sea Level",null,null,"EPSG:5100"));
+vCRS.setIdentification(new Identification("Mean sea level height",null,null,"EPSG:5714"));
+vCRS.addVerticalDatumType("geoidal");
+vCRS.addAxis(new Identification("height"),"up",pdsUnits,null);
+}
+ else if (levelID == 103) {
+vCRS.setDatum(new Identification("Mean Sea Level",null,null,"EPSG:5100"));
+vCRS.setIdentification(new Identification("Altitude above MSL",null,null,null));
+vCRS.addVerticalDatumType("geoidal");
+vCRS.addAxis(new Identification("height"),"up",pdsUnits,null);
+}
+ else if (levelID == 105) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification("Height level above ground",null,null,null));
+vCRS.addVerticalDatumType("other_surface");
+vCRS.addAxis(new Identification("height"),"up",pdsUnits,null);
+}
+ else if (levelID == 106) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification("Layer between 2 specified height level above ground",null,null,null));
+vCRS.addVerticalDatumType("geoidal");
+vCRS.addAxis(new Identification("height"),"up",pdsUnits,null);
+}
+ else if (levelID == 109) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification(pdsLevelName,null,null,null));
+vCRS.addVerticalDatumType("other_surface");
+vCRS.addAxis(new Identification("level"),"down","m",null);
+}
+ else if (levelID == 112) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification("Layer between two depths below surface",null,null,null));
+vCRS.addVerticalDatumType("other_surface");
+vCRS.addAxis(new Identification("depth"),"up",pdsUnits,null);
+}
+ else if (levelID == 116) {
+vCRS.setDatum(new Identification("Ground",null,null,null));
+vCRS.setIdentification(new Identification("Layer between two pressure difference from ground",null,null,null));
+vCRS.addVerticalDatumType("barometric");
+vCRS.addAxis(new Identification("pressure"),"down",pdsUnits,null);
+}
+ else if (levelID == 160) {
+vCRS.setDatum(new Identification("Mean Sea Level",null,null,"EPSG:5100"));
+vCRS.addVerticalDatumType("depth");
+vCRS.setIdentification(new Identification("Mean sea level depth",null,null,"EPSG:5715"));
+vCRS.addAxis(new Identification("depth"),"down",pdsUnits,null);
+}
+ else {
+vCRS.setIdentification(new Identification(pdsLevelDescription,null,null,null));
+vCRS.setDatum(new Identification(pdsLevelName,null,null,null));
+vCRS.addVerticalDatumType("other_surface");
+vCRS.addAxis(new Identification(pdsLevelName),"up",pdsUnits,null);
+}
+if (Boolean.parseBoolean(pdsIsNumeric)) {
+}
+}
+}
+setHasTemporalCRS(true);
+TemporalCRS tCRS=getTemporalCRS();
+tCRS.setDatum(new Identification("ISO8601",null,null,null));
+String timeUnits=map.get(GRIB1ImageMetadata.PROD_TIME_UNITS);
+String timeName=map.get(GRIB1ImageMetadata.PROD_TIME_NAME);
+tCRS.addAxis(new Identification(timeName),CF.POSITIVE_UP,timeUnits,null);
+String timeOrigin=null;
+final String[] unitsParts=timeUnits.split("(?i)\\s+since\\s+");
+if (unitsParts.length == 2) {
+timeUnits=unitsParts[0].trim();
+timeOrigin=unitsParts[1].trim();
+if (timeOrigin != null) {
+timeOrigin=NetCDFUtilities.trimFractionalPart(timeOrigin);
+try {
+Date epoch=(Date)NetCDFUtilities.getAxisFormat(AxisType.Time,timeOrigin).parseObject(timeOrigin);
+GregorianCalendar cal=new GregorianCalendar();
+cal.setTime(epoch);
+DefaultInstant instant=new DefaultInstant(new DefaultPosition(cal.getTime()));
+final String originDate=instant.getPosition().getDateTime().toString();
+tCRS.addOrigin(originDate);
+}
+ catch (ParseException e) {
+throw new IllegalArgumentException(e);
+}
+}
+}
+}

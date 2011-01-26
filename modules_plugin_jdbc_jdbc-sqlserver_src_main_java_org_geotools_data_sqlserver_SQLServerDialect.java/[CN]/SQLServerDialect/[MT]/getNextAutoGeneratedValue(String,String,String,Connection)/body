@@ -1,0 +1,25 @@
+{
+  StringBuffer sql=new StringBuffer("SELECT");
+  sql.append(" IDENT_CURRENT('");
+  encodeTableName(schemaName,tableName,sql,false);
+  sql.append("')");
+  sql.append(" + ");
+  sql.append(" IDENT_INCR('");
+  encodeTableName(schemaName,tableName,sql,false);
+  sql.append("')");
+  dataStore.getLogger().fine(sql.toString());
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery(sql.toString());
+    try {
+      rs.next();
+      return rs.getInt(1);
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

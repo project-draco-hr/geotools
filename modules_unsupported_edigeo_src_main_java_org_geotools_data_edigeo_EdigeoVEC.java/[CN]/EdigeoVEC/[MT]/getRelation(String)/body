@@ -1,0 +1,41 @@
+{
+  EdigeoParser parser=new EdigeoParser(vecFile);
+  String lnk="";
+  String buffern1="";
+  String otherLnk="";
+  List<Coordinate[]> geoms=new LinkedList<Coordinate[]>();
+  while (parser.readLine()) {
+    if (parser.line.contains(VS + id) || buffern1.contains(VS + id)) {
+      if (buffern1.contains(lnkDesc) && parser.line.contains(lnkDesc)) {
+        if (buffern1.contains(VS + id)) {
+          lnk=new String(parser.line);
+        }
+ else {
+          lnk=new String(buffern1);
+        }
+        while (parser.readLine()) {
+          if (parser.line.contains(lnkDesc)) {
+            otherLnk=getValue(parser.line,lnkDesc);
+            List<Coordinate[]> test=getType(otherLnk.substring(otherLnk.lastIndexOf(VS) + 1));
+            geoms.addAll(test);
+          }
+ else           break;
+        }
+        lnk=getValue(lnk,lnkDesc);
+        List<Coordinate[]> list=getType(lnk.substring(lnk.lastIndexOf(VS) + 1));
+        if (!list.isEmpty()) {
+          if (!topo) {
+            geoms.addAll(list);
+            break;
+          }
+ else {
+            geoms.addAll(list);
+          }
+        }
+      }
+    }
+    buffern1=new String(parser.line);
+  }
+  parser.close();
+  return geoms;
+}

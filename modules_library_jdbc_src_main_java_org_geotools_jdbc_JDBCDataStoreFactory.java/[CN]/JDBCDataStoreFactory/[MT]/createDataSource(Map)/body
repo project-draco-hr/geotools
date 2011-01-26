@@ -1,0 +1,30 @@
+{
+  BasicDataSource dataSource=new BasicDataSource();
+  dataSource.setDriverClassName(getDriverClassName());
+  dataSource.setUrl(getJDBCUrl(params));
+  String user=(String)USER.lookUp(params);
+  dataSource.setUsername(user);
+  String passwd=(String)PASSWD.lookUp(params);
+  if (passwd != null) {
+    dataSource.setPassword(passwd);
+  }
+  Integer maxWait=(Integer)MAXWAIT.lookUp(params);
+  if (maxWait != null && maxWait != -1) {
+    dataSource.setMaxWait(maxWait * 1000);
+  }
+  Integer minConn=(Integer)MINCONN.lookUp(params);
+  if (minConn != null) {
+    dataSource.setMinIdle(minConn);
+  }
+  Integer maxConn=(Integer)MAXCONN.lookUp(params);
+  if (maxConn != null) {
+    dataSource.setMaxActive(maxConn);
+  }
+  Boolean validate=(Boolean)VALIDATECONN.lookUp(params);
+  if (validate != null && validate && getValidationQuery() != null) {
+    dataSource.setTestOnBorrow(true);
+    dataSource.setValidationQuery(getValidationQuery());
+  }
+  dataSource.setAccessToUnderlyingConnectionAllowed(true);
+  return dataSource;
+}

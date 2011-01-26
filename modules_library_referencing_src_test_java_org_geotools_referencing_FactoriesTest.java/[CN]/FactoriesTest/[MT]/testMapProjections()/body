@@ -1,0 +1,41 @@
+{
+  out.println();
+  out.println("Testing classification names");
+  out.println("----------------------------");
+  final CRSFactory crsFactory=ReferencingFactoryFinder.getCRSFactory(null);
+  final MathTransformFactory mtFactory=ReferencingFactoryFinder.getMathTransformFactory(null);
+  final Collection<OperationMethod> methods=mtFactory.getAvailableMethods(Projection.class);
+  final Map<String,?> dummyName=Collections.singletonMap("name","Test");
+  for (  final OperationMethod method : methods) {
+    final String classification=method.getName().getCode();
+    final ParameterValueGroup param=mtFactory.getDefaultParameters(classification);
+    try {
+      param.parameter("semi_major").setValue(6377563.396);
+      param.parameter("semi_minor").setValue(6356256.909237285);
+    }
+ catch (    IllegalArgumentException e) {
+    }
+    final MathTransform mt;
+    try {
+      mt=mtFactory.createParameterizedTransform(param);
+    }
+ catch (    FactoryException e) {
+      continue;
+    }
+catch (    UnsupportedOperationException e) {
+      continue;
+    }
+    if (mt instanceof MapProjection) {
+      out.println(classification);
+      final boolean skip=classification.equalsIgnoreCase("Transverse Mercator (South Orientated)") || classification.equalsIgnoreCase("Equidistant_Cylindrical");
+      if (!skip) {
+        assertEquals(classification,((MapProjection)mt).getParameterDescriptors().getName().getCode());
+      }
+      final ProjectedCRS projCRS=crsFactory.createProjectedCRS(dummyName,DefaultGeographicCRS.WGS84,new DefiningConversion(dummyName,method,mt),DefaultCartesianCS.PROJECTED);
+      final Conversion conversion=projCRS.getConversionFromBase();
+      assertSame(mt,conversion.getMathTransform());
+      final OperationMethod projMethod=conversion.getMethod();
+      assertEquals(classification,projMethod.getName().getCode());
+    }
+  }
+}

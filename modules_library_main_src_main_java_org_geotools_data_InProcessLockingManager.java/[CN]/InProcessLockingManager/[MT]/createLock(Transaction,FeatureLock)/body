@@ -1,0 +1,19 @@
+{
+  if (featureLock == FeatureLock.TRANSACTION) {
+    if (transaction == Transaction.AUTO_COMMIT) {
+      throw new FeatureLockException("We cannot issue a Transaction lock against AUTO_COMMIT");
+    }
+    TransactionLock lock=(TransactionLock)transaction.getState(this);
+    if (lock == null) {
+      lock=new TransactionLock();
+      transaction.putState(this,lock);
+      return lock;
+    }
+ else {
+      return lock;
+    }
+  }
+ else {
+    return new MemoryLock(featureLock);
+  }
+}

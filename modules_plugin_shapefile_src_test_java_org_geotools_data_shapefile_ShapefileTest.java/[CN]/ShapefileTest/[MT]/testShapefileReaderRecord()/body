@@ -1,0 +1,25 @@
+{
+  final URL c1=TestData.url(STATEPOP);
+  ShapefileReader reader=new ShapefileReader(new ShpFiles(c1),false,false,new GeometryFactory());
+  URL c2;
+  try {
+    ArrayList offsets=new ArrayList();
+    while (reader.hasNext()) {
+      ShapefileReader.Record record=reader.nextRecord();
+      offsets.add(new Integer(record.offset()));
+      Geometry geom=(Geometry)record.shape();
+      assertEquals(new Envelope(record.minX,record.maxX,record.minY,record.maxY),geom.getEnvelopeInternal());
+      record.toString();
+    }
+    copyShapefiles(STATEPOP);
+    reader.close();
+    c2=TestData.url(TestCaseSupport.class,STATEPOP);
+    reader=new ShapefileReader(new ShpFiles(c2),false,false,new GeometryFactory());
+    for (int i=0, ii=offsets.size(); i < ii; i++) {
+      reader.shapeAt(((Integer)offsets.get(i)).intValue());
+    }
+  }
+  finally {
+    reader.close();
+  }
+}

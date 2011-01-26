@@ -1,0 +1,37 @@
+{
+  final JPanel page=super.createPanel();
+  page.setLayout(new MigLayout());
+  JLabel title=new JLabel("Choose DataStore");
+  Font titleFont=new Font("Arial",Font.BOLD,14);
+  title.setFont(titleFont);
+  page.add(title,"span");
+  JLabel description=new JLabel("Available DataStores on your classpath");
+  page.add(description,"grow, span");
+  java.util.List<DataStoreFactorySpi> factoryList=new ArrayList<DataStoreFactorySpi>();
+  for (Iterator<DataStoreFactorySpi> iter=DataStoreFinder.getAvailableDataStores(); iter.hasNext(); ) {
+    factoryList.add(iter.next());
+  }
+  list=new JList(factoryList.toArray());
+  ListCellRenderer cellRenderer=new DefaultListCellRenderer(){
+    @Override public Component getListCellRendererComponent(    JList list,    Object value,    int index,    boolean isSelected,    boolean cellHasFocus){
+      super.getListCellRendererComponent(list,value,index,isSelected,cellHasFocus);
+      DataStoreFactorySpi factory=(DataStoreFactorySpi)value;
+      setText(factory.getDisplayName());
+      setToolTipText(factory.getDescription());
+      return this;
+    }
+  }
+;
+  list.setCellRenderer(cellRenderer);
+  list.addListSelectionListener(new ListSelectionListener(){
+    public void valueChanged(    ListSelectionEvent e){
+      format=(DataStoreFactorySpi)list.getSelectedValue();
+    }
+  }
+);
+  JScrollPane scroll=new JScrollPane(list);
+  scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+  scroll.setPreferredSize(new Dimension(300,100));
+  page.add(scroll,"growx,growy,span");
+  return page;
+}

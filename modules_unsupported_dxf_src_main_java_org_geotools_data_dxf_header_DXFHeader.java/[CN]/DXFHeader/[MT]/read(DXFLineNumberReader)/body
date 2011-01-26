@@ -1,0 +1,108 @@
+{
+  Point2D.Double limmin=null;
+  Point2D.Double limmax=null;
+  Point2D.Double extmin=null;
+  Point2D.Double extmax=null;
+  int fillmode=0;
+  String version="AC1006";
+  int srid=28992;
+  int sln=br.getLineNumber();
+  log.debug(">Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    if (type.equals(ENDSEC)) {
+      doLoop=false;
+      break;
+    }
+  break;
+case VARIABLE_NAME:
+String variableName=cvp.getStringValue();
+double x=0, y=0;
+int tfillmode=0;
+String tversion=null;
+boolean doLoop2=true;
+while (doLoop2) {
+cvp=new DXFCodeValuePair();
+try {
+gc=cvp.read(br);
+}
+ catch (DXFParseException ex) {
+throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+}
+catch (EOFException e) {
+doLoop2=false;
+doLoop=false;
+break;
+}
+switch (gc) {
+case TYPE:
+type=cvp.getStringValue();
+if (type.equals(ENDSEC)) {
+doLoop=false;
+doLoop2=false;
+break;
+}
+break;
+case VARIABLE_NAME:
+doLoop2=false;
+br.reset();
+break;
+case X_1:
+x=cvp.getDoubleValue();
+break;
+case Y_1:
+y=cvp.getDoubleValue();
+break;
+case TEXT:
+tversion=cvp.getStringValue();
+break;
+case INT_1:
+tfillmode=cvp.getShortValue();
+break;
+default :
+}
+}
+if (variableName.equals($LIMMIN)) {
+limmin=new Point2D.Double(x,y);
+}
+ else if (variableName.equals($LIMMAX)) {
+limmax=new Point2D.Double(x,y);
+}
+ else if (variableName.equals($EXTMIN)) {
+extmin=new Point2D.Double(x,y);
+}
+ else if (variableName.equals($EXTMAX)) {
+extmax=new Point2D.Double(x,y);
+}
+ else if (variableName.equals($ACADVER)) {
+version=tversion;
+}
+ else if (variableName.equals($FILLMODE)) {
+fillmode=tfillmode;
+}
+break;
+default :
+break;
+}
+}
+DXFHeader e=new DXFHeader(new DXFPoint(limmin,-1,null,1,1),new DXFPoint(limmax,-1,null,1,1),new DXFPoint(extmin,-1,null,1,1),new DXFPoint(extmax,-1,null,1,1),fillmode,version,srid);
+log.debug(e.toString(limmin,limmax,extmin,extmax,fillmode,version,srid));
+log.debug(">Exit at line: " + br.getLineNumber());
+return e;
+}

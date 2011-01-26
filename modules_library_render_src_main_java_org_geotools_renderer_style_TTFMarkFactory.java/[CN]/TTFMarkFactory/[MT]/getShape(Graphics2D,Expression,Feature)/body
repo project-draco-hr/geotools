@@ -1,0 +1,32 @@
+{
+  String markUrl=symbolUrl.evaluate(feature,String.class);
+  if (!markUrl.startsWith("ttf://"))   return null;
+  if (!markUrl.matches("ttf://.+#.+")) {
+    throw new IllegalArgumentException("Mark URL font found, but does not match the required " + "structure font://<fontName>#<charNumber>, e.g., ttf://wingdigs#0x7B. You specified " + markUrl);
+  }
+  String[] fontElements=markUrl.substring(6).split("#");
+  Font font=FontCache.getDefaultInsance().getFont(fontElements[0]);
+  if (font == null) {
+    throw new IllegalArgumentException("Unkown font " + fontElements[0]);
+  }
+  String code=fontElements[1];
+  char character;
+  try {
+    if (code.startsWith("U+") || code.startsWith("\\u"))     code="0x" + code.substring(2);
+    character=(char)Integer.decode(code).intValue();
+    if (!font.canDisplay(character))     character=(char)(0xF000 | character);
+  }
+ catch (  NumberFormatException e) {
+    throw new IllegalArgumentException("Invalid character specification " + fontElements[1],e);
+  }
+  GlyphVector textGlyphVector=font.createGlyphVector(FONT_RENDER_CONTEXT,new char[]{(char)character});
+  Shape s=textGlyphVector.getOutline();
+  Rectangle2D bounds=s.getBounds2D();
+  AffineTransform tx=new AffineTransform();
+  double max=Math.max(bounds.getWidth(),bounds.getHeight());
+  tx.scale(1 / max,-1 / max);
+  tx.translate(-bounds.getCenterX(),-bounds.getCenterY());
+  ExplicitBoundsShape shape=new ExplicitBoundsShape(tx.createTransformedShape(s));
+  shape.setBounds(new Rectangle2D.Double(-0.5,0.5,1.0,1.0));
+  return shape;
+}

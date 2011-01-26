@@ -1,0 +1,54 @@
+{
+  ParameterDescriptor<Double> dDescriptor;
+  ParameterDescriptor<Integer> iDescriptor;
+  ParameterValue<Double> parameter;
+  dDescriptor=DefaultParameterDescriptor.create("Test",12,4,20,SI.METER);
+  parameter=dDescriptor.createValue();
+  assertEquals("name","Test",dDescriptor.getName().getCode());
+  assertEquals("unit",SI.METER,dDescriptor.getUnit());
+  assertEquals("class",Double.class,dDescriptor.getValueClass());
+  assertEquals("defaultValue",12.0,dDescriptor.getDefaultValue().doubleValue(),0.0);
+  assertEquals("minimum",4.0,dDescriptor.getMinimumValue());
+  assertEquals("maximum",20.0,dDescriptor.getMaximumValue());
+  assertEquals("value",12,parameter.intValue());
+  assertEquals("unit",SI.METER,parameter.getUnit());
+  for (int i=4; i <= 20; i++) {
+    parameter.setValue(i);
+    assertEquals("value",Double.valueOf(i),parameter.getValue());
+    assertEquals("unit",SI.METER,parameter.getUnit());
+    assertEquals("value",i,parameter.doubleValue(SI.METER),0);
+  }
+  try {
+    parameter.setValue(3.0);
+    fail("setValue(< min)");
+  }
+ catch (  InvalidParameterValueException exception) {
+    assertEquals("Test",exception.getParameterName());
+  }
+  try {
+    parameter.setValue("12");
+    fail("setValue(Sring)");
+  }
+ catch (  InvalidParameterValueException exception) {
+    assertEquals("Test",exception.getParameterName());
+  }
+  for (int i=400; i <= 2000; i+=100) {
+    parameter.setValue(i,SI.CENTI(SI.METER));
+    assertEquals("value",Double.valueOf(i),parameter.getValue());
+    assertEquals("unit",SI.CENTI(SI.METER),parameter.getUnit());
+    assertEquals("value",i / 100,parameter.doubleValue(SI.METER),0);
+  }
+  try {
+    iDescriptor=DefaultParameterDescriptor.create("Test",3,4,20);
+    fail("setValue(< min)");
+  }
+ catch (  InvalidParameterValueException exception) {
+    assertEquals("Test",exception.getParameterName());
+  }
+  try {
+    iDescriptor=DefaultParameterDescriptor.create("Test",12,20,4);
+    fail("ParameterDescriptor(min > max)");
+  }
+ catch (  IllegalArgumentException exception) {
+  }
+}

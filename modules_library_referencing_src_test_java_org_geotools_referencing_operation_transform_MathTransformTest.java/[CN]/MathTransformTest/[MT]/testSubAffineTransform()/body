@@ -1,0 +1,30 @@
+{
+  for (int pass=0; pass < 5; pass++) {
+    final int dimension=10;
+    final GeneralMatrix matrix=new GeneralMatrix(dimension + 1,dimension + 1);
+    for (int i=0; i < dimension; i++) {
+      matrix.setElement(i,i,400 * Math.random() - 200);
+      matrix.setElement(i,dimension,400 * Math.random() - 200);
+    }
+    assertTrue(matrix.isAffine());
+    final MathTransform[] transforms=new MathTransform[dimension];
+    for (int i=1; i <= dimension; i++) {
+      final GeneralMatrix sub=new GeneralMatrix(i + 1,i + 1);
+      matrix.copySubMatrix(0,0,i,i,0,0,sub);
+      matrix.copySubMatrix(0,dimension,i,1,0,i,sub);
+      final MathTransform transform=transforms[i - 1]=factory.createAffineTransform(sub);
+      assertTrue(sub.isAffine());
+      assertEquals(sub,new GeneralMatrix(((LinearTransform)transform).getMatrix()));
+      assertInterfaced(transform);
+      assertTrue(i == transform.getSourceDimensions());
+    }
+    assertTrue("MathTransform1D",transforms[0] instanceof MathTransform1D);
+    assertTrue("MathTransform2D",transforms[1] instanceof MathTransform2D);
+    assertEquals(matrix,((LinearTransform)transforms[dimension - 1]).getMatrix());
+    compareTransforms("SubAffineTransform",transforms);
+    for (int i=0; i < transforms.length; i++) {
+      transforms[i]=transforms[i].inverse();
+    }
+    compareTransforms("SubAffineTransform.inverse",transforms);
+  }
+}

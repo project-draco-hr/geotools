@@ -1,0 +1,50 @@
+{
+  LOGGER.fine("Creating layer " + tableName);
+  final Command<Void> createCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      final SeTable table=new SeTable(connection,tableName);
+      try {
+        table.delete();
+      }
+ catch (      SeException e) {
+        LOGGER.fine("table " + tableName + " does not already exist");
+      }
+      final boolean isNullable=true;
+      final int numCols=5;
+      final SeColumnDefinition[] colDefs=new SeColumnDefinition[numCols];
+      colDefs[0]=new SeColumnDefinition("ROW_ID",SeColumnDefinition.TYPE_INT32,10,0,false);
+      colDefs[1]=new SeColumnDefinition("INT_COL",SeColumnDefinition.TYPE_INT32,10,0,isNullable);
+      colDefs[2]=new SeColumnDefinition("DATE_COL",SeColumnDefinition.TYPE_DATE,1,0,isNullable);
+      colDefs[3]=new SeColumnDefinition("STRING_COL",SeColumnDefinition.TYPE_STRING,25,0,isNullable);
+      colDefs[4]=new SeColumnDefinition("SE_ANNO_CAD_DATA",SeColumnDefinition.TYPE_BLOB,4000,0,isNullable);
+      table.create(colDefs,configKeyword);
+      if (SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_NONE != rowIdColumnType) {
+        SeRegistration reg=new SeRegistration(connection,table.getName());
+        LOGGER.fine("setting rowIdColumnName to ROW_ID in table " + reg.getTableName());
+        reg.setRowIdColumnName("ROW_ID");
+        reg.setRowIdColumnType(rowIdColumnType);
+        reg.alter();
+      }
+      if (SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE == rowIdColumnType) {
+        makeVersioned(session,tableName);
+      }
+      if (createLayer) {
+        final SeLayer layer=new SeLayer(connection);
+        layer.setTableName(tableName);
+        layer.setSpatialColumnName("GEOM");
+        layer.setShapeTypes(SeLayer.SE_NIL_TYPE_MASK | shapeTypeMask);
+        layer.setGridSizes(1100.0,0.0,0.0);
+        layer.setDescription("GeoTools test table");
+        SeCoordinateReference coordref=getGenericCoordRef();
+        SeExtent ext=coordref.getXYEnvelope();
+        layer.setExtent(ext);
+        layer.setCoordRef(coordref);
+        layer.setCreationKeyword(configKeyword);
+        layer.create(3,4);
+      }
+      return null;
+    }
+  }
+;
+  session.issue(createCmd);
+}

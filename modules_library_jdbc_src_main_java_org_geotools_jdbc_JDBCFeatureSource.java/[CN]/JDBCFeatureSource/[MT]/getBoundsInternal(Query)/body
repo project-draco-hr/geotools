@@ -1,0 +1,44 @@
+{
+  JDBCDataStore dataStore=getDataStore();
+  Filter[] split=splitFilter(query.getFilter());
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  try {
+    if ((postFilter != null) && (postFilter != Filter.INCLUDE) || (query.getMaxFeatures() < Integer.MAX_VALUE && !canLimit()) || (query.getStartIndex() != null && query.getStartIndex() > 0 && !canOffset())) {
+      getDataStore().getLogger().fine("Calculating bounds manually");
+      CoordinateReferenceSystem flatCRS=CRS.getHorizontalCRS(getSchema().getCoordinateReferenceSystem());
+      ReferencedEnvelope bounds=new ReferencedEnvelope(flatCRS);
+      DefaultQuery q=new DefaultQuery(query);
+      q.setFilter(postFilter);
+      FeatureReader<SimpleFeatureType,SimpleFeature> i=getReader(q);
+      try {
+        if (i.hasNext()) {
+          SimpleFeature f=(SimpleFeature)i.next();
+          bounds.init(f.getBounds());
+          while (i.hasNext()) {
+            f=i.next();
+            bounds.include(f.getBounds());
+          }
+        }
+      }
+  finally {
+        i.close();
+      }
+      return bounds;
+    }
+ else {
+      Connection cx=dataStore.getConnection(getState());
+      try {
+        DefaultQuery q=new DefaultQuery(query);
+        q.setFilter(preFilter);
+        return dataStore.getBounds(getSchema(),q,cx);
+      }
+  finally {
+        getDataStore().releaseConnection(cx,getState());
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+}

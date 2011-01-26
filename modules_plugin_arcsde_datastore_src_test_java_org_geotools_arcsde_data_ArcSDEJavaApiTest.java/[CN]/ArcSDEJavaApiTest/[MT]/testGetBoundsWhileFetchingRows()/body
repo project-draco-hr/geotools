@@ -1,0 +1,37 @@
+{
+  final String typeName=testData.getTempTableName();
+  final String[] columns={TestData.TEST_TABLE_COLS[0]};
+  final SeSqlConstruct sql=new SeSqlConstruct(typeName);
+  final SeQueryInfo qInfo=new SeQueryInfo();
+  qInfo.setConstruct(sql);
+  SeExtent extent=new SeExtent(-180,-90,-170,-80);
+  SeLayer layer=session.getLayer(typeName);
+  SeShape filterShape=new SeShape(layer.getCoordRef());
+  filterShape.generateRectangle(extent);
+  SeShapeFilter bboxFilter=new SeShapeFilter(typeName,layer.getSpatialColumn(),filterShape,SeFilter.METHOD_ENVP,true);
+  final SeFilter[] spatFilters={bboxFilter};
+  final Command<Integer> countCmd=new Command<Integer>(){
+    @Override public Integer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      final SeQuery rowQuery=new SeQuery(connection,columns,sql);
+      rowQuery.setSpatialConstraints(SeQuery.SE_OPTIMIZE,false,spatFilters);
+      rowQuery.prepareQuery();
+      rowQuery.execute();
+      rowQuery.fetch();
+      rowQuery.fetch();
+      rowQuery.fetch();
+      SeQuery countQuery=new SeQuery(connection,columns,sql);
+      countQuery.setSpatialConstraints(SeQuery.SE_OPTIMIZE,true,spatFilters);
+      SeTable.SeTableStats tableStats=countQuery.calculateTableStatistics("POP_ADMIN",SeTable.SeTableStats.SE_COUNT_STATS,qInfo,0);
+      rowQuery.fetch();
+      rowQuery.fetch();
+      int resultCount=tableStats.getCount();
+      rowQuery.close();
+      countQuery.close();
+      return new Integer(resultCount);
+    }
+  }
+;
+  final Integer resultCount=session.issue(countCmd);
+  final int expCount=2;
+  assertEquals(expCount,resultCount.intValue());
+}

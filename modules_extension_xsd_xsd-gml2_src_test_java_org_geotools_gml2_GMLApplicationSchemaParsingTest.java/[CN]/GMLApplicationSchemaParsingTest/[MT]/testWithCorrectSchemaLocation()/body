@@ -1,0 +1,29 @@
+{
+  InputStream in=getClass().getResourceAsStream("feature.xml");
+  DocumentBuilderFactory factory=DocumentBuilderFactory.newInstance();
+  factory.setNamespaceAware(true);
+  Document document=factory.newDocumentBuilder().parse(in);
+  String schemaLocation=getClass().getResource("test.xsd").toString();
+  document.getDocumentElement().setAttribute("xsi:schemaLocation",TEST.NAMESPACE + " " + schemaLocation);
+  File schemaFile=File.createTempFile("test","xsd");
+  schemaFile.deleteOnExit();
+  Transformer tx=TransformerFactory.newInstance().newTransformer();
+  tx.transform(new DOMSource(document),new StreamResult(schemaFile));
+  in.close();
+  in=new FileInputStream(schemaFile);
+  StreamingParser parser=new StreamingParser(new GMLConfiguration(),in,"//TestFeature");
+  for (int i=0; i < 3; i++) {
+    SimpleFeature f=(SimpleFeature)parser.parse();
+    assertNotNull(f);
+    assertEquals(i + "",f.getID());
+    assertEquals(i,((Point)f.getDefaultGeometry()).getX(),0d);
+    assertEquals(i,((Point)f.getDefaultGeometry()).getY(),0d);
+    assertEquals(i,((Integer)f.getAttribute("count")).intValue());
+  }
+  assertNull(parser.parse());
+  try {
+    in.close();
+  }
+ catch (  IOException e) {
+  }
+}

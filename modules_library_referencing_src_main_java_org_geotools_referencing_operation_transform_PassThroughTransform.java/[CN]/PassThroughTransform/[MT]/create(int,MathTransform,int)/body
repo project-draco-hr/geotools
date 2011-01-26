@@ -1,0 +1,23 @@
+{
+  if (firstAffectedOrdinate < 0) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"firstAffectedOrdinate",firstAffectedOrdinate));
+  }
+  if (numTrailingOrdinates < 0) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"numTrailingOrdinates",numTrailingOrdinates));
+  }
+  if (firstAffectedOrdinate == 0 && numTrailingOrdinates == 0) {
+    return subTransform;
+  }
+  if (subTransform.isIdentity()) {
+    final int dimension=subTransform.getSourceDimensions();
+    if (dimension == subTransform.getTargetDimensions()) {
+      return IdentityTransform.create(firstAffectedOrdinate + dimension + numTrailingOrdinates);
+    }
+  }
+  if (subTransform instanceof LinearTransform) {
+    GeneralMatrix matrix=toGMatrix(((LinearTransform)subTransform).getMatrix());
+    matrix=PassThroughTransform.expand(matrix,firstAffectedOrdinate,numTrailingOrdinates,1);
+    return ProjectiveTransform.create(matrix);
+  }
+  return new PassThroughTransform(firstAffectedOrdinate,subTransform,numTrailingOrdinates);
+}

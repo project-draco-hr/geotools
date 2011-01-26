@@ -1,0 +1,22 @@
+{
+  String typeName=query.getTypeName();
+  Map<String,SimpleFeature> contents=features(typeName);
+  Iterator<SimpleFeature> iterator=contents.values().iterator();
+  CoordinateReferenceSystem coordinateSystem=query.getCoordinateSystem();
+  ReferencedEnvelope envelope=null;
+  Filter filter=query.getFilter();
+  int count=0;
+  while (iterator.hasNext() && (count < query.getMaxFeatures())) {
+    count++;
+    SimpleFeature feature=iterator.next();
+    if (filter.evaluate(feature)) {
+      count++;
+      Envelope env=((Geometry)feature.getDefaultGeometry()).getEnvelopeInternal();
+      if (null == envelope) {
+        envelope=new ReferencedEnvelope(coordinateSystem);
+      }
+      envelope.expandToInclude(env);
+    }
+  }
+  return envelope;
+}

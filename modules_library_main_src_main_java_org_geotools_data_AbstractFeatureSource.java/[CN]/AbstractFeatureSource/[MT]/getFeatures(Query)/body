@@ -1,0 +1,40 @@
+{
+  SimpleFeatureType schema=getSchema();
+  String typeName=schema.getTypeName();
+  if (query.getTypeName() == null) {
+    DefaultQuery defaultQuery=new DefaultQuery(query);
+    defaultQuery.setTypeName(typeName);
+  }
+ else   if (!typeName.equals(query.getTypeName())) {
+    return new EmptyFeatureCollection(schema);
+  }
+  final QueryCapabilities queryCapabilities=getQueryCapabilities();
+  if (!queryCapabilities.supportsSorting(query.getSortBy())) {
+    throw new DataSourceException("DataStore cannot provide the requested sort order");
+  }
+  SimpleFeatureCollection collection=new DefaultFeatureResults(this,query);
+  if (collection.getSchema().getGeometryDescriptor() == null) {
+    return collection;
+  }
+  if (false) {
+    if (query.getCoordinateSystem() != null) {
+      try {
+        collection=new ForceCoordinateSystemFeatureResults(collection,query.getCoordinateSystem());
+      }
+ catch (      SchemaException e) {
+        throw new IOException("Could not force CRS " + query.getCoordinateSystem());
+      }
+    }
+  }
+  if (false) {
+    if (query.getCoordinateSystemReproject() != null) {
+      try {
+        collection=new ReprojectFeatureResults(collection,query.getCoordinateSystemReproject());
+      }
+ catch (      Exception e) {
+        throw new IOException("Could not reproject to " + query.getCoordinateSystemReproject());
+      }
+    }
+  }
+  return collection;
+}

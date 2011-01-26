@@ -1,0 +1,34 @@
+{
+  AbstractLiteIterator pi=null;
+  AffineTransform combined=null;
+  if (affineTransform == null) {
+    combined=at;
+  }
+ else   if ((at == null) || at.isIdentity()) {
+    combined=affineTransform;
+  }
+ else {
+    combined=new AffineTransform(affineTransform);
+    combined.concatenate(at);
+  }
+  if (this.geometry instanceof Point) {
+    pi=new PointIterator((Point)geometry,combined);
+  }
+  if (this.geometry instanceof Polygon) {
+    pi=new PolygonIterator((Polygon)geometry,combined,generalize,maxDistance);
+  }
+ else   if (this.geometry instanceof LinearRing) {
+    lineIterator.init((LinearRing)geometry,combined,generalize,(float)maxDistance);
+    pi=lineIterator;
+  }
+ else   if (this.geometry instanceof LineString) {
+    if (combined == affineTransform)     lineIterator.init((LineString)geometry,combined,generalize,(float)maxDistance,xScale,yScale);
+ else     lineIterator.init((LineString)geometry,combined,generalize,(float)maxDistance);
+    pi=lineIterator;
+  }
+ else   if (this.geometry instanceof GeometryCollection) {
+    collIterator.init((GeometryCollection)geometry,combined,generalize,maxDistance);
+    pi=collIterator;
+  }
+  return pi;
+}

@@ -1,0 +1,42 @@
+{
+  LOGGER.fine("legalizing " + t + " and "+ e.getOtherFace(t));
+  if (isIllegal(t,e,p)) {
+    Triangle otherFace=e.getOtherFace(t);
+    LOGGER.finer("switch internal edge");
+    DelaunayNode fourthCorner=(DelaunayNode)otherFace.getThirdNode(e);
+    DelaunayNode eNodeA=(DelaunayNode)e.getNodeA();
+    DelaunayNode eNodeB=(DelaunayNode)e.getNodeB();
+    DelaunayEdge edgeP_4=new DelaunayEdge(p,fourthCorner);
+    DelaunayEdge edgeP_A=(DelaunayEdge)t.getOppositeEdge(eNodeB);
+    DelaunayEdge edgeP_B=(DelaunayEdge)t.getOppositeEdge(eNodeA);
+    DelaunayEdge edgeA_4=(DelaunayEdge)otherFace.getOppositeEdge(eNodeB);
+    DelaunayEdge edgeB_4=(DelaunayEdge)otherFace.getOppositeEdge(eNodeA);
+    Triangle farSideP_A=edgeP_A.getOtherFace(t);
+    Triangle farSideP_B=edgeP_B.getOtherFace(t);
+    Triangle farSideA_4=edgeA_4.getOtherFace(otherFace);
+    Triangle farSideB_4=edgeB_4.getOtherFace(otherFace);
+    Triangle newTriangleP_A_4=new Triangle(edgeP_A,edgeA_4,edgeP_4);
+    Triangle newTriangleP_B_4=new Triangle(edgeP_B,edgeB_4,edgeP_4);
+    if (rejectSwap(t,otherFace,newTriangleP_A_4,newTriangleP_B_4)) {
+      LOGGER.finer("Rejected swap of " + t + " and "+ otherFace);
+    }
+ else {
+      edgeP_A.setOtherFace(newTriangleP_A_4,farSideP_A);
+      edgeP_B.setOtherFace(newTriangleP_B_4,farSideP_B);
+      edgeA_4.setOtherFace(newTriangleP_A_4,farSideA_4);
+      edgeB_4.setOtherFace(newTriangleP_B_4,farSideB_4);
+      edgeP_4.setFaceA(newTriangleP_A_4);
+      edgeP_4.setFaceB(newTriangleP_B_4);
+      e.disconnect();
+      triangleList.remove(t);
+      triangleList.remove(otherFace);
+      triangleList.add(newTriangleP_A_4);
+      triangleList.add(newTriangleP_B_4);
+      LOGGER.finer("swapped " + t + " and "+ otherFace);
+      LOGGER.finer("new triangles are " + newTriangleP_A_4 + " and "+ newTriangleP_B_4);
+      LOGGER.finer("Triangle list now is: " + triangleList);
+      legalizeEdge(newTriangleP_A_4,edgeA_4,p,triangleList);
+      legalizeEdge(newTriangleP_B_4,edgeB_4,p,triangleList);
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  if (value.length != 1) {
+    throw new SAXException("Internal error, ElementValues require an associated Element.");
+  }
+  String dec;
+  String cs;
+  String ts;
+  dec=attrs.getValue("","decimal");
+  if (dec == null) {
+    dec=attrs.getValue(GMLSchema.NAMESPACE.toString(),"decimal");
+  }
+  dec=((dec == null) || (dec == "")) ? "." : dec;
+  cs=attrs.getValue("","cs");
+  if (cs == null) {
+    cs=attrs.getValue(GMLSchema.NAMESPACE.toString(),"cs");
+  }
+  cs=((cs == null) || (cs == "")) ? ",\\s*" : (cs + "\\s*");
+  ts=attrs.getValue("","ts");
+  if (ts == null) {
+    ts=attrs.getValue(GMLSchema.NAMESPACE.toString(),"ts");
+  }
+  ts=((ts == null) || (ts == "") || ts.matches("\\s")) ? "\\s+" : (ts + "\\s*");
+  String val=(String)value[0].getValue();
+  String[] touples=val.split(ts);
+  Coordinate[] coordinates=new Coordinate[touples.length];
+  for (int i=0; i < touples.length; i++) {
+    String[] points=touples[i].split(cs);
+    double[] pts=new double[points.length];
+    for (int j=0; j < points.length; j++) {
+      String t="";
+      try {
+        if (!dec.equals(".")) {
+          dec=dec.replaceAll("\\","\\");
+          t=points[j].replaceAll(dec,".");
+        }
+ else {
+          t=points[j];
+        }
+        pts[j]=Double.parseDouble(t);
+      }
+ catch (      NumberFormatException e) {
+        logger.warning(e.toString());
+        logger.warning("Double = '" + t + "' "+ j+ "/"+ points.length+ "  Touples = "+ i+ "/"+ touples.length);
+        throw e;
+      }
+    }
+    if (pts.length == 1) {
+      coordinates[i]=new Coordinate(pts[0],0);
+    }
+ else {
+      if (pts.length == 2) {
+        coordinates[i]=new Coordinate(pts[0],pts[1]);
+      }
+ else {
+        coordinates[i]=new Coordinate(pts[0],pts[1],pts[2]);
+      }
+    }
+  }
+  return DefaultCoordinateSequenceFactory.instance().create(coordinates);
+}

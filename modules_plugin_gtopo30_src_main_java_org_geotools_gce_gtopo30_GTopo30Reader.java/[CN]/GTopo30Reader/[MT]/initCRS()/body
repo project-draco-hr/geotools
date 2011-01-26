@@ -1,0 +1,52 @@
+{
+  BufferedReader reader=null;
+  try {
+    reader=new BufferedReader(new FileReader(DataUtilities.urlToFile(prjURL)));
+    final StringBuilder buffer=new StringBuilder(reader.readLine());
+    if (buffer != null) {
+      String line=buffer.toString().trim();
+      if (!line.endsWith("POLAR") && !line.endsWith("GEOGRAPHIC")) {
+        while ((line=reader.readLine()) != null)         buffer.append(line);
+      }
+    }
+    reader.close();
+    final String crsDescription=buffer.toString().trim();
+    final DefaultGeographicCRS geoCRS=(DefaultGeographicCRS)CRS.decode("EPSG:4326",true);
+    if (crsDescription != null) {
+      if (crsDescription.endsWith("POLAR")) {
+        final CartesianCS cartCS=org.geotools.referencing.cs.DefaultCartesianCS.PROJECTED;
+        final MathTransformFactory mtFactory=ReferencingFactoryFinder.getMathTransformFactory(null);
+        final ParameterValueGroup parameters=mtFactory.getDefaultParameters("Polar_Stereographic");
+        parameters.parameter("central_meridian").setValue(0.0);
+        parameters.parameter("latitude_of_origin").setValue(-71.0);
+        parameters.parameter("scale_factor").setValue(1);
+        parameters.parameter("false_easting").setValue(0.0);
+        parameters.parameter("false_northing").setValue(0.0);
+        final ReferencingFactoryContainer factories=ReferencingFactoryContainer.instance(null);
+        final Map<String,String> properties=Collections.singletonMap("name","WGS 84 / Antartic Polar Stereographic");
+        return factories.createProjectedCRS(properties,geoCRS,null,parameters,cartCS);
+      }
+      if (crsDescription.endsWith("GEOGRAPHIC")) {
+        return geoCRS;
+      }
+      return CRS.parseWKT(crsDescription);
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+  }
+catch (  FactoryException e) {
+    LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+  }
+ finally {
+    if (reader != null)     try {
+      reader.close();
+    }
+ catch (    Exception e1) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e1.getLocalizedMessage(),e1);
+    }
+  }
+  final CoordinateReferenceSystem crs=AbstractGridFormat.getDefaultCRS();
+  LOGGER.info("PRJ file not found, proceeding with default crs");
+  return crs;
+}

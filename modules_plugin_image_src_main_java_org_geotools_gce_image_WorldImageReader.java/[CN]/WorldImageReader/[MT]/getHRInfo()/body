@@ -1,0 +1,38 @@
+{
+  final Iterator<ImageReader> it=ImageIO.getImageReaders(inStream);
+  if (!it.hasNext())   throw new DataSourceException("No reader avalaible for this source");
+  final ImageReader reader=(ImageReader)it.next();
+  readerSPI=reader.getOriginatingProvider();
+  reader.setInput(inStream);
+  numOverviews=wmsRequest ? 0 : reader.getNumImages(true) - 1;
+  int hrWidth=reader.getWidth(0);
+  int hrHeight=reader.getHeight(0);
+  final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
+  originalGridRange=new GridEnvelope2D(actualDim);
+  if (source instanceof File) {
+    prepareWorldImageGridToWorldTransform();
+    if (!metaFile) {
+      final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
+      tempTransform.translate(-0.5,-0.5);
+      originalEnvelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(actualDim));
+      originalEnvelope.setCoordinateReferenceSystem(crs);
+      highestRes=new double[2];
+      highestRes[0]=XAffineTransform.getScaleX0(tempTransform);
+      highestRes[1]=XAffineTransform.getScaleY0(tempTransform);
+    }
+ else {
+      highestRes=getResolution(originalEnvelope,actualDim,crs);
+      final GridToEnvelopeMapper mapper=new GridToEnvelopeMapper(originalGridRange,originalEnvelope);
+      mapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+      this.raster2Model=mapper.createTransform();
+    }
+  }
+  if (numOverviews >= 1) {
+    overViewResolutions=new double[numOverviews][2];
+    for (int i=0; i < numOverviews; i++) {
+      overViewResolutions[i][0]=(highestRes[0] * this.originalGridRange.getSpan(0)) / reader.getWidth(i + 1);
+      overViewResolutions[i][1]=(highestRes[1] * this.originalGridRange.getSpan(1)) / reader.getHeight(i + 1);
+    }
+  }
+ else   overViewResolutions=null;
+}

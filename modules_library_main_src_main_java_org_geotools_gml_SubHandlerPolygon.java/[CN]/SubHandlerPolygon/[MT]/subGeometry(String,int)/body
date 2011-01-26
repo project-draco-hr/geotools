@@ -1,0 +1,58 @@
+{
+  if (message.equals("LinearRing")) {
+    if (type == GEOMETRY_END) {
+      if (location == INNER_BOUNDARY) {
+        LinearRing ring=(LinearRing)currentHandler.create(geometryFactory);
+        Coordinate[] points=ring.getCoordinates();
+        if (cga.isCCW(points)) {
+          LOGGER.finer("good hole found");
+          innerBoundaries.add(ring);
+        }
+ else {
+          LOGGER.finer("bad hole found - fixing");
+          Coordinate[] newPoints=new Coordinate[points.length];
+          for (int i=0, j=points.length - 1; i < points.length; i++, j--) {
+            newPoints[i]=points[j];
+          }
+          try {
+            ring=geometryFactory.createLinearRing(newPoints);
+            innerBoundaries.add(ring);
+          }
+ catch (          TopologyException e) {
+            LOGGER.warning("Caught Topology exception in GMLPolygonHandler");
+            ring=null;
+          }
+        }
+      }
+ else       if (location == OUTER_BOUNDARY) {
+        outerBoundary=(LinearRing)currentHandler.create(geometryFactory);
+        Coordinate[] points=outerBoundary.getCoordinates();
+        if (cga.isCCW(points)) {
+          LOGGER.finer("bad outer ring - rebuilding");
+          Coordinate[] newPoints=new Coordinate[points.length];
+          for (int i=0, j=points.length - 1; i < points.length; i++, j--) {
+            newPoints[i]=points[j];
+          }
+          try {
+            outerBoundary=geometryFactory.createLinearRing(newPoints);
+          }
+ catch (          TopologyException e) {
+            LOGGER.warning("Caught Topology exception in " + "GMLPolygonHandler");
+            outerBoundary=null;
+          }
+        }
+      }
+    }
+ else     if (type == GEOMETRY_START) {
+      currentHandler=new SubHandlerLinearRing();
+    }
+  }
+ else   if (message.equals("outerBoundaryIs")) {
+    LOGGER.finer("new outer Boundary");
+    location=OUTER_BOUNDARY;
+  }
+ else   if (message.equals("innerBoundaryIs")) {
+    LOGGER.finer("new InnerBoundary");
+    location=INNER_BOUNDARY;
+  }
+}

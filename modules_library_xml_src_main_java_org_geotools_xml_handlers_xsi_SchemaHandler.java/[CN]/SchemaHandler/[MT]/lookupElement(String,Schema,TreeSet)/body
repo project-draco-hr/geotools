@@ -1,0 +1,29 @@
+{
+  if (s == null) {
+    return null;
+  }
+  logger.finest("looking for element in " + s.getTargetNamespace());
+  targets.add(s.getTargetNamespace());
+  if (s.getElements() != null) {
+    Element[] sts=s.getElements();
+    for (int i=0; (sts != null) && (i < sts.length); i++) {
+      String name=sts[i].getName();
+      logger.finest("checking element " + name);
+      if (localName.equalsIgnoreCase(name)) {
+        return sts[i];
+      }
+    }
+  }
+  if (s.getImports() != null) {
+    Schema[] ss=s.getImports();
+    for (int i=0; (ss != null) && (i < ss.length); i++) {
+      if (!targets.contains(ss[i].getTargetNamespace())) {
+        Element st=lookupElement(localName,ss[i],targets);
+        if (st != null) {
+          return st;
+        }
+      }
+    }
+  }
+  return null;
+}

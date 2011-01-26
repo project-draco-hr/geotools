@@ -1,0 +1,21 @@
+{
+  String extentSelect=getExtentSelectStatment(li);
+  String statementString=MessageFormat.format(extentSelect,new Object[]{li.getSpatialTableName()});
+  Envelope extent=null;
+  PreparedStatement s=con.prepareStatement(statementString);
+  ResultSet r=s.executeQuery();
+  if (r.next()) {
+    Object o=r.getObject(1);
+    String pgString=o.toString();
+    int start=pgString.indexOf("(") + 1;
+    int end=pgString.indexOf(")");
+    pgString=pgString.substring(start,end);
+    String[] coords=pgString.split(",");
+    String[] lower=coords[0].split(" ");
+    String[] upper=coords[1].split(" ");
+    extent=new Envelope(new Coordinate(new Double(lower[0]),new Double(lower[1])),new Coordinate(new Double(upper[0]),new Double(upper[1])));
+  }
+  r.close();
+  s.close();
+  return extent;
+}

@@ -1,0 +1,41 @@
+{
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  final GridCoverage2D source=coverage.view(ViewType.NATIVE);
+  final Envelope oldEnvelope=source.getEnvelope();
+  final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{oldEnvelope.getMinimum(0),oldEnvelope.getMinimum(1)},new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0) / 4,oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1)});
+  cropEnvelope.setCoordinateReferenceSystem(oldEnvelope.getCoordinateReferenceSystem());
+  GeometryFactory geometryFactory=JTSFactoryFinder.getGeometryFactory(JTSFactoryFinder.EMPTY_HINTS);
+  CoordinateSequence cs1=new CoordinateArraySequence(5);
+  cs1.setOrdinate(0,0,oldEnvelope.getMedian(0));
+  cs1.setOrdinate(0,1,oldEnvelope.getMaximum(1));
+  cs1.setOrdinate(1,0,oldEnvelope.getMaximum(0));
+  cs1.setOrdinate(1,1,oldEnvelope.getMedian(1));
+  cs1.setOrdinate(2,0,oldEnvelope.getMedian(0));
+  cs1.setOrdinate(2,1,oldEnvelope.getMinimum(1));
+  cs1.setOrdinate(3,0,oldEnvelope.getMinimum(0));
+  cs1.setOrdinate(3,1,oldEnvelope.getMedian(1));
+  cs1.setOrdinate(4,0,oldEnvelope.getMedian(0));
+  cs1.setOrdinate(4,1,oldEnvelope.getMaximum(1));
+  LinearRing shape1=geometryFactory.createLinearRing(cs1);
+  com.vividsolutions.jts.geom.Polygon poly1=geometryFactory.createPolygon(shape1,null);
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(source);
+  param.parameter("Envelope").setValue(cropEnvelope);
+  param.parameter("ROI").setValue(poly1);
+  GridCoverage2D cropped=(GridCoverage2D)processor.doOperation(param);
+  if (SHOW) {
+    Viewer.show(coverage,"Original");
+    Viewer.show(cropped,"Cropped");
+    Thread.sleep(10000);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(cropped.getRenderedImage()).getTiles());
+  }
+  RenderedImage raster=cropped.getRenderedImage();
+  assertEquals(0,raster.getMinX());
+  assertEquals(115,raster.getMinY());
+  assertEquals(113,raster.getWidth());
+  assertEquals(230,raster.getHeight());
+  assertEquals(source.getGridGeometry().getGridToCRS2D(),cropped.getGridGeometry().getGridToCRS2D());
+  assertFalse(cropEnvelope.equals(cropped.getEnvelope()));
+}

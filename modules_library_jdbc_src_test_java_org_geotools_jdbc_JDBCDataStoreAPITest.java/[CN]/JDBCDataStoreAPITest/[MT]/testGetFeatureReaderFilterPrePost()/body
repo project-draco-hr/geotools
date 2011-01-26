@@ -1,0 +1,17 @@
+{
+  Transaction t=new DefaultTransaction();
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  FilterFactory factory=CommonFactoryFinder.getFilterFactory(null);
+  FilterFunction_geometryType geomTypeExpr=new FilterFunction_geometryType();
+  geomTypeExpr.setParameters(Collections.singletonList(factory.property(aname("geom"))));
+  PropertyIsEqualTo filter=factory.equals(geomTypeExpr,factory.literal("Polygon"));
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),filter),t);
+  assertNotNull(reader);
+  assertFalse(reader.hasNext());
+  reader.close();
+  filter=factory.equals(geomTypeExpr,factory.literal("LineString"));
+  reader=dataStore.getFeatureReader(new DefaultQuery(tname("road"),filter),t);
+  assertTrue(reader.hasNext());
+  reader.close();
+  t.close();
+}

@@ -1,0 +1,17 @@
+{
+  SimpleFeatureTypeBuilder b=new SimpleFeatureTypeBuilder();
+  b.init(original);
+  b.attributes().clear();
+  for (  AttributeDescriptor descriptor : original.getAttributeDescriptors()) {
+    if (descriptor instanceof GeometryDescriptor) {
+      GeometryDescriptor geometryDescriptor=(GeometryDescriptor)descriptor;
+      AttributeTypeBuilder adjust=new AttributeTypeBuilder(b.factory);
+      adjust.init(geometryDescriptor);
+      adjust.setCRS(crs);
+      b.add(adjust.buildDescriptor(geometryDescriptor.getLocalName()));
+      continue;
+    }
+    b.add(descriptor);
+  }
+  return b.buildFeatureType();
+}

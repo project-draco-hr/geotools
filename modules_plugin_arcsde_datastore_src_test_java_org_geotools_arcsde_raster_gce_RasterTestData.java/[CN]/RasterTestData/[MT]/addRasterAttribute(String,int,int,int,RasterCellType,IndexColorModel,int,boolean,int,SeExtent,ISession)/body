@@ -1,0 +1,115 @@
+{
+  final SeRasterProducer prod=new SeRasterProducer(){
+    public void addConsumer(    SeRasterConsumer consumer){
+    }
+    public boolean isConsumer(    SeRasterConsumer consumer){
+      return false;
+    }
+    public void removeConsumer(    SeRasterConsumer consumer){
+    }
+    /** 
+ * Note that due to some synchronization problems inherent in the SDE api code, the
+ * startProduction() method MUST return before consumer.setScanLines() or
+ * consumer.setRasterTiles() is called. Hence the thread implementation.
+ */
+    public void startProduction(    final SeRasterConsumer consumer){
+      if (!(consumer instanceof SeRasterRenderedImage)) {
+        throw new IllegalArgumentException("You must set SeRasterAttr.setImportMode(false) to " + "load data using this SeProducer implementation.");
+      }
+      Thread runme=new Thread(){
+        @Override public void run(){
+          try {
+            PixelSampler sampler=PixelSampler.getSampler(pixelType);
+            for (int bandN=0; bandN < numberOfBands; bandN++) {
+              final byte[] imgBandData;
+              imgBandData=sampler.getImgBandData(imageWidth,imageHeight,bandN,numberOfBands);
+              consumer.setScanLines(imageHeight,imgBandData,null);
+              consumer.rasterComplete(SeRasterConsumer.SINGLEFRAMEDONE);
+            }
+            consumer.rasterComplete(SeRasterConsumer.STATICIMAGEDONE);
+          }
+ catch (          Exception se) {
+            se.printStackTrace();
+            consumer.rasterComplete(SeRasterConsumer.IMAGEERROR);
+          }
+        }
+      }
+;
+      runme.start();
+    }
+  }
+;
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+{
+        SeRasterAttr attr=new SeRasterAttr(true);
+        attr.setImageSize(imageWidth,imageHeight,numberOfBands);
+        int tileWidth=imageWidth >> 4;
+        int tileHeight=imageHeight >> 4;
+        attr.setTileSize(tileWidth,tileHeight);
+        attr.setPixelType(pixelType.getSeRasterPixelType());
+        attr.setCompressionType(SeRaster.SE_COMPRESSION_NONE);
+        attr.setPyramidInfo(maxPyramidLevel,skipLevelOne,interpolationType);
+        attr.setInterleave(true,SeRaster.SE_RASTER_INTERLEAVE_BIP);
+        attr.setMaskMode(false);
+        attr.setImportMode(false);
+        attr.setExtent(extent);
+        attr.setRasterProducer(prod);
+        SeInsert insert=new SeInsert(connection);
+        insert.intoTable(tableName,new String[]{"RASTER"});
+        insert.setWriteMode(false);
+        SeRow row=insert.getRowToSet();
+        row.setRaster(0,attr);
+        insert.execute();
+        insert.close();
+      }
+      if (colorModel != null) {
+        try {
+          SeQuery query=new SeQuery(connection,new String[]{"RASTER"},new SeSqlConstruct(tableName));
+          query.prepareQuery();
+          query.execute();
+          SeRow row=query.fetch();
+          SeRasterAttr attr=row.getRaster(0);
+          SeRaster raster;
+          try {
+            raster=attr.getRasterInfo();
+          }
+ catch (          CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+          }
+          SeRasterBand band1=raster.getBands()[0];
+          final int numEntries=colorModel.getMapSize();
+          final int numBanks=colorModel.getNumComponents();
+          final int colorMapType=numBanks == 3 ? SeRaster.SE_COLORMAP_RGB : SeRaster.SE_COLORMAP_RGBA;
+          final int dataType=pixelType.getDataBufferType();
+          DataBuffer dataBuffer;
+          if (DataBuffer.TYPE_BYTE == dataType) {
+            dataBuffer=new DataBufferByte(numEntries,numBanks);
+          }
+ else           if (DataBuffer.TYPE_USHORT == dataType) {
+            dataBuffer=new DataBufferShort(numEntries,numBanks);
+          }
+ else {
+            throw new IllegalArgumentException("data type: " + pixelType);
+          }
+          for (int elem=0; elem < numEntries; elem++) {
+            dataBuffer.setElem(0,colorModel.getRed(elem));
+            dataBuffer.setElem(1,colorModel.getGreen(elem));
+            dataBuffer.setElem(2,colorModel.getBlue(elem));
+            if (numBanks == 4) {
+              dataBuffer.setElem(3,colorModel.getAlpha(elem));
+            }
+          }
+          band1.setColorMap(colorMapType,dataBuffer);
+          band1.alter();
+        }
+ catch (        SeException e) {
+          e.printStackTrace();
+          throw new ArcSdeException(e);
+        }
+      }
+      return null;
+    }
+  }
+);
+}

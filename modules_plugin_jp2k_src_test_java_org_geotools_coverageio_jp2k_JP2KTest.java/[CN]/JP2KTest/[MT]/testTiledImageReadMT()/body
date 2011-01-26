@@ -1,0 +1,39 @@
+{
+  if (!testingEnabled()) {
+    return;
+  }
+  File file=null;
+  try {
+    file=TestData.file(this,"sample.jp2");
+  }
+ catch (  FileNotFoundException fnfe) {
+    LOGGER.warning("test-data not found: sample.jp2 \nTests are skipped");
+    return;
+  }
+  final JP2KFormat format=factorySpi.createFormat();
+  assertTrue(format.accepts(file));
+  final Hints hints=new Hints(Hints.OVERVIEW_POLICY,OverviewPolicy.getDefaultPolicy());
+  final JP2KReader reader=new JP2KReader(file,hints);
+  final ParameterValue<GridGeometry2D> gg=JP2KFormat.READ_GRIDGEOMETRY2D.createValue();
+  final ParameterValue<Boolean> useMT=JP2KFormat.USE_MULTITHREADING.createValue();
+  final ParameterValue<Boolean> useJAI=JP2KFormat.USE_JAI_IMAGEREAD.createValue();
+  final ParameterValue<String> tileSize=JP2KFormat.SUGGESTED_TILE_SIZE.createValue();
+  final ParameterValue<Color> transparentColor=JP2KFormat.INPUT_TRANSPARENT_COLOR.createValue();
+  transparentColor.setValue(new Color(0,0,0));
+  tileSize.setValue("128,128");
+  useMT.setValue(false);
+  useJAI.setValue(true);
+  final GeneralEnvelope oldEnvelope=reader.getOriginalEnvelope();
+  gg.setValue(new GridGeometry2D(reader.getOriginalGridRange(),oldEnvelope));
+  final GridCoverage2D gc=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,useJAI,useMT,tileSize,transparentColor});
+  assertNotNull(gc);
+  forceDataLoading(gc);
+  final MathTransform g2w=reader.getRaster2Model();
+  final AffineTransform at=(AffineTransform)g2w;
+  assertEquals(at.getScaleX(),0.9,DELTA);
+  assertEquals(at.getScaleY(),-0.9,DELTA);
+  assertEquals(at.getTranslateX(),-179.55,DELTA);
+  assertEquals(at.getTranslateY(),89.55,DELTA);
+  assertEquals(gc.getRenderedImage().getWidth(),400);
+  assertEquals(gc.getRenderedImage().getHeight(),200);
+}

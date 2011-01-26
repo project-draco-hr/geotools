@@ -1,0 +1,93 @@
+{
+  if (mt instanceof AffineTransform2D) {
+    return new WarpAffine((AffineTransform2D)mt);
+  }
+  if (maxDistanceSquared == 0) {
+    return new WarpAdapter(null,mt);
+  }
+  final double minx=domain.getMinX();
+  final double maxx=domain.getMaxX();
+  final double miny=domain.getMinY();
+  final double maxy=domain.getMaxY();
+  final int width=(int)(maxx - minx);
+  final int heigth=(int)(maxy - miny);
+  if (abs(width) == 0 || heigth == 0) {
+    throw new IllegalArgumentException("The domain is empty!");
+  }
+  int[] rowCols;
+  try {
+    rowCols=computeOptimalDepths(mt,minx,maxx,miny,maxy,0,0);
+  }
+ catch (  ExcessiveDepthException e) {
+    return new WarpAdapter(null,mt);
+  }
+  if (rowCols[0] == 0 && rowCols[1] == 0) {
+    ordinates[0]=minx;
+    ordinates[1]=miny;
+    ordinates[2]=minx;
+    ordinates[3]=maxy;
+    ordinates[4]=maxx;
+    ordinates[5]=miny;
+    mt.transform(ordinates,0,ordinates,0,3);
+    final double m00=(ordinates[4] - ordinates[0]) / width;
+    final double m10=(ordinates[5] - ordinates[1]) / width;
+    final double m01=(ordinates[2] - ordinates[0]) / heigth;
+    final double m11=(ordinates[3] - ordinates[1]) / heigth;
+    final double m02=ordinates[0];
+    final double m12=ordinates[1];
+    AffineTransform at=new AffineTransform(m00,m10,m01,m11,m02,m12);
+    at.translate(-minx,-miny);
+    XAffineTransform.round(at,1e-6);
+    LOGGER.log(Level.FINE,"Optimizing the warp into an affine transformation: {0}",at);
+    return new WarpAffine(at);
+  }
+ else {
+    int stepx=(int)(width / pow(2,rowCols[1]));
+    int stepy=(int)(heigth / pow(2,rowCols[0]));
+    int cols=(int)(width / stepx);
+    int rows=(int)(heigth / stepy);
+    int cmax=(int)(minx + cols * stepx);
+    int rmax=(int)(miny + rows * stepy);
+    if (cmax < maxx) {
+      if ((cmax + stepx) < cols * (stepx + 1)) {
+        cmax+=stepx;
+        cols++;
+      }
+ else {
+        stepx++;
+        cmax=(int)(minx + cols * stepx);
+      }
+    }
+    if (rmax < maxy) {
+      if ((rmax + stepy) < rows * (stepy + 1)) {
+        rmax+=stepy;
+        rows++;
+      }
+ else {
+        stepy++;
+        rmax=(int)(miny + rows * stepy);
+      }
+    }
+    final float[] warpPositions=new float[(rows + 1) * (cols + 1) * 2];
+    int r=(int)miny;
+    int idx=0;
+    while (r <= rmax) {
+      int c=(int)minx;
+      while (c <= cmax) {
+        warpPositions[idx++]=c;
+        warpPositions[idx++]=r;
+        c+=stepx;
+      }
+      r+=stepy;
+    }
+    if (DUMP_GRIDS) {
+      dumpPropertyFile(warpPositions,"original");
+    }
+    mt.transform(warpPositions,0,warpPositions,0,warpPositions.length / 2);
+    if (DUMP_GRIDS) {
+      dumpPropertyFile(warpPositions,"transformed");
+    }
+    LOGGER.log(Level.FINE,"Optimizing the warp into an grid warp {0} x {1}",new Object[]{rows,cols});
+    return new WarpGrid((int)minx,stepx,cols,(int)miny,stepy,rows,warpPositions);
+  }
+}

@@ -1,0 +1,106 @@
+{
+  final float tolerance=getGridTolerance();
+  final int xColumn=getCheckedColumnX(imageIndex);
+  final int yColumn=getCheckedColumnY(imageIndex);
+  final RecordList records=getRecords(imageIndex);
+  final int width=records.getPointCount(xColumn,tolerance);
+  final int height=records.getPointCount(yColumn,tolerance);
+  final int numSrcBands=records.getColumnCount() - (xColumn == yColumn ? 1 : 2);
+  final int[] srcBands;
+  final int[] dstBands;
+  final int sourceXSubsampling;
+  final int sourceYSubsampling;
+  final int subsamplingXOffset;
+  final int subsamplingYOffset;
+  final int destinationXOffset;
+  final int destinationYOffset;
+  if (param != null) {
+    srcBands=param.getSourceBands();
+    dstBands=param.getDestinationBands();
+    final Point offset=param.getDestinationOffset();
+    sourceXSubsampling=param.getSourceXSubsampling();
+    sourceYSubsampling=param.getSourceYSubsampling();
+    subsamplingXOffset=param.getSubsamplingXOffset();
+    subsamplingYOffset=param.getSubsamplingYOffset();
+    destinationXOffset=offset.x;
+    destinationYOffset=offset.y;
+  }
+ else {
+    srcBands=null;
+    dstBands=null;
+    sourceXSubsampling=1;
+    sourceYSubsampling=1;
+    subsamplingXOffset=0;
+    subsamplingYOffset=0;
+    destinationXOffset=0;
+    destinationYOffset=0;
+  }
+  final int numDstBands=(dstBands != null) ? dstBands.length : (srcBands != null) ? srcBands.length : numSrcBands;
+  final BufferedImage image=getDestination(imageIndex,param,width,height,null);
+  checkReadParamBandSettings(param,numSrcBands,image.getSampleModel().getNumBands());
+  final Rectangle srcRegion=new Rectangle();
+  final Rectangle dstRegion=new Rectangle();
+  computeRegions(param,width,height,image,srcRegion,dstRegion);
+  final int sourceXMin=srcRegion.x;
+  final int sourceYMin=srcRegion.y;
+  final int sourceXMax=srcRegion.width + sourceXMin;
+  final int sourceYMax=srcRegion.height + sourceYMin;
+  final WritableRaster raster=image.getRaster();
+  final int rasterWidth=raster.getWidth();
+  final int rasterHeigth=raster.getHeight();
+  final int columnCount=records.getColumnCount();
+  final int dataCount=records.getDataCount();
+  final float[] data=records.getData();
+  final double xmin=records.getMinimum(xColumn);
+  final double ymin=records.getMinimum(yColumn);
+  final double xmax=records.getMaximum(xColumn);
+  final double ymax=records.getMaximum(yColumn);
+  final double scaleX=(width - 1) / (xmax - xmin);
+  final double scaleY=(height - 1) / (ymax - ymin);
+  if (CLEAR) {
+    final int minX=dstRegion.x;
+    final int minY=dstRegion.y;
+    final int maxX=dstRegion.width + minX;
+    final int maxY=dstRegion.height + minY;
+    for (int b=(dstBands != null) ? dstBands.length : numDstBands; --b >= 0; ) {
+      final int band=(dstBands != null) ? dstBands[b] : b;
+      for (int y=minY; y < maxY; y++) {
+        for (int x=minX; x < maxX; x++) {
+          raster.setSample(x,y,band,Float.NaN);
+        }
+      }
+    }
+  }
+  final int[] columns=new int[(srcBands != null) ? srcBands.length : numDstBands];
+  for (int i=0; i < columns.length; i++) {
+    columns[i]=getColumn(imageIndex,srcBands != null ? srcBands[i] : i);
+  }
+  for (int i=0; i < dataCount; i+=columnCount) {
+    final double fx=(data[i + xColumn] - xmin) * scaleX;
+    final double fy=(ymax - data[i + yColumn]) * scaleY;
+    int x=(int)Math.round(fx);
+    int y=(int)Math.round(fy);
+    if (!(Math.abs(x - fx) <= tolerance)) {
+      fireBadCoordinate(data[i + xColumn]);
+      continue;
+    }
+    if (!(Math.abs(y - fy) <= tolerance)) {
+      fireBadCoordinate(data[i + yColumn]);
+      continue;
+    }
+    if (x >= sourceXMin && x < sourceXMax && y >= sourceYMin && y < sourceYMax) {
+      x-=subsamplingXOffset;
+      y-=subsamplingYOffset;
+      if ((x % sourceXSubsampling) == 0 && (y % sourceYSubsampling) == 0) {
+        x=x / sourceXSubsampling + (destinationXOffset - sourceXMin);
+        y=y / sourceYSubsampling + (destinationYOffset - sourceYMin);
+        if (x < rasterWidth && y < rasterHeigth) {
+          for (int j=0; j < columns.length; j++) {
+            raster.setSample(x,y,(dstBands != null ? dstBands[j] : j),data[i + columns[j]]);
+          }
+        }
+      }
+    }
+  }
+  return image;
+}

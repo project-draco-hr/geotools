@@ -1,0 +1,30 @@
+{
+  try {
+    Envelope env=new Envelope2D(crs,0,0,1000,1000);
+    List<MappedPosition> mp=generateMappedPositions(env,15,1,crs);
+    GeneralMatrix M=new GeneralMatrix(3,3);
+    double[] m0={1,0,0};
+    double[] m1={0,1,0};
+    double[] m2={0,0,1};
+    M.setRow(0,m0);
+    M.setRow(1,m1);
+    M.setRow(2,m2);
+    WarpGridBuilder builder=new RSGridBuilder(mp,3,3,env,ProjectiveTransform.create(M));
+    GridCoverage2D rubberdx=(new GridCoverageFactory()).create("RubberSheet - dx",builder.getDxGrid(),env);
+    GridCoverage2D rubberdy=(new GridCoverageFactory()).create("RubberSheet - dy",builder.getDyGrid(),env);
+    if (show == true) {
+      rubberdx.show();
+      rubberdy.show();
+    }
+    if (write == true) {
+      WorldImageWriter writerx=new WorldImageWriter((Object)(new File(path + "/rubberdx.png")));
+      writerx.write(rubberdx,null);
+      WorldImageWriter writery=new WorldImageWriter((Object)(new File(path + "/rubberdy.png")));
+      writery.write(rubberdy,null);
+    }
+    assertBuilder(builder);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+}

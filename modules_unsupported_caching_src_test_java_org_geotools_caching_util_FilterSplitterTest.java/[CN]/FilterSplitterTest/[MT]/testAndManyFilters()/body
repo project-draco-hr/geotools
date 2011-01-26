@@ -1,0 +1,28 @@
+{
+  BBoxFilterSplitter splitter=new BBoxFilterSplitter();
+  List<Filter> filters=new ArrayList<Filter>();
+  filters.add(bb);
+  filters.add(bb2);
+  filters.add(att);
+  filters.add(bso);
+  Filter and=ff.and(filters);
+  and.accept(splitter,null);
+  Envelope tmp=new Envelope(bbenv);
+  tmp.expandToInclude(bb2env);
+  tmp.expandToInclude(bsoenv);
+  assertEquals(tmp,splitter.getEnvelope());
+  assertEquals(and,splitter.getFilterPost());
+  Filter bbox=ff.bbox("geom",500,210,2000,200,"srs");
+  Coordinate[] coords=new Coordinate[]{new Coordinate(205,455),new Coordinate(205,500),new Coordinate(210,500),new Coordinate(210,455),new Coordinate(205,455)};
+  CoordinateArraySequence seq=new CoordinateArraySequence(coords);
+  LinearRing ls=new LinearRing(seq,new GeometryFactory());
+  Polygon ret=new Polygon(ls,null,new GeometryFactory());
+  Filter intersects=((FilterFactoryImpl)ff).intersects(ff.property("geom"),ff.literal(ret));
+  and=ff.and(intersects,bbox);
+  splitter=new BBoxFilterSplitter();
+  and.accept(splitter,null);
+  tmp=new Envelope(500,2000,200,210);
+  tmp.expandToInclude(ret.getEnvelopeInternal());
+  assertEquals(ff.bbox("geom",tmp.getMinX(),tmp.getMinY(),tmp.getMaxX(),tmp.getMaxY(),"srs"),splitter.getFilterPre());
+  assertEquals(and,splitter.getFilterPost());
+}

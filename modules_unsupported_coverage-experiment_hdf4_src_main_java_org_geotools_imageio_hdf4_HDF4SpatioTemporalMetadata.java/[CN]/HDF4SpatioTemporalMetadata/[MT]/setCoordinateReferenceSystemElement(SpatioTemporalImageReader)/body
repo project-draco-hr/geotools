@@ -1,0 +1,44 @@
+{
+  getAttributesMap(reader);
+  init(reader);
+  CoordinateReferenceSystem crs=getCRS(SpatioTemporalMetadataFormat.PROJECTED);
+  crs.setBaseCRS(new Identification("WGS 84",null,null,"EPSG:4326"));
+switch (hdf4_type) {
+case TeraScan:
+    setTerascanCRS(crs);
+  break;
+case APS:
+setAPSCRS(crs);
+break;
+}
+setHasTemporalCRS(true);
+final TemporalCRS tCRS=getTemporalCRS();
+tCRS.setDatum(new Identification("ISO8601",null,null,null));
+String startTime=null;
+String endTime=null;
+Date startDate=null;
+Date endDate=null;
+switch (hdf4_type) {
+case APS:
+startTime=attributesMap.get("timeStart");
+endTime=attributesMap.get("timeEnd");
+startDate=HDF4Utilities.getDateTime(startTime,HDF4Utilities.APS_DATETIME_FORMAT);
+endDate=HDF4Utilities.getDateTime(endTime,HDF4Utilities.APS_DATETIME_FORMAT);
+break;
+case TeraScan:
+final String startDates=attributesMap.get("data_start_date");
+final String startTimes=attributesMap.get("data_start_time");
+final String endDates=attributesMap.get("data_end_date");
+final String endTimes=attributesMap.get("data_end_time");
+startTime=new StringBuilder(startDates).append(" ").append(startTimes).toString();
+endTime=new StringBuilder(endDates).append(" ").append(endTimes).toString();
+startDate=HDF4Utilities.getDateTime(startTime,HDF4Utilities.TERASCAN_DATETIME_FORMAT);
+endDate=HDF4Utilities.getDateTime(endTime,HDF4Utilities.TERASCAN_DATETIME_FORMAT);
+break;
+}
+if (startDate != null) startInstant=new DefaultInstant(new DefaultPosition(startDate));
+if (endDate != null) endInstant=new DefaultInstant(new DefaultPosition(endDate));
+final String timeOrigin=startInstant.getPosition().getDateTime().toString();
+tCRS.addAxis(new Identification("TIME"),"future","hours since " + timeOrigin,null);
+tCRS.addOrigin(timeOrigin);
+}

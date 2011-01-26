@@ -1,0 +1,54 @@
+{
+  String line;
+  File file=new File(regionFilePath);
+  if (!file.exists()) {
+    String nameLower=file.getName().toLowerCase();
+    String nameUpper=file.getName().toUpperCase();
+    String baseDir=file.getParent();
+    File tmpFile=null;
+    if ((tmpFile=new File(baseDir + File.separator + nameLower)).exists()) {
+      file=tmpFile;
+    }
+ else     if ((tmpFile=new File(baseDir + File.separator + nameUpper)).exists()) {
+      file=tmpFile;
+    }
+ else {
+      BufferedWriter out=new BufferedWriter(new FileWriter(file));
+      out.write(BLANK_REGION);
+      out.close();
+    }
+  }
+  BufferedReader windReader=new BufferedReader(new FileReader(file));
+  LinkedHashMap<String,String> store=new LinkedHashMap<String,String>();
+  while ((line=windReader.readLine()) != null) {
+    StringTokenizer tok=new StringTokenizer(line,":");
+    if (tok.countTokens() == 2) {
+      String key=tok.nextToken().trim();
+      String value=tok.nextToken().trim();
+      if ((key.indexOf("res") != -1 && key.indexOf("resol") == -1) || key.indexOf("res3") != -1) {
+        store.put(key.replaceAll("res","resol"),value);
+      }
+ else       store.put(key,value);
+    }
+  }
+  store.put("north",new java.lang.Double(region.getNorth()).toString());
+  store.put("south",new java.lang.Double(region.getSouth()).toString());
+  store.put("east",new java.lang.Double(region.getEast()).toString());
+  store.put("west",new java.lang.Double(region.getWest()).toString());
+  store.put("n-s resol",new java.lang.Double(region.getNSResolution()).toString());
+  store.put("e-w resol",new java.lang.Double(region.getWEResolution()).toString());
+  store.put("cols",new java.lang.Integer(region.getCols()).toString());
+  store.put("rows",new java.lang.Integer(region.getRows()).toString());
+  windReader.close();
+  windReader=null;
+  StringBuffer data=new StringBuffer(512);
+  Set<Entry<String,String>> entrySet=store.entrySet();
+  for (  Entry<String,String> entry : entrySet) {
+    data.append(entry.getKey() + ":   " + entry.getValue()+ "\n");
+  }
+  BufferedWriter windWriter=new BufferedWriter(new FileWriter(file));
+  windWriter.write(data.toString());
+  windWriter.flush();
+  windWriter.close();
+  windWriter=null;
+}

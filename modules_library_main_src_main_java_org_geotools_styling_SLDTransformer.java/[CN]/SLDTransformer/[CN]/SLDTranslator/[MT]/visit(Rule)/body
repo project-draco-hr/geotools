@@ -1,0 +1,40 @@
+{
+  start("Rule");
+  if (rule.getName() != null)   element("Name",rule.getName());
+  if (rule.getTitle() != null)   element("Title",rule.getTitle());
+  if (rule.getAbstract() != null)   element("Abstract",rule.getAbstract());
+  Graphic[] gr=rule.getLegendGraphic();
+  for (int i=0; i < gr.length; i++) {
+    start("LegendGraphic");
+    gr[i].accept(this);
+    end("LegendGraphic");
+  }
+  Filter filter=rule.getFilter();
+  if (filter == null || filter == Filter.INCLUDE) {
+  }
+ else {
+    try {
+      contentHandler.startElement("","","ogc:Filter",NULL_ATTS);
+      filterTranslator.encode(filter);
+      contentHandler.endElement("","","ogc:Filter");
+    }
+ catch (    SAXException se) {
+      throw new RuntimeException(se);
+    }
+  }
+  if (rule.isElseFilter()) {
+    start("ElseFilter");
+    end("ElseFilter");
+  }
+  if (rule.getMinScaleDenominator() != 0.0) {
+    element("MinScaleDenominator",rule.getMinScaleDenominator() + "");
+  }
+  if (rule.getMaxScaleDenominator() != Double.POSITIVE_INFINITY) {
+    element("MaxScaleDenominator",rule.getMaxScaleDenominator() + "");
+  }
+  Symbolizer[] sym=rule.getSymbolizers();
+  for (int i=0; i < sym.length; i++) {
+    sym[i].accept(this);
+  }
+  end("Rule");
+}

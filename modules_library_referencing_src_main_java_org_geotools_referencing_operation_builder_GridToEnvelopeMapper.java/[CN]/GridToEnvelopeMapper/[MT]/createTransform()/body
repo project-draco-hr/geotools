@@ -1,0 +1,42 @@
+{
+  if (transform == null) {
+    final GridEnvelope gridRange=getGridRange();
+    final Envelope userRange=getEnvelope();
+    final boolean swapXY=getSwapXY();
+    final boolean[] reverse=getReverseAxis();
+    final PixelInCell gridType=getPixelAnchor();
+    final int dimension=gridRange.getDimension();
+    final double translate;
+    if (PixelInCell.CELL_CENTER.equals(gridType)) {
+      translate=0.5;
+    }
+ else     if (PixelInCell.CELL_CORNER.equals(gridType)) {
+      translate=0.0;
+    }
+ else {
+      throw new IllegalStateException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"gridType",gridType));
+    }
+    final Matrix matrix=MatrixFactory.create(dimension + 1);
+    for (int i=0; i < dimension; i++) {
+      int j=i;
+      if (swapXY && j <= 1) {
+        j=1 - j;
+      }
+      double scale=userRange.getSpan(j) / gridRange.getSpan(i);
+      double offset;
+      if (reverse == null || j >= reverse.length || !reverse[j]) {
+        offset=userRange.getMinimum(j);
+      }
+ else {
+        scale=-scale;
+        offset=userRange.getMaximum(j);
+      }
+      offset-=scale * (gridRange.getLow(i) - translate);
+      matrix.setElement(j,j,0.0);
+      matrix.setElement(j,i,scale);
+      matrix.setElement(j,dimension,offset);
+    }
+    transform=ProjectiveTransform.create(matrix);
+  }
+  return transform;
+}

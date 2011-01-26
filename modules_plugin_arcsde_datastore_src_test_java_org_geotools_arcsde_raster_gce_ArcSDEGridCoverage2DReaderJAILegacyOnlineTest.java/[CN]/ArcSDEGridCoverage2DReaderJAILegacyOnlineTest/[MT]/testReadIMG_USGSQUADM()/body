@@ -1,0 +1,65 @@
+{
+  initJAI();
+  doWriteToDisk=false;
+  tableName="SDE.RASTER.IMG_USGSQUADM";
+  getReader();
+  final int count=10;
+  final int threads=30;
+  final AtomicInteger writeCount=new AtomicInteger();
+  Stopwatch sw=new Stopwatch();
+  sw.start();
+  List<Callable<Object>> tasks=new ArrayList<Callable<Object>>(threads);
+  final long[] stats={Long.MAX_VALUE,Long.MIN_VALUE,0,0};
+  for (int t=0; t < threads; t++) {
+    tasks.add(new Callable<Object>(){
+      public Object call() throws Exception {
+        try {
+          final AbstractGridCoverage2DReader reader=getReader();
+          assertNotNull("Couldn't obtain a reader for " + tableName,reader);
+          final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope();
+          final GridEnvelope originalGridRange=reader.getOriginalGridRange();
+          final int reqWidth=originalGridRange.getSpan(0) / 200;
+          final int reqHeight=originalGridRange.getSpan(1) / 200;
+          for (int i=0; i < count; i++) {
+            final GeneralEnvelope reqEnv=new GeneralEnvelope(originalEnvelope);
+{
+              double dx=(originalEnvelope.getSpan(0) / 2) / (2 * i + 1);
+              double dy=(originalEnvelope.getSpan(1) / 2) / (2 * i + 1);
+              reqEnv.setEnvelope(originalEnvelope.getMedian(0) - dx,originalEnvelope.getMedian(1) - dy,originalEnvelope.getMedian(0) + dx,originalEnvelope.getMedian(1) + dy);
+            }
+            final GridCoverage2D coverage=readCoverage(reader,reqWidth,reqHeight,reqEnv);
+            assertNotNull("read coverage returned null",coverage);
+            RenderedImage image=coverage.view(ViewType.PHOTOGRAPHIC).getRenderedImage();
+            Stopwatch sw=new Stopwatch();
+            sw.start();
+            writeToDisk(image,"testRead_" + tableName);
+            sw.stop();
+            long memMB=(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024;
+            System.err.println("wrote #" + writeCount.incrementAndGet() + " in "+ sw.getTimeString()+ ": Mem: "+ memMB+ "M. Thread: "+ Thread.currentThread().getName()+ ", iteration #"+ i);
+synchronized (stats) {
+              stats[0]=Math.min(stats[0],sw.getTime());
+              stats[1]=Math.max(stats[1],sw.getTime());
+              stats[2]=stats[2] + sw.getTime();
+              stats[3]=Math.max(stats[3],memMB);
+            }
+          }
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+          throw e;
+        }
+        return null;
+      }
+    }
+);
+  }
+  ExecutorService threadPool=Executors.newFixedThreadPool(threads);
+  threadPool.invokeAll(tasks);
+  threadPool.shutdown();
+  while (!threadPool.isTerminated()) {
+    Thread.sleep(100);
+  }
+  sw.stop();
+  System.err.println("____ Finished in " + sw.getTimeString() + ". Min: "+ stats[0]+ ", Max: "+ stats[1]+ ", total execution time: "+ stats[2]+ ", Avg: "+ (stats[2] / (threads * count))+ ". Max mem: "+ stats[3]+ "MB");
+  System.err.println("__________________\n  SNAPSHOT!!!!!!!!");
+}

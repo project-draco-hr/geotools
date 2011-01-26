@@ -1,0 +1,37 @@
+{
+  return new SimpleFeatureIterator(){
+    SimpleFeatureType schema;
+    Object next;
+    public boolean hasNext(){
+      if (next != null) {
+        return true;
+      }
+      next=parser.parse();
+      return next != null;
+    }
+    public SimpleFeature next(){
+      if (next == null) {
+        next=parser.parse();
+      }
+      if (next != null) {
+        try {
+          if (schema == null) {
+            schema=simpleType(next);
+          }
+          SimpleFeature feature=simpleFeature(next,schema);
+          return feature;
+        }
+  finally {
+          next=null;
+        }
+      }
+ else {
+        return null;
+      }
+    }
+    public void close(){
+      schema=null;
+    }
+  }
+;
+}

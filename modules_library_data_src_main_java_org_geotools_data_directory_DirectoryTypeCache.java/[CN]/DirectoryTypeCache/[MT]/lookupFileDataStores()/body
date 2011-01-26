@@ -1,0 +1,24 @@
+{
+  List<FactoryAdapter> adapters=new ArrayList<FactoryAdapter>();
+  Iterator<DataStoreFactorySpi> it=DataStoreFinder.getAllDataStores();
+  while (it.hasNext()) {
+    DataStoreFactorySpi factory=it.next();
+    Param[] params=factory.getParametersInfo();
+    if (params == null) {
+      LOGGER.fine("DataStore factory " + factory + " returns null from getParametersInfo!");
+      continue;
+    }
+    Param fileParam=null;
+    Param nsParam=null;
+    for (    Param param : params) {
+      Class<?> type=param.type;
+      String key=param.key;
+      if (File.class.isAssignableFrom(type) || URL.class.isAssignableFrom(type))       fileParam=param;
+ else       if (key.equalsIgnoreCase("namespace") && (String.class.isAssignableFrom(type) || URI.class.isAssignableFrom(type)))       nsParam=param;
+    }
+    if (fileParam != null) {
+      adapters.add(new FactoryAdapter(factory,fileParam,nsParam));
+    }
+  }
+  return adapters;
+}

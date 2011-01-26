@@ -1,0 +1,26 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  ds.setVersioned("rail",true,"mambo","Version enabling rails");
+  Transaction t=createTransaction("serial","Feature modification");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> fw=ds.getFeatureWriter("rail",Filter.INCLUDE,t);
+  assertTrue(fw.hasNext());
+  SimpleFeature f=fw.next();
+  f.setDefaultGeometry(line(new int[]{0,0,-10,-10}));
+  fw.write();
+  fw.close();
+  t.commit();
+  fw=ds.getFeatureWriterAppend("rail",t);
+  f=fw.next();
+  f.setDefaultGeometry(line(new int[]{-10,-10,-20,-10}));
+  fw.write();
+  assertEquals("rail.2",f.getID());
+  fw.close();
+  t.commit();
+  fw=ds.getFeatureWriter("rail",ff.id(Collections.singleton(ff.featureId("rail.1"))),t);
+  assertTrue(fw.hasNext());
+  f=fw.next();
+  fw.remove();
+  fw.close();
+  t.commit();
+  t.close();
+}

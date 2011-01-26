@@ -1,0 +1,23 @@
+{
+  Element e=value[0].getElement();
+  if (e == null) {
+    if (!element.isNillable())     throw new SAXException("Internal error, ElementValues require an associated Element.");
+    return null;
+  }
+  GeometryFactory gf=new GeometryFactory(DefaultCoordinateSequenceFactory.instance());
+  LinearRing outerLR=null;
+  LinearRing[] innerLR=new LinearRing[(value.length > 1) ? (value.length - 1) : 0];
+  int innerIndex=0;
+  for (int i=0; i < value.length; i++) {
+    if (elements[0].getName().equalsIgnoreCase(value[i].getElement().getName())) {
+      outerLR=(LinearRing)value[i].getValue();
+    }
+ else {
+      innerLR[innerIndex++]=(LinearRing)value[i].getValue();
+    }
+  }
+  Polygon p=gf.createPolygon(outerLR,innerLR);
+  ElementValue[] ev=new ElementValue[1];
+  ev[0]=new DefaultElementValue(element,p);
+  return AbstractGeometryType.getInstance().getValue(element,ev,attrs,hints);
+}

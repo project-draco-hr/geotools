@@ -1,0 +1,48 @@
+{
+  DataInputStream[] in=new DataInputStream[tempFiles.length];
+  try {
+    IndexRecord[] recs=new IndexRecord[tempFiles.length];
+    for (int i=0; i < tempFiles.length; i++) {
+      in[i]=new DataInputStream(new FileInputStream(tempFiles[i]));
+      recs[i]=null;
+    }
+    currentChannel=writeChannel;
+    allocateBuffers();
+    writeBuffer.position(HEADER_SIZE);
+    position=0;
+    int streamsReady;
+    IndexRecord min;
+    int mpos;
+    do {
+      min=null;
+      mpos=-1;
+      streamsReady=recs.length;
+      for (int j=0; j < recs.length; j++) {
+        if (recs[j] == null) {
+          try {
+            recs[j]=readRecord(in[j]);
+          }
+ catch (          EOFException e) {
+            streamsReady--;
+            continue;
+          }
+        }
+        if (min == null || (min.compareTo(recs[j]) > 0)) {
+          min=recs[j];
+          mpos=j;
+        }
+      }
+      if (mpos != -1)       recs[mpos]=null;
+      write(min);
+    }
+ while (streamsReady > 0);
+  }
+  finally {
+    for (int i=0; i < in.length; i++) {
+      if (in[i] != null)       in[i].close();
+    }
+    drain();
+    writeHeader();
+    close();
+  }
+}

@@ -1,0 +1,17 @@
+{
+  ReferencedEnvelope world=new ReferencedEnvelope(-180,180,-50,50,WGS84);
+  ReferencedEnvelope mercatorEnvelope=world.transform(MERCATOR,true);
+  Geometry g=new WKTReader().read("LINESTRING(170 -50, 190 50)");
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(mercatorEnvelope,true);
+  assertTrue(handler.requiresProcessing(WGS84,g));
+  Geometry preProcessed=handler.preProcess(WGS84,g);
+  assertEquals(g,preProcessed);
+  Geometry transformed=JTS.transform(g,CRS.findMathTransform(WGS84,MERCATOR,true));
+  Geometry postProcessed=handler.postProcess(transformed);
+  assertTrue(postProcessed instanceof MultiLineString);
+  MultiLineString mls=(MultiLineString)postProcessed;
+  assertEquals(2,mls.getNumGeometries());
+  double twentyDegWidth=mercatorEnvelope.getWidth() / 18;
+  assertEquals(twentyDegWidth,mls.getGeometryN(0).getEnvelopeInternal().getWidth(),EPS);
+  assertEquals(twentyDegWidth,mls.getGeometryN(1).getEnvelopeInternal().getWidth(),EPS);
+}

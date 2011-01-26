@@ -1,0 +1,42 @@
+{
+  if (!hasQuantitative) {
+    return null;
+  }
+  int count=0;
+  double[] padValues=null;
+  final int size=categories.size();
+  for (int i=0; i < size; i++) {
+    final Category category=categories.get(i);
+    if (!category.isQuantitative()) {
+      final double min=category.minimum;
+      final double max=category.maximum;
+      if (!Double.isNaN(min) || !Double.isNaN(max)) {
+        if (padValues == null) {
+          padValues=new double[size - i];
+        }
+        if (count >= padValues.length) {
+          padValues=XArray.resize(padValues,count * 2);
+        }
+        padValues[count++]=min;
+        if (max != min) {
+          int lower=(int)min;
+          int upper=(int)max;
+          if (lower != min || upper != max || !Classes.isInteger(category.getRange().getElementClass())) {
+            throw new IllegalStateException(Errors.format(ErrorKeys.NON_INTEGER_CATEGORY));
+          }
+          final int requiredLength=count + (upper - lower);
+          if (requiredLength > padValues.length) {
+            padValues=XArray.resize(padValues,requiredLength * 2);
+          }
+          while (++lower <= upper) {
+            padValues[count++]=lower;
+          }
+        }
+      }
+    }
+  }
+  if (padValues != null) {
+    padValues=XArray.resize(padValues,count);
+  }
+  return padValues;
+}

@@ -1,0 +1,45 @@
+{
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  final GridCoverage2D source=EXAMPLES.get(2).view(ViewType.NATIVE);
+  final Envelope envelope=source.getEnvelope();
+  final RenderedImage rgbImage=new ImageWorker(source.getRenderedImage()).forceComponentColorModel().getRenderedImage();
+  final SampleModel sm=rgbImage.getSampleModel();
+  final ColorModel cm=rgbImage.getColorModel();
+  final int numBands=sm.getNumBands();
+  final GridSampleDimension[] bands=new GridSampleDimension[numBands];
+  for (int i=0; i < numBands; i++) {
+    final ColorInterpretation colorInterpretation=TypeMap.getColorInterpretation(cm,i);
+    if (colorInterpretation == null)     assertFalse("Unrecognized sample dimension type",true);
+    bands[i]=new GridSampleDimension(colorInterpretation.name()).geophysics(true);
+  }
+  final GridCoverage2D newCoverage=CoverageFactoryFinder.getGridCoverageFactory(null).create("sample",rgbImage,envelope,bands,null,null);
+  assertTrue(newCoverage.getNumSampleDimensions() == 3);
+  ParameterValueGroup param=processor.getOperation("SelectSampleDimension").getParameters();
+  param.parameter("Source").setValue(newCoverage);
+  param.parameter("SampleDimensions").setValue(new int[]{0});
+  GridCoverage2D singleBanded=(GridCoverage2D)processor.doOperation(param);
+  if (SHOW) {
+    Viewer.show(source);
+    Viewer.show(singleBanded);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(singleBanded.getRenderedImage()).getTiles());
+  }
+  RenderedImage raster=singleBanded.getRenderedImage();
+  assertEquals(1,raster.getSampleModel().getNumBands());
+  assertNotNull(raster.getColorModel());
+  param=processor.getOperation("SelectSampleDimension").getParameters();
+  param.parameter("Source").setValue(newCoverage);
+  param.parameter("SampleDimensions").setValue(new int[]{2});
+  singleBanded=(GridCoverage2D)processor.doOperation(param);
+  if (SHOW) {
+    Viewer.show(source);
+    Viewer.show(singleBanded);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(singleBanded.getRenderedImage()).getTiles());
+  }
+  raster=singleBanded.getRenderedImage();
+  assertEquals(1,raster.getSampleModel().getNumBands());
+  assertNotNull(raster.getColorModel());
+}

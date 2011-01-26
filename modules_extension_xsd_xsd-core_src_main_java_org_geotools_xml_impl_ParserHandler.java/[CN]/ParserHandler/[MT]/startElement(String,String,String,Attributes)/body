@@ -1,0 +1,239 @@
+{
+  if (logger.isLoggable(Level.FINEST)) {
+    logger.finest("startElement(" + uri + ","+ localName+ ","+ qName);
+  }
+  if (schemas == null) {
+    String[] locations=null;
+    for (int i=0; i < attributes.getLength(); i++) {
+      String name=attributes.getQName(i);
+      if (name.endsWith("schemaLocation")) {
+        logger.finer("schemaLocation found: " + attributes.getValue(i));
+        locations=attributes.getValue(i).split(" +");
+        break;
+      }
+    }
+    if (!isStrict() && (locations == null)) {
+      logger.finer("No schemaLocation found, using '" + config.getNamespaceURI() + " "+ config.getSchemaFileURL());
+      locations=new String[]{config.getNamespaceURI(),config.getSchemaFileURL()};
+    }
+    XSDSchemaLocator[] locators=findSchemaLocators();
+    XSDSchemaLocationResolver[] resolvers=findSchemaLocationResolvers();
+    if ((locations != null) && (locations.length > 0)) {
+      schemas=new XSDSchema[locations.length / 2];
+      for (int i=0; i < locations.length; i+=2) {
+        String namespace=locations[i];
+        String location=null;
+        if (i + 1 < locations.length) {
+          location=locations[i + 1];
+        }
+ else {
+          logger.warning("Schema location not specified as namespace/location pair. " + "Ignoring " + namespace);
+          continue;
+        }
+        for (int j=0; j < resolvers.length; j++) {
+          String override=resolvers[j].resolveSchemaLocation(null,namespace,location);
+          if (override != null) {
+            override=override.replaceAll(" ","%20");
+            logger.finer("Found override for " + namespace + ": "+ location+ " ==> "+ override);
+            location=override;
+            break;
+          }
+        }
+        for (int j=0; j < locators.length; j++) {
+          XSDSchema schema=locators[j].locateSchema(null,namespace,location,null);
+          if (schema != null) {
+            schemas[i / 2]=schema;
+            break;
+          }
+        }
+        if (schemas[i / 2] == null) {
+          if (isValidating()) {
+            try {
+              Schemas.validateImportsIncludes(location,locators,resolvers);
+            }
+ catch (            IOException e) {
+              throw (SAXException)new SAXException("error validating").initCause(e);
+            }
+          }
+          try {
+            schemas[i / 2]=Schemas.parse(location,locators,resolvers);
+          }
+ catch (          Exception e) {
+            String msg="Error parsing: " + location;
+            logger.warning(msg);
+            if (isStrict()) {
+              throw (SAXException)new SAXException(msg).initCause(e);
+            }
+          }
+        }
+      }
+    }
+ else {
+      for (int i=0; i < locators.length; i++) {
+        XSDSchema schema=locators[i].locateSchema(null,uri,null,null);
+        if (schema != null) {
+          schemas=new XSDSchema[]{schema};
+          break;
+        }
+      }
+    }
+    int n=0;
+    for (int i=0; i < schemas.length; i++) {
+      if (schemas[i] != null) {
+        n++;
+      }
+    }
+    if (n != schemas.length) {
+      XSDSchema[] nschemas=new XSDSchema[n];
+      int j=0;
+      for (int i=0; i < schemas.length; i++) {
+        if (schemas[i] == null) {
+          continue;
+        }
+        nschemas[j++]=schemas[i];
+      }
+      schemas=nschemas;
+    }
+    if ((schemas == null) || (schemas.length == 0)) {
+      logger.warning("Could not find a schema");
+      if (isStrict()) {
+        String msg="Could not find a schemaLocation attribute or " + "appropriate locator";
+        throw new SAXException(msg);
+      }
+ else {
+        try {
+          schemas=new XSDSchema[]{config.getXSD().getSchema()};
+        }
+ catch (        IOException e) {
+          throw (SAXException)new SAXException().initCause(e);
+        }
+      }
+    }
+    boolean found=false;
+    O:     for (int i=0; i < schemas.length; i++) {
+      if (config.getNamespaceURI().equals(schemas[i].getTargetNamespace())) {
+        found=true;
+        break O;
+      }
+      List imports=Schemas.getImports(schemas[i]);
+      for (Iterator im=imports.iterator(); im.hasNext(); ) {
+        XSDImport imprt=(XSDImport)im.next();
+        if (config.getNamespaceURI().equals(imprt.getNamespace())) {
+          found=true;
+          break O;
+        }
+      }
+    }
+    if (!found) {
+      if (!isStrict()) {
+        logger.fine("schema specified by parser configuration not found, supplementing...");
+        XSDSchema[] copy=new XSDSchema[schemas.length + 1];
+        System.arraycopy(schemas,0,copy,0,schemas.length);
+        copy[schemas.length]=config.schema();
+        schemas=copy;
+      }
+ else {
+        String msg="parser configuration specified schema: '" + config.getNamespaceURI() + "', but instance document does not reference this schema.";
+        logger.info(msg);
+      }
+    }
+    index=new SchemaIndexImpl(schemas);
+    context.registerComponentInstance(index);
+    if (namespaces.getURI("") == null) {
+      namespaces.declarePrefix("",config.getNamespaceURI());
+    }
+  }
+  namespaces.pushContext();
+  if ((uri == null) || uri.equals("")) {
+    uri=namespaces.getURI("");
+  }
+  QName qualifiedName=new QName(uri,localName);
+  Handler parent=(Handler)handlers.peek();
+  ElementHandler handler=(ElementHandler)parent.createChildHandler(qualifiedName);
+  if (handler == null) {
+    XSDElementDeclaration element=index.getElementDeclaration(qualifiedName);
+    if (element != null) {
+      handler=handlerFactory.createElementHandler(element,parent,this);
+    }
+  }
+  if (handler == null) {
+    List handlerFactories=context.getComponentInstancesOfType(HandlerFactory.class);
+    for (Iterator hf=handlerFactories.iterator(); (handler == null) && hf.hasNext(); ) {
+      HandlerFactory handlerFactory=(HandlerFactory)hf.next();
+      handler=handlerFactory.createElementHandler(qualifiedName,parent,this);
+    }
+  }
+  if (handler == null) {
+    List delegates=Schemas.getComponentInstancesOfType(context,ParserDelegate.class);
+    for (Iterator d=delegates.iterator(); d.hasNext(); ) {
+      ParserDelegate delegate=(ParserDelegate)d.next();
+      if (delegate.canHandle(qualifiedName)) {
+        handler=new DelegatingHandler(delegate,qualifiedName,parent);
+        ((DelegatingHandler)handler).startDocument();
+      }
+    }
+  }
+  if (handler == null) {
+    if (!isStrict()) {
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine("Could not find declaration for: " + qualifiedName + ". Checking if containing type declares a single particle.");
+      }
+      if (parent.getComponent() instanceof ElementInstance) {
+        ElementInstance parentElement=(ElementInstance)parent.getComponent();
+        List childParticles=index.getChildElementParticles(parentElement.getElementDeclaration());
+        if (childParticles.size() == 1) {
+          XSDParticle particle=(XSDParticle)childParticles.iterator().next();
+          XSDElementDeclaration child=(XSDElementDeclaration)particle.getContent();
+          if (child.isElementDeclarationReference()) {
+            child=child.getResolvedElementDeclaration();
+          }
+          handler=handlerFactory.createElementHandler(new QName(child.getTargetNamespace(),child.getName()),parent,this);
+        }
+      }
+    }
+  }
+  if (handler == null) {
+    if (!isStrict()) {
+      String msg="Could not find declaration for: " + qualifiedName + ". Performing lookup by ignoring namespace";
+      logger.fine(msg);
+      handler=(ElementHandler)parent.createChildHandler(new QName("*",qualifiedName.getLocalPart()));
+    }
+  }
+  if (handler == null) {
+    if (!isStrict()) {
+      String msg="Could not find declaration for: " + qualifiedName + ". Creating a mock element declaration and parsing anyways...";
+      logger.fine(msg);
+      XSDElementDeclaration decl=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+      decl.setName(qualifiedName.getLocalPart());
+      decl.setTargetNamespace(qualifiedName.getNamespaceURI());
+      QName typeDefinition=(QName)context.getComponentInstance("http://geotools.org/typeDefinition");
+      if (typeDefinition != null) {
+        context.unregisterComponent("http://geotools.org/typeDefinition");
+        XSDTypeDefinition type=index.getTypeDefinition(typeDefinition);
+        if (type == null) {
+          throw new NullPointerException();
+        }
+        decl.setTypeDefinition(type);
+      }
+ else {
+        XSDTypeDefinition type=index.getTypeDefinition(XS.ANYTYPE);
+        decl.setTypeDefinition(type);
+      }
+      handler=handlerFactory.createElementHandler(decl,parent,this);
+    }
+  }
+  if (handler != null) {
+    if ((handler.getElementDeclaration().getTargetNamespace() != null) && !handler.getElementDeclaration().getTargetNamespace().equals(uri)) {
+      if (!handler.getElementDeclaration().isAbstract()) {
+        namespaces.declarePrefix("",handler.getElementDeclaration().getTargetNamespace());
+        qualifiedName=new QName(handler.getElementDeclaration().getTargetNamespace(),qualifiedName.getLocalPart());
+      }
+    }
+    handler.startElement(qualifiedName,attributes);
+    handlers.push(handler);
+  }
+ else {
+    String msg="Handler for " + qName + " could not be found.";
+    throw new SAXException(msg);
+  }
+}

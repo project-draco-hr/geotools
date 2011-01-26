@@ -1,0 +1,106 @@
+{
+  if (gridCoverage == null)   throw new NullPointerException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"gridCoverage"));
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Drawing coverage " + gridCoverage.toString());
+  final CoordinateReferenceSystem sourceCoverageCRS=gridCoverage.getCoordinateReferenceSystem2D();
+  final GeneralEnvelope sourceCoverageEnvelope=(GeneralEnvelope)gridCoverage.getEnvelope();
+  final MathTransform sourceCRSToDestinationCRSTransformation=CRS.findMathTransform(sourceCoverageCRS,destinationCRS,true);
+  final MathTransform destinationCRSToSourceCRSTransformation=sourceCRSToDestinationCRSTransformation.inverse();
+  final boolean doReprojection=!sourceCRSToDestinationCRSTransformation.isIdentity();
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Transforming coverage envelope with transform " + destinationCRSToSourceCRSTransformation.toWKT());
+  GeneralEnvelope destinationEnvelopeInSourceCRS;
+  if (doReprojection) {
+    try {
+      destinationEnvelopeInSourceCRS=CRS.transform(destinationCRSToSourceCRSTransformation,destinationEnvelope);
+    }
+ catch (    TransformException te) {
+      final GeneralEnvelope destinationEnvelopeWGS84;
+      if (!CRS.equalsIgnoreMetadata(destinationCRS,DefaultGeographicCRS.WGS84)) {
+        final MathTransform destinationCRSToWGS84transformation=CRS.findMathTransform(destinationCRS,DefaultGeographicCRS.WGS84,true);
+        if (!destinationCRSToWGS84transformation.isIdentity()) {
+          destinationEnvelopeWGS84=CRS.transform(destinationCRSToWGS84transformation,destinationEnvelope);
+          destinationEnvelopeWGS84.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+        }
+ else {
+          destinationEnvelopeWGS84=new GeneralEnvelope(destinationEnvelope);
+        }
+      }
+ else {
+        destinationEnvelopeWGS84=new GeneralEnvelope(destinationEnvelope);
+      }
+      if (!CRS.equalsIgnoreMetadata(sourceCoverageCRS,DefaultGeographicCRS.WGS84)) {
+        final MathTransform WGS84ToSourceCoverageCRSTransformation=CRS.findMathTransform(DefaultGeographicCRS.WGS84,sourceCoverageCRS,true);
+        if (!WGS84ToSourceCoverageCRSTransformation.isIdentity()) {
+          destinationEnvelopeInSourceCRS=CRS.transform(WGS84ToSourceCoverageCRSTransformation,destinationEnvelopeWGS84);
+          destinationEnvelopeInSourceCRS.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+        }
+ else {
+          destinationEnvelopeInSourceCRS=new GeneralEnvelope(destinationEnvelopeWGS84);
+        }
+      }
+ else {
+        destinationEnvelopeInSourceCRS=new GeneralEnvelope(destinationEnvelopeWGS84);
+      }
+    }
+  }
+ else   destinationEnvelopeInSourceCRS=new GeneralEnvelope(destinationEnvelope);
+  final GeneralEnvelope intersectionEnvelope=new GeneralEnvelope(destinationEnvelopeInSourceCRS);
+  intersectionEnvelope.intersect(sourceCoverageEnvelope);
+  if (intersectionEnvelope.isEmpty() || intersectionEnvelope.isNull()) {
+    if (LOGGER.isLoggable(Level.INFO)) {
+      LOGGER.info("The destination envelope does not intersect the envelope of the source coverage.");
+    }
+    return null;
+  }
+  final Interpolation interpolation=(Interpolation)hints.get(JAI.KEY_INTERPOLATION);
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Using interpolation " + interpolation);
+  GridCoverage2D preResample=gridCoverage;
+  try {
+    preResample=getCroppedCoverage(gridCoverage,intersectionEnvelope,sourceCoverageCRS,this.hints);
+    if (preResample == null) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Skipping current coverage because cropped to an empty area");
+      return null;
+    }
+  }
+ catch (  Throwable t) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Crop Failed for reason: " + t.getLocalizedMessage(),t);
+    preResample=gridCoverage;
+  }
+  if (DEBUG) {
+    writeRenderedImage(preResample.geophysics(false).getRenderedImage(),"preresample");
+  }
+  GridCoverage2D preSymbolizer;
+  if (doReprojection) {
+    preSymbolizer=resample(preResample,destinationCRS,interpolation == null ? new InterpolationNearest() : interpolation,destinationEnvelope,this.hints);
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Reprojecting to crs " + destinationCRS.toWKT());
+  }
+ else   preSymbolizer=preResample;
+  if (DEBUG) {
+    writeRenderedImage(preSymbolizer.geophysics(false).getRenderedImage(),"preSymbolizer");
+  }
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuilder("Raster Symbolizer ").toString());
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuffer("Raster Symbolizer ").toString());
+  final RenderedImage finalImage;
+  final GridCoverage2D finalGC;
+  if (symbolizer != null) {
+    final RasterSymbolizerHelper rsp=new RasterSymbolizerHelper(preSymbolizer,this.hints);
+    rsp.visit(symbolizer);
+    finalGC=(GridCoverage2D)rsp.getOutput();
+    finalImage=finalGC.geophysics(false).getRenderedImage();
+  }
+ else {
+    finalGC=preSymbolizer;
+    finalImage=finalGC.geophysics(false).getRenderedImage();
+  }
+  if (DEBUG) {
+    writeRenderedImage(finalImage,"postSymbolizer");
+  }
+  final GridGeometry2D recoloredCoverageGridGeometry=((GridGeometry2D)finalGC.getGridGeometry());
+  final MathTransform2D finalGCTransform=recoloredCoverageGridGeometry.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  if (!(finalGCTransform instanceof AffineTransform)) {
+    throw new UnsupportedOperationException("Non-affine transformations not yet implemented");
+  }
+  final AffineTransform finalGCgridToWorld=new AffineTransform((AffineTransform)finalGCTransform);
+  final AffineTransform clonedFinalWorldToGrid=(AffineTransform)finalWorldToGrid.clone();
+  clonedFinalWorldToGrid.concatenate(finalGCgridToWorld);
+  return new GCpair(clonedFinalWorldToGrid,finalGC);
+}

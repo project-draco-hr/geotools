@@ -1,0 +1,57 @@
+{
+  double x0=segment[0];
+  double y0=segment[1];
+  double x1=segment[2];
+  double y1=segment[3];
+  int outcode0=computeOutCode(x0,y0,xmin,ymin,xmax,ymax);
+  int outcode1=computeOutCode(x1,y1,xmin,ymin,xmax,ymax);
+  int step=0;
+  do {
+    if ((outcode0 | outcode1) == 0) {
+      if (x0 == x1 && y0 == y1) {
+        return null;
+      }
+      segment[0]=x0;
+      segment[1]=y0;
+      segment[2]=x1;
+      segment[3]=y1;
+      return segment;
+    }
+ else     if ((outcode0 & outcode1) > 0) {
+      return null;
+    }
+ else {
+      int outcodeOut=outcode0 != 0 ? outcode0 : outcode1;
+      double x, y;
+      if ((outcodeOut & TOP) > 0) {
+        x=x0 + (x1 - x0) * (ymax - y0) / (y1 - y0);
+        y=ymax;
+      }
+ else       if ((outcodeOut & BOTTOM) > 0) {
+        x=x0 + (x1 - x0) * (ymin - y0) / (y1 - y0);
+        y=ymin;
+      }
+ else       if ((outcodeOut & RIGHT) > 0) {
+        y=y0 + (y1 - y0) * (xmax - x0) / (x1 - x0);
+        x=xmax;
+      }
+ else {
+        y=y0 + (y1 - y0) * (xmin - x0) / (x1 - x0);
+        x=xmin;
+      }
+      if (outcodeOut == outcode0) {
+        x0=x;
+        y0=y;
+        outcode0=computeOutCode(x0,y0,xmin,ymin,xmax,ymax);
+      }
+ else {
+        x1=x;
+        y1=y;
+        outcode1=computeOutCode(x1,y1,xmin,ymin,xmax,ymax);
+      }
+    }
+    step++;
+  }
+ while (step < 5);
+  throw new RuntimeException("Algorithm did not converge");
+}

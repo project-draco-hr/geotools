@@ -1,0 +1,53 @@
+{
+  GeometryFactory geomFac=new GeometryFactory();
+  MemoryDataStore data=new MemoryDataStore();
+  SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+  ftb.add("centre",com.vividsolutions.jts.geom.Point.class);
+  ftb.add("size",Double.class);
+  ftb.add("rotation",Double.class);
+  ftb.add("symbol",String.class);
+  ftb.setName("test");
+  SimpleFeatureType pointType=ftb.buildFeatureType();
+  Point point;
+  SimpleFeature pointFeature;
+  String[] symbol={"\uF04A","\uF04B","\uF059","\uF05A","\uF06B","\uF06C","\uF06E"};
+  double size=16;
+  double rotation=0.0;
+  int rows=8;
+  for (int j=0; j < rows; j++) {
+    for (int i=0; i < symbol.length; i++) {
+      point=makeSamplePoint(geomFac,((double)i * 5.0) + 5.0,5.0 + (j * 5));
+      pointFeature=SimpleFeatureBuilder.build(pointType,new Object[]{point,new Double(size),new Double(rotation),symbol[i]},null);
+      data.addFeature(pointFeature);
+    }
+    size+=2;
+    rotation+=45;
+  }
+  String typeName=data.getTypeNames()[0];
+  SimpleFeatureCollection ft=data.getFeatureSource(typeName).getFeatures();
+  org.geotools.styling.FontImpl font=new org.geotools.styling.FontImpl();
+  font.setFontFamily(filterFactory.literal(dataFolder + "geog.ttf"));
+  font.setFontSize(filterFactory.property("size"));
+  PropertyName symbExpr=filterFactory.property("symbol");
+  TextMark textMark=new TextMarkImpl(font,symbExpr);
+  org.geotools.styling.FontImpl font2=new org.geotools.styling.FontImpl();
+  font2.setFontFamily(filterFactory.literal("MapInfo Cartographic"));
+  font2.setFontSize(filterFactory.property("size"));
+  textMark.addFont(font2);
+  org.geotools.styling.FontImpl font3=new org.geotools.styling.FontImpl();
+  font3.setFontFamily(filterFactory.literal("ESRI Cartography"));
+  font3.setFontSize(filterFactory.property("size"));
+  textMark.addFont(font3);
+  GraphicImpl graphic=new GraphicImpl();
+  graphic.addSymbol(textMark);
+  PointSymbolizerImpl pointsym=new PointSymbolizerImpl();
+  pointsym.setGeometryPropertyName("centre");
+  pointsym.setGraphic(graphic);
+  RuleImpl rule=new RuleImpl();
+  rule.setSymbolizers(new Symbolizer[]{pointsym});
+  FeatureTypeStyleImpl fts=new FeatureTypeStyleImpl();
+  fts.addRule(rule);
+  fts.setFeatureTypeName("testPoint");
+  StyleImpl style=new StyleImpl();
+  style.addFeatureTypeStyle(fts);
+}

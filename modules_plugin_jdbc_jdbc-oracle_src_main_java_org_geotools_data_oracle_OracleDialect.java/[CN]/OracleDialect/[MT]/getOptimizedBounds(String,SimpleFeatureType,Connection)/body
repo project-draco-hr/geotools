@@ -1,0 +1,34 @@
+{
+  if (!estimatedExtentsEnabled || dataStore.getVirtualTables().get(featureType.getTypeName()) != null)   return null;
+  String tableName=featureType.getTypeName();
+  Statement st=null;
+  ResultSet rs=null;
+  List<ReferencedEnvelope> result=new ArrayList<ReferencedEnvelope>();
+  try {
+    st=cx.createStatement();
+    for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+      if (att instanceof GeometryDescriptor) {
+        StringBuffer sql=new StringBuffer();
+        sql.append("select SDO_TUNE.EXTENT_OF('");
+        sql.append(tableName);
+        sql.append("', '");
+        sql.append(att.getName().getLocalPart());
+        sql.append("') FROM DUAL");
+        rs=st.executeQuery(sql.toString());
+        if (rs.next()) {
+          Envelope env=decodeGeometryEnvelope(rs,1,cx);
+          if (env != null && !env.isNull()) {
+            CoordinateReferenceSystem crs=((GeometryDescriptor)att).getCoordinateReferenceSystem();
+            result.add(new ReferencedEnvelope(env,crs));
+          }
+        }
+        rs.close();
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(rs);
+    dataStore.closeSafe(st);
+  }
+  return result;
+}

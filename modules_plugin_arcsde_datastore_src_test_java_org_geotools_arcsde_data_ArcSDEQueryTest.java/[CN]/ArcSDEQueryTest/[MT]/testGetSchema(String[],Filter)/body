@@ -1,0 +1,20 @@
+{
+  String typeName=testData.getTempTableName();
+  SimpleFeatureType fullSchema=dstore.getSchema(typeName);
+  assertNotNull(fullSchema.getDescriptor("SHAPE"));
+  assertNotNull(fullSchema.getDescriptor("INT32_COL"));
+  Query query=new Query(typeName,filter,requestProperties);
+  FIDReader fidReader=new FIDReader.SdeManagedFidReader(typeName,"rowid");
+  ArcSdeVersionHandler versioningHandler=ArcSdeVersionHandler.NONVERSIONED_HANDLER;
+  ArcSDEQuery sdeQuery;
+  ISession session=dstore.getSession(Transaction.AUTO_COMMIT);
+  try {
+    sdeQuery=ArcSDEQuery.createQuery(session,fullSchema,query,fidReader,versioningHandler);
+  }
+  finally {
+    session.dispose();
+  }
+  SimpleFeatureType schema=sdeQuery.getSchema();
+  assertNotNull(schema);
+  return schema;
+}

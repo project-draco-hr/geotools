@@ -1,0 +1,40 @@
+{
+  if (expression instanceof Literal) {
+    Literal bbox=(Literal)expression;
+    Object value=bbox.getValue();
+    if (value instanceof BoundingBox) {
+      BoundingBox env=(BoundingBox)value;
+      minx=env.getMinX();
+      maxx=env.getMaxX();
+      miny=env.getMinY();
+      maxy=env.getMaxY();
+      srs=CRS.toSRS(env.getCoordinateReferenceSystem());
+    }
+ else {
+      Envelope env=null;
+      if (value instanceof Envelope) {
+        env=(Envelope)value;
+      }
+ else       if (value instanceof Geometry) {
+        Geometry geom=(Geometry)value;
+        env=geom.getEnvelopeInternal();
+        if (geom.getUserData() != null) {
+          if (geom.getUserData() instanceof String) {
+            srs=(String)geom.getUserData();
+          }
+ else           if (geom.getUserData() instanceof CoordinateReferenceSystem) {
+            srs=CRS.toSRS((CoordinateReferenceSystem)geom.getUserData());
+          }
+        }
+      }
+ else {
+        env=(Envelope)bbox.evaluate(null,Envelope.class);
+      }
+      if (env == null)       return;
+      minx=env.getMinX();
+      maxx=env.getMaxX();
+      miny=env.getMinY();
+      maxy=env.getMaxY();
+    }
+  }
+}

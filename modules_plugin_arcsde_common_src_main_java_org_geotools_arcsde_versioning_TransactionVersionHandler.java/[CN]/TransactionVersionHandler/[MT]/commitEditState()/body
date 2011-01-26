@@ -1,0 +1,21 @@
+{
+  LOGGER.fine("Commiting versioned state");
+  if (transactionState == null) {
+    LOGGER.fine("Already commited, ignoring operation");
+    return;
+  }
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeObjectId transactionStateId=transactionState.getId();
+      LOGGER.finer("Refreshing version info");
+      version.getInfo();
+      LOGGER.finer("Chaning version '" + version.getName() + "' state to point to transaction state "+ transactionStateId);
+      version.changeState(transactionStateId);
+      LOGGER.finer("Freeing transaction state lock");
+      transactionState.freeLock();
+      transactionState=null;
+      return null;
+    }
+  }
+);
+}

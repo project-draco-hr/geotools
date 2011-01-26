@@ -1,0 +1,41 @@
+{
+  testData.insertTestData();
+  final SimpleFeatureCollection featuresToSet=testData.createTestFeatures(Point.class,5);
+  final DataStore ds=testData.getDataStore();
+  final String typeName=testData.getTempTableName();
+  final Transaction transaction=new DefaultTransaction("testSetFeaturesTransaction handle");
+  final SimpleFeatureStore store;
+  store=(SimpleFeatureStore)ds.getFeatureSource(typeName);
+  store.setTransaction(transaction);
+  final int initialCount=store.getCount(Query.ALL);
+  assertTrue(initialCount > 0);
+  assertTrue(initialCount != 5);
+  try {
+    store.setFeatures(DataUtilities.reader(featuresToSet));
+    final int countInsideTransaction=store.getCount(Query.ALL);
+    assertEquals(5,countInsideTransaction);
+    final SimpleFeatureSource sourceNoTransaction;
+    sourceNoTransaction=ds.getFeatureSource(typeName);
+    int countNoTransaction=sourceNoTransaction.getCount(Query.ALL);
+    if (databaseIsMsSqlServer) {
+      assertEquals(countInsideTransaction,countNoTransaction);
+    }
+ else {
+      assertEquals(initialCount,countNoTransaction);
+    }
+    transaction.commit();
+    countNoTransaction=sourceNoTransaction.getCount(Query.ALL);
+    assertEquals(5,countNoTransaction);
+  }
+ catch (  Exception e) {
+    transaction.rollback();
+    throw e;
+  }
+catch (  AssertionFailedError e) {
+    transaction.rollback();
+    throw e;
+  }
+ finally {
+    transaction.close();
+  }
+}

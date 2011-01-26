@@ -1,0 +1,24 @@
+{
+  final String typeName;
+{
+    ISessionPool connectionPool=testData.getConnectionPool();
+    ISession session=connectionPool.getSession();
+    final String user;
+    user=session.getUser();
+    session.dispose();
+    typeName=user + ".GT_TEST_CREATE";
+  }
+  SimpleFeatureTypeBuilder b=new SimpleFeatureTypeBuilder();
+  b.setName(typeName);
+  b.add("FST_COL",String.class);
+  b.add("SECOND_COL",String.class);
+  b.add("GEOM",Point.class);
+  b.add("FOURTH_COL",Integer.class);
+  final SimpleFeatureType type=b.buildFeatureType();
+  DataStore ds=testData.getDataStore();
+  testData.deleteTable(typeName);
+  Map<String,String> hints=new HashMap<String,String>();
+  hints.put("configuration.keyword",testData.getConfigKeyword());
+  ((ArcSDEDataStore)ds).createSchema(type,hints);
+  testData.deleteTable(typeName);
+}

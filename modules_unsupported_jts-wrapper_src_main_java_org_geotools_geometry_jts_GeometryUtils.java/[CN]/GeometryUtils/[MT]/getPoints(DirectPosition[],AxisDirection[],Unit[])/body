@@ -1,0 +1,25 @@
+{
+  int length=positions.length * targetDirections.length;
+  double[] returnable=new double[length];
+  CoordinateReferenceSystem crs=positions[0].getCoordinateReferenceSystem();
+  CoordinateSystem cs=crs.getCoordinateSystem();
+  int dimension=cs.getDimension();
+  int[] axisIndices=new int[targetDirections.length];
+  UnitConverter[] converters=new UnitConverter[targetUnits.length];
+  for (int i=0; i < targetDirections.length; i++) {
+    boolean notfound=true;
+    for (int j=0; notfound && j < dimension; j++) {
+      if (cs.getAxis(j).getDirection().equals(targetDirections[i])) {
+        axisIndices[i]=j;
+        converters[i]=cs.getAxis(j).getUnit().getConverterTo(targetUnits[i]);
+        notfound=false;
+      }
+    }
+  }
+  for (int i=0; i < positions.length; i++) {
+    for (int j=0; j < axisIndices.length; j++) {
+      returnable[(i * dimension) + j]=converters[j].convert(positions[i].getOrdinate(axisIndices[j]));
+    }
+  }
+  return returnable;
+}

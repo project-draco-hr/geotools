@@ -1,0 +1,92 @@
+{
+  List<DirectPosition> directPositionList=new ArrayList<DirectPosition>();
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{20,10}));
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{40,10}));
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{50,40}));
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{30,50}));
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{10,30}));
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{20,10}));
+  Ring exteriorRing=tPrimFactory.createRingByDirectPositions(directPositionList);
+  List<Ring> interiors=new ArrayList<Ring>();
+  SurfaceBoundaryImpl surfaceBoundary1=tPrimFactory.createSurfaceBoundary(exteriorRing,interiors);
+  SurfaceImpl surface=tPrimFactory.createSurface(surfaceBoundary1);
+  SurfaceImpl surface2=null;
+  SurfaceImpl surface_bak=null;
+  try {
+    surface2=surface.clone();
+    surface_bak=surface.clone();
+  }
+ catch (  CloneNotSupportedException e) {
+    e.printStackTrace();
+    fail();
+  }
+  surface.setBoundary(surfaceBoundary1);
+  assertTrue(surface.getBoundary().equals(surface2.getBoundary()));
+  List<? extends SurfacePatch> triangleList=this._testTriangle1(aGeomFactory,tPrimFactory);
+  List<SurfacePatch> surfacePatches1=(List<SurfacePatch>)triangleList;
+  surface.setPatches(surfacePatches1);
+  List<? extends SurfacePatch> surfacePatches2=surface.getPatches();
+  assertTrue(surfacePatches1.equals(surfacePatches2));
+  String toS=surface.toString();
+  assertTrue(toS != null);
+  assertTrue(toS.length() > 0);
+  assertTrue(surface_bak.equals((Object)surface2));
+  assertTrue(surface_bak.equals((Object)surface_bak));
+  assertFalse(surface_bak.equals((Object)surfacePatches1));
+  assertFalse(surface_bak.equals((Object)null));
+  SurfaceImpl surface3=tPrimFactory.createSurface(surfacePatches1);
+  assertFalse(surface_bak.equals(surface3));
+  assertTrue(surfaceBoundary1.getDimension(null) == 1);
+  String toS2=surfaceBoundary1.toString();
+  assertTrue(toS2 != null);
+  assertTrue(toS2.length() > 0);
+  assertTrue(surfaceBoundary1.equals((Object)tPrimFactory.createSurfaceBoundary(exteriorRing,interiors)));
+  assertTrue(surfaceBoundary1.equals((Object)surfaceBoundary1));
+  assertFalse(surfaceBoundary1.equals((Object)surfacePatches1));
+  assertFalse(surfaceBoundary1.equals((Object)null));
+  directPositionList.remove(directPositionList.size() - 1);
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{15,25}));
+  directPositionList.add(aGeomFactory.createDirectPosition(new double[]{20,10}));
+  Ring exteriorRing2=tPrimFactory.createRingByDirectPositions(directPositionList);
+  SurfaceBoundaryImpl surfaceBoundary2=tPrimFactory.createSurfaceBoundary(exteriorRing2,interiors);
+  assertFalse(surfaceBoundary1.equals(surfaceBoundary2));
+  SurfacePatchImpl patch=(SurfacePatchImpl)surfacePatches1.get(0);
+  assertNotNull(patch.getInterpolation());
+  assertNotNull(patch.getNumDerivativesOnBoundary());
+  List<Position> dps=new ArrayList<Position>();
+  dps.add(aGeomFactory.createDirectPosition(new double[]{20,10}));
+  dps.add(aGeomFactory.createDirectPosition(new double[]{40,10}));
+  dps.add(aGeomFactory.createDirectPosition(new double[]{50,40}));
+  dps.add(aGeomFactory.createDirectPosition(new double[]{30,50}));
+  dps.add(aGeomFactory.createDirectPosition(new double[]{10,30}));
+  dps.add(aGeomFactory.createDirectPosition(new double[]{20,10}));
+  LineString line=aGeomFactory.createLineString(dps);
+  ArrayList<CurveSegment> segs=new ArrayList<CurveSegment>();
+  segs.add(line);
+  OrientableCurve curve=tPrimFactory.createCurve(segs);
+  List<OrientableCurve> orientableCurves=new ArrayList<OrientableCurve>();
+  orientableCurves.add(curve);
+  Ring extRing=tPrimFactory.createRing(orientableCurves);
+  List<Ring> intRings=new ArrayList<Ring>();
+  SurfaceBoundary sb=tPrimFactory.createSurfaceBoundary(extRing,intRings);
+  Surface surface22=tPrimFactory.createSurface(sb);
+  SurfaceBoundary sb2=(SurfaceBoundary)surface22.getBoundary();
+  Ring exterior=sb2.getExterior();
+  List<Ring> interiors2=sb2.getInteriors();
+  Collection<? extends Primitive> extCurve=exterior.getElements();
+  Iterator<? extends Primitive> iter=extCurve.iterator();
+  PointArray samplePoints=null;
+  while (iter.hasNext()) {
+    Curve curve2=(Curve)iter.next();
+    List<? extends CurveSegment> segs2=curve2.getSegments();
+    Iterator<? extends CurveSegment> iter2=segs2.iterator();
+    while (iter2.hasNext()) {
+      if (samplePoints == null) {
+        samplePoints=iter2.next().getSamplePoints();
+      }
+ else {
+        samplePoints.addAll(iter2.next().getSamplePoints());
+      }
+    }
+  }
+}

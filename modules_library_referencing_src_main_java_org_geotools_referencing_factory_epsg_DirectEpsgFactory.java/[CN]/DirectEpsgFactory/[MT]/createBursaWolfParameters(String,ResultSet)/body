@@ -1,0 +1,65 @@
+{
+  if (safetyGuard.contains(code)) {
+    return null;
+  }
+  PreparedStatement stmt;
+  stmt=prepareStatement("BursaWolfParametersSet","SELECT CO.COORD_OP_CODE," + " CO.COORD_OP_METHOD_CODE," + " CRS2.DATUM_CODE"+ " FROM [Coordinate_Operation] AS CO"+ " INNER JOIN [Coordinate Reference System] AS CRS2"+ " ON CO.TARGET_CRS_CODE = CRS2.COORD_REF_SYS_CODE"+ " WHERE CO.COORD_OP_METHOD_CODE >= " + BURSA_WOLF_MIN_CODE + " AND CO.COORD_OP_METHOD_CODE <= "+ BURSA_WOLF_MAX_CODE+ " AND CO.COORD_OP_CODE <> "+ DUMMY_OPERATION+ " AND CO.SOURCE_CRS_CODE IN ("+ " SELECT CRS1.COORD_REF_SYS_CODE "+ " FROM [Coordinate Reference System] AS CRS1 "+ " WHERE CRS1.DATUM_CODE = ?)"+ " ORDER BY CRS2.DATUM_CODE,"+ " ABS(CO.DEPRECATED), CO.COORD_OP_ACCURACY,"+ " CO.COORD_OP_CODE DESC");
+  stmt.setInt(1,Integer.parseInt(code));
+  ResultSet result=stmt.executeQuery();
+  List<Object> bwInfos=null;
+  while (result.next()) {
+    final String operation=getString(result,1,code);
+    final int method=getInt(result,2,code);
+    final String datum=getString(result,3,code);
+    if (bwInfos == null) {
+      bwInfos=new ArrayList<Object>();
+    }
+    bwInfos.add(new BursaWolfInfo(operation,method,datum));
+  }
+  result.close();
+  if (bwInfos == null) {
+    return null;
+  }
+  toClose.close();
+  int size=bwInfos.size();
+  if (size > 1) {
+    final BursaWolfInfo[] codes=bwInfos.toArray(new BursaWolfInfo[size]);
+    sort(codes);
+    bwInfos.clear();
+    final Set<String> added=new HashSet<String>();
+    for (int i=0; i < codes.length; i++) {
+      final BursaWolfInfo candidate=codes[i];
+      if (added.add(candidate.target)) {
+        bwInfos.add(candidate);
+      }
+    }
+    size=bwInfos.size();
+  }
+  stmt=prepareStatement("BursaWolfParameters","SELECT PARAMETER_CODE," + " PARAMETER_VALUE," + " UOM_CODE"+ " FROM [Coordinate_Operation Parameter Value]"+ " WHERE COORD_OP_CODE = ?"+ " AND COORD_OP_METHOD_CODE = ?");
+  for (int i=0; i < size; i++) {
+    final BursaWolfInfo info=(BursaWolfInfo)bwInfos.get(i);
+    final GeodeticDatum datum;
+    try {
+      safetyGuard.add(code);
+      datum=buffered.createGeodeticDatum(info.target);
+    }
+  finally {
+      safetyGuard.remove(code);
+    }
+    final BursaWolfParameters parameters=new BursaWolfParameters(datum);
+    stmt.setInt(1,Integer.parseInt(info.operation));
+    stmt.setInt(2,info.method);
+    result=stmt.executeQuery();
+    while (result.next()) {
+      setBursaWolfParameter(parameters,getInt(result,1,info.operation),getDouble(result,2,info.operation),buffered.createUnit(getString(result,3,info.operation)));
+    }
+    result.close();
+    if (info.method == ROTATION_FRAME_CODE) {
+      parameters.ex=-parameters.ex;
+      parameters.ey=-parameters.ey;
+      parameters.ey=-parameters.ey;
+    }
+    bwInfos.set(i,parameters);
+  }
+  return bwInfos.toArray(new BursaWolfParameters[size]);
+}

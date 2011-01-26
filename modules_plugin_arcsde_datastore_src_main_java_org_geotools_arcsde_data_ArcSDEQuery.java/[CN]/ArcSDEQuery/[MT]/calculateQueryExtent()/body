@@ -1,0 +1,55 @@
+{
+  LOGGER.fine("Building a new SeQuery to consult it's resulting envelope");
+  final SeExtent extent;
+  try {
+    extent=session.issue(new Command<SeExtent>(){
+      @Override public SeExtent execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        final String[] spatialCol={schema.getGeometryDescriptor().getLocalName()};
+        final SeSqlConstruct fullConstruct=filters.getQueryInfo(spatialCol).getConstruct();
+        String whereClause=fullConstruct.getWhere();
+        if (whereClause == null) {
+          whereClause="1 = 1";
+        }
+        final SeFilter[] spatialConstraints=filters.getSpatialFilters();
+        SeExtent extent;
+        final SeQuery extentQuery=new SeQuery(connection);
+        try {
+          versioningHandler.setUpStream(session,extentQuery);
+          if (spatialConstraints.length > 0) {
+            extentQuery.setSpatialConstraints(SeQuery.SE_OPTIMIZE,false,spatialConstraints);
+          }
+          SeSqlConstruct sqlCons=new SeSqlConstruct();
+          sqlCons.setTables(fullConstruct.getTables());
+          sqlCons.setWhere(whereClause);
+          final SeQueryInfo seQueryInfo=new SeQueryInfo();
+          seQueryInfo.setColumns(spatialCol);
+          seQueryInfo.setConstruct(sqlCons);
+          extent=extentQuery.calculateLayerExtent(seQueryInfo);
+        }
+  finally {
+          extentQuery.close();
+        }
+        return extent;
+      }
+    }
+);
+  }
+ catch (  IOException ex) {
+    SeSqlConstruct sqlCons=this.filters.getSeSqlConstruct();
+    String sql=(sqlCons == null) ? null : sqlCons.getWhere();
+    String tables=(sqlCons == null) ? null : Arrays.asList(sqlCons.getTables()).toString();
+    if (ex.getCause() instanceof SeException) {
+      SeException sdeEx=(SeException)ex.getCause();
+      if (sdeEx.getSeError().getSdeError() == -288) {
+        LOGGER.severe("ArcSDE is complaining that your 'LOGFILE SYSTEM " + "TABLES DO NOT EXIST'.  This is an ignorable error.");
+      }
+    }
+    LOGGER.log(Level.SEVERE,"***********************\ntables: " + tables + "\nfilter: "+ this.filters.getGeometryFilter()+ "\nSQL: "+ sql,ex);
+    throw ex;
+  }
+  Envelope envelope=new Envelope(extent.getMinX(),extent.getMaxX(),extent.getMinY(),extent.getMaxY());
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("got extent: " + extent + ", built envelope: "+ envelope);
+  }
+  return envelope;
+}

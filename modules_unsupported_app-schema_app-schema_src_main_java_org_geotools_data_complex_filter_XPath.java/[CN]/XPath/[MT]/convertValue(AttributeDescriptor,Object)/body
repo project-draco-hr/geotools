@@ -1,0 +1,19 @@
+{
+  final AttributeType type=descriptor.getType();
+  Class<?> binding=type.getBinding();
+  if (type instanceof ComplexType && binding == Collection.class) {
+    if (!(value instanceof Collection) && isSimpleContentType(type)) {
+      ArrayList<Property> list=new ArrayList<Property>();
+      if (value == null && !descriptor.isNillable()) {
+        return list;
+      }
+      list.add(buildSimpleContent(type,value));
+      return list;
+    }
+  }
+  if (binding == String.class && value instanceof Collection) {
+    String collectionString=value.toString();
+    return collectionString.substring(1,collectionString.length() - 1);
+  }
+  return FF.literal(value).evaluate(value,binding);
+}

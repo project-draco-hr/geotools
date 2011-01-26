@@ -1,0 +1,23 @@
+{
+  try {
+    return parser.parseObject(text);
+  }
+ catch (  ParseException exception) {
+    int shift=0;
+    int errorOffset=exception.getErrorOffset();
+    for (Replacement r=replacements; r != null; r=r.next) {
+      if (errorOffset < r.lower) {
+        break;
+      }
+      if (errorOffset < r.upper) {
+        errorOffset=r.lower;
+        break;
+      }
+      shift+=r.shift;
+    }
+    final ParseException adjusted=new ParseException(exception.getLocalizedMessage(),errorOffset - shift);
+    adjusted.setStackTrace(exception.getStackTrace());
+    adjusted.initCause(exception.getCause());
+    throw adjusted;
+  }
+}

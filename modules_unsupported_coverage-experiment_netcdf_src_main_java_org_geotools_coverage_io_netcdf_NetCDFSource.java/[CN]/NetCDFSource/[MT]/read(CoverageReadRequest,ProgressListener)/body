@@ -1,0 +1,68 @@
+{
+  ensureNotDisposed();
+  checkRequest(request);
+  BoundingBox requestedBoundingBox=request.getGeographicArea();
+  Rectangle requestedRasterArea=request.getRasterArea();
+  Set<TemporalGeometricPrimitive> temporalSubset=request.getTemporalSubset();
+  Set<NumberRange<Double>> verticalSubset=request.getVerticalSubset();
+  RangeType range=request.getRangeSubset();
+  Set<FieldType> fieldTypes=range.getFieldTypes();
+  final boolean useJAI=false;
+  final CoverageResponse response=new CoverageResponse();
+  response.setRequest(request);
+  Rectangle sourceRasterRegion=new Rectangle();
+  GeneralEnvelope adjustedRequestedEnvelope2D;
+  GeneralEnvelope requestedEnvelope2D=new GeneralEnvelope(requestedBoundingBox);
+  final MathTransform2D grid2WorldTransform=request.getGridToWorldTransform();
+  final ImageReadParam imageReadParam=new ImageReadParam();
+  try {
+    adjustedRequestedEnvelope2D=Utilities.evaluateRequestedParams(access.gridGeometry2DMap.get(this.name).getGridRange(),access.baseEnvelope2DMap.get(this.name),access.spatialReferenceSystem2DMap.get(this.name),access.raster2ModelMap.get(this.name),requestedEnvelope2D,sourceRasterRegion,requestedRasterArea,grid2WorldTransform,access.wgs84BaseEnvelope2DMap.get(this.name));
+    if (adjustedRequestedEnvelope2D != null) {
+      final GeneralEnvelope req=(adjustedRequestedEnvelope2D.isEmpty()) ? requestedEnvelope2D : adjustedRequestedEnvelope2D;
+      Utilities.setReadParameters(null,imageReadParam,req,requestedRasterArea,access.highestResMap.get(this.name),access.gridGeometry2DMap.get(this.name).getGridRange(),PixelInCell.CELL_CORNER);
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    adjustedRequestedEnvelope2D=null;
+  }
+catch (  TransformException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    adjustedRequestedEnvelope2D=null;
+  }
+  if (adjustedRequestedEnvelope2D != null && sourceRasterRegion != null && !sourceRasterRegion.isEmpty()) {
+    imageReadParam.setSourceRegion(sourceRasterRegion);
+  }
+  final boolean needTransformation=(adjustedRequestedEnvelope2D != null && !adjustedRequestedEnvelope2D.isEmpty());
+  final boolean emptyRequest=adjustedRequestedEnvelope2D == null;
+  for (  FieldType fieldType : fieldTypes) {
+    final Name name=fieldType.getName();
+    Set<SampleDimension> sampleDims=fieldType.getSampleDimensions();
+    if (sampleDims == null || sampleDims.isEmpty()) {
+      final RangeType innerRange=access.rangeMap.get(this.name);
+      if (innerRange != null) {
+        final FieldType ft=innerRange.getFieldType(name.getLocalPart());
+        if (ft != null)         sampleDims=ft.getSampleDimensions();
+      }
+    }
+    final GridSampleDimension[] sampleDimensions=sampleDims.toArray(new GridSampleDimension[sampleDims.size()]);
+    final Collection<SliceDescriptor> sliceDescriptors=access.sliceDescriptorsMap.values();
+    for (    SliceDescriptor sd : sliceDescriptors) {
+      if (name.getLocalPart().equals(sd.getElementName())) {
+        if (!temporalSubset.isEmpty()) {
+          for (          TemporalGeometricPrimitive time : temporalSubset) {
+            TemporalGeometricPrimitive sdTime=sd.getTemporalExtent();
+            if (isTimeAccepted(time,sdTime)) {
+              addCoverage(response,verticalSubset,sd,needTransformation,emptyRequest,useJAI,imageReadParam,sampleDimensions);
+            }
+          }
+        }
+ else {
+          addCoverage(response,verticalSubset,sd,needTransformation,emptyRequest,useJAI,imageReadParam,sampleDimensions);
+        }
+      }
+    }
+  }
+  response.setStatus(Status.SUCCESS);
+  return response;
+}

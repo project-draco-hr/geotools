@@ -1,0 +1,58 @@
+{
+  int k=4;
+  Object[] obj=GraphTestUtil.buildPerfectBinaryTree(builder(),k);
+  final Node root=(Node)obj[0];
+  final HashMap map=(HashMap)obj[1];
+  HashMap rmap=new HashMap();
+  Map.Entry[] set=new Map.Entry[map.size()];
+  map.entrySet().toArray(set);
+  for (int i=0; i < set.length; i++) {
+    rmap.put(set[i].getValue(),set[i].getKey());
+  }
+  final HashMap hashmap=rmap;
+class Factory {
+    public AStarIterator.AStarFunctions createFunctions(    Node target){
+      return (new AStarIterator.AStarFunctions(target){
+        public double cost(        AStarNode n1,        AStarNode n2){
+          return 1;
+        }
+        public double h(        Node n){
+          String dest=hashmap.get(this.getDest()).toString();
+          String current=hashmap.get(n).toString();
+          if (dest.startsWith(current)) {
+            dest=dest.replaceAll("\\D","");
+            current=current.replaceAll("\\D","");
+            return dest.length() - current.length();
+          }
+ else {
+            return Double.POSITIVE_INFINITY;
+          }
+        }
+      }
+);
+    }
+  }
+  Factory f=new Factory();
+  AStarShortestPathFinder walker=new AStarShortestPathFinder(builder().getGraph(),root,((Node)map.get("0.1.0.1")),f.createFunctions(((Node)map.get("0.1.0.1"))));
+  walker.calculate();
+  MyVisitor visitor=new MyVisitor();
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(visitor.count > 0);
+  assertTrue(visitor.count < map.size() + 1);
+  Path p=null;
+  try {
+    p=walker.getPath();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+  p.getEdges();
+  assertTrue(p.size() == 4);
+  for (int j=0; j < p.size() - 1; j++) {
+    Node n=(Node)p.get(j);
+    Node parent=(Node)p.get(j + 1);
+    String n_id=rmap.get(n).toString();
+    String parent_id=rmap.get(parent).toString();
+    assertTrue(n_id.startsWith(parent_id));
+  }
+}

@@ -1,0 +1,24 @@
+{
+  Document doc=null;
+  DocumentBuilderFactory factory=DocumentBuilderFactory.newInstance();
+  factory.setIgnoringComments(true);
+  factory.setNamespaceAware(true);
+  factory.setIgnoringElementContentWhitespace(true);
+  try {
+    DocumentBuilder db=factory.newDocumentBuilder();
+    doc=db.parse(url.openStream());
+    VALIDATOR.validate(new DOMSource(doc));
+  }
+ catch (  Exception e) {
+    throw new IOException(e.getMessage());
+  }
+  NodeList nl=doc.getElementsByTagName(GENERALIZATION_INFOS_TAG);
+  GeneralizationInfos gInfos=new GeneralizationInfos();
+  Node gInfosNode=nl.item(0);
+  checkVersion(gInfosNode);
+  NamedNodeMap attrMap=gInfosNode.getAttributes();
+  if (attrMap.getNamedItem(DATASOURCE_NAME_ATTR) != null)   gInfos.setDataSourceName(attrMap.getNamedItem(DATASOURCE_NAME_ATTR).getTextContent());
+  if (attrMap.getNamedItem(DATASOURCE_NAMESPACE_NAME_ATTR) != null)   gInfos.setDataSourceNameSpace(attrMap.getNamedItem(DATASOURCE_NAMESPACE_NAME_ATTR).getTextContent());
+  parseGeneralizationInfoNodes(gInfosNode,gInfos);
+  return gInfos;
+}

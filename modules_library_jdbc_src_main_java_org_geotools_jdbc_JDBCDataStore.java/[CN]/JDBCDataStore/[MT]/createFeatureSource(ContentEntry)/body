@@ -1,0 +1,12 @@
+{
+  SimpleFeatureType schema=entry.getState(Transaction.AUTO_COMMIT).getFeatureType();
+  if (schema == null) {
+    schema=new JDBCFeatureSource(entry,null).buildFeatureType();
+    entry.getState(Transaction.AUTO_COMMIT).setFeatureType(schema);
+  }
+  Object readOnlyMarker=schema.getUserData().get(JDBC_READ_ONLY);
+  if (Boolean.TRUE.equals(readOnlyMarker)) {
+    return new JDBCFeatureSource(entry,null);
+  }
+  return new JDBCFeatureStore(entry,null);
+}

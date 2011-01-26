@@ -1,0 +1,35 @@
+{
+  ensureNonNull("code",code);
+  OperationMethod returnValue=null;
+  final PreparedStatement stmt;
+  try {
+    final String primaryKey=toPrimaryKey(OperationMethod.class,code,"[Coordinate_Operation Method]","COORD_OP_METHOD_CODE","COORD_OP_METHOD_NAME");
+    stmt=prepareStatement("OperationMethod","SELECT COORD_OP_METHOD_CODE," + " COORD_OP_METHOD_NAME," + " FORMULA,"+ " REMARKS"+ " FROM [Coordinate_Operation Method]"+ " WHERE COORD_OP_METHOD_CODE = ?");
+    stmt.setString(1,primaryKey);
+    final ResultSet result=stmt.executeQuery();
+    OperationMethod method=null;
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final String formula=result.getString(3);
+      final String remarks=result.getString(4);
+      final int encoded=getDimensionsForMethod(epsg);
+      final int sourceDimensions=encoded >>> 16;
+      final int targetDimensions=encoded & 0xFFFF;
+      final ParameterDescriptor[] descriptors=generateParameterDescriptors(epsg);
+      final Map<String,Object> properties=generateProperties(name,epsg,remarks);
+      if (formula != null) {
+        properties.put(OperationMethod.FORMULA_KEY,formula);
+      }
+      method=new DefaultOperationMethod(properties,sourceDimensions,targetDimensions,new DefaultParameterDescriptorGroup(properties,descriptors));
+      returnValue=ensureSingleton(method,returnValue,code);
+    }
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(OperationMethod.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(OperationMethod.class,code);
+  }
+  return returnValue;
+}

@@ -1,0 +1,46 @@
+{
+  String name="";
+  int f=0, color=0;
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+case VARIABLE_NAME:
+      br.reset();
+    doLoop=false;
+  break;
+case NAME:
+name=cvp.getStringValue();
+break;
+case COLOR:
+color=cvp.getShortValue();
+break;
+case INT_1:
+f=cvp.getShortValue();
+break;
+default :
+}
+}
+DXFLayer l=new DXFLayer(name,color,f);
+if (color < 0) {
+l.setVisible(false);
+}
+log.debug(l.toString(name,color,f));
+log.debug(">Exit at line: " + br.getLineNumber());
+return l;
+}

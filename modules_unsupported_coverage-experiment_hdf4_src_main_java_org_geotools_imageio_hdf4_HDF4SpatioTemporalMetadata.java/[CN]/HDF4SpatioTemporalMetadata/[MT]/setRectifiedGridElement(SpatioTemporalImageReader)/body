@@ -1,0 +1,53 @@
+{
+  init(reader);
+  final RectifiedGrid rg=getRectifiedGrid();
+  getAttributesMap(reader);
+  final int imageIndex=getImageIndex();
+  int width;
+  int height;
+  String startX, startY, deltaX, deltaY, axisX, axisY;
+  startX=startY=deltaX=deltaY=axisX=axisY=null;
+  AffineTransform tempTransform=null;
+  try {
+    width=reader.getWidth(imageIndex);
+    height=reader.getHeight(imageIndex);
+    rg.setLow(new int[]{0,0});
+    rg.setHigh(new int[]{width,height});
+switch (hdf4_type) {
+case APS:
+      if (transform == null) {
+        final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper();
+        geMapper.setEnvelope(envelope);
+        geMapper.setGridRange(new GridEnvelope2D(gridRange));
+        geMapper.setPixelAnchor(PixelInCell.CELL_CORNER);
+        transform=(AffineTransform)geMapper.createTransform();
+      }
+    tempTransform=(AffineTransform)transform.clone();
+  break;
+case TeraScan:
+if (transform == null) {
+  final String projToImageTransformation=attributesMap.get(HDF4TeraScanProperties.ProjAttribs.PROJECT_TO_IMAGE_AFFINE);
+  transform=CRSUtilities.createAffineTransform(projToImageTransformation);
+}
+if (transform != null) {
+tempTransform=(AffineTransform)transform.clone();
+final double tr=-PixelTranslation.getPixelTranslation(PixelInCell.CELL_CORNER);
+tempTransform.translate(tr,tr);
+}
+break;
+}
+startX=Double.toString(tempTransform.getTranslateX());
+startY=Double.toString(tempTransform.getTranslateY());
+deltaX=Double.toString(tempTransform.getScaleX());
+deltaY=Double.toString(tempTransform.getScaleY());
+axisX="Easting";
+axisY="Northing";
+rg.setCoordinates(new double[]{Double.parseDouble(startX),Double.parseDouble(startY)});
+rg.addOffsetVector(new double[]{Double.parseDouble(deltaX),0d});
+rg.addOffsetVector(new double[]{0d,Double.parseDouble(deltaY)});
+rg.addAxisName(axisX);
+rg.addAxisName(axisY);
+}
+ catch (IOException e) {
+}
+}

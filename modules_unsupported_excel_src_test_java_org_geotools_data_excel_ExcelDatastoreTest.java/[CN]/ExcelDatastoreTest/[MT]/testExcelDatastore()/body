@@ -1,0 +1,31 @@
+{
+  File file=TestData.file(this,"locations.xls");
+  java.net.URL url=DataUtilities.fileToURL(file);
+  Iterator<DataStoreFactorySpi> it=DataStoreFinder.getAvailableDataStores();
+  int count=0;
+  while (it.hasNext()) {
+    count++;
+    final DataStoreFactorySpi next=it.next();
+    System.out.println(next + " " + next.getDisplayName()+ " "+ next.isAvailable());
+  }
+  HashMap<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put("type","excel");
+  params.put("url",url);
+  params.put("sheet","locations");
+  params.put("latcol","LAT");
+  params.put("longcol","LON");
+  params.put("projection","epsg:4326");
+  if (count == 1) {
+    DataStore store=DataStoreFinder.getDataStore(params);
+    assertNotNull("no datastore found",store);
+    System.out.println(store.getInfo());
+  }
+  ExcelDataStoreFactory fac=new ExcelDataStoreFactory();
+  assertTrue("Can't process params",fac.canProcess(params));
+  DataStore store=fac.createDataStore(params);
+  assertNotNull("no datastore created",store);
+  params.put("headerrow",0);
+  assertTrue("Can't process params with headerrow",fac.canProcess(params));
+  params.remove("sheet");
+  assertFalse("Can process params without sheet",fac.canProcess(params));
+}

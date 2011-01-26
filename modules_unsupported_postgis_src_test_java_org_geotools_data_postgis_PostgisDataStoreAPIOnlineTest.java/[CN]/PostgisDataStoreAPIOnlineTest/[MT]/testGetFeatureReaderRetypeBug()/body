@@ -1,0 +1,19 @@
+{
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureType type=data.getSchema("river");
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  FilterFactory ff=FilterFactoryFinder.createFilterFactory();
+  CompareFilter cf=ff.createCompareFilter(Filter.COMPARE_EQUALS);
+  cf.addLeftValue(ff.createAttributeExpression("flow"));
+  cf.addRightValue(ff.createLiteralExpression(4.5));
+  DefaultQuery q=new DefaultQuery("river");
+  q.setPropertyNames(new String[]{"geom"});
+  q.setFilter(cf);
+  reader=data.getFeatureReader(q,t);
+  assertTrue(reader.hasNext());
+  assertEquals(1,reader.getFeatureType().getAttributeCount());
+  reader.next();
+  assertFalse(reader.hasNext());
+  reader.close();
+  t.close();
+}

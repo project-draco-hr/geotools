@@ -1,0 +1,37 @@
+{
+  if (config.getSpatialExtension() == SpatialExtension.UNIVERSAL) {
+    if (isJoined()) {
+      sqlInsertSpatial=con.prepareStatement("INSERT INTO " + spatialTableName + " ("+ config.getKeyAttributeNameInSpatialTable()+ ","+ config.getTileMinXAttribute()+ ","+ config.getTileMinYAttribute()+ ","+ config.getTileMaxXAttribute()+ ","+ config.getTileMaxYAttribute()+ ","+ config.getBlobAttributeNameInTileTable()+ ") VALUES  (?,?,?,?,?,?)");
+    }
+ else {
+      sqlInsertSpatial=con.prepareStatement("INSERT INTO " + spatialTableName + " ("+ config.getKeyAttributeNameInSpatialTable()+ ","+ config.getTileMinXAttribute()+ ","+ config.getTileMinYAttribute()+ ","+ config.getTileMaxXAttribute()+ ","+ config.getTileMaxYAttribute()+ ") VALUES  (?,?,?,?,?)");
+    }
+    return;
+  }
+  String geometryParam=null;
+  if (config.getSpatialExtension() == SpatialExtension.DB2) {
+    geometryParam="db2gse.st_tomultipolygon(db2gse.st_geometry(cast (? as BLOB(4096))," + srs + "))";
+  }
+ else   if (config.getSpatialExtension() == SpatialExtension.POSTGIS) {
+    geometryParam="geomfromwkb(?," + srs + ")";
+  }
+ else   if (config.getSpatialExtension() == SpatialExtension.MYSQL) {
+    geometryParam="geomfromwkb(?)";
+  }
+ else   if (config.getSpatialExtension() == SpatialExtension.ORACLE) {
+    geometryParam="{0}";
+  }
+  String statement=null;
+  if (isJoined()) {
+    statement="INSERT INTO " + spatialTableName + " ("+ config.getKeyAttributeNameInSpatialTable()+ ","+ config.getGeomAttributeNameInSpatialTable()+ ","+ config.getBlobAttributeNameInTileTable()+ ") VALUES  (?,"+ geometryParam+ ",?)";
+  }
+ else {
+    statement="INSERT INTO " + spatialTableName + " ("+ config.getKeyAttributeNameInSpatialTable()+ ","+ config.getGeomAttributeNameInSpatialTable()+ ") VALUES  (?,"+ geometryParam+ ")";
+  }
+  if (config.getSpatialExtension() == SpatialExtension.ORACLE) {
+    oracleInsertSpatial=statement;
+  }
+ else {
+    sqlInsertSpatial=con.prepareStatement(statement);
+  }
+}

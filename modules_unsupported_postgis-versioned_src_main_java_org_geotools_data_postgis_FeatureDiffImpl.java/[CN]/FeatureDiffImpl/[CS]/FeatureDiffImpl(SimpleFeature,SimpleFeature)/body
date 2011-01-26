@@ -1,0 +1,27 @@
+{
+  super();
+  if (oldFeature == null && newFeature == null)   throw new IllegalArgumentException("Both features are null, that's not a diff!");
+  this.ID=oldFeature != null ? oldFeature.getID() : newFeature.getID();
+  this.feature=newFeature;
+  this.oldFeature=oldFeature;
+  this.changedAttributes=Collections.EMPTY_LIST;
+  if (oldFeature == null) {
+    this.state=INSERTED;
+  }
+ else   if (newFeature == null) {
+    this.state=DELETED;
+  }
+ else {
+    this.state=UPDATED;
+    List changedAttributes=new ArrayList();
+    for (int i=0; i < oldFeature.getAttributeCount(); i++) {
+      String attName=oldFeature.getFeatureType().getDescriptor(i).getLocalName();
+      Object toAttribute=newFeature.getAttribute(attName);
+      Object fromAttribute=oldFeature.getAttribute(attName);
+      if (!DataUtilities.attributesEqual(fromAttribute,toAttribute)) {
+        changedAttributes.add(attName);
+      }
+    }
+    this.changedAttributes=Collections.unmodifiableList(changedAttributes);
+  }
+}

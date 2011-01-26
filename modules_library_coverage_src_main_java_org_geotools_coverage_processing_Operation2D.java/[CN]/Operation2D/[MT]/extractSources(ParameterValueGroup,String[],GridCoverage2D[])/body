@@ -1,0 +1,29 @@
+{
+  Utilities.ensureNonNull("parameters",parameters);
+  Utilities.ensureNonNull("sourceNames",sourceNames);
+  Utilities.ensureNonNull("sources",sources);
+  if (sources.length != sourceNames.length) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.MISMATCHED_ARRAY_LENGTH));
+  }
+  ViewType type=null;
+  final boolean computeOnGeophysicsValues=computeOnGeophysicsValues(parameters);
+  for (int i=0; i < sourceNames.length; i++) {
+    Object candidate=parameters.parameter(sourceNames[i]).getValue();
+    if (candidate == null) {
+      continue;
+    }
+    if (!(candidate instanceof GridCoverage2D)) {
+      throw new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,Classes.getClass(candidate),GridCoverage2D.class),sourceNames[i],candidate);
+    }
+    GridCoverage2D source=(GridCoverage2D)candidate;
+    if (computeOnGeophysicsValues) {
+      final GridCoverage2D old=source;
+      source=source.view(ViewType.GEOPHYSICS);
+      if (i == PRIMARY_SOURCE_INDEX) {
+        type=(old == source) ? ViewType.GEOPHYSICS : ViewType.PACKED;
+      }
+    }
+    sources[i]=source;
+  }
+  return type;
+}

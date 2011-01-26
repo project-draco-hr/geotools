@@ -1,0 +1,21 @@
+{
+  Utilities.ensureNonNull("readParams",readParams);
+  Utilities.ensureNonNull("RasterManager",rasterManager);
+  Utilities.ensureNonNull("overviewsController",overviewController);
+  if (overviewPolicy == null) {
+    overviewPolicy=OverviewPolicy.getDefaultPolicy();
+  }
+  if (decimationPolicy == null) {
+    decimationPolicy=DecimationPolicy.getDefaultPolicy();
+  }
+  int imageChoice=0;
+  readParams.setSourceSubsampling(1,1,0,0);
+  if (overviewPolicy.equals(OverviewPolicy.IGNORE) && decimationPolicy.equals(DecimationPolicy.DISALLOW))   return imageChoice;
+  if (!overviewPolicy.equals(OverviewPolicy.IGNORE)) {
+    imageChoice=overviewController.pickOverviewLevel(overviewPolicy,requestedResolution);
+  }
+  if (!decimationPolicy.equals(DecimationPolicy.DISALLOW)) {
+    ReadParamsController.performDecimation(rasterManager.spatialDomainManager,requestedResolution,imageChoice,readParams,overviewController);
+  }
+  return imageChoice;
+}

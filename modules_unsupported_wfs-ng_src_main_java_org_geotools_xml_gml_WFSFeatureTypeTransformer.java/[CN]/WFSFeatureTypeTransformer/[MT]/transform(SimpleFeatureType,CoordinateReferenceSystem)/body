@@ -1,0 +1,21 @@
+{
+  SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+  build.setName(schema.getName());
+  GeometryDescriptor defaultGeometryType=null;
+  for (int i=0; i < schema.getAttributeCount(); i++) {
+    AttributeDescriptor attributeType=schema.getDescriptor(i);
+    if (attributeType instanceof ChoiceGeometryType) {
+      defaultGeometryType=handleChoiceGeometryAttribute(schema,crs,build,defaultGeometryType,attributeType);
+    }
+ else     if (attributeType instanceof GeometryDescriptor) {
+      defaultGeometryType=handleGeometryAttribute(schema,crs,build,defaultGeometryType,attributeType);
+    }
+ else {
+      build.add(attributeType);
+    }
+  }
+  if (defaultGeometryType != null) {
+    build.setDefaultGeometry(defaultGeometryType.getLocalName());
+  }
+  return build.buildFeatureType();
+}

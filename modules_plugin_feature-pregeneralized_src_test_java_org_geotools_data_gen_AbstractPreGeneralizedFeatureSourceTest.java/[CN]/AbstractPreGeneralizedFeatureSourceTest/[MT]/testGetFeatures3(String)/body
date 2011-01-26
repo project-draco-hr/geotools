@@ -1,0 +1,69 @@
+{
+  try {
+    PreGeneralizedDataStore ds=getDataStore(configName);
+    SimpleFeatureSource fs=ds.getFeatureSource("GenStreams");
+    assertTrue(fs.getSupportedHints().contains(Hints.GEOMETRY_DISTANCE));
+    SimpleFeatureCollection fCollection;
+    String typeName;
+    fCollection=fs.getFeatures();
+    typeName=fCollection.getSchema().getTypeName();
+    assertTrue("GenStreams".equals(typeName));
+    assertTrue(fCollection.size() > 0);
+    assertFalse(fCollection.isEmpty());
+    Object[] array=fCollection.toArray();
+    assertTrue(array.length == fCollection.size());
+    assertNotNull(array[0]);
+    assertTrue(array[0] instanceof PreGeneralizedSimpleFeature);
+    array=fCollection.toArray(new Object[fCollection.size()]);
+    assertTrue(array.length == fCollection.size());
+    assertNotNull(array[0]);
+    assertTrue(array[0] instanceof PreGeneralizedSimpleFeature);
+    assertTrue(fCollection.getBounds().equals(fs.getBounds()));
+    assertTrue(fCollection.contains(array[0]));
+    List<Object> list=new ArrayList<Object>();
+    list.add(array[0]);
+    list.add(array[1]);
+    assertTrue(fCollection.containsAll(list));
+    SimpleFeatureCollection subCollection=fCollection.subCollection(Filter.INCLUDE);
+    typeName=subCollection.getSchema().getTypeName();
+    assertTrue("GenStreams".equals(typeName));
+    assertTrue(fCollection.size() == subCollection.size());
+    assertTrue(subCollection.contains(array[0]));
+    SortBy2 sortBy=new SortBy2(){
+      public Expression getExpression(){
+        return null;
+      }
+      public void setExpression(      Expression expression){
+      }
+      public PropertyName getPropertyName(){
+        return new AttributeExpressionImpl("CAT_ID");
+      }
+      public SortOrder getSortOrder(){
+        return SortOrder.ASCENDING;
+      }
+    }
+;
+    SimpleFeatureCollection sortedCollection=fCollection.sort(sortBy);
+    final List<Long> catIds=new ArrayList<Long>();
+    FeatureVisitor checkSortVisitor=new FeatureVisitor(){
+      public void visit(      Feature feature){
+        SimpleFeature sf=(SimpleFeature)feature;
+        assertTrue(feature instanceof PreGeneralizedSimpleFeature);
+        long catid=(Long)sf.getAttribute("CAT_ID");
+        catIds.add(catid);
+      }
+    }
+;
+    try {
+      fCollection.accepts(checkSortVisitor,null);
+    }
+ catch (    Throwable e) {
+      Assert.fail();
+    }
+    assertTrue(catIds.size() == fCollection.size());
+    ds.dispose();
+  }
+ catch (  Exception ex) {
+    Assert.fail(ex.getMessage());
+  }
+}

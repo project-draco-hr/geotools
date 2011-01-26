@@ -1,0 +1,35 @@
+{
+  final int nnodes=100;
+  Node[] ends=GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  HashSet toRemove=new HashSet();
+  toRemove.addAll(ends[0].getEdges());
+  toRemove.addAll(ends[1].getEdges());
+  builder().removeEdges(toRemove);
+  assertTrue(builder().getGraph().getNodes().size() == nnodes);
+  assertTrue(builder().getGraph().getEdges().size() == nnodes - 3);
+  try {
+    File victim=File.createTempFile("graph",null);
+    victim.deleteOnExit();
+    m_serializer.setProperty(SerializedReaderWriter.FILENAME,victim.getAbsolutePath());
+    m_serializer.write(builder().getGraph());
+    Graph before=builder().getGraph();
+    Graph after=m_serializer.read();
+    assertTrue(before.getNodes().size() == after.getNodes().size());
+    assertTrue(before.getEdges().size() == after.getEdges().size());
+    GraphVisitor visitor=new GraphVisitor(){
+      public int visit(      Graphable component){
+        Node n=(Node)component;
+        if (n.getID() == 0 || n.getID() == nnodes - 1)         assertTrue(n.getDegree() == 0);
+ else         if (n.getID() == 1 || n.getID() == nnodes - 2)         assertTrue(n.getDegree() == 1);
+ else         assertTrue(n.getDegree() == 2);
+        return (0);
+      }
+    }
+;
+    after.visitNodes(visitor);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    assertTrue(false);
+  }
+}

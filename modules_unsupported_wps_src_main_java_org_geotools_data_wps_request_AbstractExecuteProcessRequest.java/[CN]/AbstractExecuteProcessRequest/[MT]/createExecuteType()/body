@@ -1,0 +1,30 @@
+{
+  ExecuteType request=Wps10Factory.eINSTANCE.createExecuteType();
+  CodeType codetype=Ows11Factory.eINSTANCE.createCodeType();
+  String iden=(String)this.properties.get(this.IDENTIFIER);
+  codetype.setValue(iden);
+  request.setIdentifier(codetype);
+  request.setService("WPS");
+  request.setVersion("1.0.0");
+  if (this.inputs != null && !this.inputs.isEmpty()) {
+    DataInputsType1 inputtypes=Wps10Factory.eINSTANCE.createDataInputsType1();
+    Set<Object> keyset=this.inputs.keySet();
+    Iterator<Object> iterator=keyset.iterator();
+    while (iterator.hasNext()) {
+      Object key=iterator.next();
+      List<DataType> objects=(List<DataType>)this.inputs.get(key);
+      Iterator<DataType> iterator2=objects.iterator();
+      while (iterator2.hasNext()) {
+        DataType dt=(DataType)iterator2.next();
+        InputType input=Wps10Factory.eINSTANCE.createInputType();
+        CodeType ct=Ows11Factory.eINSTANCE.createCodeType();
+        ct.setValue((String)key);
+        input.setIdentifier(ct);
+        input.setData((DataType)dt);
+        inputtypes.getInput().add(input);
+      }
+    }
+    request.setDataInputs(inputtypes);
+  }
+  return request;
+}

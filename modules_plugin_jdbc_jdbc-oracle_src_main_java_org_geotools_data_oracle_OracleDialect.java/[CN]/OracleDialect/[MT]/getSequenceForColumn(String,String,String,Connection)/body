@@ -1,0 +1,30 @@
+{
+  String sequenceName=(tableName + "_" + columnName+ "_SEQUENCE").toUpperCase();
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery("SELECT * FROM USER_SEQUENCES" + " WHERE SEQUENCE_NAME = '" + sequenceName + "'");
+    try {
+      if (rs.next()) {
+        return sequenceName;
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+    dataStore.closeSafe(rs);
+    rs=st.executeQuery("SELECT * FROM ALL_SEQUENCES" + " WHERE SEQUENCE_NAME = '" + sequenceName + "'");
+    try {
+      if (rs.next()) {
+        String schema=rs.getString("OWNER");
+        return schema + "." + sequenceName;
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+  return null;
+}

@@ -1,0 +1,21 @@
+{
+  testData.truncateTestTable(tableName);
+  SimpleFeatureStore store;
+  store=(SimpleFeatureStore)ds.getFeatureSource(tableName);
+  assertNotNull(store);
+  store.setTransaction(transaction);
+  SimpleFeatureType schema=store.getSchema();
+  assertNotNull(schema);
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(schema);
+  if (schema.getDescriptor("ROW_ID") != null) {
+    builder.set("ROW_ID",Integer.valueOf(1000));
+  }
+  builder.set("INT_COL",Integer.valueOf(1000));
+  builder.set("STRING_COL",Integer.valueOf(1000));
+  SimpleFeatureCollection fc;
+  fc=DataUtilities.collection(builder.buildFeature(null));
+  List<FeatureId> fids=store.addFeatures(fc);
+  assertNotNull(fids);
+  assertEquals(1,fids.size());
+  return fids;
+}

@@ -1,0 +1,33 @@
+{
+  final int numBands=image.getSampleModel().getNumBands();
+  if (src != null && src.length != numBands) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NUMBER_OF_BANDS_MISMATCH_$3,numBands,src.length,"SampleDimension"));
+  }
+  if (dst.length != numBands) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NUMBER_OF_BANDS_MISMATCH_$3,numBands,dst.length,"SampleDimension"));
+  }
+  int countGeophysics=0;
+  int countIndexed=0;
+  GridSampleDimension[] defaultSD=null;
+  for (int i=0; i < numBands; i++) {
+    GridSampleDimension sd=(src != null) ? src[i] : null;
+    if (sd == null) {
+      if (defaultSD == null) {
+        defaultSD=new GridSampleDimension[numBands];
+        create(name,RectIterFactory.create(image,null),image.getSampleModel(),null,null,null,null,defaultSD,null);
+      }
+      sd=defaultSD[i];
+    }
+    sd=new RenderedSampleDimension(sd,image,i);
+    dst[i]=sd;
+    if (sd.geophysics(true) == sd)     countGeophysics++;
+    if (sd.geophysics(false) == sd)     countIndexed++;
+  }
+  if (countGeophysics == numBands) {
+    return true;
+  }
+  if (countIndexed == numBands) {
+    return false;
+  }
+  throw new IllegalArgumentException(Errors.format(ErrorKeys.MIXED_CATEGORIES));
+}

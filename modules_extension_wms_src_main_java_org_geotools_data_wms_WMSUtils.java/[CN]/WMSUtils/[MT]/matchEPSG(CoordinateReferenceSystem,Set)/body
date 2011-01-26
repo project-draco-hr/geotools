@@ -1,0 +1,53 @@
+{
+  TreeSet previous=(TreeSet)crsCache.get(crs);
+  if (previous != null) {
+    Iterator iter=previous.iterator();
+    while (iter.hasNext()) {
+      String code=(String)iter.next();
+      if (codes.contains(code)) {
+        return code;
+      }
+    }
+  }
+  Iterator iter=crs.getIdentifiers().iterator();
+  while (iter.hasNext()) {
+    Identifier ident=(Identifier)iter.next();
+    String epsgCode=ident.toString();
+    if (codes.contains(epsgCode)) {
+      if (crsCache.get(crs) == null) {
+        crsCache.put(crs,new TreeSet());
+      }
+      TreeSet set=(TreeSet)crsCache.get(crs);
+      set.add(epsgCode);
+      return epsgCode;
+    }
+  }
+  iter=null;
+  iter=codes.iterator();
+  while (iter.hasNext()) {
+    String epsgCode=(String)iter.next();
+    CoordinateReferenceSystem epsgCRS;
+    try {
+      epsgCRS=CRS.decode(epsgCode);
+    }
+ catch (    Exception e) {
+      continue;
+    }
+    MathTransform transform;
+    try {
+      transform=CRS.findMathTransform(crs,epsgCRS,true);
+    }
+ catch (    FactoryException e) {
+      continue;
+    }
+    if (transform.isIdentity()) {
+      if (crsCache.get(crs) == null) {
+        crsCache.put(crs,new TreeSet());
+      }
+      TreeSet set=(TreeSet)crsCache.get(crs);
+      set.add(epsgCode);
+      return epsgCode;
+    }
+  }
+  return null;
+}

@@ -1,0 +1,17 @@
+{
+  try {
+    Geometry geom=null;
+    Object struct=rs.getObject(position);
+    geom=converter.asGeometry((STRUCT)struct);
+    if (targetClazz.equals(MultiPolygon.class) && geom instanceof Polygon)     return geometryFactory.createMultiPolygon(new Polygon[]{(Polygon)geom});
+ else     if (targetClazz.equals(MultiPoint.class) && geom instanceof Point)     return geometryFactory.createMultiPoint(new Point[]{(Point)geom});
+ else     if (targetClazz.equals(MultiLineString.class) && geom instanceof LineString)     return geometryFactory.createMultiLineString(new LineString[]{(LineString)geom});
+ else     if (targetClazz.equals(GeometryCollection.class))     return geometryFactory.createGeometryCollection(new Geometry[]{geom});
+    return geom;
+  }
+ catch (  SQLException e) {
+    String msg="SQL Exception reading geometry column";
+    LOGGER.log(Level.SEVERE,msg,e);
+    throw new DataSourceException(msg,e);
+  }
+}

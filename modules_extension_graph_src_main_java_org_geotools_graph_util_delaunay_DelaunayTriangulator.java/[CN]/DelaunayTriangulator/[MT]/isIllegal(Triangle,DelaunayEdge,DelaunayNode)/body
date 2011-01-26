@@ -1,0 +1,62 @@
+{
+  DelaunayNode eNodeA=(DelaunayNode)e.getNodeA();
+  DelaunayNode eNodeB=(DelaunayNode)e.getNodeB();
+  if (isTemporary(eNodeA) && isTemporary(eNodeB)) {
+    return false;
+  }
+  DelaunayNode farNode=(DelaunayNode)e.getOtherFace(t).getThirdNode(e);
+  DelaunayEdge p_a=((DelaunayEdge)t.getOppositeEdge(e.getNodeB()));
+  DelaunayEdge p_b=((DelaunayEdge)t.getOppositeEdge(e.getNodeA()));
+  DelaunayNode farNodeP_A=(DelaunayNode)p_a.getOtherFace(t).getThirdNode(p_a);
+  DelaunayNode farNodeP_B=(DelaunayNode)p_b.getOtherFace(t).getThirdNode(p_b);
+  if ((farNode.equals(farNodeP_A)) || (farNode.equals(farNodeP_B))) {
+    return false;
+  }
+  int numTemporary=0;
+  if (isTemporary(eNodeA)) {
+    numTemporary++;
+  }
+  if (isTemporary(eNodeB)) {
+    numTemporary++;
+  }
+  if (isTemporary(p)) {
+    numTemporary++;
+  }
+  if (isTemporary(farNode)) {
+    numTemporary++;
+  }
+  if (numTemporary == 0) {
+    Ellipse2D.Double circum=constructCircle(p,eNodeA,eNodeB);
+    Point2D.Double point=new Point2D.Double(farNode.getCoordinate().x,farNode.getCoordinate().y);
+    if (circum.contains(point)) {
+      LOGGER.finer("Illegal by case 2");
+      return true;
+    }
+ else {
+      return false;
+    }
+  }
+ else   if (numTemporary == 1) {
+    if (isTemporary(eNodeA) || isTemporary(eNodeB)) {
+      LOGGER.finer("Illegal by case 3");
+      return true;
+    }
+ else {
+      return false;
+    }
+  }
+ else   if (numTemporary == 2) {
+    int i=whichSpecialNode(eNodeA,eNodeB);
+    int j=whichSpecialNode(p,farNode);
+    if (i < j) {
+      return false;
+    }
+ else {
+      LOGGER.finer("Illegal by case 4");
+      return true;
+    }
+  }
+ else {
+    throw new RuntimeException("Problem in DelaunayTriangulator.isIllegal--This shouldn't've happened!");
+  }
+}

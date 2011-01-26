@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  ImageDatum datum=(ImageDatum)cache.get(key);
+  if (datum == null) {
+    try {
+      cache.writeLock(key);
+      datum=(ImageDatum)cache.peek(key);
+      if (datum == null) {
+        datum=datumAuthority.createImageDatum(code);
+        cache.put(key,datum);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return datum;
+}

@@ -1,0 +1,42 @@
+{
+  ReadableByteChannel in=null;
+  try {
+    ByteBuffer buffer=ByteBuffer.allocate(100);
+    FileReader reader=new FileReader(){
+      public String id(){
+        return "Shapefile Datastore's getBounds Method";
+      }
+    }
+;
+    in=shpFiles.getReadChannel(SHP,reader);
+    try {
+      in.read(buffer);
+      buffer.flip();
+      ShapefileHeader header=new ShapefileHeader();
+      header.read(buffer,true);
+      ReferencedEnvelope bounds=new ReferencedEnvelope(schema.getCoordinateReferenceSystem());
+      bounds.include(header.minX(),header.minY());
+      bounds.include(header.minX(),header.minY());
+      Envelope env=new Envelope(header.minX(),header.maxX(),header.minY(),header.maxY());
+      if (schema != null) {
+        return new ReferencedEnvelope(env,schema.getCoordinateReferenceSystem());
+      }
+      return new ReferencedEnvelope(env,null);
+    }
+  finally {
+      in.close();
+    }
+  }
+ catch (  IOException ioe) {
+    throw new DataSourceException("Problem getting Bbox",ioe);
+  }
+ finally {
+    try {
+      if (in != null) {
+        in.close();
+      }
+    }
+ catch (    IOException ioe) {
+    }
+  }
+}

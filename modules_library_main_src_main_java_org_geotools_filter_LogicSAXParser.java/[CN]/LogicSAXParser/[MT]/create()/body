@@ -1,0 +1,24 @@
+{
+  LogicFilter filter=null;
+  LOGGER.finer("creating a logic filter");
+  if (isComplete()) {
+    LOGGER.finer("filter is complete, with type: " + this.logicType);
+    if (logicType == AbstractFilter.LOGIC_NOT) {
+      filter=ff.createLogicFilter((Filter)subFilters.get(0),this.logicType);
+    }
+ else {
+      filter=ff.createLogicFilter(this.logicType);
+      Iterator iterator=subFilters.iterator();
+      while (iterator.hasNext()) {
+        filter.addFilter((org.opengis.filter.Filter)iterator.next());
+      }
+    }
+    subFilters=new ArrayList();
+    this.logicType=-1;
+    isComplete=false;
+    return filter;
+  }
+ else {
+    throw new IllegalFilterException("Attempted to generate incomplete logic filter.");
+  }
+}

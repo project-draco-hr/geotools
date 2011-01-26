@@ -1,0 +1,31 @@
+{
+  final double rho=hypot(x,y);
+  final double ce=2.0 * atan2(rho * cosChi1,k0);
+  final double cosce=cos(ce);
+  final double since=sin(ce);
+  final boolean rhoIs0=abs(rho) < EPSILON;
+  final double chi=rhoIs0 ? chi1 : asin(cosce * sinChi1 + (y * since * cosChi1 / rho));
+  final double tp=tan(PI / 4.0 + chi / 2.0);
+  final double t=x * since;
+  final double ct=rho * cosChi1 * cosce - y * sinChi1 * since;
+  final double halfe=excentricity / 2.0;
+  double phi0=chi;
+  for (int i=MAXIMUM_ITERATIONS; ; ) {
+    final double esinphi=excentricity * sin(phi0);
+    final double phi=2 * atan(tp * pow((1 + esinphi) / (1 - esinphi),halfe)) - PI / 2;
+    if (abs(phi - phi0) < ITERATION_TOLERANCE) {
+      x=rhoIs0 || (abs(t) < EPSILON && abs(ct) < EPSILON) ? 0.0 : atan2(t,ct);
+      y=phi;
+      break;
+    }
+    phi0=phi;
+    if (--i < 0) {
+      throw new ProjectionException(ErrorKeys.NO_CONVERGENCE);
+    }
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(x,y);
+    return ptDst;
+  }
+  return new Point2D.Double(x,y);
+}

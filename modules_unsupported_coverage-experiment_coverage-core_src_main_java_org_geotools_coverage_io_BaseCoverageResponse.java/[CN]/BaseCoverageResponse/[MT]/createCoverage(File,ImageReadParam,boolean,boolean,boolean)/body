@@ -1,0 +1,19 @@
+{
+  final PlanarImage image=readRaster(input,useJAI,imageReadParam,useMultithreading);
+  if (newTransform) {
+    final int ssWidth=image.getWidth();
+    final int ssHeight=image.getHeight();
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Coverage read: width = " + ssWidth + " height = "+ ssHeight);
+    }
+    final Rectangle sourceRegion=imageReadParam.getSourceRegion();
+    final double scaleX=sourceRegion.width / (1.0 * ssWidth);
+    final double scaleY=sourceRegion.height / (1.0 * ssHeight);
+    final double translateX=sourceRegion.x;
+    final double translateY=sourceRegion.y;
+    return createCoverageFromImage(image,ConcatenatedTransform.create(ProjectiveTransform.create(new AffineTransform(scaleX,0,0,scaleY,translateX,translateY)),raster2Model));
+  }
+ else {
+    return createCoverageFromImage(image);
+  }
+}

@@ -1,0 +1,33 @@
+{
+  if (!sourceImage.getColorModel().getColorSpace().isCS_sRGB()) {
+    if (!(consumer instanceof SeRasterRenderedImage)) {
+      throw new IllegalArgumentException("You must set " + "SeRasterAttr.setImportMode(false) to load " + "data using this SeProducer implementation.");
+    }
+    Thread runme;
+    runme=new Thread(){
+      @Override public void run(){
+        try {
+          final int imageHeight=sourceImage.getHeight();
+          for (int i=0; i < sourceImage.getData().getNumBands(); i++) {
+            final byte[] imgBandData=((DataBufferByte)sourceImage.getData().getDataBuffer()).getData(i);
+            consumer.setScanLines(imageHeight,imgBandData,null);
+            consumer.rasterComplete(SeRasterConsumer.SINGLEFRAMEDONE);
+          }
+          consumer.rasterComplete(SeRasterConsumer.STATICIMAGEDONE);
+        }
+ catch (        Exception se) {
+          se.printStackTrace();
+          consumer.rasterComplete(SeRasterConsumer.IMAGEERROR);
+        }
+      }
+    }
+;
+    runme.start();
+  }
+ else {
+    SeRasterScanLineProducer prod=new SeRasterScanLineProducer(attr,sourceImage,sourceImage.getHeight());
+    prod.setBitMaskType(maskType);
+    prod.addConsumer(consumer);
+    prod.startProduction(consumer);
+  }
+}

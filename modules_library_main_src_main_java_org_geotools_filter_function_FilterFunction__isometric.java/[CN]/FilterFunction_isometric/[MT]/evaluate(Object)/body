@@ -1,0 +1,32 @@
+{
+  Geometry geom=(Geometry)getExpression(0).evaluate(feature,Geometry.class);
+  Double extrusion=getExpression(1).evaluate(feature,Double.class);
+  if (geom != null && extrusion != null) {
+    SegmentExtractorFilter extractor=new SegmentExtractorFilter();
+    geom.apply(extractor);
+    List<Polygon> faces=extractor.getFaces(geom.getFactory(),extrusion);
+    if (geom instanceof Polygon) {
+      Polygon offseted=(Polygon)geom.clone();
+      offseted.apply(new OffsetOrdinateFilter(0,extrusion));
+      faces.add(0,(Polygon)geom);
+      faces.add(offseted);
+    }
+ else     if (geom instanceof GeometryCollection) {
+      GeometryCollection gc=(GeometryCollection)geom;
+      for (int i=0; i < gc.getNumGeometries(); i++) {
+        Geometry g=gc.getGeometryN(i);
+        if (g instanceof Polygon) {
+          Polygon offseted=(Polygon)g.clone();
+          offseted.apply(new OffsetOrdinateFilter(0,extrusion));
+          faces.add(0,(Polygon)g);
+          faces.add(offseted);
+        }
+      }
+    }
+    Polygon[] polyArray=(Polygon[])faces.toArray(new Polygon[faces.size()]);
+    return geom.getFactory().createMultiPolygon(polyArray);
+  }
+ else {
+    return null;
+  }
+}

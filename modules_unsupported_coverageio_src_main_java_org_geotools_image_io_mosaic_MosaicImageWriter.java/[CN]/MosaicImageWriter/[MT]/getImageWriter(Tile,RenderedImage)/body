@@ -1,0 +1,109 @@
+{
+  final Object output=tile.getInput();
+  final Class<?> outputType=output.getClass();
+  final ImageReaderSpi readerSpi=tile.getImageReaderSpi();
+  final String[] formatNames=readerSpi.getFormatNames();
+  final String[] spiNames=readerSpi.getImageWriterSpiNames();
+  ImageOutputStream stream=null;
+  if (spiNames != null) {
+    final IIORegistry registry=IIORegistry.getDefaultInstance();
+    final ImageWriterSpi[] providers=new ImageWriterSpi[spiNames.length];
+    int count=0;
+    for (    final String name : spiNames) {
+      final Class<?> spiType;
+      try {
+        spiType=Class.forName(name);
+      }
+ catch (      ClassNotFoundException e) {
+        continue;
+      }
+      final Object candidate=registry.getServiceProviderByClass(spiType);
+      if (candidate instanceof ImageWriterSpi) {
+        final ImageWriterSpi spi=(ImageWriterSpi)candidate;
+        final String[] names=spi.getFormatNames();
+        if (XArray.intersects(formatNames,names) && spi.canEncodeImage(image)) {
+          providers[count++]=spi;
+          for (          final Class<?> legalType : spi.getOutputTypes()) {
+            if (legalType.isAssignableFrom(outputType)) {
+              final ImageWriter writer=spi.createWriterInstance();
+              writer.setOutput(output);
+              if (filter(writer)) {
+                return writer;
+              }
+              writer.dispose();
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (count != 0) {
+      stream=ImageIO.createImageOutputStream(output);
+      if (stream != null) {
+        final Class<? extends ImageOutputStream> streamType=stream.getClass();
+        for (int i=0; i < count; i++) {
+          final ImageWriterSpi spi=providers[i];
+          for (          final Class<?> legalType : spi.getOutputTypes()) {
+            if (legalType.isAssignableFrom(streamType)) {
+              final ImageWriter writer=spi.createWriterInstance();
+              writer.setOutput(stream);
+              if (filter(writer)) {
+                return writer;
+              }
+              writer.dispose();
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  for (  final String name : formatNames) {
+    final List<ImageWriter> writers=new ArrayList<ImageWriter>();
+    final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName(name);
+    while (it.hasNext()) {
+      final ImageWriter writer=it.next();
+      final ImageWriterSpi spi=writer.getOriginatingProvider();
+      if (spi == null || !spi.canEncodeImage(image)) {
+        writer.dispose();
+        continue;
+      }
+      writers.add(writer);
+      for (      final Class<?> legalType : spi.getOutputTypes()) {
+        if (legalType.isAssignableFrom(outputType)) {
+          writer.setOutput(output);
+          if (filter(writer)) {
+            return writer;
+          }
+          break;
+        }
+      }
+    }
+    if (!writers.isEmpty()) {
+      if (stream == null) {
+        stream=ImageIO.createImageOutputStream(output);
+        if (stream == null) {
+          break;
+        }
+      }
+      final Class<? extends ImageOutputStream> streamType=stream.getClass();
+      for (      final ImageWriter writer : writers) {
+        final ImageWriterSpi spi=writer.getOriginatingProvider();
+        for (        final Class<?> legalType : spi.getOutputTypes()) {
+          if (legalType.isAssignableFrom(streamType)) {
+            writer.setOutput(stream);
+            if (filter(writer)) {
+              return writer;
+            }
+            break;
+          }
+        }
+        writer.dispose();
+      }
+    }
+  }
+  if (stream != null) {
+    stream.close();
+  }
+  throw new IIOException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+}

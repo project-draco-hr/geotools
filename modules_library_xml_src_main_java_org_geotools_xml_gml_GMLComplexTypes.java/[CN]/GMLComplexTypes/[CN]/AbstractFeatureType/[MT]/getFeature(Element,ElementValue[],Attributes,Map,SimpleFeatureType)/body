@@ -1,0 +1,36 @@
+{
+  if (ft == null)   ft=(SimpleFeatureType)featureTypeMappings.get(element.getType().getNamespace() + "#" + element.getName());
+  if (ft == null) {
+    ft=loadFeatureType(element,value,attrs);
+  }
+  Object[] values=new Object[ft.getAttributeCount()];
+  for (int i=0; i < values.length; i++)   values[i]=null;
+  for (int i=0; i < value.length; i++) {
+    int j=-1;
+    setAttribute(value,ft,values,i,j);
+  }
+  String fid=attrs.getValue("","fid");
+  if ((fid == null) || "".equals(fid)) {
+    fid=attrs.getValue(GMLSchema.NAMESPACE.toString(),"fid");
+  }
+  SimpleFeature rt=null;
+  if ((fid != null) || !"".equals(fid)) {
+    try {
+      rt=SimpleFeatureBuilder.build(ft,values,fid);
+    }
+ catch (    IllegalAttributeException e) {
+      logger.warning(e.toString());
+      throw new SAXException(e);
+    }
+  }
+  try {
+    if (rt == null) {
+      rt=SimpleFeatureBuilder.build(ft,values,null);
+    }
+  }
+ catch (  IllegalAttributeException e1) {
+    logger.warning(e1.toString());
+    throw new SAXException(e1);
+  }
+  return rt;
+}

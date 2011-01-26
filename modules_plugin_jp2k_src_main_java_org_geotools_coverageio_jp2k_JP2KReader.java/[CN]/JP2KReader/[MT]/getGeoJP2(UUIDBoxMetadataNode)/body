@@ -1,0 +1,46 @@
+{
+  CoordinateReferenceSystem coordinateReferenceSystem=null;
+  final ByteArrayInputStream inputStream=new ByteArrayInputStream(uuid.getData());
+  final TIFFImageReader tiffreader=(TIFFImageReader)new TIFFImageReaderSpi().createReaderInstance();
+  tiffreader.setInput(ImageIO.createImageInputStream(inputStream));
+  final IIOMetadata tiffmetadata=tiffreader.getImageMetadata(0);
+  try {
+    final GeoTiffIIOMetadataDecoder metadataDecoder=new GeoTiffIIOMetadataDecoder(tiffmetadata);
+    final GeoTiffMetadata2CRSAdapter adapter=new GeoTiffMetadata2CRSAdapter(hints);
+    coordinateReferenceSystem=adapter.createCoordinateSystem(metadataDecoder);
+    if (coordinateReferenceSystem != null) {
+      if (this.crs == null)       this.crs=coordinateReferenceSystem;
+    }
+    if (this.raster2Model == null) {
+      this.raster2Model=GeoTiffMetadata2CRSAdapter.getRasterToModel(metadataDecoder);
+      final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
+      tempTransform.translate(-0.5,-0.5);
+      final GeneralEnvelope envelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(nativeGridRange));
+      envelope.setCoordinateReferenceSystem(crs);
+      setCoverageEnvelope(envelope);
+    }
+  }
+ catch (  FactoryException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to parse CRS from underlying TIFF",e);
+    coordinateReferenceSystem=null;
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to parse CRS from underlying TIFF",e);
+    coordinateReferenceSystem=null;
+  }
+catch (  UnsupportedOperationException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to parse CRS from underlying TIFF",e);
+    coordinateReferenceSystem=null;
+  }
+catch (  IllegalArgumentException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to parse CRS from underlying TIFF",e);
+    coordinateReferenceSystem=null;
+  }
+ finally {
+    if (inputStream != null)     try {
+      inputStream.close();
+    }
+ catch (    IOException ioe) {
+    }
+  }
+}

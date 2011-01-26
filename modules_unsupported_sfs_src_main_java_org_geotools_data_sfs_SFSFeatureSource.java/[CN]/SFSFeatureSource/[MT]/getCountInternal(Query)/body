@@ -1,0 +1,26 @@
+{
+  int count=0;
+  Filter[] split=splitFilter(fnQuery.getFilter());
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  if ((postFilter != null) && (postFilter != Filter.INCLUDE)) {
+    return -1;
+  }
+ else {
+    Query tmpPreQ=new Query(fnQuery);
+    tmpPreQ.setFilter(preFilter);
+    String strQuery=SFSDataStoreUtil.encodeQuery(tmpPreQ);
+    String strCount=ods.resourceToString("data/" + layer.getTypeName().getLocalPart() + "?mode=count",strQuery);
+    try {
+      count=Integer.parseInt(strCount);
+    }
+ catch (    NumberFormatException nfe) {
+      LOGGER.log(Level.SEVERE,"Number format Exception in getCountInternal : FeatureSource -- getCount --" + nfe.getMessage(),nfe);
+      return 0;
+    }
+  }
+  if (query.getMaxFeatures() > 0 && count > query.getMaxFeatures()) {
+    count=query.getMaxFeatures();
+  }
+  return count;
+}

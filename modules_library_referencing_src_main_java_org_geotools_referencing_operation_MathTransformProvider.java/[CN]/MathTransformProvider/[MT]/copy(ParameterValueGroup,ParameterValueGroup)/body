@@ -1,0 +1,42 @@
+{
+  for (  final GeneralParameterValue value : values.values()) {
+    final String name=value.getDescriptor().getName().getCode();
+    if (value instanceof ParameterValueGroup) {
+      final GeneralParameterDescriptor descriptor;
+      descriptor=copy.getDescriptor().descriptor(name);
+      if (descriptor instanceof ParameterDescriptorGroup) {
+        final ParameterValueGroup groups=(ParameterValueGroup)descriptor.createValue();
+        copy((ParameterValueGroup)value,groups);
+        values.groups(name).add(groups);
+        continue;
+      }
+ else {
+        throw new InvalidParameterNameException(Errors.format(ErrorKeys.UNEXPECTED_PARAMETER_$1,name),name);
+      }
+    }
+    final ParameterValue<?> source=(ParameterValue)value;
+    final ParameterValue<?> target;
+    try {
+      target=copy.parameter(name);
+    }
+ catch (    ParameterNotFoundException cause) {
+      final InvalidParameterNameException exception=new InvalidParameterNameException(Errors.format(ErrorKeys.UNEXPECTED_PARAMETER_$1,name),name);
+      exception.initCause(cause);
+      throw exception;
+    }
+    final Object v=source.getValue();
+    final Unit<?> unit=source.getUnit();
+    if (unit == null) {
+      target.setValue(v);
+    }
+ else     if (v instanceof Number) {
+      target.setValue(((Number)v).doubleValue(),unit);
+    }
+ else     if (v instanceof double[]) {
+      target.setValue((double[])v,unit);
+    }
+ else {
+      throw new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,name,v),name,v);
+    }
+  }
+}

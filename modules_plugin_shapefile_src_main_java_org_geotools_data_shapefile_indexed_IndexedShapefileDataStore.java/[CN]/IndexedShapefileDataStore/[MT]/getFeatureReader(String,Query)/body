@@ -1,0 +1,37 @@
+{
+  if (query.getFilter() == Filter.EXCLUDE)   return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(getSchema());
+  String[] propertyNames=query.getPropertyNames() == null ? new String[0] : query.getPropertyNames();
+  String defaultGeomName=schema.getGeometryDescriptor().getLocalName();
+  if (propertyNames.length > 0) {
+    FilterAttributeExtractor fae=new FilterAttributeExtractor(schema);
+    query.getFilter().accept(fae,null);
+    Set<String> attributes=new LinkedHashSet<String>(Arrays.asList(propertyNames));
+    attributes.addAll(fae.getAttributeNameSet());
+    propertyNames=(String[])attributes.toArray(new String[attributes.size()]);
+  }
+  SimpleFeatureType newSchema=schema;
+  boolean readDbf=true;
+  boolean readGeometry=true;
+  try {
+    if (((query.getPropertyNames() != Query.NO_NAMES) && (propertyNames.length == 1) && propertyNames[0].equals(defaultGeomName))) {
+      readDbf=false;
+      newSchema=createSubType(propertyNames);
+    }
+ else     if ((query.getPropertyNames() == Query.NO_NAMES) && (propertyNames.length == 0)) {
+      readDbf=false;
+      readGeometry=false;
+      newSchema=createSubType(propertyNames);
+    }
+ else     if (propertyNames.length > 0 && !propertyNames[0].equals(defaultGeomName)) {
+      readGeometry=false;
+      newSchema=createSubType(propertyNames);
+    }
+ else     if (propertyNames.length > 0) {
+      newSchema=createSubType(propertyNames);
+    }
+    return createFeatureReader(typeName,getAttributesReader(readDbf,readGeometry,query,newSchema),newSchema);
+  }
+ catch (  SchemaException se) {
+    throw new DataSourceException("Error creating schema",se);
+  }
+}

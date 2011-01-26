@@ -1,0 +1,73 @@
+{
+  List versions=new ArrayList(specs.length);
+  Exception exception=null;
+  for (int i=0; i < specs.length; i++) {
+    versions.add(i,specs[i].getVersion());
+  }
+  int minClient=0;
+  int maxClient=specs.length - 1;
+  int test=maxClient;
+  while ((minClient <= test) && (test <= maxClient)) {
+    Specification tempSpecification=specs[test];
+    String clientVersion=tempSpecification.getVersion();
+    GetCapabilitiesRequest request=tempSpecification.createGetCapabilitiesRequest(serverURL);
+    C tempCapabilities;
+    try {
+      tempCapabilities=(C)issueRequest(request).getCapabilities();
+    }
+ catch (    ServiceException e) {
+      tempCapabilities=null;
+      exception=e;
+    }
+    int compare=-1;
+    String serverVersion=clientVersion;
+    if (tempCapabilities != null) {
+      serverVersion=tempCapabilities.getVersion();
+      compare=serverVersion.compareTo(clientVersion);
+    }
+    if (compare == 0) {
+      this.specification=tempSpecification;
+      return tempCapabilities;
+    }
+    if (tempCapabilities != null && versions.contains(serverVersion)) {
+      int index=versions.indexOf(serverVersion);
+      this.specification=specs[index];
+      return tempCapabilities;
+    }
+ else     if (compare < 0) {
+      maxClient=test - 1;
+      clientVersion=before(versions,serverVersion);
+      if (clientVersion == null) {
+        if (exception != null) {
+          if (exception instanceof ServiceException) {
+            throw (ServiceException)exception;
+          }
+          IOException e=new IOException(exception.getMessage());
+          throw e;
+        }
+        return null;
+      }
+      test=versions.indexOf(clientVersion);
+    }
+ else {
+      minClient=test + 1;
+      clientVersion=after(versions,serverVersion);
+      if (clientVersion == null) {
+        if (exception != null) {
+          if (exception instanceof ServiceException) {
+            throw (ServiceException)exception;
+          }
+          IOException e=new IOException(exception.getMessage());
+          throw e;
+        }
+        return null;
+      }
+      test=versions.indexOf(clientVersion);
+    }
+  }
+  if (exception != null) {
+    IOException e=new IOException(exception.getMessage());
+    throw e;
+  }
+  return null;
+}

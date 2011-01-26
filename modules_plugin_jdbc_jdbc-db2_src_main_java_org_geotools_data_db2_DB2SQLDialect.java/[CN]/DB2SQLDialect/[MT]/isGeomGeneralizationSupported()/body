@@ -1,0 +1,22 @@
+{
+  DB2DialectInfo info=getDb2DialectInfo();
+  if (info.getProductVersion().startsWith("DSN"))   return false;
+  if (info.getProductName().startsWith("Informix"))   return false;
+  if (info.getProductVersion().startsWith("SQL") == false)   return false;
+  if (info.getMajorVersion() > 9)   return true;
+  if (info.getMajorVersion() < 9)   return false;
+  if (info.getMinorVersion() > 7)   return true;
+  if (info.getMinorVersion() < 5)   return false;
+  if (info.getProductVersion().length() < 8)   return false;
+  String fp=info.getProductVersion().substring(7);
+  StringBuffer buff=new StringBuffer();
+  for (int i=0; i < fp.length(); i++) {
+    if (Character.isDigit(fp.charAt(i)))     buff.append(fp.charAt(i));
+ else     break;
+  }
+  if (buff.length() == 0)   return false;
+  int fpNumber=Integer.parseInt(buff.toString());
+  if (info.getMinorVersion() == 5 && fpNumber >= 5)   return true;
+  if (info.getMinorVersion() == 7 && fpNumber >= 1)   return true;
+  return false;
+}

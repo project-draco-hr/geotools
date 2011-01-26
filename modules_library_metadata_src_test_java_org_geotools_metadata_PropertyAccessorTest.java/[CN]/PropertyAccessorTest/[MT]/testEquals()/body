@@ -1,0 +1,30 @@
+{
+  Citation citation=Citations.EPSG;
+  final PropertyAccessor accessor=createPropertyAccessor(citation);
+  assertFalse(accessor.shallowEquals(citation,Citations.GEOTIFF,true));
+  assertFalse(accessor.shallowEquals(citation,Citations.GEOTIFF,false));
+  assertTrue(accessor.shallowEquals(citation,Citations.EPSG,false));
+  citation=new CitationImpl();
+  assertTrue(accessor.shallowCopy(Citations.EPSG,citation,true));
+  assertFalse(accessor.shallowEquals(citation,Citations.GEOTIFF,true));
+  assertFalse(accessor.shallowEquals(citation,Citations.GEOTIFF,false));
+  assertTrue(accessor.shallowEquals(citation,Citations.EPSG,false));
+  final int index=accessor.indexOf("identifiers");
+  final Object source=accessor.get(index,Citations.EPSG);
+  final Object target=accessor.get(index,citation);
+  assertNotNull(source);
+  assertNotNull(target);
+  assertNotSame(source,target);
+  assertEquals(source,target);
+  assertTrue(containsEPSG(target));
+  assertSame(target,accessor.set(index,citation,null));
+  final Object value=accessor.get(index,citation);
+  assertNotNull(value);
+  assertTrue(((Collection)value).isEmpty());
+  try {
+    accessor.shallowCopy(citation,Citations.EPSG,true);
+    fail("Citations.EPSG should be unmodifiable.");
+  }
+ catch (  UnmodifiableMetadataException e) {
+  }
+}

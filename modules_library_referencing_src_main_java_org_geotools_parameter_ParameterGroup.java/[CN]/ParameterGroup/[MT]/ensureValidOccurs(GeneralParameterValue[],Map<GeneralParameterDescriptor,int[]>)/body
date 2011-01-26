@@ -1,0 +1,22 @@
+{
+  for (int i=0; i < values.length; i++) {
+    ensureNonNull("values",values,i);
+    final GeneralParameterDescriptor descriptor=values[i].getDescriptor();
+    final int[] count=occurences.get(descriptor);
+    if (count == null) {
+      final String name=getName(descriptor);
+      throw new InvalidParameterTypeException(Errors.format(ErrorKeys.ILLEGAL_DESCRIPTOR_FOR_PARAMETER_$1,name),name);
+    }
+    count[0]++;
+  }
+  for (  final Map.Entry<GeneralParameterDescriptor,int[]> entry : occurences.entrySet()) {
+    final GeneralParameterDescriptor descriptor=entry.getKey();
+    final int count=entry.getValue()[0];
+    final int min=descriptor.getMinimumOccurs();
+    final int max=descriptor.getMaximumOccurs();
+    if (!(count >= min && count <= max)) {
+      final String name=getName(descriptor);
+      throw new InvalidParameterCardinalityException(Errors.format(ErrorKeys.ILLEGAL_OCCURS_FOR_PARAMETER_$4,name,count,min,max),name);
+    }
+  }
+}

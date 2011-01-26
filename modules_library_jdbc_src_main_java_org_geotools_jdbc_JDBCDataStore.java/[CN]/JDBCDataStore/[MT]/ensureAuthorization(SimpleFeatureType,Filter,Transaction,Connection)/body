@@ -1,0 +1,31 @@
+{
+  Query query=new DefaultQuery(featureType.getTypeName(),filter,Query.NO_NAMES);
+  Statement st=null;
+  try {
+    ResultSet rs=null;
+    if (getSQLDialect() instanceof PreparedStatementSQLDialect) {
+      st=selectSQLPS(featureType,query,cx);
+      rs=((PreparedStatement)st).executeQuery();
+    }
+ else {
+      String sql=selectSQL(featureType,query);
+      LOGGER.fine(sql);
+      st=cx.createStatement();
+      rs=st.executeQuery(sql);
+    }
+    try {
+      PrimaryKey key=getPrimaryKey(featureType);
+      InProcessLockingManager lm=(InProcessLockingManager)getLockingManager();
+      while (rs.next()) {
+        String fid=featureType.getTypeName() + "." + encodeFID(key,rs);
+        lm.assertAccess(featureType.getTypeName(),fid,tx);
+      }
+    }
+  finally {
+      closeSafe(rs);
+    }
+  }
+  finally {
+    closeSafe(st);
+  }
+}

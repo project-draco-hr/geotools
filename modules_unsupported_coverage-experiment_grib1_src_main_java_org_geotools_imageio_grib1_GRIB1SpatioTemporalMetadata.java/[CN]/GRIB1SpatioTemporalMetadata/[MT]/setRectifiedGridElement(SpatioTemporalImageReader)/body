@@ -1,0 +1,34 @@
+{
+  final RectifiedGrid rg=getRectifiedGrid();
+  Map<String,String> map=getAttributesMap(reader);
+  final int imageIndex=getImageIndex();
+  try {
+    final int width=reader.getWidth(imageIndex);
+    final int height=reader.getHeight(imageIndex);
+    final String gridTypeS=map.get(GRIB1ImageMetadata.GRID_TYPE);
+    int gridType=0;
+    if (gridTypeS != null)     gridType=Integer.parseInt(gridTypeS);
+    final String deltaX=map.get(GRIB1ImageMetadata.GRID_DELTA_X);
+    final String deltaY=map.get(GRIB1ImageMetadata.GRID_DELTA_Y);
+    final String startX=map.get(GRIB1ImageMetadata.GRID_LON_1);
+    final String startY=map.get(GRIB1ImageMetadata.GRID_LAT_1);
+    if (deltaX != null && deltaY != null && startX != null && startY != null) {
+      rg.setLow(new int[]{0,0});
+      rg.setHigh(new int[]{width,height});
+switch (gridType) {
+case 10:
+case 0:
+        rg.setCoordinates(new double[]{Double.parseDouble(startX),Double.parseDouble(startY)});
+      rg.addOffsetVector(new double[]{Double.parseDouble(deltaX),0d});
+    rg.addOffsetVector(new double[]{0d,Double.parseDouble(deltaY)});
+  rg.addAxisName("Long");
+rg.addAxisName("Lat");
+break;
+case 3:
+}
+}
+}
+ catch (IOException e) {
+throw new IllegalArgumentException("Unable parsing metadata");
+}
+}

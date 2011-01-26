@@ -1,0 +1,49 @@
+{
+  BasicSQLDialect dialect=(BasicSQLDialect)getSQLDialect();
+  PrimaryKey key=null;
+  try {
+    key=getPrimaryKey(featureType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  Set<String> pkColumnNames=getColumnNames(key);
+  StringBuffer sql=new StringBuffer();
+  sql.append("UPDATE ");
+  encodeTableName(featureType.getTypeName(),sql,null);
+  sql.append(" SET ");
+  for (int i=0; i < attributes.length; i++) {
+    String attName=attributes[i].getLocalName();
+    if (pkColumnNames.contains(attName)) {
+      continue;
+    }
+    dialect.encodeColumnName(attName,sql);
+    sql.append(" = ");
+    if (Geometry.class.isAssignableFrom(attributes[i].getType().getBinding())) {
+      try {
+        Geometry g=(Geometry)values[i];
+        int srid=getGeometrySRID(g,attributes[i]);
+        dialect.encodeGeometryValue(g,srid,sql);
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+ else {
+      dialect.encodeValue(values[i],attributes[i].getType().getBinding(),sql);
+    }
+    sql.append(",");
+  }
+  sql.setLength(sql.length() - 1);
+  sql.append(" ");
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    try {
+      FilterToSQL toSQL=createFilterToSQL(featureType);
+      sql.append(" ").append(toSQL.encodeToString(filter));
+    }
+ catch (    FilterToSQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  return sql.toString();
+}

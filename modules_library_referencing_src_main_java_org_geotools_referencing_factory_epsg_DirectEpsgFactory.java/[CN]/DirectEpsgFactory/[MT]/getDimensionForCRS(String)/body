@@ -1,0 +1,17 @@
+{
+  final PreparedStatement stmt;
+  final Short cached=axisCounts.get(code);
+  final short dimension;
+  if (cached == null) {
+    stmt=prepareStatement("Dimension","  SELECT COUNT(COORD_AXIS_CODE)" + " FROM [Coordinate Axis]" + " WHERE COORD_SYS_CODE = (SELECT COORD_SYS_CODE "+ " FROM [Coordinate Reference System]"+ " WHERE COORD_REF_SYS_CODE = ?)");
+    stmt.setString(1,code);
+    final ResultSet result=stmt.executeQuery();
+    dimension=result.next() ? result.getShort(1) : 2;
+    axisCounts.put(code,dimension);
+    result.close();
+  }
+ else {
+    dimension=cached.shortValue();
+  }
+  return dimension;
+}

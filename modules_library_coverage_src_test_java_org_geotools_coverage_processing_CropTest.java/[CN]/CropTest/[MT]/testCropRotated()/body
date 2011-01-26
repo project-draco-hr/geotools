@@ -1,0 +1,36 @@
+{
+  final GridCoverage2D source=coverage;
+  final AffineTransform gridToCRS=AffineTransform.getRotateInstance(Math.PI / 4.0);
+  gridToCRS.concatenate(getAffineTransform(source));
+  final MathTransform tr=ProjectiveTransform.create(gridToCRS);
+  CoordinateReferenceSystem crs=source.getCoordinateReferenceSystem();
+  crs=new DefaultDerivedCRS("Rotated CRS",crs,tr,crs.getCoordinateSystem());
+  final GridCoverage2D rotated=project(source,crs,null,null,true);
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  final Envelope oldEnvelope=rotated.getEnvelope();
+  final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0) * 3 / 8,oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1) * 3 / 8},new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0) * 5 / 8,oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1) * 5 / 8});
+  cropEnvelope.setCoordinateReferenceSystem(oldEnvelope.getCoordinateReferenceSystem());
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(rotated);
+  param.parameter("Envelope").setValue(cropEnvelope);
+  GridCoverage2D cropped=(GridCoverage2D)processor.doOperation(param);
+  if (SHOW) {
+    Viewer.show(coverage);
+    Viewer.show(cropped);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(cropped.getRenderedImage()).getTiles());
+    assertNotNull(PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getTiles());
+  }
+  RenderedImage raster=cropped.getRenderedImage();
+  assertEquals(111,raster.getMinX());
+  assertEquals(116,raster.getMinY());
+  assertEquals(228,raster.getWidth());
+  assertEquals(228,raster.getHeight());
+  assertEquals(rotated.getGridGeometry().getGridToCRS2D(),cropped.getGridGeometry().getGridToCRS2D());
+  Object property=cropped.getProperty("GC_ROI");
+  assertNotNull(property);
+  assertTrue(property instanceof Polygon);
+  Polygon roi=(Polygon)property;
+  assertEquals(new Rectangle(raster.getMinX(),raster.getMinY(),raster.getWidth(),raster.getHeight()),roi.getBounds());
+}

@@ -1,0 +1,43 @@
+{
+  if (!canProcess(params)) {
+    throw new IOException("Invalid parameters");
+  }
+  if (!isAvailable()) {
+    throw new IOException("DB2 Driver not available");
+  }
+  String host=(String)HOST.lookUp(params);
+  String user=(String)USER.lookUp(params);
+  String passwd=(String)PASSWD.lookUp(params);
+  int port=((Integer)PORT.lookUp(params)).intValue();
+  String database=(String)DATABASE.lookUp(params);
+  String tabschema=(String)TABSCHEMA.lookUp(params);
+  Integer maxConn=(Integer)MAXCONN.lookUp(params);
+  Integer minConn=(Integer)MINCONN.lookUp(params);
+  Boolean validateConn=(Boolean)VALIDATECONN.lookUp(params);
+  boolean validate=validateConn != null && validateConn.booleanValue();
+  int maxActive=maxConn != null ? maxConn.intValue() : 10;
+  int maxIdle=minConn != null ? minConn.intValue() : 4;
+  String url=getJDBCUrl(host,port,database);
+  DataSource source=getDefaultDataSource(url,user,passwd,maxActive,maxIdle,validate);
+  if (tabschema == null || tabschema.length() == 0) {
+    tabschema=user;
+  }
+  if (tabschema.startsWith("\"")) {
+    tabschema=tabschema.substring(1,tabschema.length() - 1);
+  }
+ else {
+    tabschema=tabschema.toUpperCase();
+  }
+  tabschema=tabschema.trim();
+  JDBCDataStoreConfig config=new JDBCDataStoreConfig(tabschema,tabschema,10000);
+  DB2DataStore ds;
+  try {
+    ds=new DB2DataStore(source,config,url);
+  }
+ catch (  IOException e) {
+    LOGGER.info("Create DB2Datastore failed: " + e);
+    throw new DataSourceException("Could not create DB2DataStore",e);
+  }
+  LOGGER.info("Successfully created DB2Datastore for: " + host + ":"+ port+ "/"+ database);
+  return ds;
+}

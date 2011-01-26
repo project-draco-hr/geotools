@@ -1,0 +1,18 @@
+{
+  final MathTransform transform=gridGeometry.getGridToCRS2D();
+  if (!(transform instanceof AffineTransform)) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.NOT_AN_AFFINE_TRANSFORM));
+  }
+  final AffineTransform at=(AffineTransform)transform;
+  if (at.getShearX() != 0 || at.getShearY() != 0) {
+    throw new IllegalArgumentException("Shear and rotation not supported");
+  }
+  final double xScale=at.getScaleX();
+  final double yScale=at.getScaleY();
+  final double xTrans=-at.getTranslateX() / xScale;
+  final double yTrans=-at.getTranslateY() / yScale;
+  final GridEnvelope range=gridGeometry.getGridRange();
+  final ParameterBlock param=new ParameterBlock().add(function).add(range.getSpan(0)).add(range.getSpan(1)).add((float)xScale).add((float)yScale).add((float)xTrans).add((float)yTrans);
+  final PlanarImage image=JAI.create("ImageFunction",param);
+  return create(name,image,gridGeometry,bands,null,properties);
+}

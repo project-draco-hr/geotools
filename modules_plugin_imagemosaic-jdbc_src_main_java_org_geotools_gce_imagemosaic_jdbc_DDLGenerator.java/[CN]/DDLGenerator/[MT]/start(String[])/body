@@ -1,0 +1,74 @@
+{
+  Config config=null;
+  String spatialTNPrefix=null;
+  String tileTNPrefix=null;
+  String statementDelim=null;
+  String srs=null;
+  String targetDir=null;
+  int pyramids=DefaultPyramids;
+  for (int i=0; i < args.length; i++) {
+    if (args[i].equals(CONFIGPARAM)) {
+      try {
+        config=Config.readFrom(getURLFromString(args[i + 1]));
+      }
+ catch (      Exception e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+      if (config != null && (config.getSpatialExtension() == SpatialExtension.GEORASTER || config.getSpatialExtension() == SpatialExtension.CUSTOM)) {
+        System.out.println(NotSuppord + config.getSpatialExtension());
+        System.exit(1);
+      }
+      i++;
+    }
+ else     if (args[i].equals(SPATIALTNPREFIXPARAM)) {
+      spatialTNPrefix=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals(TILETNPREFIXPARAM)) {
+      tileTNPrefix=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-statementDelim")) {
+      statementDelim=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-srs")) {
+      srs=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-pyramids")) {
+      pyramids=new Integer(args[i + 1]);
+      i++;
+    }
+ else     if (args[i].equals("-targetDir")) {
+      targetDir=args[i + 1];
+      i++;
+    }
+ else {
+      System.out.println("Unkwnown option: " + args[i]);
+      System.exit(1);
+    }
+  }
+  if ((config == null) || (spatialTNPrefix == null) || (statementDelim == null)) {
+    System.out.println(UsageInfo);
+    System.exit(1);
+  }
+  if (targetDir == null) {
+    System.out.println("Must specify -targetDir ");
+    System.exit(1);
+  }
+  if (needsSpatialRegistry(config) && (srs == null)) {
+    System.out.println("Must specify -srs ");
+    System.exit(1);
+  }
+  DDLGenerator gen=new DDLGenerator(config,spatialTNPrefix,tileTNPrefix,pyramids,statementDelim,srs,targetDir);
+  try {
+    gen.generate();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    System.exit(1);
+  }
+  System.exit(0);
+}

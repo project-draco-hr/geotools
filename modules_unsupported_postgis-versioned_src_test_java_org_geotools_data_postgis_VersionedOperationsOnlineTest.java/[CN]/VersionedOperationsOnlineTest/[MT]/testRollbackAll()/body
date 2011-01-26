@@ -1,0 +1,15 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  buildRiverHistory();
+  Transaction t=createTransaction("Mambo","Gimbo, what did you do? " + "Now I have to rollback your changes!");
+  VersionedPostgisFeatureStore fs=(VersionedPostgisFeatureStore)ds.getFeatureSource("river");
+  fs.setTransaction(t);
+  fs.rollback("1",Filter.INCLUDE,null);
+  t.commit();
+  SimpleFeatureCollection fc=fs.getFeatures();
+  assertEquals(riverFeatures.length,fc.size());
+  for (int i=0; i < riverFeatures.length; i++) {
+    assertTrue(fc.contains(riverFeatures[i]));
+  }
+  t.close();
+}

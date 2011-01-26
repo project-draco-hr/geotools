@@ -1,0 +1,49 @@
+{
+  numOverviews=configuration.getLevelsNum() - 1;
+  final double[][] resolutions=configuration.getLevels();
+  overViewResolutions=numOverviews >= 1 ? new double[numOverviews][2] : null;
+  highestRes=new double[2];
+  highestRes[0]=resolutions[0][0];
+  highestRes[1]=resolutions[0][1];
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuilder("Highest res ").append(highestRes[0]).append(" ").append(highestRes[1]).toString());
+  if (numOverviews > 0) {
+    for (int i=0; i < numOverviews; i++) {
+      overViewResolutions[i][0]=resolutions[i + 1][0];
+      overViewResolutions[i][1]=resolutions[i + 1][1];
+    }
+  }
+  coverageName=configuration.getName();
+  expandMe=configuration.isExpandToRGB();
+  heterogeneousGranules=configuration.isHeterogeneous();
+  pathType=configuration.isAbsolutePath() ? PathType.ABSOLUTE : PathType.RELATIVE;
+  locationAttributeName=configuration.getLocationAttribute();
+  final String suggestedSPIClass=configuration.getSuggestedSPI();
+  if (suggestedSPIClass != null) {
+    try {
+      final Class<?> clazz=Class.forName(suggestedSPIClass);
+      if (clazz.newInstance() instanceof ImageReaderSpi)       suggestedSPI=(ImageReaderSpi)clazz.newInstance();
+ else       suggestedSPI=null;
+    }
+ catch (    ClassNotFoundException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      suggestedSPI=null;
+    }
+catch (    InstantiationException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      suggestedSPI=null;
+    }
+catch (    IllegalAccessException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      suggestedSPI=null;
+    }
+  }
+  final String timeAttribute=configuration.getTimeAttribute();
+  if (timeAttribute != null)   this.timeAttribute=timeAttribute;
+  final String elevationAttribute=configuration.getElevationAttribute();
+  if (elevationAttribute != null)   this.elevationAttribute=elevationAttribute;
+  final String runtimeAttribute=configuration.getRuntimeAttribute();
+  if (runtimeAttribute != null)   this.runtimeAttribute=runtimeAttribute;
+  cachingIndex=configuration.isCaching();
+  this.imposedBBox=true;
+  return configuration;
+}

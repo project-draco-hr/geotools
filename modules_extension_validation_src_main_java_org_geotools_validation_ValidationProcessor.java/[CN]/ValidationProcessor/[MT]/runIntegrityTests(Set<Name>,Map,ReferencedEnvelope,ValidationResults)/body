@@ -1,0 +1,58 @@
+{
+  if ((integrityLookup == null) || (integrityLookup.size() == 0)) {
+    LOGGER.fine("No tests defined by integrityLookup - validation not needed");
+    return;
+  }
+  LOGGER.fine("Starting validation tests for:" + typeRefs);
+  LOGGER.fine("Marshalled " + stores.size() + " FeatureSources for testing");
+  LOGGER.fine("Testing limited to " + envelope);
+  if (typeRefs == null) {
+    LOGGER.finer("Using default typeRegs for stores");
+    typeRefs=stores.keySet();
+  }
+ else   if (typeRefs.isEmpty()) {
+    LOGGER.finer("Validation test abandond - nothing was modified");
+  }
+  List tests=new ArrayList();
+  LOGGER.finer("Finding tests for everybody");
+  List anyTests=(List)integrityLookup.get(ANYTYPENAME);
+  if ((anyTests != null) && !anyTests.isEmpty()) {
+    tests.addAll(anyTests);
+  }
+  LOGGER.finer("Found " + tests.size() + " tests (so far)");
+  LOGGER.finer("Finding tests for modified typeRefs");
+  for (  Name name : typeRefs) {
+    String typeRef=typeRef(name);
+    LOGGER.finer("Finding tests for typeRef:" + typeRef);
+    List moreTests=(List)integrityLookup.get(typeRef);
+    if ((moreTests != null) && !moreTests.isEmpty()) {
+      tests.addAll(moreTests);
+    }
+  }
+  if (tests.isEmpty()) {
+    LOGGER.finer("Validation test abandond - no tests found to run");
+    return;
+  }
+  LOGGER.finer("Validation test about to run - " + tests.size() + " tests found");
+  for (Iterator j=tests.iterator(); j.hasNext(); ) {
+    IntegrityValidation validator=(IntegrityValidation)j.next();
+    LOGGER.finer("Running test:" + validator.getName());
+    results.setValidation(validator);
+    try {
+      boolean success=validator.validate(stores,envelope,results);
+      if (!success) {
+        results.error(null,"Was not successful");
+      }
+    }
+ catch (    Throwable e) {
+      LOGGER.finer("Validation test died:" + validator.getName());
+      String error=e.getClass().getName();
+      if (e.getMessage() != null) {
+        error+=(" - " + e.getMessage());
+      }
+      LOGGER.log(Level.WARNING,validator.getName() + " failed with " + error,e);
+      e.printStackTrace();
+      results.error(null,error);
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  if (!CRS.equalsIgnoreMetadata(sourceCRS.getDatum(),targetCRS.getDatum())) {
+    return null;
+  }
+  final ProjectionAnalyzer source=new ProjectionAnalyzer(sourceCRS);
+  final ProjectionAnalyzer target=new ProjectionAnalyzer(targetCRS);
+  if (!nameMatches(source.projection.getMethod(),target.projection.getMethod())) {
+    final ParameterDescriptorGroup sourceDsc=source.getTransformDescriptor();
+    final ParameterDescriptorGroup targetDsc=source.getTransformDescriptor();
+    if (sourceDsc == null || targetDsc == null || !nameMatches(sourceDsc,targetDsc)) {
+      return null;
+    }
+  }
+  if (source.parameters == null || target.parameters == null) {
+    return null;
+  }
+  XMatrix sourceScale=source.normalizedToProjection();
+  XMatrix targetScale=target.normalizedToProjection();
+  if (!parameterValuesEqual(source.parameters,target.parameters,errorTolerance)) {
+    return null;
+  }
+  targetScale=target.applyProjectedScale(targetScale);
+  sourceScale=source.applyProjectedScale(sourceScale);
+  sourceScale.invert();
+  targetScale.multiply(sourceScale);
+  if (targetScale.isIdentity(errorTolerance)) {
+    targetScale.setIdentity();
+  }
+  return targetScale;
+}

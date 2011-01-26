@@ -1,0 +1,26 @@
+{
+  boolean can=true;
+  Map<SoftReference,WeakReference<AuthorityCodes>> pool=null;
+  for (final Iterator<Map.Entry<Class<?>,Reference<AuthorityCodes>>> it=authorityCodes.entrySet().iterator(); it.hasNext(); ) {
+    final Map.Entry<Class<?>,Reference<AuthorityCodes>> entry=it.next();
+    final Reference<AuthorityCodes> reference=entry.getValue();
+    final AuthorityCodes codes=reference.get();
+    if (codes == null) {
+      it.remove();
+      continue;
+    }
+    can=false;
+    if (reference instanceof SoftReference) {
+      if (pool == null) {
+        pool=new IdentityHashMap<SoftReference,WeakReference<AuthorityCodes>>();
+      }
+      WeakReference<AuthorityCodes> weak=pool.get(reference);
+      if (weak == null) {
+        weak=new WeakReference<AuthorityCodes>(codes);
+        pool.put((SoftReference)reference,weak);
+      }
+      entry.setValue(weak);
+    }
+  }
+  return can;
+}

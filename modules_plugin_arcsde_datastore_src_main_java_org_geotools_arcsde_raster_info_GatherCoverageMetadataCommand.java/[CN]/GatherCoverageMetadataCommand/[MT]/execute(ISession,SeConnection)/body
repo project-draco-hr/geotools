@@ -1,0 +1,79 @@
+{
+  LOGGER.fine("Gathering raster dataset metadata for " + rasterTableName);
+  final String[] rasterColumns=getRasterColumns(connection,rasterTableName);
+  final List<RasterInfo> rastersLayoutInfo=new ArrayList<RasterInfo>();
+{
+    final List<SeRasterAttr> rasterAttributes;
+    rasterAttributes=getSeRasterAttr(connection,rasterTableName,rasterColumns);
+    if (rasterAttributes.size() == 0) {
+      throw new IllegalArgumentException("Table " + rasterTableName + " contains no raster datasets");
+    }
+    final CoordinateReferenceSystem coverageCrs;
+    final Map<Long,IndexColorModel> rastersColorMaps;
+{
+      final SeRasterColumn rasterColumn;
+      final SeRasterBand sampleBand;
+      final long rasterColumnId;
+      final int bitsPerSample;
+      try {
+        SeRasterAttr ratt=rasterAttributes.get(0);
+        rasterColumn=new SeRasterColumn(connection,ratt.getRasterColumnId());
+        rasterColumnId=rasterColumn.getID().longValue();
+        sampleBand=ratt.getBands()[0];
+        bitsPerSample=RasterCellType.valueOf(ratt.getPixelType()).getBitsPerSample();
+      }
+ catch (      SeException e) {
+        throw new ArcSdeException(e);
+      }
+      final SeCoordinateReference seCoordRef=rasterColumn.getCoordRef();
+      if (seCoordRef == null) {
+        throw new IllegalArgumentException(rasterTableName + " has no coordinate reference system set");
+      }
+      LOGGER.finer("Looking CRS for raster column " + rasterTableName);
+      coverageCrs=ArcSDEUtils.findCompatibleCRS(seCoordRef);
+      if (DefaultEngineeringCRS.CARTESIAN_2D == coverageCrs) {
+        LOGGER.warning("Raster " + rasterTableName + " has not CRS set, using DefaultEngineeringCRS.CARTESIAN_2D");
+      }
+      if (sampleBand.hasColorMap()) {
+        rastersColorMaps=loadColorMaps(rasterColumnId,bitsPerSample,connection);
+      }
+ else {
+        rastersColorMaps=Collections.emptyMap();
+      }
+    }
+    try {
+      for (      SeRasterAttr rAtt : rasterAttributes) {
+        LOGGER.fine("Gathering raster metadata for " + rasterTableName + " raster "+ rAtt.getRasterId().longValue());
+        if (rAtt.getMaxLevel() == 0) {
+          throw new IllegalArgumentException("Raster cotains no pyramid levels, we don't support non pyramid rasters");
+        }
+        if (rAtt.getNumBands() == 0) {
+          throw new IllegalArgumentException("Raster " + rAtt.getRasterId().longValue() + " in "+ rasterTableName+ " contains no raster attribtues");
+        }
+        if (this.statisticsMandatory && !rAtt.getBandInfo(1).hasStats()) {
+          throw new IllegalArgumentException(rasterTableName + " has no statistics generated (or not all it's rasters have). " + "Please use sderaster -o stats to create them before use");
+        }
+        RasterInfo rasterInfo=new RasterInfo(rAtt,coverageCrs);
+        rastersLayoutInfo.add(rasterInfo);
+        final GeneralEnvelope originalEnvelope;
+        originalEnvelope=calculateOriginalEnvelope(rAtt,coverageCrs);
+        rasterInfo.setOriginalEnvelope(originalEnvelope);
+        final List<RasterBandInfo> bands;
+        bands=setUpBandInfo(connection,rAtt,rastersColorMaps);
+        rasterInfo.setBands(bands);
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.finer("Gathered metadata for " + rasterTableName + "#"+ rAtt.getRasterId().longValue()+ ":\n"+ rasterInfo.toString());
+        }
+        System.out.println(rasterInfo);
+      }
+    }
+ catch (    SeException e) {
+      throw new ArcSdeException("Gathering raster dataset information",e);
+    }
+  }
+  RasterDatasetInfo rasterInfo=new RasterDatasetInfo();
+  rasterInfo.setRasterTable(rasterTableName);
+  rasterInfo.setRasterColumns(rasterColumns);
+  rasterInfo.setPyramidInfo(rastersLayoutInfo);
+  return rasterInfo;
+}

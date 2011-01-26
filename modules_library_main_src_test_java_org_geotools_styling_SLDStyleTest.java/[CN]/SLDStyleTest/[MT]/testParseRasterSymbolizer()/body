@@ -1,0 +1,35 @@
+{
+  StyleFactory factory=CommonFactoryFinder.getStyleFactory(null);
+  java.net.URL surl=TestData.getResource(this,"rasterSymbolizer.sld");
+  SLDParser stylereader=new SLDParser(factory,surl);
+  Style[] styles=stylereader.readXML();
+  assertEquals(1,styles.length);
+  assertEquals(1,styles[0].getFeatureTypeStyles().length);
+  assertEquals(1,styles[0].getFeatureTypeStyles()[0].getRules().length);
+  Rule r=styles[0].getFeatureTypeStyles()[0].getRules()[0];
+  assertEquals(1,r.getSymbolizers().length);
+  RasterSymbolizer rs=(RasterSymbolizer)r.getSymbolizers()[0];
+  assertEquals(0.75,SLD.opacity(rs));
+  ChannelSelection cs=rs.getChannelSelection();
+  SelectedChannelType redChannel=cs.getRGBChannels()[0];
+  SelectedChannelType greenChannel=cs.getRGBChannels()[1];
+  SelectedChannelType blueChannel=cs.getRGBChannels()[2];
+  assertEquals("1",redChannel.getChannelName());
+  assertEquals("2",greenChannel.getChannelName());
+  assertEquals("6",blueChannel.getChannelName());
+  ContrastEnhancement rcs=redChannel.getContrastEnhancement();
+  String type=(String)rcs.getType().evaluate(null);
+  assertEquals("Histogram",type);
+  ContrastEnhancement gcs=greenChannel.getContrastEnhancement();
+  Double ggamma=(Double)gcs.getGammaValue().evaluate(null);
+  assertEquals(2.8,ggamma.doubleValue());
+  ContrastEnhancement bcs=blueChannel.getContrastEnhancement();
+  type=(String)bcs.getType().evaluate(null);
+  assertEquals("Normalize",type);
+  Expression overlapExpr=rs.getOverlap();
+  type=(String)overlapExpr.evaluate(null);
+  assertEquals("LATEST_ON_TOP",type);
+  ContrastEnhancement ce=rs.getContrastEnhancement();
+  Double v=(Double)ce.getGammaValue().evaluate(null);
+  assertEquals(1.0,v.doubleValue());
+}

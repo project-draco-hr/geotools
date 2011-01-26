@@ -1,0 +1,26 @@
+{
+  List<AttributeDescriptor> attributes=new LinkedList<AttributeDescriptor>();
+  AttributeDescriptor t=null;
+switch (eg.getGrouping()) {
+case ElementGrouping.CHOICE:
+    t=getAttribute(name,(Choice)eg);
+  if (t != null)   attributes.add(t);
+break;
+case ElementGrouping.GROUP:
+attributes.addAll(getAttributes(name,((Group)eg).getChild()));
+break;
+case ElementGrouping.ELEMENT:
+t=getAttribute((Element)eg);
+if (t != null) attributes.add(t);
+return attributes;
+case ElementGrouping.ALL:
+Element[] elems=((All)eg).getElements();
+if (elems != null) for (int i=0; i < elems.length; i++) attributes.add(getAttribute(elems[i]));
+break;
+case ElementGrouping.SEQUENCE:
+ElementGrouping[] children=((Sequence)eg).getChildren();
+if (children != null) for (int i=0; i < children.length; i++) attributes.addAll(getAttributes(name,children[i]));
+break;
+}
+return attributes;
+}

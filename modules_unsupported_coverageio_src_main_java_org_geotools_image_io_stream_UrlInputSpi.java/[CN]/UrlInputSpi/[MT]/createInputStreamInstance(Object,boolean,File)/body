@@ -1,0 +1,32 @@
+{
+  final URL url=(URL)input;
+  final URLConnection connection=url.openConnection();
+  int retry=RETRY;
+  InputStream stream;
+  while (true) {
+    try {
+      stream=connection.getInputStream();
+      break;
+    }
+ catch (    SocketException exception) {
+      if (--retry < 0) {
+        throw exception;
+      }
+      Logging.getLogger(UrlInputSpi.class).warning(exception.toString());
+    }
+    try {
+      Thread.sleep(1000);
+    }
+ catch (    InterruptedException ignore) {
+    }
+    System.gc();
+    Thread.interrupted();
+    final FinalizationStopper stopper=new FinalizationStopper(4000);
+    System.runFinalization();
+    stopper.cancel();
+    if (Thread.interrupted() || stopper.interrupted) {
+      Logging.getLogger(UrlInputSpi.class).warning("System.runFinalization() was blocked.");
+    }
+  }
+  return new FileCacheImageInputStream(stream,cacheDir);
+}

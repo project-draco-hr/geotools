@@ -1,0 +1,61 @@
+{
+  WPSFactory wpsfactory=(WPSFactory)this.factory;
+  ProcessDescriptionType pdt=wpsfactory.getProcessDescriptionType();
+  URL url=wpsfactory.getServerURL();
+  WebProcessingService wps;
+  try {
+    wps=new WebProcessingService(url);
+  }
+ catch (  ServiceException e) {
+    return null;
+  }
+catch (  IOException e) {
+    return null;
+  }
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(wpsfactory.getIdentifier());
+  EList inputs=pdt.getDataInputs().getInput();
+  Iterator iterator=inputs.iterator();
+  while (iterator.hasNext()) {
+    InputDescriptionType idt=(InputDescriptionType)iterator.next();
+    String identifier=idt.getIdentifier().getValue();
+    Object inputValue=input.get(identifier);
+    if (inputValue != null) {
+      List<DataType> list=new ArrayList<DataType>();
+      if (inputValue instanceof Map) {
+        for (        Object inVal : ((Map)inputValue).values()) {
+          DataType createdInput=WPSUtils.createInputDataType(inVal,idt);
+          list.add(createdInput);
+        }
+      }
+ else       if (inputValue instanceof Collection) {
+        for (        Object inVal : (Collection)inputValue) {
+          DataType createdInput=WPSUtils.createInputDataType(inVal,idt);
+          list.add(createdInput);
+        }
+      }
+ else {
+        DataType createdInput=WPSUtils.createInputDataType(inputValue,idt);
+        list.add(createdInput);
+      }
+      exeRequest.addInput(identifier,list);
+    }
+  }
+  ExecuteProcessResponse response;
+  try {
+    response=wps.issueRequest(exeRequest);
+  }
+ catch (  ServiceException e) {
+    return null;
+  }
+catch (  IOException e) {
+    return null;
+  }
+  if (response.getExceptionResponse() != null || response.getExecuteResponse() == null) {
+    return null;
+  }
+  ExecuteResponseType executeResponse=response.getExecuteResponse();
+  Map<String,Object> results=new TreeMap<String,Object>();
+  results=WPSUtils.createResultMap(executeResponse,results);
+  return results;
+}

@@ -1,0 +1,56 @@
+{
+  if (maxSpacing == 0 && maxOffset == 0)   return this;
+  List<Position> positions=new ArrayList<Position>();
+  double actualParam=this.startParam;
+  double newSpacing=maxSpacing;
+  List<LineSegment> segments=this.asLineSegments();
+  int firstSegment=0;
+  int lastSegment=0;
+  double maxDistance=0;
+  while (actualParam < this.endParam) {
+    if (actualParam + newSpacing > this.endParam) {
+      newSpacing=this.endParam - actualParam;
+    }
+    maxDistance=0;
+    int i=firstSegment;
+    while ((segments.get(i).getStartParam() < actualParam) && (i < segments.size() - 1)) {
+      i++;
+    }
+    firstSegment=i;
+    do {
+      double EPSILON=0.00001;
+      if ((segments.get(firstSegment).getStartParam() > actualParam && segments.get(firstSegment).getStartParam() + EPSILON < actualParam + newSpacing) || (segments.get(firstSegment).getEndParam() > actualParam && segments.get(firstSegment).getEndParam() + EPSILON < actualParam + newSpacing)) {
+        i=firstSegment;
+        while ((i < segments.size()) && (segments.get(i).getEndParam() <= actualParam + newSpacing)) {
+          i++;
+        }
+        lastSegment=i - 1;
+        DirectPosition p1=this.forParam(actualParam);
+        DirectPosition p2=new DirectPositionImpl(this.forParam(actualParam + newSpacing));
+        LineSegmentImpl seg=new LineSegmentImpl(p1,p2,0);
+        CurveImpl curve=new CurveImpl(seg);
+        maxDistance=curve.distance(new PointImpl(segments.get(firstSegment).getStartPoint()));
+        double actDistance=0;
+        for (i=firstSegment; i < lastSegment; i++) {
+          actDistance=curve.distance(new PointImpl(segments.get(i).getEndPoint()));
+          if (actDistance > maxDistance) {
+            maxDistance=actDistance;
+          }
+        }
+        if (maxDistance > maxOffset) {
+          newSpacing/=2;
+        }
+      }
+ else {
+        maxDistance=0;
+      }
+    }
+ while (maxDistance > maxOffset);
+    actualParam+=newSpacing;
+    newSpacing=maxSpacing;
+    positions.add(new DirectPositionImpl(this.forParam(actualParam)));
+  }
+  LineStringImpl rLineString=new LineStringImpl(positions);
+  rLineString.setEndParam(this.getEndParam());
+  return rLineString;
+}

@@ -1,0 +1,34 @@
+{
+  try {
+    final int TABLE_NAME=3;
+    final int COLUMN_NAME=4;
+    final int TYPE_NAME=6;
+    final int NULLABLE=11;
+    String typeName=metadataRs.getString(TYPE_NAME);
+    if (typeName.equals("geometry")) {
+      String tableName=metadataRs.getString(TABLE_NAME);
+      String columnName=metadataRs.getString(COLUMN_NAME);
+      int nullCode=metadataRs.getInt(NULLABLE);
+      boolean nillable=isNullable(nullCode);
+      return getGeometryAttribute(tableName,columnName,nillable);
+    }
+ else     if ("uuid".equals(typeName)) {
+      String tableName=metadataRs.getString(TABLE_NAME);
+      String columnName=metadataRs.getString(COLUMN_NAME);
+      int nullCode=metadataRs.getInt(NULLABLE);
+      boolean nillable=isNullable(nullCode);
+      AttributeTypeBuilder atb=new AttributeTypeBuilder();
+      atb.setName(columnName);
+      atb.setBinding(String.class);
+      atb.setMinOccurs(nillable ? 0 : 1);
+      atb.setMaxOccurs(1);
+      return atb.buildDescriptor(columnName);
+    }
+ else {
+      return super.buildAttributeType(metadataRs);
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException("Sql error occurred: " + e.getMessage());
+  }
+}

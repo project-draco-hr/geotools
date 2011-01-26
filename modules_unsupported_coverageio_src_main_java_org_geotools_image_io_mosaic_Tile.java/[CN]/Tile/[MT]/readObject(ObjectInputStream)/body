@@ -1,0 +1,18 @@
+{
+  in.defaultReadObject();
+  final Object candidate=in.readObject();
+  final IIORegistry registry=IIORegistry.getDefaultInstance();
+  Class<?> type=candidate.getClass();
+  try {
+    type=(Class<?>)candidate;
+    provider=(ImageReaderSpi)registry.getServiceProviderByClass(type);
+  }
+ catch (  ClassCastException cause) {
+    InvalidClassException e=new InvalidClassException(type.getName(),Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,type,ImageReaderSpi.class));
+    e.initCause(cause);
+    throw e;
+  }
+  if (provider == null) {
+    throw new ClassNotFoundException(type.getName());
+  }
+}

@@ -1,0 +1,37 @@
+{
+  try {
+    resetDatasets();
+    String feattype="mycollection";
+    SimpleFeatureSource raw=rawDataset.getFeatureSource("mycollection");
+    FeatureType ft=rawDataset.getFeatureSource("mycollection").getSchema();
+    String localname=ft.getGeometryDescriptor().getLocalName();
+    String srs=ft.getGeometryDescriptor().getCoordinateReferenceSystem().toString();
+    Filter bb=filterFactory.bbox(localname,0,0,10,10,srs);
+    assertEquals(numFeatures,rawDataset.getFeatureSource(feattype).getFeatures().size());
+    assertEquals(numFeatures,cacheDataset.getFeatures().size());
+    int beforebboxcnt=raw.getFeatures(bb).size();
+    assertEquals(beforebboxcnt,cacheDataset.getFeatures(bb).size());
+    SimpleFeature newFeature2=makeFeature(raw.getSchema(),0,10);
+    Transaction t=new DefaultTransaction();
+    try {
+      FeatureWriter<SimpleFeatureType,SimpleFeature> writer=rawDataset.getFeatureWriter("mycollection",t);
+      while (writer.hasNext())       writer.next();
+      SimpleFeature feature=writer.next();
+      feature.setAttributes(newFeature2.getAttributes());
+      writer.write();
+      t.commit();
+    }
+  finally {
+      t.close();
+    }
+    assertEquals(numFeatures + 1,cacheDataset.getFeatures().size());
+    assertEquals(beforebboxcnt + 1,cacheDataset.getFeatures(bb).size());
+    assertEquals(beforebboxcnt + 1,raw.getFeatures(bb).size());
+    assertEquals(numFeatures + 1,raw.getFeatures().size());
+    assertEquals(numFeatures + 1,cacheDataset.getFeatures().size());
+  }
+ catch (  Exception ex) {
+    ex.printStackTrace();
+    fail();
+  }
+}

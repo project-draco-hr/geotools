@@ -1,0 +1,34 @@
+{
+  Filter c1=ff.equals(ff.property("eventstatus"),ff.literal("deleted"));
+  Filter c2=ff.equals(ff.property("eventtype"),ff.literal("road hazard"));
+  Filter c3=ff.equals(ff.property("eventtype"),ff.literal("area warning"));
+  Filter g=ff.bbox("geom",0,180,0,90,"");
+  Filter f=ff.or(c2,c3);
+  f=ff.and(ff.not(c1),f);
+  f=ff.and(f,g);
+  simpleLogicalCaps.addType(BBOX.class);
+  simpleLogicalCaps.addType(FilterFunction_geometryType.class);
+  visitor=new PostPreProcessFilterSplittingVisitor(simpleLogicalCaps,null,null);
+  f.accept(visitor,null);
+  assertEquals(f,visitor.getFilterPre());
+  assertEquals(Filter.INCLUDE,visitor.getFilterPost());
+  visitor=new PostPreProcessFilterSplittingVisitor(simpleLogicalCaps,null,new ClientTransactionAccessor(){
+    public Filter getDeleteFilter(){
+      return null;
+    }
+    public Filter getUpdateFilter(    String attributePath){
+      if (attributePath.equals("eventtype")) {
+        HashSet ids=new HashSet();
+        ids.add(ff.featureId("fid"));
+        return ff.id(ids);
+      }
+      return null;
+    }
+  }
+);
+  f.accept(visitor,null);
+  HashSet ids=new HashSet();
+  ids.add(ff.featureId("fid"));
+  assertEquals(f,visitor.getFilterPost());
+  assertEquals(ff.or(f,ff.id(ids)),visitor.getFilterPre());
+}

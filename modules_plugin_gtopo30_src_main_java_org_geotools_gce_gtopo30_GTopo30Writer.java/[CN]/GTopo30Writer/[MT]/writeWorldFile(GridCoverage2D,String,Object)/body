@@ -1,0 +1,41 @@
+{
+  final AffineTransform gridToWorld=(AffineTransform)gc.getGridGeometry().getGridToCRS2D();
+  boolean lonFirst=(XAffineTransform.getSwapXY(gridToWorld) != -1);
+  final double xPixelSize=(lonFirst) ? gridToWorld.getScaleX() : gridToWorld.getShearY();
+  final double rotation1=(lonFirst) ? gridToWorld.getShearX() : gridToWorld.getScaleY();
+  final double rotation2=(lonFirst) ? gridToWorld.getShearY() : gridToWorld.getScaleX();
+  final double yPixelSize=(lonFirst) ? gridToWorld.getScaleY() : gridToWorld.getShearX();
+  final double xLoc=lonFirst ? gridToWorld.getTranslateX() : gridToWorld.getTranslateY();
+  final double yLoc=lonFirst ? gridToWorld.getTranslateY() : gridToWorld.getTranslateX();
+  if (dest instanceof File) {
+    dest=new File((File)dest,new StringBuffer(name).append(".DMW").toString());
+    final PrintWriter out=new PrintWriter(new FileOutputStream((File)dest));
+    out.println(xPixelSize);
+    out.println(rotation1);
+    out.println(rotation2);
+    out.println(yPixelSize);
+    out.println(xLoc);
+    out.println(yLoc);
+    out.close();
+  }
+ else {
+    final ZipOutputStream outZ=(ZipOutputStream)dest;
+    final ZipEntry e=new ZipEntry(gc.getName().toString() + ".DMW");
+    outZ.putNextEntry(e);
+    outZ.write(Double.toString(xPixelSize).getBytes());
+    outZ.write("\n".getBytes());
+    outZ.write(Double.toString(rotation1).toString().getBytes());
+    outZ.write("\n".getBytes());
+    outZ.write(Double.toString(rotation2).toString().getBytes());
+    outZ.write("\n".getBytes());
+    outZ.write(Double.toString(xPixelSize).toString().getBytes());
+    outZ.write("\n".getBytes());
+    outZ.write(Double.toString(yPixelSize).toString().getBytes());
+    outZ.write("\n".getBytes());
+    outZ.write(Double.toString(xLoc).toString().getBytes());
+    outZ.write("\n".getBytes());
+    outZ.write(Double.toString(yLoc).toString().getBytes());
+    outZ.write("\n".getBytes());
+    ((ZipOutputStream)dest).closeEntry();
+  }
+}

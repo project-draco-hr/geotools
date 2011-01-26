@@ -1,0 +1,45 @@
+{
+  SimpleFeatureCollection fc=null;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> outFeatureWriter=null;
+  try {
+    CoordinateReferenceSystem inCRS=crsFactory.createFromWKT(inWKT);
+    CoordinateReferenceSystem outCRS=crsFactory.createFromWKT(outWKT);
+    System.out.println("source CRS: " + inCRS.getName().getCode());
+    System.out.println("target CRS: " + outCRS.getName().getCode());
+    CoordinateOperation co=coFactory.createOperation(inCRS,outCRS);
+    System.out.println("transform: " + co.getMathTransform().toWKT());
+    CoordinateFilter transFilter=new TransformationCoordinateFilter(co.getMathTransform());
+    DataStore inStore=new ShapefileDataStore(inURL);
+    String name=inStore.getTypeNames()[0];
+    SimpleFeatureSource inSource=inStore.getFeatureSource(name);
+    fc=inSource.getFeatures();
+    SimpleFeatureType inSchema=inSource.getSchema();
+    DataStore outStore=new ShapefileDataStore(outURL);
+    outStore.createSchema(FeatureTypes.transform(inSchema,outCRS));
+    outFeatureWriter=outStore.getFeatureWriter(outStore.getTypeNames()[0],Transaction.AUTO_COMMIT);
+    SimpleFeatureIterator i=fc.features();
+    while (i.hasNext()) {
+      SimpleFeature inFeature=i.next();
+      SimpleFeature outFeature=outFeatureWriter.next();
+      for (int j=0; j < inFeature.getAttributeCount(); j++) {
+        Object inAttribute=inFeature.getAttribute(j);
+        if (inAttribute instanceof Geometry) {
+          Geometry geom=(Geometry)inAttribute;
+          geom.apply(transFilter);
+          outFeature.setAttribute(j,geom);
+        }
+ else {
+          outFeature.setAttribute(j,inAttribute);
+        }
+      }
+      outFeatureWriter.write();
+    }
+    fc.close(i);
+    outFeatureWriter.close();
+    System.out.println("Done");
+  }
+ catch (  Exception e) {
+    System.out.println("Exception: " + e);
+    e.printStackTrace();
+  }
+}

@@ -1,0 +1,48 @@
+{
+  if ((value == null) || (!(value instanceof FeatureCollection))) {
+    return;
+  }
+  if (element == null) {
+    output.startElement(GMLSchema.NAMESPACE,"_featureCollection",null);
+  }
+ else {
+    output.startElement(element.getNamespace(),element.getName(),null);
+  }
+  SimpleFeatureCollection fc=(SimpleFeatureCollection)value;
+  if (fc.getBounds() != null) {
+    BoundingShapeType.getInstance().encode(null,fc.getBounds(),output,hints);
+  }
+ else {
+    throw new IOException("Bounding box required for the FeatureCollection");
+  }
+  SimpleFeatureIterator i=fc.features();
+  Element e=null;
+  while (i.hasNext()) {
+    SimpleFeature f=i.next();
+    output.startElement(GMLSchema.NAMESPACE,"featureMember",null);
+    if (e == null) {
+      e=output.findElement(f.getFeatureType().getTypeName());
+      ComplexType t=e.getType() instanceof ComplexType ? (ComplexType)e.getType() : null;
+      while (t != null && t != AbstractFeatureType.getInstance())       t=t.getParent() instanceof ComplexType ? (ComplexType)t.getParent() : null;
+      if (t != AbstractFeatureType.getInstance()) {
+        e=output.findElement(value);
+        t=e.getType() instanceof ComplexType ? (ComplexType)e.getType() : null;
+        while (t != null && t != AbstractFeatureType.getInstance())         t=t.getParent() instanceof ComplexType ? (ComplexType)t.getParent() : null;
+        if (t != AbstractFeatureType.getInstance()) {
+          throw new OperationNotSupportedException("Could not find a correct Element for FeatureType " + f.getFeatureType().getTypeName());
+        }
+      }
+    }
+    if (e == null) {
+      throw new NullPointerException("Feature Definition not found in Schema " + element.getNamespace());
+    }
+    AbstractFeatureType.getInstance().encode(e,f,output,hints);
+    output.endElement(GMLSchema.NAMESPACE,"featureMember");
+  }
+  if (element == null) {
+    output.endElement(GMLSchema.NAMESPACE,"_featureCollection");
+  }
+ else {
+    output.endElement(element.getNamespace(),element.getName());
+  }
+}

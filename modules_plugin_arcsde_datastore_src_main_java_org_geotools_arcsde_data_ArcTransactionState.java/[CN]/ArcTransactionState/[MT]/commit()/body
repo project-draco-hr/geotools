@@ -1,0 +1,31 @@
+{
+  failIfClosed();
+  final ISession session=this.getConnection();
+  final Command<Void> commitCommand=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      try {
+        if (currentVersionState != null) {
+          SeObjectId parentStateId=initialStateId;
+          defaultVersion.changeState(currentVersionState.getId());
+          currentVersionState.trimTree(parentStateId,currentVersionState.getId());
+        }
+      }
+ catch (      SeException se) {
+        LOGGER.log(Level.WARNING,se.getMessage(),se);
+        close();
+        throw se;
+      }
+      return null;
+    }
+  }
+;
+  try {
+    session.issue(commitCommand);
+    fireChanges(true);
+    versionHandler.commitEditState();
+  }
+ catch (  IOException e) {
+    versionHandler.rollbackEditState();
+    throw e;
+  }
+}

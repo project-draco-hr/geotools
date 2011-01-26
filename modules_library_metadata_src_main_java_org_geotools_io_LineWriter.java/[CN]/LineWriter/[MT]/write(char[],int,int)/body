@@ -1,0 +1,51 @@
+{
+  if (offset < 0 || length < 0 || (offset + length) > cbuf.length) {
+    throw new IndexOutOfBoundsException();
+  }
+  if (length == 0) {
+    return;
+  }
+synchronized (lock) {
+    if (skipCR && cbuf[offset] == '\n') {
+      offset++;
+      length--;
+    }
+    int upper=offset;
+    for (; length != 0; length--) {
+switch (cbuf[upper++]) {
+case '\r':
+{
+          writeLine(cbuf,offset,upper - 1);
+          writeEOL();
+          if (length > 1 && cbuf[upper] == '\n') {
+            upper++;
+            length--;
+          }
+          offset=upper;
+          break;
+        }
+case '\n':
+{
+        writeLine(cbuf,offset,upper - 1);
+        writeEOL();
+        offset=upper;
+        break;
+      }
+  }
+}
+skipCR=(cbuf[upper - 1] == '\r');
+for (int i=upper; --i >= offset; ) {
+  if (!isWhitespace(cbuf[i])) {
+    writeLine(cbuf,offset,offset=i + 1);
+    break;
+  }
+}
+length=upper - offset;
+final int newCount=count + length;
+if (newCount > buffer.length) {
+  buffer=XArray.resize(buffer,newCount);
+}
+System.arraycopy(cbuf,offset,buffer,count,length);
+count=newCount;
+}
+}

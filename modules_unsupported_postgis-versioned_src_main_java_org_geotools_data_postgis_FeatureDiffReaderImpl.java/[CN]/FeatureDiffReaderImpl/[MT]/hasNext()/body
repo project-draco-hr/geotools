@@ -1,0 +1,43 @@
+{
+  if (createdReader != null) {
+    if (createdReader.hasNext()) {
+      return true;
+    }
+ else {
+      createdReader.close();
+      createdReader=null;
+    }
+  }
+  if (deletedReader != null) {
+    if (deletedReader.hasNext()) {
+      return true;
+    }
+ else {
+      deletedReader.close();
+      deletedReader=null;
+    }
+  }
+  if (lastDiff != null)   return true;
+  if (fromReader != null && toReader != null) {
+    while (true) {
+      if (!fromReader.hasNext()) {
+        lastDiff=null;
+        fromReader.close();
+        toReader.close();
+        fromReader=null;
+        toReader=null;
+        return false;
+      }
+      SimpleFeature from=gatherNextUnversionedFeature(fromReader);
+      SimpleFeature to=gatherNextUnversionedFeature(toReader);
+      FeatureDiffImpl diff=new FeatureDiffImpl(from,to);
+      if (diff.getChangedAttributes().size() != 0) {
+        lastDiff=diff;
+        return true;
+      }
+    }
+  }
+ else {
+    return false;
+  }
+}

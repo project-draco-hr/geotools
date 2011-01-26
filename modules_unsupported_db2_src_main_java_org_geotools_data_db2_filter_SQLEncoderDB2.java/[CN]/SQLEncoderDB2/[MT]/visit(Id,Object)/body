@@ -1,0 +1,48 @@
+{
+  if (mapper == null) {
+    throw new RuntimeException("Must set a fid mapper before trying to encode FIDFilters");
+  }
+  Set fids=filter.getIdentifiers();
+  LOGGER.finer("Exporting FID=" + fids);
+  String[] colNames=new String[mapper.getColumnCount()];
+  String[] colDelimiters=new String[mapper.getColumnCount()];
+  for (int i=0; i < colNames.length; i++) {
+    colNames[i]=mapper.getColumnName(i);
+    int dataType=mapper.getColumnType(i);
+    if ((dataType == Types.VARCHAR) || (dataType == Types.CHAR) || (dataType == Types.CLOB)) {
+      colDelimiters[i]="'";
+    }
+ else {
+      colDelimiters[i]="";
+    }
+  }
+  Iterator it=fids.iterator();
+  int i=0;
+  while (it.hasNext()) {
+    try {
+      FeatureId fid=(FeatureId)it.next();
+      Object[] attValues=mapper.getPKAttributes(fid.getID());
+      out.write("(");
+      for (int j=0; j < attValues.length; j++) {
+        int colType=mapper.getColumnType(j);
+        out.write(escapeName(colNames[j]));
+        out.write(" = ");
+        out.write(colDelimiters[j]);
+        out.write(attValues[j].toString());
+        out.write(colDelimiters[j]);
+        if (j < (attValues.length - 1)) {
+          out.write(" AND ");
+        }
+      }
+      out.write(")");
+      if (i < (fids.size() - 1)) {
+        out.write(" OR ");
+      }
+      i++;
+    }
+ catch (    java.io.IOException e) {
+      LOGGER.warning("IO Error exporting FID Filter.");
+    }
+  }
+  return extraData;
+}

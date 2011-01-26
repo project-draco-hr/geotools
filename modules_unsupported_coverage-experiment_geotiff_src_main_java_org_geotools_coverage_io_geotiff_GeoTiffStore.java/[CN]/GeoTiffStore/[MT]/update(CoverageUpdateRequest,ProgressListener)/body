@@ -1,0 +1,24 @@
+{
+  ensureNotDisposed();
+  access.globalLock.writeLock().lock();
+  final DefaultCoverageResponseImpl response=new DefaultCoverageResponseImpl();
+  response.setRequest(writeRequest);
+  try {
+    final GeoTiffWriter writer=new GeoTiffWriter(this.access.input);
+    final GridCoverage2D coverage=(GridCoverage2D)writeRequest.getData().iterator().next();
+    writer.write(coverage,null);
+    writer.dispose();
+    response.addResult(coverage);
+    response.setStatus(Status.SUCCESS);
+    Info info=getInfo(null);
+    info.setExtent((GeneralEnvelope)coverage.getGridGeometry().getEnvelope());
+    info.setGeometry(coverage.getGridGeometry());
+  }
+ catch (  Throwable e) {
+    response.addException(new GeoTiffException(null,"IO error",e));
+  }
+ finally {
+    this.access.globalLock.writeLock().unlock();
+  }
+  return response;
+}

@@ -1,0 +1,27 @@
+{
+  QuantileListVisitor quantileVisit=new QuantileListVisitor(getExpression(),getClasses());
+  if (progress == null)   progress=new NullProgressListener();
+  try {
+    featureCollection.accepts(quantileVisit,progress);
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,"QuantileFunction calculate(SimpleFeatureCollection) failed",e);
+    return null;
+  }
+  if (progress.isCanceled())   return null;
+  CalcResult calcResult=quantileVisit.getResult();
+  if (calcResult == null)   return null;
+  List[] bin=(List[])calcResult.getValue();
+  Comparable globalMin=(Comparable)bin[0].toArray()[0];
+  Object lastBin[]=bin[bin.length - 1].toArray();
+  if (lastBin.length == 0) {
+    return null;
+  }
+  Comparable globalMax=(Comparable)lastBin[lastBin.length - 1];
+  if ((globalMin instanceof Number) && (globalMax instanceof Number)) {
+    return calculateNumerical(bin,globalMin,globalMax);
+  }
+ else {
+    return calculateNonNumerical(bin);
+  }
+}

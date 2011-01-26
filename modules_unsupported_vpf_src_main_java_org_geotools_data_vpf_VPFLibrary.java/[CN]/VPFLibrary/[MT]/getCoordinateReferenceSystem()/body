@@ -1,0 +1,23 @@
+{
+  if (crs == null) {
+    try {
+      String vpfTableName=new File(directory,GEOGRAPHIC_REFERENCE_TABLE).toString();
+      VPFFile grtFile=VPFFileFactory.getInstance().getFile(vpfTableName);
+      SimpleFeature grt=grtFile.getRowFromId("id",1);
+      String dataType=String.valueOf(grt.getAttribute("data_type"));
+      if ("GEO".equalsIgnoreCase(dataType)) {
+        String geoDatumCode=String.valueOf(grt.getAttribute("geo_datum_code"));
+        if ("WGE".equalsIgnoreCase(geoDatumCode)) {
+          crs=DefaultGeographicCRS.WGS84;
+        }
+      }
+    }
+ catch (    Exception ex) {
+      if (!loggedCRSException) {
+        ex.printStackTrace();
+        loggedCRSException=true;
+      }
+    }
+  }
+  return crs;
+}

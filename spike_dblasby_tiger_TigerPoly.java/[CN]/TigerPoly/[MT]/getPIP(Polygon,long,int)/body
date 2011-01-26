@@ -1,0 +1,40 @@
+{
+  List l=PIP.query(p.getEnvelopeInternal());
+  Iterator it=l.iterator();
+  boolean determinedThisIsMainPolygon=false;
+  boolean found=false;
+  long foundID=0;
+  while (it.hasNext()) {
+    Point point=(Point)it.next();
+    boolean inside=p.contains(point);
+    if (pointsTouchingOuterRightCountAsInside == 1) {
+      inside|=p.touches(point);
+    }
+    if (pointsTouchingOuterRightCountAsInside == 2) {
+      inside|=p.distance(point) < 1E-8;
+      System.out.println("distance = " + p.distance(point));
+    }
+    if (inside) {
+      foundID=((Long)point.getUserData()).longValue();
+      if (determinedThisIsMainPolygon) {
+        throw new Exception("found a 2nd PIP in a main polygon " + mainPolyID + " and "+ foundID);
+      }
+      determinedThisIsMainPolygon|=(foundID == mainPolyID);
+      found=true;
+    }
+  }
+  if (!found) {
+    if (p.getArea() < 5E-9) {
+      if (pointsTouchingOuterRightCountAsInside == 0) {
+        System.out.println("small polygon with no PIP - retrying with pointsTouchingOuterRightCountAsInside=1 - " + mainPolyID + " area="+ p.getArea());
+        return getPIP(p,mainPolyID,1);
+      }
+      if (pointsTouchingOuterRightCountAsInside == 1) {
+        System.out.println("small polygon with no PIP - retrying with pointsTouchingOuterRightCountAsInside=2 - " + mainPolyID + " area="+ p.getArea());
+        return getPIP(p,mainPolyID,2);
+      }
+    }
+    throw new Exception("poly has 0 pips! area=" + p.getArea());
+  }
+  return foundID;
+}

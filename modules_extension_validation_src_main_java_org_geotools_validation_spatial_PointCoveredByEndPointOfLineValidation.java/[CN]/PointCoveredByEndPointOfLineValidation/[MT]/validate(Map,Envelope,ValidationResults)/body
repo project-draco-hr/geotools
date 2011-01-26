@@ -1,0 +1,34 @@
+{
+  SimpleFeatureSource lineSource=(SimpleFeatureSource)layers.get(getRestrictedLineTypeRef());
+  SimpleFeatureSource pointSource=(SimpleFeatureSource)layers.get(getPointTypeRef());
+  Object[] points=pointSource.getFeatures().toArray();
+  Object[] lines=lineSource.getFeatures().toArray();
+  if (!envelope.contains(pointSource.getBounds())) {
+    results.error((SimpleFeature)points[0],"Point Feature Source is not contained within the Envelope provided.");
+    return false;
+  }
+  if (!envelope.contains(lineSource.getBounds())) {
+    results.error((SimpleFeature)lines[0],"Line Feature Source is not contained within the Envelope provided.");
+    return false;
+  }
+  for (int i=0; i < lines.length; i++) {
+    SimpleFeature tmp=(SimpleFeature)lines[i];
+    Geometry gt=(Geometry)tmp.getDefaultGeometry();
+    if (gt instanceof LineString) {
+      LineString ls=(LineString)gt;
+      Point str=ls.getStartPoint();
+      Point end=ls.getEndPoint();
+      for (int j=0; j < points.length; j++) {
+        SimpleFeature tmp2=(SimpleFeature)points[j];
+        Geometry gt2=(Geometry)tmp2.getDefaultGeometry();
+        if (gt2 instanceof Point) {
+          Point pt=(Point)gt2;
+          if (pt.equalsExact(str) || pt.equalsExact(end)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}

@@ -1,0 +1,26 @@
+{
+  String geometryname=this.featureType.getGeometryDescriptor().getLocalName();
+  String srs=this.featureType.getGeometryDescriptor().getCoordinateReferenceSystem().toString();
+  ArrayList<Filter> filters=new ArrayList<Filter>(shapes.size());
+  if (shapes.size() < MAX_FILTER_SIZE) {
+    for (Iterator<NodeIdentifier> iterator=shapes.iterator(); iterator.hasNext(); ) {
+      Region r=(Region)iterator.next().getShape();
+      Filter bbox=filterFactory.bbox(geometryname,r.getLow(0),r.getLow(1),r.getHigh(0),r.getHigh(1),srs);
+      filters.add(bbox);
+    }
+    return filterFactory.or(filters);
+  }
+ else {
+    Region area=null;
+    for (Iterator<NodeIdentifier> iterator=shapes.iterator(); iterator.hasNext(); ) {
+      Region r=(Region)iterator.next().getShape();
+      if (area == null) {
+        area=new Region(r);
+      }
+ else {
+        area=area.combinedRegion(r);
+      }
+    }
+    return filterFactory.bbox(geometryname,area.getLow(0),area.getLow(1),area.getHigh(0),area.getHigh(1),srs);
+  }
+}

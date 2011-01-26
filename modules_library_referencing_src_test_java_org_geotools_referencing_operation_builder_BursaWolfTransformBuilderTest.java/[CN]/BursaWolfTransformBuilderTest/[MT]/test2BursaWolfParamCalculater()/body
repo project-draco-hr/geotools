@@ -1,0 +1,34 @@
+{
+  double R=6370000;
+  Random random=new Random(143477662);
+  DirectPosition ptSrc;
+  DirectPosition ptDst;
+  List<MappedPosition> vectors=new ArrayList<MappedPosition>();
+  BursaWolfParameters bwp=new BursaWolfParameters(null);
+  bwp.dx=random.nextDouble() * 100;
+  bwp.dy=random.nextDouble() * 100;
+  bwp.dz=random.nextDouble() * 100;
+  bwp.ex=random.nextDouble() * 10;
+  bwp.ey=random.nextDouble() * 10;
+  bwp.ez=random.nextDouble() * 10;
+  bwp.ppm=random.nextDouble() * 10;
+  GeocentricTranslation gt=new GeocentricTranslation(bwp);
+  for (int i=0; i < (3 * 10); i++) {
+    double gamma=((45 + (random.nextDouble() * 10)) * Math.PI) / 180;
+    double alfa=((45 + (random.nextDouble() * 10)) * Math.PI) / 180;
+    ptSrc=new GeneralDirectPosition(R * Math.sin(gamma) * Math.cos(alfa),R * Math.sin(gamma) * Math.cos(alfa),R * Math.cos(gamma));
+    double[] pom=new double[3];
+    gt.transform(ptSrc.getCoordinates(),0,pom,0,1);
+    ptDst=new GeneralDirectPosition(pom);
+    vectors.add(new MappedPosition(ptSrc,ptDst));
+  }
+  BursaWolfTransformBuilder BWPT=new BursaWolfTransformBuilder(vectors);
+  assertEquals(BWPT.getBursaWolfParameters(null).dx,bwp.dx,1E-2);
+  assertEquals(BWPT.getBursaWolfParameters(null).dy,bwp.dy,1E-2);
+  assertEquals(BWPT.getBursaWolfParameters(null).dz,bwp.dz,1E-2);
+  assertEquals(BWPT.getBursaWolfParameters(null).ex,bwp.ex,1E-2);
+  assertEquals(BWPT.getBursaWolfParameters(null).ey,bwp.ey,1E-2);
+  assertEquals(BWPT.getBursaWolfParameters(null).ez,bwp.ez,1E-2);
+  assertEquals(BWPT.getBursaWolfParameters(null).ppm,bwp.ppm,1E-2);
+  assertEquals(BWPT.getErrorStatistics().rms(),0,1E-2);
+}

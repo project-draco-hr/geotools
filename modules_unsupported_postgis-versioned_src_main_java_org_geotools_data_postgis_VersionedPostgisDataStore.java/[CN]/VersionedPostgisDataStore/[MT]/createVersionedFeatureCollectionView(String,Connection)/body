@@ -1,0 +1,16 @@
+{
+  Statement st=null;
+  try {
+    st=conn.createStatement();
+    String viewName=getVFCViewName(typeName);
+    st.execute("CREATE VIEW " + viewName + "\n "+ "AS SELECT "+ "cr.revision as \"creationVersion\", cr.author as \"createdBy\", "+ "cr.date as \"creationDate\", cr.message as \"creationMessage\",  "+ "lu.revision as \"lastUpdateVersion\", lu.author as \"lastUpdatedBy\", "+ "lu.date as \"lastUpdateDate\", lu.message as \"lastUpdateMessage\","+ typeName+ ".*\n"+ "FROM "+ typeName+ " inner join "+ " changesets lu on "+ typeName+ ".revision = lu.revision "+ " inner join changesets cr on "+ typeName+ ".created = cr.revision");
+    st.execute("DELETE FROM geometry_columns " + "WHERE f_table_schema = current_schema()" + "AND f_table_name = '" + viewName + "'");
+    st.execute("INSERT INTO geometry_columns \n" + "SELECT '', current_schema(), '" + viewName + "', "+ "       gc.f_geometry_column, gc.coord_dimension, gc.srid, gc.type\n"+ "FROM geometry_columns as gc\n"+ "WHERE gc.f_table_name = '"+ typeName+ "'");
+  }
+ catch (  SQLException e) {
+    throw new DataSourceException("Issues creating versioned feature collection view for " + typeName,e);
+  }
+ finally {
+    JDBCUtils.close(st);
+  }
+}

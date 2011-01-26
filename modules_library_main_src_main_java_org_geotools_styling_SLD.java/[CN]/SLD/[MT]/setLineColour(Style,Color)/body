@@ -1,0 +1,34 @@
+{
+  if (style == null) {
+    return;
+  }
+  for (  FeatureTypeStyle featureTypeStyle : style.featureTypeStyles()) {
+    for (int i=0; i < featureTypeStyle.rules().size(); i++) {
+      Rule rule=featureTypeStyle.rules().get(i);
+      DuplicatingStyleVisitor update=new DuplicatingStyleVisitor(){
+        @Override public void visit(        LineSymbolizer line){
+          String name=line.getGeometryPropertyName();
+          Stroke stroke=update(line.getStroke());
+          LineSymbolizer copy=sf.createLineSymbolizer(stroke,name);
+          pages.push(copy);
+        }
+        Stroke update(        Stroke stroke){
+          Expression color=ff.literal(colour);
+          Expression width=copy(stroke.getWidth());
+          Expression opacity=copy(stroke.getOpacity());
+          Expression lineJoin=copy(stroke.getLineJoin());
+          Expression lineCap=copy(stroke.getLineCap());
+          float[] dashArray=copy(stroke.getDashArray());
+          Expression dashOffset=copy(stroke.getDashOffset());
+          Graphic graphicStroke=copy(stroke.getGraphicStroke());
+          Graphic graphicFill=copy(stroke.getGraphicFill());
+          return sf.createStroke(color,width,opacity,lineJoin,lineCap,dashArray,dashOffset,graphicFill,graphicStroke);
+        }
+      }
+;
+      rule.accept(update);
+      Rule updatedRule=(Rule)update.getCopy();
+      featureTypeStyle.rules().set(i,updatedRule);
+    }
+  }
+}

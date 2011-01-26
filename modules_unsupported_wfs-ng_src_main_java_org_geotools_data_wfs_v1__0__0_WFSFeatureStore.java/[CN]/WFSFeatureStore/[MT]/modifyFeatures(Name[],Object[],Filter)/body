@@ -1,0 +1,40 @@
+{
+  Filter filter=ds.processFilter(filter2);
+  WFSTransactionState ts=null;
+  if (trans == Transaction.AUTO_COMMIT) {
+    ts=new WFSTransactionState(ds);
+  }
+ else {
+    ts=(WFSTransactionState)trans.getState(ds);
+  }
+  Map<String,Object> props=new HashMap<String,Object>();
+  ReferencedEnvelope bounds=null;
+  for (int i=0; i < names.length; i++) {
+    if (names[i] instanceof GeometryDescriptor) {
+      Geometry g=(Geometry)value[i];
+      CoordinateReferenceSystem cs=((GeometryDescriptor)names[i]).getCoordinateReferenceSystem();
+      if (cs != null && !cs.getIdentifiers().isEmpty())       g.setUserData(cs.getIdentifiers().iterator().next().toString());
+      g.setUserData(cs.getIdentifiers().iterator().next().toString());
+      if (cs != null && !cs.getIdentifiers().isEmpty())       g.setUserData(cs.getIdentifiers().iterator().next().toString());
+      if (g == null)       continue;
+      if (bounds == null) {
+        bounds=new ReferencedEnvelope(g.getEnvelopeInternal(),cs);
+      }
+ else {
+        bounds.expandToInclude(g.getEnvelopeInternal());
+      }
+    }
+    props.put(names[i].getLocalPart(),value[i]);
+  }
+  ts.addAction(getSchema().getTypeName(),new UpdateAction(getSchema().getTypeName(),filter,props));
+  if (bounds == null) {
+    bounds=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+    ((WFS_1_0_0_DataStore)getDataStore()).listenerManager.fireFeaturesRemoved(getSchema().getTypeName(),getTransaction(),bounds,false);
+  }
+ else {
+    ((WFS_1_0_0_DataStore)getDataStore()).listenerManager.fireFeaturesRemoved(getSchema().getTypeName(),getTransaction(),bounds,false);
+  }
+  if (trans == Transaction.AUTO_COMMIT) {
+    ts.commit();
+  }
+}

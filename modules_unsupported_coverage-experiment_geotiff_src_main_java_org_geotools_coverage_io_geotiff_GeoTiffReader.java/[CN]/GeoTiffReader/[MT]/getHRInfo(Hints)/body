@@ -1,0 +1,35 @@
+{
+  final ImageReader reader=readerSPI.createReaderInstance();
+  reader.setInput(inStream);
+  final IIOMetadata iioMetadata=reader.getImageMetadata(0);
+  metadata=new GeoTiffIIOMetadataDecoder(iioMetadata);
+  gtcs=(GeoTiffMetadata2CRSAdapter)GeoTiffMetadata2CRSAdapter.get(hints);
+  if (metadata.hasNoData())   noData=metadata.getNoData();
+  final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+  if (tempCRS != null) {
+    this.crs=(CoordinateReferenceSystem)tempCRS;
+    LOGGER.log(Level.WARNING,new StringBuffer("Using forced coordinate reference system ").append(crs.toWKT()).toString());
+  }
+ else   crs=gtcs.createCoordinateSystem(metadata);
+  numOverviews=reader.getNumImages(true) - 1;
+  int hrWidth=reader.getWidth(0);
+  int hrHeight=reader.getHeight(0);
+  final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
+  originalGridRange=new GridEnvelope2D(actualDim);
+  this.raster2Model=gtcs.getRasterToModel(metadata);
+  final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
+  tempTransform.translate(-0.5,-0.5);
+  originalEnvelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(actualDim));
+  originalEnvelope.setCoordinateReferenceSystem(crs);
+  highestRes=new double[2];
+  highestRes[0]=XAffineTransform.getScaleX0(tempTransform);
+  highestRes[1]=XAffineTransform.getScaleY0(tempTransform);
+  if (numOverviews >= 1) {
+    overViewResolutions=new double[numOverviews][2];
+    for (int i=0; i < numOverviews; i++) {
+      overViewResolutions[i][0]=(highestRes[0] * this.originalGridRange.getSpan(0)) / reader.getWidth(i + 1);
+      overViewResolutions[i][1]=(highestRes[1] * this.originalGridRange.getSpan(1)) / reader.getHeight(i + 1);
+    }
+  }
+ else   overViewResolutions=null;
+}

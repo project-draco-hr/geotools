@@ -1,0 +1,43 @@
+{
+  try {
+    PreGeneralizedDataStore ds=getDataStore(configName);
+    SimpleFeatureSource fs=ds.getFeatureSource("GenStreams");
+    assertTrue(fs.getSupportedHints().contains(Hints.GEOMETRY_DISTANCE));
+    SimpleFeatureCollection fCollection;
+    String typeName;
+    fCollection=fs.getFeatures();
+    typeName=fCollection.getSchema().getTypeName();
+    assertTrue("GenStreams".equals(typeName));
+    assertTrue(fCollection.size() > 0);
+    assertFalse(fCollection.isEmpty());
+    Iterator<SimpleFeature> iterator=fCollection.iterator();
+    while (iterator.hasNext()) {
+      SimpleFeature f=iterator.next();
+      checkPoints(f,0.0);
+    }
+    fCollection.close(iterator);
+    fCollection=fs.getFeatures(Filter.INCLUDE);
+    typeName=fCollection.getSchema().getTypeName();
+    assertTrue("GenStreams".equals(typeName));
+    assertTrue(fCollection.size() > 0);
+    assertFalse(fCollection.isEmpty());
+    iterator=fCollection.iterator();
+    while (iterator.hasNext()) {
+      SimpleFeature f=iterator.next();
+      checkPoints(f,0.0);
+    }
+    boolean error=true;
+    try {
+      iterator.remove();
+    }
+ catch (    UnsupportedOperationException e) {
+      error=false;
+    }
+    assertFalse(error);
+    fCollection.close(iterator);
+    ds.dispose();
+  }
+ catch (  Exception ex) {
+    Assert.fail(ex.getMessage());
+  }
+}

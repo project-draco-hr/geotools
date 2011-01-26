@@ -1,0 +1,44 @@
+{
+  File shpFile=copyShapefiles(STATE_POP);
+  URL url=shpFile.toURI().toURL();
+  IndexedShapefileDataStore ds=new IndexedShapefileDataStore(url,null,true,true,IndexType.NONE);
+  SimpleFeatureSource featureSource=ds.getFeatureSource();
+  SimpleFeatureCollection features=featureSource.getFeatures();
+  SimpleFeatureIterator indexIter=features.features();
+  Set<String> expectedFids=new LinkedHashSet<String>();
+  final Filter fidFilter;
+  try {
+    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+    Set<FeatureId> fids=new HashSet<FeatureId>();
+    while (indexIter.hasNext()) {
+      SimpleFeature newFeature=indexIter.next();
+      String id=newFeature.getID();
+      expectedFids.add(id);
+      fids.add(ff.featureId(id));
+    }
+    fidFilter=ff.id(fids);
+  }
+  finally {
+    indexIter.close();
+  }
+  Set<String> actualFids=new HashSet<String>();
+{
+    features=featureSource.getFeatures(fidFilter);
+    indexIter=features.features();
+    while (indexIter.hasNext()) {
+      SimpleFeature next=indexIter.next();
+      String id=next.getID();
+      actualFids.add(id);
+    }
+  }
+  TreeSet<String> lackingFids=new TreeSet<String>(expectedFids);
+  lackingFids.removeAll(actualFids);
+  TreeSet<String> unexpectedFids=new TreeSet<String>(actualFids);
+  unexpectedFids.removeAll(expectedFids);
+  String lacking=String.valueOf(lackingFids);
+  String unexpected=String.valueOf(unexpectedFids);
+  String failureMsg="lacking fids: " + lacking + ". Unexpected ones: "+ unexpected;
+  assertEquals(failureMsg,expectedFids.size(),actualFids.size());
+  assertEquals(failureMsg,expectedFids,actualFids);
+  ds.dispose();
+}

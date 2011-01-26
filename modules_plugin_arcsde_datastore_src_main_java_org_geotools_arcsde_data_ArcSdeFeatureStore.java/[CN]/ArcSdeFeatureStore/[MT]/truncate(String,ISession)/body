@@ -1,0 +1,22 @@
+{
+  final boolean transactionInProgress=session.isTransactionActive();
+  final SeTable table=session.getTable(typeName);
+  if (transactionInProgress) {
+    LOGGER.fine("deleting all table records for " + typeName);
+    final FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriter(typeName,transaction);
+    while (writer.hasNext()) {
+      writer.next();
+      writer.remove();
+    }
+  }
+ else {
+    LOGGER.fine("truncating table " + typeName);
+    session.issue(new Command<Void>(){
+      @Override public Void execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        table.truncate();
+        return null;
+      }
+    }
+);
+  }
+}

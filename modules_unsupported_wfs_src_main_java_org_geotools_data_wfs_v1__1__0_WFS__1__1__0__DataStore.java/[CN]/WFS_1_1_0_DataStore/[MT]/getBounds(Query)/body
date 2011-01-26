@@ -1,0 +1,24 @@
+{
+  if (!Filter.INCLUDE.equals(query.getFilter())) {
+    return null;
+  }
+  final String typeName=query.getTypeName();
+  ReferencedEnvelope featureTypeBounds;
+  featureTypeBounds=getFeatureTypeBounds(typeName);
+  final CoordinateReferenceSystem featureTypeCrs=featureTypeBounds.getCoordinateReferenceSystem();
+  final CoordinateReferenceSystem queryCrs=query.getCoordinateSystem();
+  if (queryCrs != null && !CRS.equalsIgnoreMetadata(queryCrs,featureTypeCrs)) {
+    try {
+      featureTypeBounds=featureTypeBounds.transform(queryCrs,true);
+    }
+ catch (    TransformException e) {
+      LOGGER.log(Level.INFO,"Error transforming bounds for " + typeName,e);
+      featureTypeBounds=null;
+    }
+catch (    FactoryException e) {
+      LOGGER.log(Level.INFO,"Error transforming bounds for " + typeName,e);
+      featureTypeBounds=null;
+    }
+  }
+  return featureTypeBounds;
+}

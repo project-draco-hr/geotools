@@ -1,0 +1,64 @@
+{
+  if (dest == null) {
+    throw new NullPointerException("The provided destination is null.");
+  }
+  destination=dest;
+  final File temp;
+  final URL url;
+  if (dest instanceof String) {
+    temp=new File((String)dest);
+    if ((temp.exists() && !temp.isDirectory()) || !temp.exists()) {
+      destination=null;
+    }
+ else     if (!temp.exists()) {
+      if (!temp.mkdir()) {
+        destination=null;
+      }
+ else {
+        destination=temp.getAbsolutePath();
+      }
+    }
+  }
+ else   if (dest instanceof File) {
+    temp=(File)dest;
+    if (temp.exists() && !temp.isDirectory()) {
+      this.destination=null;
+    }
+ else     if (!temp.exists()) {
+      if (temp.mkdir()) {
+        destination=temp.getAbsolutePath();
+      }
+ else {
+        destination=null;
+      }
+    }
+  }
+ else   if (dest instanceof URL) {
+    url=(URL)dest;
+    if (url.getProtocol().compareToIgnoreCase("file") != 0) {
+      destination=null;
+    }
+    temp=DataUtilities.urlToFile(url);
+    if (temp.exists() && !temp.isDirectory()) {
+      destination=null;
+    }
+ else     if (!temp.exists()) {
+      if (temp.mkdir()) {
+        destination=temp.getAbsolutePath();
+      }
+ else {
+        destination=null;
+      }
+    }
+  }
+ else   if (dest instanceof ImageOutputStream) {
+    this.destination=dest;
+  }
+ else {
+    throw new IllegalArgumentException("The provided destination is of an incorrect type.");
+  }
+  if (this.hints == null)   this.hints=new Hints();
+  if (hints != null) {
+    this.hints.add(hints);
+  }
+}

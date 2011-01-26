@@ -1,0 +1,61 @@
+{
+  MonolineFormatter monoline=null;
+  boolean foundConsoleHandler=false;
+  Handler[] handlers=logger.getHandlers();
+  for (int i=0; i < handlers.length; i++) {
+    final Handler handler=handlers[i];
+    if (handler.getClass().equals(ConsoleHandler.class)) {
+      foundConsoleHandler=true;
+      final Formatter formatter=handler.getFormatter();
+      if (formatter instanceof MonolineFormatter) {
+        if (monoline == null) {
+          monoline=(MonolineFormatter)formatter;
+          if (level != null) {
+            handler.setLevel(level);
+          }
+        }
+      }
+ else       if (formatter.getClass().equals(SimpleFormatter.class)) {
+        if (monoline == null) {
+          monoline=new MonolineFormatter();
+        }
+        try {
+          handler.setFormatter(monoline);
+          if (level != null) {
+            handler.setLevel(level);
+          }
+        }
+ catch (        SecurityException exception) {
+          unexpectedException(exception);
+        }
+      }
+    }
+  }
+  for (Logger parent=logger; parent.getUseParentHandlers(); ) {
+    parent=parent.getParent();
+    if (parent == null) {
+      break;
+    }
+    handlers=parent.getHandlers();
+    for (int i=0; i < handlers.length; i++) {
+      Handler handler=handlers[i];
+      if (handler.getClass().equals(ConsoleHandler.class)) {
+        if (!foundConsoleHandler) {
+          continue;
+        }
+        foundConsoleHandler=true;
+        final Formatter formatter=handler.getFormatter();
+        if (formatter.getClass().equals(SimpleFormatter.class)) {
+          monoline=addHandler(logger,level);
+          continue;
+        }
+      }
+      logger.addHandler(handler);
+    }
+  }
+  logger.setUseParentHandlers(false);
+  if (!foundConsoleHandler) {
+    monoline=addHandler(logger,level);
+  }
+  return monoline;
+}

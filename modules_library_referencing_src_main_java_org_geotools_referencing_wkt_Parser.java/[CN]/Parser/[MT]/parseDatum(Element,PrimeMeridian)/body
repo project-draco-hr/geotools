@@ -1,0 +1,30 @@
+{
+  Element element=parent.pullElement("DATUM");
+  String name=element.pullString("name");
+  Ellipsoid ellipsoid=parseSpheroid(element);
+  BursaWolfParameters toWGS84=parseToWGS84(element);
+  Map<String,Object> properties=parseAuthority(element,name);
+  if (ALLOW_ORACLE_SYNTAX && (toWGS84 == null) && (element.peek() instanceof Number)) {
+    toWGS84=new BursaWolfParameters(DefaultGeodeticDatum.WGS84);
+    toWGS84.dx=element.pullDouble("dx");
+    toWGS84.dy=element.pullDouble("dy");
+    toWGS84.dz=element.pullDouble("dz");
+    toWGS84.ex=element.pullDouble("ex");
+    toWGS84.ey=element.pullDouble("ey");
+    toWGS84.ez=element.pullDouble("ez");
+    toWGS84.ppm=element.pullDouble("ppm");
+  }
+  element.close();
+  if (toWGS84 != null) {
+    if (!(properties instanceof HashMap)) {
+      properties=new HashMap<String,Object>(properties);
+    }
+    properties.put(DefaultGeodeticDatum.BURSA_WOLF_KEY,toWGS84);
+  }
+  try {
+    return datumFactory.createGeodeticDatum(properties,ellipsoid,meridian);
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

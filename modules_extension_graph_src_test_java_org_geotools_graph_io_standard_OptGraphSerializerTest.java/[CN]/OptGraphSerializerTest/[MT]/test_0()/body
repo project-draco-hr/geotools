@@ -1,0 +1,22 @@
+{
+  final int nnodes=100;
+  Object[] obj=GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  final Map node2id=(Map)obj[2];
+  final Map edge2id=(Map)obj[3];
+  try {
+    File victim=File.createTempFile("graph",null);
+    victim.deleteOnExit();
+    serializer().setProperty(SerializedReaderWriter.FILENAME,victim.getAbsolutePath());
+    serializer().write(builder().getGraph());
+    Graph before=builder().getGraph();
+    Graph after=serializer().read();
+    assertTrue(before.getNodes().size() == after.getNodes().size());
+    assertTrue(before.getEdges().size() == after.getEdges().size());
+    assertTrue(after.getNodesOfDegree(1).size() == 2);
+    assertTrue(after.getNodesOfDegree(2).size() == nnodes - 2);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    assertTrue(false);
+  }
+}

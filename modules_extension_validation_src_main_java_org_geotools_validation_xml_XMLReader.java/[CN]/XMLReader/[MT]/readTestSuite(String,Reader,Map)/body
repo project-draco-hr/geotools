@@ -1,0 +1,51 @@
+{
+  TestSuiteDTO dto=new TestSuiteDTO();
+  try {
+    Element elem=null;
+    try {
+      elem=ReaderUtils.loadConfig(inputSource);
+    }
+ catch (    ParserConfigurationException e) {
+      throw new ValidationException("Problem parsing " + name + ":"+ e.getMessage(),e);
+    }
+catch (    SAXException e) {
+      throw new ValidationException("XML problem with  " + name + ":"+ e.getMessage(),e);
+    }
+    try {
+      dto.setName(ReaderUtils.getChildText(elem,"name",true));
+    }
+ catch (    SAXException e) {
+      throw new ValidationException("Error loading test suite name",e);
+    }
+    try {
+      dto.setDescription(ReaderUtils.getChildText(elem,"description",true));
+    }
+ catch (    SAXException e) {
+      throw new ValidationException("Error loading test suite description",e);
+    }
+    Map l=new HashMap();
+    dto.setTests(l);
+    NodeList nl=elem.getElementsByTagName("test");
+    if ((nl == null) || (nl.getLength() == 0)) {
+      throw new ValidationException("The test suite loader has detected an error: no tests provided.");
+    }
+ else {
+      for (int i=0; i < nl.getLength(); i++) {
+        try {
+          TestDTO t=loadTestDTO((Element)nl.item(i),plugIns);
+          l.put(t.getName(),t);
+        }
+ catch (        ValidationException e) {
+          throw new ValidationException("An error occured loading a test in " + dto.getName() + " test suite.",e);
+        }
+catch (        Throwable t) {
+          throw new ValidationException("Could not load test suite " + dto.getName() + ":"+ t.getMessage(),t);
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new ValidationException("An error occured loading the " + dto.getName() + "test suite",e);
+  }
+  return dto;
+}

@@ -1,0 +1,27 @@
+{
+  if (session == null) {
+    return;
+  }
+  try {
+    try {
+      session.rollbackTransaction();
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.SEVERE,"Unexpected exception at close(): " + e.getMessage(),e);
+    }
+    session.dispose();
+  }
+ catch (  IllegalStateException workflowError) {
+    try {
+      session.rollbackTransaction();
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.SEVERE,"rolling back connection " + session,e);
+      session.dispose();
+    }
+    throw workflowError;
+  }
+ finally {
+    session=null;
+  }
+}

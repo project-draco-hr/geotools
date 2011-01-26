@@ -1,0 +1,48 @@
+{
+  WFSTransactionState ts=null;
+  if (trans == Transaction.AUTO_COMMIT) {
+    ts=new WFSTransactionState(ds);
+  }
+ else {
+    ts=(WFSTransactionState)trans.getState(ds);
+  }
+  ts.addAction(getSchema().getTypeName(),new DeleteAction(getSchema().getTypeName(),Filter.INCLUDE));
+  ReferencedEnvelope bounds=null;
+  while (reader.hasNext()) {
+    try {
+      SimpleFeature f=reader.next();
+      List<AttributeDescriptor> atrs=f.getFeatureType().getAttributeDescriptors();
+      for (int i=0; i < atrs.size(); i++) {
+        if (atrs.get(i) instanceof GeometryDescriptor) {
+          Geometry g=(Geometry)f.getAttribute(i);
+          CoordinateReferenceSystem cs=((GeometryDescriptor)atrs.get(i)).getCoordinateReferenceSystem();
+          if (cs != null && !cs.getIdentifiers().isEmpty())           g.setUserData(cs.getIdentifiers().iterator().next().toString());
+          if (g == null)           continue;
+          if (bounds == null) {
+            bounds=new ReferencedEnvelope(g.getEnvelopeInternal(),cs);
+          }
+ else {
+            bounds.expandToInclude(g.getEnvelopeInternal());
+          }
+        }
+      }
+      ts.addAction(getSchema().getTypeName(),new InsertAction(f));
+    }
+ catch (    NoSuchElementException e) {
+      WFS_1_0_0_DataStore.LOGGER.warning(e.toString());
+    }
+catch (    IllegalAttributeException e) {
+      WFS_1_0_0_DataStore.LOGGER.warning(e.toString());
+    }
+  }
+  if (bounds == null) {
+    bounds=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+    ((WFS_1_0_0_DataStore)getDataStore()).listenerManager.fireFeaturesRemoved(getSchema().getTypeName(),getTransaction(),bounds,false);
+  }
+ else {
+    ((WFS_1_0_0_DataStore)getDataStore()).listenerManager.fireFeaturesRemoved(getSchema().getTypeName(),getTransaction(),bounds,false);
+  }
+  if (trans == Transaction.AUTO_COMMIT) {
+    ts.commit();
+  }
+}

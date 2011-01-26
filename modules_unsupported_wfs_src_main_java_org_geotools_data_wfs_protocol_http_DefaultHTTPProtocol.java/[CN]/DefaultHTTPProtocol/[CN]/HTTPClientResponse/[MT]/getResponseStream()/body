@@ -1,0 +1,27 @@
+{
+  final InputStream in;
+{
+    InputStream responseStream=method.getResponseBodyAsStream();
+    String encoding=getResponseHeader("Content-Encoding");
+    if (encoding != null) {
+      if (encoding.toLowerCase().indexOf("gzip") > -1) {
+        LOGGER.finest("Response is GZIP encoded, wrapping with gzip input stream");
+        responseStream=new GZIPInputStream(responseStream);
+      }
+    }
+ else {
+      LOGGER.finest("HTTP response is not gzip encoded");
+    }
+    in=responseStream;
+  }
+  InputStream releaseConnectionInputStream=new InputStream(){
+    @Override public int read() throws IOException {
+      return in.read();
+    }
+    @Override public void close() throws IOException {
+      method.releaseConnection();
+    }
+  }
+;
+  return releaseConnectionInputStream;
+}

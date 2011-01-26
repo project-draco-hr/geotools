@@ -1,0 +1,22 @@
+{
+  boolean supports=true;
+  if (filter == null) {
+    throw new IllegalArgumentException("Null filters can not be " + "unpacked, did you mean " + "Filter.INCLUDE?");
+  }
+  short filterType=Filters.getFilterType(filter);
+  if (AbstractFilter.isLogicFilter(filterType)) {
+    Iterator filters=((LogicFilter)filter).getFilterIterator();
+    org.opengis.filter.Filter testFilter=null;
+    while (filters.hasNext()) {
+      testFilter=(org.opengis.filter.Filter)filters.next();
+      if (!(this.fullySupports(testFilter))) {
+        supports=false;
+        break;
+      }
+    }
+  }
+ else {
+    supports=this.supports(filter);
+  }
+  return supports;
+}

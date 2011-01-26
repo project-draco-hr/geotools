@@ -1,0 +1,35 @@
+{
+  BeanDescriptor beanDescriptor=beanInfo.getBeanDescriptor();
+  Class type=beanDescriptor.getBeanClass();
+  Constructor create;
+  try {
+    create=type.getConstructor(new Class[0]);
+  }
+ catch (  SecurityException e) {
+    throw new ValidationException("Could not create '" + plugInName + "' as "+ type.getName(),e);
+  }
+catch (  NoSuchMethodException e) {
+    throw new ValidationException("Could not create '" + plugInName + "' as "+ type.getName(),e);
+  }
+catch (  IllegalArgumentException e) {
+    throw new ValidationException("Could not create '" + plugInName + "' as "+ type.getName(),e);
+  }
+  Validation validate;
+  try {
+    validate=(Validation)create.newInstance(new Object[0]);
+  }
+ catch (  InstantiationException e) {
+    throw new ValidationException("Could not create '" + name + "' as plugIn "+ plugInName,e);
+  }
+catch (  IllegalAccessException e) {
+    throw new ValidationException("Could not create '" + name + "' as plugIn "+ plugInName,e);
+  }
+catch (  InvocationTargetException e) {
+    throw new ValidationException("Could not create '" + name + "' as plugIn "+ plugInName,e);
+  }
+  validate.setName(name);
+  validate.setDescription(description);
+  configure(validate,defaults);
+  configure(validate,transArgs(args));
+  return validate;
+}

@@ -1,0 +1,32 @@
+{
+  final int SCHEMA_NAME=2;
+  final int TABLE_NAME=3;
+  final int COLUMN_NAME=4;
+  String tableName=columnMetaData.getString(TABLE_NAME);
+  String columnName=columnMetaData.getString(COLUMN_NAME);
+  String schemaName=columnMetaData.getString(SCHEMA_NAME);
+  String sqlStatement;
+  Statement statement=null;
+  ResultSet result=null;
+  String gType=null;
+  try {
+    if (schemaName != null) {
+      sqlStatement="SELECT GEOMETRY_TYPE FROM GEOMETRY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOMETRY_COLUMN = '"+ columnName+ "'";
+    }
+ else {
+      sqlStatement="SELECT GEOMETRY_TYPE FROM GEOMETRY_COLUMNS WHERE " + "F_TABLE_NAME = '" + tableName + "' "+ "AND F_GEOMETRY_COLUMN = '"+ columnName+ "'";
+    }
+    LOGGER.log(Level.FINE,"Geometry type check; {0} ",sqlStatement);
+    statement=cx.createStatement();
+    result=statement.executeQuery(sqlStatement);
+    if (result.next()) {
+      gType=result.getString(1);
+    }
+  }
+  finally {
+    dataStore.closeSafe(result);
+    dataStore.closeSafe(statement);
+  }
+  Class geometryClass=(Class)TYPE_TO_CLASS_MAP.get(gType == null ? gType : gType.trim());
+  return geometryClass;
+}

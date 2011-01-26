@@ -1,0 +1,37 @@
+{
+  SimpleFeatureSource pointSource=(SimpleFeatureSource)layers.get(getPointTypeRef());
+  SimpleFeatureSource polySource=(SimpleFeatureSource)layers.get(getRestrictedPolygonTypeRef());
+  Object[] polys=polySource.getFeatures().toArray();
+  Object[] points=pointSource.getFeatures().toArray();
+  if (!envelope.contains(polySource.getBounds())) {
+    results.error((SimpleFeature)polys[0],"Point Feature Source is not contained within the Envelope provided.");
+    return false;
+  }
+  if (!envelope.contains(pointSource.getBounds())) {
+    results.error((SimpleFeature)points[0],"Line Feature Source is not contained within the Envelope provided.");
+    return false;
+  }
+  for (int i=0; i < points.length; i++) {
+    SimpleFeature tmp=(SimpleFeature)points[i];
+    Geometry gt=(Geometry)tmp.getDefaultGeometry();
+    if (gt instanceof Polygon) {
+      Polygon ls=(Polygon)gt;
+      boolean r=false;
+      for (int j=0; j < polys.length && !r; j++) {
+        SimpleFeature tmp2=(SimpleFeature)polys[j];
+        Geometry gt2=(Geometry)tmp2.getDefaultGeometry();
+        if (gt2 instanceof Point) {
+          Point pt=(Point)gt2;
+          if (!ls.contains(pt)) {
+            r=true;
+          }
+        }
+      }
+      if (!r) {
+        results.error(tmp,"Polygon does not contained one of the specified points.");
+        return false;
+      }
+    }
+  }
+  return true;
+}

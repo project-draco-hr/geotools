@@ -1,0 +1,39 @@
+{
+  try {
+    final int COLUMN_NAME=4;
+    final int DATA_TYPE=5;
+    final int NULLABLE=11;
+    final int LENGTH=7;
+    String columnName=rs.getString(COLUMN_NAME);
+    int dataType=rs.getInt(DATA_TYPE);
+    Class type=(Class)TYPE_MAPPINGS.get(new Integer(dataType));
+    int nullCode=rs.getInt(NULLABLE);
+    boolean nillable=true;
+switch (nullCode) {
+case DatabaseMetaData.columnNoNulls:
+      nillable=false;
+    break;
+case DatabaseMetaData.columnNullable:
+  nillable=true;
+break;
+case DatabaseMetaData.columnNullableUnknown:
+nillable=true;
+break;
+}
+if (type == null) {
+return null;
+}
+ else {
+int min=nillable ? 0 : 1;
+AttributeTypeBuilder atb=new AttributeTypeBuilder();
+atb.setName(columnName);
+atb.setBinding(type);
+atb.setMinOccurs(min);
+atb.setMaxOccurs(1);
+return atb.buildDescriptor(columnName);
+}
+}
+ catch (SQLException e) {
+throw new IOException("SQL exception occurred: " + e.getMessage());
+}
+}

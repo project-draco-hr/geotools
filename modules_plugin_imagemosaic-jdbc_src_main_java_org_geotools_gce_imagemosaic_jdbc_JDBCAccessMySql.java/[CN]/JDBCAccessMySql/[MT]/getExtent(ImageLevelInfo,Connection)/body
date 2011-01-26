@@ -1,0 +1,28 @@
+{
+  String extentSelect=getExtentSelectStatment(li);
+  String statementString=MessageFormat.format(extentSelect,new Object[]{li.getSpatialTableName()});
+  Envelope extent=null;
+  PreparedStatement s=con.prepareStatement(statementString);
+  ResultSet r=s.executeQuery();
+  WKBReader reader=new WKBReader();
+  while (r.next()) {
+    byte[] bytes=r.getBytes(1);
+    Geometry g;
+    try {
+      g=reader.read(bytes);
+    }
+ catch (    ParseException e) {
+      LOGGER.log(Level.SEVERE,e.getMessage(),e);
+      throw new IOException(e.getMessage());
+    }
+    if (extent == null) {
+      extent=g.getEnvelopeInternal();
+    }
+ else {
+      extent.expandToInclude(g.getEnvelopeInternal());
+    }
+  }
+  r.close();
+  s.close();
+  return extent;
+}

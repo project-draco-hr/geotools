@@ -1,0 +1,37 @@
+{
+  final GeographicMetadata metadata=new GeographicMetadata();
+  final MetadataReader parser=new MetadataReader();
+  final DefaultTextMetadataParser textMetadata=new DefaultTextMetadataParser();
+  textMetadata.setGeographicMetadata(metadata);
+  textMetadata.addAlias(TextMetadataParser.X_MINIMUM,"XMinimum");
+  textMetadata.addAlias(TextMetadataParser.X_MAXIMUM,"XMaximum");
+  textMetadata.addAlias(TextMetadataParser.Y_MINIMUM,"YMinimum");
+  textMetadata.addAlias(TextMetadataParser.Y_MAXIMUM,"YMaximum");
+  textMetadata.addAlias(TextMetadataParser.X_RESOLUTION,"XResolution");
+  textMetadata.addAlias(TextMetadataParser.Y_RESOLUTION,"YResolution");
+  textMetadata.addAlias(TextMetadataParser.UNIT,"Unit");
+  textMetadata.addAlias(TextMetadataParser.PROJECTION,"Projection");
+  textMetadata.addAlias(TextMetadataParser.CENTRAL_MERIDIAN,"Central meridian");
+  textMetadata.addAlias(TextMetadataParser.LATITUDE_OF_ORIGIN,"Latitude of origin");
+  textMetadata.addAlias(TextMetadataParser.FALSE_EASTING,"False easting");
+  textMetadata.addAlias(TextMetadataParser.FALSE_NORTHING,"False northing");
+  textMetadata.addAlias(TextMetadataParser.ELLIPSOID,"Ellipsoid");
+  textMetadata.addAlias(TextMetadataParser.DATUM,"Datum");
+  textMetadata.addAlias(TextMetadataParser.WIDTH,"Width");
+  textMetadata.addAlias(TextMetadataParser.HEIGHT,"Height");
+  textMetadata.addAlias(TextMetadataParser.COORDINATE_REFERENCE_SYSTEM,"Coordinate Reference System");
+  textMetadata.addAlias(TextMetadataParser.COORDINATE_SYSTEM,"Coordinate System");
+  textMetadata.load(in);
+  parser.setGeographicMetadata(metadata);
+  final GridEnvelope range=parser.getGridRange();
+  assertEquals("Width",800,range.getHigh(0));
+  assertEquals("Height",600,range.getHigh(1));
+  final CoordinateSystemAxis axisOne=parser.getAxis(0);
+  assertTrue(axisOne.getDirection() == AxisDirection.valueOf("east"));
+  assertTrue(axisOne.getName().getCode().equalsIgnoreCase("x"));
+  final Datum datum=parser.getDatum();
+  assertTrue(datum.getName().getCode().equals("Clarke 1866"));
+  final CoordinateReferenceSystem notExpectedCRS=DefaultGeographicCRS.WGS84;
+  final CoordinateReferenceSystem createdCRS=parser.getCoordinateReferenceSystem();
+  assertFalse(notExpectedCRS == createdCRS);
+}

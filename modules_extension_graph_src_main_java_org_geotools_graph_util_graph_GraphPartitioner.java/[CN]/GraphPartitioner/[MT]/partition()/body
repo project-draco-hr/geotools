@@ -1,0 +1,38 @@
+{
+  try {
+    m_nvisited=m_graph.getNodes().size();
+    DepthFirstIterator iterator=new DepthFirstIterator();
+    BasicGraphTraversal traversal=new BasicGraphTraversal(m_graph,this,iterator);
+    Iterator sources=m_graph.getNodes().iterator();
+    traversal.init();
+    m_partition=new ArrayList();
+    while (m_nvisited > 0) {
+      Node source=null;
+      while (sources.hasNext() && (source=(Node)sources.next()).isVisited())       ;
+      if (source == null || source.isVisited())       return (false);
+      iterator.setSource(source);
+      traversal.traverse();
+    }
+    HashSet nodes=null;
+    HashSet edges=null;
+    ArrayList graphs=new ArrayList();
+    for (Iterator itr=m_partitions.iterator(); itr.hasNext(); ) {
+      m_partition=(ArrayList)itr.next();
+      if (m_partition.size() == 0)       continue;
+      nodes=new HashSet();
+      edges=new HashSet();
+      for (Iterator nitr=m_partition.iterator(); nitr.hasNext(); ) {
+        Node node=(Node)nitr.next();
+        nodes.add(node);
+        edges.addAll(node.getEdges());
+      }
+      graphs.add(new BasicGraph(nodes,edges));
+    }
+    m_partitions=graphs;
+    return (true);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+  return (false);
+}

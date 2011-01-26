@@ -1,0 +1,88 @@
+{
+  System.out.println("Start of the output for the tutorial: DemoJTS.\n");
+  System.out.println("PART I: Coordinates from scratch");
+  Coordinate ptc=new Coordinate(14.0d,14.0d);
+  System.out.println("The Coordinate is:            " + ptc);
+  Coordinate[] lsc=new Coordinate[8];
+  lsc[0]=new Coordinate(5.0d,5.0d);
+  lsc[1]=new Coordinate(6.0d,5.0d);
+  lsc[2]=new Coordinate(6.0d,6.0d);
+  lsc[3]=new Coordinate(7.0d,6.0d);
+  lsc[4]=new Coordinate(7.0d,7.0d);
+  lsc[5]=new Coordinate(8.0d,7.0d);
+  lsc[6]=new Coordinate(8.0d,8.0d);
+  lsc[7]=new Coordinate(9.0d,9.0d);
+  Coordinate[] pgc=new Coordinate[10];
+  pgc[0]=new Coordinate(7,7);
+  pgc[1]=new Coordinate(6,9);
+  pgc[2]=new Coordinate(6,11);
+  pgc[3]=new Coordinate(7,12);
+  pgc[4]=new Coordinate(9,11);
+  pgc[5]=new Coordinate(11,12);
+  pgc[6]=new Coordinate(13,11);
+  pgc[7]=new Coordinate(13,9);
+  pgc[8]=new Coordinate(11,7);
+  pgc[9]=new Coordinate(7,7);
+  System.out.println("\nPART II: Envelopes from scratch and operations");
+  Envelope e1=new Envelope(8.0d,20.0d,4.0d,12.0d);
+  Envelope e2=new Envelope(new Coordinate(12.0d,6.0d),new Coordinate(16.0d,16.0d));
+  System.out.println("The first Envelope is:       " + e1);
+  System.out.println("It contains the coordinate?  " + e1.contains(ptc));
+  System.out.println("Does the second?             " + e2.contains(ptc));
+  Envelope e1prime=new Envelope(e1);
+  e1prime.expandToInclude(ptc);
+  System.out.println("The first Envelope expanded  " + e1prime);
+  System.out.println("Two Envelopes intersected    " + e1.intersection(e2));
+  System.out.println("\nPART III: Geometries from Coordinates");
+  GeometryFactory geomFac=new GeometryFactory();
+  Point ptG=geomFac.createPoint(ptc);
+  LineString lnG=geomFac.createLineString(lsc);
+  LinearRing rgG=geomFac.createLinearRing(pgc);
+  Polygon pgG=geomFac.createPolygon(rgG,null);
+  System.out.println("The point is:                " + ptG);
+  System.out.println("The line string is:          " + lnG);
+  System.out.println("The linear ring is:          " + rgG);
+  System.out.println("The polygon is:              " + pgG);
+  System.out.println("\nPART IV: Geometry Creation from WKT");
+  Geometry lnGwkt=null;
+  try {
+    lnGwkt=new WKTReader().read("LINESTRING (0 0, 30 30, 0 7, 5 10)");
+  }
+ catch (  ParseException pe) {
+    System.out.println("Couldn't parse the linestring");
+  }
+  System.out.print("The WKT line string is:      ");
+  WKTWriter wrt=new WKTWriter();
+  String str=wrt.write(lnGwkt);
+  System.out.println(str);
+  System.out.println(" or with one statement:      " + (new WKTWriter()).write(lnGwkt));
+  System.out.println("\nPART V: Geometry Comparisons");
+  Coordinate cNew=new Coordinate(14.000001,14.0,3.0);
+  Point ptNew=geomFac.createPoint(cNew);
+  System.out.println("Are the pt geometries equal? " + ptG.equals(ptNew));
+  System.out.println(" exactly equal?              " + ptG.equalsExact(ptNew));
+  System.out.println(" near to exactly equal?      " + ptG.equalsExact(ptNew,0.0000000001));
+  System.out.println(" inexactly equal?            " + ptG.equalsExact(ptNew,0.001));
+  Geometry g_one=null;
+  Geometry g_two=null;
+  try {
+    g_one=new WKTReader().read("LINESTRING (0 0, 10 10, 0 20, 0 0)");
+    g_two=new WKTReader().read("LINESTRING (10 10, 0 20, 0 0, 10 10)");
+  }
+ catch (  ParseException pe) {
+    System.out.println("Couldn't parse the linestring");
+  }
+  System.out.println("Are the triangles equal?     " + g_one.equals(g_two));
+  System.out.println("Do the envelopes overalp?    " + lnG.getEnvelope().overlaps(pgG.getEnvelope()));
+  System.out.println("Do the convex hulls overalp? " + lnG.convexHull().overlaps(pgG.convexHull()));
+  System.out.println("Do the geometries overalp?   " + lnG.overlaps(pgG));
+  System.out.println("\nPART VI: Geometry Operations");
+  System.out.println("Does it self intersect?      " + lnGwkt.isSimple());
+  System.out.println("Line strings intersection:   " + lnGwkt.intersection(lnG));
+  System.out.println("Line, polygon intersection:  " + lnG.intersects(pgG));
+  System.out.println("Union of two LineStrings:    " + lnG.union(lnGwkt));
+  System.out.println("\nPART VII: Operations on Geometry Sets");
+  System.out.println("...TODO...");
+  System.out.println("\nEnd of the tutorial output.");
+  System.out.println("Testing...");
+}

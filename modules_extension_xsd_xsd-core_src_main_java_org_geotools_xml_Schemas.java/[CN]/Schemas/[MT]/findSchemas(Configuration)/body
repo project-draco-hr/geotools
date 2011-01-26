@@ -1,0 +1,35 @@
+{
+  Set configurations=new HashSet(configuration.allDependencies());
+  configurations.add(configuration);
+  List resolvedSchemas=new ArrayList(configurations.size());
+  for (Iterator it=configurations.iterator(); it.hasNext(); ) {
+    Configuration conf=(Configuration)it.next();
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("looking up schema for " + conf.getNamespaceURI());
+    }
+    XSDSchemaLocator locator=conf.getSchemaLocator();
+    if (locator == null) {
+      LOGGER.fine("No schema locator for " + conf.getNamespaceURI());
+      continue;
+    }
+    String namespaceURI=conf.getNamespaceURI();
+    String schemaLocation=null;
+    try {
+      URL location=new URL(conf.getSchemaFileURL());
+      schemaLocation=location.toExternalForm();
+    }
+ catch (    MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("schema location: " + schemaLocation);
+    }
+    XSDSchema schema=locator.locateSchema(null,namespaceURI,schemaLocation,null);
+    if (schema != null) {
+      resolvedSchemas.add(schema);
+    }
+  }
+  XSDSchema[] schemas=(XSDSchema[])resolvedSchemas.toArray(new XSDSchema[resolvedSchemas.size()]);
+  SchemaIndex index=new SchemaIndexImpl(schemas);
+  return index;
+}

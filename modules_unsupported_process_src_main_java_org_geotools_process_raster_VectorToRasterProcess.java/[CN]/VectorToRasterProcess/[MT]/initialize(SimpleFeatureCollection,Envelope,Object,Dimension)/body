@@ -1,0 +1,37 @@
+{
+  if (attribute instanceof String) {
+    String propName=(String)attribute;
+    AttributeDescriptor attDesc=features.getSchema().getDescriptor(propName);
+    if (attDesc == null) {
+      throw new VectorToRasterException(propName + " not found");
+    }
+    Class<?> attClass=attDesc.getType().getBinding();
+    if (!Number.class.isAssignableFrom(attClass)) {
+      throw new VectorToRasterException(propName + " is not numeric");
+    }
+    if (Float.class.isAssignableFrom(attClass)) {
+      transferType=TransferType.FLOAT;
+    }
+ else     if (Double.class.isAssignableFrom(attClass)) {
+      transferType=TransferType.FLOAT;
+      Logger.getLogger(VectorToRasterProcess.class.getName()).log(Level.WARNING,"coercing double feature values to float raster values");
+    }
+ else     if (Long.class.isAssignableFrom(attClass)) {
+      transferType=TransferType.INTEGRAL;
+      Logger.getLogger(VectorToRasterProcess.class.getName()).log(Level.WARNING,"coercing long feature values to int raster values");
+    }
+ else {
+      transferType=TransferType.INTEGRAL;
+    }
+    valueSource=ValueSource.PROPERTY_NAME;
+  }
+ else   if (attribute instanceof Expression) {
+    valueSource=ValueSource.EXPRESSION;
+  }
+ else {
+    throw new VectorToRasterException("value attribute must be a feature property name" + "or an org.opengis.filter.expression.Expression object");
+  }
+  minAttValue=maxAttValue=null;
+  setBounds(features,bounds,gridDim);
+  createImage(gridDim);
+}

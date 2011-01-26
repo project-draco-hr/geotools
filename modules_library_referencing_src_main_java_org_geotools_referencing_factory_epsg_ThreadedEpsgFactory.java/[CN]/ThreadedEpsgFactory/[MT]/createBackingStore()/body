@@ -1,0 +1,21 @@
+{
+  final AbstractAuthorityFactory factory;
+  String product='<' + Vocabulary.format(VocabularyKeys.UNKNOW) + '>';
+  String url=product;
+  try {
+    factory=createBackingStore0();
+    if (factory instanceof DirectEpsgFactory) {
+      final DatabaseMetaData info=((DirectEpsgFactory)factory).getConnection().getMetaData();
+      product=info.getDatabaseProductName();
+      url=info.getURL();
+    }
+  }
+ catch (  SQLException exception) {
+    throw new FactoryException(Errors.format(ErrorKeys.CANT_CONNECT_DATABASE_$1,"EPSG"),exception);
+  }
+  log(Loggings.format(Level.CONFIG,LoggingKeys.CONNECTED_EPSG_DATABASE_$2,url,product));
+  if (factory instanceof DirectEpsgFactory) {
+    ((DirectEpsgFactory)factory).buffered=this;
+  }
+  return factory;
+}

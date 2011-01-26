@@ -1,0 +1,97 @@
+{
+  String value=null;
+  int i=instruction.indexOf('=');
+  if (i >= 0) {
+    value=instruction.substring(i + 1).trim();
+    instruction=instruction.substring(0,i).trim();
+  }
+  final StringTokenizer keywords=new StringTokenizer(instruction);
+  if (keywords.hasMoreTokens()) {
+    final String key0=keywords.nextToken();
+    if (!keywords.hasMoreTokens()) {
+      if (key0.equalsIgnoreCase("exit")) {
+        if (value != null) {
+          throw unexpectedArgument("exit");
+        }
+        stop();
+        return;
+      }
+      if (key0.equalsIgnoreCase("stacktrace")) {
+        if (value != null) {
+          throw unexpectedArgument("stacktrace");
+        }
+        if (lastError != null) {
+          lastError.printStackTrace(err);
+        }
+        return;
+      }
+      if (key0.equalsIgnoreCase("transform")) {
+        transform=(MathTransform)parseObject(value,MathTransform.class);
+        sourceCRS=null;
+        targetCRS=null;
+        return;
+      }
+    }
+ else {
+      final String key1=keywords.nextToken();
+      if (!keywords.hasMoreTokens()) {
+        if (key0.equalsIgnoreCase("print")) {
+          if (value != null) {
+            throw unexpectedArgument("print");
+          }
+          if (key1.equalsIgnoreCase("set")) {
+            printDefinitions();
+            return;
+          }
+          if (key1.equalsIgnoreCase("crs")) {
+            printCRS();
+            return;
+          }
+          if (key1.equalsIgnoreCase("pts")) {
+            printPts();
+            return;
+          }
+        }
+        if (key0.equalsIgnoreCase("set")) {
+          addDefinition(key1,value);
+          return;
+        }
+        if (key0.equalsIgnoreCase("test")) {
+          if (key1.equalsIgnoreCase("tolerance")) {
+            tolerance=parseVector(value);
+            return;
+          }
+        }
+        if (key1.equalsIgnoreCase("crs")) {
+          if (key0.equalsIgnoreCase("source")) {
+            sourceCRS=(CoordinateReferenceSystem)parseObject(value,CoordinateReferenceSystem.class);
+            transform=null;
+            return;
+          }
+          if (key0.equalsIgnoreCase("target")) {
+            targetCRS=(CoordinateReferenceSystem)parseObject(value,CoordinateReferenceSystem.class);
+            transform=null;
+            return;
+          }
+        }
+        if (key1.equalsIgnoreCase("pt")) {
+          if (key0.equalsIgnoreCase("source")) {
+            sourcePosition=new GeneralDirectPosition(parseVector(value));
+            return;
+          }
+          if (key0.equalsIgnoreCase("target")) {
+            targetPosition=new GeneralDirectPosition(parseVector(value));
+            if (tolerance != null && sourcePosition != null) {
+              update();
+              if (transform != null) {
+                test();
+              }
+            }
+            return;
+          }
+        }
+      }
+    }
+  }
+  throw new ParseException(Errors.format(ErrorKeys.ILLEGAL_INSTRUCTION_$1,instruction),0);
+}

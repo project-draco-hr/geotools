@@ -1,0 +1,32 @@
+{
+  if (!featureCollectionBuffer.addFeature(feature)) {
+    throw new SAXException("Buffer overflow");
+  }
+  if (featureCollectionBuffer.state <= 0) {
+switch (featureCollectionBuffer.state) {
+case FCBuffer.STOP:
+      throw new StopException();
+case FCBuffer.FINISH:
+    return;
+default :
+  featureCollectionBuffer.state=(featureCollectionBuffer.getCapacity() - featureCollectionBuffer.getSize()) / 3;
+logger.finest("New State " + featureCollectionBuffer.state + " "+ featureCollectionBuffer.getSize());
+while (featureCollectionBuffer.getSize() > (featureCollectionBuffer.getCapacity() - 1)) {
+logger.finest("waiting for reader");
+synchronized (featureCollectionBuffer) {
+  try {
+    featureCollectionBuffer.wait(100);
+  }
+ catch (  InterruptedException e) {
+    throw new StopException();
+  }
+}
+if (featureCollectionBuffer.state == FCBuffer.STOP) throw new StopException();
+}
+}
+}
+ else {
+featureCollectionBuffer.state--;
+logger.finest("New State " + featureCollectionBuffer.state + " "+ featureCollectionBuffer.getSize());
+}
+}

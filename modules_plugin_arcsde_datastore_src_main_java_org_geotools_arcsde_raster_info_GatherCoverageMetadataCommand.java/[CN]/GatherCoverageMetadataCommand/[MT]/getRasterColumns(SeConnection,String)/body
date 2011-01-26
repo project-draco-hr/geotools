@@ -1,0 +1,20 @@
+{
+  String[] rasterColumns;
+  SeTable sTable=new SeTable(scon,rasterTable);
+  SeColumnDefinition[] cols;
+  try {
+    cols=sTable.describe();
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException("Exception fetching the list of columns for table " + rasterTable,e);
+  }
+  List<String> fetchColumns=new ArrayList<String>(cols.length / 2);
+  for (int i=0; i < cols.length; i++) {
+    if (cols[i].getType() == SeColumnDefinition.TYPE_RASTER)     fetchColumns.add(cols[i].getName());
+  }
+  if (fetchColumns.size() == 0) {
+    throw new DataSourceException("Couldn't find any TYPE_RASTER columns in ArcSDE table " + rasterTable);
+  }
+  rasterColumns=fetchColumns.toArray(new String[fetchColumns.size()]);
+  return rasterColumns;
+}

@@ -1,0 +1,42 @@
+{
+  boolean valid=true;
+  int minc=10;
+  char chr=text.charAt(0);
+  if (chr == '-') {
+    minc=11;
+  }
+ else   if (chr == '+') {
+    valid=false;
+  }
+  int split=text.length() - 6;
+  if (text.length() < minc) {
+    valid=false;
+  }
+ else {
+    if ((text.charAt(split) != '-') || (text.charAt(split + 3) != '-')) {
+      valid=false;
+    }
+  }
+  if (!valid) {
+    throw new IllegalArgumentException("Invalid date format");
+  }
+  int year=parseInt(text.substring(0,split));
+  if (year == 0) {
+    throw new IllegalArgumentException("Year value 0 is not allowed");
+  }
+  int month=parseDigits(text,split + 1,2) - 1;
+  if ((month < 0) || (month > 11)) {
+    throw new IllegalArgumentException("Month value out of range");
+  }
+  long day=parseDigits(text,split + 4,2) - 1;
+  boolean leap=((year % 4) == 0) && !(((year % 100) == 0) && ((year % 400) != 0));
+  int[] starts=leap ? MONTHS_LEAP : MONTHS_NONLEAP;
+  if ((day < 0) || (day >= (starts[month + 1] - starts[month]))) {
+    throw new IllegalArgumentException("Day value out of range");
+  }
+  if (year > 0) {
+    year--;
+  }
+  day+=(((((long)year) * 365) + (year / 4)) - (year / 100) + (year / 400) + starts[month]);
+  return (day * MSPERDAY) - TIME_BASE;
+}

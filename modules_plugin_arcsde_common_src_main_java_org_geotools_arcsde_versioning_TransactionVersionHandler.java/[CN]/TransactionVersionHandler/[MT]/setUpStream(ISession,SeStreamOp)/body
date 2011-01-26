@@ -1,0 +1,36 @@
+{
+  session.issue(new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      LOGGER.finest("setting up stream for transaction on a versioned table");
+      if (transactionState == null) {
+        LOGGER.finer("no transaction state created yet, about " + "to create a new state for the transaction");
+        try {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest("Refreshing '" + version.getName() + "' version info");
+          }
+          version.getInfo();
+          LOGGER.finest("Getting version state");
+          final SeState currentState=new SeState(connection,version.getStateId());
+          final long currentStateId=currentState.getId().longValue();
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer(version.getName() + "version state: " + currentStateId+ ", open: "+ currentState.isOpen()+ ", owner: "+ currentState.getOwner()+ ", current user: "+ connection.getUser());
+          }
+          LOGGER.finer("Creating new state for the transaction...");
+          transactionState=session.createChildState(currentStateId);
+          LOGGER.finer("New transaction state: " + transactionState.getId() + ", parent: "+ transactionState.getParentId().longValue());
+          LOGGER.finer("Locking the transaction state");
+          transactionState.lock();
+          LOGGER.finer("Transaction state locked");
+        }
+ catch (        SeException e) {
+          throw new ArcSdeException(e);
+        }
+      }
+      final SeObjectId differencesId=new SeObjectId(SeState.SE_NULL_STATE_ID);
+      final SeObjectId currentStateId=transactionState.getId();
+      streamOperation.setState(currentStateId,differencesId,SeState.SE_STATE_DIFF_NOCHECK);
+      return null;
+    }
+  }
+);
+}

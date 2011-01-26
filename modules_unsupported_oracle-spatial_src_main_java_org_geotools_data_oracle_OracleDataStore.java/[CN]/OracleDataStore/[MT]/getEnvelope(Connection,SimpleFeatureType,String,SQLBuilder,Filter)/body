@@ -1,0 +1,39 @@
+{
+  StringBuffer sql=new StringBuffer();
+  GeometryDescriptor gat=(GeometryDescriptor)schema.getDescriptor(geomName);
+  List queries=new ArrayList();
+  if (Filter.INCLUDE.equals(filter) && !(gat.getCoordinateReferenceSystem() instanceof GeodeticCRS)) {
+    sql.append("SELECT SDO_TUNE.EXTENT_OF('").append(schema.getTypeName()).append("', '");
+    sql.append(geomName).append("') from dual");
+    queries.add(sql.toString());
+    sql=new StringBuffer();
+  }
+  sql.append("SELECT SDO_AGGR_MBR(").append(geomName).append(") ");
+  sqlBuilder.sqlFrom(sql,schema.getTypeName());
+  sqlBuilder.sqlWhere(sql,filter);
+  queries.add(sql.toString());
+  LOGGER.fine("SQL: " + sql);
+  Statement statement=null;
+  ResultSet results=null;
+  Envelope result=null;
+  for (Iterator it=queries.iterator(); it.hasNext(); ) {
+    String query=(String)it.next();
+    try {
+      statement=conn.createStatement();
+      results=statement.executeQuery(query);
+      results.next();
+      Geometry geom=null;
+      Object struct=results.getObject(1);
+      UnWrapper unwrapper=DataSourceFinder.getUnWrapper(conn);
+      OracleConnection oraConn=(OracleConnection)unwrapper.unwrap(conn);
+      GeometryConverter converter=new GeometryConverter(oraConn,new GeometryFactory());
+      geom=converter.asGeometry((STRUCT)struct);
+      if (geom != null)       return geom.getEnvelopeInternal();
+    }
+  finally {
+      JDBCUtils.close(results);
+      JDBCUtils.close(statement);
+    }
+  }
+  return result;
+}

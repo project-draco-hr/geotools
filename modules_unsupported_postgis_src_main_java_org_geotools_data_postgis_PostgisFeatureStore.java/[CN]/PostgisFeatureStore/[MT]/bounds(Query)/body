@@ -1,0 +1,76 @@
+{
+  Filter filter=query.getFilter();
+  if (filter == Filter.EXCLUDE) {
+    return new ReferencedEnvelope(new ReferencedEnvelope(),query.getCoordinateSystem());
+  }
+  SimpleFeatureType schema=getSchema();
+  JDBCDataStore jdbc=(JDBCDataStore)getJDBCDataStore();
+  SQLBuilder sqlBuilder=jdbc.getSqlBuilder(schema.getTypeName());
+  Filter postQueryFilter=sqlBuilder.getPostQueryFilter(query.getFilter());
+  if (postQueryFilter != null && !postQueryFilter.equals(Filter.INCLUDE)) {
+    return null;
+  }
+  Connection conn=null;
+  try {
+    conn=getConnection();
+    ReferencedEnvelope retEnv=new ReferencedEnvelope();
+    Filter preFilter=sqlBuilder.getPreQueryFilter(query.getFilter());
+    AttributeDescriptor[] attributeTypes=(AttributeDescriptor[])schema.getAttributeDescriptors().toArray(new AttributeDescriptor[schema.getAttributeDescriptors().size()]);
+    SimpleFeatureType schemaNew=schema;
+    if (!query.retrieveAllProperties()) {
+      try {
+        schemaNew=DataUtilities.createSubType(schema,query.getPropertyNames());
+        if (schemaNew.getGeometryDescriptor() == null) {
+          if (schema.getGeometryDescriptor() != null) {
+            ArrayList al=new ArrayList(Arrays.asList(query.getPropertyNames()));
+            al.add(schema.getGeometryDescriptor().getLocalName());
+            schemaNew=DataUtilities.createSubType(schema,(String[])al.toArray(new String[1]));
+          }
+        }
+      }
+ catch (      SchemaException e1) {
+        throw new DataSourceException("Could not create subtype",e1);
+      }
+    }
+    attributeTypes=(AttributeDescriptor[])schemaNew.getAttributeDescriptors().toArray(new AttributeDescriptor[schema.getAttributeDescriptors().size()]);
+    for (int j=0, n=schemaNew.getAttributeCount(); j < n; j++) {
+      if (Geometry.class.isAssignableFrom(attributeTypes[j].getType().getBinding())) {
+        String attName=attributeTypes[j].getLocalName();
+        ReferencedEnvelope curEnv=getEnvelope(conn,attName,sqlBuilder,filter);
+        if (curEnv == null) {
+          return null;
+        }
+        retEnv.expandToInclude(curEnv);
+      }
+    }
+    LOGGER.finer("returning bounds " + retEnv);
+    CoordinateReferenceSystem base=null;
+    if (query.getCoordinateSystem() != null)     base=query.getCoordinateSystem();
+ else     if (schemaNew.getGeometryDescriptor() != null)     base=schemaNew.getGeometryDescriptor().getCoordinateReferenceSystem();
+    CoordinateReferenceSystem dest=query.getCoordinateSystemReproject();
+    ReferencedEnvelope result=new ReferencedEnvelope(retEnv,base);
+    if (base != null && dest != null)     result=result.transform(dest,true);
+    return result;
+  }
+ catch (  SQLException sqlException) {
+    JDBCUtils.close(conn,transaction,sqlException);
+    conn=null;
+    throw new DataSourceException("Could not count " + query.getHandle(),sqlException);
+  }
+catch (  SQLEncoderException e) {
+    return null;
+  }
+catch (  ParseException parseE) {
+    String message="Could not read geometry: " + parseE.getMessage();
+    return null;
+  }
+catch (  FactoryException e) {
+    throw new DataSourceException("Could not reproject",e);
+  }
+catch (  TransformException e) {
+    throw new DataSourceException("Could not reproject",e);
+  }
+ finally {
+    JDBCUtils.close(conn,transaction,null);
+  }
+}

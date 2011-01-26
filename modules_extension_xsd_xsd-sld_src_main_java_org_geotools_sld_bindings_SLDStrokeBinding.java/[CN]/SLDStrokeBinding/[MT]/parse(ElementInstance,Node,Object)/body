@@ -1,0 +1,48 @@
+{
+  Expression color=null;
+  Expression opacity=null;
+  Expression width=null;
+  Expression lineJoin=null;
+  Expression lineCap=null;
+  Expression dashArray=null;
+  Expression dashOffset=null;
+  for (Iterator i=node.getChildValues(CssParameter.class).iterator(); i.hasNext(); ) {
+    CssParameter css=(CssParameter)i.next();
+    Expression exp=css.getExpression();
+    if (exp == null) {
+      continue;
+    }
+    if ("stroke".equals(css.getName())) {
+      color=exp;
+    }
+ else     if ("stroke-opacity".equals(css.getName())) {
+      opacity=exp;
+    }
+ else     if ("stroke-width".equals(css.getName())) {
+      width=exp;
+    }
+ else     if ("stroke-linejoin".equals(css.getName())) {
+      lineJoin=exp;
+    }
+ else     if ("stroke-linecap".equals(css.getName())) {
+      lineCap=exp;
+    }
+ else     if ("stroke-dasharray".equals(css.getName())) {
+      dashArray=exp;
+    }
+ else     if ("stroke-dashoffset".equals(css.getName())) {
+      dashOffset=exp;
+    }
+  }
+  float[] dash=null;
+  if (dashArray != null) {
+    String[] string=Filters.asString(dashArray).split(" +");
+    dash=new float[string.length];
+    for (int i=0; i < string.length; i++) {
+      dash[i]=Float.parseFloat(string[i]);
+    }
+  }
+  Graphic graphicFill=(Graphic)node.getChildValue("GraphicFill");
+  Graphic graphicStroke=(Graphic)node.getChildValue("GraphicStroke");
+  return styleFactory.createStroke(color,width,opacity,lineJoin,lineCap,dash,dashOffset,graphicFill,graphicStroke);
+}

@@ -1,0 +1,109 @@
+{
+  final Expression sourceExpression=attMapping.getSourceExpression();
+  final AttributeType targetNodeType=attMapping.getTargetNodeInstance();
+  final StepList xpath=attMapping.getTargetXPath();
+  Map<Name,Expression> clientPropsMappings=attMapping.getClientProperties();
+  boolean isNestedFeature=attMapping.isNestedAttribute();
+  String id=null;
+  if (Expression.NIL != attMapping.getIdentifierExpression()) {
+    id=extractIdForAttribute(attMapping.getIdentifierExpression(),source);
+  }
+  if (attMapping.isNestedAttribute()) {
+    NestedAttributeMapping nestedMapping=((NestedAttributeMapping)attMapping);
+    Object mappingName=nestedMapping.getNestedFeatureType(source);
+    if (mappingName != null) {
+      if (nestedMapping.isSameSource() && mappingName instanceof Name) {
+        setPolymorphicValues((Name)mappingName,target,id,nestedMapping,source,xpath,clientPropsMappings);
+        return;
+      }
+ else       if (mappingName instanceof Hints) {
+        setPolymorphicReference((Hints)mappingName,clientPropsMappings,target,xpath,targetNodeType);
+        return;
+      }
+    }
+ else {
+      return;
+    }
+  }
+  Object value=getValues(attMapping.isMultiValued(),sourceExpression,source);
+  boolean isHRefLink=isByReference(clientPropsMappings,isNestedFeature);
+  if (isNestedFeature) {
+    if (value instanceof Collection) {
+      ArrayList<Feature> nestedFeatures=new ArrayList<Feature>(((Collection)value).size());
+      for (      Object val : (Collection)value) {
+        if (val instanceof Attribute) {
+          val=((Attribute)val).getValue();
+          if (val instanceof Collection) {
+            val=((Collection)val).iterator().next();
+          }
+          while (val instanceof Attribute) {
+            val=((Attribute)val).getValue();
+          }
+        }
+        if (isHRefLink) {
+          nestedFeatures.addAll(((NestedAttributeMapping)attMapping).getInputFeatures(val,source));
+        }
+ else {
+          nestedFeatures.addAll(((NestedAttributeMapping)attMapping).getFeatures(val,reprojection,source));
+        }
+      }
+      value=nestedFeatures;
+    }
+ else     if (isHRefLink) {
+      value=((NestedAttributeMapping)attMapping).getInputFeatures(value,source);
+    }
+ else {
+      value=((NestedAttributeMapping)attMapping).getFeatures(value,reprojection,source);
+    }
+    if (isHRefLink) {
+      setXlinkReference(target,clientPropsMappings,value,xpath,targetNodeType);
+      return;
+    }
+  }
+  if (isNestedFeature) {
+    if (value == null) {
+      return;
+    }
+  }
+  if (value instanceof Collection) {
+    Map<Object,Object> userData;
+    Map<Name,Expression> valueProperties=new HashMap<Name,Expression>();
+    for (    Object singleVal : (Collection)value) {
+      ArrayList valueList=new ArrayList();
+      if (singleVal instanceof Attribute) {
+        valueProperties=getClientProperties((Attribute)singleVal);
+        if (!valueProperties.isEmpty()) {
+          valueProperties.putAll(clientPropsMappings);
+        }
+      }
+      if (!isNestedFeature) {
+        if (singleVal instanceof Attribute) {
+          singleVal=((Attribute)singleVal).getValue();
+          if (singleVal instanceof Collection) {
+            valueList.addAll((Collection)singleVal);
+          }
+ else {
+            valueList.add(singleVal);
+          }
+        }
+      }
+ else {
+        valueList.add(singleVal);
+      }
+      Attribute instance=xpathAttributeBuilder.set(target,xpath,valueList,id,targetNodeType,false,sourceExpression);
+      setClientProperties(instance,source,valueProperties);
+    }
+  }
+ else {
+    if (value instanceof Attribute) {
+      Map<Name,Expression> newClientProps=getClientProperties((Attribute)value);
+      if (!newClientProps.isEmpty()) {
+        newClientProps.putAll(clientPropsMappings);
+        clientPropsMappings=newClientProps;
+      }
+      value=((Attribute)value).getValue();
+    }
+    Attribute instance=xpathAttributeBuilder.set(target,xpath,value,id,targetNodeType,false,sourceExpression);
+    setClientProperties(instance,source,clientPropsMappings);
+  }
+}

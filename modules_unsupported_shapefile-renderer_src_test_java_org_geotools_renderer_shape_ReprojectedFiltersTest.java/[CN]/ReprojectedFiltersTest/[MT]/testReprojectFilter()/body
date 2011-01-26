@@ -1,0 +1,28 @@
+{
+  CoordinateReferenceSystem mercator=CRS.decode("EPSG:3395",true);
+  ReferencedEnvelope world=new ReferencedEnvelope(-180,180,-80,80,DefaultGeographicCRS.WGS84);
+  ReferencedEnvelope worldMercator=world.transform(mercator,true);
+  StyleBuilder sb=new StyleBuilder();
+  Style s=sb.createStyle(sb.createPolygonSymbolizer());
+  Filter filter=CQL.toFilter("CONTAINS(the_geom, POINT(-100 32))");
+  MapContext mc=new DefaultMapContext(mercator);
+  DefaultMapLayer l=new DefaultMapLayer(ds.getFeatureSource(),s);
+  l.setQuery(new DefaultQuery("statepop",filter));
+  mc.addLayer(l);
+  ShapefileRenderer r=new ShapefileRenderer(mc);
+  r.addRenderListener(new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+      features++;
+      assertEquals("statepop.15",feature.getID());
+    }
+    public void errorOccurred(    Exception e){
+      errors++;
+    }
+  }
+);
+  BufferedImage image=new BufferedImage(400,300,BufferedImage.TYPE_4BYTE_ABGR);
+  final Graphics2D graphics=(Graphics2D)image.getGraphics();
+  r.paint(graphics,new Rectangle(image.getWidth(),image.getHeight()),worldMercator);
+  assertEquals(1,features);
+  assertEquals(0,errors);
+}

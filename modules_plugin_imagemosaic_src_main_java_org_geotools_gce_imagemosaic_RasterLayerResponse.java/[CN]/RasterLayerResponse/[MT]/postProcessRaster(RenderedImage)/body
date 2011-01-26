@@ -1,0 +1,23 @@
+{
+  if (finalTransparentColor != null) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Support for alpha on final mosaic");
+    return Utils.makeColorTransparent(finalTransparentColor,mosaic);
+  }
+  if (oversampledRequest) {
+    try {
+      final AffineTransform sourceGridToWorld=new AffineTransform((AffineTransform)baseGridToWorld);
+      sourceGridToWorld.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+      final AffineTransform targetGridToWorld=new AffineTransform(request.getRequestedGridToWorld());
+      targetGridToWorld.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+      final AffineTransform targetWorldToGrid=targetGridToWorld.createInverse();
+      targetWorldToGrid.concatenate(sourceGridToWorld);
+      mosaic=AffineDescriptor.create(mosaic,targetWorldToGrid,interpolation,backgroundValues,hints);
+    }
+ catch (    NoninvertibleTransformException e) {
+      if (LOGGER.isLoggable(Level.SEVERE)) {
+        LOGGER.log(Level.SEVERE,"Unable to create the requested mosaic ",e);
+      }
+    }
+  }
+  return mosaic;
+}

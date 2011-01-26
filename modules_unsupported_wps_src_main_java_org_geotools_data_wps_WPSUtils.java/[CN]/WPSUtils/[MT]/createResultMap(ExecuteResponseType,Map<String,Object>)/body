@@ -1,0 +1,39 @@
+{
+  if (map == null) {
+    map=new TreeMap<String,Object>();
+  }
+  EList outputs=ert.getProcessOutputs().getOutput();
+  if (outputs == null)   return null;
+  Iterator iterator=outputs.iterator();
+  while (iterator.hasNext()) {
+    OutputDataType odt=(OutputDataType)iterator.next();
+    DataType data=odt.getData();
+    ComplexDataType complexData=data.getComplexData();
+    LiteralDataType literalData=data.getLiteralData();
+    if (literalData != null) {
+      Object value=literalData.getValue();
+      if (literalData.getDataType() != null) {
+        Class type=getLiteralTypeFromReference(literalData.getDataType());
+        Object convertedValue=Converters.convert(literalData.getValue(),type);
+        if (convertedValue != null)         value=convertedValue;
+      }
+      map.put(odt.getIdentifier().getValue(),value);
+    }
+ else     if (complexData != null) {
+      EList datas=complexData.getData();
+      if (datas.size() > 1) {
+        Iterator iterator2=datas.iterator();
+        List<Object> values=new ArrayList<Object>();
+        while (iterator2.hasNext()) {
+          Object value=iterator2.next();
+          values.add(value);
+        }
+        map.put(odt.getIdentifier().getValue(),values);
+      }
+ else {
+        map.put(odt.getIdentifier().getValue(),datas.get(0));
+      }
+    }
+  }
+  return map;
+}

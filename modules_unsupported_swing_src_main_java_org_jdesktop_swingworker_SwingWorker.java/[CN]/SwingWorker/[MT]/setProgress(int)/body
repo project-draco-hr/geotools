@@ -1,0 +1,27 @@
+{
+  if (progress < 0 || progress > 100) {
+    throw new IllegalArgumentException("the value should be from 0 to 100");
+  }
+  if (this.progress == progress) {
+    return;
+  }
+  int oldProgress=this.progress;
+  this.progress=progress;
+  if (!getPropertyChangeSupport().hasListeners("progress")) {
+    return;
+  }
+synchronized (this) {
+    if (doNotifyProgressChange == null) {
+      doNotifyProgressChange=new AccumulativeRunnable<Integer>(){
+        @Override public void run(        List<Integer> args){
+          firePropertyChange("progress",args.get(0),args.get(args.size() - 1));
+        }
+        @Override protected void submit(){
+          doSubmit.add(this);
+        }
+      }
+;
+    }
+  }
+  doNotifyProgressChange.add(oldProgress,progress);
+}

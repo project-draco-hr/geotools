@@ -1,0 +1,71 @@
+{
+  final int numSrcBands=1;
+  final int numDstBands=1;
+  checkImageIndex(imageIndex);
+  checkReadParamBandSettings(param,numSrcBands,numDstBands);
+  final int[] sourceBands;
+  final int[] destinationBands;
+  final int sourceXSubsampling;
+  final int sourceYSubsampling;
+  final int subsamplingXOffset;
+  final int subsamplingYOffset;
+  final int destinationXOffset;
+  final int destinationYOffset;
+  if (param != null) {
+    sourceBands=param.getSourceBands();
+    destinationBands=param.getDestinationBands();
+    final Point offset=param.getDestinationOffset();
+    sourceXSubsampling=param.getSourceXSubsampling();
+    sourceYSubsampling=param.getSourceYSubsampling();
+    subsamplingXOffset=param.getSubsamplingXOffset();
+    subsamplingYOffset=param.getSubsamplingYOffset();
+    destinationXOffset=offset.x;
+    destinationYOffset=offset.y;
+  }
+ else {
+    sourceBands=null;
+    destinationBands=null;
+    sourceXSubsampling=1;
+    sourceYSubsampling=1;
+    subsamplingXOffset=0;
+    subsamplingYOffset=0;
+    destinationXOffset=0;
+    destinationYOffset=0;
+  }
+  final Rectangle srcRegion=getSourceRegion(param,width,height);
+  final boolean isDirect=sourceXSubsampling == 1 && sourceYSubsampling == 1 && subsamplingXOffset == 0 && subsamplingYOffset == 0 && destinationXOffset == 0 && destinationYOffset == 0 && srcRegion.x == 0 && srcRegion.width == width && srcRegion.y == 0 && srcRegion.height == height;
+  if (data == null || !completed) {
+    if (load(imageIndex,true)) {
+      return null;
+    }
+  }
+  if (isDirect && (param == null || param.getDestination() == null)) {
+    final ImageTypeSpecifier type=getRawImageType(imageIndex,param,null);
+    final SampleModel model=type.getSampleModel().createCompatibleSampleModel(width,height);
+    final DataBuffer buffer=new DataBufferFloat(data,data.length);
+    final WritableRaster raster=Raster.createWritableRaster(model,buffer,null);
+    return new BufferedImage(type.getColorModel(),raster,false,null);
+  }
+  final int dstBand=0;
+  final BufferedImage image=getDestination(imageIndex,param,width,height,null);
+  final WritableRaster dstRaster=image.getRaster();
+  final Rectangle dstRegion=new Rectangle();
+  computeRegions(param,width,height,image,srcRegion,dstRegion);
+  final int dstXMin=dstRegion.x;
+  final int dstYMin=dstRegion.y;
+  final int dstXMax=dstRegion.width + dstXMin;
+  final int dstYMax=dstRegion.height + dstYMin;
+  int srcY=srcRegion.y;
+  for (int y=dstYMin; y < dstYMax; y++) {
+    assert(srcY < srcRegion.y + srcRegion.height);
+    int srcX=srcRegion.x;
+    for (int x=dstXMin; x < dstXMax; x++) {
+      assert(srcX < srcRegion.x + srcRegion.width);
+      final float value=data[srcY * width + srcX];
+      dstRaster.setSample(x,y,dstBand,value);
+      srcX+=sourceXSubsampling;
+    }
+    srcY+=sourceYSubsampling;
+  }
+  return image;
+}

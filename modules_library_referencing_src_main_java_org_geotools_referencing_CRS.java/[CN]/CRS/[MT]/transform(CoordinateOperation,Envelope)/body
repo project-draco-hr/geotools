@@ -1,0 +1,115 @@
+{
+  if (envelope == null) {
+    return null;
+  }
+  final CoordinateReferenceSystem sourceCRS=operation.getSourceCRS();
+  if (sourceCRS != null) {
+    final CoordinateReferenceSystem crs=envelope.getCoordinateReferenceSystem();
+    if (crs != null && !equalsIgnoreMetadata(crs,sourceCRS)) {
+      throw new MismatchedReferenceSystemException(Errors.format(ErrorKeys.MISMATCHED_COORDINATE_REFERENCE_SYSTEM));
+    }
+  }
+  MathTransform mt=operation.getMathTransform();
+  final GeneralDirectPosition centerPt=new GeneralDirectPosition(mt.getTargetDimensions());
+  final GeneralEnvelope transformed=transform(mt,envelope,centerPt);
+  if (sourceCRS != null) {
+    final CoordinateSystem cs=sourceCRS.getCoordinateSystem();
+    if (cs != null) {
+      DirectPosition sourcePt=null;
+      DirectPosition targetPt=null;
+      final int dimension=cs.getDimension();
+      for (int i=0; i < dimension; i++) {
+        final CoordinateSystemAxis axis=cs.getAxis(i);
+        if (axis == null) {
+          continue;
+        }
+        final double min=envelope.getMinimum(i);
+        final double max=envelope.getMaximum(i);
+        final double v1=axis.getMinimumValue();
+        final double v2=axis.getMaximumValue();
+        final boolean b1=(v1 > min && v1 < max);
+        final boolean b2=(v2 > min && v2 < max);
+        if (!b1 && !b2) {
+          continue;
+        }
+        if (sourcePt == null) {
+          sourcePt=new GeneralDirectPosition(dimension);
+          for (int j=0; j < dimension; j++) {
+            sourcePt.setOrdinate(j,envelope.getCenter(j));
+          }
+        }
+        if (b1) {
+          sourcePt.setOrdinate(i,v1);
+          transformed.add(targetPt=mt.transform(sourcePt,targetPt));
+        }
+        if (b2) {
+          sourcePt.setOrdinate(i,v2);
+          transformed.add(targetPt=mt.transform(sourcePt,targetPt));
+        }
+        sourcePt.setOrdinate(i,envelope.getCenter(i));
+      }
+    }
+  }
+  final CoordinateReferenceSystem targetCRS=operation.getTargetCRS();
+  if (targetCRS == null) {
+    return transformed;
+  }
+  transformed.setCoordinateReferenceSystem(targetCRS);
+  final CoordinateSystem targetCS=targetCRS.getCoordinateSystem();
+  if (targetCS == null) {
+    return transformed;
+  }
+  GeneralEnvelope generalEnvelope=null;
+  DirectPosition sourcePt=null;
+  DirectPosition targetPt=null;
+  final int dimension=targetCS.getDimension();
+  for (int i=0; i < dimension; i++) {
+    final CoordinateSystemAxis axis=targetCS.getAxis(i);
+    if (axis == null) {
+      continue;
+    }
+    boolean testMax=false;
+    do {
+      final double extremum=testMax ? axis.getMaximumValue() : axis.getMinimumValue();
+      if (Double.isInfinite(extremum) || Double.isNaN(extremum)) {
+        continue;
+      }
+      if (targetPt == null) {
+        try {
+          mt=mt.inverse();
+        }
+ catch (        NoninvertibleTransformException exception) {
+          if (dimension >= mt.getSourceDimensions()) {
+            unexpectedException("transform",exception);
+          }
+          return transformed;
+        }
+        targetPt=new GeneralDirectPosition(mt.getSourceDimensions());
+        for (int j=0; j < dimension; j++) {
+          targetPt.setOrdinate(j,centerPt.getOrdinate(j));
+        }
+        if (envelope instanceof GeneralEnvelope) {
+          generalEnvelope=(GeneralEnvelope)envelope;
+        }
+ else {
+          generalEnvelope=new GeneralEnvelope(envelope);
+        }
+      }
+      targetPt.setOrdinate(i,extremum);
+      try {
+        sourcePt=mt.transform(targetPt,sourcePt);
+      }
+ catch (      TransformException e) {
+        continue;
+      }
+      if (generalEnvelope.contains(sourcePt)) {
+        transformed.add(targetPt);
+      }
+    }
+ while ((testMax=!testMax) == true);
+    if (targetPt != null) {
+      targetPt.setOrdinate(i,centerPt.getOrdinate(i));
+    }
+  }
+  return transformed;
+}

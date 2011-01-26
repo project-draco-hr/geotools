@@ -1,0 +1,40 @@
+{
+  if (map == null) {
+    map=new TreeMap<String,Parameter<?>>();
+  }
+  DataInputsType dataInputs=processDesc.getDataInputs();
+  if (dataInputs == null)   return null;
+  EList inputs=dataInputs.getInput();
+  if (inputs == null || inputs.isEmpty())   return null;
+  Iterator iterator=inputs.iterator();
+  while (iterator.hasNext()) {
+    InputDescriptionType idt=(InputDescriptionType)iterator.next();
+    LiteralInputType literalData=idt.getLiteralData();
+    SupportedComplexDataInputType complexData=idt.getComplexData();
+    Class type=Object.class;
+    if (literalData != null) {
+      String reference=literalData.getDataType().getReference();
+      type=getLiteralTypeFromReference(reference);
+    }
+ else     if (complexData != null) {
+      ComplexDataDescriptionType format=complexData.getDefault().getFormat();
+      String encoding=format.getEncoding();
+      String mimetype=format.getMimeType();
+      String schema=format.getSchema();
+      if (encoding == null)       encoding="";
+      if (mimetype == null)       mimetype="";
+      if (schema == null)       schema="";
+      type=getComplexType(encoding,mimetype,schema);
+    }
+    boolean required=true;
+    if (idt.getMinOccurs().intValue() < 1) {
+      required=false;
+    }
+    String identifier=idt.getIdentifier().getValue();
+    InternationalString title=Text.text(idt.getTitle().getValue());
+    InternationalString description=Text.text(idt.getAbstract() == null ? "" : idt.getAbstract().getValue());
+    Parameter<?> param=new Parameter(identifier,type,title,description,required,idt.getMinOccurs().intValue(),idt.getMaxOccurs().intValue(),null,null);
+    map.put(identifier,param);
+  }
+  return map;
+}

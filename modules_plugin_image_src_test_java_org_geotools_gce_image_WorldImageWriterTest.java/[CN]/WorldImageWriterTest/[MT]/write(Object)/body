@@ -1,0 +1,23 @@
+{
+  WorldImageReader wiReader=new WorldImageReader(source);
+  GridCoverage2D coverage=(GridCoverage2D)wiReader.read(null);
+  assertNotNull(coverage);
+  assertNotNull(coverage.getRenderedImage());
+  assertNotNull(coverage.getEnvelope());
+  final StringBuffer buff=new StringBuffer("./write/temp").append(".").append(format);
+  final File tempFile=TestData.temp(this,buff.toString());
+  final WorldImageWriter wiWriter=new WorldImageWriter(tempFile);
+  final Format writerFormat=wiWriter.getFormat();
+  final ParameterValueGroup params=writerFormat.getWriteParameters();
+  params.parameter(WorldImageFormat.FORMAT.getName().toString()).setValue(format);
+  final GeneralParameterValue[] gpv={params.parameter(WorldImageFormat.FORMAT.getName().toString())};
+  wiWriter.write(coverage,gpv);
+  wiWriter.dispose();
+  assertTrue(tempFile.exists());
+  wiReader=new WorldImageReader(tempFile);
+  coverage=(GridCoverage2D)wiReader.read(null);
+  if (TestData.isInteractiveTest())   coverage.show();
+ else   coverage.getRenderedImage().getData();
+  wiReader.dispose();
+  coverage.dispose(true);
+}

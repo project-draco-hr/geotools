@@ -1,0 +1,50 @@
+{
+  this.layer=layer;
+  org.opengis.geometry.Envelope env=null;
+  CoordinateReferenceSystem crs=null;
+  if (layer.getBoundingBoxes().isEmpty()) {
+    env=layer.getEnvelope(DefaultGeographicCRS.WGS84);
+  }
+ else {
+    CRSEnvelope bbox;
+    String epsg4326="EPSG:4326";
+    String epsg4269="EPSG:4269";
+    if (layer.getBoundingBoxes().containsKey(epsg4326)) {
+      bbox=layer.getBoundingBoxes().get(epsg4326);
+    }
+ else     if (layer.getBoundingBoxes().containsKey(epsg4269)) {
+      bbox=layer.getBoundingBoxes().get(epsg4269);
+    }
+ else {
+      bbox=layer.getBoundingBoxes().values().iterator().next();
+    }
+    try {
+      crs=CRS.decode(bbox.getEPSGCode());
+      env=new ReferencedEnvelope(bbox.getMinX(),bbox.getMaxX(),bbox.getMinY(),bbox.getMaxY(),crs);
+    }
+ catch (    NoSuchAuthorityCodeException e) {
+      crs=DefaultGeographicCRS.WGS84;
+      env=layer.getEnvelope(crs);
+    }
+catch (    FactoryException e) {
+      crs=DefaultGeographicCRS.WGS84;
+      env=layer.getEnvelope(crs);
+    }
+  }
+  bounds=new ReferencedEnvelope(env.getMinimum(0),env.getMaximum(0),env.getMinimum(1),env.getMaximum(1),crs);
+  String source=getInfo().getSource().toString();
+  keywords=new TreeSet<String>();
+  if (layer.getKeywords() != null) {
+    List<String> more=Arrays.asList(layer.getKeywords());
+    keywords.addAll(more);
+  }
+  if (layer.getName() != null) {
+    keywords.add(layer.getName());
+  }
+  if (layer.getTitle() != null) {
+    keywords.add(layer.getTitle());
+  }
+  keywords.add(capabilities.getService().getName());
+  keywords.add(source);
+  keywords.addAll(getInfo().getKeywords());
+}

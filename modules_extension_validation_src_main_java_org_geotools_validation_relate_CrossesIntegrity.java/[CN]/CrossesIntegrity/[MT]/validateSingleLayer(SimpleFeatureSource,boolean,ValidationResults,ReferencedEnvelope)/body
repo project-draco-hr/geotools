@@ -1,0 +1,38 @@
+{
+  boolean success=true;
+  SimpleFeatureType ft=featureSourceA.getSchema();
+  Filter filter=filterBBox(bBox,ft);
+  SimpleFeatureCollection featureResults=featureSourceA.getFeatures();
+  SimpleFeatureIterator fr1=null;
+  SimpleFeatureIterator fr2=null;
+  try {
+    fr1=featureResults.features();
+    if (fr1 == null)     return success;
+    while (fr1.hasNext()) {
+      SimpleFeature f1=fr1.next();
+      Geometry g1=(Geometry)f1.getDefaultGeometry();
+      Filter filter2=filterBBox(ReferencedEnvelope.reference(g1.getEnvelope().getEnvelopeInternal()),ft);
+      SimpleFeatureCollection featureResults2=featureSourceA.getFeatures();
+      fr2=featureResults2.features();
+      while (fr2 != null && fr2.hasNext()) {
+        SimpleFeature f2=fr2.next();
+        Geometry g2=(Geometry)f2.getDefaultGeometry();
+        if (!usedIDs.contains(f2.getID())) {
+          if (!f1.getID().equals(f2.getID())) {
+            if (g1.crosses(g2) != expected) {
+              results.error(f1,getGeomTypeRefA() + "(" + f1.getID()+ ")"+ " crossed "+ getGeomTypeRefA()+ "("+ f2.getID()+ ")");
+              System.out.println(((Geometry)f1.getDefaultGeometry()).getGeometryType() + " " + getGeomTypeRefA()+ "("+ f1.getID()+ ")"+ " crossed "+ getGeomTypeRefA()+ "("+ f2.getID()+ "), Result was not "+ expected);
+              success=false;
+            }
+          }
+        }
+      }
+      usedIDs.add(f1.getID());
+    }
+  }
+  finally {
+    fr1.close();
+    if (fr2 != null)     fr2.close();
+  }
+  return success;
+}

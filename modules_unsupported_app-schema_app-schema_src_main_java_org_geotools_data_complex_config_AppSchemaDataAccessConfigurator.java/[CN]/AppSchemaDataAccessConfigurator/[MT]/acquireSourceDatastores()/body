@@ -1,0 +1,23 @@
+{
+  AppSchemaDataAccessConfigurator.LOGGER.entering(getClass().getName(),"acquireSourceDatastores");
+  final Map<String,DataAccess<FeatureType,Feature>> datastores=new LinkedHashMap<String,DataAccess<FeatureType,Feature>>();
+  @SuppressWarnings("unchecked") final List<SourceDataStore> dsParams=config.getSourceDataStores();
+  String id;
+  for (  SourceDataStore dsconfig : dsParams) {
+    id=dsconfig.getId();
+    if (dsconfig.isDataAccess()) {
+      inputDataAccessIds.add(id);
+    }
+    @SuppressWarnings("unchecked") Map<String,Serializable> datastoreParams=dsconfig.getParams();
+    datastoreParams=resolveRelativePaths(datastoreParams);
+    AppSchemaDataAccessConfigurator.LOGGER.fine("looking for datastore " + id);
+    DataAccess<FeatureType,Feature> dataStore=DataAccessFinder.getDataStore(datastoreParams);
+    if (dataStore == null) {
+      AppSchemaDataAccessConfigurator.LOGGER.log(Level.SEVERE,"Cannot find a DataAccess for parameters " + datastoreParams);
+      throw new DataSourceException("Cannot find a DataAccess for parameters " + "(some not shown) " + filterDatastoreParams(datastoreParams));
+    }
+    AppSchemaDataAccessConfigurator.LOGGER.fine("got datastore " + dataStore);
+    datastores.put(id,dataStore);
+  }
+  return datastores;
+}

@@ -1,0 +1,50 @@
+{
+  Dimension parentSize;
+  final Vocabulary resources=Vocabulary.getResources(parent != null ? parent.getLocale() : null);
+  final String title=resources.getString(VocabularyKeys.PROGRESSION);
+  final JDesktopPane desktop=JOptionPane.getDesktopPaneForComponent(parent);
+  if (desktop != null) {
+    final JInternalFrame frame;
+    frame=new JInternalFrame(title);
+    window=frame;
+    content=new JPanel();
+    parentSize=desktop.getSize();
+    frame.setContentPane(content);
+    frame.setDefaultCloseOperation(JInternalFrame.HIDE_ON_CLOSE);
+    desktop.add(frame,JLayeredPane.PALETTE_LAYER);
+  }
+ else {
+    final JDialog dialog;
+    dialog=new JDialog((Frame)null,title);
+    window=dialog;
+    content=(JComponent)dialog.getContentPane();
+    parentSize=Toolkit.getDefaultToolkit().getScreenSize();
+    dialog.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+    dialog.setResizable(false);
+  }
+  window.setBounds((parentSize.width - WIDTH) / 2,(parentSize.height - HEIGHT) / 2,WIDTH,HEIGHT);
+  description=new JLabel();
+  description.setHorizontalAlignment(JLabel.CENTER);
+  progressBar=new JProgressBar();
+  progressBar.setIndeterminate(true);
+  progressBar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(6,9,6,9),progressBar.getBorder()));
+  cancel=new JButton(resources.getString(VocabularyKeys.CANCEL));
+  cancel.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      setCanceled(true);
+    }
+  }
+);
+  final Box cancelBox=Box.createHorizontalBox();
+  cancelBox.add(Box.createGlue());
+  cancelBox.add(cancel);
+  cancelBox.add(Box.createGlue());
+  cancelBox.setBorder(BorderFactory.createEmptyBorder(0,0,6,0));
+  final JPanel panel=new JPanel(new GridLayout(2,1));
+  panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(VMARGIN,HMARGIN,VMARGIN,HMARGIN),BorderFactory.createEtchedBorder()));
+  panel.add(description);
+  panel.add(progressBar);
+  content.setLayout(new BorderLayout());
+  content.add(panel,BorderLayout.NORTH);
+  content.add(cancelBox,BorderLayout.SOUTH);
+}

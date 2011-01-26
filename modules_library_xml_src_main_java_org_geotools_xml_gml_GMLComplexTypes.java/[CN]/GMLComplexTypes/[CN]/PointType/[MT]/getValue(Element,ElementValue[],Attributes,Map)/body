@@ -1,0 +1,27 @@
+{
+  if (value.length > 1) {
+    throw new SAXException("Cannot have more than one coord per " + getName());
+  }
+  Element e=value[0].getElement();
+  if (e == null) {
+    if (!element.isNillable())     throw new SAXException("Internal error, ElementValues require an associated Element.");
+    return null;
+  }
+  Object t=value[0].getValue();
+  Point p=null;
+  if (t == null) {
+    throw new SAXException("Invalid coordinate specified");
+  }
+  GeometryFactory gf=new GeometryFactory(DefaultCoordinateSequenceFactory.instance());
+  if (t instanceof Coordinate) {
+    Coordinate c=(Coordinate)t;
+    p=gf.createPoint(c);
+  }
+ else {
+    CoordinateSequence c=(CoordinateSequence)t;
+    p=gf.createPoint(c);
+  }
+  ElementValue[] ev=new ElementValue[1];
+  ev[0]=new DefaultElementValue(element,p);
+  return AbstractGeometryType.getInstance().getValue(element,ev,attrs,hints);
+}

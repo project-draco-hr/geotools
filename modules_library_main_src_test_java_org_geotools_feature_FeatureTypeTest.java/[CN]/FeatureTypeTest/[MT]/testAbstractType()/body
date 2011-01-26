@@ -1,0 +1,31 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName("AbstractThing");
+  tb.setAbstract(true);
+  tb.setNamespaceURI(new URI("http://www.nowhereinparticular.net"));
+  SimpleFeatureType abstractType=tb.buildFeatureType();
+  tb.setName("AbstractType2");
+  tb.setSuperType(abstractType);
+  tb.add("X",String.class);
+  SimpleFeatureType abstractType2=tb.buildFeatureType();
+  assertTrue(abstractType.isAbstract());
+  assertTrue(abstractType2.isAbstract());
+  assertTrue("abstractType2 --|> abstractType",FeatureTypes.isDecendedFrom(abstractType2,abstractType));
+  assertFalse("abstractType2 !--|> abstractType",FeatureTypes.isDecendedFrom(abstractType,abstractType2));
+  try {
+    SimpleFeatureBuilder.build(abstractType,new Object[0],null);
+    fail("abstract type allowed create");
+  }
+ catch (  IllegalArgumentException iae) {
+  }
+catch (  UnsupportedOperationException uoe) {
+  }
+  try {
+    SimpleFeatureBuilder.build(abstractType2,new Object[0],null);
+    fail("abstract type allowed create");
+  }
+ catch (  IllegalArgumentException iae) {
+  }
+catch (  UnsupportedOperationException uoe) {
+  }
+}

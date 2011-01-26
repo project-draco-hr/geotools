@@ -1,0 +1,19 @@
+{
+  try {
+    final SeQuery query=new SeQuery(conn,new String[]{"RASTER"},new SeSqlConstruct(rasterName));
+    query.prepareQuery();
+    query.execute();
+    final SeRow r=query.fetch();
+    SeRasterConstraint rConstraint=new SeRasterConstraint();
+    rConstraint.setEnvelope((int)tiles.getMinX(),(int)tiles.getMinY(),(int)tiles.getMaxX(),(int)tiles.getMaxY());
+    rConstraint.setLevel(level);
+    rConstraint.setBands(bands);
+    query.queryRasterTile(rConstraint);
+    final SeRasterAttr rattr=r.getRaster(0);
+    query.close();
+    return rattr;
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException(e);
+  }
+}

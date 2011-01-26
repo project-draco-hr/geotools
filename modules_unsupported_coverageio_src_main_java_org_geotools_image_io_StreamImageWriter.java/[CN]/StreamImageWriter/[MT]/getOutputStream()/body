@@ -1,0 +1,36 @@
+{
+  if (stream == null) {
+    final Object output=getOutput();
+    if (output == null) {
+      throw new IllegalStateException();
+    }
+    if (output instanceof OutputStream) {
+      stream=(OutputStream)output;
+      closeOnReset=null;
+    }
+ else     if (output instanceof ImageOutputStream) {
+      stream=new OutputStreamAdapter((ImageOutputStream)output);
+      closeOnReset=null;
+    }
+ else     if (output instanceof String) {
+      stream=new FileOutputStream((String)output);
+      closeOnReset=stream;
+    }
+ else     if (output instanceof File) {
+      stream=new FileOutputStream((File)output);
+      closeOnReset=stream;
+    }
+ else     if (output instanceof URL) {
+      stream=((URL)output).openConnection().getOutputStream();
+      closeOnReset=stream;
+    }
+ else     if (output instanceof URLConnection) {
+      stream=((URLConnection)output).getOutputStream();
+      closeOnReset=stream;
+    }
+ else {
+      throw new IllegalStateException(getErrorResources().getString(ErrorKeys.ILLEGAL_CLASS_$2,Classes.getClass(output),OutputStream.class));
+    }
+  }
+  return stream;
+}

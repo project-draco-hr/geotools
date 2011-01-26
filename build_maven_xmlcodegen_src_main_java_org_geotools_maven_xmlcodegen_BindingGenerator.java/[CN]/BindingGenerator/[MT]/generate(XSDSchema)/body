@@ -1,0 +1,102 @@
+{
+  List components=new ArrayList();
+  if (generateElements) {
+    List elements=schema.getElementDeclarations();
+    for (Iterator e=elements.iterator(); e.hasNext(); ) {
+      XSDElementDeclaration element=(XSDElementDeclaration)e.next();
+      generate(element,schema);
+      if (target(element,schema)) {
+        components.add(element);
+      }
+    }
+  }
+  if (generateTypes) {
+    List types=GeneratorUtils.allTypes(schema);
+    for (Iterator t=types.iterator(); t.hasNext(); ) {
+      XSDTypeDefinition type=(XSDTypeDefinition)t.next();
+      generate(type,schema);
+      if (target(type,schema)) {
+        components.add(type);
+      }
+    }
+  }
+  if (generateAttributes) {
+    List attributes=schema.getAttributeDeclarations();
+    for (Iterator a=attributes.iterator(); a.hasNext(); ) {
+      XSDAttributeDeclaration attribute=(XSDAttributeDeclaration)a.next();
+      generate(attribute,schema);
+      if (target(attribute,schema)) {
+        components.add(attribute);
+      }
+    }
+  }
+  if (generateXsd) {
+    try {
+      String result=execute("XSDTemplate",schema);
+      write(result,prefix(schema).toUpperCase(),sourceLocation);
+    }
+ catch (    Exception e) {
+      String msg="Error generating binding interface";
+      logger.log(Level.WARNING,msg,e);
+    }
+  }
+  if (generateConfiguration) {
+    try {
+      String result=execute("ConfigurationTemplate",new Object[]{schema,components});
+      String prefix=Schemas.getTargetPrefix(schema).toUpperCase();
+      write(result,prefix + "Configuration",sourceLocation);
+    }
+ catch (    Exception e) {
+      logger.log(Level.SEVERE,"Error generating resolver",e);
+    }
+    ArrayList includes=new ArrayList();
+    File file=null;
+    try {
+      file=findSchemaFile(schema.getSchemaLocation());
+    }
+ catch (    IOException e) {
+      logger.log(Level.SEVERE,"",e);
+    }
+    if (file != null) {
+      includes.add(file);
+    }
+ else {
+      logger.log(Level.SEVERE,"Could not find: " + schema.getSchemaLocation() + " to copy.");
+    }
+    for (Iterator i=Schemas.getIncludes(schema).iterator(); i.hasNext(); ) {
+      XSDInclude include=(XSDInclude)i.next();
+      file=null;
+      try {
+        file=findSchemaFile(include.getSchemaLocation());
+      }
+ catch (      IOException e) {
+        logger.log(Level.SEVERE,"",e);
+      }
+      if (file != null) {
+        includes.add(file);
+      }
+ else {
+        logger.log(Level.SEVERE,"Could not find: " + include.getSchemaLocation() + " to copy.");
+      }
+    }
+    for (Iterator i=includes.iterator(); i.hasNext(); ) {
+      File include=(File)i.next();
+      try {
+        copy(include,resourceLocation);
+      }
+ catch (      IOException e) {
+        logger.log(Level.WARNING,"Could not copy file " + include,e);
+      }
+    }
+  }
+  if (generateTests) {
+    try {
+      String result=execute("BindingTestSupportClass",new Object[]{schema});
+      String prefix=Schemas.getTargetPrefix(schema).toUpperCase();
+      write(result,prefix + "TestSupport",testLocation);
+    }
+ catch (    Exception e) {
+      logger.log(Level.SEVERE,"Error generating test support class",e);
+    }
+  }
+}

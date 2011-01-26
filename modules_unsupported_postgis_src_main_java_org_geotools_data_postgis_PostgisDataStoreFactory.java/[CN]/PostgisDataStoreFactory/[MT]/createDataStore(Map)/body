@@ -1,0 +1,34 @@
+{
+  String host=(String)HOST.lookUp(params);
+  String user=(String)USER.lookUp(params);
+  String passwd=(String)PASSWD.lookUp(params);
+  Integer port=(Integer)PORT.lookUp(params);
+  Integer maxConn=(Integer)MAXCONN.lookUp(params);
+  Integer minConn=(Integer)MINCONN.lookUp(params);
+  Boolean validateConn=(Boolean)VALIDATECONN.lookUp(params);
+  String schema=(String)SCHEMA.lookUp(params);
+  String database=(String)DATABASE.lookUp(params);
+  Boolean wkb_enabled=(Boolean)WKBENABLED.lookUp(params);
+  Boolean is_loose_bbox=(Boolean)LOOSEBBOX.lookUp(params);
+  Boolean is_estimated_extent=(Boolean)ESTIMATEDEXTENT.lookUp(params);
+  String namespace=(String)NAMESPACE.lookUp(params);
+  if (!canProcess(params)) {
+    throw new IOException("The parameters map isn't correct!!");
+  }
+  boolean validate=validateConn != null && validateConn.booleanValue();
+  int maxActive=maxConn != null ? maxConn.intValue() : 10;
+  int maxIdle=minConn != null ? minConn.intValue() : 4;
+  DataSource source=getDefaultDataSource(host,user,passwd,port.intValue(),database,maxActive,maxIdle,validate);
+  PostgisDataStore dataStore=createDataStoreInternal(source,namespace,schema);
+  if (wkb_enabled != null) {
+    dataStore.setWKBEnabled(wkb_enabled.booleanValue());
+  }
+  if (is_loose_bbox != null) {
+    dataStore.setLooseBbox(is_loose_bbox.booleanValue());
+  }
+  if (is_estimated_extent != null) {
+    dataStore.setOptimizeMode(PostgisDataStore.OPTIMIZE_SQL);
+    dataStore.setEstimatedExtent(is_estimated_extent.booleanValue());
+  }
+  return dataStore;
+}

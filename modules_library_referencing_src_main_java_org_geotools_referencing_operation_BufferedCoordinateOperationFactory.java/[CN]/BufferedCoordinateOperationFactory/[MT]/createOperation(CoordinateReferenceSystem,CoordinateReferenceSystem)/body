@@ -1,0 +1,14 @@
+{
+  ensureNonNull("sourceCRS",sourceCRS);
+  ensureNonNull("targetCRS",targetCRS);
+  final CRSPair key=new CRSPair(sourceCRS,targetCRS);
+  CoordinateOperation op;
+synchronized (hints) {
+    op=pool.get(key);
+    if (op == null) {
+      op=getBackingFactory().createOperation(sourceCRS,targetCRS);
+      pool.put(key,op);
+    }
+  }
+  return op;
+}

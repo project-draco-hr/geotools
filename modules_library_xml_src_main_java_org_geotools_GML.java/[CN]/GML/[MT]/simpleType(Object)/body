@@ -1,0 +1,60 @@
+{
+  if (obj instanceof SimpleFeature) {
+    SimpleFeature feature=(SimpleFeature)obj;
+    return feature.getFeatureType();
+  }
+  if (obj instanceof Map<?,?>) {
+    Map<?,?> map=(Map<?,?>)obj;
+    SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+    build.setName("Unknown");
+    for (    Map.Entry<?,?> entry : map.entrySet()) {
+      String key=(String)entry.getKey();
+      Object value=entry.getValue();
+      Class<?> binding=value == null ? Object.class : value.getClass();
+      if (value instanceof Geometry) {
+        Geometry geom=(Geometry)value;
+        Object srs=geom.getUserData();
+        if (srs instanceof CoordinateReferenceSystem) {
+          build.add(key,binding,(CoordinateReferenceSystem)srs);
+        }
+ else         if (srs instanceof Integer) {
+          build.add(key,binding,(Integer)srs);
+        }
+ else         if (srs instanceof String) {
+          build.add(key,binding,(String)srs);
+        }
+ else {
+          build.add(key,binding);
+        }
+      }
+ else {
+        build.add(key,binding);
+      }
+    }
+    SimpleFeatureType schema=build.buildFeatureType();
+    return schema;
+  }
+  if (obj instanceof Geometry) {
+    Geometry geom=(Geometry)obj;
+    Class<?> binding=geom.getClass();
+    Object srs=geom.getUserData();
+    SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+    build.setName("Unknown");
+    if (srs instanceof CoordinateReferenceSystem) {
+      build.add("the_geom",binding,(CoordinateReferenceSystem)srs);
+    }
+ else     if (srs instanceof Integer) {
+      build.add("the_geom",binding,(Integer)srs);
+    }
+ else     if (srs instanceof String) {
+      build.add("the_geom",binding,(String)srs);
+    }
+ else {
+      build.add("the_geom",binding);
+    }
+    build.setDefaultGeometry("the_geom");
+    SimpleFeatureType schema=build.buildFeatureType();
+    return schema;
+  }
+  return null;
+}

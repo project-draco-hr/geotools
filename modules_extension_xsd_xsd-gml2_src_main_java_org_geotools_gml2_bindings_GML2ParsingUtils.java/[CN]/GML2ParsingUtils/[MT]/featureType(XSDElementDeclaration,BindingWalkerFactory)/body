@@ -1,0 +1,46 @@
+{
+  SimpleFeatureTypeBuilder ftBuilder=new SimpleFeatureTypeBuilder();
+  ftBuilder.setName(element.getName());
+  ftBuilder.setNamespaceURI(element.getTargetNamespace());
+  List children=Schemas.getChildElementParticles(element.getType(),true);
+  for (Iterator itr=children.iterator(); itr.hasNext(); ) {
+    XSDParticle particle=(XSDParticle)itr.next();
+    XSDElementDeclaration property=(XSDElementDeclaration)particle.getContent();
+    if (property.isElementDeclarationReference()) {
+      property=property.getResolvedElementDeclaration();
+    }
+    final ArrayList bindings=new ArrayList();
+    BindingWalker.Visitor visitor=new BindingWalker.Visitor(){
+      public void visit(      Binding binding){
+        bindings.add(binding);
+      }
+    }
+;
+    bwFactory.walk(property,visitor);
+    if (bindings.isEmpty()) {
+      LOGGER.warning("Could not find binding for " + property.getQName() + ", using XSAnyTypeBinding.");
+      bindings.add(new XSAnyTypeBinding());
+    }
+    Binding last=((Binding)bindings.get(bindings.size() - 1));
+    Class theClass=last.getType();
+    if (theClass == null) {
+      throw new RuntimeException("binding declares null type: " + last.getTarget());
+    }
+    int min=particle.getMinOccurs();
+    int max=particle.getMaxOccurs();
+    if (min == -1) {
+      min=0;
+    }
+    if (max == -1) {
+      max=1;
+    }
+    ftBuilder.minOccurs(min).maxOccurs(max).add(property.getName(),theClass);
+    final String propNamespace=property.getTargetNamespace();
+    if (Geometry.class.isAssignableFrom(theClass) && (propNamespace == null || !propNamespace.startsWith(GML.NAMESPACE))) {
+      if (ftBuilder.getDefaultGeometry() == null) {
+        ftBuilder.setDefaultGeometry(property.getName());
+      }
+    }
+  }
+  return ftBuilder.buildFeatureType();
+}

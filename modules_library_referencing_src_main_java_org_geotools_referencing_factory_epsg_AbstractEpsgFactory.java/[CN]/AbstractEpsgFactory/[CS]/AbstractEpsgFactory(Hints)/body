@@ -1,0 +1,29 @@
+{
+  super(MAXIMUM_PRIORITY - 20);
+  hints.put(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.FALSE);
+  hints.put(Hints.FORCE_STANDARD_AXIS_DIRECTIONS,Boolean.FALSE);
+  hints.put(Hints.FORCE_STANDARD_AXIS_UNITS,Boolean.FALSE);
+  if (userHints != null) {
+    Object hint=userHints.get(Hints.EPSG_DATA_SOURCE);
+    if (hint instanceof String) {
+      String name=(String)hint;
+      try {
+        dataSource=(DataSource)GeoTools.getInitialContext(userHints).lookup(name);
+      }
+ catch (      NamingException e) {
+        throw new FactoryException("A EPSG_DATA_SOURCE hint is required:" + e);
+      }
+      hints.put(Hints.EPSG_DATA_SOURCE,dataSource);
+    }
+ else     if (hint instanceof DataSource) {
+      dataSource=(DataSource)hint;
+      hints.put(Hints.EPSG_DATA_SOURCE,dataSource);
+    }
+ else {
+      throw new FactoryException("A EPSG_DATA_SOURCE hint is required.");
+    }
+  }
+ else {
+    throw new FactoryException("A EPSG_DATA_SOURCE hint is required.");
+  }
+}

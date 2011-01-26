@@ -1,0 +1,23 @@
+{
+  LOGGER.info("testErrorConditions");
+  final File testFile=TestData.file(this,"arcgrid/precip30min.asc");
+  final URL testURL=TestData.url(this,"arcgrid/precip30min.asc");
+  final ArcGridFormat af=new ArcGridFormat();
+  assertTrue("Unable to get an a reader for a file",af.accepts(testFile));
+  assertTrue("Unable to get an a reader for a URL",af.accepts(testURL));
+  assertNotNull("Unable to get an a reader for a file",af.getReader(testFile));
+  assertNotNull("Unable to get an a reader for a URL",af.getReader(testURL));
+  assertFalse("We should not get a reader for a non existing file",af.accepts(TestData.temp(this,"temp")));
+  assertTrue("Write params of incorrect type",af.getDefaultImageIOWriteParameters() instanceof ArcGridWriteParams);
+  boolean caught=false;
+  try {
+    af.getReader(TestData.openStream(this,"arcgrid/precip30min.asc"));
+  }
+ catch (  IllegalArgumentException e) {
+    caught=true;
+  }
+  assertTrue("Streams are  supported now",!caught);
+  assertNotNull("Unable to get a writer for a file",af.getWriter(TestData.temp(this,"temp")));
+  assertNotNull("Unable to get a writer for a url",af.getWriter(TestData.temp(this,"temp").toURI().toURL()));
+  assertNotNull("We should be ablet to write on an http link",af.getWriter(new URL("http://www.geo-solutions.it")));
+}

@@ -1,0 +1,29 @@
+{
+  if (!(factory instanceof CRSAuthorityFactory)) {
+    return;
+  }
+  final CRSAuthorityFactory factory=(CRSAuthorityFactory)this.factory;
+  final CoordinateOperationFactory opFactory=ReferencingFactoryFinder.getCoordinateOperationFactory(HINTS);
+  char[] separator=null;
+  for (int i=0; i < args.length; i++) {
+    final CoordinateReferenceSystem crs1=factory.createCoordinateReferenceSystem(args[i]);
+    for (int j=i + 1; j < args.length; j++) {
+      final CoordinateReferenceSystem crs2=factory.createCoordinateReferenceSystem(args[j]);
+      final CoordinateOperation op;
+      try {
+        op=opFactory.createOperation(crs1,crs2);
+      }
+ catch (      OperationNotFoundException exception) {
+        out.println(exception.getLocalizedMessage());
+        continue;
+      }
+      if (separator == null) {
+        separator=getSeparator();
+      }
+ else {
+        out.println(separator);
+      }
+      out.println(formatter.format(op.getMathTransform()));
+    }
+  }
+}

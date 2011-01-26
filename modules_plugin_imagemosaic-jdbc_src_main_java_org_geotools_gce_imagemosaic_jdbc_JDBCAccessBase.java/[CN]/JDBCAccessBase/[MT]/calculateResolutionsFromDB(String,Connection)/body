@@ -1,0 +1,36 @@
+{
+  PreparedStatement stmt=null;
+  stmt=con.prepareStatement(config.getSqlUpdateResStatement());
+  List<ImageLevelInfo> toBeRemoved=new ArrayList<ImageLevelInfo>();
+  for (  ImageLevelInfo li : levelInfos) {
+    if (li.getCoverageName().equals(coverageName) == false) {
+      continue;
+    }
+    if (li.calculateResolutionNeeded() == false) {
+      continue;
+    }
+    Date start=new Date();
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("Calculate resolutions for " + li.toString());
+    double[] resolutions=getPixelResolution(li,con);
+    if (resolutions == null) {
+      if (LOGGER.isLoggable(Level.WARNING))       LOGGER.log(Level.WARNING,"No image found, removing " + li.toString());
+      toBeRemoved.add(li);
+      continue;
+    }
+    li.setResX(resolutions[0]);
+    li.setResY(resolutions[1]);
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("ResX: " + li.getResX() + " ResY: "+ li.getResY());
+    stmt.setDouble(1,li.getResX().doubleValue());
+    stmt.setDouble(2,li.getResY().doubleValue());
+    stmt.setString(3,li.getCoverageName());
+    stmt.setString(4,li.getTileTableName());
+    stmt.setString(5,li.getSpatialTableName());
+    stmt.execute();
+    long msecs=(new Date()).getTime() - start.getTime();
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("Calculate resolutions for " + li.toString() + " finished in "+ msecs+ " ms ");
+  }
+  levelInfos.removeAll(toBeRemoved);
+  if (stmt != null) {
+    stmt.close();
+  }
+}

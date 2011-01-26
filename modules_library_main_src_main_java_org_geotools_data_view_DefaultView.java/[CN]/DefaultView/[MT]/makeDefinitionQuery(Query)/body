@@ -1,0 +1,31 @@
+{
+  if ((query == Query.ALL) || query.equals(Query.ALL)) {
+    return new DefaultQuery(constraintQuery);
+  }
+  try {
+    String[] propNames=extractAllowedAttributes(query);
+    String typeName=query.getTypeName();
+    if (typeName == null) {
+      typeName=constraintQuery.getTypeName();
+    }
+    URI namespace=query.getNamespace();
+    if (namespace == null || namespace == Query.NO_NAMESPACE) {
+      namespace=constraintQuery.getNamespace();
+    }
+    Filter filter=makeDefinitionFilter(query.getFilter());
+    int maxFeatures=Math.min(query.getMaxFeatures(),constraintQuery.getMaxFeatures());
+    String handle=query.getHandle();
+    if (handle == null) {
+      handle=constraintQuery.getHandle();
+    }
+ else     if (constraintQuery.getHandle() != null) {
+      handle=handle + "(" + constraintQuery.getHandle()+ ")";
+    }
+    DefaultQuery defaultQuery=new DefaultQuery(typeName,namespace,filter,maxFeatures,propNames,handle);
+    defaultQuery.setSortBy(query.getSortBy());
+    return defaultQuery;
+  }
+ catch (  Exception ex) {
+    throw new DataSourceException("Could not restrict the query to the definition criteria: " + ex.getMessage(),ex);
+  }
+}

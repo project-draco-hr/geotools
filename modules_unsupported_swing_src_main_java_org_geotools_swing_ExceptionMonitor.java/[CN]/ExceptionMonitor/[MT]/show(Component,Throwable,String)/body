@@ -1,0 +1,24 @@
+{
+  if (EventQueue.isDispatchThread()) {
+    Pane.show(owner,exception,message);
+  }
+ else {
+    final Runnable monitor=new Runnable(){
+      public void run(){
+        Pane.show(owner,exception,message);
+      }
+    }
+;
+    try {
+      EventQueue.invokeAndWait(monitor);
+    }
+ catch (    InterruptedException error) {
+    }
+catch (    InvocationTargetException error) {
+      final Throwable e=error.getTargetException();
+      if (e instanceof RuntimeException)       throw (RuntimeException)e;
+      if (e instanceof Error)       throw (Error)e;
+      Logging.unexpectedException(ExceptionMonitor.class,"show",e);
+    }
+  }
+}

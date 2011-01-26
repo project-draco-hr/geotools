@@ -1,0 +1,41 @@
+{
+  SimpleFeatureSource road=data.getFeatureSource("road");
+  assertEquals(roadType,road.getSchema());
+  assertSame(data,road.getDataStore());
+  int count=road.getCount(Query.ALL);
+  assertTrue((count == 3) || (count == -1));
+  ReferencedEnvelope bounds=road.getBounds(Query.ALL);
+  assertTrue((bounds == null) || new Envelope(bounds).equals(roadBounds));
+  SimpleFeatureCollection all=road.getFeatures();
+  assertEquals(3,all.size());
+  assertEquals(roadBounds,new Envelope(all.getBounds()));
+  SimpleFeatureCollection expected=DataUtilities.collection(roadFeatures);
+  assertCovers("all",expected,all);
+  assertEquals(roadBounds,new Envelope(all.getBounds()));
+  SimpleFeatureCollection some=road.getFeatures(rd12Filter);
+  assertEquals(2,some.size());
+  ReferencedEnvelope e=new ReferencedEnvelope();
+  e.include(roadFeatures[0].getBounds());
+  e.include(roadFeatures[1].getBounds());
+  assertEquals(e,new Envelope(some.getBounds()));
+  assertEquals(some.getSchema(),road.getSchema());
+  DefaultQuery query=new DefaultQuery("road",rd12Filter,new String[]{"name"});
+  SimpleFeatureCollection half=road.getFeatures(query);
+  assertEquals(2,half.size());
+  assertEquals(1,half.getSchema().getAttributeCount());
+  SimpleFeatureIterator reader=half.features();
+  SimpleFeatureType type=half.getSchema();
+  reader.close();
+  SimpleFeatureType actual=half.getSchema();
+  assertEquals(type.getName(),actual.getName());
+  assertEquals(type.getAttributeCount(),actual.getAttributeCount());
+  for (int i=0; i < type.getAttributeCount(); i++) {
+    assertEquals(type.getDescriptor(i),actual.getDescriptor(i));
+  }
+  assertNull(type.getGeometryDescriptor());
+  assertEquals(type.getGeometryDescriptor(),actual.getGeometryDescriptor());
+  assertEquals(type,actual);
+  ReferencedEnvelope b=half.getBounds();
+  ReferencedEnvelope expectedBounds=isEnvelopeComputingEnabled() ? roadBounds : new ReferencedEnvelope();
+  assertEquals(expectedBounds,new Envelope(b));
+}

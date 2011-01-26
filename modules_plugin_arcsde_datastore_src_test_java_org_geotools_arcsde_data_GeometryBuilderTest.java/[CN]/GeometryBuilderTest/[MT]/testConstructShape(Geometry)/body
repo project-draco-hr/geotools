@@ -1,0 +1,31 @@
+{
+  LOGGER.finer("testConstructShape: testing " + geometry);
+  Class<? extends Geometry> geometryClass=geometry.getClass();
+  ArcSDEGeometryBuilder builder=ArcSDEGeometryBuilder.builderFor(geometryClass);
+  SeCoordinateReference cr=TestData.getGenericCoordRef();
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("****************** CRS extent: " + cr.getXYEnvelope());
+  }
+  Geometry equivalentGeometry=null;
+  SeShape equivalentShape=builder.constructShape(geometry,cr);
+  int expectedNumOfPoints=geometry.getNumPoints();
+  Assert.assertEquals(geometry + " - " + equivalentShape,expectedNumOfPoints,equivalentShape.getNumOfPoints());
+  LOGGER.fine("geometry and SeShape contains the same number of points: " + equivalentShape.getNumOfPoints());
+  LOGGER.finer("generating an SeShape's equivalent Geometry");
+  equivalentGeometry=builder.construct(equivalentShape,new GeometryFactory());
+  LOGGER.fine("now testing both geometries for equivalence: " + geometry + " -- "+ equivalentGeometry);
+  if (geometry instanceof Polygon) {
+    int expectedNumInteriorRing=((Polygon)geometry).getNumInteriorRing();
+    int numInteriorRing=((Polygon)equivalentGeometry).getNumInteriorRing();
+    Assert.assertEquals(geometry.toString(),expectedNumInteriorRing,numInteriorRing);
+  }
+  Assert.assertEquals(geometry.getDimension(),equivalentGeometry.getDimension());
+  LOGGER.fine("dimension test passed");
+  Assert.assertEquals(geometry.getGeometryType(),equivalentGeometry.getGeometryType());
+  LOGGER.fine("geometry type test passed");
+  Assert.assertEquals(geometry + " - " + equivalentGeometry,geometry.getNumPoints(),equivalentGeometry.getNumPoints());
+  LOGGER.fine("numPoints test passed");
+  LOGGER.fine(geometry.getEnvelopeInternal() + " == " + equivalentGeometry.getEnvelopeInternal());
+  Assert.assertEquals(geometry.getArea(),equivalentGeometry.getArea(),0.1);
+  LOGGER.fine("area test passed");
+}

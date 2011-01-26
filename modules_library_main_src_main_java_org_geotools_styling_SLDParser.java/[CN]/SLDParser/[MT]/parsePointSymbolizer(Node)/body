@@ -1,0 +1,28 @@
+{
+  PointSymbolizer symbol=factory.getDefaultPointSymbolizer();
+  NamedNodeMap namedNodeMap=root.getAttributes();
+  Node uomNode=namedNodeMap.getNamedItem(uomString);
+  if (uomNode != null) {
+    UomOgcMapping uomMapping=UomOgcMapping.get(uomNode.getNodeValue());
+    symbol.setUnitOfMeasure(uomMapping.getUnit());
+  }
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase(geomString)) {
+      symbol.setGeometry(parseGeometry(child));
+    }
+ else     if (childName.equalsIgnoreCase(graphicSt)) {
+      symbol.setGraphic(parseGraphic(child));
+    }
+  }
+  return symbol;
+}

@@ -1,0 +1,39 @@
+{
+  final DataStore ds=testData.getDataStore();
+  final String typeName=testData.getTempTableName();
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=ds.getFeatureReader(new Query(typeName),Transaction.AUTO_COMMIT);
+  final String idTemplate;
+  Set<FeatureId> fids=new TreeSet<FeatureId>(new Comparator<FeatureId>(){
+    public int compare(    FeatureId o1,    FeatureId o2){
+      return o1.getID().compareTo(o2.getID());
+    }
+  }
+);
+  try {
+    String id=reader.next().getID();
+    fids.add(ff.featureId(id));
+    idTemplate=id.substring(0,id.length() - 1);
+  }
+  finally {
+    reader.close();
+  }
+  int x=1000;
+  while (fids.size() < numFids) {
+    fids.add(ff.featureId(idTemplate + x++));
+  }
+  Id filter=ff.id(fids);
+  SimpleFeatureSource source=ds.getFeatureSource(typeName);
+  Query query=new Query(typeName,filter);
+  SimpleFeatureCollection results=source.getFeatures(query);
+  assertEquals(1,results.size());
+  SimpleFeatureIterator iterator=results.features();
+  try {
+    while (iterator.hasNext()) {
+      String fid=iterator.next().getID();
+      assertTrue("a fid not included in query was returned: " + fid,fids.contains(ff.featureId(fid)));
+    }
+  }
+  finally {
+    iterator.close();
+  }
+}

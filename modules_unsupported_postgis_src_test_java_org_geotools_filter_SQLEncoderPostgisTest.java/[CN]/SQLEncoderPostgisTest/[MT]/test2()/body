@@ -1,0 +1,11 @@
+{
+  FilterFactory factory=FilterFactoryFinder.createFilterFactory();
+  GeometryFilter gf=factory.createGeometryFilter(AbstractFilter.GEOMETRY_BBOX);
+  LiteralExpressionImpl left=new BBoxExpressionImpl(new Envelope(10,300,10,300));
+  gf.addLeftGeometry(left);
+  SQLEncoderPostgis encoder=new SQLEncoderPostgis(2346);
+  encoder.setDefaultGeometry("testGeometry");
+  String out=encoder.encode(gf);
+  LOGGER.fine("Resulting SQL filter is \n" + out);
+  assertEquals(out,"WHERE GeometryFromText(" + "'POLYGON ((10 10, 10 300, 300 300, 300 10, 10 10))'" + ", 2346) && \"testGeometry\"");
+}

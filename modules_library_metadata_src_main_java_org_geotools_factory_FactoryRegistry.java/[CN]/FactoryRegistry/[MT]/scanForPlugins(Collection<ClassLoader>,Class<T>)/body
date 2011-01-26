@@ -1,0 +1,28 @@
+{
+  if (!scanningCategories.add(category)) {
+    throw new RecursiveSearchException(category);
+  }
+  try {
+    final StringBuilder message=getLogHeader(category);
+    boolean newServices=false;
+    for (    final ClassLoader loader : loaders) {
+      newServices|=register(lookupProviders(category,loader),category,message);
+      newServices|=registerFromSystemProperty(loader,category,message);
+    }
+    final FactoryIteratorProvider[] fip=FactoryIteratorProviders.getIteratorProviders();
+    for (int i=0; i < fip.length; i++) {
+      final Iterator<T> it=fip[i].iterator(category);
+      if (it != null) {
+        newServices|=register(it,category,message);
+      }
+    }
+    if (newServices) {
+      log("scanForPlugins",message);
+    }
+  }
+  finally {
+    if (!scanningCategories.remove(category)) {
+      throw new AssertionError(category);
+    }
+  }
+}

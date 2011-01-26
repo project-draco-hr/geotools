@@ -1,0 +1,29 @@
+{
+  InputStream in=getClass().getResourceAsStream("feature.xml");
+  DocumentBuilderFactory factory=DocumentBuilderFactory.newInstance();
+  factory.setNamespaceAware(true);
+  Document document=factory.newDocumentBuilder().parse(in);
+  document.getDocumentElement().removeAttribute("xsi:schemaLocation");
+  File schemaFile=File.createTempFile("test","xsd");
+  schemaFile.deleteOnExit();
+  Transformer tx=TransformerFactory.newInstance().newTransformer();
+  tx.transform(new DOMSource(document),new StreamResult(schemaFile));
+  in.close();
+  in=new FileInputStream(schemaFile);
+  GMLConfiguration configuration=new GMLConfiguration();
+  configuration.getProperties().add(Parser.Properties.IGNORE_SCHEMA_LOCATION);
+  configuration.getProperties().add(Parser.Properties.PARSE_UNKNOWN_ELEMENTS);
+  StreamingParser parser=new StreamingParser(configuration,in,"//Point");
+  for (int i=0; i < 3; i++) {
+    Point p=(Point)parser.parse();
+    assertNotNull(p);
+    assertEquals(i,p.getX(),0d);
+    assertEquals(i,p.getY(),0d);
+  }
+  assertNull(parser.parse());
+  try {
+    in.close();
+  }
+ catch (  IOException e) {
+  }
+}

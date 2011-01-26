@@ -1,0 +1,39 @@
+{
+  CoordinateReferenceSystem crs=dp.getCoordinateReferenceSystem();
+  int dim=crs.getCoordinateSystem().getDimension();
+  boolean isProjectedCRS=crs instanceof ProjectedCRS;
+  CoordinateReferenceSystem bcrs=crs instanceof ProjectedCRS ? ((ProjectedCRS)crs).getBaseCRS() : crs;
+  GeographicCRS wgs84crs=null;
+  try {
+    wgs84crs=(GeographicCRS)CRS.decode("EPSG:4327");
+  }
+ catch (  Exception nsace) {
+    getLog().warn("could not get crs for EPSG:4327");
+  }
+  if (bcrs.equals(wgs84crs)) {
+    return dp;
+  }
+  if (bcrs.toWKT().indexOf("WGS84") > -1) {
+    return dp;
+  }
+  if (bcrs instanceof GeographicCRS) {
+    if (((GeographicCRS)bcrs).getDatum().equals(wgs84crs.getDatum())) {
+      return dp;
+    }
+  }
+  DirectPosition dp2=BasicFactories.getDefault().getGeometryFactory(wgs84crs).createDirectPosition();
+  try {
+    MathTransform transform=CRS.findMathTransform(crs,wgs84crs);
+    transform.transform(dp,dp2);
+  }
+ catch (  FactoryException fe) {
+    getLog().warn("Could not create CoordinateOperation to convert DirectPosition CRS " + crs.getName() + " to WGS84, using original ordinates",fe);
+  }
+catch (  TransformException e) {
+    getLog().warn("Could not transform DirectPosition CRS " + crs.getName() + " to WGS84, using original ordinates",e);
+  }
+catch (  MismatchedDimensionException e) {
+    getLog().warn("Dimension mismatch prevented conversion of DirectPosition CRS " + crs.getName() + " to WGS84, using original ordinates",e);
+  }
+  return dp2;
+}

@@ -1,0 +1,57 @@
+{
+  XSDFactory factory=XSDFactory.eINSTANCE;
+  XSDComplexTypeDefinition definition=factory.createXSDComplexTypeDefinition();
+  definition.setName(type.getName().getLocalPart());
+  definition.setDerivationMethod(XSDDerivationMethod.EXTENSION_LITERAL);
+  if (BASE_TYPE != null) {
+    definition.setBaseTypeDefinition(BASE_TYPE);
+  }
+  List<String> skip=Collections.emptyList();
+  if ("AbstractFeatureType".equals(BASE_TYPE.getName())) {
+    skip=Arrays.asList(new String[]{"nounds","description","boundedBy"});
+  }
+  XSDModelGroup attributes=factory.createXSDModelGroup();
+  attributes.setCompositor(XSDCompositor.SEQUENCE_LITERAL);
+  Name anyName=new NameImpl(XS.NAMESPACE,XS.ANYTYPE.getLocalPart());
+  for (  PropertyDescriptor descriptor : type.getDescriptors()) {
+    if (descriptor instanceof AttributeDescriptor) {
+      AttributeDescriptor attributeDescriptor=(AttributeDescriptor)descriptor;
+      if (skip.contains(attributeDescriptor.getLocalName())) {
+        continue;
+      }
+      XSDElementDeclaration attribute=factory.createXSDElementDeclaration();
+      attribute.setName(attributeDescriptor.getLocalName());
+      attribute.setNillable(attributeDescriptor.isNillable());
+      Name name=attributeDescriptor.getType().getName();
+      if (!anyName.equals(name)) {
+        AttributeType attributeType=attributeDescriptor.getType();
+        if (attributeType instanceof ComplexType) {
+          ComplexType complexType=(ComplexType)attributeType;
+          if (xsd.resolveTypeDefinition(name.getNamespaceURI(),name.getLocalPart()) == null) {
+            xsd(xsd,complexType,null);
+          }
+        }
+ else {
+          Class<?> binding=attributeType.getBinding();
+          Entry<Name,AttributeType> entry=searchSchemas(binding);
+          if (entry == null) {
+            throw new IllegalStateException("No type for " + attribute.getName() + " ("+ binding.getName()+ ")");
+          }
+          name=entry.getKey();
+        }
+      }
+      XSDTypeDefinition attributeDefinition=xsd.resolveTypeDefinition(name.getNamespaceURI(),name.getLocalPart());
+      attribute.setTypeDefinition(attributeDefinition);
+      XSDParticle particle=factory.createXSDParticle();
+      particle.setMinOccurs(attributeDescriptor.getMinOccurs());
+      particle.setMaxOccurs(attributeDescriptor.getMaxOccurs());
+      particle.setContent(attribute);
+      attributes.getContents().add(particle);
+    }
+  }
+  XSDParticle contents=factory.createXSDParticle();
+  contents.setContent(attributes);
+  definition.setContent(contents);
+  xsd.getContents().add(definition);
+  return definition;
+}

@@ -1,0 +1,33 @@
+{
+  super(source,uHints);
+  this.sourceURL=Utils.checkSource(source);
+  if (this.sourceURL == null)   throw new DataSourceException("This plugin accepts only File,  URL and String pointing to a file");
+  final File inputFile=DataUtilities.urlToFile(sourceURL);
+  if (inputFile == null)   throw new DataSourceException("Unable to find a file for the provided source");
+  parentPath=inputFile.getParent();
+  ImageReader reader=null;
+  final ImageInputStream stream=ImageIO.createImageInputStream(inputFile);
+  if (cachedSPI == null) {
+    reader=Utils.getReader(stream);
+    if (reader != null)     cachedSPI=reader.getOriginatingProvider();
+  }
+  if (reader == null)   throw new DataSourceException("No reader found for that source " + sourceURL);
+  reader.setInput(stream);
+  coverageName=inputFile.getName();
+  final int dotIndex=coverageName.lastIndexOf(".");
+  coverageName=(dotIndex == -1) ? coverageName : coverageName.substring(0,dotIndex);
+  final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+  if (tempCRS != null) {
+    this.crs=(CoordinateReferenceSystem)tempCRS;
+    LOGGER.log(Level.WARNING,"Using forced coordinate reference system " + crs.toWKT());
+  }
+ else {
+    setCoverageProperties(reader);
+    if (crs == null) {
+      throw new DataSourceException("Unable to find a CRS for this coverage, using a default one: " + crs.toWKT());
+    }
+  }
+  setResolutionInfo(reader);
+  reader.dispose();
+  rasterManager=new RasterManager(this);
+}

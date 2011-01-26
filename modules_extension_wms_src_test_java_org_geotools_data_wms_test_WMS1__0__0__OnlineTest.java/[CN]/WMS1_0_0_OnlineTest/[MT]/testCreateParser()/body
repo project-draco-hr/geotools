@@ -1,0 +1,36 @@
+{
+  WMSCapabilities capabilities=createCapabilities("1.0.0Capabilities.xml");
+  try {
+    assertEquals(capabilities.getVersion(),"1.0.0");
+    assertEquals(capabilities.getService().getName(),"GetMap");
+    assertEquals(capabilities.getService().getTitle(),"World Map");
+    for (int i=0; i < capabilities.getService().getKeywordList().length; i++) {
+      assertEquals(capabilities.getService().getKeywordList()[i],"OpenGIS WMS Web Map Server".split(" ")[i]);
+    }
+    assertEquals(capabilities.getService().getOnlineResource(),new URL("http://www2.demis.nl"));
+    assertEquals(capabilities.getRequest().getGetCapabilities().getFormats().get(0),"application/vnd.ogc.wms_xml");
+    assertEquals(capabilities.getRequest().getGetFeatureInfo().getGet(),new URL("http://www2.demis.nl/wms/wms.asp?wms=WorldMap&"));
+    assertEquals(capabilities.getRequest().getGetMap().getFormats().size(),4);
+    assertEquals(capabilities.getLayerList().size(),21);
+    Layer[] layers=(Layer[])capabilities.getLayerList().toArray(new Layer[capabilities.getLayerList().size()]);
+    assertEquals(layers[0].getTitle(),"World Map");
+    assertEquals(layers[0].getParent(),null);
+    assertTrue(layers[0].getSrs().contains("EPSG:4326"));
+    assertTrue(layers[0].getSrs().contains("EPSG:4327"));
+    assertEquals(layers[1].getTitle(),"Bathymetry");
+    assertEquals(layers[1].getName(),"Bathymetry");
+    assertEquals(layers[20].getTitle(),"Ocean features");
+    assertEquals(layers[20].getName(),"Ocean features");
+    assertEquals(layers[0].getBoundingBoxes().size(),1);
+    CRSEnvelope bbox=(CRSEnvelope)layers[1].getBoundingBoxes().get("EPSG:4326");
+    assertNotNull(bbox);
+  }
+ catch (  Exception e) {
+    if (e.getMessage().indexOf("timed out") > 0) {
+      System.err.println("Unable to test - timed out: " + e);
+    }
+ else {
+      throw (e);
+    }
+  }
+}

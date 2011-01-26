@@ -1,0 +1,22 @@
+{
+  String jsonString=ods.resourceToString("describe/" + contentEntry.getName().getLocalPart(),null);
+  JSONParser parser=new JSONParser();
+  JSONArray jsonArray=null;
+  try {
+    jsonArray=(JSONArray)parser.parse(jsonString);
+  }
+ catch (  org.json.simple.parser.ParseException pe) {
+    LOGGER.log(Level.SEVERE,"parse Exception : FeatureSource -- buildFeatureType --" + pe.getMessage(),pe);
+  }
+  SimpleFeatureTypeBuilder fbt=new SimpleFeatureTypeBuilder();
+  fbt.setName(contentEntry.getName());
+  fbt.setCRS(layer.getCoordinateReferenceSystem());
+  Iterator itr=jsonArray.iterator();
+  while (itr.hasNext()) {
+    HashMap<String,String> tmpMap=(HashMap<String,String>)itr.next();
+    for (    Map.Entry<String,String> entry : tmpMap.entrySet()) {
+      fbt.add(entry.getKey(),SFSDataStoreUtil.getClass(entry.getValue()));
+    }
+  }
+  return fbt.buildFeatureType();
+}

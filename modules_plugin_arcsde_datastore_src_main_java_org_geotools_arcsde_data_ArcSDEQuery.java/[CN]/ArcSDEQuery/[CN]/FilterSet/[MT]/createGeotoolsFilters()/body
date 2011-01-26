@@ -1,0 +1,21 @@
+{
+  FilterToSQLSDE sqlEncoder=getSqlEncoder();
+  PostPreProcessFilterSplittingVisitor unpacker=new PostPreProcessFilterSplittingVisitor(sqlEncoder.getCapabilities(),featureType,null);
+  sourceFilter.accept(unpacker,null);
+  SimplifyingFilterVisitor filterSimplifier=new SimplifyingFilterVisitor();
+  final String typeName=this.featureType.getTypeName();
+  FIDValidator validator=new SimplifyingFilterVisitor.TypeNameDotNumberFidValidator(typeName);
+  filterSimplifier.setFIDValidator(validator);
+  this._sqlFilter=unpacker.getFilterPre();
+  this._sqlFilter=(Filter)this._sqlFilter.accept(filterSimplifier,null);
+  if (LOGGER.isLoggable(Level.FINE) && _sqlFilter != null)   LOGGER.fine("SQL portion of SDE Query: '" + _sqlFilter + "'");
+  Filter remainingFilter=unpacker.getFilterPost();
+  unpacker=new PostPreProcessFilterSplittingVisitor(GeometryEncoderSDE.getCapabilities(),featureType,null);
+  remainingFilter.accept(unpacker,null);
+  this.geometryFilter=unpacker.getFilterPre();
+  this.geometryFilter=(Filter)this.geometryFilter.accept(filterSimplifier,null);
+  if (LOGGER.isLoggable(Level.FINE) && geometryFilter != null)   LOGGER.fine("Spatial-Filter portion of SDE Query: '" + geometryFilter + "'");
+  this.unsupportedFilter=unpacker.getFilterPost();
+  this.unsupportedFilter=(Filter)this.unsupportedFilter.accept(filterSimplifier,null);
+  if (LOGGER.isLoggable(Level.FINE) && unsupportedFilter != null)   LOGGER.fine("Unsupported (and therefore ignored) portion of SDE Query: '" + unsupportedFilter + "'");
+}

@@ -1,0 +1,36 @@
+{
+  if (CRS.equalsIgnoreMetadata(state.getRequestedEnvelope().getCoordinateReferenceSystem(),this.crs)) {
+    state.setRequestEnvelopeTransformed(state.getRequestedEnvelope());
+    return;
+  }
+  try {
+    final MathTransform transform=operationFactory.createOperation(state.getRequestedEnvelope().getCoordinateReferenceSystem(),crs).getMathTransform();
+    if (transform.isIdentity()) {
+      state.setRequestEnvelopeTransformed(state.getRequestedEnvelope());
+      return;
+    }
+    state.setRequestEnvelopeTransformed(CRS.transform(transform,state.getRequestedEnvelope()));
+    state.getRequestEnvelopeTransformed().setCoordinateReferenceSystem(crs);
+    int indexX=indexOfX(crs);
+    int indexY=indexOfY(crs);
+    int indexRequestedX=indexOfX(state.getRequestedEnvelope().getCoordinateReferenceSystem());
+    int indexRequestedY=indexOfY(state.getRequestedEnvelope().getCoordinateReferenceSystem());
+    if (indexX == indexRequestedY && indexY == indexRequestedX) {
+      state.setXAxisSwitch(true);
+      Rectangle2D tmp=new Rectangle2D.Double(state.getRequestEnvelopeTransformed().getMinimum(1),state.getRequestEnvelopeTransformed().getMinimum(0),state.getRequestEnvelopeTransformed().getSpan(1),state.getRequestEnvelopeTransformed().getSpan(0));
+      state.setRequestEnvelopeTransformed(new GeneralEnvelope(tmp));
+      state.getRequestEnvelopeTransformed().setCoordinateReferenceSystem(crs);
+    }
+ else     if (indexX == indexRequestedX && indexY == indexRequestedY) {
+    }
+ else {
+      throw new DataSourceException("Unable to resolve the X Axis problem");
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine(new StringBuffer("Reprojected envelope ").append(state.getRequestedEnvelope().toString()).append(" crs ").append(crs.toWKT()).toString());
+    }
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Unable to create a coverage for this source",e);
+  }
+}

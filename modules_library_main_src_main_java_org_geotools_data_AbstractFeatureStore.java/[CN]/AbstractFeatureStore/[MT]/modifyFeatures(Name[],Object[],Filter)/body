@@ -1,0 +1,31 @@
+{
+  String typeName=getSchema().getTypeName();
+  if (filter == null) {
+    String msg="Must specify a filter, must not be null.";
+    throw new IllegalArgumentException(msg);
+  }
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=((DataStore)getDataStore()).getFeatureWriter(typeName,filter,getTransaction());
+  SimpleFeature feature;
+  for (  Name attributeName : attributeNames) {
+    if (getSchema().getDescriptor(attributeName) == null) {
+      throw new DataSourceException("Cannot modify " + attributeName + " as it is not an attribute of "+ getSchema().getName());
+    }
+  }
+  try {
+    while (writer.hasNext()) {
+      feature=writer.next();
+      for (int i=0; i < attributeNames.length; i++) {
+        try {
+          feature.setAttribute(attributeNames[i],attributeValues[i]);
+        }
+ catch (        Exception e) {
+          throw new DataSourceException("Could not update feature " + feature.getID() + " with "+ attributeNames[i]+ "="+ attributeValues[i],e);
+        }
+      }
+      writer.write();
+    }
+  }
+  finally {
+    writer.close();
+  }
+}

@@ -1,0 +1,40 @@
+{
+  List<ColumnMetadata> result=new ArrayList<ColumnMetadata>();
+  Statement st=null;
+  ResultSet rs=null;
+  try {
+    String sql;
+    StringBuffer sb=new StringBuffer();
+    sb.append("select * from (");
+    sb.append(vtable.expandParameters(null));
+    sb.append(")");
+    dialect.encodeTableAlias("vtable",sb);
+    sb.append(" where 1 = 0");
+    sql=sb.toString();
+    st=cx.createStatement();
+    LOGGER.log(Level.FINE,"Gathering sql view result structure: {0}",sql);
+    rs=st.executeQuery(sql);
+    ResultSetMetaData metadata=rs.getMetaData();
+    for (int i=1; i < metadata.getColumnCount() + 1; i++) {
+      ColumnMetadata column=new ColumnMetadata();
+      column.name=metadata.getColumnName(i);
+      column.typeName=metadata.getColumnTypeName(i);
+      column.sqlType=metadata.getColumnType(i);
+      column.nullable=metadata.isNullable(i) != ResultSetMetaData.columnNoNulls;
+      column.srid=vtable.getNativeSrid(column.name);
+      column.binding=vtable.getGeometryType(column.name);
+      if (column.binding == null) {
+        column.binding=store.getMapping(column.sqlType);
+        if (column.binding == null) {
+          column.binding=store.getMapping(column.typeName);
+        }
+      }
+      result.add(column);
+    }
+  }
+  finally {
+    store.closeSafe(st);
+    store.closeSafe(rs);
+  }
+  return result;
+}

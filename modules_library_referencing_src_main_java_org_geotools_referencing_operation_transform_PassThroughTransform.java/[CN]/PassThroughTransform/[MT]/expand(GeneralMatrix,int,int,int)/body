@@ -1,0 +1,22 @@
+{
+  final int nSkipped=firstAffectedOrdinate + numTrailingOrdinates;
+  final int numRow=subMatrix.getNumRow() - affine;
+  final int numCol=subMatrix.getNumCol() - affine;
+  final GeneralMatrix matrix=new GeneralMatrix(numRow + nSkipped + affine,numCol + nSkipped + affine);
+  matrix.setZero();
+  for (int j=0; j < firstAffectedOrdinate; j++) {
+    matrix.setElement(j,j,1);
+  }
+  subMatrix.copySubMatrix(0,0,numRow,numCol,firstAffectedOrdinate,firstAffectedOrdinate,matrix);
+  final int offset=numCol - numRow;
+  final int numRowOut=numRow + nSkipped;
+  for (int j=numRowOut - numTrailingOrdinates; j < numRowOut; j++) {
+    matrix.setElement(j,j + offset,1);
+  }
+  if (affine != 0) {
+    subMatrix.copySubMatrix(0,numCol,numRow,affine,firstAffectedOrdinate,numCol + nSkipped,matrix);
+    subMatrix.copySubMatrix(numRow,0,affine,numCol,numRow + nSkipped,firstAffectedOrdinate,matrix);
+    subMatrix.copySubMatrix(numRow,numCol,affine,affine,numRow + nSkipped,numCol + nSkipped,matrix);
+  }
+  return matrix;
+}

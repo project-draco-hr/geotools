@@ -1,0 +1,40 @@
+{
+  if (Utilities.equals(current,expected)) {
+    return gridToCRS;
+  }
+  if (gridToCRS == null) {
+    return null;
+  }
+  final int dimension=gridToCRS.getSourceDimensions();
+  if (xDimension < 0 || xDimension >= dimension) {
+    throw illegalDimension("xDimension",xDimension);
+  }
+  if (yDimension < 0 || yDimension >= dimension) {
+    throw illegalDimension("yDimension",yDimension);
+  }
+  if (xDimension == yDimension) {
+    throw illegalDimension("xDimension","yDimension");
+  }
+  final PixelTranslation source=getPixelTranslation(current);
+  final PixelTranslation target=getPixelTranslation(expected);
+  final double dx=target.dx - source.dx;
+  final double dy=target.dy - source.dy;
+  MathTransform mt;
+  if (dimension == 2 && (xDimension | yDimension) == 1 && dx == dy && Math.abs(dx) == 0.5) {
+    final int index=(dx >= 0) ? 5 : 4;
+synchronized (translations) {
+      mt=translations[index];
+      if (mt == null) {
+        mt=ProjectiveTransform.createTranslation(dimension,dx);
+        translations[index]=mt;
+      }
+    }
+  }
+ else {
+    final Matrix matrix=MatrixFactory.create(dimension + 1);
+    matrix.setElement(xDimension,dimension,dx);
+    matrix.setElement(yDimension,dimension,dy);
+    mt=ProjectiveTransform.create(matrix);
+  }
+  return ConcatenatedTransform.create(mt,gridToCRS);
+}

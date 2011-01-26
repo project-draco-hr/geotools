@@ -1,0 +1,43 @@
+{
+  if (!dirtyTypes.isEmpty()) {
+    String author=(String)transaction.getProperty(VersioningDataStore.AUTHOR);
+    String message=(String)transaction.getProperty(VersioningDataStore.MESSAGE);
+    SimpleFeature f=null;
+    FeatureWriter<SimpleFeatureType,SimpleFeature> writer=null;
+    try {
+      FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+      Filter revisionFilter=ff.id(Collections.singleton(ff.featureId(VersionedPostgisDataStore.TBL_CHANGESETS + "." + getRevision())));
+      writer=wrapped.getFeatureWriter(VersionedPostgisDataStore.TBL_CHANGESETS,(org.geotools.filter.Filter)revisionFilter,transaction);
+      if (!writer.hasNext()) {
+        throw new IOException("Could not find the changeset record " + "that should have been set in the versioned datastore on " + "versioned jdbc state creation");
+      }
+      f=writer.next();
+      f.setAttribute("author",author);
+      f.setAttribute("message",message);
+      f.setDefaultGeometry(toLatLonRectange(bbox));
+      writer.write();
+    }
+ catch (    IllegalAttributeException e) {
+      throw new DataSourceException("Could not set an attribute in changesets, " + "most probably the table schema has been tampered with.",e);
+    }
+ finally {
+      if (writer != null)       writer.close();
+    }
+    Statement st=null;
+    try {
+      st=getConnection().createStatement();
+      for (Iterator it=dirtyTypes.iterator(); it.hasNext(); ) {
+        String typeName=(String)it.next();
+        execute(st,"INSERT INTO " + VersionedPostgisDataStore.TBL_TABLESCHANGED + " "+ "SELECT "+ revision+ ", id "+ "FROM "+ VersionedPostgisDataStore.TBL_VERSIONEDTABLES+ " WHERE SCHEMA = '"+ wrapped.getConfig().getDatabaseSchemaName()+ "' "+ "AND NAME = '"+ typeName+ "'");
+      }
+    }
+ catch (    SQLException e) {
+      throw new DataSourceException("Error occurred while trying to save modified tables for " + "this changeset. This should not happen, probaly there's a " + "bug at work here.",e);
+    }
+ finally {
+      JDBCUtils.close(st);
+    }
+  }
+  super.commit();
+  reset();
+}

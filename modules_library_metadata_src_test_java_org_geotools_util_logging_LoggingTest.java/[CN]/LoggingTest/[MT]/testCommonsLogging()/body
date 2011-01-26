@@ -1,0 +1,31 @@
+{
+  try {
+    Logging.GEOTOOLS.setLoggerFactory("org.geotools.util.logging.CommonsLoggerFactory");
+    Logger logger=Logging.getLogger("org.geotools");
+    assertTrue(logger instanceof CommonsLogger);
+    final org.apache.log4j.Logger log4j=org.apache.log4j.Logger.getLogger("org.geotools");
+    final org.apache.log4j.Level oldLevel=log4j.getLevel();
+    log4j.setLevel(org.apache.log4j.Level.WARN);
+    assertEquals(Level.WARNING,logger.getLevel());
+    assertTrue(logger.isLoggable(Level.WARNING));
+    assertTrue(logger.isLoggable(Level.SEVERE));
+    assertFalse(logger.isLoggable(Level.CONFIG));
+    log4j.setLevel(org.apache.log4j.Level.DEBUG);
+    assertTrue(logger.isLoggable(Level.FINE));
+    assertTrue(logger.isLoggable(Level.SEVERE));
+    log4j.setLevel(org.apache.log4j.Level.OFF);
+    assertEquals(Level.OFF,logger.getLevel());
+    logger.finest("Message to Commons-logging at FINEST level.");
+    logger.finer("Message to Commons-logging at FINER level.");
+    logger.fine("Message to Commons-logging at FINE level.");
+    logger.config("Message to Commons-logging at CONFIG level.");
+    logger.info("Message to Commons-logging at INFO level.");
+    logger.warning("Message to Commons-logging at WARNING level.");
+    logger.severe("Message to Commons-logging at SEVERE level.");
+    log4j.setLevel(oldLevel);
+  }
+  finally {
+    Logging.GEOTOOLS.setLoggerFactory((String)null);
+    assertEquals(Logger.class,Logging.getLogger("org.geotools").getClass());
+  }
+}

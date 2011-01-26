@@ -1,0 +1,32 @@
+{
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery("SELECT b.COLUMN_DEFAULT " + " FROM INFORMATION_SCHEMA.INDEXES A, INFORMATION_SCHEMA.COLUMNS B " + "WHERE a.TABLE_NAME = b.TABLE_NAME "+ " AND a.COLUMN_NAME = b.COLUMN_NAME "+ " AND a.TABLE_NAME = '" + tableName + "' "+ " AND a.COLUMN_NAME = '"+ columnName+ "' "+ " AND a.PRIMARY_KEY = TRUE");
+    String sequence=null;
+    try {
+      rs.next();
+      String string=rs.getString(1);
+      sequence=string.substring(string.indexOf("SYSTEM_SEQUENCE"),string.length() - 1);
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+    try {
+      if (schemaName != null) {
+        rs=st.executeQuery("SELECT CURRVAL('" + schemaName + "','"+ sequence+ "')");
+      }
+ else {
+        rs=st.executeQuery("SELECT CURRVAL('" + sequence + "')");
+      }
+      rs.next();
+      int value=rs.getInt(1);
+      return new Integer(value + 1);
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

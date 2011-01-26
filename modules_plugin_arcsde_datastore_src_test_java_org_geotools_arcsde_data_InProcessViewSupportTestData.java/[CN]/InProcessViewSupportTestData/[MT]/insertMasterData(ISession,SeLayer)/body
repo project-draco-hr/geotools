@@ -1,0 +1,27 @@
+{
+  Command<Void> insertCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeInsert insert=null;
+      SeCoordinateReference coordref=layer.getCoordRef();
+      final String[] columns={"ID","NAME","SHAPE"};
+      for (int i=1; i < 4; i++) {
+        insert=new SeInsert(connection);
+        insert.intoTable(layer.getName(),columns);
+        insert.setWriteMode(true);
+        SeRow row=insert.getRowToSet();
+        SeShape shape=new SeShape(coordref);
+        SDEPoint[] points={new SDEPoint(i,i)};
+        shape.generatePoint(1,points);
+        row.setInteger(0,Integer.valueOf(i));
+        row.setString(1,"name" + i);
+        row.setShape(2,shape);
+        insert.execute();
+        insert.close();
+      }
+      return null;
+    }
+  }
+;
+  session.issue(insertCmd);
+  session.commitTransaction();
+}

@@ -1,0 +1,39 @@
+{
+  if (original == null)   original=filter;
+  Class[] spatialOps=new Class[]{Beyond.class,Contains.class,Crosses.class,Disjoint.class,DWithin.class,Equals.class,Intersects.class,Overlaps.class,Touches.class,Within.class};
+  for (int i=0; i < spatialOps.length; i++) {
+    if (spatialOps[i].isAssignableFrom(filter.getClass())) {
+      if (!fcs.supports(filter)) {
+        postStack.push(filter);
+        return;
+      }
+ else {
+        break;
+      }
+    }
+  }
+  int i=postStack.size();
+  Expression leftGeometry, rightGeometry;
+  leftGeometry=((BinarySpatialOperator)filter).getExpression1();
+  rightGeometry=((BinarySpatialOperator)filter).getExpression2();
+  if (leftGeometry == null || rightGeometry == null) {
+    postStack.push(filter);
+    return;
+  }
+  leftGeometry.accept(this,null);
+  if (i < postStack.size()) {
+    postStack.pop();
+    postStack.push(filter);
+    return;
+  }
+  rightGeometry.accept(this,null);
+  if (i < postStack.size()) {
+    preStack.pop();
+    postStack.pop();
+    postStack.push(filter);
+    return;
+  }
+  preStack.pop();
+  preStack.pop();
+  preStack.push(filter);
+}

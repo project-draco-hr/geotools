@@ -1,0 +1,98 @@
+{
+  List<LineString> clipped=new ArrayList<LineString>();
+  final GeometryFactory gf=line.getFactory();
+  final CoordinateSequenceFactory csf=gf.getCoordinateSequenceFactory();
+  final CoordinateSequence coords=line.getCoordinateSequence();
+  final Ordinates ordinates=new Ordinates(coords.size());
+  double x0=coords.getX(0);
+  double y0=coords.getY(0);
+  boolean prevInside=contained(x0,y0);
+  if (prevInside) {
+    ordinates.add(x0,y0);
+  }
+  double[] segment=new double[4];
+  final int size=coords.size();
+  for (int i=1; i < size; i++) {
+    final double x1=coords.getX(i);
+    final double y1=coords.getY(i);
+    boolean inside=contained(x1,y1);
+    if (inside == prevInside) {
+      if (inside) {
+        ordinates.add(x1,y1);
+      }
+ else {
+        if (!outside(x0,y0,x1,y1)) {
+          segment[0]=x0;
+          segment[1]=y0;
+          segment[2]=x1;
+          segment[3]=y1;
+          double[] clippedSegment=clipSegment(segment);
+          if (clippedSegment != null) {
+            CoordinateSequence cs=csf.create(2,2);
+            cs.setOrdinate(0,0,clippedSegment[0]);
+            cs.setOrdinate(0,1,clippedSegment[1]);
+            cs.setOrdinate(1,0,clippedSegment[2]);
+            cs.setOrdinate(1,1,clippedSegment[3]);
+            clipped.add(gf.createLineString(cs));
+          }
+        }
+      }
+    }
+ else {
+      segment[0]=x0;
+      segment[1]=y0;
+      segment[2]=x1;
+      segment[3]=y1;
+      double[] clippedSegment=clipSegment(segment);
+      if (clippedSegment != null) {
+        if (prevInside) {
+          ordinates.add(clippedSegment[2],clippedSegment[3]);
+        }
+ else {
+          ordinates.add(clippedSegment[0],clippedSegment[1]);
+          ordinates.add(clippedSegment[2],clippedSegment[3]);
+        }
+        if (prevInside) {
+          clipped.add(gf.createLineString(ordinates.toCoordinateSequence(csf)));
+          ordinates.clear();
+        }
+      }
+ else {
+        prevInside=false;
+      }
+    }
+    prevInside=inside;
+    x0=x1;
+    y0=y1;
+  }
+  if (ordinates.size() > 1) {
+    clipped.add(gf.createLineString(ordinates.toCoordinateSequence(csf)));
+  }
+  if (line.isClosed() && clipped.size() > 1) {
+    CoordinateSequence cs0=clipped.get(0).getCoordinateSequence();
+    CoordinateSequence cs1=clipped.get(clipped.size() - 1).getCoordinateSequence();
+    if (cs0.getOrdinate(0,0) == cs1.getOrdinate(cs1.size() - 1,0) && cs0.getOrdinate(0,1) == cs1.getOrdinate(cs1.size() - 1,1)) {
+      CoordinateSequence cs=csf.create(cs0.size() + cs1.size() - 1,2);
+      for (int i=0; i < cs1.size(); i++) {
+        cs.setOrdinate(i,0,cs1.getOrdinate(i,0));
+        cs.setOrdinate(i,1,cs1.getOrdinate(i,1));
+      }
+      for (int i=1; i < cs0.size(); i++) {
+        cs.setOrdinate(i + cs1.size() - 1,0,cs0.getOrdinate(i,0));
+        cs.setOrdinate(i + cs1.size() - 1,1,cs0.getOrdinate(i,1));
+      }
+      clipped.remove(0);
+      clipped.remove(clipped.size() - 1);
+      clipped.add(gf.createLineString(cs));
+    }
+  }
+  if (clipped.size() > 1) {
+    return gf.createMultiLineString((LineString[])clipped.toArray(new LineString[clipped.size()]));
+  }
+ else   if (clipped.size() == 1) {
+    return clipped.get(0);
+  }
+ else {
+    return null;
+  }
+}

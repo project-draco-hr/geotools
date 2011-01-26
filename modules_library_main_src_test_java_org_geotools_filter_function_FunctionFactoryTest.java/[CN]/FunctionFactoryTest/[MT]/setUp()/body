@@ -1,0 +1,31 @@
+{
+  ffIteratorProvider=new FactoryIteratorProvider(){
+    public <T>Iterator<T> iterator(    Class<T> category){
+      if (FunctionFactory.class == category) {
+        List l=new ArrayList();
+        l.add(new FunctionFactory(){
+          @SuppressWarnings("unchecked") public List<FunctionName> getFunctionNames(){
+            return (List)Arrays.asList(new FunctionNameImpl("foo",new String[]{"bar","baz"}));
+          }
+          public Function function(          String name,          List<Expression> args,          Literal fallback){
+            if ("foo".equals(name)) {
+              return new FunctionImpl(){
+                @Override public Object evaluate(                Object object,                Class context){
+                  return "theResult";
+                }
+              }
+;
+            }
+            return null;
+          }
+        }
+);
+        return l.iterator();
+      }
+      return null;
+    }
+  }
+;
+  GeoTools.addFactoryIteratorProvider(ffIteratorProvider);
+  CommonFactoryFinder.reset();
+}

@@ -1,0 +1,33 @@
+{
+  GraphBuilder builder=(GraphBuilder)getProperty(BUILDER);
+  ObjectInputStream objin=new ObjectInputStream(new BufferedInputStream(new FileInputStream((String)getProperty(FILENAME))));
+  int nnodes=objin.readInt();
+  int nedges=objin.readInt();
+  int count=0;
+  while (count++ < nedges) {
+    Edge e=(Edge)objin.readObject();
+    e.getNodeA().setVisited(false);
+    e.getNodeB().setVisited(false);
+    builder.addEdge(e);
+  }
+  for (Iterator itr=builder.getGraph().getEdges().iterator(); itr.hasNext(); ) {
+    Edge e=(Edge)itr.next();
+    if (!e.getNodeA().isVisited()) {
+      e.getNodeA().setVisited(true);
+      builder.addNode(e.getNodeA());
+    }
+    if (!e.getNodeB().isVisited()) {
+      e.getNodeB().setVisited(true);
+      builder.addNode(e.getNodeB());
+    }
+  }
+  try {
+    Node n;
+    while ((n=(Node)objin.readObject()) != null) {
+      builder.addNode(n);
+    }
+  }
+ catch (  EOFException ignore) {
+  }
+  return (builder.getGraph());
+}

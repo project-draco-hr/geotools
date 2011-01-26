@@ -1,0 +1,39 @@
+{
+  int transparentPixel=colorMap.getTransparentPixel();
+  if (transparentPixel > -1) {
+    return colorMap;
+  }
+  final int transferType=colorMap.getTransferType();
+  final int mapSize=colorMap.getMapSize();
+  final int maxSize=65536;
+  if (mapSize == maxSize) {
+    LOGGER.fine("There's no room for a new transparent pixel, " + "returning the original colorMap as is");
+    return colorMap;
+  }
+  final int newMapSize=mapSize + 1;
+  final int[] argb=new int[newMapSize];
+  colorMap.getRGBs(argb);
+  argb[newMapSize - 1]=ColorUtilities.getIntFromColor(0,0,0,0);
+  IndexColorModel targetColorModel;
+  final int significantBits;
+  final int newTransferType;
+{
+    if (DataBuffer.TYPE_BYTE == transferType && newMapSize <= 256) {
+      significantBits=colorMap.getPixelSize();
+      newTransferType=DataBuffer.TYPE_BYTE;
+    }
+ else     if (DataBuffer.TYPE_BYTE == transferType && newMapSize == 257) {
+      significantBits=9;
+      newTransferType=DataBuffer.TYPE_USHORT;
+    }
+ else {
+      significantBits=16;
+      newTransferType=DataBuffer.TYPE_USHORT;
+    }
+  }
+  final int transparentPixelIndex=newMapSize - 1;
+  final boolean hasalpha=true;
+  final int startIndex=0;
+  targetColorModel=new IndexColorModel(significantBits,newMapSize,argb,startIndex,hasalpha,transparentPixelIndex,newTransferType);
+  return targetColorModel;
+}

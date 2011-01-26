@@ -1,0 +1,22 @@
+{
+  SimpleFeatureSource road=sridStore.getFeatureSource("road2");
+  SimpleFeatureCollection features=road.getFeatures();
+  assertEquals(4,features.size());
+  SimpleFeature feature;
+  Geometry geom;
+  Property prop;
+  GeometryType geomType;
+  SimpleFeatureIterator iterator=features.features();
+  while (iterator.hasNext()) {
+    feature=iterator.next();
+    prop=feature.getProperty("geom");
+    assertTrue(prop.getType() instanceof GeometryType);
+    geomType=(GeometryType)prop.getType();
+    Object val=prop.getValue();
+    assertTrue(val != null && val instanceof Geometry);
+    geom=(Geometry)val;
+    Object userData=geom.getUserData();
+    assertTrue(userData != null && userData instanceof CoordinateReferenceSystem);
+    assertEquals(userData,geomType.getCoordinateReferenceSystem());
+  }
+}

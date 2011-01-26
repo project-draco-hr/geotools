@@ -1,0 +1,33 @@
+{
+  ISession session=store.getSession(Transaction.AUTO_COMMIT);
+  final String plainQuery="SELECT " + InProcessViewSupportTestData.MASTER + ".ID, "+ InProcessViewSupportTestData.MASTER+ ".SHAPE, "+ InProcessViewSupportTestData.CHILD+ ".NAME  FROM "+ InProcessViewSupportTestData.MASTER+ " INNER JOIN "+ InProcessViewSupportTestData.CHILD+ " ON "+ InProcessViewSupportTestData.CHILD+ ".MASTER_ID = "+ InProcessViewSupportTestData.MASTER+ ".ID";
+  final int shapeIndex=1;
+  final int expectedCount=7;
+  final SeQuery query=session.issue(new Command<SeQuery>(){
+    @Override public SeQuery execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeQuery query=new SeQuery(connection);
+      query.prepareSql(plainQuery);
+      query.execute();
+      return query;
+    }
+  }
+);
+  try {
+    SdeRow row=session.fetch(query);
+    int count=0;
+    while (row != null) {
+      Object shape=row.getObject(shapeIndex);
+      assertTrue(shape instanceof Integer);
+      count++;
+      row=session.fetch(query);
+    }
+    assertEquals(expectedCount,count);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    session.dispose();
+  }
+}

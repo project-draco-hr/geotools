@@ -1,0 +1,49 @@
+{
+  fireEvent(Level.INFO,"Creating final properties file ",99.9);
+  final Properties properties=new Properties();
+  properties.setProperty("AbsolutePath",Boolean.toString(mosaicConfiguration.isAbsolutePath()));
+  properties.setProperty("LocationAttribute",mosaicConfiguration.getLocationAttribute());
+  final String timeAttribute=mosaicConfiguration.getTimeAttribute();
+  if (timeAttribute != null)   properties.setProperty("TimeAttribute",mosaicConfiguration.getTimeAttribute());
+  final String elevationAttribute=mosaicConfiguration.getElevationAttribute();
+  if (elevationAttribute != null)   properties.setProperty("ElevationAttribute",mosaicConfiguration.getElevationAttribute());
+  final String runtimeAttribute=mosaicConfiguration.getRuntimeAttribute();
+  if (runtimeAttribute != null)   properties.setProperty("RuntimeAttribute",mosaicConfiguration.getRuntimeAttribute());
+  final int numberOfLevels=mosaicConfiguration.getLevelsNum();
+  final double[][] resolutionLevels=mosaicConfiguration.getLevels();
+  properties.setProperty("LevelsNum",Integer.toString(numberOfLevels));
+  final StringBuilder levels=new StringBuilder();
+  for (int k=0; k < numberOfLevels; k++) {
+    levels.append(Double.toString(resolutionLevels[0][k])).append(",").append(Double.toString(resolutionLevels[1][k]));
+    if (k < numberOfLevels - 1)     levels.append(" ");
+  }
+  properties.setProperty("Levels",levels.toString());
+  properties.setProperty("Name",runConfiguration.getIndexName());
+  properties.setProperty("ExpandToRGB",Boolean.toString(mustConvertToRGB));
+  properties.setProperty("Heterogeneous",Boolean.toString(mosaicConfiguration.isHeterogeneous()));
+  if (cachedSPI != null) {
+    properties.setProperty("SuggestedSPI",cachedSPI.getClass().getName());
+  }
+  if (imposedBBox != null) {
+    properties.setProperty("Envelope2D",imposedBBox.getMinX() + "," + imposedBBox.getMinY()+ " "+ imposedBBox.getMaxX()+ ","+ imposedBBox.getMaxY());
+  }
+  OutputStream outStream=null;
+  try {
+    outStream=new BufferedOutputStream(new FileOutputStream(runConfiguration.getRootMosaicDirectory() + "/" + runConfiguration.getIndexName()+ ".properties"));
+    properties.store(outStream,"-Automagically created from GeoTools-");
+  }
+ catch (  FileNotFoundException e) {
+    fireEvent(Level.SEVERE,e.getLocalizedMessage(),0);
+  }
+catch (  IOException e) {
+    fireEvent(Level.SEVERE,e.getLocalizedMessage(),0);
+  }
+ finally {
+    try {
+      if (outStream != null)       outStream.close();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+  }
+}

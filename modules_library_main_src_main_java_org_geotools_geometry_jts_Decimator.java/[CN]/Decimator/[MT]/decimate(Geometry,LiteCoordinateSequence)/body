@@ -1,0 +1,33 @@
+{
+  double[] coords=seq.getXYArray();
+  int dim=seq.getDimension();
+  int numDoubles=coords.length;
+  int readDoubles=0;
+  double prevx, currx, prevy, curry, diffx, diffy;
+  for (int currentDoubles=0; currentDoubles < numDoubles; currentDoubles+=dim) {
+    if (currentDoubles >= dim && currentDoubles < numDoubles - dim) {
+      prevx=coords[readDoubles - dim];
+      currx=coords[currentDoubles];
+      diffx=Math.abs(prevx - currx);
+      prevy=coords[readDoubles - dim + 1];
+      curry=coords[currentDoubles + 1];
+      diffy=Math.abs(prevy - curry);
+      if (diffx > spanx || diffy > spany) {
+        readDoubles=copyCoordinate(coords,dim,readDoubles,currentDoubles);
+      }
+    }
+ else {
+      readDoubles=copyCoordinate(coords,dim,readDoubles,currentDoubles);
+    }
+  }
+  if (g instanceof LinearRing && readDoubles < dim * 4) {
+    decimateRingFully(seq);
+  }
+ else {
+    if (readDoubles < numDoubles) {
+      double[] newCoords=new double[readDoubles];
+      System.arraycopy(coords,0,newCoords,0,readDoubles);
+      seq.setArray(newCoords);
+    }
+  }
+}

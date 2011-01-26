@@ -1,0 +1,40 @@
+{
+  super(null,coverage);
+  this.interpolation=interpolations[index];
+  if (be == null) {
+    this.borderExtender=BorderExtender.createInstance(DEFAULT_BORDER_EXTENDER_TYPE);
+  }
+ else   this.borderExtender=be;
+  if (index + 1 < interpolations.length) {
+    if (interpolations[index + 1] instanceof InterpolationNearest) {
+      this.fallback=this;
+    }
+ else {
+      this.fallback=new Interpolator2D(coverage,interpolations,index + 1,be);
+    }
+  }
+ else {
+    this.fallback=null;
+  }
+  if (fallback != null && fallback != this) {
+    this.toGrid=fallback.toGrid;
+  }
+ else   try {
+    final MathTransform2D transform=gridGeometry.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+    toGrid=transform.inverse();
+  }
+ catch (  NoninvertibleTransformException exception) {
+    throw new IllegalArgumentException(exception);
+  }
+  final int left=interpolation.getLeftPadding();
+  final int top=interpolation.getTopPadding();
+  this.top=top;
+  this.left=left;
+  final int x=image.getMinX();
+  final int y=image.getMinY();
+  this.xmin=x + left;
+  this.ymin=y + top;
+  this.xmax=x + image.getWidth();
+  this.ymax=y + image.getHeight();
+  bounds=new Rectangle(0,0,interpolation.getWidth(),interpolation.getHeight());
+}

@@ -1,0 +1,33 @@
+{
+  Connection conn=getConnection(Transaction.AUTO_COMMIT);
+  try {
+    Statement st=conn.createStatement();
+    try {
+      st.execute("SELECT * FROM geometry_columns LIMIT 0;");
+    }
+ catch (    Throwable t) {
+      String msg="Error querying relation: geometry_columns." + " Possible cause:" + t.getLocalizedMessage();
+      throw new DataSourceException(msg,t);
+    }
+    try {
+      SQLEncoderPostgis encoder=new SQLEncoderPostgis(-1);
+      encoder.setSupportsGEOS(useGeos);
+      PostgisSQLBuilder builder=new PostgisSQLBuilder(encoder,config);
+      initBuilder(builder);
+      st.execute("SELECT * FROM " + builder.encodeTableName(typeName) + " LIMIT 0;");
+    }
+ catch (    Throwable t) {
+      String msg="Error querying relation:" + typeName + "."+ " Possible cause:"+ t.getLocalizedMessage();
+      throw new DataSourceException(msg,t);
+    }
+    st.close();
+  }
+ catch (  SQLException e) {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,e);
+    throw new DataSourceException(e);
+  }
+ finally {
+    JDBCUtils.close(conn,Transaction.AUTO_COMMIT,null);
+  }
+  return super.buildSchema(typeName,mapper);
+}

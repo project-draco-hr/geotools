@@ -1,0 +1,56 @@
+{
+  Filter filter=CQL.toFilter("STRING_COL = strConcat('string', STRING_COL) AND STRING_COL > 'String2' AND BBOX(SHAPE, 10.0,20.0,30.0,40.0)");
+  filteringQuery=new Query(typeName,filter);
+  ArcSDEQuery sdeQuery=createFilteringQuery();
+  FilterSet filters;
+  try {
+    filters=sdeQuery.getFilters();
+  }
+  finally {
+    sdeQuery.session.dispose();
+    sdeQuery.close();
+  }
+  Filter geometryFilter=filters.getGeometryFilter();
+  Filter sqlFilter=filters.getSqlFilter();
+  Filter unsupportedFilter=filters.getUnsupportedFilter();
+  System.out.println("geom: " + geometryFilter + ", sql: "+ sqlFilter+ ", unsupp: "+ unsupportedFilter);
+  assertTrue(geometryFilter instanceof BBOX);
+  assertTrue(sqlFilter instanceof PropertyIsGreaterThan);
+  assertTrue(unsupportedFilter instanceof PropertyIsEqualTo);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  filter=ff.and(ff.id(Collections.singleton(ff.featureId(typeName + ".1"))),ff.equals(ff.property("STRING_COL"),ff.literal("test")));
+  filteringQuery=new Query(typeName,filter);
+  sdeQuery=createFilteringQuery();
+  try {
+    filters=sdeQuery.getFilters();
+  }
+  finally {
+    sdeQuery.session.dispose();
+    sdeQuery.close();
+  }
+  geometryFilter=filters.getGeometryFilter();
+  sqlFilter=filters.getSqlFilter();
+  unsupportedFilter=filters.getUnsupportedFilter();
+  System.out.println("geom: " + geometryFilter + ", sql: "+ sqlFilter+ ", unsupp: "+ unsupportedFilter);
+  Assert.assertEquals(Filter.INCLUDE,geometryFilter);
+  assertTrue(String.valueOf(sqlFilter),sqlFilter instanceof And);
+  Assert.assertEquals(Filter.INCLUDE,unsupportedFilter);
+  List<Filter> singleAnded=Collections.singletonList((Filter)ff.id(Collections.singleton(ff.featureId(typeName + ".1"))));
+  filter=ff.and(singleAnded);
+  filteringQuery=new Query(typeName,filter);
+  sdeQuery=createFilteringQuery();
+  try {
+    filters=sdeQuery.getFilters();
+  }
+  finally {
+    sdeQuery.session.dispose();
+    sdeQuery.close();
+  }
+  geometryFilter=filters.getGeometryFilter();
+  sqlFilter=filters.getSqlFilter();
+  unsupportedFilter=filters.getUnsupportedFilter();
+  System.out.println("geom: " + geometryFilter + ", sql: "+ sqlFilter+ ", unsupp: "+ unsupportedFilter);
+  assertTrue(sqlFilter instanceof Id);
+  Assert.assertEquals(Filter.INCLUDE,geometryFilter);
+  Assert.assertEquals(Filter.INCLUDE,unsupportedFilter);
+}

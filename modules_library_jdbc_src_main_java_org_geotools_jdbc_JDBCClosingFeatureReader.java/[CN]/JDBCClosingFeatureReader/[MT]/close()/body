@@ -1,0 +1,20 @@
+{
+  FeatureReader r=reader;
+  while (r instanceof DelegatingFeatureReader) {
+    if (r instanceof JDBCFeatureReader) {
+      break;
+    }
+    r=((DelegatingFeatureReader)r).getDelegate();
+  }
+  if (r instanceof JDBCFeatureReader) {
+    JDBCFeatureReader jdbcReader=(JDBCFeatureReader)r;
+    JDBCFeatureSource fs=jdbcReader.featureSource;
+    Connection cx=jdbcReader.cx;
+    try {
+      reader.close();
+    }
+  finally {
+      fs.getDataStore().releaseConnection(cx,fs.getState());
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  DXFLayer l=null;
+  String value="", style="STANDARD";
+  int visibility=0, align=0, c=-1;
+  DXFLineType lineType=null;
+  double x=0, y=0, angle=0, rotation=0, zoomfactor=1, thickness=DXFTables.defaultThickness, height=0;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    br.reset();
+  doLoop=false;
+break;
+case X_1:
+x=cvp.getDoubleValue();
+break;
+case Y_1:
+y=cvp.getDoubleValue();
+break;
+case TEXT:
+value=cvp.getStringValue();
+break;
+case ANGLE_1:
+rotation=cvp.getDoubleValue();
+break;
+case THICKNESS:
+thickness=cvp.getDoubleValue();
+break;
+case DOUBLE_1:
+height=cvp.getDoubleValue();
+break;
+case ANGLE_2:
+angle=cvp.getDoubleValue();
+break;
+case DOUBLE_2:
+zoomfactor=cvp.getDoubleValue();
+break;
+case INT_3:
+align=cvp.getShortValue();
+break;
+case LAYER_NAME:
+l=univers.findLayer(cvp.getStringValue());
+break;
+case COLOR:
+c=cvp.getShortValue();
+break;
+case TEXT_STYLE_NAME:
+style=cvp.getStringValue();
+break;
+case VISIBILITY:
+visibility=cvp.getShortValue();
+break;
+case LINETYPE_NAME:
+lineType=univers.findLType(cvp.getStringValue());
+break;
+default :
+break;
+}
+}
+DXFText e=new DXFText(x,y,value,rotation,thickness,height,align,style,c,l,angle,zoomfactor,visibility,lineType);
+e.setType(GeometryType.POINT);
+e.setStartingLineNumber(sln);
+e.setUnivers(univers);
+e.setKey(value);
+log.debug(e.toString(x,y,value,rotation,thickness,height,align,style,c,angle,zoomfactor,visibility));
+log.debug(">Exit at line: " + br.getLineNumber());
+return e;
+}

@@ -1,0 +1,23 @@
+{
+  if (featureTyp != null)   return featureTyp;
+  try {
+    SimpleFeatureType baseType=getBaseFeatureSource().getSchema();
+    List<AttributeDescriptor> attrDescrs=new ArrayList<AttributeDescriptor>();
+    outer:     for (    AttributeDescriptor descr : baseType.getAttributeDescriptors()) {
+      for (      Generalization di : info.getGeneralizations()) {
+        if (di.getDataSourceName().equals(info.getDataSourceName())) {
+          if (di.getFeatureName().equals(baseType.getName().getLocalPart())) {
+            if (di.getGeomPropertyName().equals(descr.getName().getLocalPart()))             continue outer;
+          }
+        }
+      }
+      attrDescrs.add(descr);
+    }
+    GeometryDescriptor geomDescr=(GeometryDescriptor)baseType.getDescriptor(info.getGeomPropertyName());
+    featureTyp=new SimpleFeatureTypeImpl(new NameImpl(dataStore.getNamespace() == null ? null : dataStore.getNamespace().toString(),info.getFeatureName()),attrDescrs,geomDescr,false,null,null,baseType.getDescription());
+  }
+ catch (  IOException ex) {
+    throw new RuntimeException(ex);
+  }
+  return featureTyp;
+}

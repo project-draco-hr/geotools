@@ -1,0 +1,53 @@
+{
+  if (perParameterSetDataStoreCache.containsKey(params)) {
+    return perParameterSetDataStoreCache.get(params);
+  }
+  final URL getCapabilitiesRequest=(URL)URL.lookUp(params);
+  final Boolean protocol=(Boolean)PROTOCOL.lookUp(params);
+  final String user=(String)USERNAME.lookUp(params);
+  final String pass=(String)PASSWORD.lookUp(params);
+  final int timeoutMillis=(Integer)TIMEOUT.lookUp(params);
+  final int buffer=(Integer)BUFFER_SIZE.lookUp(params);
+  final boolean tryGZIP=(Boolean)TRY_GZIP.lookUp(params);
+  final boolean lenient=(Boolean)LENIENT.lookUp(params);
+  final String encoding=(String)ENCODING.lookUp(params);
+  final Integer maxFeatures=(Integer)MAXFEATURES.lookUp(params);
+  final Charset defaultEncoding=Charset.forName(encoding);
+  if (((user == null) && (pass != null)) || ((pass == null) && (user != null))) {
+    throw new IOException("Cannot define only one of USERNAME or PASSWORD, must define both or neither");
+  }
+  final WFSDataStore dataStore;
+  final HTTPProtocol http=new SimpleHttpProtocol();
+  http.setTryGzip(tryGZIP);
+  http.setAuth(user,pass);
+  http.setTimeoutMillis(timeoutMillis);
+  final byte[] wfsCapabilitiesRawData=loadCapabilities(getCapabilitiesRequest,http);
+  final Document capsDoc=parseCapabilities(wfsCapabilitiesRawData);
+  final Element rootElement=capsDoc.getDocumentElement();
+  final String capsVersion=rootElement.getAttribute("version");
+  final Version version=Version.find(capsVersion);
+  if (Version.v1_0_0 == version) {
+    final ConnectionFactory connectionFac=new DefaultConnectionFactory(tryGZIP,user,pass,defaultEncoding,timeoutMillis);
+    InputStream reader=new ByteArrayInputStream(wfsCapabilitiesRawData);
+    final WFS100ProtocolHandler protocolHandler=new WFS100ProtocolHandler(reader,connectionFac);
+    try {
+      HttpMethod prefferredProtocol=Boolean.TRUE.equals(protocol) ? POST : GET;
+      dataStore=new WFS_1_0_0_DataStore(prefferredProtocol,protocolHandler,timeoutMillis,buffer,lenient);
+    }
+ catch (    SAXException e) {
+      logger.warning(e.toString());
+      throw new IOException(e.toString());
+    }
+  }
+ else {
+    InputStream capsIn=new ByteArrayInputStream(wfsCapabilitiesRawData);
+    WFS_1_1_0_Protocol wfs=new WFS_1_1_0_Protocol(capsIn,http);
+    WFSStrategy strategy=determineCorrectStrategy(getCapabilitiesRequest,capsDoc);
+    wfs.setStrategy(strategy);
+    dataStore=new WFS_1_1_0_DataStore(wfs);
+    dataStore.setMaxFeatures(maxFeatures);
+    dataStore.setPreferPostOverGet(protocol);
+  }
+  perParameterSetDataStoreCache.put(new HashMap(params),dataStore);
+  return dataStore;
+}

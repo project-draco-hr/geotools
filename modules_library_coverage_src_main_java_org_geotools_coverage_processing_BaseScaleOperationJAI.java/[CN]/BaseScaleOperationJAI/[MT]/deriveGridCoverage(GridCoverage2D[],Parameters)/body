@@ -1,0 +1,70 @@
+{
+  int indexOfInterpolationParam;
+  try {
+    indexOfInterpolationParam=parameters.parameters.indexOfParam("Interpolation");
+  }
+ catch (  IllegalArgumentException e) {
+    indexOfInterpolationParam=-1;
+  }
+  int indexOfBorderExtenderParam;
+  try {
+    indexOfBorderExtenderParam=parameters.parameters.indexOfParam("BorderExtender");
+  }
+ catch (  IllegalArgumentException e) {
+    indexOfBorderExtenderParam=-1;
+  }
+  final Interpolation interpolation=(Interpolation)(indexOfInterpolationParam == -1 ? new InterpolationNearest() : parameters.parameters.getObjectParameter("Interpolation"));
+  ;
+  final BorderExtender borderExtender=(BorderExtender)(indexOfBorderExtenderParam != -1 ? parameters.parameters.getObjectParameter("BorderExtender") : BorderExtender.createInstance(BorderExtender.BORDER_COPY));
+  GridCoverage2D sourceCoverage=sources[PRIMARY_SOURCE_INDEX];
+  final MathTransform sourceG2W=(sourceCoverage.getGridGeometry()).getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  RenderedImage sourceImage=sourceCoverage.getRenderedImage();
+  ViewType strategy=CoverageUtilities.preferredViewForOperation(sourceCoverage,interpolation,false,parameters.hints);
+switch (strategy) {
+case PHOTOGRAPHIC:
+    break;
+case GEOPHYSICS:
+case PACKED:
+  sourceCoverage=sourceCoverage.view(strategy);
+sourceImage=sourceCoverage.getRenderedImage();
+break;
+}
+RenderingHints targetHints=ImageUtilities.getRenderingHints(sourceImage);
+if (targetHints == null) targetHints=new RenderingHints(null);
+if (parameters.hints != null) targetHints.add(parameters.hints);
+ImageLayout layout=(ImageLayout)targetHints.get(JAI.KEY_IMAGE_LAYOUT);
+if (layout != null) {
+layout=(ImageLayout)layout.clone();
+}
+ else {
+layout=new ImageLayout(sourceImage);
+layout.unsetTileLayout();
+}
+if ((layout.getValidMask() & (ImageLayout.TILE_WIDTH_MASK | ImageLayout.TILE_HEIGHT_MASK | ImageLayout.TILE_GRID_X_OFFSET_MASK| ImageLayout.TILE_GRID_Y_OFFSET_MASK)) == 0) {
+layout.setTileGridXOffset(layout.getMinX(sourceImage));
+layout.setTileGridYOffset(layout.getMinY(sourceImage));
+final int width=layout.getWidth(sourceImage);
+final int height=layout.getHeight(sourceImage);
+if (layout.getTileWidth(sourceImage) > width) layout.setTileWidth(width);
+if (layout.getTileHeight(sourceImage) > height) layout.setTileHeight(height);
+}
+targetHints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+targetHints.put(JAI.KEY_BORDER_EXTENDER,borderExtender);
+if (strategy != ViewType.PHOTOGRAPHIC) targetHints.add(ImageUtilities.DONT_REPLACE_INDEX_COLOR_MODEL);
+ else {
+targetHints.add(ImageUtilities.REPLACE_INDEX_COLOR_MODEL);
+layout.unsetValid(ImageLayout.COLOR_MODEL_MASK);
+layout.unsetValid(ImageLayout.SAMPLE_MODEL_MASK);
+}
+RenderedImage image=createRenderedImage(parameters.parameters,targetHints);
+final PixelTranslation translationValue=PixelTranslation.getPixelTranslation(PixelOrientation.LOWER_RIGHT);
+final LinearTransform translation=ProjectiveTransform.create(AffineTransform.getTranslateInstance(translationValue.dx,translationValue.dy));
+final LinearTransform scale=ProjectiveTransform.create(AffineTransform.getScaleInstance(sourceImage.getWidth() / (1.0 * image.getWidth()),sourceImage.getHeight() / (1.0 * image.getHeight())));
+final MathTransform finalTransform=ConcatenatedTransform.create(translation,ConcatenatedTransform.create(scale,sourceG2W));
+final InternationalString name=deriveName(sources,0,parameters);
+final Map<String,?> properties=getProperties(image,parameters.crs,name,finalTransform,sources,parameters);
+final GridCoverage2D result=getFactory(parameters.hints).create(name,image,parameters.crs,finalTransform,(GridSampleDimension[])(strategy == ViewType.PHOTOGRAPHIC ? null : sourceCoverage.getSampleDimensions().clone()),sources,properties);
+if (strategy == ViewType.GEOPHYSICS) return result.view(ViewType.PACKED);
+if (strategy == ViewType.PACKED) return result.view(ViewType.GEOPHYSICS);
+return result;
+}

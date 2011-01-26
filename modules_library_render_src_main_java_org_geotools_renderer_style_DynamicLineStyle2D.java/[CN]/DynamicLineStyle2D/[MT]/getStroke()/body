@@ -1,0 +1,28 @@
+{
+  Stroke stroke=ls.getStroke();
+  if (stroke == null) {
+    return null;
+  }
+  String joinType;
+  int joinCode;
+  joinType=evaluateExpression(stroke.getLineJoin(),feature,"miter");
+  joinCode=SLDStyleFactory.lookUpJoin(joinType);
+  String capType;
+  int capCode;
+  capType=evaluateExpression(stroke.getLineCap(),feature,"square");
+  capCode=SLDStyleFactory.lookUpCap(capType);
+  float[] dashes=stroke.getDashArray();
+  float width=((Float)stroke.getWidth().evaluate(feature,Float.class)).floatValue();
+  float dashOffset=((Float)stroke.getDashOffset().evaluate(feature,Float.class)).floatValue();
+  if (width <= 1) {
+    width=0;
+  }
+  BasicStroke stroke2d;
+  if ((dashes != null) && (dashes.length > 0)) {
+    stroke2d=new BasicStroke(width,capCode,joinCode,1,dashes,dashOffset);
+  }
+ else {
+    stroke2d=new BasicStroke(width,capCode,joinCode,1);
+  }
+  return stroke2d;
+}

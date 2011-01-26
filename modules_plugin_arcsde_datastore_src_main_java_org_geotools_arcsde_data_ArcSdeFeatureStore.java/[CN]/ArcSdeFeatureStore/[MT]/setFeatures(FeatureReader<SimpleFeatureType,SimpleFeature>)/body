@@ -1,0 +1,27 @@
+{
+  final SimpleFeatureType readerType=reader.getFeatureType();
+  if (!getSchema().equals(readerType)) {
+    throw new IllegalArgumentException("Type mismatch: " + readerType);
+  }
+  final String typeName=typeInfo.getFeatureTypeName();
+  final ISession session=getSession();
+  try {
+    truncate(typeName,session);
+  }
+  finally {
+    session.dispose();
+  }
+  final FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=dataStore.getFeatureWriterAppend(typeName,transaction);
+  try {
+    while (reader.hasNext()) {
+      SimpleFeature feature=reader.next();
+      SimpleFeature newFeature=writer.next();
+      newFeature.setAttributes(feature.getAttributes());
+      writer.write();
+    }
+  }
+  finally {
+    writer.close();
+  }
+}

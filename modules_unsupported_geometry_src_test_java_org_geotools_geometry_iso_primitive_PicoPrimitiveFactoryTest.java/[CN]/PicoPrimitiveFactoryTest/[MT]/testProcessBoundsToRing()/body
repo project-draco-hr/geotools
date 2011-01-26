@@ -1,0 +1,31 @@
+{
+  CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
+  PicoContainer container=container(crs);
+  PrimitiveFactoryImpl factory=(PrimitiveFactoryImpl)container.getComponentInstanceOfType(PrimitiveFactoryImpl.class);
+  PositionFactory positionFactory=(PositionFactory)container.getComponentInstanceOfType(PositionFactory.class);
+  DirectPosition positionA=positionFactory.createDirectPosition(new double[]{10,10});
+  DirectPosition positionB=positionFactory.createDirectPosition(new double[]{70,30});
+  Envelope bounds=new EnvelopeImpl(positionA,positionB);
+  LineSegmentImpl segment=new LineSegmentImpl(crs,new double[]{10,Double.NaN},new double[]{70,Double.NaN},0.0);
+  DirectPosition one=new DirectPositionImpl(segment.getStartPoint());
+  one.setOrdinate(1,bounds.getMinimum(1));
+  DirectPosition two=new DirectPositionImpl(segment.getEndPoint());
+  two.setOrdinate(1,bounds.getMinimum(1));
+  DirectPosition three=new DirectPositionImpl(two);
+  three.setOrdinate(1,bounds.getMaximum(1));
+  DirectPosition four=new DirectPositionImpl(one);
+  four.setOrdinate(1,bounds.getMaximum(1));
+  LineSegment edge1=new LineSegmentImpl(one,two,0.0);
+  LineSegment edge2=new LineSegmentImpl(two,three,0.0);
+  LineSegment edge3=new LineSegmentImpl(three,four,0.0);
+  LineSegment edge4=new LineSegmentImpl(four,one,0.0);
+  List<OrientableCurve> edges=new ArrayList<OrientableCurve>();
+  edges.add(new CurveImpl(edge1));
+  edges.add(new CurveImpl(edge2));
+  edges.add(new CurveImpl(edge3));
+  edges.add(new CurveImpl(edge4));
+  Ring expected=new RingImpl(edges);
+  Ring actual=factory.processBoundsToRing(bounds,segment,1);
+  assertNotNull(actual);
+  assertEquals(expected,actual);
+}

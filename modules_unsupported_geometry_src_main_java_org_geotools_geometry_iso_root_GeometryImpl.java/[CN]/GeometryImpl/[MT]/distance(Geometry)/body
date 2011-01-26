@@ -1,0 +1,123 @@
+{
+  if (geometry instanceof MultiPrimitive) {
+    double minDistance=Double.POSITIVE_INFINITY;
+    MultiPrimitive gc1=(MultiPrimitive)geometry;
+    Iterator<? extends Geometry> iter=gc1.getElements().iterator();
+    while (iter.hasNext()) {
+      GeometryImpl prim=(GeometryImpl)iter.next();
+      double d=prim.distance(this);
+      if (d < minDistance) {
+        minDistance=d;
+        if (minDistance == 0)         return 0;
+      }
+    }
+    return minDistance;
+  }
+ else   if (this instanceof MultiPrimitive) {
+    double minDistance=Double.POSITIVE_INFINITY;
+    MultiPrimitive gc1=(MultiPrimitive)this;
+    Iterator<? extends Geometry> iter=gc1.getElements().iterator();
+    while (iter.hasNext()) {
+      GeometryImpl prim=(GeometryImpl)iter.next();
+      double d=prim.distance(geometry);
+      if (d < minDistance) {
+        minDistance=d;
+        if (minDistance == 0)         return 0;
+      }
+    }
+    return minDistance;
+  }
+ else {
+    if (this.intersects(geometry)) {
+      return 0;
+    }
+    List<LineSegment> lines1=null;
+    List<LineSegment> lines2=null;
+    PointImpl point1=null;
+    PointImpl point2=null;
+    if (this instanceof PointImpl) {
+      point1=(PointImpl)this;
+    }
+ else     if (this instanceof CurveImpl) {
+      lines1=((CurveImpl)this).asLineSegments();
+    }
+ else     if (this instanceof RingImplUnsafe) {
+      lines1=((RingImplUnsafe)this).asLineString().asLineSegments();
+    }
+ else     if (this instanceof RingImpl) {
+      lines1=((RingImpl)this).asLineString().asLineSegments();
+    }
+ else     if (this instanceof SurfaceImpl) {
+      lines1=((RingImplUnsafe)((SurfaceImpl)this).getBoundary().getExterior()).asLineString().asLineSegments();
+    }
+    if (geometry instanceof PointImpl) {
+      point2=(PointImpl)geometry;
+    }
+ else     if (geometry instanceof CurveImpl) {
+      lines2=((CurveImpl)geometry).asLineSegments();
+    }
+ else     if (geometry instanceof RingImplUnsafe) {
+      lines2=((RingImplUnsafe)geometry).asLineString().asLineSegments();
+    }
+ else     if (geometry instanceof RingImpl) {
+      lines2=((RingImpl)geometry).asLineString().asLineSegments();
+    }
+ else     if (geometry instanceof SurfaceImpl) {
+      lines2=((RingImplUnsafe)((SurfaceImpl)geometry).getBoundary().getExterior()).asLineString().asLineSegments();
+    }
+    if (point1 != null && point2 != null) {
+      return point1.getPosition().distance(point2.getPosition());
+    }
+ else     if (lines1 != null) {
+      if (point2 != null) {
+        double minDistance=Double.POSITIVE_INFINITY;
+        for (int i=0; i < lines1.size(); i++) {
+          Coordinate c1=new Coordinate(point2.getRepresentativePoint().getCoordinates());
+          Coordinate cA=new Coordinate(lines1.get(i).getStartPoint().getCoordinates());
+          Coordinate cB=new Coordinate(lines1.get(i).getEndPoint().getCoordinates());
+          double d=CGAlgorithms.distancePointLine(c1,cA,cB);
+          if (d < minDistance) {
+            minDistance=d;
+            if (minDistance == 0)             return 0;
+          }
+        }
+        return minDistance;
+      }
+ else       if (lines2 != null) {
+        double minDistance=Double.POSITIVE_INFINITY;
+        for (int i=0; i < lines1.size(); i++) {
+          for (int y=0; y < lines2.size(); y++) {
+            Coordinate A=new Coordinate(lines1.get(i).getStartPoint().getCoordinates());
+            Coordinate B=new Coordinate(lines1.get(i).getEndPoint().getCoordinates());
+            Coordinate C=new Coordinate(lines2.get(y).getStartPoint().getCoordinates());
+            Coordinate D=new Coordinate(lines2.get(y).getEndPoint().getCoordinates());
+            double d=CGAlgorithms.distanceLineLine(A,B,C,D);
+            if (d < minDistance) {
+              minDistance=d;
+              if (minDistance == 0)               return 0;
+            }
+          }
+        }
+        return minDistance;
+      }
+    }
+ else     if (lines2 != null) {
+      if (point1 != null) {
+        double minDistance=Double.POSITIVE_INFINITY;
+        for (int i=0; i < lines2.size(); i++) {
+          Coordinate c1=new Coordinate(point1.getRepresentativePoint().getCoordinates());
+          Coordinate cA=new Coordinate(lines2.get(i).getStartPoint().getCoordinates());
+          Coordinate cB=new Coordinate(lines2.get(i).getEndPoint().getCoordinates());
+          double d=CGAlgorithms.distancePointLine(c1,cA,cB);
+          if (d < minDistance) {
+            minDistance=d;
+            if (minDistance == 0)             return 0;
+          }
+        }
+        return minDistance;
+      }
+    }
+  }
+  Assert.isTrue(false);
+  return Double.NaN;
+}

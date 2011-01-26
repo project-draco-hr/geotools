@@ -1,0 +1,21 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("DELETE FROM ");
+  encodeTableName(featureType.getTypeName(),sql,null);
+  PreparedFilterToSQL toSQL=null;
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    try {
+      toSQL=createPreparedFilterToSQL(featureType);
+      sql.append(" ").append(toSQL.encodeToString(filter));
+    }
+ catch (    FilterToSQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  LOGGER.fine(sql.toString());
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  if (toSQL != null) {
+    setPreparedFilterValues(ps,toSQL,0,cx);
+  }
+  return ps;
+}

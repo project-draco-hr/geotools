@@ -1,0 +1,27 @@
+{
+  final int minimum=-2000;
+  final int maximum=4000;
+  final int padValue=-9999;
+  final SampleConverter[] converters=new SampleConverter[1];
+  final GeographicImageReader reader=new NullImageReader(DataBuffer.TYPE_USHORT,minimum,maximum,padValue);
+  final GeographicImageReadParam param=(GeographicImageReadParam)reader.getDefaultReadParam();
+  param.setPaletteName("grayscale");
+  final ImageTypeSpecifier specifier=reader.getRawImageType(0,param,converters);
+  final SampleConverter converter=converters[0];
+  assertNotNull(converter);
+  assertEquals(1 - minimum,converter.getOffset(),0.0);
+  assertEquals(1,converter.convert(minimum));
+  assertEquals(1 + maximum - minimum,converter.convert(maximum));
+  assertEquals(0,converter.convert(padValue));
+  final SampleModel sm=specifier.getSampleModel();
+  assertNotNull(sm);
+  assertEquals(DataBuffer.TYPE_USHORT,sm.getDataType());
+  final ColorModel cm=specifier.getColorModel();
+  assertTrue(cm instanceof IndexColorModel);
+  final IndexColorModel indexed=(IndexColorModel)cm;
+  assertEquals(2 + maximum - minimum,indexed.getMapSize());
+  assertEquals(0xFF000000,indexed.getRGB(converter.convert(minimum) & 0xFFFF));
+  assertEquals(0xFFFFFFFF,indexed.getRGB(converter.convert(maximum) & 0xFFFF));
+  assertEquals(0x00000000,indexed.getRGB(converter.convert(padValue) & 0xFFFF));
+  assertEquals(0,indexed.getTransparentPixel());
+}

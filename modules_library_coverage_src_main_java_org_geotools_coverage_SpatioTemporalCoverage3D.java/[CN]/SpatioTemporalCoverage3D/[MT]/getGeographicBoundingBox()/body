@@ -1,0 +1,25 @@
+{
+  if (boundingBox == null) {
+    final Envelope envelope=getEnvelope();
+    Rectangle2D geographicArea=XRectangle2D.createFromExtremums(envelope.getMinimum(xDimension),envelope.getMinimum(yDimension),envelope.getMaximum(xDimension),envelope.getMaximum(yDimension));
+    final CoordinateReferenceSystem sourceCRS=CRS.getHorizontalCRS(crs);
+    if (sourceCRS == null) {
+      throw new TransformException(Errors.format(ErrorKeys.CANT_SEPARATE_CRS_$1,crs.getName()));
+    }
+    final CoordinateReferenceSystem targetCRS=DefaultGeographicCRS.WGS84;
+    if (!CRS.equalsIgnoreMetadata(targetCRS,sourceCRS)) {
+      final CoordinateOperation transform;
+      final CoordinateOperationFactory factory;
+      factory=ReferencingFactoryFinder.getCoordinateOperationFactory(HINTS);
+      try {
+        transform=factory.createOperation(sourceCRS,targetCRS);
+      }
+ catch (      FactoryException exception) {
+        throw new TransformPathNotFoundException(exception);
+      }
+      geographicArea=CRS.transform(transform,geographicArea,geographicArea);
+    }
+    boundingBox=(GeographicBoundingBox)new GeographicBoundingBoxImpl(geographicArea).unmodifiable();
+  }
+  return boundingBox;
+}

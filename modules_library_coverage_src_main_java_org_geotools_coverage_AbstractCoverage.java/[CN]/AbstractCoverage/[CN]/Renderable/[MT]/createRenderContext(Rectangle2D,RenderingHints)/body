@@ -1,0 +1,22 @@
+{
+  final GeneralMatrix matrix;
+  final GeneralEnvelope srcEnvelope=new GeneralEnvelope(bounds);
+  final GeneralEnvelope dstEnvelope=new GeneralEnvelope(gridBounds);
+  if (crs != null) {
+    final CoordinateSystem cs=crs.getCoordinateSystem();
+    final AxisDirection[] axis=new AxisDirection[]{cs.getAxis(xAxis).getDirection(),cs.getAxis(yAxis).getDirection()};
+    final AxisDirection[] normalized=axis.clone();
+    if (false) {
+      Arrays.sort(normalized);
+      for (int i=normalized.length; --i >= 0; ) {
+        normalized[i]=normalized[i].absolute();
+      }
+    }
+    normalized[1]=normalized[1].opposite();
+    matrix=new GeneralMatrix(srcEnvelope,axis,dstEnvelope,normalized);
+  }
+ else {
+    matrix=new GeneralMatrix(srcEnvelope,dstEnvelope);
+  }
+  return new RenderContext(matrix.toAffineTransform2D(),hints);
+}

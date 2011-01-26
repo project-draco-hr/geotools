@@ -1,0 +1,34 @@
+{
+  if ((g == null) || g.getNumGeometries() <= 0) {
+    throw new IOException("Bad MultiLineString Data");
+  }
+  AttributesImpl ai=new AttributesImpl();
+  if (g.getUserData() != null) {
+    ai.addAttribute("","srsName","","anyURI",g.getUserData().toString());
+  }
+ else {
+    if (g.getSRID() != 0) {
+      ai.addAttribute("","srsName","","anyURI","" + g.getSRID());
+    }
+ else {
+      throw new IOException("srsName required for MultiPoint " + (e == null ? "" : e.getName()));
+    }
+  }
+  if (e == null) {
+    output.startElement(GMLSchema.NAMESPACE,"MultiLineString",ai);
+  }
+ else {
+    output.startElement(e.getNamespace(),e.getName(),ai);
+  }
+  for (int i=0; i < g.getNumGeometries(); i++) {
+    output.startElement(GMLSchema.NAMESPACE,"lineStringMember",null);
+    encode(null,(LineString)g.getGeometryN(i),output);
+    output.endElement(GMLSchema.NAMESPACE,"lineStringMember");
+  }
+  if (e == null) {
+    output.endElement(GMLSchema.NAMESPACE,"MultiLineString");
+  }
+ else {
+    output.endElement(e.getNamespace(),e.getName());
+  }
+}

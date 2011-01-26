@@ -1,0 +1,34 @@
+{
+  ensureNonNull("code",code);
+  String authority=null;
+  FactoryRegistryException cause=null;
+  final Collection<AuthorityFactory> factories=getFactories();
+  final char separator=getSeparator(code);
+  for (int split=code.lastIndexOf(separator); split >= 0; split=code.lastIndexOf(separator,split - 1)) {
+    if (!canSeparateAt(code,split)) {
+      continue;
+    }
+    authority=code.substring(0,split).trim();
+    if (factories != null) {
+      for (      final AuthorityFactory factory : factories) {
+        if (type.isAssignableFrom(factory.getClass())) {
+          if (Citations.identifierMatches(factory.getAuthority(),authority)) {
+            return type.cast(factory);
+          }
+        }
+      }
+    }
+    final AuthorityFactory factory;
+    try {
+      factory=fromFactoryRegistry(authority,type);
+    }
+ catch (    FactoryRegistryException exception) {
+      cause=exception;
+      continue;
+    }
+    if (factory != null) {
+      return type.cast(factory);
+    }
+  }
+  throw noSuchAuthority(code,authority,cause);
+}

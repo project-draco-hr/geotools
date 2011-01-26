@@ -1,0 +1,50 @@
+{
+  Hexagon hn=null;
+class Shift {
+    double dx;
+    double dy;
+    public Shift(    double dx,    double dy){
+      this.dx=dx;
+      this.dy=dy;
+    }
+  }
+  final double MAJOR=2.0 * SIDE_LEN;
+  final double MINOR=Math.sqrt(3.0) * SIDE_LEN;
+  Map<Neighbor,Shift> flatShifts=new HashMap<Neighbor,Shift>();
+  flatShifts.put(Neighbor.LOWER,new Shift(0.0,-MINOR));
+  flatShifts.put(Neighbor.LOWER_LEFT,new Shift(-0.75 * MAJOR,-0.5 * MINOR));
+  flatShifts.put(Neighbor.LOWER_RIGHT,new Shift(0.75 * MAJOR,-0.5 * MINOR));
+  flatShifts.put(Neighbor.UPPER,new Shift(0.0,MINOR));
+  flatShifts.put(Neighbor.UPPER_LEFT,new Shift(-0.75 * MAJOR,0.5 * MINOR));
+  flatShifts.put(Neighbor.UPPER_RIGHT,new Shift(0.75 * MAJOR,0.5 * MINOR));
+  Map<Neighbor,Shift> angledShifts=new HashMap<Neighbor,Shift>();
+  angledShifts.put(Neighbor.LEFT,new Shift(-MINOR,0.0));
+  angledShifts.put(Neighbor.LOWER_LEFT,new Shift(-0.5 * MINOR,-0.75 * MAJOR));
+  angledShifts.put(Neighbor.LOWER_RIGHT,new Shift(0.5 * MINOR,-0.75 * MAJOR));
+  angledShifts.put(Neighbor.RIGHT,new Shift(MINOR,0.0));
+  angledShifts.put(Neighbor.UPPER_LEFT,new Shift(-0.5 * MINOR,0.75 * MAJOR));
+  angledShifts.put(Neighbor.UPPER_RIGHT,new Shift(0.5 * MINOR,0.75 * MAJOR));
+  Map<Orientation,Map<Neighbor,Shift>> table=new HashMap<Orientation,Map<Neighbor,Shift>>();
+  table.put(Orientation.FLAT,flatShifts);
+  table.put(Orientation.ANGLED,angledShifts);
+  for (  Orientation o : Orientation.values()) {
+    AbstractGridBuilder gridBuilder=o == Orientation.ANGLED ? angledBuilder : flatBuilder;
+    Hexagon h0=Hexagons.create(0.0,0.0,SIDE_LEN,o,null);
+    for (    Neighbor n : Neighbor.values()) {
+      boolean expectEx=!gridBuilder.isValidNeighbor(n);
+      boolean gotEx=false;
+      try {
+        hn=(Hexagon)gridBuilder.createNeighbor(h0,n);
+      }
+ catch (      IllegalArgumentException ex) {
+        gotEx=true;
+      }
+      assertEquals("Failed for case " + o + " "+ n,expectEx,gotEx);
+      if (!gotEx) {
+        Shift shift=table.get(o).get(n);
+        assertNotNull("Error in test code",shift);
+        assertNeighborVertices(h0,hn,shift.dx,shift.dy);
+      }
+    }
+  }
+}

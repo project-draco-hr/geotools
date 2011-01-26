@@ -1,0 +1,14 @@
+{
+  ensureNonNull("envelope",envelope);
+  ensureNonNull("crs",crs);
+  if (envelope instanceof ReferencedEnvelope) {
+    final ReferencedEnvelope referenced=(ReferencedEnvelope)envelope;
+    final CoordinateReferenceSystem implicitCRS=referenced.getCoordinateReferenceSystem();
+    if ((crs != null) && !CRS.equalsIgnoreMetadata(crs,implicitCRS)) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.MISMATCHED_ENVELOPE_CRS_$2,crs.getName().getCode(),implicitCRS.getName().getCode()));
+    }
+  }
+  final CoordinateReferenceSystem crs2D=CRS.getHorizontalCRS(crs);
+  if (crs2D == null)   throw new MismatchedDimensionException(Errors.format(ErrorKeys.CANT_SEPARATE_CRS_$1,crs));
+  return new Envelope2D(crs2D,envelope.getMinX(),envelope.getMinY(),envelope.getWidth(),envelope.getHeight());
+}

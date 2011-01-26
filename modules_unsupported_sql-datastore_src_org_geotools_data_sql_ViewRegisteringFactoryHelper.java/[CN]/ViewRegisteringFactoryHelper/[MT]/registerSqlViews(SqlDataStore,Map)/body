@@ -1,0 +1,20 @@
+{
+  Map cleanedUp=cleanUpViewDefinitions(params);
+  for (Iterator it=cleanedUp.entrySet().iterator(); it.hasNext(); ) {
+    Map.Entry entry=(Map.Entry)it.next();
+    String typeName=(String)entry.getKey();
+    String sqlQuery=(String)entry.getValue();
+    LOGGER.finer("registering view " + typeName);
+    LOGGER.finest("sql query is '" + sqlQuery + "'");
+    SelectBody selectBody=SqlParser.parse(sqlQuery);
+    if (selectBody instanceof Union) {
+      dataStore.registerView(typeName,(Union)selectBody);
+    }
+ else     if (selectBody instanceof PlainSelect) {
+      dataStore.registerView(typeName,(PlainSelect)selectBody);
+    }
+ else {
+      throw new IllegalStateException(selectBody.getClass().getName());
+    }
+  }
+}

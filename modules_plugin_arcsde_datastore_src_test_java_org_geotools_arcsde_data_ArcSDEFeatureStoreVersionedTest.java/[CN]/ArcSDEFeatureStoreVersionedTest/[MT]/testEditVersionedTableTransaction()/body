@@ -1,0 +1,80 @@
+{
+  try {
+    final String tableName;
+{
+      ISession session=testData.getConnectionPool().getSession();
+      try {
+        SeTable versionedTable=testData.createVersionedTable(session);
+        tableName=versionedTable.getQualifiedName();
+      }
+  finally {
+        session.dispose();
+      }
+    }
+    final ArcSDEDataStore dataStore=testData.getDataStore();
+    final SimpleFeatureSource source;
+    final SimpleFeatureStore store;
+    source=dataStore.getFeatureSource(tableName);
+    store=(SimpleFeatureStore)dataStore.getFeatureSource(tableName);
+    Transaction transaction=new DefaultTransaction();
+    store.setTransaction(transaction);
+    ArcSdeResourceInfo info=(ArcSdeResourceInfo)store.getInfo();
+    assertTrue(info.isVersioned());
+    final SimpleFeatureType schema=store.getSchema();
+    final int initialCount=store.getCount(Query.ALL);
+    assertEquals(0,initialCount);
+    final WKTReader reader=new WKTReader();
+    Object[] content=new Object[2];
+    SimpleFeature feature;
+    SimpleFeatureCollection collection;
+    int count;
+    content[0]="Feature name 1";
+    content[1]=reader.read("POINT (10 10)");
+    feature=SimpleFeatureBuilder.build(schema,content,(String)null);
+    collection=DataUtilities.collection(feature);
+    store.addFeatures(collection);
+    count=store.getCount(Query.ALL);
+    assertEquals(1,count);
+    assertEquals(0,source.getCount(Query.ALL));
+{
+      SimpleFeatureIterator features=store.getFeatures().features();
+      SimpleFeature f=features.next();
+      features.close();
+      Object obj=f.getDefaultGeometry();
+      assertTrue(obj instanceof Point);
+      Point p=(Point)obj;
+      double x=p.getX();
+      double y=p.getY();
+      assertEquals(10D,x,1E-5);
+      assertEquals(10D,y,1E-5);
+    }
+    transaction.commit();
+    assertEquals(1,source.getCount(Query.ALL));
+    content[0]="Feature name 2";
+    content[1]=reader.read("POINT (2 2)");
+    feature=SimpleFeatureBuilder.build(schema,content,(String)null);
+    collection=DataUtilities.collection(feature);
+    store.addFeatures(collection);
+    count=store.getCount(Query.ALL);
+    assertEquals(2,count);
+    assertEquals(1,source.getCount(Query.ALL));
+    transaction.rollback();
+    assertEquals(1,store.getCount(Query.ALL));
+    transaction.close();
+{
+      SimpleFeatureIterator features=source.getFeatures().features();
+      SimpleFeature f=features.next();
+      features.close();
+      Object obj=f.getDefaultGeometry();
+      assertTrue(obj instanceof Point);
+      Point p=(Point)obj;
+      double x=p.getX();
+      double y=p.getY();
+      assertEquals(10D,x,1E-5);
+      assertEquals(10D,y,1E-5);
+    }
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException(e);
+  }
+}

@@ -1,0 +1,32 @@
+{
+  ShapefileDataStoreFactory fac=new ShapefileDataStoreFactory();
+  ShapefileDataStore store=(ShapefileDataStore)fac.createDataStore(TestData.getResource(Timing.class,"theme1.shp"));
+  DefaultMapContext context=new DefaultMapContext();
+  context.addLayer(store.getFeatureSource(),createLineStyle("theme1"));
+  if (NO_REPROJECTION)   context.setAreaOfInterest(new Envelope(),store.getSchema().getDefaultGeometry().getCoordinateSystem());
+  ShapefileRenderer renderer=new ShapefileRenderer(context);
+  if (ANTI_ALIASING) {
+    RenderingHints hints=new RenderingHints(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+    renderer.setJava2DHints(hints);
+  }
+  Image image;
+  Graphics2D g;
+  image=createImage();
+  g=createGraphics(image);
+  g.setColor(Color.white);
+  g.fillRect(0,0,w,h);
+  Envelope bounds=new Envelope(-7.105552354197932,8.20555235419793,-3.239388966356115,4.191388966388683);
+  if (!ALL_DATA)   bounds=new Envelope(bounds.getMinX() + bounds.getWidth() / 4,bounds.getMaxX() - bounds.getWidth() / 4,bounds.getMinY() + bounds.getHeight() / 4,bounds.getMaxY() - bounds.getHeight() / 4);
+  if (ACCURATE)   renderer.paint(g,new Rectangle(w,h),bounds);
+  long start=System.currentTimeMillis();
+  renderer.paint(g,new Rectangle(w,h),bounds);
+  if (ACCURATE) {
+    for (int i=0; i < CYCLES; i++)     renderer.paint(g,new Rectangle(w,h),bounds);
+  }
+  long end=System.currentTimeMillis();
+  if (ACCURATE) {
+    out.write("tiny " + getTestName() + "="+ (end - start) / 3 + "\n");
+  }
+ else   out.write("tiny " + getTestName() + "="+ (end - start)+ "\n");
+  if (DISPLAY)   display("tiny",image,w,h);
+}

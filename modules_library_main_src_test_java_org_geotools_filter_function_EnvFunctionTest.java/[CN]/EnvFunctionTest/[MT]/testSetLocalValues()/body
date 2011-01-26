@@ -1,0 +1,41 @@
+{
+  System.out.println("   setLocalValues");
+  final String key1="foo";
+  final String key2="bar";
+  final Map<String,Object> table0=new HashMap<String,Object>();
+  table0.put(key1,1);
+  table0.put(key2,2);
+  final Map<String,Object> table1=new HashMap<String,Object>();
+  table1.put(key1,10);
+  table1.put(key2,20);
+  final List<Map<String,Object>> tables=new ArrayList<Map<String,Object>>();
+  tables.add(table0);
+  tables.add(table1);
+  final CountDownLatch latch=new CountDownLatch(2);
+class Task implements Runnable {
+    private final int threadIndex;
+    public Task(    int threadIndex){
+      this.threadIndex=threadIndex;
+    }
+    public void run(){
+      EnvFunction.setLocalValues(tables.get(threadIndex));
+      latch.countDown();
+      try {
+        latch.await();
+      }
+ catch (      InterruptedException ex) {
+        throw new IllegalStateException(ex);
+      }
+      Map<String,Object> table=tables.get(threadIndex);
+      for (      String name : table.keySet()) {
+        Object result=ff.function("env",ff.literal(name)).evaluate(null);
+        int value=((Number)result).intValue();
+        assertEquals(table.get(name),value);
+      }
+    }
+  }
+  Future f1=executor.submit(new Task(0));
+  Future f2=executor.submit(new Task(1));
+  f1.get();
+  f2.get();
+}

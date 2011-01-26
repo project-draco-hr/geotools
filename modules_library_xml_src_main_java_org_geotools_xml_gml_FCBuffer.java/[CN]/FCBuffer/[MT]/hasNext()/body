@@ -1,0 +1,51 @@
+{
+  if (exception instanceof StopException) {
+    return false;
+  }
+  if (exception != null) {
+    IOException e=new IOException(exception.toString());
+    e.initCause(exception);
+    throw e;
+  }
+  logger.finest("hasNext " + size);
+  resetTimer();
+  while ((size <= 1) && (state != FINISH) && (state != STOP)) {
+    if (exception != null) {
+      state=STOP;
+      IOException e=new IOException(exception.toString());
+      e.initCause(exception);
+      throw e;
+    }
+    logger.finest("waiting for parser");
+    try {
+synchronized (this) {
+        wait(200);
+      }
+    }
+ catch (    InterruptedException e) {
+    }
+    if (lastUpdate.before(new Date(Calendar.getInstance().getTimeInMillis() - timeout))) {
+      exception=new SAXException("Timeout");
+      state=STOP;
+    }
+  }
+  if (state == STOP) {
+    if (exception != null) {
+      IOException e=new IOException(exception.toString());
+      e.initCause(exception);
+      throw e;
+    }
+    return false;
+  }
+  if (state == FINISH) {
+    return !(size == 0);
+  }
+  if (size == 0) {
+    state=STOP;
+    if (exception != null) {
+      throw new IOException(exception.toString());
+    }
+    throw new IOException("There was an error");
+  }
+  return true;
+}

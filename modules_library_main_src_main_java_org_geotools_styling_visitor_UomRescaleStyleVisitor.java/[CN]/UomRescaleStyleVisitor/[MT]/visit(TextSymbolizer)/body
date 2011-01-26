@@ -1,0 +1,29 @@
+{
+  super.visit(text);
+  TextSymbolizer copy=(TextSymbolizer)pages.peek();
+  Unit<Length> uom=copy.getUnitOfMeasure();
+  Font[] fonts=copy.getFonts();
+  for (  Font font : fonts)   font.setSize(rescale(font.getSize(),mapScale,uom));
+  copy.setFonts(fonts);
+  LabelPlacement placement=copy.getLabelPlacement();
+  if (placement instanceof PointPlacement) {
+    PointPlacement pointPlacement=(PointPlacement)placement;
+    Displacement disp=pointPlacement.getDisplacement();
+    if (disp != null) {
+      disp.setDisplacementX(rescale(disp.getDisplacementX(),mapScale,uom));
+      disp.setDisplacementY(rescale(disp.getDisplacementY(),mapScale,uom));
+      pointPlacement.setDisplacement(disp);
+    }
+  }
+ else   if (placement instanceof LinePlacement) {
+    LinePlacement linePlacement=(LinePlacement)placement;
+    linePlacement.setGap(rescale(linePlacement.getGap(),mapScale,uom));
+    linePlacement.setInitialGap(rescale(linePlacement.getInitialGap(),mapScale,uom));
+    linePlacement.setPerpendicularOffset(rescale(linePlacement.getPerpendicularOffset(),mapScale,uom));
+  }
+  copy.setLabelPlacement(placement);
+  if (copy.getHalo() != null) {
+    copy.getHalo().setRadius(rescale(copy.getHalo().getRadius(),mapScale,uom));
+  }
+  copy.setUnitOfMeasure(NonSI.PIXEL);
+}

@@ -1,0 +1,33 @@
+{
+  String currLine=reader.readLine();
+  while (currLine != null) {
+    currLine=currLine.trim();
+    int firstSpaceIndex=currLine.indexOf(' ');
+    if (firstSpaceIndex == -1) {
+      throw new IOException("Illegal line in GTOPO30 header file");
+    }
+    final String key=currLine.substring(0,firstSpaceIndex).toUpperCase();
+    final String value=currLine.substring(firstSpaceIndex).trim();
+    if (propertyMap.containsKey(key)) {
+      final Class propClass=getPropertyClass(key);
+      try {
+        if (propClass == String.class) {
+          propertyMap.put(key,value);
+        }
+ else         if (propClass == Integer.class) {
+          propertyMap.put(key,Integer.valueOf(value));
+        }
+ else         if (propClass == Double.class) {
+          propertyMap.put(key,Double.valueOf(value));
+        }
+      }
+ catch (      NumberFormatException nfe) {
+        final IOException ex=new IOException();
+        ex.initCause(nfe);
+        throw ex;
+      }
+    }
+    currLine=reader.readLine();
+  }
+  reader.close();
+}

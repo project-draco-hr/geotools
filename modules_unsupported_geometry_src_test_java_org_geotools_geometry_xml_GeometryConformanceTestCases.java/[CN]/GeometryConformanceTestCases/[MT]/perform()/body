@@ -1,0 +1,21 @@
+{
+  String name=getName();
+  name=name.substring(4) + ".xml";
+  File file=TestData.file(GeometryConformanceTestCases.class,name);
+  GeometryTestParser parser=new GeometryTestParser();
+  Properties excludes=findExclusions(file);
+  if (isAllExcluded(excludes))   return;
+  InputStream inputStream=file.toURI().toURL().openStream();
+  InputSource inputSource=new InputSource(inputStream);
+  GeometryTestContainer container=parser.parseTestDefinition(inputSource);
+  container.checkTestOverrides(name,excludes);
+  TestResult tempResult=new TestResult();
+  container.runAllTestCases(tempResult);
+  assertTrue("failures: " + tempResult.failureCount(),tempResult.wasSuccessful());
+  Enumeration enums=tempResult.failures();
+  while (enums.hasMoreElements()) {
+    System.out.println("what");
+    AssertionFailedError failure=(AssertionFailedError)enums.nextElement();
+    assertTrue("--" + failure.toString(),tempResult.wasSuccessful());
+  }
+}

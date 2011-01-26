@@ -1,0 +1,23 @@
+{
+  String typeName="Places";
+  SimpleFeatureSource fs=dataStore.getFeatureSource("Places");
+  SimpleFeatureType ft=fs.getSchema();
+  org.opengis.filter.FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  PropertyName column=ff.property("Name");
+  Literal compareValue=ff.literal("Zena");
+  PropertyIsEqualTo filter=ff.equals(column,compareValue);
+  String pattern="s_met*s";
+  PropertyIsLike lf=ff.like(column,pattern);
+  sqlBuilder=(DB2SQLBuilder)dataStore.getSqlBuilder("Places");
+  DefaultQuery query=new DefaultQuery("Places",lf);
+  Filter preFilter=sqlBuilder.getPreQueryFilter(query.getFilter());
+  Filter postFilter=sqlBuilder.getPostQueryFilter(query.getFilter());
+  String[] attrNames=new String[ft.getAttributeCount()];
+  AttributeDescriptor[] attrTypes=new AttributeDescriptor[ft.getAttributeCount()];
+  for (int i=0; i < ft.getAttributeCount(); i++) {
+    attrNames[i]=ft.getDescriptor(i).getLocalName();
+    attrTypes[i]=ft.getDescriptor(i);
+  }
+  String likeQuery=this.sqlBuilder.buildSQLQuery("Places",this.dataStore.getFIDMapper("Places"),attrTypes,preFilter);
+  assertEquals("LIKE encoding failed","SELECT \"Id\", \"Name\", DB2GSE.ST_AsBinary(\"Geom\") FROM \"Test\".\"Places\" WHERE \"Name\" LIKE 's_met%s' ",likeQuery);
+}

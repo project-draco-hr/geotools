@@ -1,0 +1,47 @@
+{
+  final int type=transform.getType();
+  if (type == TYPE_IDENTITY) {
+    return shape;
+  }
+  if ((type & (TYPE_GENERAL_ROTATION | TYPE_GENERAL_TRANSFORM)) == 0) {
+    if (shape instanceof Rectangle2D) {
+      final Rectangle2D rect=(Rectangle2D)shape;
+      return transform(transform,rect,overwrite ? rect : null);
+    }
+    if ((type & (TYPE_FLIP & TYPE_MASK_ROTATION)) == 0) {
+      if (shape instanceof RectangularShape) {
+        RectangularShape rect=(RectangularShape)shape;
+        if (!overwrite) {
+          rect=(RectangularShape)rect.clone();
+        }
+        final Rectangle2D frame=rect.getFrame();
+        rect.setFrame(transform(transform,frame,frame));
+        return rect;
+      }
+    }
+  }
+  if (shape instanceof GeneralPath) {
+    final GeneralPath path=(GeneralPath)shape;
+    if (overwrite) {
+      path.transform(transform);
+    }
+ else {
+      shape=path.createTransformedShape(transform);
+    }
+  }
+ else   if (shape instanceof Area) {
+    final Area area=(Area)shape;
+    if (overwrite) {
+      area.transform(transform);
+    }
+ else {
+      shape=area.createTransformedArea(transform);
+    }
+  }
+ else {
+    final GeneralPath path=new GeneralPath(shape);
+    path.transform(transform);
+    shape=path;
+  }
+  return shape;
+}

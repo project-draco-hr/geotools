@@ -1,0 +1,30 @@
+{
+  final InputStream stream=EarthGravitationalModel.class.getResourceAsStream(filename);
+  if (stream == null) {
+    throw new FileNotFoundException(filename);
+  }
+  final LineNumberReader in;
+  in=new LineNumberReader(new InputStreamReader(stream,"ISO-8859-1"));
+  String line;
+  while ((line=in.readLine()) != null) {
+    final StringTokenizer tokens=new StringTokenizer(line);
+    try {
+      final int n=Short.parseShort(tokens.nextToken());
+      final int m=Short.parseShort(tokens.nextToken());
+      final double cbar=Double.parseDouble(tokens.nextToken());
+      final double sbar=Double.parseDouble(tokens.nextToken());
+      if (n <= nmax) {
+        final int ll=locatingArray(n) + m;
+        cnmGeopCoef[ll]=cbar;
+        snmGeopCoef[ll]=sbar;
+      }
+    }
+ catch (    RuntimeException cause) {
+      final IOException exception=new IOException(Errors.format(ErrorKeys.BAD_LINE_IN_FILE_$2,filename,in.getLineNumber()));
+      exception.initCause(cause);
+      throw exception;
+    }
+  }
+  in.close();
+  initialize();
+}

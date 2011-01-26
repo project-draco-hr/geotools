@@ -1,0 +1,41 @@
+{
+  Schema[] imports=getSchemaOrdering();
+  String s="";
+  Map schemaLocs=(Map)((arg0 == null) ? null : arg0.get(SCHEMA_LOCATION_HINT));
+  schemaLocs=(schemaLocs == null) ? new HashMap() : schemaLocs;
+  for (int i=0; i < imports.length; i++) {
+    if (imports[i] != null) {
+      if (imports[i] == schema) {
+        writer.write(" xmlns=\"" + schema.getTargetNamespace() + "\"");
+        if ((schema.getURI() != null) && !schema.getTargetNamespace().equals(schema.getURI())) {
+          String endResult=schema.getURI().toString();
+          endResult=endResult.replaceAll("&","&amp;");
+          s=schema.getTargetNamespace() + " " + endResult;
+        }
+      }
+ else {
+        writer.write(" xmlns:" + imports[i].getPrefix() + "=\""+ imports[i].getTargetNamespace()+ "\"");
+      }
+      URI location=imports[i].getURI();
+      boolean forced=false;
+      if (schemaLocs.containsKey(imports[i].getTargetNamespace())) {
+        location=(URI)schemaLocs.get(imports[i].getTargetNamespace());
+        forced=true;
+      }
+      if ((location != null) && location.isAbsolute()) {
+        if (imports[i].includesURI(location) || forced) {
+          if ((location != null) && !location.equals(imports[i].getTargetNamespace())) {
+            String endResult=location.toString();
+            endResult=endResult.replaceAll("&","&amp;");
+            s+=(" " + imports[i].getTargetNamespace() + " "+ endResult);
+          }
+        }
+      }
+    }
+  }
+  s=s.trim();
+  if (!"".equals(s)) {
+    writer.write(" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
+    writer.write(" xsi:schemaLocation=\"" + s + "\"");
+  }
+}

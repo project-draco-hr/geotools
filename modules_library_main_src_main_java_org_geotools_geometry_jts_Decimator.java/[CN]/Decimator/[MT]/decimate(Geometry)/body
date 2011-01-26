@@ -1,0 +1,29 @@
+{
+  if (spanx == -1)   return;
+  if (geom instanceof MultiPoint) {
+    return;
+  }
+  if (geom instanceof GeometryCollection) {
+    GeometryCollection collection=(GeometryCollection)geom;
+    final int numGeometries=collection.getNumGeometries();
+    for (int i=0; i < numGeometries; i++) {
+      decimate(collection.getGeometryN(i));
+    }
+  }
+ else   if (geom instanceof LineString) {
+    LineString line=(LineString)geom;
+    LiteCoordinateSequence seq=(LiteCoordinateSequence)line.getCoordinateSequence();
+    if (decimateOnEnvelope(line,seq)) {
+      return;
+    }
+    decimate(line,seq);
+  }
+ else   if (geom instanceof Polygon) {
+    Polygon line=(Polygon)geom;
+    decimate(line.getExteriorRing());
+    final int numRings=line.getNumInteriorRing();
+    for (int i=0; i < numRings; i++) {
+      decimate(line.getInteriorRingN(i));
+    }
+  }
+}

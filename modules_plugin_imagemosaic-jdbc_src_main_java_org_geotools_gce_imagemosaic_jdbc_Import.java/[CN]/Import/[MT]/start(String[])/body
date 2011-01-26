@@ -1,0 +1,145 @@
+{
+  Config config=null;
+  String spatialTableName=null;
+  String tileTableName=null;
+  String spatialTablePrefix=null;
+  String tileTablePrefix=null;
+  int commitCount=DefaultCommitCount;
+  URL csvUrl=null;
+  URL shapeUrl=null;
+  String csvDelim=null;
+  String shapeKeyField=null;
+  String extension=null, dir=null;
+  for (int i=0; i < args.length; i++) {
+    if (args[i].equals(CONFIGPARAM)) {
+      try {
+        config=Config.readFrom(getURLFromString(args[i + 1]));
+      }
+ catch (      Exception e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+      if (config != null && (config.getSpatialExtension() == SpatialExtension.GEORASTER || config.getSpatialExtension() == SpatialExtension.CUSTOM)) {
+        System.out.println(NotSupported + config.getSpatialExtension().toString());
+        System.exit(1);
+      }
+      i++;
+    }
+ else     if (args[i].equals("-spatialTN")) {
+      spatialTableName=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-tileTN")) {
+      tileTableName=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals(SPATIALTNPREFIXPARAM)) {
+      spatialTablePrefix=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals(TILETNPREFIXPARAM)) {
+      tileTablePrefix=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-commitCount")) {
+      commitCount=new Integer(args[i + 1]);
+      i++;
+    }
+ else     if (args[i].equals("-shape")) {
+      shapeUrl=getURLFromString(args[i + 1]);
+      if (shapeUrl == null) {
+        System.out.println("Cannot open " + args[i + 1]);
+        System.exit(1);
+      }
+      i++;
+    }
+ else     if (args[i].equals("-csv")) {
+      csvUrl=getURLFromString(args[i + 1]);
+      if (csvUrl == null) {
+        System.out.println("Cannot open " + args[i + 1]);
+        System.exit(1);
+      }
+      i++;
+    }
+ else     if (args[i].equals("-csvDelim")) {
+      csvDelim=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-shapeKeyField")) {
+      shapeKeyField=args[i + 1];
+      i++;
+    }
+ else     if (args[i].equals("-dir")) {
+      dir=args[i + 1];
+      File f=new File(dir);
+      if (f.exists() == false) {
+        System.out.println("Cannot open " + args[i + 1]);
+        System.exit(1);
+      }
+      i++;
+    }
+ else     if (args[i].equals("-ext")) {
+      extension=args[i + 1];
+      i++;
+    }
+ else {
+      System.out.println("Unkwnown option: " + args[i]);
+      System.exit(1);
+    }
+  }
+  if (config == null) {
+    System.out.println(UsageInfo);
+    System.exit(1);
+  }
+  boolean isLevelImport=false, isPrefixImport=false;
+  if ((spatialTableName != null) && (tileTableName != null))   isLevelImport=true;
+  if ((spatialTablePrefix != null) && (tileTablePrefix != null))   isPrefixImport=true;
+  if ((isLevelImport && isPrefixImport) || (isLevelImport == false && isPrefixImport == false)) {
+    System.out.println(UsageInfo);
+    System.exit(1);
+  }
+  ImportTyp typ=null;
+  int countNull=0;
+  if (shapeUrl == null)   countNull++;
+ else   typ=ImportTyp.SHAPE;
+  if (csvUrl == null)   countNull++;
+ else   typ=ImportTyp.CSV;
+  if (dir == null)   countNull++;
+ else   typ=ImportTyp.DIR;
+  if (countNull != 2) {
+    System.out.println(UsageInfo);
+    System.exit(1);
+  }
+  if (((shapeUrl != null) && (shapeKeyField == null)) || ((csvUrl != null) && (csvDelim == null)) || ((dir != null) && (extension == null))) {
+    System.out.println(UsageInfo);
+    System.exit(1);
+  }
+  Connection con=null;
+  try {
+    Class.forName(config.getDriverClassName());
+    con=DriverManager.getConnection(config.getJdbcUrl(),config.getUsername(),config.getPassword());
+    if (con.getAutoCommit())     con.setAutoCommit(false);
+    List<ImportParam> importParamList=new ArrayList<ImportParam>();
+    if (isLevelImport) {
+      if (typ == ImportTyp.SHAPE)       importParamList.add(new ImportParam(spatialTableName,tileTableName,shapeUrl,shapeKeyField,ImportTyp.SHAPE));
+      if (typ == ImportTyp.CSV)       importParamList.add(new ImportParam(spatialTableName,tileTableName,csvUrl,csvDelim,ImportTyp.CSV));
+      if (typ == ImportTyp.DIR)       importParamList.add(new ImportParam(spatialTableName,tileTableName,new File(dir).toURI().toURL(),extension,ImportTyp.DIR));
+    }
+    if (isPrefixImport) {
+      if (typ == ImportTyp.SHAPE)       fillImportParamList(spatialTablePrefix,tileTablePrefix,shapeUrl,shapeKeyField,ImportTyp.SHAPE,importParamList);
+      if (typ == ImportTyp.CSV)       fillImportParamList(spatialTablePrefix,tileTablePrefix,csvUrl,csvDelim,ImportTyp.CSV,importParamList);
+      if (typ == ImportTyp.DIR)       fillImportParamList(spatialTablePrefix,tileTablePrefix,new File(dir).toURI().toURL(),extension,ImportTyp.DIR,importParamList);
+    }
+    for (    ImportParam param : importParamList) {
+      Import imp=new Import(config,param,commitCount,con);
+      imp.fillSpatialTable();
+      con.commit();
+    }
+    con.close();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    System.exit(1);
+  }
+  System.exit(0);
+}

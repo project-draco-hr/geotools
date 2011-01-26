@@ -1,0 +1,215 @@
+{
+  LOGGER.finer("parsingExpression " + root.getLocalName());
+  if ((root == null) || (root.getNodeType() != Node.ELEMENT_NODE)) {
+    LOGGER.finer("bad node input ");
+    return null;
+  }
+  LOGGER.finer("processing root " + root.getLocalName());
+  Node child=root;
+  String childName=(child.getLocalName() != null) ? child.getLocalName() : child.getNodeName();
+  if (childName.indexOf(':') != -1) {
+    childName=childName.substring(childName.indexOf(':') + 1);
+  }
+  if (childName.equalsIgnoreCase("Literal")) {
+    LOGGER.finer("processing literal " + child);
+    NodeList kidList=child.getChildNodes();
+    LOGGER.finest("literal elements (" + kidList.getLength() + ") "+ kidList.toString());
+    for (int i=0; i < kidList.getLength(); i++) {
+      Node kid=kidList.item(i);
+      LOGGER.finest("kid " + i + " "+ kid);
+      if (kid == null) {
+        LOGGER.finest("Skipping ");
+        continue;
+      }
+      if (kid.getNodeValue() == null) {
+        LOGGER.finer("node " + kid.getNodeValue() + " namespace "+ kid.getNamespaceURI());
+        LOGGER.fine("a literal gml string?");
+        try {
+          Geometry geom=parseGML(kid);
+          if (geom != null) {
+            LOGGER.finer("built a " + geom.getGeometryType() + " from gml");
+            LOGGER.finer("\tpoints: " + geom.getNumPoints());
+          }
+ else {
+            LOGGER.finer("got a null geometry back from gml parser");
+          }
+          return ff.literal(geom);
+        }
+ catch (        IllegalFilterException ife) {
+          LOGGER.warning("Problem building GML/JTS object: " + ife);
+        }
+        return null;
+      }
+      if (kid.getNodeValue().trim().length() == 0) {
+        LOGGER.finest("empty text element");
+        continue;
+      }
+      String nodeValue=kid.getNodeValue();
+      LOGGER.finer("processing " + nodeValue);
+      try {
+        return ff.literal(nodeValue);
+      }
+ catch (      IllegalFilterException ife) {
+        LOGGER.finer("Unable to build expression " + ife);
+        return null;
+      }
+    }
+    return ff.literal("");
+  }
+  if (childName.equalsIgnoreCase("add")) {
+    try {
+      LOGGER.fine("processing an Add");
+      Node value=child.getFirstChild();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add left value -> " + value + "<-");
+      Expression left=parseExpression(value);
+      value=value.getNextSibling();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add right value -> " + value + "<-");
+      Expression right=parseExpression(value);
+      return ff.add(left,right);
+    }
+ catch (    IllegalFilterException ife) {
+      LOGGER.warning("Unable to build expression " + ife);
+      return null;
+    }
+  }
+  if (childName.equalsIgnoreCase("sub")) {
+    try {
+      Node value=child.getFirstChild();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add left value -> " + value + "<-");
+      Expression left=parseExpression(value);
+      value=value.getNextSibling();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add right value -> " + value + "<-");
+      Expression right=parseExpression(value);
+      return ff.subtract(left,right);
+    }
+ catch (    IllegalFilterException ife) {
+      LOGGER.warning("Unable to build expression " + ife);
+      return null;
+    }
+  }
+  if (childName.equalsIgnoreCase("mul")) {
+    try {
+      Node value=child.getFirstChild();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add left value -> " + value + "<-");
+      Expression left=parseExpression(value);
+      value=value.getNextSibling();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add right value -> " + value + "<-");
+      Expression right=parseExpression(value);
+      return ff.multiply(left,right);
+    }
+ catch (    IllegalFilterException ife) {
+      LOGGER.warning("Unable to build expression " + ife);
+      return null;
+    }
+  }
+  if (childName.equalsIgnoreCase("div")) {
+    try {
+      Node value=child.getFirstChild();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add left value -> " + value + "<-");
+      Expression left=parseExpression(value);
+      value=value.getNextSibling();
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+      }
+      LOGGER.finer("add right value -> " + value + "<-");
+      Expression right=parseExpression(value);
+      return ff.divide(left,right);
+    }
+ catch (    IllegalFilterException ife) {
+      LOGGER.warning("Unable to build expression " + ife);
+      return null;
+    }
+  }
+  if (childName.equalsIgnoreCase("PropertyName")) {
+    try {
+      String value=child.getFirstChild().getNodeValue();
+      value=value != null ? value.trim() : value;
+      PropertyName attribute=ff.property(value);
+      return attribute;
+    }
+ catch (    IllegalFilterException ife) {
+      LOGGER.warning("Unable to build expression: " + ife);
+      return null;
+    }
+  }
+  if (childName.equalsIgnoreCase("Function")) {
+    Element param=(Element)child;
+    NamedNodeMap map=param.getAttributes();
+    String funcName=null;
+    for (int k=0; k < map.getLength(); k++) {
+      String res=map.item(k).getNodeValue();
+      String name=map.item(k).getLocalName();
+      if (name == null) {
+        name=map.item(k).getNodeName();
+      }
+      if (name.indexOf(':') != -1) {
+        name=name.substring(name.indexOf(':') + 1);
+      }
+      LOGGER.fine("attribute " + name + " with value of "+ res);
+      if (name.equalsIgnoreCase("name")) {
+        funcName=res;
+      }
+    }
+    if (funcName == null) {
+      LOGGER.severe("failed to find a function name in " + child);
+      return null;
+    }
+    ArrayList<Expression> args=new ArrayList<Expression>();
+    Node value=child.getFirstChild();
+    ARGS:     while (value != null) {
+      while (value.getNodeType() != Node.ELEMENT_NODE) {
+        value=value.getNextSibling();
+        if (value == null)         break ARGS;
+      }
+      args.add(parseExpression(value));
+      value=value.getNextSibling();
+    }
+    Expression[] array=args.toArray(new Expression[0]);
+    return ff.function(funcName,array);
+  }
+  if (child.getNodeType() == Node.TEXT_NODE) {
+    LOGGER.finer("processing a text node " + root.getNodeValue());
+    String nodeValue=root.getNodeValue();
+    LOGGER.finer("Text name " + nodeValue);
+    try {
+      try {
+        Integer intLiteral=new Integer(nodeValue);
+        return ff.literal(intLiteral);
+      }
+ catch (      NumberFormatException e) {
+      }
+      try {
+        Double doubleLit=new Double(nodeValue);
+        return ff.literal(doubleLit);
+      }
+ catch (      NumberFormatException e) {
+      }
+      return ff.literal(nodeValue);
+    }
+ catch (    IllegalFilterException ife) {
+      LOGGER.finer("Unable to build expression " + ife);
+    }
+  }
+  return null;
+}

@@ -1,0 +1,28 @@
+{
+  GeometryBuilder builder=new GeometryBuilder(DefaultGeographicCRS.WGS84);
+  PositionFactory posF=builder.getPositionFactory();
+  PrimitiveFactory primF=builder.getPrimitiveFactory();
+  GeometryFactory geomF=builder.getGeometryFactory();
+  DirectPosition start=posF.createDirectPosition(new double[]{48.44,-123.37});
+  DirectPosition middle=posF.createDirectPosition(new double[]{47,-122});
+  DirectPosition end=posF.createDirectPosition(new double[]{46.5,-121.5});
+  ArrayList<Position> positions=new ArrayList<Position>();
+  positions.add(start);
+  positions.add(middle);
+  positions.add(end);
+  LineString line=geomF.createLineString(positions);
+  ArrayList<CurveSegment> segs=new ArrayList<CurveSegment>();
+  segs.add(line);
+  Curve curve=primF.createCurve(segs);
+  List<? extends CurveSegment> segs2=curve.getSegments();
+  Iterator<? extends CurveSegment> iter=segs2.iterator();
+  PointArray samplePoints=null;
+  while (iter.hasNext()) {
+    if (samplePoints == null) {
+      samplePoints=iter.next().getSamplePoints();
+    }
+ else {
+      samplePoints.addAll(iter.next().getSamplePoints());
+    }
+  }
+}

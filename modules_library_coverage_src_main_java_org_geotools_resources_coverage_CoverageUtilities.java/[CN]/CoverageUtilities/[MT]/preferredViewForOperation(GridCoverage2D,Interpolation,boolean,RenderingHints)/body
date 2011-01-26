@@ -1,0 +1,40 @@
+{
+  if (hints != null) {
+    final Object candidate=hints.get(Hints.COVERAGE_PROCESSING_VIEW);
+    if (candidate instanceof ViewType) {
+      return (ViewType)candidate;
+    }
+  }
+  final RenderedImage sourceImage=coverage.getRenderedImage();
+  if (sourceImage.getColorModel() instanceof IndexColorModel) {
+    if (!hasRenderingCategories(coverage)) {
+      return ViewType.PHOTOGRAPHIC;
+    }
+    if (hints != null && Boolean.FALSE.equals(hints.get(Hints.REPLACE_NON_GEOPHYSICS_VIEW))) {
+      return ViewType.PHOTOGRAPHIC;
+    }
+    if (!hasFilter && (interpolation == null || interpolation instanceof InterpolationNearest)) {
+      if (hints != null) {
+        final Object rendering=hints.get(RenderingHints.KEY_RENDERING);
+        if (RenderingHints.VALUE_RENDER_QUALITY.equals(rendering)) {
+          return ViewType.NATIVE;
+        }
+        if (RenderingHints.VALUE_RENDER_SPEED.equals(rendering)) {
+          return ViewType.SAME;
+        }
+      }
+      return ViewType.SAME;
+    }
+    return ViewType.GEOPHYSICS;
+  }
+  if (!hasFilter && (interpolation == null || interpolation instanceof InterpolationNearest)) {
+    final GridCoverage2D candidate=coverage.view(ViewType.NATIVE);
+    if (candidate != coverage) {
+      final List<RenderedImage> sources=coverage.getRenderedImage().getSources();
+      if (sources != null && sources.contains(candidate.getRenderedImage())) {
+        return ViewType.NATIVE;
+      }
+    }
+  }
+  return ViewType.SAME;
+}

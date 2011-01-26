@@ -1,0 +1,18 @@
+{
+  final String jndiName=(String)JNDI_REFNAME.lookUp(params);
+  final Object lookup=lookupJndiResource(jndiName);
+  final ISessionPool sessionPool=getSessionPool(jndiName,lookup);
+  final String nsUri=(String)NAMESPACE_PARAM.lookUp(params);
+  final String version=(String)VERSION_PARAM.lookUp(params);
+  final boolean nonSpatial;
+{
+    final Boolean allowNonSpatialTables=(Boolean)ALLOW_NON_SPATIAL_PARAM.lookUp(params);
+    nonSpatial=allowNonSpatialTables == null ? false : allowNonSpatialTables.booleanValue();
+  }
+  final ArcSDEConnectionConfig connectionConfig=sessionPool.getConfig();
+  final ArcSDEDataStoreConfig dsConfig;
+  dsConfig=new ArcSDEDataStoreConfig(connectionConfig,nsUri,version,nonSpatial);
+  LOGGER.info("Creating ArcSDE JNDI DataStore with shared session pool for " + dsConfig);
+  final ArcSDEDataStore dataStore=delegateFactory.createDataStore(dsConfig,sessionPool);
+  return dataStore;
+}

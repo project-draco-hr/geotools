@@ -1,0 +1,27 @@
+{
+  List geometries=node.getChildValues(Geometry.class);
+  if (geometries.isEmpty()) {
+    return geometryFactory.createGeometryCollection(new Geometry[]{});
+  }
+  int i=0;
+  Class geometryClass=geometries.get(i++).getClass();
+  for (; i < geometries.size(); i++) {
+    Class clazz=geometries.get(i).getClass();
+    if (!clazz.isAssignableFrom(geometryClass) && !geometryClass.isAssignableFrom(clazz)) {
+      geometryClass=null;
+      break;
+    }
+  }
+  if (geometryClass != null) {
+    if (geometryClass == Point.class) {
+      return geometryFactory.createMultiPoint((Point[])geometries.toArray(new Point[geometries.size()]));
+    }
+    if ((geometryClass == LineString.class) || (geometryClass == LinearRing.class)) {
+      return geometryFactory.createMultiLineString((LineString[])geometries.toArray(new LineString[geometries.size()]));
+    }
+    if (geometryClass == Polygon.class) {
+      return geometryFactory.createMultiPolygon((Polygon[])geometries.toArray(new Polygon[geometries.size()]));
+    }
+  }
+  return geometryFactory.createGeometryCollection((Geometry[])geometries.toArray(new Geometry[geometries.size()]));
+}

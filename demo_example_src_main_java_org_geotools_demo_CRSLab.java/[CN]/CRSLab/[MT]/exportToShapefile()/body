@@ -1,0 +1,53 @@
+{
+  SimpleFeatureType schema=featureSource.getSchema();
+  JFileDataStoreChooser chooser=new JFileDataStoreChooser("shp");
+  chooser.setDialogTitle("Save reprojected shapefile");
+  chooser.setSaveFile(sourceFile);
+  int returnVal=chooser.showSaveDialog(null);
+  if (returnVal != JFileDataStoreChooser.APPROVE_OPTION) {
+    return;
+  }
+  File file=chooser.getSelectedFile();
+  if (file.equals(sourceFile)) {
+    JOptionPane.showMessageDialog(null,"Cannot replace " + file);
+    return;
+  }
+  CoordinateReferenceSystem dataCRS=schema.getCoordinateReferenceSystem();
+  CoordinateReferenceSystem worldCRS=map.getCoordinateReferenceSystem();
+  boolean lenient=true;
+  MathTransform transform=CRS.findMathTransform(dataCRS,worldCRS,lenient);
+  SimpleFeatureCollection featureCollection=featureSource.getFeatures();
+  DataStoreFactorySpi factory=new ShapefileDataStoreFactory();
+  Map<String,Serializable> create=new HashMap<String,Serializable>();
+  create.put("url",file.toURI().toURL());
+  create.put("create spatial index",Boolean.TRUE);
+  DataStore newDataStore=factory.createNewDataStore(create);
+  SimpleFeatureType featureType=SimpleFeatureTypeBuilder.retype(schema,worldCRS);
+  newDataStore.createSchema(featureType);
+  Transaction transaction=new DefaultTransaction("Reproject");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=newDataStore.getFeatureWriterAppend(featureType.getTypeName(),transaction);
+  SimpleFeatureIterator iterator=featureCollection.features();
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=iterator.next();
+      SimpleFeature copy=writer.next();
+      copy.setAttributes(feature.getAttributes());
+      Geometry geometry=(Geometry)feature.getDefaultGeometry();
+      Geometry geometry2=JTS.transform(geometry,transform);
+      copy.setDefaultGeometry(geometry2);
+      writer.write();
+    }
+    transaction.commit();
+    JOptionPane.showMessageDialog(null,"Export to shapefile complete");
+  }
+ catch (  Exception problem) {
+    problem.printStackTrace();
+    transaction.rollback();
+    JOptionPane.showMessageDialog(null,"Export to shapefile failed");
+  }
+ finally {
+    writer.close();
+    iterator.close();
+    transaction.close();
+  }
+}

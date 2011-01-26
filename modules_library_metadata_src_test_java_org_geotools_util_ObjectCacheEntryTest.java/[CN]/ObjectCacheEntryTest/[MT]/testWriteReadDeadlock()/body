@@ -1,0 +1,16 @@
+{
+  entry=new DefaultObjectCache.ObjectCacheEntry();
+  entry.writeLock();
+  Runnable thread1=new EntryReaderThread();
+  Thread t1=new Thread(thread1);
+  t1.start();
+  Thread.yield();
+  entry.setValue(1);
+  Object[] values=((EntryReaderThread)thread1).getValue();
+  assertArrayEquals(null,values);
+  entry.writeUnLock();
+  t1.join();
+  values=((EntryReaderThread)thread1).getValue();
+  assertNotNull(values);
+  assertEquals(1,values[0]);
+}

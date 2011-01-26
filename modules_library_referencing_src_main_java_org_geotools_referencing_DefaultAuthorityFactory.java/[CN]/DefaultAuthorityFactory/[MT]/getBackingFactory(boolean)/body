@@ -1,0 +1,29 @@
+{
+  final Hints hints=GeoTools.getDefaultHints();
+  if (longitudeFirst) {
+    hints.put(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE);
+  }
+ else {
+  }
+  Collection<CRSAuthorityFactory> factories=ReferencingFactoryFinder.getCRSAuthorityFactories(hints);
+  if (Boolean.TRUE.equals(hints.put(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.FALSE))) {
+    factories=new ArrayList<CRSAuthorityFactory>(factories);
+    final Set<Citation> authorities=new LinkedHashSet<Citation>();
+    for (    final CRSAuthorityFactory factory : factories) {
+      authorities.add(factory.getAuthority());
+    }
+    searchNews:     for (    final CRSAuthorityFactory factory : ReferencingFactoryFinder.getCRSAuthorityFactories(hints)) {
+      final Citation authority=factory.getAuthority();
+      if (authorities.contains(authority)) {
+        continue;
+      }
+      for (      final Citation check : authorities) {
+        if (Citations.identifierMatches(authority,check)) {
+          continue searchNews;
+        }
+      }
+      factories.add(factory);
+    }
+  }
+  return new ManyAuthoritiesFactory(factories);
+}

@@ -1,0 +1,47 @@
+{
+  final Random random=new Random(-854734760285695284L);
+  final Point[] sources=new Point[100];
+  final Point[] dest=new Point[sources.length];
+  for (int i=0; i < dest.length; i++) {
+    Point p;
+    sources[i]=p=new Point(random.nextInt(WIDTH),random.nextInt(HEIGHT));
+    dest[i]=p=new Point(p);
+    formula.transform(p);
+  }
+  final Point ext=new Point(WIDTH,HEIGHT);
+  formula.transform(ext);
+  final WarpTransform2D transform=new WarpTransform2D(new Rectangle(0,0,WIDTH,HEIGHT),sources,0,new Rectangle(0,0,ext.x,ext.y),dest,0,sources.length,degree);
+  final WarpTransform2D inverse=(WarpTransform2D)transform.inverse();
+  assertNotNull("WKT formatting test",transform.toString());
+  final Warp warp=transform.getWarp();
+  assertTrue("Expected a polynomial warp but got " + Classes.getShortClassName(warp),warp instanceof WarpPolynomial);
+  final WarpPolynomial poly=(WarpPolynomial)warp;
+  for (int i=0; i < sources.length; i++) {
+    final String message=formula.message() + " Point #" + i;
+    final Point source=sources[i];
+    final Point expected=dest[i];
+    final Point2D computed=new Point2D.Double(source.x,source.y);
+    assertSame(message,computed,transform.transform(computed,computed));
+    assertEquals(message,expected.x,computed.getX(),EPS * expected.x);
+    assertEquals(message,expected.y,computed.getY(),EPS * expected.y);
+    if (true) {
+      final float[] array=new float[]{source.x,source.y};
+      transform.transform(array,0,array,0,1);
+      assertEquals(message,expected.x,array[0],EPS * expected.x);
+      assertEquals(message,expected.y,array[1],EPS * expected.y);
+    }
+    if (true) {
+      final double[] array=new double[]{source.x,source.y};
+      transform.transform(array,0,array,0,1);
+      assertEquals(message,expected.x,array[0],EPS * expected.x);
+      assertEquals(message,expected.y,array[1],EPS * expected.y);
+    }
+    if (degree == 1) {
+      computed.setLocation(expected.x,expected.y);
+      assertSame(message,computed,inverse.transform(computed,computed));
+      assertEquals(message,source.x,computed.getX(),EPS * expected.x);
+      assertEquals(message,source.y,computed.getY(),EPS * expected.y);
+    }
+  }
+  return poly;
+}

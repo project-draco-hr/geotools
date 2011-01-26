@@ -1,0 +1,36 @@
+{
+  String spatialColName=geometryAtt.getLocalName();
+  LOGGER.info("setting spatial column name: " + spatialColName);
+  layer.setSpatialColumnName(spatialColName);
+  int seShapeTypes=ArcSDEAdapter.guessShapeTypes(geometryAtt);
+  layer.setShapeTypes(seShapeTypes);
+  layer.setGridSizes(1100.0,0.0,0.0);
+  layer.setDescription("Created with GeoTools");
+  CoordinateReferenceSystem crs=geometryAtt.getCoordinateReferenceSystem();
+  SeCoordinateReference coordref=getGenericCoordRef();
+  String WKT=null;
+  if (crs == null) {
+    LOGGER.warning("Creating feature type " + qualifiedName + ": the geometry attribute does not supply a coordinate reference system");
+  }
+ else {
+    LOGGER.info("Creating the SeCoordRef object for CRS " + crs);
+    WKT=crs.toWKT();
+    coordref.setCoordSysByDescription(WKT);
+  }
+  SeExtent validCoordRange=null;
+  if ((WKT != null) && (WKT.indexOf("GEOGCS") != -1)) {
+    validCoordRange=new SeExtent(-180,-90,180,90);
+  }
+ else {
+    validCoordRange=coordref.getXYEnvelope();
+  }
+  layer.setExtent(validCoordRange);
+  LOGGER.info("Applying CRS " + coordref.getCoordSysDescription());
+  layer.setCoordRef(coordref);
+  LOGGER.info("CRS applyed to the new layer.");
+  int estInitFeatCount=4;
+  int estAvgPointsPerFeature=4;
+  LOGGER.info("Creating the layer...");
+  layer.create(estInitFeatCount,estAvgPointsPerFeature);
+  LOGGER.info("ArcSDE layer created.");
+}

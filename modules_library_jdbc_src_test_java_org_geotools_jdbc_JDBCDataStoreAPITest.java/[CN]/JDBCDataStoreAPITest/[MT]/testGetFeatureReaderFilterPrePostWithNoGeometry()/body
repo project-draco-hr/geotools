@@ -1,0 +1,18 @@
+{
+  Transaction t=new DefaultTransaction();
+  FilterFactory factory=CommonFactoryFinder.getFilterFactory(null);
+  FilterFunction_geometryType geomTypeExpr=new FilterFunction_geometryType();
+  geomTypeExpr.setParameters(Collections.singletonList(factory.property(aname("geom"))));
+  PropertyIsEqualTo filter=factory.equals(geomTypeExpr,factory.literal("Polygon"));
+  DefaultQuery query=new DefaultQuery(tname("road"),filter);
+  query.setPropertyNames(Collections.singletonList(aname("id")));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=dataStore.getFeatureReader(query,t);
+  assertNotNull(reader);
+  reader.close();
+  filter=factory.equals(geomTypeExpr,factory.literal("LineString"));
+  query.setFilter(filter);
+  reader=dataStore.getFeatureReader(query,t);
+  assertTrue(reader.hasNext());
+  reader.close();
+  t.close();
+}

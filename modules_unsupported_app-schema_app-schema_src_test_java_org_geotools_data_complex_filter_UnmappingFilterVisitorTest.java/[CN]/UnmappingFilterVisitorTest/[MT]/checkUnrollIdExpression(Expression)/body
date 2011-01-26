@@ -1,0 +1,34 @@
+{
+  AttributeMapping featureMapping=null;
+  Name featurePath=mapping.getTargetFeature().getName();
+  QName featureName=Types.toQName(featurePath);
+  for (Iterator it=mapping.getAttributeMappings().iterator(); it.hasNext(); ) {
+    AttributeMapping attMapping=(AttributeMapping)it.next();
+    StepList targetXPath=attMapping.getTargetXPath();
+    if (targetXPath.size() > 1) {
+      continue;
+    }
+    Step step=(Step)targetXPath.get(0);
+    if (featureName.equals(step.getName())) {
+      featureMapping=attMapping;
+      break;
+    }
+  }
+  featureMapping.setIdentifierExpression(idExpression);
+  this.visitor=new UnmappingFilterVisitor(this.mapping);
+  FeatureCollection<SimpleFeatureType,SimpleFeature> content=mapping.getSource().getFeatures();
+  Iterator iterator=content.iterator();
+  Feature sourceFeature=(Feature)iterator.next();
+  content.close(iterator);
+  String fid=sourceFeature.getIdentifier().toString();
+  Id fidFilter=ff.id(Collections.singleton(ff.featureId(fid)));
+  Filter unrolled=(Filter)fidFilter.accept(visitor,null);
+  assertNotNull(unrolled);
+  assertTrue(unrolled instanceof Id);
+  FeatureCollection<SimpleFeatureType,SimpleFeature> results=mapping.getSource().getFeatures(unrolled);
+  assertEquals(1,getCount(results));
+  iterator=results.iterator();
+  SimpleFeature unmappedFeature=(SimpleFeature)iterator.next();
+  results.close(iterator);
+  assertEquals(fid,unmappedFeature.getID());
+}

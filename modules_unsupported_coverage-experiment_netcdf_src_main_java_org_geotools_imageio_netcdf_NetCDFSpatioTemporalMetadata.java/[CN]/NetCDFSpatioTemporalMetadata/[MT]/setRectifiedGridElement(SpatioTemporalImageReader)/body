@@ -1,0 +1,111 @@
+{
+  final RectifiedGrid rectifiedGrid=getRectifiedGrid();
+  checkReader(reader);
+  final NetCDFSpatioTemporalImageReader netCDFReader=((NetCDFSpatioTemporalImageReader)reader);
+  final int imageIndex=getImageIndex();
+  final Variable variable=netCDFReader.getVariable(imageIndex);
+  final List<CoordinateSystem> systems=((VariableDS)variable).getCoordinateSystems();
+  if (!systems.isEmpty()) {
+    int rank=variable.getRank() - (systems.get(0).hasTimeAxis() ? 1 : 0);
+    boolean isZregular=true;
+    List<Dimension> dimensions=variable.getDimensions();
+    for (    Dimension dim : dimensions) {
+      final Variable axisVar=netCDFReader.getCoordinate(dim.getName());
+      if (axisVar != null && axisVar instanceof CoordinateAxis) {
+        final CoordinateAxis coordAxis=(CoordinateAxis)axisVar;
+        final AxisType axisType=coordAxis.getAxisType();
+        if (AxisType.GeoZ.equals(axisType) || AxisType.Height.equals(axisType) || AxisType.Pressure.equals(axisType)) {
+          if (coordAxis instanceof CoordinateAxis1D) {
+            CoordinateAxis1D axis=(CoordinateAxis1D)coordAxis;
+          }
+        }
+      }
+    }
+    int i=rank - 1;
+    int[] low=new int[rank];
+    int[] high=new int[rank];
+    String[] axesNames=new String[rank];
+    double[] origin=new double[rank];
+    double[][] offsetVectors=new double[rank][rank];
+    for (    Dimension dim : dimensions) {
+      final Variable axisVar=netCDFReader.getCoordinate(dim.getName());
+      if (axisVar != null && axisVar instanceof CoordinateAxis) {
+        final CoordinateAxis coordAxis=(CoordinateAxis)axisVar;
+        final AxisType axisType=coordAxis.getAxisType();
+        if (!AxisType.Time.equals(axisType)) {
+          if (!AxisType.GeoZ.equals(axisType) && !AxisType.Height.equals(axisType) && !AxisType.Pressure.equals(axisType)) {
+            low[i]=0;
+            high[i]=dim.getLength();
+          }
+ else {
+            Range range=((NetCDFSpatioTemporalImageReader)reader).getRange(imageIndex);
+            final int zIndex=NetCDFUtilities.getZIndex(variable,range,imageIndex);
+            low[i]=zIndex;
+            high[i]=zIndex + 1;
+            axesNames[i]=getAxisName(coordAxis);
+          }
+          if (i < 4 && netCDFReader.getCoordinate(dim.getName()) != null) {
+            if (coordAxis.isNumeric() && coordAxis instanceof CoordinateAxis1D) {
+              final CoordinateAxis1D axis1D=(CoordinateAxis1D)coordAxis;
+              final int length=axis1D.getDimension(0).getLength();
+              if (length > 2 && axis1D.isRegular()) {
+                axesNames[i]=getAxisName(coordAxis);
+                final double increment=axis1D.getIncrement();
+                final double start=axis1D.getStart();
+                final double end=start + increment * (length - 1);
+                origin[i]=start;
+                offsetVectors[i][i]=(end - start) / length;
+                i--;
+              }
+ else {
+                final double[] values=axis1D.getCoordValues();
+                if (values != null) {
+                  final int valuesLength=values.length;
+                  if (valuesLength >= 2) {
+                    if (!Double.isNaN(values[0]) && !Double.isNaN(values[values.length - 1])) {
+                      origin[i]=values[0];
+                      offsetVectors[i][i]=(values[values.length - 1] - values[0]) / length;
+                      i--;
+                    }
+ else {
+                      if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.log(Level.FINE,"Axis values contains NaN; finding first valid values");
+                      }
+                      for (int j=0; j < valuesLength; j++) {
+                        double v=values[j];
+                        if (!Double.isNaN(v)) {
+                          for (int k=valuesLength; k > j; k--) {
+                            double vv=values[k];
+                            if (!Double.isNaN(vv)) {
+                              origin[i]=v;
+                              offsetVectors[i][i]=(vv - v) / length;
+                              i--;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+ else {
+                    origin[i]=values[0];
+                    offsetVectors[i][i]=0;
+                    i--;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    rectifiedGrid.setLow(low);
+    rectifiedGrid.setHigh(high);
+    rectifiedGrid.setCoordinates(origin);
+    for (int ov=0; ov < offsetVectors.length; ov++) {
+      rectifiedGrid.addOffsetVector(offsetVectors[ov]);
+    }
+    for (    String axisName : axesNames) {
+      rectifiedGrid.addAxisName(axisName);
+    }
+  }
+}

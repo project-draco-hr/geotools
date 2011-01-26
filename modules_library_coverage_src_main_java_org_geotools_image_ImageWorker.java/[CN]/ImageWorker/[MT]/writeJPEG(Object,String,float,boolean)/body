@@ -1,0 +1,62 @@
+{
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Encoding input image to write out as JPEG.");
+  ColorModel cm=image.getColorModel();
+  final boolean hasAlpha=cm.hasAlpha();
+  forceComponentColorModel();
+  cm=image.getColorModel();
+  rescaleToBytes();
+  cm=image.getColorModel();
+  final int numBands=image.getSampleModel().getNumBands();
+  if (hasAlpha) {
+    retainBands(numBands - 1);
+  }
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Getting a JPEG writer and configuring it.");
+  final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("JPEG");
+  if (!it.hasNext()) {
+    throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+  }
+  ImageWriter writer=it.next();
+  if (!nativeAcc && writer.getClass().getName().equals("com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter")) {
+    writer=it.next();
+  }
+  if ((!PackageUtil.isCodecLibAvailable() || !(writer.getOriginatingProvider() instanceof CLibJPEGImageWriterSpi)) && compression.equals("JPEG-LS"))   throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"compression","JPEG-LS"));
+  final ImageWriteParam iwp=writer.getDefaultWriteParam();
+  final ImageOutputStream outStream=ImageIO.createImageOutputStream(destination);
+  if (outStream == null)   throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
+  iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+  iwp.setCompressionType(compression);
+  iwp.setCompressionQuality(compressionRate);
+  if (iwp instanceof JPEGImageWriteParam) {
+    final JPEGImageWriteParam param=(JPEGImageWriteParam)iwp;
+    param.setOptimizeHuffmanTables(true);
+    try {
+      param.setProgressiveMode(JPEGImageWriteParam.MODE_DEFAULT);
+    }
+ catch (    UnsupportedOperationException e) {
+      throw (IOException)new IOException().initCause(e);
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Writing out...");
+  try {
+    writer.setOutput(outStream);
+    if (!nativeAcc && (image.getMinX() != 0 || image.getMinY() != 0)) {
+      final BufferedImage finalImage=new BufferedImage(image.getColorModel(),((WritableRaster)image.getData()).createWritableTranslatedChild(0,0),image.getColorModel().isAlphaPremultiplied(),null);
+      writer.write(null,new IIOImage(finalImage,null,null),iwp);
+    }
+ else     writer.write(null,new IIOImage(image,null,null),iwp);
+  }
+  finally {
+    try {
+      writer.dispose();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+    try {
+      outStream.close();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+  }
+}

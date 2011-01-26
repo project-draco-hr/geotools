@@ -1,0 +1,23 @@
+{
+  String geomName=getGeometryPropertyName(s);
+  com.vividsolutions.jts.geom.Geometry geom;
+  if (geomName == null) {
+    geom=(com.vividsolutions.jts.geom.Geometry)f.getDefaultGeometry();
+  }
+ else {
+    geom=(com.vividsolutions.jts.geom.Geometry)f.getAttribute(geomName);
+  }
+  if ((s instanceof PointSymbolizer || s instanceof TextSymbolizer) && !(geom instanceof Point)) {
+    if (geom instanceof LineString && !(geom instanceof LinearRing)) {
+      Coordinate[] coordinates=geom.getCoordinates();
+      Coordinate start=coordinates[0];
+      Coordinate end=coordinates[1];
+      Coordinate mid=new Coordinate((start.x + end.x) / 2,(start.y + end.y) / 2);
+      geom=geom.getFactory().createPoint(mid);
+    }
+ else {
+      geom=geom.getCentroid();
+    }
+  }
+  return geom;
+}

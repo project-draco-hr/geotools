@@ -1,0 +1,27 @@
+{
+  if (value == null) {
+    return null;
+  }
+  final String error;
+  final Class<T> type=descriptor.getValueClass();
+  if (!type.isInstance(value)) {
+    error=Errors.format(ErrorKeys.ILLEGAL_OPERATION_FOR_VALUE_CLASS_$1,Classes.getClass(value));
+  }
+ else {
+    @SuppressWarnings("unchecked") final Comparable<Object> minimum=(Comparable)descriptor.getMinimumValue();
+    @SuppressWarnings("unchecked") final Comparable<Object> maximum=(Comparable)descriptor.getMaximumValue();
+    if ((minimum != null && minimum.compareTo(value) > 0) || (maximum != null && maximum.compareTo(value) < 0)) {
+      error=Errors.format(ErrorKeys.VALUE_OUT_OF_BOUNDS_$3,value,minimum,maximum);
+    }
+ else {
+      final Set<?> validValues=descriptor.getValidValues();
+      if (validValues != null && !validValues.contains(value)) {
+        error=Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,getName(descriptor),value);
+      }
+ else {
+        return type.cast(value);
+      }
+    }
+  }
+  throw new InvalidParameterValueException(error,getName(descriptor),value);
+}

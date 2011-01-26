@@ -1,0 +1,30 @@
+{
+  final SeLayer layer=getLayer();
+  final SeTable table=getTable();
+  final SeTableIdRange ids=layer == null ? null : table.getIds(1);
+  if (ids == null) {
+    return null;
+  }
+  final SeObjectId startId=ids.getStartId();
+  final long id=startId.longValue();
+  final Long newId=Long.valueOf(id);
+  final AttributeDescriptor rowIdAtt=featureType.getDescriptor(fidReader.getFidColumn());
+  final Class<?> binding=rowIdAtt.getType().getBinding();
+  final Number userFidValue;
+  if (Long.class == binding) {
+    userFidValue=newId;
+  }
+ else   if (Integer.class == binding) {
+    userFidValue=Integer.valueOf(newId.intValue());
+  }
+ else   if (Double.class == binding) {
+    userFidValue=new Double(newId.doubleValue());
+  }
+ else   if (Float.class == binding) {
+    userFidValue=new Float(newId.floatValue());
+  }
+ else {
+    throw new IllegalArgumentException("Can't handle a user managed row id of type " + binding);
+  }
+  return userFidValue;
+}

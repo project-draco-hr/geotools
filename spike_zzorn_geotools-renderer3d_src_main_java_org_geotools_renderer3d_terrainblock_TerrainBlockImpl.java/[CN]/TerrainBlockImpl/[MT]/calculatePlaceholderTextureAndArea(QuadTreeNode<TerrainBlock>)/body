@@ -1,0 +1,26 @@
+{
+  if (node == null) {
+    myTempParentTextureToUse=null;
+    return null;
+  }
+ else {
+    final TerrainBlock block=node.getNodeData();
+    final Texture texture=block.getTexture();
+    if (block.hasCalculatedTextureImage() && texture != null) {
+      myTempParentTextureToUse=texture;
+      return WHOLE_TEXTURE;
+    }
+ else {
+      final QuadTreeNode<TerrainBlock> parentNode=node.getParent();
+      final BoundingRectangle area=calculatePlaceholderTextureAndArea(parentNode);
+      if (area == null) {
+        return null;
+      }
+ else {
+        int quadrant=parentNode.getIndexOfChild(node);
+        quadrant=area.flipSubquadrantAcrossY(quadrant);
+        return area.createSubquadrantBoundingRectangle(quadrant);
+      }
+    }
+  }
+}

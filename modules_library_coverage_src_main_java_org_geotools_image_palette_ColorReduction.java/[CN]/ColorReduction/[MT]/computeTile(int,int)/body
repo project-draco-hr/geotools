@@ -1,0 +1,27 @@
+{
+synchronized (this) {
+    if (!initialized) {
+      this.paletteBuilder.buildPalette();
+      this.setImageLayout(getImageLayout(getSourceImage(0),hints));
+    }
+  }
+  final RenderedImage sourceImage=getSourceImage(0);
+  final ColorModel sourceColorModel=sourceImage.getColorModel();
+  final Raster sourceRaster=sourceImage.getTile(tx,ty);
+  final int w=sourceRaster.getWidth();
+  final int h=sourceRaster.getHeight();
+  final int numBands=sourceRaster.getSampleModel().getNumBands();
+  final int rgba[]=new int[numBands];
+  final boolean sourceHasAlpha=sourceColorModel.hasAlpha();
+  final int alphaBand=sourceHasAlpha ? numBands - 1 : -1;
+  final int minx=sourceRaster.getMinX();
+  final int maxx=minx + w;
+  final int miny=sourceRaster.getMinY();
+  final int maxy=miny + h;
+  final WritableRaster destRaster=this.colorModel.createCompatibleWritableRaster(w,h).createWritableTranslatedChild(minx,miny);
+  for (int i=minx; i < maxx; i++)   for (int j=miny; j < maxy; j++) {
+    sourceRaster.getPixel(i,j,rgba);
+    destRaster.setSample(i,j,0,paletteBuilder.findNearestColorIndex(rgba,alphaBand));
+  }
+  return destRaster;
+}

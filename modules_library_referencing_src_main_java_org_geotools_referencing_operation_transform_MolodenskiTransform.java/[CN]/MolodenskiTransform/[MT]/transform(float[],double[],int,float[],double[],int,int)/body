@@ -1,0 +1,80 @@
+{
+  int step=0;
+  if ((srcPts2 != null ? srcPts2 == dstPts2 : srcPts1 == dstPts1) && srcOff < dstOff && srcOff + numPts * getSourceDimensions() > dstOff) {
+    if (source3D != target3D) {
+      throw new UnsupportedOperationException("Not yet implemented.");
+    }
+    step=getSourceDimensions();
+    srcOff+=(numPts - 1) * step;
+    dstOff+=(numPts - 1) * step;
+    step*=-2;
+  }
+  while (--numPts >= 0) {
+    double x, y, z;
+    if (srcPts2 != null) {
+      x=srcPts2[srcOff++];
+      y=srcPts2[srcOff++];
+      z=(source3D) ? srcPts2[srcOff++] : 0.0;
+    }
+ else {
+      x=srcPts1[srcOff++];
+      y=srcPts1[srcOff++];
+      z=(source3D) ? srcPts1[srcOff++] : 0.0;
+    }
+    x=toRadians(x);
+    y=toRadians(y);
+    final double sinX=sin(x);
+    final double cosX=cos(x);
+    final double sinY=sin(y);
+    final double cosY=cos(y);
+    final double sin2Y=sinY * sinY;
+    final double Rn=a / sqrt(1 - e2 * sin2Y);
+    final double Rm=Rn * (1 - e2) / (1 - e2 * sin2Y);
+    if (abridged) {
+      y+=(dz * cosY - sinY * (dy * sinX + dx * cosX) + adf * sin(2 * y)) / Rm;
+      x+=(dy * cosX - dx * sinX) / (Rn * cosY);
+    }
+ else {
+      y+=(dz * cosY - sinY * (dy * sinX + dx * cosX) + da_a * (Rn * e2 * sinY* cosY) + df * (Rm * (a_b) + Rn * (b_a)) * sinY* cosY) / (Rm + z);
+      x+=(dy * cosX - dx * sinX) / ((Rn + z) * cosY);
+    }
+    if (abs(y) > PI / 2.0) {
+      if (dstPts2 != null) {
+        dstPts2[dstOff++]=0.0;
+        dstPts2[dstOff++]=(y > 0.0) ? 90.0 : -90.0;
+      }
+ else {
+        dstPts1[dstOff++]=0.0f;
+        dstPts1[dstOff++]=(y > 0.0f) ? 90.0f : -90.0f;
+      }
+    }
+ else {
+      x=toDegrees(rollLongitude(x));
+      y=toDegrees(y);
+      if (dstPts2 != null) {
+        dstPts2[dstOff++]=x;
+        dstPts2[dstOff++]=y;
+      }
+ else {
+        dstPts1[dstOff++]=(float)x;
+        dstPts1[dstOff++]=(float)y;
+      }
+    }
+    if (target3D) {
+      if (abridged) {
+        z+=dx * cosY * cosX + dy * cosY * sinX + dz * sinY + adf * sin2Y - da;
+      }
+ else {
+        z+=dx * cosY * cosX + dy * cosY * sinX + dz * sinY + df * (b_a) * Rn* sin2Y - daa / Rn;
+      }
+      if (dstPts2 != null) {
+        dstPts2[dstOff++]=z;
+      }
+ else {
+        dstPts1[dstOff++]=(float)z;
+      }
+    }
+    srcOff+=step;
+    dstOff+=step;
+  }
+}

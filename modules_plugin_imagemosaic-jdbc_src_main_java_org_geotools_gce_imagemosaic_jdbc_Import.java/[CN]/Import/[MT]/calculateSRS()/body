@@ -1,0 +1,47 @@
+{
+  String schema=getSchema();
+  String srsSelect=null;
+  if (config.getSpatialExtension() == SpatialExtension.POSTGIS) {
+    srsSelect=JDBCAccessPostGis.SRSSelect;
+  }
+ else   if (config.getSpatialExtension() == SpatialExtension.DB2) {
+    if (schema == null) {
+      srsSelect=JDBCAccessDB2.SRSSelectCurrentSchema;
+    }
+ else {
+      srsSelect=JDBCAccessDB2.SRSSelect;
+    }
+  }
+ else   if (config.getSpatialExtension() == SpatialExtension.ORACLE) {
+    if (schema == null) {
+      srsSelect=JDBCAccessOracle.SRSSelectCurrentSchema;
+    }
+ else {
+      srsSelect=JDBCAccessOracle.SRSSelect;
+    }
+  }
+ else {
+    srs=0;
+    return;
+  }
+  PreparedStatement ps=con.prepareStatement(srsSelect);
+  if (schema != null) {
+    ps.setString(1,schema);
+    ps.setString(2,spatialTableName);
+    ps.setString(3,config.getGeomAttributeNameInSpatialTable());
+  }
+ else {
+    ps.setString(1,spatialTableName);
+    ps.setString(2,config.getGeomAttributeNameInSpatialTable());
+  }
+  ResultSet resultSet=ps.executeQuery();
+  if (resultSet.next()) {
+    srs=resultSet.getInt(1);
+  }
+ else {
+    String msg=srsSelect + " has no result for " + ((schema != null) ? (schema + ",") : "")+ spatialTableName+ ","+ config.getGeomAttributeNameInSpatialTable();
+    throw new IOException(msg);
+  }
+  resultSet.close();
+  ps.close();
+}

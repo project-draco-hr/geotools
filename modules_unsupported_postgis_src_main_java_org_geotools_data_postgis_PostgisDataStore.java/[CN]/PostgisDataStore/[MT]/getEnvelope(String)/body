@@ -1,0 +1,134 @@
+{
+  Connection conn=null;
+  try {
+    conn=createConnection();
+    Statement st=null;
+    ResultSet rs=null;
+    Envelope envelope=null;
+    SimpleFeatureType schema=getSchema(typeName);
+    String geomName=schema.getGeometryDescriptor().getLocalName();
+    if (getDBInfo().getMajorVersion() >= 1) {
+      String q;
+      String dbSchema=config.getDatabaseSchemaName();
+      if (!schemaEnabled || dbSchema == null || "".equals(dbSchema)) {
+        q="SELECT AsText(force_2d(envelope(estimated_extent('" + typeName + "','"+ geomName+ "'))))";
+      }
+ else {
+        q="SELECT AsText(force_2d(envelope(estimated_extent('" + dbSchema + "','"+ typeName+ "','"+ geomName+ "'))))";
+      }
+      st=conn.createStatement();
+      rs=st.executeQuery(q);
+      if (rs.next()) {
+        String wkt=rs.getString(1);
+        if (wkt != null && !wkt.trim().equals("")) {
+          envelope=geometryReader.read(wkt).getEnvelopeInternal();
+          double minX=envelope.getMinX();
+          double minY=envelope.getMinY();
+          double maxX=envelope.getMaxX();
+          double maxY=envelope.getMaxY();
+          double deltaX=(maxX - minX) * 0.1;
+          double deltaY=(maxY - minY) * 0.1;
+          envelope.expandToInclude(minX - deltaX,minY - deltaY);
+          envelope.expandToInclude(maxX + deltaX,maxY + deltaY);
+        }
+ else {
+          LOGGER.warning("PostGIS estimated_extent function did not return a result." + "\nPerhaps 'ANALYZE " + typeName + ";' needs to be run or the table is empty?");
+        }
+      }
+      rs.close();
+      st.close();
+    }
+    if (envelope == null) {
+      envelope=new Envelope();
+      final int blockSize=10;
+      final int fetchAllLimit=99;
+      int[] offset=new int[]{0,10,100,1000,10000,20000,40000};
+      int hits=0;
+      int misses=0;
+      for (int i=0; i < offset.length && misses < 4; i++) {
+        String limit=" LIMIT " + blockSize + " OFFSET "+ offset[i];
+        ;
+        if (i + 1 < offset.length && offset[i + 1] - offset[i] <= blockSize) {
+          limit=" LIMIT " + blockSize * 2 + " OFFSET " + offset[i];
+          offset[i + 1]=offset[i] + blockSize;
+          i++;
+        }
+        String q="SELECT AsText(force_2d(envelope(" + geomName + "))) FROM "+ typeName;
+        if (offset[i] > -1) {
+          q=q + limit;
+        }
+        st=conn.createStatement();
+        rs=st.executeQuery(q);
+        boolean gotEnvelope=false;
+        while (rs.next()) {
+          gotEnvelope=true;
+          String wkt=rs.getString(1);
+          if (wkt != null && !wkt.trim().equals("")) {
+            Envelope e=geometryReader.read(wkt).getEnvelopeInternal();
+            if (envelope.isNull())             envelope.init(e);
+ else             envelope.expandToInclude(e);
+          }
+        }
+        if (gotEnvelope) {
+          hits++;
+        }
+ else {
+          misses++;
+          if (hits == 0) {
+            rs.close();
+            st.close();
+            return new Envelope();
+          }
+          if (offset[i - 1] < fetchAllLimit) {
+            offset[i]=-1;
+          }
+ else {
+            int min=offset[i - 1];
+            int max=offset[i];
+            if (misses == 2) {
+              min=offset[i - 2];
+              max=offset[i - 1];
+            }
+            if (misses < 3) {
+              offset[i]=(int)((min + max) / 2.0);
+              int width=(int)((max - min) / (double)(offset.length - i));
+              for (int j=i + 1; j < offset.length; j++) {
+                offset[j]=min + (width * (j - i));
+              }
+            }
+ else {
+              rs.close();
+              st.close();
+              break;
+            }
+          }
+          i--;
+        }
+        rs.close();
+        st.close();
+        if (offset[i] == -1)         break;
+      }
+      double minX=envelope.getMinX();
+      double minY=envelope.getMinY();
+      double maxX=envelope.getMaxX();
+      double maxY=envelope.getMaxY();
+      double deltaX=(maxX - minX) * 1.0;
+      double deltaY=(maxY - minY) * 1.0;
+      envelope.expandToInclude(minX - deltaX,minY - deltaY);
+      envelope.expandToInclude(maxX + deltaX,maxY + deltaY);
+    }
+    return envelope;
+  }
+ catch (  Exception ignore) {
+    return null;
+  }
+ finally {
+    if (conn != null) {
+      try {
+        conn.close();
+      }
+ catch (      SQLException e) {
+      }
+    }
+  }
+}

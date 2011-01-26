@@ -1,0 +1,35 @@
+{
+  List dependencies=allDependencies();
+  for (Iterator d=dependencies.iterator(); d.hasNext(); ) {
+    Configuration dependency=(Configuration)d.next();
+    XSDSchemaLocationResolver resolver=dependency.getSchemaLocationResolver();
+    if (resolver != null) {
+      QName key=new QName(dependency.getNamespaceURI(),"schemaLocationResolver");
+      container.registerComponentInstance(key,resolver);
+    }
+    XSDSchemaLocator locator=dependency.getSchemaLocator();
+    if (locator != null) {
+      QName key=new QName(dependency.getNamespaceURI(),"schemaLocator");
+      container.registerComponentInstance(key,locator);
+    }
+synchronized (dependency.getProperties()) {
+      for (      QName property : (Set<QName>)dependency.getProperties()) {
+        try {
+          container.registerComponentInstance(property,property);
+        }
+ catch (        DuplicateComponentKeyRegistrationException e) {
+        }
+      }
+    }
+    container=container.makeChildContainer();
+    dependency.configureContext(container);
+  }
+  if (!context.getComponentAdapters().isEmpty()) {
+    container=container.makeChildContainer();
+    for (Iterator ca=context.getComponentAdapters().iterator(); ca.hasNext(); ) {
+      ComponentAdapter adapter=(ComponentAdapter)ca.next();
+      container.registerComponent(adapter);
+    }
+  }
+  return container;
+}

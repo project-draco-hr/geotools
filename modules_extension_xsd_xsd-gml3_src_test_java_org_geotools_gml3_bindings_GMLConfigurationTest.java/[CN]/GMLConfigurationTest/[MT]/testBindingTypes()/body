@@ -1,0 +1,19 @@
+{
+  GMLConfiguration configuration=new GMLConfiguration();
+  assertEquals(GML.NAMESPACE,configuration.getNamespaceURI());
+  Map bindings=configuration.setupBindings();
+  for (  Object object : bindings.values()) {
+    if (object instanceof Class) {
+      Class type=(Class)object;
+      if (Binding.class.isAssignableFrom(type)) {
+        Constructor c=type.getConstructors()[0];
+        Object[] params=new Object[c.getParameterTypes().length];
+        Binding binding=(Binding)c.newInstance(params);
+        assertNotNull(binding.getTarget());
+        if (binding.getTarget().getNamespaceURI().equals(GML.NAMESPACE)) {
+          assertNotNull(binding.getTarget() + " has a null type",binding.getType());
+        }
+      }
+    }
+  }
+}

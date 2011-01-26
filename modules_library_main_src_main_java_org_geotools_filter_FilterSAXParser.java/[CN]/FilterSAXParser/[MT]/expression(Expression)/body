@@ -1,0 +1,91 @@
+{
+  if (filterType == AbstractFilter.BETWEEN) {
+    if (curState.equals("attribute")) {
+      ((BetweenFilter)curFilter).addMiddleValue(expression);
+      curState="LowerBoundary";
+    }
+ else     if (curState.equals("LowerBoundary")) {
+      ((BetweenFilter)curFilter).addLeftValue(expression);
+      curState="UpperBoundary";
+    }
+ else     if (curState.equals("UpperBoundary")) {
+      ((BetweenFilter)curFilter).addRightValue(expression);
+      curState="complete";
+    }
+ else {
+      throw new IllegalFilterException("Got expression for Between Filter in illegal state: " + curState);
+    }
+  }
+ else   if (AbstractFilter.isCompareFilter(filterType)) {
+    if (curState.equals("leftValue")) {
+      ((CompareFilter)curFilter).addLeftValue(expression);
+      curState="rightValue";
+    }
+ else     if (curState.equals("rightValue")) {
+      ((CompareFilter)curFilter).addRightValue(expression);
+      curState="complete";
+    }
+ else {
+      throw new IllegalFilterException("Got expression for Compare Filter in illegal state: " + curState);
+    }
+  }
+ else   if (filterType == AbstractFilter.NULL) {
+    if (curState.equals("attribute")) {
+      ((NullFilter)curFilter).nullCheckValue(expression);
+      curState="complete";
+    }
+ else {
+      throw new IllegalFilterException("Got expression for Null Filter in illegal state: " + curState);
+    }
+  }
+ else   if (AbstractFilter.isGeometryFilter(filterType)) {
+    if (curState.equals("leftValue")) {
+      ((GeometryFilter)curFilter).addLeftGeometry(expression);
+      curState="rightValue";
+    }
+ else     if (curState.equals("rightValue")) {
+      ((GeometryFilter)curFilter).addRightGeometry(expression);
+      if (AbstractFilter.isGeometryDistanceFilter(filterType)) {
+        curState="distance";
+      }
+ else {
+        curState="complete";
+      }
+      LOGGER.finer("expression called on geometry, curState = " + curState);
+    }
+ else {
+      throw new IllegalFilterException("Got expression for Geometry Filter in illegal state: " + curState);
+    }
+  }
+ else   if (filterType == AbstractFilter.LIKE) {
+    if (curState.equals("attribute")) {
+      ((LikeFilter)curFilter).setValue(expression);
+      curState="pattern";
+    }
+ else     if (curState.equals("pattern")) {
+      if (attributes.size() != NUM_LIKE_ATTS) {
+        throw new IllegalFilterException("Got wrong number of attributes (expecting 3): " + attributes.size() + "\n"+ attributes);
+      }
+      String wildcard=(String)attributes.get("wildCard");
+      if ((wildcard == null) || (wildcard.length() != 1)) {
+        throw new IllegalFilterException("like filter -- required attribute 'wildCard' missing or not exactly 1 char long.  Capitalization?");
+      }
+      String singleChar=(String)attributes.get("singleChar");
+      if ((singleChar == null) || (singleChar.length() != 1)) {
+        throw new IllegalFilterException("like filter -- required attribute 'singleChar' missing  or not exactly 1 char long.  Capitalization?");
+      }
+      String escapeChar=(String)attributes.get("escape");
+      if (escapeChar == null)       escapeChar=(String)attributes.get("escapeChar");
+      if ((escapeChar == null) || (escapeChar.length() != 1)) {
+        throw new IllegalFilterException("like filter -- required attribute 'escape' missing  or not exactly 1 char long.  Capitalization?");
+      }
+      LOGGER.fine("escape char is " + escapeChar);
+      ((LikeFilter)curFilter).setPattern(expression,wildcard,singleChar,escapeChar);
+      curState="complete";
+    }
+ else {
+      throw new IllegalFilterException("Got expression for Like Filter in illegal state: " + curState);
+    }
+  }
+  LOGGER.finer("current state (end): " + curState);
+}

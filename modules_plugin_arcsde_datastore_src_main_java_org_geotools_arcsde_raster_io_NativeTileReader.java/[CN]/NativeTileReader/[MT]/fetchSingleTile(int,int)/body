@@ -1,0 +1,20 @@
+{
+  if (LOGGER.isLoggable(Level.INFO)) {
+    LOGGER.info("fetchSingleTile raster #" + this.rasterId + ", plevel "+ pyramidLevel+ ", tile "+ tileX+ ", "+ tileY);
+  }
+  final int width=1;
+  final int height=1;
+  final GridEnvelope requestTiles=new GridEnvelope2D(tileX,tileY,width,height);
+  final QueryObjects singleTileQueryObjects=execute(requestTiles);
+  final SeQuery query=singleTileQueryObjects.preparedQuery;
+  final SeRow row=singleTileQueryObjects.row;
+  final TileFetchCommand command=new TileFetchCommand(row,nativeCellType);
+  SeRasterTile[] tileData;
+  try {
+    tileData=readTile(command);
+  }
+  finally {
+    session.close(query);
+  }
+  return tileData;
+}

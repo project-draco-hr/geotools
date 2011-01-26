@@ -1,0 +1,29 @@
+{
+  ImageOutputStream out;
+  if (dest instanceof File) {
+    if (dest instanceof File) {
+      dest=new File((File)dest,new StringBuffer(name).append(".DEM").toString());
+    }
+    out=ImageIO.createImageOutputStream((File)dest);
+  }
+ else {
+    final ZipOutputStream outZ=(ZipOutputStream)dest;
+    final ZipEntry e=new ZipEntry(name + ".DEM");
+    outZ.putNextEntry(e);
+    out=ImageIO.createImageOutputStream(outZ);
+  }
+  out.setByteOrder(java.nio.ByteOrder.BIG_ENDIAN);
+  image=untileImage(image);
+  final ParameterBlockJAI pbjW=new ParameterBlockJAI("ImageWrite");
+  pbjW.addSource(image);
+  pbjW.setParameter("Format","raw");
+  pbjW.setParameter("Output",out);
+  JAI.create("ImageWrite",pbjW);
+  if (dest instanceof File) {
+    out.flush();
+    out.close();
+  }
+ else {
+    ((ZipOutputStream)dest).closeEntry();
+  }
+}

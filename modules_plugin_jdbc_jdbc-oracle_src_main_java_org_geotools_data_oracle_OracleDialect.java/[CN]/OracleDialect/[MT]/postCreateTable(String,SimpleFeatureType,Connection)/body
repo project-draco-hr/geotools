@@ -1,0 +1,91 @@
+{
+  String tableName=featureType.getName().getLocalPart().toUpperCase();
+  Statement st=null;
+  try {
+    st=cx.createStatement();
+    for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+      if (att instanceof GeometryDescriptor) {
+        GeometryDescriptor geom=(GeometryDescriptor)att;
+        double tolerance;
+        int dims;
+        double[] min;
+        double[] max;
+        String[] axisNames;
+        if (geom.getCoordinateReferenceSystem() != null) {
+          CoordinateSystem cs=geom.getCoordinateReferenceSystem().getCoordinateSystem();
+          if (geom.getUserData().get(Hints.COORDINATE_DIMENSION) != null) {
+            dims=((Number)geom.getUserData().get(Hints.COORDINATE_DIMENSION)).intValue();
+          }
+ else {
+            dims=cs.getDimension();
+          }
+          min=new double[dims];
+          max=new double[dims];
+          axisNames=new String[dims];
+          double extent=Double.MAX_VALUE;
+          for (int i=0; i < dims; i++) {
+            if (i < cs.getDimension()) {
+              CoordinateSystemAxis axis=cs.getAxis(i);
+              axisNames[i]=axis.getAbbreviation();
+              min[i]=Double.isInfinite(axis.getMinimumValue()) ? DEFAULT_AXIS_MIN : axis.getMinimumValue();
+              max[i]=Double.isInfinite(axis.getMaximumValue()) ? DEFAULT_AXIS_MAX : axis.getMaximumValue();
+              if (max[i] - min[i] < extent)               extent=max[i] - min[i];
+            }
+ else {
+              min[i]=DEFAULT_AXIS_MIN;
+              max[i]=10000000;
+            }
+          }
+          tolerance=extent / 10000000;
+        }
+ else {
+          dims=2;
+          axisNames=new String[2];
+          min=new double[2];
+          max=new double[2];
+          axisNames[0]="X";
+          axisNames[1]="Y";
+          min[0]=DEFAULT_AXIS_MIN;
+          min[1]=DEFAULT_AXIS_MIN;
+          max[0]=10000000;
+          max[1]=10000000;
+          tolerance=0.01;
+        }
+        int srid=-1;
+        if (geom.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID) != null) {
+          srid=(Integer)geom.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID);
+        }
+ else         if (geom.getCoordinateReferenceSystem() != null) {
+          try {
+            Integer result=CRS.lookupEpsgCode(geom.getCoordinateReferenceSystem(),true);
+            if (result != null)             srid=result;
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.FINE,"Error looking up the epsg code for metadata insertion, assuming -1",e);
+          }
+        }
+        String geomColumnName=geom.getLocalName().toUpperCase();
+        String sql="INSERT INTO USER_SDO_GEOM_METADATA" + "(TABLE_NAME, COLUMN_NAME, DIMINFO, SRID)\n" + "VALUES (\n"+ "'" + tableName + "',\n"+ "'"+ geomColumnName+ "',\n"+ "MDSYS.SDO_DIM_ARRAY(\n";
+        for (int i=0; i < dims; i++) {
+          sql+="   MDSYS.SDO_DIM_ELEMENT('" + axisNames[i] + "', "+ min[i]+ ", "+ max[i]+ ", "+ tolerance+ ")";
+          if (i < dims - 1)           sql+=", ";
+          sql+="\n";
+        }
+        sql=sql + "),\n" + (srid == -1 ? "NULL" : String.valueOf(srid))+ ")";
+        LOGGER.log(Level.FINE,"Creating metadata with sql: {0}",sql);
+        st.execute(sql);
+        int idxDim=isGeodeticSrid(srid,cx) ? 2 : dims;
+        String type=CLASSES_TO_GEOM.get(geom.getType().getBinding());
+        String idxName=tableName + "_" + geomColumnName+ "_IDX";
+        sql="CREATE INDEX " + idxName + " ON \""+ tableName+ "\"(\""+ geomColumnName+ "\")"+ " INDEXTYPE IS MDSYS.SPATIAL_INDEX"+ " PARAMETERS ('SDO_INDX_DIMS="+ idxDim;
+        if (type != null)         sql+=" LAYER_GTYPE=\"" + type + "\"')";
+ else         sql+="')";
+        LOGGER.log(Level.FINE,"Creating index with sql: {0}",sql);
+        st.execute(sql);
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

@@ -1,0 +1,73 @@
+{
+  LOGGER.finer("found start element: " + localName);
+  characters.setLength(0);
+  if (localName.equals("Filter")) {
+    insideFilter=true;
+    expressionFactory=new ExpressionSAXParser(schema);
+  }
+ else   if (insideFilter) {
+    short filterType=convertType(localName);
+    LOGGER.finest("types: (xml): " + localName + "; "+ "(internal): "+ filterType);
+    if ((filterType == -1) && !((localName.equals("UpperBoundary")) || (localName.equals("LowerBoundary")) || (localName.equals("Distance")))) {
+      if (!(localName.endsWith("Member")))       throw new SAXException("Attempted to construct illegal filter - I dont understand the tag: " + qName + ".  HINT: tags are case-sensitive!");
+    }
+    try {
+      if (isFidFilter) {
+        if (filterType == AbstractFilter.FID) {
+          LOGGER.finer("sending attributes to existing FID filter");
+          filterFactory.setAttributes(atts);
+        }
+ else {
+          isFidFilter=false;
+          LOGGER.finer("is fid (1): " + isFidFilter);
+          if (isLogicFilter) {
+            addFilterToLogicFactory();
+          }
+ else {
+            addFilterToParent();
+          }
+        }
+      }
+      if (!isFidFilter) {
+        LOGGER.finest("is logic?");
+        if (AbstractFilter.isLogicFilter(filterType)) {
+          LOGGER.finer("found a logic filter start");
+          isLogicFilter=true;
+          logicFactory.start(filterType);
+        }
+ else         if (AbstractFilter.isSimpleFilter(filterType)) {
+          LOGGER.finer("found a simple filter start");
+          filterFactory.start(filterType);
+          if (filterType == AbstractFilter.LIKE) {
+            LOGGER.finer("sending attributes for like filter");
+            filterFactory.setAttributes(atts);
+          }
+ else           if (filterType == AbstractFilter.FID) {
+            LOGGER.finer("sending attributes to new FID filter");
+            filterFactory.setAttributes(atts);
+            isFidFilter=true;
+            LOGGER.finer("is fid (3): " + isFidFilter);
+          }
+        }
+ else         if (DefaultExpression.isExpression(filterType)) {
+          LOGGER.finest("found an expression filter start");
+          expressionFactory.start(localName,atts);
+        }
+ else         if (localName.equals("Distance")) {
+          LOGGER.finest("inside distance");
+          if (("units").equals(atts.getLocalName(0))) {
+            units=atts.getValue(0);
+            LOGGER.finest("units = " + units);
+          }
+          insideDistance=true;
+        }
+      }
+    }
+ catch (    IllegalFilterException ife) {
+      throw new SAXException("Attempted to construct illegal " + "filter: " + ife.getMessage(),ife);
+    }
+  }
+ else {
+    parent.startElement(namespaceURI,localName,qName,atts);
+  }
+}

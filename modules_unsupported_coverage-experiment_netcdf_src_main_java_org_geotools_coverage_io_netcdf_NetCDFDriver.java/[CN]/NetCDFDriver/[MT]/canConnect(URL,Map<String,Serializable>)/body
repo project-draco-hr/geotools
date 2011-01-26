@@ -1,0 +1,74 @@
+{
+  if (url == null) {
+    return false;
+  }
+  ImageInputStream inputStream=null;
+  Object source=null;
+  try {
+    if (url.getProtocol().equalsIgnoreCase("file")) {
+      File file=new File(URLDecoder.decode(url.getFile(),"UTF-8"));
+      if (file.exists()) {
+        if (!file.canRead() || !file.isFile()) {
+          if (LOGGER.isLoggable(Level.FINE))           LOGGER.fine("File cannot be read or it is a directory");
+          return false;
+        }
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine("Provided URL is a file");
+        source=file;
+      }
+ else {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine("File doesn't exist");
+        return false;
+      }
+    }
+ else {
+      if (url.getProtocol().toLowerCase().startsWith("http") || url.getProtocol().equalsIgnoreCase("dods")) {
+        URIImageInputStream uriInStream=new URIImageInputStreamImpl(url.toURI());
+        source=uriInStream;
+        if (!spi.canDecodeInput(source)) {
+          if (LOGGER.isLoggable(Level.FINE))           LOGGER.fine("Unable to decode the inputStream");
+          return false;
+        }
+        return true;
+      }
+ else       if (url.getProtocol().equalsIgnoreCase("ftp")) {
+        source=url.openStream();
+      }
+ else {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine("Unsupported protocol");
+        return false;
+      }
+    }
+    inputStream=(ImageInputStream)((source instanceof ImageInputStream) ? source : (source instanceof File) ? new FileImageInputStreamExtImpl((File)source) : ImageIO.createImageInputStream(source));
+    if (inputStream == null) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Unable to get an ImageInputStream");
+      return false;
+    }
+    inputStream.mark();
+    if (!spi.canDecodeInput(inputStream)) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Unable to decode the inputStream");
+      return false;
+    }
+    return true;
+  }
+ catch (  Throwable e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    return false;
+  }
+ finally {
+    if (inputStream != null) {
+      try {
+        inputStream.close();
+      }
+ catch (      Exception e) {
+      }
+    }
+    if (source != null && (source instanceof InputStream)) {
+      try {
+        ((InputStream)source).close();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+}

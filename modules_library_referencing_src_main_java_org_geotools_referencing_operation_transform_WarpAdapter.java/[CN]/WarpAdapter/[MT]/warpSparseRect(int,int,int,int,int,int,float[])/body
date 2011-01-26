@@ -1,0 +1,29 @@
+{
+  if (periodX < 1)   throw new IllegalArgumentException(String.valueOf(periodX));
+  if (periodY < 1)   throw new IllegalArgumentException(String.valueOf(periodY));
+  final int xmax=xmin + width;
+  final int ymax=ymin + height;
+  final int count=((width + (periodX - 1)) / periodX) * ((height + (periodY - 1)) / periodY);
+  if (destRect == null) {
+    destRect=new float[2 * count];
+  }
+  int index=0;
+  for (int y=ymin; y < ymax; y+=periodY) {
+    for (int x=xmin; x < xmax; x+=periodX) {
+      destRect[index++]=x + 0.5f;
+      destRect[index++]=y + 0.5f;
+    }
+  }
+  try {
+    inverse.transform(destRect,0,destRect,0,count);
+  }
+ catch (  TransformException exception) {
+    RasterFormatException e=new RasterFormatException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,name));
+    e.initCause(exception);
+    throw e;
+  }
+  while (--index >= 0) {
+    destRect[index]-=0.5f;
+  }
+  return destRect;
+}

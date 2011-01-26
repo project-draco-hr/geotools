@@ -1,0 +1,44 @@
+{
+  LOGGER.fine("Starting GeoRaster Image Mosaic");
+  Connection con=null;
+  try {
+    con=getConnection();
+    int srid=getSRID(con);
+    stmtPixel=String.format(StmtTemplatePixel,getConfig().getGeoRasterAttribute(),Integer.toString(srid),getConfig().getGeoRasterAttribute(),Integer.toString(srid),getConfig().getMasterTable(),getConfig().getCoverageNameAttribute());
+    stmtExport=String.format(StmtTemplateExport,getConfig().getGeoRasterAttribute(),getConfig().getMasterTable(),getConfig().getCoverageNameAttribute(),"TIFF");
+    CoordinateReferenceSystem crs=getCRS();
+    Envelope extent=getExtent(con);
+    double[] spatialResolutions=getSpatialResolutions(con);
+    int numberOfPyramidLevels=getPyramidLevels(con);
+    LOGGER.fine("Base Spatial Resolution X: " + spatialResolutions[0] + ", Y: "+ spatialResolutions[1]);
+    LOGGER.fine("Number of Pyramids" + numberOfPyramidLevels);
+    LOGGER.fine("minX " + extent.getMinX());
+    LOGGER.fine("maxX " + extent.getMaxX());
+    LOGGER.fine("maxY " + extent.getMaxY());
+    LOGGER.fine("minY " + extent.getMinY());
+    for (int i=0; i < numberOfPyramidLevels; i++) {
+      ImageLevelInfo imageLevel=new ImageLevelInfo();
+      imageLevel.setCoverageName(getConfig().getCoverageName());
+      imageLevel.setSpatialTableName(new String(i + ""));
+      imageLevel.setTileTableName(new String(i + ""));
+      imageLevel.setResX(spatialResolutions[0] * (Math.pow(2,i)));
+      imageLevel.setResY(spatialResolutions[1] * (Math.pow(2,i)));
+      imageLevel.setExtentMinX(extent.getMinX());
+      imageLevel.setExtentMinY(extent.getMinY());
+      imageLevel.setExtentMaxX(extent.getMaxX());
+      imageLevel.setExtentMaxY(extent.getMaxY());
+      imageLevel.setSrsId(srid);
+      imageLevel.setCrs(crs);
+      getLevelInfos().add(imageLevel);
+      LOGGER.fine("New Level Info for Coverage: " + getConfig().getCoverageName() + " Pyramid Level: "+ imageLevel.getSpatialTableName());
+      LOGGER.fine("Resolution X: " + imageLevel.getResX());
+      LOGGER.fine("Resolution Y: " + imageLevel.getResY());
+      LOGGER.fine("SRID: " + imageLevel.getSrsId());
+      LOGGER.fine("CRS: " + imageLevel.getCrs());
+    }
+    LOGGER.fine("Image Level List Size: " + getLevelInfos().size());
+  }
+  finally {
+    closeConnection(con);
+  }
+}

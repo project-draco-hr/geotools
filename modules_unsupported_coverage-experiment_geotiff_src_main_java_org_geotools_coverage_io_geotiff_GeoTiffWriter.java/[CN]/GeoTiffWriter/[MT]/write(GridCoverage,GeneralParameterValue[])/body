@@ -1,0 +1,33 @@
+{
+  GeoToolsWriteParams gtParams=null;
+  if (params != null) {
+    if (params != null) {
+      Parameter param;
+      final int length=params.length;
+      for (int i=0; i < length; i++) {
+        param=(Parameter)params[i];
+        if (param.getDescriptor().getName().getCode().equals(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString())) {
+          gtParams=(GeoToolsWriteParams)param.getValue();
+        }
+      }
+    }
+  }
+  if (gtParams == null)   gtParams=new GeoTiffWriteParams();
+  final GridGeometry2D gg=(GridGeometry2D)gc.getGridGeometry();
+  GridEnvelope2D range=gg.getGridRange2D();
+  final Rectangle sourceRegion=gtParams.getSourceRegion();
+  if (sourceRegion != null)   range=new GridEnvelope2D(sourceRegion);
+  final AffineTransform tr=(AffineTransform)gg.getGridToCRS2D();
+  final CoordinateReferenceSystem crs=gg.getCoordinateReferenceSystem2D();
+  double inNoData=getCandidateNoData(gc);
+  if (crs instanceof ProjectedCRS || crs instanceof GeographicCRS) {
+    final CRS2GeoTiffMetadataAdapter adapter=(CRS2GeoTiffMetadataAdapter)CRS2GeoTiffMetadataAdapter.get(crs);
+    final GeoTiffIIOMetadataEncoder metadata=adapter.parseCoordinateReferenceSystem();
+    if (!Double.isNaN(inNoData)) {
+      metadata.setNoData(inNoData);
+    }
+    setGeoReference(crs,metadata,tr,range);
+    writeImage(((GridCoverage2D)gc).geophysics(true).getRenderedImage(),this.outStream,metadata,gtParams);
+  }
+ else   throw new GeoTiffException(null,"The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems",null);
+}

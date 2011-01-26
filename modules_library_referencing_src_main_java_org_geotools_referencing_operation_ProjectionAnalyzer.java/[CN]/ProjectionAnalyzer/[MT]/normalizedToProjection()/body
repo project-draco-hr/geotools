@@ -1,0 +1,51 @@
+{
+  parameters=new LinkedList<GeneralParameterValue>(parameters);
+  final int sourceDim=(transform != null) ? transform.getTargetDimensions() : 2;
+  final int targetDim=(projectedScale != null) ? projectedScale.getNumCol() - 1 : sourceDim;
+  final XMatrix matrix=MatrixFactory.create(targetDim + 1,sourceDim + 1);
+  Unit<?> unit=null;
+  String warning=null;
+  for (final Iterator<GeneralParameterValue> it=parameters.iterator(); it.hasNext(); ) {
+    final GeneralParameterValue parameter=it.next();
+    if (parameter instanceof ParameterValue) {
+      final ParameterValue<?> value=(ParameterValue)parameter;
+      final ParameterDescriptor<?> descriptor=value.getDescriptor();
+      if (Number.class.isAssignableFrom(descriptor.getValueClass())) {
+        if (nameMatches(descriptor,"scale_factor")) {
+          final double scale=value.doubleValue();
+          for (int i=Math.min(sourceDim,targetDim); --i >= 0; ) {
+            matrix.setElement(i,i,matrix.getElement(i,i) * scale);
+          }
+        }
+ else {
+          final int d;
+          if (nameMatches(descriptor,"false_easting")) {
+            d=0;
+          }
+ else           if (nameMatches(descriptor,"false_northing")) {
+            d=1;
+          }
+ else {
+            continue;
+          }
+          final double offset=value.doubleValue(SI.METER);
+          if (!Double.isNaN(offset) && offset != value.doubleValue()) {
+            unit=value.getUnit();
+            warning=descriptor.getName().getCode();
+          }
+          matrix.setElement(d,sourceDim,matrix.getElement(d,sourceDim) + offset);
+        }
+        it.remove();
+      }
+    }
+  }
+  if (warning != null) {
+    final LogRecord record=Loggings.format(Level.WARNING,LoggingKeys.APPLIED_UNIT_CONVERSION_$3,warning,unit,SI.METER);
+    record.setSourceClassName(getClass().getName());
+    record.setSourceMethodName("createLinearConversion");
+    final Logger logger=ReferencingFactory.LOGGER;
+    record.setLoggerName(logger.getName());
+    logger.log(record);
+  }
+  return matrix;
+}

@@ -1,0 +1,22 @@
+{
+  int hrWidth=reader.getWidth(0);
+  int hrHeight=reader.getHeight(0);
+  final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
+  this.nativeGridRange=new GridEnvelope2D(actualDim);
+  if (this.crs == null) {
+    parsePRJFile();
+  }
+  if (this.nativeEnvelope == null) {
+    parseWorldFile();
+  }
+  if (this.crs == null || this.nativeEnvelope == null) {
+    final IIOMetadata metadata=reader.getStreamMetadata();
+    checkUUIDBoxes(metadata);
+  }
+  if (this.nativeEnvelope == null) {
+    throw new DataSourceException("Unavailable envelope for this coverage");
+  }
+  originalEnvelope=getCoverageEnvelope();
+  originalEnvelope.setCoordinateReferenceSystem(crs);
+  originalGridRange=getCoverageGridRange();
+}

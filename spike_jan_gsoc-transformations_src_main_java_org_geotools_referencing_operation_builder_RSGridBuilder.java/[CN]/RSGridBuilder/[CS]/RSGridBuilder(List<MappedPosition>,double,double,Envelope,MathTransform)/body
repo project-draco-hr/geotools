@@ -1,0 +1,21 @@
+{
+  super(vectors,dx,dy,envelope,realToGrid);
+  Envelope gridEnvelope=CRS.transform(worldToGrid,envelope);
+  double enlarge=gridEnvelope.getLength(0) * 0.01;
+  DirectPosition p0=new DirectPosition2D(gridEnvelope.getLowerCorner().getOrdinate(0) - enlarge,gridEnvelope.getLowerCorner().getOrdinate(1) - enlarge);
+  DirectPosition p2=new DirectPosition2D(gridEnvelope.getUpperCorner().getOrdinate(0) + enlarge,gridEnvelope.getUpperCorner().getOrdinate(1) + enlarge);
+  DirectPosition p1=new DirectPosition2D(p0.getOrdinate(0),p2.getOrdinate(1));
+  DirectPosition p3=new DirectPosition2D(p2.getOrdinate(0),p0.getOrdinate(1));
+  List<MappedPosition> gridMP=super.getGridMappedPositions();
+  CoordinateReferenceSystem crs=((MappedPosition)gridMP.get(0)).getSource().getCoordinateReferenceSystem();
+  p0=new DirectPosition2D(crs,p0.getOrdinate(0),p0.getOrdinate(1));
+  p1=new DirectPosition2D(crs,p1.getOrdinate(0),p1.getOrdinate(1));
+  p2=new DirectPosition2D(crs,p2.getOrdinate(0),p2.getOrdinate(1));
+  p3=new DirectPosition2D(crs,p3.getOrdinate(0),p3.getOrdinate(1));
+  quad=new ArrayList<DirectPosition>();
+  quad.add(p0);
+  quad.add(p1);
+  quad.add(p2);
+  quad.add(p3);
+  rsBuilder=new RubberSheetBuilder(super.getGridMappedPositions(),quad);
+}

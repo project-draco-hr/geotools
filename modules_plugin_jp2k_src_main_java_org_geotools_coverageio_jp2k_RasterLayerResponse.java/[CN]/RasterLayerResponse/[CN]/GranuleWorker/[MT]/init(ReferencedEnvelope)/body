@@ -1,0 +1,22 @@
+{
+  final ReferencedEnvelope granuleBBox=aoi;
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("About to read image number " + granulesNumber);
+  final File rasterFile=new File(location);
+  if (rasterFile == null) {
+    return;
+  }
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("File found " + location);
+  Granule granule=null;
+synchronized (rasterManager.granulesCache) {
+    if (rasterManager.granulesCache.containsKey(rasterFile.toURI().toString())) {
+      granule=rasterManager.granulesCache.get(rasterFile.toURI().toString());
+    }
+ else {
+      granule=new Granule(granuleBBox,rasterFile);
+      rasterManager.granulesCache.put(rasterFile.toURI().toString(),granule);
+    }
+  }
+  final GranuleLoader loader=new GranuleLoader(baseReadParameters,imageChoice,bbox,finalWorldToGridCorner,granule,request.getTileDimensions());
+  tasks.add(new FutureTask<RenderedImage>(loader));
+  granulesNumber++;
+}

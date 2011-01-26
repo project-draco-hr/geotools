@@ -1,0 +1,30 @@
+{
+  Object value=currentRow.getObject(index);
+  if (value instanceof SeShape) {
+    try {
+      final SeShape shape=(SeShape)value;
+      final Class<? extends Geometry> actualGeomtryClass;
+      if (shape.isNil()) {
+        value=null;
+      }
+ else {
+        actualGeomtryClass=ArcSDEAdapter.getGeometryTypeFromSeShape(shape);
+        final ArcSDEGeometryBuilder geometryBuilder;
+        geometryBuilder=ArcSDEGeometryBuilder.builderFor(actualGeomtryClass);
+        value=geometryBuilder.construct(shape,geometryFactory);
+        if (!this.schemaGeometryClass.isAssignableFrom(actualGeomtryClass)) {
+          value=adaptGeometry((Geometry)value,schemaGeometryClass);
+        }
+      }
+    }
+ catch (    SeException e) {
+      throw new ArcSdeException(e);
+    }
+  }
+ else   if (value instanceof Geometry) {
+    if (!this.schemaGeometryClass.isAssignableFrom(value.getClass())) {
+      value=adaptGeometry((Geometry)value,schemaGeometryClass);
+    }
+  }
+  return value;
+}

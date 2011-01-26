@@ -1,0 +1,32 @@
+{
+  FeatureLock lock=FeatureLockFactory.generate(tname("ft1"),60 * 60 * 1000);
+  Transaction tx=new DefaultTransaction();
+  store.setTransaction(tx);
+  store.setFeatureLock(lock);
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo f=ff.equals(ff.property(aname("intProperty")),ff.literal(1));
+  int locked=store.lockFeatures(f);
+  assertEquals(1,locked);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriter(tname("ft1"),tx);
+  boolean failure=false;
+  while (writer.hasNext()) {
+    SimpleFeature feature=(SimpleFeature)writer.next();
+    Number old=(Number)feature.getAttribute(aname("intProperty"));
+    feature.setAttribute(aname("intProperty"),new Integer(100));
+    if (new Integer(1).equals(old.intValue())) {
+      try {
+        writer.write();
+        fail("writer should have thrown exception for locked feature");
+      }
+ catch (      FeatureLockException e) {
+        failure=true;
+      }
+    }
+ else {
+      writer.write();
+    }
+  }
+  writer.close();
+  assertTrue(failure);
+  tx.close();
+}

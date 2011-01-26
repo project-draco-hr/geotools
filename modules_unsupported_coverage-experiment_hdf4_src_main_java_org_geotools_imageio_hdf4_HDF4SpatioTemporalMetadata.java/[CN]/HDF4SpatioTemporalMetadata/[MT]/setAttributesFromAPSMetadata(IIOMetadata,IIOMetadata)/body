@@ -1,0 +1,75 @@
+{
+  if (metadata instanceof HDF4APSImageMetadata) {
+    Node root=metadata.getAsTree(HDF4APSImageMetadata.nativeMetadataFormatName);
+    if (root != null) {
+      Node mainNode=root.getFirstChild();
+      if (mainNode != null) {
+        final NamedNodeMap attributes=mainNode.getAttributes();
+        if (attributes != null) {
+          final int numAttributes=attributes.getLength();
+          for (int i=0; i < numAttributes; i++) {
+            final Node node=attributes.item(i);
+            if (node != null) {
+              attributesMap.put(node.getNodeName(),node.getNodeValue());
+            }
+          }
+        }
+      }
+    }
+  }
+  if (streamMetadata instanceof HDF4APSStreamMetadata) {
+    Node root=streamMetadata.getAsTree(HDF4APSStreamMetadata.nativeMetadataFormatName);
+    if (root != null) {
+      NamedNodeMap attributes=null;
+      Node attributesNode=root.getFirstChild();
+      if (attributesNode != null) {
+        Node mainNode=attributesNode.getFirstChild();
+        if (mainNode != null) {
+          if (mainNode.getNodeName().equalsIgnoreCase(HDF4APSStreamMetadata.STD_NODE)) {
+            Node timeNode=mainNode.getFirstChild().getNextSibling();
+            attributes=timeNode.getAttributes();
+            if (attributes != null) {
+              final int numAttributes=attributes.getLength();
+              for (int i=0; i < numAttributes; i++) {
+                final Node node=attributes.item(i);
+                if (node != null) {
+                  attributesMap.put(node.getNodeName(),node.getNodeValue());
+                }
+              }
+            }
+          }
+          attributes=null;
+          mainNode=mainNode.getNextSibling();
+          if (mainNode != null && mainNode.getNodeName().equalsIgnoreCase(HDF4APSStreamMetadata.PFA_NODE)) {
+            Node navigationNode=mainNode.getFirstChild().getNextSibling();
+            if (navigationNode != null) {
+              attributes=navigationNode.getAttributes();
+              if (attributes != null) {
+                final int numAttributes=attributes.getLength();
+                for (int i=0; i < numAttributes; i++) {
+                  final Node node=attributes.item(i);
+                  if (node != null) {
+                    attributesMap.put(node.getNodeName(),node.getNodeValue());
+                  }
+                }
+              }
+            }
+          }
+        }
+        Node projectionNode=attributesNode.getNextSibling().getFirstChild();
+        if (projectionNode != null && projectionNode.getNodeName().equalsIgnoreCase(HDF4APSStreamMetadata.PROJECTION_NODE)) {
+          attributes=projectionNode.getAttributes();
+          if (attributes != null) {
+            final int numAttributes=attributes.getLength();
+            for (int i=0; i < numAttributes; i++) {
+              final Node node=attributes.item(i);
+              if (node != null) {
+                attributesMap.put(node.getNodeName(),node.getNodeValue());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

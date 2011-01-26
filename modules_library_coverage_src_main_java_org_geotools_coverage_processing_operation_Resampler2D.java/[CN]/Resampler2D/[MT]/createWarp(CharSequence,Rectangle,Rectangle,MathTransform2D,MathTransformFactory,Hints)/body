@@ -1,0 +1,30 @@
+{
+  Double tolerance=(Double)hints.get(Hints.RESAMPLE_TOLERANCE);
+  if (tolerance == null) {
+    tolerance=(Double)Hints.getSystemDefault(Hints.RESAMPLE_TOLERANCE);
+  }
+  if (tolerance == null) {
+    tolerance=0.333;
+  }
+  WarpBuilder wb=new WarpBuilder(tolerance);
+  MathTransform2D transform=allSteps2D;
+  Rectangle actualBB=null;
+  int step=0;
+  do {
+    if (actualBB != null) {
+      final double scaleX=1 - ((double)sourceBB.width / (double)actualBB.width);
+      final double scaleY=1 - ((double)sourceBB.height / (double)actualBB.height);
+      final double translateX=sourceBB.x - actualBB.x;
+      final double translateY=sourceBB.y - actualBB.y;
+      final double factor=(double)step / (double)EMPIRICAL_ADJUSTMENT_STEPS;
+      final AffineTransform2D adjustment=new AffineTransform2D(1 - scaleX * factor,0,0,1 - scaleY * factor,translateX * factor,translateY * factor);
+      transform=(MathTransform2D)mtFactory.createConcatenatedTransform(allSteps2D,adjustment);
+    }
+    final Warp warp=wb.buildWarp(transform,sourceBB);
+    if (true) {
+      return warp;
+    }
+  }
+ while (step++ <= EMPIRICAL_ADJUSTMENT_STEPS);
+  throw new FactoryException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,name));
+}

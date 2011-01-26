@@ -1,0 +1,56 @@
+{
+  final int numberOfBands=rasterInfo.getNumBands();
+  final RasterCellType nativePixelType=rasterInfo.getNativeCellType();
+  final RasterCellType pixelType=rasterInfo.getTargetCellType(rasterIndex);
+  final int sampleImageWidth=1;
+  final int sampleImageHeight=1;
+  final ImageTypeSpecifier its;
+  final int bitsPerSample=pixelType.getBitsPerSample();
+  final int dataType=pixelType.getDataBufferType();
+  final boolean hasColorMap=rasterInfo.isColorMapped();
+  if (hasColorMap) {
+    IndexColorModel colorMap=rasterInfo.getColorMap(rasterIndex);
+    its=createColorMappedImageSpec(colorMap,sampleImageWidth,sampleImageHeight);
+  }
+ else   if (nativePixelType == TYPE_1BIT && numberOfBands == 1) {
+    byte noDataValue=rasterInfo.getNoDataValue(rasterIndex,0).byteValue();
+    its=createOneBitColorMappedImageSpec(sampleImageWidth,sampleImageHeight,noDataValue);
+  }
+ else   if (nativePixelType == TYPE_4BIT && numberOfBands == 1) {
+    byte noDataValue=rasterInfo.getNoDataValue(rasterIndex,0).byteValue();
+    its=createFourBitColorMappedImageSpec(sampleImageWidth,sampleImageHeight,noDataValue);
+  }
+ else   if (numberOfBands == 1) {
+    its=createGrayscaleImageSpec(sampleImageWidth,sampleImageHeight,dataType,bitsPerSample);
+  }
+ else   if (numberOfBands == 3 && pixelType == TYPE_8BIT_U) {
+    its=createRGBImageSpec(sampleImageWidth,sampleImageHeight,dataType);
+  }
+ else   if (numberOfBands == 4 && pixelType == TYPE_8BIT_U) {
+    its=createRGBAImageSpec(sampleImageWidth,sampleImageHeight,dataType);
+  }
+ else {
+    final ColorModel colorModel;
+    final SampleModel sampleModel;
+{
+      final ColorSpace colorSpace;
+      colorSpace=new BogusColorSpace(numberOfBands);
+      int[] numBits=new int[numberOfBands];
+      for (int i=0; i < numberOfBands; i++) {
+        numBits[i]=bitsPerSample;
+      }
+      colorModel=new ComponentColorModelJAI(colorSpace,numBits,false,false,Transparency.OPAQUE,dataType);
+    }
+{
+      int[] bankIndices=new int[numberOfBands];
+      int[] bandOffsets=new int[numberOfBands];
+      for (int i=0; i < numberOfBands; i++) {
+        bankIndices[i]=i;
+        bandOffsets[i]=0;
+      }
+      sampleModel=new BandedSampleModel(dataType,sampleImageWidth,sampleImageHeight,sampleImageWidth,bankIndices,bandOffsets);
+    }
+    its=new ImageTypeSpecifier(colorModel,sampleModel);
+  }
+  return its;
+}

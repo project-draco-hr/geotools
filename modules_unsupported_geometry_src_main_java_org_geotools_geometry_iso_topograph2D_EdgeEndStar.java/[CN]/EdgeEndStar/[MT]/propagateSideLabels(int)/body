@@ -1,0 +1,31 @@
+{
+  int startLoc=Location.NONE;
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    EdgeEnd e=(EdgeEnd)it.next();
+    Label label=e.getLabel();
+    if (label.isArea(geomIndex) && label.getLocation(geomIndex,Position.LEFT) != Location.NONE)     startLoc=label.getLocation(geomIndex,Position.LEFT);
+  }
+  if (startLoc == Location.NONE)   return;
+  int currLoc=startLoc;
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    EdgeEnd e=(EdgeEnd)it.next();
+    Label label=e.getLabel();
+    if (label.getLocation(geomIndex,Position.ON) == Location.NONE)     label.setLocation(geomIndex,Position.ON,currLoc);
+    if (label.isArea(geomIndex)) {
+      int leftLoc=label.getLocation(geomIndex,Position.LEFT);
+      int rightLoc=label.getLocation(geomIndex,Position.RIGHT);
+      if (rightLoc != Location.NONE) {
+        if (rightLoc != currLoc)         throw new TopologyException("side location conflict",e.getCoordinate());
+        if (leftLoc == Location.NONE) {
+          Assert.shouldNeverReachHere("found single null side (at " + e.getCoordinate() + ")");
+        }
+        currLoc=leftLoc;
+      }
+ else {
+        Assert.isTrue(label.getLocation(geomIndex,Position.LEFT) == Location.NONE,"found single null side");
+        label.setLocation(geomIndex,Position.RIGHT,currLoc);
+        label.setLocation(geomIndex,Position.LEFT,currLoc);
+      }
+    }
+  }
+}

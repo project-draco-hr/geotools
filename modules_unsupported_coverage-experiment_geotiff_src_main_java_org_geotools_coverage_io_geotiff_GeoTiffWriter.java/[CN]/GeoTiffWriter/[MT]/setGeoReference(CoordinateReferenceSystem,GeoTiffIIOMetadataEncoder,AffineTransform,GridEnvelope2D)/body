@@ -1,0 +1,23 @@
+{
+  final AffineTransform modifiedRasterToModel;
+  int minx=range.x, miny=range.y;
+  if (minx != 0 || miny != 0) {
+    modifiedRasterToModel=new AffineTransform(rasterToModel);
+    modifiedRasterToModel.concatenate(AffineTransform.getTranslateInstance(minx,miny));
+  }
+ else   modifiedRasterToModel=rasterToModel;
+  metadata.addGeoShortParam(GeoTiffConstants.GTRasterTypeGeoKey,GeoTiffConstants.RasterPixelIsPoint);
+  boolean lonFirst=XAffineTransform.getSwapXY(modifiedRasterToModel) != -1;
+  double rotation=XAffineTransform.getRotation(modifiedRasterToModel);
+  if (!(Double.isInfinite(rotation) || Double.isNaN(rotation) || Math.abs(rotation) > 1E-6)) {
+    final double tiePointLongitude=(lonFirst) ? modifiedRasterToModel.getTranslateX() : modifiedRasterToModel.getTranslateY();
+    final double tiePointLatitude=(lonFirst) ? modifiedRasterToModel.getTranslateY() : modifiedRasterToModel.getTranslateX();
+    metadata.setModelTiePoint(0,0,0,tiePointLongitude,tiePointLatitude,0);
+    final double scaleModelToRasterLongitude=(lonFirst) ? Math.abs(modifiedRasterToModel.getScaleX()) : Math.abs(modifiedRasterToModel.getShearY());
+    final double scaleModelToRasterLatitude=(lonFirst) ? Math.abs(modifiedRasterToModel.getScaleY()) : Math.abs(modifiedRasterToModel.getShearX());
+    metadata.setModelPixelScale(scaleModelToRasterLongitude,scaleModelToRasterLatitude,0);
+  }
+ else {
+    metadata.setModelTransformation(modifiedRasterToModel);
+  }
+}

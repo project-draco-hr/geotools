@@ -1,0 +1,37 @@
+{
+  final byte[] bb=uuid.getData();
+  if (bb[0] != 'M' || bb[1] != 'S' || bb[2] != 'I' || bb[3] != 'G')   return;
+  final int worldFileInterpretation=bb[6];
+  final int ckIndex=16;
+  final int chunkIndex=bb[ckIndex];
+  final long chunkLength=Utils.bytes2long(bb,ckIndex + 2);
+  if (chunkIndex != 0 && chunkLength != 48)   return;
+  final double xScale=Utils.bytes2double(bb,ckIndex + 6);
+  final double xRotation=Utils.bytes2double(bb,ckIndex + 14);
+  final double yRotation=Utils.bytes2double(bb,ckIndex + 22);
+  final double yScale=Utils.bytes2double(bb,ckIndex + 30);
+  final double xUpperLeft=Utils.bytes2double(bb,ckIndex + 38);
+  final double yUpperLeft=Utils.bytes2double(bb,ckIndex + 46);
+  final AffineTransform tempTransform=new AffineTransform(xScale,yRotation,xRotation,yScale,xUpperLeft,yUpperLeft);
+  if (worldFileInterpretation == WORLD_FILE_INTERPRETATION_PIXEL_CORNER) {
+    AffineTransform transform=(AffineTransform)ProjectiveTransform.create(tempTransform);
+    final double tr=-PixelTranslation.getPixelTranslation(PixelInCell.CELL_CORNER);
+    transform.translate(tr,tr);
+    this.raster2Model=ProjectiveTransform.create(transform);
+  }
+ else {
+    this.raster2Model=ProjectiveTransform.create(tempTransform);
+    tempTransform.translate(-0.5,-0.5);
+  }
+  try {
+    final GeneralEnvelope envelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(nativeGridRange));
+    envelope.setCoordinateReferenceSystem(crs);
+    this.nativeEnvelope=envelope;
+  }
+ catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to parse CRS from underlying TIFF",e);
+  }
+catch (  UnsupportedOperationException e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to parse CRS from underlying TIFF due to an unsupported CRS",e);
+  }
+}

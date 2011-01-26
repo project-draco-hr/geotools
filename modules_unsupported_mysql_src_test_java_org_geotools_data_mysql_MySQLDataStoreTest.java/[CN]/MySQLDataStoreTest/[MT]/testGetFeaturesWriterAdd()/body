@@ -1,0 +1,23 @@
+{
+  Transaction trans=new DefaultTransaction();
+  JDBCTransactionState state=new JDBCTransactionState(connPool);
+  trans.putState(connPool,state);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dstore.getFeatureWriter(FEATURE_TABLE,Filter.INCLUDE,trans);
+  int count=0;
+  while (writer.hasNext()) {
+    SimpleFeature feature=writer.next();
+    count++;
+  }
+  assertEquals("Checking num features before add",6,count);
+  assertFalse(writer.hasNext());
+  SimpleFeature feature=(SimpleFeature)writer.next();
+  Object[] atts=getTestAtts("testAdd");
+  feature.setAttributes(atts);
+  writer.write();
+  assertFalse(writer.hasNext());
+  writer.close();
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=dstore.getFeatureReader(schema,Filter.INCLUDE,trans);
+  int numFeatures=count(reader);
+  assertEquals("Wrong number of features after add",7,numFeatures);
+  state.rollback();
+}

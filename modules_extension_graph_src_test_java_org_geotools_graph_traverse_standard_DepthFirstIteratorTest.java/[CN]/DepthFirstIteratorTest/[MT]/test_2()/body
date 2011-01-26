@@ -1,0 +1,38 @@
+{
+  int nnodes=100;
+  Node[] ends=GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  final int kill=50;
+  CountingWalker walker=new CountingWalker(){
+    private int m_mode=0;
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      super.visit(element,traversal);
+      if (m_mode == 0) {
+        if (element.getID() == kill) {
+          m_mode++;
+          return (GraphTraversal.KILL_BRANCH);
+        }
+      }
+ else       if (m_mode == 1) {
+        assertTrue(false);
+      }
+      return (GraphTraversal.CONTINUE);
+    }
+  }
+;
+  DepthFirstIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  iterator.setSource(ends[0]);
+  traversal.traverse();
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      if (component.getID() <= kill)       assertTrue(component.isVisited());
+ else       assertTrue(!component.isVisited());
+      return (0);
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == nnodes - kill + 1);
+  traversal.traverse();
+}

@@ -1,0 +1,40 @@
+{
+  ISession session=store.getSession(Transaction.AUTO_COMMIT);
+  SeSqlConstruct sqlConstruct=new SeSqlConstruct();
+  String[] tables={InProcessViewSupportTestData.MASTER,InProcessViewSupportTestData.CHILD};
+  sqlConstruct.setTables(tables);
+  String where=InProcessViewSupportTestData.CHILD + ".MASTER_ID = " + InProcessViewSupportTestData.MASTER+ ".ID";
+  sqlConstruct.setWhere(where);
+  String[] propertyNames={InProcessViewSupportTestData.MASTER + ".ID",InProcessViewSupportTestData.CHILD + ".NAME"};
+  final int expectedCount=6;
+  final SeQueryInfo queryInfo=new SeQueryInfo();
+  queryInfo.setConstruct(sqlConstruct);
+  queryInfo.setColumns(propertyNames);
+  String groupBy=InProcessViewSupportTestData.MASTER + ".ID, " + InProcessViewSupportTestData.CHILD+ ".NAME, "+ InProcessViewSupportTestData.MASTER+ ".SHAPE";
+  queryInfo.setByClause(" GROUP BY " + groupBy + " ORDER BY "+ InProcessViewSupportTestData.CHILD+ ".NAME DESC");
+  SeQuery query=session.issue(new Command<SeQuery>(){
+    @Override public SeQuery execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeQuery query=new SeQuery(connection);
+      query.prepareQueryInfo(queryInfo);
+      query.execute();
+      return query;
+    }
+  }
+);
+  try {
+    SdeRow row=session.fetch(query);
+    int count=0;
+    while (row != null) {
+      count++;
+      row=session.fetch(query);
+    }
+    assertEquals(expectedCount,count);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
+ finally {
+    session.dispose();
+  }
+}

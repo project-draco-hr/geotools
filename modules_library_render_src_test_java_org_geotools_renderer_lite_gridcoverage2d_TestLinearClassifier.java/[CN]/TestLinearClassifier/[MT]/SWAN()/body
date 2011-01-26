@@ -1,0 +1,35 @@
+{
+  final RenderedImage image=getSWAN();
+  for (int i=0; i < TEST_NUM; i++) {
+    final LinearColorMapElement c0=LinearColorMapElement.create("c0",Color.green,NumberRange.create(Double.NEGATIVE_INFINITY,0.3),51);
+    final LinearColorMapElement c1=LinearColorMapElement.create("c2",Color.yellow,NumberRange.create(0.3,false,0.6,true),1);
+    final LinearColorMapElement c1b=LinearColorMapElement.create("c2",Color.BLACK,NumberRange.create(0.3,false,0.6,true),1);
+    final LinearColorMapElement c1c=LinearColorMapElement.create("c2",Color.yellow,NumberRange.create(0.3,false,0.6,true),1);
+    assertFalse(c1.equals(c1b));
+    assertTrue(c1.equals(c1c));
+    final LinearColorMapElement c3=LinearColorMapElement.create("c3",Color.red,NumberRange.create(0.60,false,0.90,true),2);
+    final LinearColorMapElement c4=LinearColorMapElement.create("c4",Color.BLUE,NumberRange.create(0.9,false,Double.POSITIVE_INFINITY,true),3);
+    final LinearColorMapElement nodata=LinearColorMapElement.create("nodata",new Color(0,0,0,0),NumberRange.create(-9.0,-9.0),4);
+    final LinearColorMap list=new LinearColorMap("testSWAN",new LinearColorMapElement[]{c0,c1,c3,c4},new LinearColorMapElement[]{nodata},new Color(0,0,0));
+    assertEquals(list.getSourceDimensions(),1);
+    assertEquals(list.getTargetDimensions(),1);
+    assertEquals(list.getName().toString(),"testSWAN");
+    assertNotNull(c0.toString());
+    final ParameterBlockJAI pbj=new ParameterBlockJAI(RasterClassifier.OPERATION_NAME);
+    pbj.addSource(image);
+    pbj.setParameter("Domain1D",list);
+    try {
+      pbj.setParameter("bandIndex",new Integer(2));
+      final RenderedOp d=JAI.create(RasterClassifier.OPERATION_NAME,pbj);
+      d.getTiles();
+      assertTrue(false);
+    }
+ catch (    Exception e) {
+    }
+    pbj.setParameter("bandIndex",new Integer(0));
+    final RenderedOp finalImage=JAI.create(RasterClassifier.OPERATION_NAME,pbj);
+    if (TestData.isInteractiveTest())     RasterSymbolizerTest.visualize(finalImage,"testSWAN1");
+ else     finalImage.getTiles();
+    finalImage.dispose();
+  }
+}

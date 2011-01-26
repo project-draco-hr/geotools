@@ -1,0 +1,108 @@
+{
+  testData.createTempTable(true);
+  final DataStore ds=testData.getDataStore();
+  final String typeName=testData.getTempTableName();
+  final SimpleFeatureStore transFs;
+  transFs=(SimpleFeatureStore)ds.getFeatureSource(typeName);
+  final SimpleFeatureType schema=transFs.getSchema();
+  final Transaction transaction=new DefaultTransaction("test_handle");
+  transFs.setTransaction(transaction);
+  try {
+    SimpleFeatureBuilder builder=new SimpleFeatureBuilder(schema);
+    builder.set("INT32_COL",Integer.valueOf(1000));
+    builder.set("STRING_COL","inside transaction");
+    SimpleFeature feature=builder.buildFeature(null);
+    transFs.addFeatures(DataUtilities.collection(feature));
+    final Filter filterNewFeature=CQL.toFilter("INT32_COL = 1000");
+    final Query newFeatureQuery=new Query(typeName,filterNewFeature);
+    SimpleFeatureCollection features;
+    features=transFs.getFeatures(filterNewFeature);
+    int size=features.size();
+    assertEquals(1,size);
+{
+      FeatureReader<SimpleFeatureType,SimpleFeature> autoCommitReader;
+      autoCommitReader=ds.getFeatureReader(newFeatureQuery,Transaction.AUTO_COMMIT);
+      try {
+        if (databaseIsMsSqlServer) {
+          assertTrue(autoCommitReader.hasNext());
+        }
+ else {
+          assertFalse(autoCommitReader.hasNext());
+        }
+      }
+  finally {
+        autoCommitReader.close();
+      }
+    }
+{
+      FeatureReader<SimpleFeatureType,SimpleFeature> transactionReader;
+      transactionReader=ds.getFeatureReader(newFeatureQuery,transaction);
+      try {
+        assertTrue(transactionReader.hasNext());
+        transactionReader.next();
+        assertFalse(transactionReader.hasNext());
+      }
+  finally {
+        transactionReader.close();
+      }
+    }
+    try {
+      transaction.commit();
+    }
+ catch (    IOException e) {
+      transaction.rollback();
+      throw e;
+    }
+{
+      FeatureReader<SimpleFeatureType,SimpleFeature> autoCommitReader;
+      autoCommitReader=ds.getFeatureReader(newFeatureQuery,Transaction.AUTO_COMMIT);
+      try {
+        assertTrue(autoCommitReader.hasNext());
+      }
+  finally {
+        autoCommitReader.close();
+      }
+    }
+    transFs.removeFeatures(filterNewFeature);
+{
+      FeatureReader<SimpleFeatureType,SimpleFeature> autoCommitReader;
+      autoCommitReader=ds.getFeatureReader(newFeatureQuery,Transaction.AUTO_COMMIT);
+      try {
+        if (databaseIsMsSqlServer) {
+          assertFalse(autoCommitReader.hasNext());
+        }
+ else {
+          assertTrue(autoCommitReader.hasNext());
+        }
+      }
+  finally {
+        autoCommitReader.close();
+      }
+    }
+{
+      FeatureReader<SimpleFeatureType,SimpleFeature> transactionReader;
+      transactionReader=ds.getFeatureReader(newFeatureQuery,transaction);
+      try {
+        assertFalse(transactionReader.hasNext());
+      }
+  finally {
+        transactionReader.close();
+      }
+    }
+{
+      FeatureReader<SimpleFeatureType,SimpleFeature> autoCommitReader;
+      try {
+        transaction.commit();
+        autoCommitReader=ds.getFeatureReader(newFeatureQuery,Transaction.AUTO_COMMIT);
+        assertFalse(autoCommitReader.hasNext());
+      }
+ catch (      Exception e) {
+        transaction.rollback();
+        throw e;
+      }
+    }
+  }
+  finally {
+    transaction.close();
+  }
+}

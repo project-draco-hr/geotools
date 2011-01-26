@@ -1,0 +1,14 @@
+{
+  FeatureLock lock=FeatureLockFactory.generate("Timed",1000);
+  FeatureLocking<SimpleFeatureType,SimpleFeature> road=(FeatureLocking<SimpleFeatureType,SimpleFeature>)dataStore.getFeatureSource(tname("road"));
+  road.setFeatureLock(lock);
+  assertFalse(isLocked(tname("road"),tname("road") + "." + (td.initialFidValue)));
+  road.lockFeatures(td.rd1Filter);
+  assertTrue(isLocked(tname("road"),tname("road") + "." + (td.initialFidValue)));
+  long then=System.currentTimeMillis();
+  do {
+    Thread.sleep(1000);
+  }
+ while (System.currentTimeMillis() - then < 1000);
+  assertFalse(isLocked(tname("road"),tname("road") + "." + (td.initialFidValue)));
+}

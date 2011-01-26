@@ -1,0 +1,57 @@
+{
+  boolean threwException=false;
+  HashSet mappings=new HashSet();
+  TypeMapping duplicate=new TypeMapping();
+  duplicate.setMappingName(dtoMappingName.getMappingName());
+  duplicate.setSourceDataStore(dtoMappingName.getSourceDataStore());
+  duplicate.setSourceTypeName(dtoMappingName.getSourceTypeName());
+  duplicate.setTargetElementName(dtoMappingName.getTargetElementName());
+  mappings.add(dtoMappingName);
+  mappings.add(duplicate);
+  config.setTypeMappings(mappings);
+  try {
+    AppSchemaDataAccess da=new AppSchemaDataAccess(AppSchemaDataAccessConfigurator.buildMappings(config));
+  }
+ catch (  DataSourceException e) {
+    assertTrue(e.getMessage().startsWith("Duplicate mappingName or targetElement across FeatureTypeMapping instances detected."));
+    threwException=true;
+  }
+  assertTrue(threwException);
+  threwException=false;
+  duplicate=new TypeMapping();
+  duplicate.setMappingName(dtoNoMappingName.getTargetElementName());
+  duplicate.setSourceDataStore(dtoNoMappingName.getSourceDataStore());
+  duplicate.setSourceTypeName(dtoNoMappingName.getSourceTypeName());
+  duplicate.setTargetElementName(dtoNoMappingName.getTargetElementName());
+  mappings.clear();
+  mappings.add(duplicate);
+  mappings.add(dtoNoMappingName);
+  config.setTypeMappings(mappings);
+  assertTrue(config.getTypeMappings().containsAll(mappings));
+  try {
+    AppSchemaDataAccess da=new AppSchemaDataAccess(AppSchemaDataAccessConfigurator.buildMappings(config));
+  }
+ catch (  DataSourceException e) {
+    assertTrue(e.getMessage().startsWith("Duplicate mappingName or targetElement across FeatureTypeMapping instances detected."));
+    threwException=true;
+  }
+  assertTrue(threwException);
+  threwException=false;
+  duplicate=new TypeMapping();
+  duplicate.setSourceDataStore(dtoNoMappingName.getSourceDataStore());
+  duplicate.setSourceTypeName(dtoNoMappingName.getSourceTypeName());
+  duplicate.setTargetElementName(dtoNoMappingName.getTargetElementName());
+  mappings.clear();
+  mappings.add(duplicate);
+  mappings.add(dtoNoMappingName);
+  config.setTypeMappings(mappings);
+  assertTrue(config.getTypeMappings().containsAll(mappings));
+  try {
+    AppSchemaDataAccess da=new AppSchemaDataAccess(AppSchemaDataAccessConfigurator.buildMappings(config));
+  }
+ catch (  DataSourceException e) {
+    assertTrue(e.getMessage().startsWith("Duplicate mappingName or targetElement across FeatureTypeMapping instances detected."));
+    threwException=true;
+  }
+  assertTrue(threwException);
+}

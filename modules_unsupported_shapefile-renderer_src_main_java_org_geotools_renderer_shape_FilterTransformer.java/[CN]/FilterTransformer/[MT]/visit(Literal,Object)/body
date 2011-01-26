@@ -1,0 +1,22 @@
+{
+  Object value=expression.getValue();
+  try {
+    if (value instanceof com.vividsolutions.jts.geom.Geometry) {
+      return getFactory(extraData).literal(JTS.transform((com.vividsolutions.jts.geom.Geometry)value,mt));
+    }
+    if (value instanceof Envelope) {
+      ReferencedEnvelope start=new ReferencedEnvelope((Envelope)value,toCRS);
+      return getFactory(extraData).literal(JTS.transform((Envelope)start,mt));
+    }
+  }
+ catch (  MismatchedDimensionException e) {
+    throw new RuntimeException(e);
+  }
+catch (  IllegalFilterException e) {
+    throw new RuntimeException(e);
+  }
+catch (  TransformException e) {
+    throw new RuntimeException(e);
+  }
+  return super.visit(expression,extraData);
+}

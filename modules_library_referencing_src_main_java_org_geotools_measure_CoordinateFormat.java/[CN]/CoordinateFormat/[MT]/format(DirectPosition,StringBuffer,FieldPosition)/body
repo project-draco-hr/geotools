@@ -1,0 +1,61 @@
+{
+  final int dimension=point.getDimension();
+  final CoordinateSystem cs;
+  if (crs != null) {
+    if (dimension != formats.length) {
+      throw new MismatchedDimensionException(Errors.format(ErrorKeys.MISMATCHED_DIMENSION_$3,"point",dimension,formats.length));
+    }
+    cs=crs.getCoordinateSystem();
+  }
+ else {
+    cs=null;
+  }
+  for (int i=0; i < dimension; i++) {
+    final double value=point.getOrdinate(i);
+    final int fi=Math.min(i,formats.length - 1);
+    final Object object;
+    final byte type=types[fi];
+switch (type) {
+default :
+      object=Double.valueOf(value);
+    break;
+case LONGITUDE:
+  object=new Longitude(value);
+break;
+case LATITUDE:
+object=new Latitude(value);
+break;
+case ANGLE:
+object=new Angle(value);
+break;
+case DATE:
+{
+final CoordinateSystemAxis axis=cs.getAxis(i);
+long offset=Math.round(toMillis[fi].convert(value));
+if (AxisDirection.PAST.equals(axis.getDirection())) {
+offset=-offset;
+}
+object=new Date(epochs[fi] + offset);
+break;
+}
+}
+if (i != 0) {
+toAppendTo.append(separator);
+}
+formats[fi].format(object,toAppendTo,dummy);
+if (type == 0 && cs != null) {
+final Unit<?> unit=cs.getAxis(i).getUnit();
+if (unit != null) {
+if (unitFormat == null) {
+unitFormat=UnitFormat.getInstance();
+}
+final String asText=unitFormat.format(unit);
+if (asText.length() != 0) {
+toAppendTo.append('\u00A0');
+toAppendTo.append(unit);
+}
+}
+}
+}
+return toAppendTo;
+}

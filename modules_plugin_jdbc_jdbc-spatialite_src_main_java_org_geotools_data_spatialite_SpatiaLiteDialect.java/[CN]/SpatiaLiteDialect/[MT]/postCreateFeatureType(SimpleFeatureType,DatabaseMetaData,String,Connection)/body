@@ -1,0 +1,18 @@
+{
+  for (  AttributeDescriptor ad : featureType.getAttributeDescriptors()) {
+    if (!(ad instanceof GeometryDescriptor)) {
+      continue;
+    }
+    GeometryDescriptor gd=(GeometryDescriptor)ad;
+    String idxTableName="idx_" + featureType.getTypeName() + "_"+ gd.getLocalName();
+    ResultSet rs=metadata.getTables(null,schemaName,idxTableName,new String[]{"TABLE"});
+    try {
+      if (rs.next()) {
+        gd.getUserData().put(SPATIALITE_SPATIAL_INDEX,idxTableName);
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+}

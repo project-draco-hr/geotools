@@ -1,0 +1,77 @@
+{
+  if (CRS.equalsIgnoreMetadata(this.crs,(this.crs=crs))) {
+    return;
+  }
+  Format numberFormat=null;
+  Format angleFormat=null;
+  Format dateFormat=null;
+  if (formats != null) {
+    for (int i=formats.length; --i >= 0; ) {
+      final Format format=formats[i];
+      if (format instanceof NumberFormat) {
+        numberFormat=format;
+      }
+ else       if (format instanceof AngleFormat) {
+        angleFormat=format;
+      }
+ else       if (format instanceof DateFormat) {
+        dateFormat=format;
+      }
+    }
+  }
+  if (crs == null) {
+    if (numberFormat == null) {
+      numberFormat=NumberFormat.getNumberInstance(locale);
+    }
+    types=new byte[1];
+    formats=new Format[]{numberFormat};
+    return;
+  }
+  final CoordinateSystem cs=crs.getCoordinateSystem();
+  epochs=null;
+  toMillis=null;
+  formats=new Format[cs.getDimension()];
+  types=new byte[formats.length];
+  for (int i=0; i < formats.length; i++) {
+    final Unit<?> unit=cs.getAxis(i).getUnit();
+    if (NonSI.DEGREE_ANGLE.equals(unit)) {
+      if (angleFormat == null) {
+        angleFormat=new AngleFormat("DD??MM.m'",locale);
+      }
+      formats[i]=angleFormat;
+      final AxisDirection axis=cs.getAxis(i).getDirection().absolute();
+      if (AxisDirection.EAST.equals(axis)) {
+        types[i]=LONGITUDE;
+      }
+ else       if (AxisDirection.NORTH.equals(axis)) {
+        types[i]=LATITUDE;
+      }
+ else {
+        types[i]=ANGLE;
+      }
+      continue;
+    }
+    if (SI.SECOND.isCompatible(unit)) {
+      final Datum datum=CRSUtilities.getDatum(CRSUtilities.getSubCRS(crs,i,i + 1));
+      if (datum instanceof TemporalDatum) {
+        if (toMillis == null) {
+          toMillis=new UnitConverter[formats.length];
+          epochs=new long[formats.length];
+        }
+        toMillis[i]=unit.getConverterTo(DefaultTemporalCRS.MILLISECOND);
+        epochs[i]=((TemporalDatum)datum).getOrigin().getTime();
+        if (dateFormat == null) {
+          dateFormat=DateFormat.getDateInstance(DateFormat.DEFAULT,locale);
+        }
+        formats[i]=dateFormat;
+        types[i]=DATE;
+        continue;
+      }
+      types[i]=TIME;
+    }
+    if (numberFormat == null) {
+      numberFormat=NumberFormat.getNumberInstance(locale);
+    }
+    formats[i]=numberFormat;
+  }
+}

@@ -1,0 +1,51 @@
+{
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      String type=cvp.getStringValue();
+    if (type.equals(ENDSEC)) {
+      doLoop=false;
+      break;
+    }
+  break;
+case NAME:
+String name=cvp.getStringValue();
+if (name.equals(HEADER)) {
+_header=DXFHeader.read(br);
+if (_header._EXTMAX == null || _header._EXTMIN == null) {
+  _header=new DXFHeader();
+}
+geometryFactory=new GeometryFactory(precisionModel,_header._SRID);
+}
+ else if (name.equals(TABLES)) {
+DXFTables at=DXFTables.readTables(br,this);
+theTables.add(at);
+}
+ else if (name.equals(BLOCKS)) {
+DXFBlocks ab=DXFBlocks.readBlocks(br,this);
+theBlocks.addAll(ab.theBlocks);
+}
+ else if (name.equals(ENTITIES)) {
+DXFEntities dxfes=DXFEntities.readEntities(br,this);
+theEntities.addAll(dxfes.theEntities);
+}
+break;
+default :
+break;
+}
+}
+}

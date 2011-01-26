@@ -1,0 +1,30 @@
+{
+  if (original == null)   original=filter;
+  if (!fcs.supports(FilterCapabilities.SIMPLE_COMPARISONS_OPENGIS)) {
+    postStack.push(filter);
+    return;
+  }
+  int i=postStack.size();
+  Expression leftValue=filter.getExpression1();
+  Expression rightValue=filter.getExpression2();
+  if (leftValue == null || rightValue == null) {
+    postStack.push(filter);
+    return;
+  }
+  leftValue.accept(this,null);
+  if (i < postStack.size()) {
+    postStack.pop();
+    postStack.push(filter);
+    return;
+  }
+  rightValue.accept(this,null);
+  if (i < postStack.size()) {
+    preStack.pop();
+    postStack.pop();
+    postStack.push(filter);
+    return;
+  }
+  preStack.pop();
+  preStack.pop();
+  preStack.push(filter);
+}

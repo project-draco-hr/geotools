@@ -1,0 +1,44 @@
+{
+  TestDTO dto=new TestDTO();
+  try {
+    dto.setName(ReaderUtils.getChildText(elem,"name",true));
+  }
+ catch (  SAXException e) {
+    throw new ValidationException("Error reading the name for this test case.",e);
+  }
+  try {
+    dto.setDescription(ReaderUtils.getChildText(elem,"description",false));
+  }
+ catch (  SAXException e) {
+    throw new ValidationException("Error reading the description for the " + dto.getName() + " test case.",e);
+  }
+  try {
+    String pluginName=ReaderUtils.getChildText(elem,"plugin",true);
+    dto.setPlugIn((PlugInDTO)plugIns.get(pluginName));
+    if (dto.getPlugIn() == null) {
+      throw new NullPointerException("Error - should have a plugin at " + elem);
+    }
+  }
+ catch (  SAXException e) {
+    throw new ValidationException("Error reading the plugin for the " + dto.getName() + " test case.",e);
+  }
+  NodeList nl=elem.getElementsByTagName("argument");
+  if (nl != null) {
+    Map m=new HashMap();
+    dto.setArgs(m);
+    for (int i=0; i < nl.getLength(); i++) {
+      elem=(Element)nl.item(i);
+      ArgumentDTO adto=null;
+      try {
+        adto=loadArg(elem,dto.getPlugIn());
+      }
+ catch (      ValidationException e) {
+        e.printStackTrace();
+      }
+      if ((adto == null) || !adto.isFinal()) {
+        m.put(adto.getName(),adto);
+      }
+    }
+  }
+  return dto;
+}

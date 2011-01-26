@@ -1,0 +1,39 @@
+{
+  SimpleFeatureTypeBuilder bb=new SimpleFeatureTypeBuilder();
+  bb.add("ID",Integer.class);
+  bb.add("the_geom",Geometry.class,DefaultEngineeringCRS.CARTESIAN_2D);
+  bb.setDefaultGeometry("the_geom");
+  bb.setName("My Feature Type");
+  SimpleFeatureType featureType=bb.buildFeatureType();
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(featureType);
+  GeometryFactory gf=new GeometryFactory();
+  LineString[] geoms=new LineString[2];
+  int feature1[]=new int[]{2,4,2,8,8,8};
+  int feature2[]=new int[]{0,0,0,10,10,10,10,0,0,0};
+  Object featurescoords[]=new Object[]{feature1,feature2};
+  for (int i=0; i < featurescoords.length; i++) {
+    int[] values=(int[])featurescoords[i];
+    Coordinate c[]=new Coordinate[values.length / 2];
+    for (int j=0; j < values.length; j=j + 2) {
+      int x=values[j];
+      int y=values[j + 1];
+      c[j / 2]=new Coordinate(x,y);
+    }
+    geoms[i]=gf.createLineString(c);
+  }
+  SimpleFeature features[]=new SimpleFeature[geoms.length];
+  MemoryFeatureCollection mm=new MemoryFeatureCollection(featureType);
+  for (int i=0; i < geoms.length; i++) {
+    features[i]=fb.buildFeature(i + "",new Object[]{new Integer(i),geoms[i]});
+    mm.add(features[i]);
+  }
+  DataStore ds=new MemoryDataStore(mm);
+  SimpleFeatureSource fs=ds.getFeatureSource(featureType.getTypeName());
+  FeatureCache cache=new StreamingGridFeatureCache(fs,4,4,MemoryStorage.createInstance());
+  Filter upperLeft=filterFactory.bbox(featureType.getGeometryDescriptor().getLocalName(),0,5.1,4.9,9.9,featureType.getCoordinateReferenceSystem().toString());
+  SimpleFeatureCollection fc=cache.getFeatures(upperLeft);
+  assertEquals(2,fc.size());
+  Filter upperHalf=filterFactory.bbox(featureType.getGeometryDescriptor().getLocalName(),0,5.1,9.9,9.9,featureType.getCoordinateReferenceSystem().toString());
+  fc=cache.getFeatures(upperHalf);
+  assertEquals(2,fc.size());
+}

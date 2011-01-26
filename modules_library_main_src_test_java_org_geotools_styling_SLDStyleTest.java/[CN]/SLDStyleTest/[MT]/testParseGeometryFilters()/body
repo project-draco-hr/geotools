@@ -1,0 +1,31 @@
+{
+  final String TYPE_NAME="testType";
+  final String GEOMETRY_ATTR="Polygons";
+  StyleFactory factory=CommonFactoryFinder.getStyleFactory(null);
+  java.net.URL surl=TestData.getResource(this,"spatialFilter.xml");
+  SLDParser stylereader=new SLDParser(factory,surl);
+  Style[] styles=stylereader.readXML();
+  final int expectedStyleCount=1;
+  assertEquals(expectedStyleCount,styles.length);
+  Style notDisjoint=styles[0];
+  assertEquals(1,notDisjoint.getFeatureTypeStyles().length);
+  FeatureTypeStyle fts=notDisjoint.getFeatureTypeStyles()[0];
+  assertEquals(TYPE_NAME,fts.getFeatureTypeName());
+  assertEquals(1,fts.getRules().length);
+  Filter filter=fts.getRules()[0].getFilter();
+  assertTrue(filter instanceof Not);
+  BinarySpatialOperator spatialFilter=(BinarySpatialOperator)((BinaryLogicOperator)filter).getChildren().get(0);
+  assertTrue(spatialFilter instanceof Disjoint);
+  Expression left=spatialFilter.getExpression1();
+  Expression right=spatialFilter.getExpression2();
+  assertTrue(left instanceof PropertyName);
+  assertTrue(right instanceof Literal);
+  assertTrue(right.evaluate(null) instanceof Geometry);
+  assertEquals(GEOMETRY_ATTR,((PropertyName)left).getPropertyName());
+  assertTrue(right.evaluate(null) instanceof Polygon);
+  Envelope bbox=((Polygon)right.evaluate(null)).getEnvelopeInternal();
+  assertEquals(-10D,bbox.getMinX(),0);
+  assertEquals(-10D,bbox.getMinY(),0);
+  assertEquals(10D,bbox.getMaxX(),0);
+  assertEquals(10D,bbox.getMaxY(),0);
+}

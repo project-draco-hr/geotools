@@ -1,0 +1,25 @@
+{
+  double[] requestedRes=null;
+  try {
+    if (dim != null && envelope != null && crs != null) {
+      final CoordinateReferenceSystem crs2D=CRS.getHorizontalCRS(envelope.getCoordinateReferenceSystem());
+      if (crs2D != null && !CRS.equalsIgnoreMetadata(crs,crs2D)) {
+        final MathTransform tr=CRS.findMathTransform(crs2D,crs,true);
+        if (!tr.isIdentity()) {
+          envelope=CRS.transform(tr,envelope);
+          envelope.setCoordinateReferenceSystem(crs);
+        }
+      }
+      requestedRes=new double[2];
+      requestedRes[0]=envelope.getSpan(0) / dim.getWidth();
+      requestedRes[1]=envelope.getSpan(1) / dim.getHeight();
+    }
+    return requestedRes;
+  }
+ catch (  TransformException e) {
+    throw new DataSourceException("Unable to get resolution",e);
+  }
+catch (  FactoryException e) {
+    throw new DataSourceException("Unable to get resolution",e);
+  }
+}

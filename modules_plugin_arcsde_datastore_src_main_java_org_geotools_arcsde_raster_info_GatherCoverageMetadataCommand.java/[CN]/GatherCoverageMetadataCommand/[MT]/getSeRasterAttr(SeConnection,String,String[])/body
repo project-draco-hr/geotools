@@ -1,0 +1,32 @@
+{
+  LOGGER.fine("Gathering raster attributes for " + rasterTable);
+  SeRasterAttr rasterAttributes;
+  LinkedList<SeRasterAttr> rasterAttList=new LinkedList<SeRasterAttr>();
+  SeQuery query=null;
+  try {
+    query=new SeQuery(scon,rasterColumns,new SeSqlConstruct(rasterTable));
+    query.prepareQuery();
+    query.execute();
+    SeRow row=query.fetch();
+    while (row != null) {
+      rasterAttributes=row.getRaster(0);
+      rasterAttList.addFirst(rasterAttributes);
+      row=query.fetch();
+    }
+  }
+ catch (  SeException se) {
+    throw new ArcSdeException("Error fetching raster attributes for " + rasterTable,se);
+  }
+ finally {
+    if (query != null) {
+      try {
+        query.close();
+      }
+ catch (      SeException e) {
+        throw new ArcSdeException(e);
+      }
+    }
+  }
+  LOGGER.fine("Found " + rasterAttList.size() + " raster attributes for "+ rasterTable);
+  return rasterAttList;
+}

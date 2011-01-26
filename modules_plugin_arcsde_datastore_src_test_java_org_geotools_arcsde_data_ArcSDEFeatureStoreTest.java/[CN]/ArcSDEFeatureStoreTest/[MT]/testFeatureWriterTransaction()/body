@@ -1,0 +1,39 @@
+{
+  testData.insertTestData();
+  final String typeName=testData.getTempTableName();
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureSource fsource=ds.getFeatureSource(typeName);
+  final int initialCount=fsource.getCount(Query.ALL);
+  final int writeCount=initialCount + 2;
+  final SimpleFeatureCollection testFeatures=testData.createTestFeatures(LineString.class,writeCount);
+  final Transaction transaction=new DefaultTransaction();
+  final FeatureWriter<SimpleFeatureType,SimpleFeature> writer=ds.getFeatureWriter(typeName,Filter.INCLUDE,transaction);
+  SimpleFeature source;
+  SimpleFeature dest;
+  int count=0;
+  try {
+    for (SimpleFeatureIterator fi=testFeatures.features(); fi.hasNext(); count++) {
+      if (count < initialCount) {
+        assertTrue("at index " + count,writer.hasNext());
+      }
+ else {
+        assertFalse("at index " + count,writer.hasNext());
+      }
+      source=fi.next();
+      dest=writer.next();
+      dest.setAttributes(source.getAttributes());
+      writer.write();
+    }
+    transaction.commit();
+  }
+ catch (  Exception e) {
+    transaction.rollback();
+    throw e;
+  }
+ finally {
+    writer.close();
+    transaction.close();
+  }
+  int fcount=fsource.getCount(Query.ALL);
+  assertEquals(writeCount,fcount);
+}

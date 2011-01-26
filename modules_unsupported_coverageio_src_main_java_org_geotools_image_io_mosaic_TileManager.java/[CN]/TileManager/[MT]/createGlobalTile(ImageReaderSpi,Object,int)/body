@@ -1,0 +1,23 @@
+{
+  if (provider == null) {
+    provider=getImageReaderSpis().iterator().next();
+    ImageReaderSpi inferred=Tile.getImageReaderSpi(input);
+    if (inferred != null && inferred != provider) {
+      final Collection<String> f1=Arrays.asList(provider.getFormatNames());
+      final Collection<String> f2=Arrays.asList(inferred.getFormatNames());
+      if (!f1.containsAll(f2)) {
+        provider=inferred;
+      }
+    }
+  }
+  final Tile tile;
+  final ImageGeometry geometry=getGridGeometry();
+  if (geometry == null) {
+    tile=new LargeTile(provider,input,imageIndex,getRegion());
+  }
+ else {
+    tile=new LargeTile(provider,input,imageIndex,geometry.getGridRange());
+    tile.setGridToCRS(geometry.getGridToCRS());
+  }
+  return tile;
+}

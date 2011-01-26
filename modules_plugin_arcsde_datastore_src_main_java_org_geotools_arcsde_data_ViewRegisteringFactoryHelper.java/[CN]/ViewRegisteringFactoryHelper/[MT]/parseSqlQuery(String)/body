@@ -1,0 +1,24 @@
+{
+  CCJSqlParserManager pm=new CCJSqlParserManager();
+  Reader reader=new StringReader(selectStatement);
+  Statement statement;
+  try {
+    statement=pm.parse(reader);
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("parsing select statement: " + e.getCause().getMessage(),e);
+  }
+  if (!(statement instanceof Select)) {
+    throw new IllegalArgumentException("expected select or union statement: " + statement);
+  }
+  SelectBody selectBody=((Select)statement).getSelectBody();
+  if (selectBody instanceof Union) {
+    throw new UnsupportedOperationException("ArcSDEDataStore does not supports registering Union queries");
+  }
+ else   if (selectBody instanceof PlainSelect) {
+    return (PlainSelect)selectBody;
+  }
+ else {
+    throw new IllegalStateException(selectBody.getClass().getName());
+  }
+}

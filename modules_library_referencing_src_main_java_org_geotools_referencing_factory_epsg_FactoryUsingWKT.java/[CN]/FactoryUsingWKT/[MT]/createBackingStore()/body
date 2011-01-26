@@ -1,0 +1,17 @@
+{
+  try {
+    URL url=getDefinitionsURL();
+    if (url == null) {
+      throw new FactoryNotFoundException(Errors.format(ErrorKeys.FILE_DOES_NOT_EXIST_$1,FILENAME));
+    }
+    final Iterator<? extends Identifier> ids=getAuthority().getIdentifiers().iterator();
+    final String authority=ids.hasNext() ? ids.next().getCode() : "EPSG";
+    final LogRecord record=Loggings.format(Level.CONFIG,LoggingKeys.USING_FILE_AS_FACTORY_$2,url.getPath(),authority);
+    record.setLoggerName(LOGGER.getName());
+    LOGGER.log(record);
+    return new PropertyAuthorityFactory(factories,getAuthorities(),url);
+  }
+ catch (  IOException exception) {
+    throw new FactoryException(Errors.format(ErrorKeys.CANT_READ_$1,FILENAME),exception);
+  }
+}

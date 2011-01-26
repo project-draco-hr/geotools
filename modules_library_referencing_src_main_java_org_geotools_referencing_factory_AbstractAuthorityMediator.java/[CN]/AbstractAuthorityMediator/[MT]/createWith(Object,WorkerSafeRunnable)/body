@@ -1,0 +1,35 @@
+{
+  T value=(T)cache.get(key);
+  if (value == null) {
+    try {
+      cache.writeLock(key);
+      value=(T)cache.peek(key);
+      if (value == null) {
+        AbstractCachedAuthorityFactory worker=null;
+        try {
+          worker=(AbstractCachedAuthorityFactory)getPool().borrowObject();
+          value=(T)runner.run(worker);
+        }
+ catch (        FactoryException e) {
+          throw e;
+        }
+catch (        Exception e) {
+          throw new FactoryException(e);
+        }
+ finally {
+          try {
+            getPool().returnObject(worker);
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.WARNING,"Unable to return worker " + e,e);
+          }
+        }
+        cache.put(key,value);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return value;
+}

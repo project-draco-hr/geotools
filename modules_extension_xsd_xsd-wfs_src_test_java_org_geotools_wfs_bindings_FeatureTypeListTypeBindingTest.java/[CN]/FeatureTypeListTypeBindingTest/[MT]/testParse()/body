@@ -1,0 +1,27 @@
+{
+  final URL resource=TestData.getResource(this,"FeatureTypeListTypeBindingTest.xml");
+  buildDocument(resource);
+  final Object parsed=parse(WFS.FeatureTypeList);
+  assertNotNull(parsed);
+  assertTrue(parsed instanceof FeatureTypeListType);
+  final FeatureTypeListType ftl=(FeatureTypeListType)parsed;
+  List operations=ftl.getOperations().getOperation();
+  assertEquals(4,operations.size());
+  assertSame(OperationType.DELETE_LITERAL,operations.get(0));
+  assertSame(OperationType.INSERT_LITERAL,operations.get(1));
+  assertSame(OperationType.QUERY_LITERAL,operations.get(2));
+  assertSame(OperationType.GET_GML_OBJECT_LITERAL,operations.get(3));
+  assertEquals(1,ftl.getFeatureType().size());
+  FeatureTypeType ft=(FeatureTypeType)ftl.getFeatureType().get(0);
+  assertEquals(new QName("http://www.openplans.org/topp","name1"),ft.getName());
+  assertEquals("title1",ft.getTitle());
+  assertEquals(1,ft.getKeywords().size());
+  KeywordsType kw=(KeywordsType)ft.getKeywords().get(0);
+  assertEquals(2,kw.getKeyword().size());
+  assertEquals("urn:ogc:crs:EPSG:6.7:4326",ft.getDefaultSRS());
+  assertEquals(1,ft.getOtherSRS().size());
+  assertEquals("urn:ogc:crs:EPSG:6.7:23030",ft.getOtherSRS().get(0));
+  assertEquals(1,ft.getOutputFormats().getFormat().size());
+  assertEquals("GML2",ft.getOutputFormats().getFormat().get(0));
+  assertNotNull(ft.getWGS84BoundingBox());
+}

@@ -1,0 +1,65 @@
+{
+  id=atts.getValue("","id");
+  if (id == null) {
+    id=atts.getValue(namespaceURI,"id");
+  }
+  String min=atts.getValue("","minOccurs");
+  if (min == null) {
+    min=atts.getValue(namespaceURI,"minOccurs");
+  }
+  String max=atts.getValue("","maxOccurs");
+  if (max == null) {
+    max=atts.getValue(namespaceURI,"maxOccurs");
+  }
+  String namespace1=atts.getValue("","namespace");
+  if (namespace1 == null) {
+    namespace1=atts.getValue(namespaceURI,"namespace");
+  }
+  try {
+    if (namespace1 != null) {
+      if (namespace1.toLowerCase().equals("##any")) {
+        this.namespace=Any.ALL;
+      }
+ else {
+        if (namespace1.toLowerCase().equals("##other")) {
+          this.namespace=Any.ALL;
+        }
+ else {
+          if (namespace1.toLowerCase().equals("##targetNamespace")) {
+            try {
+              this.namespace=new URI(namespaceURI);
+            }
+ catch (            URISyntaxException e) {
+              logger.warning(e.toString());
+              this.namespace=new URI(namespace1);
+            }
+          }
+ else {
+            this.namespace=new URI(namespace1);
+          }
+        }
+      }
+    }
+  }
+ catch (  URISyntaxException e) {
+    logger.warning(e.toString());
+    throw new SAXException(e);
+  }
+  if ((null == min) || "".equalsIgnoreCase(min)) {
+    minOccurs=1;
+  }
+ else {
+    minOccurs=Integer.parseInt(min);
+  }
+  if ((null == max) || "".equalsIgnoreCase(max)) {
+    maxOccurs=1;
+  }
+ else {
+    if ("unbounded".equalsIgnoreCase(max)) {
+      maxOccurs=ElementGrouping.UNBOUNDED;
+    }
+ else {
+      maxOccurs=Integer.parseInt(max);
+    }
+  }
+}

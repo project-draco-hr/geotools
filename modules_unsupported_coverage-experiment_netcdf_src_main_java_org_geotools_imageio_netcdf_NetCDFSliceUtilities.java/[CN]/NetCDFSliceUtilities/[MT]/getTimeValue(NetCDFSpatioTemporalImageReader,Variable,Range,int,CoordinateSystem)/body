@@ -1,0 +1,53 @@
+{
+  TemporalObject varTime=null;
+  if (cs != null && cs.hasTimeAxis()) {
+    int timeIndex=NetCDFUtilities.getTIndex(variable,range,imageIndex);
+    final int rank=variable.getRank();
+    final Dimension temporalDimension=variable.getDimension(rank - ((cs.hasVerticalAxis() ? NetCDFUtilities.Z_DIMENSION : 2) + 1));
+    final Variable axis=geoNetCDFReader.getCoordinate(temporalDimension.getName());
+    if ((axis != null) && axis.isCoordinateVariable()) {
+      final AxisType type=((CoordinateAxis)axis).getAxisType();
+      if (!AxisType.Time.equals(type))       return varTime;
+      String units=axis.getUnitsString();
+      Date epoch=null, start_time=null, end_time=null;
+      String origin=null;
+      final String[] unitsParts=units.split("(?i)\\s+since\\s+");
+      if (unitsParts.length == 2) {
+        units=unitsParts[0].trim();
+        origin=unitsParts[1].trim();
+      }
+ else {
+        final Attribute attribute=axis.findAttribute("time_origin");
+        if (attribute != null) {
+          origin=attribute.getStringValue();
+        }
+      }
+      if (origin != null) {
+        origin=NetCDFUtilities.trimFractionalPart(origin);
+        origin=checkDateDigits(origin);
+        try {
+          epoch=(Date)NetCDFUtilities.getAxisFormat(type,origin).parseObject(origin);
+        }
+ catch (        ParseException e) {
+          LOGGER.warning("Error while parsing time Axis. Skip setting the TemporalExtent from coordinateAxis");
+        }
+      }
+      if (((CoordinateAxis)axis).isNumeric() && epoch != null && axis instanceof CoordinateAxis1D) {
+        Calendar cal=null;
+        final CoordinateAxis1D axis1D=(CoordinateAxis1D)axis;
+        final double[] values=axis1D.getCoordValues();
+        cal=new GregorianCalendar();
+        cal.setTime(epoch);
+        int vi=(int)Math.floor(values[timeIndex]);
+        double vd=values[timeIndex] - vi;
+        cal.add(getTimeUnits(units,null),vi);
+        if (vd != 0.0)         cal.add(getTimeUnits(units,vd),getTimeSubUnitsValue(units,vd));
+        start_time=cal.getTime();
+        if (start_time != null) {
+          varTime=new DefaultInstant(new DefaultPosition(start_time));
+        }
+      }
+    }
+  }
+  return varTime;
+}

@@ -1,0 +1,27 @@
+{
+  String tileFileName=null;
+  Map rows=new HashMap();
+  rows.put(file,row);
+  Iterator joinIter=featureType.getFeatureClass().getJoinList().iterator();
+  while (joinIter.hasNext()) {
+    ColumnPair columnPair=(ColumnPair)joinIter.next();
+    VPFFile primaryFile=getVPFFile(columnPair.column1);
+    VPFFile joinFile=null;
+    joinFile=getVPFFile(columnPair.column2);
+    if (!rows.containsKey(joinFile) && rows.containsKey(primaryFile)) {
+      SimpleFeature joinRow=(SimpleFeature)rows.get(primaryFile);
+      try {
+        int joinID=Integer.parseInt(joinRow.getAttribute(columnPair.column1.getLocalName()).toString());
+        rows.put(joinFile,getVPFFile(columnPair.column2).getRowFromId(columnPair.column2.getLocalName(),joinID));
+      }
+ catch (      NullPointerException exc) {
+        rows.put(joinFile,null);
+      }
+catch (      IllegalAttributeException exc) {
+        exc.printStackTrace();
+        rows.put(joinFile,null);
+      }
+    }
+  }
+  return rows;
+}

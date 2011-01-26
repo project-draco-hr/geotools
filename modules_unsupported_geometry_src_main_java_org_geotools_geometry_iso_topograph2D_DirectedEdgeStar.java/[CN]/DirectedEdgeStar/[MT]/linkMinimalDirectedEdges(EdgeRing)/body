@@ -1,0 +1,27 @@
+{
+  DirectedEdge firstOut=null;
+  DirectedEdge incoming=null;
+  int state=SCANNING_FOR_INCOMING;
+  for (int i=resultAreaEdgeList.size() - 1; i >= 0; i--) {
+    DirectedEdge nextOut=(DirectedEdge)resultAreaEdgeList.get(i);
+    DirectedEdge nextIn=nextOut.getSym();
+    if (firstOut == null && nextOut.getEdgeRing() == er)     firstOut=nextOut;
+switch (state) {
+case SCANNING_FOR_INCOMING:
+      if (nextIn.getEdgeRing() != er)       continue;
+    incoming=nextIn;
+  state=LINKING_TO_OUTGOING;
+break;
+case LINKING_TO_OUTGOING:
+if (nextOut.getEdgeRing() != er) continue;
+incoming.setNextMin(nextOut);
+state=SCANNING_FOR_INCOMING;
+break;
+}
+}
+if (state == LINKING_TO_OUTGOING) {
+Assert.isTrue(firstOut != null,"found null for first outgoing dirEdge");
+Assert.isTrue(firstOut.getEdgeRing() == er,"unable to link last incoming dirEdge");
+incoming.setNextMin(firstOut);
+}
+}

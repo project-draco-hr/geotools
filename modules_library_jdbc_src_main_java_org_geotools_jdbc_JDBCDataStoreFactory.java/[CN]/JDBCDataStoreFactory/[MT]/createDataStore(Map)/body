@@ -1,0 +1,46 @@
+{
+  JDBCDataStore dataStore=new JDBCDataStore();
+  final SQLDialect dialect=createSQLDialect(dataStore);
+  dataStore.setSQLDialect(dialect);
+  DataSource ds=(DataSource)DATASOURCE.lookUp(params);
+  if (ds != null) {
+    dataStore.setDataSource(ds);
+  }
+ else {
+    dataStore.setDataSource(createDataSource(params,dialect));
+  }
+  Integer fetchSize=(Integer)FETCHSIZE.lookUp(params);
+  if (fetchSize != null && fetchSize > 0)   dataStore.setFetchSize(fetchSize);
+  String namespace=(String)NAMESPACE.lookUp(params);
+  if (namespace != null) {
+    dataStore.setNamespaceURI(namespace);
+  }
+  String schema=(String)SCHEMA.lookUp(params);
+  if (schema != null) {
+    dataStore.setDatabaseSchema(schema);
+  }
+  String metadataTable=(String)PK_METADATA_TABLE.lookUp(params);
+  if (metadataTable != null) {
+    MetadataTablePrimaryKeyFinder tableFinder=new MetadataTablePrimaryKeyFinder();
+    if (metadataTable.contains(".")) {
+      String[] parts=metadataTable.split("\\.");
+      if (parts.length > 2)       throw new IllegalArgumentException("The primary key metadata table format " + "is either 'name' or 'schema.name'");
+      tableFinder.setTableSchema(parts[0]);
+      tableFinder.setTableName(parts[1]);
+    }
+ else {
+      tableFinder.setTableSchema(metadataTable);
+    }
+    dataStore.setPrimaryKeyFinder(new CompositePrimaryKeyFinder(tableFinder,new HeuristicPrimaryKeyFinder()));
+  }
+  Boolean exposePk=(Boolean)EXPOSE_PK.lookUp(params);
+  if (exposePk != null) {
+    dataStore.setExposePrimaryKeyColumns(exposePk);
+  }
+  dataStore.setFilterFactory(CommonFactoryFinder.getFilterFactory(null));
+  dataStore.setGeometryFactory(new GeometryFactory());
+  dataStore.setFeatureTypeFactory(new FeatureTypeFactoryImpl());
+  dataStore.setFeatureFactory(CommonFactoryFinder.getFeatureFactory(null));
+  dataStore.setDataStoreFactory(this);
+  return createDataStoreInternal(dataStore,params);
+}

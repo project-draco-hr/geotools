@@ -1,0 +1,44 @@
+{
+  ISession session=getConnectionPool().getSession();
+  try {
+    session.issue(new Command<Void>(){
+      @Override public Void execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        List<SeRasterColumn> rasterCols=connection.getRasterColumns();
+        for (        SeRasterColumn rasterCol : rasterCols) {
+          final String colName=rasterCol.getName();
+          final String tableName=rasterCol.getTableName();
+          final String tableQName=rasterCol.getQualifiedTableName();
+          SeQuery query=new SeQuery(connection,new String[]{colName},new SeSqlConstruct(tableQName));
+          query.prepareQuery();
+          query.execute();
+          SeRow row=query.fetch();
+          if (row == null) {
+            continue;
+          }
+          SeRasterAttr attr=row.getRaster(0);
+          int pixelType=attr.getPixelType();
+          final RasterCellType cellType=RasterCellType.valueOf(pixelType);
+          final int numBands=attr.getNumBands();
+          final int imageWidth=attr.getImageWidth();
+          final int imageHeight=attr.getImageHeight();
+          final int compressionType=attr.getCompressionType();
+          final int tileHeight=attr.getTileHeight();
+          final int tileWidth=attr.getTileWidth();
+          final int interpolation=attr.getInterpolation();
+          System.out.println(tableName + ":\n\t pixelType: " + cellType+ "\n\tnumBands: "+ numBands+ "\n\twidth: "+ imageWidth+ ", height: "+ imageHeight+ ", tile width: "+ tileWidth+ ", tile height: "+ tileHeight+ "\n\t compression type: "+ CompressionType.valueOf(compressionType)+ ", interpolation: "+ InterpolationType.valueOf(interpolation));
+          SeRasterBand[] bands=attr.getBands();
+          for (          SeRasterBand band : bands) {
+            int bandNumber=band.getBandNumber();
+            boolean hasColorMap=band.hasColorMap();
+            System.out.println("\t Band n?? " + bandNumber + ": has color map: "+ hasColorMap);
+          }
+        }
+        return null;
+      }
+    }
+);
+  }
+  finally {
+    session.dispose();
+  }
+}

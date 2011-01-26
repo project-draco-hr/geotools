@@ -1,0 +1,24 @@
+{
+  SimpleFeatureBuilder b=new SimpleFeatureBuilder(collection.getSchema());
+  b.set(aname("intProperty"),new Integer(3));
+  b.set(aname("doubleProperty"),new Double(3.3));
+  b.set(aname("stringProperty"),"three");
+  b.set(aname("geometry"),new GeometryFactory().createPoint(new Coordinate(3,3)));
+  SimpleFeature feature=b.buildFeature(null);
+  assertEquals(3,collection.size());
+  collection.add(feature);
+  assertEquals(4,collection.size());
+  Iterator i=collection.iterator();
+  boolean found=false;
+  while (i.hasNext()) {
+    SimpleFeature f=(SimpleFeature)i.next();
+    if ("three".equals(f.getAttribute(aname("stringProperty")))) {
+      assertEquals(feature.getAttribute(aname("doubleProperty")),f.getAttribute(aname("doubleProperty")));
+      assertEquals(feature.getAttribute(aname("stringProperty")),f.getAttribute(aname("stringProperty")));
+      assertTrue(((Geometry)feature.getAttribute(aname("geometry"))).equals((Geometry)f.getAttribute(aname("geometry"))));
+      found=true;
+    }
+  }
+  assertTrue(found);
+  collection.close(i);
+}

@@ -1,0 +1,15 @@
+{
+  final CoordinateReferenceSystem targetCRS=crsFactory.createFromWKT(WKT.MERCATOR);
+  CoordinateReferenceSystem sourceCRS=targetCRS;
+  sourceCRS=new DefaultCompoundCRS("Mercator 3D",sourceCRS,DefaultVerticalCRS.ELLIPSOIDAL_HEIGHT);
+  sourceCRS=new DefaultCompoundCRS("Mercator 4D",sourceCRS,DefaultTemporalCRS.MODIFIED_JULIAN);
+  final CoordinateOperation op=opFactory.createOperation(sourceCRS,targetCRS);
+  final MathTransform mt=op.getMathTransform();
+  if (usingDefaultFactory) {
+    assertSame(sourceCRS,op.getSourceCRS());
+    assertSame(targetCRS,op.getTargetCRS());
+  }
+  assertFalse(mt.isIdentity());
+  assertTrue("The somewhat complex MathTransform chain should have been simplified " + "to a single affine transform.",mt instanceof LinearTransform);
+  assertTrue("The operation should be a simple axis change, not a complex" + "chain of ConcatenatedOperations.",op instanceof Conversion);
+}

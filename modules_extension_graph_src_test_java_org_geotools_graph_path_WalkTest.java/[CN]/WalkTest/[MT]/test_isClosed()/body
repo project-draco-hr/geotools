@@ -1,0 +1,24 @@
+{
+  Node[] ends=GraphTestUtil.buildNoBifurcations(builder(),10);
+  final Walk walk=new Walk();
+  NoBifurcationIterator iterator=new NoBifurcationIterator();
+  iterator.setSource(ends[0]);
+  GraphWalker walker=new GraphWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      walk.add(element);
+      return (GraphTraversal.CONTINUE);
+    }
+    public void finish(){
+    }
+  }
+;
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  assertTrue(walk.size() == builder().getGraph().getNodes().size());
+  assertTrue(walk.isValid() && !walk.isClosed());
+  Edge e=builder().buildEdge(ends[0],ends[1]);
+  builder().addEdge(e);
+  walk.add(ends[0]);
+  assertTrue(walk.isValid() && walk.isClosed());
+}

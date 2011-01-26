@@ -1,0 +1,79 @@
+{
+  Command<Void> importRasterCmd=new Command<Void>(){
+    @Override public Void execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      createRasterColumn(tableName,crs,session);
+      IndexColorModel indexCM=colorModel;
+      BufferedImage sampleImage=ImageIO.read(org.geotools.test.TestData.getResource(null,rasterFilename));
+{
+        ColorModel imgColorModel=sampleImage.getColorModel();
+        if (imgColorModel instanceof IndexColorModel) {
+          indexCM=(IndexColorModel)imgColorModel;
+        }
+      }
+      int imageWidth=sampleImage.getWidth(), imageHeight=sampleImage.getHeight();
+      SeRasterAttr attr=new SeRasterAttr(true);
+      attr.setImageSize(imageWidth,imageHeight,sampleImage.getSampleModel().getNumBands());
+      int tileWidth=imageWidth >> 3;
+      int tileHeight=imageHeight >> 3;
+      attr.setTileSize(tileWidth,tileHeight);
+      attr.setPixelType(sePixelType);
+      attr.setCompressionType(SeRaster.SE_COMPRESSION_NONE);
+      int maxLevels=(imageWidth / (2 * tileWidth)) - 1;
+      attr.setPyramidInfo(maxLevels,false,SeRaster.SE_INTERPOLATION_BILINEAR);
+      attr.setMaskMode(false);
+      attr.setImportMode(false);
+      attr.setExtent(extent);
+      prod.setSeRasterAttr(attr);
+      prod.setSourceImage(sampleImage);
+      attr.setRasterProducer(prod);
+      try {
+        SeInsert insert=new SeInsert(connection);
+        insert.intoTable(tableName,new String[]{"RASTER"});
+        insert.setWriteMode(false);
+        SeRow row=insert.getRowToSet();
+        row.setRaster(0,attr);
+        insert.execute();
+        insert.close();
+      }
+ catch (      SeException se) {
+        se.printStackTrace();
+        throw se;
+      }
+      if (indexCM != null) {
+        attr=getRasterAttributes(connection,tableName,new Rectangle(0,0,0,0),0,new int[]{1});
+        final int numEntries=indexCM.getMapSize();
+        final int numBanks=indexCM.getNumComponents();
+        final int colorMapType=numBanks == 3 ? SeRaster.SE_COLORMAP_RGB : SeRaster.SE_COLORMAP_RGBA;
+        DataBufferByte dataBuffer=new DataBufferByte(numEntries,numBanks);
+        for (int elem=0; elem < numEntries; elem++) {
+          dataBuffer.setElem(0,elem,indexCM.getRed(elem));
+          dataBuffer.setElem(1,elem,indexCM.getGreen(elem));
+          dataBuffer.setElem(2,elem,indexCM.getBlue(elem));
+          if (numBanks == 4) {
+            dataBuffer.setElem(3,elem,indexCM.getAlpha(elem));
+          }
+        }
+        SeRaster raster;
+        try {
+          raster=attr.getRasterInfo();
+        }
+ catch (        CloneNotSupportedException e) {
+          throw new RuntimeException(e);
+        }
+        SeRasterBand[] bands=raster.getBands();
+        SeRasterBand band=bands[0];
+        band.setColorMap(colorMapType,dataBuffer);
+        band.alter();
+      }
+      return null;
+    }
+  }
+;
+  final ISession session=getConnectionPool().getSession();
+  try {
+    session.issue(importRasterCmd);
+  }
+  finally {
+    session.dispose();
+  }
+}

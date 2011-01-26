@@ -1,0 +1,27 @@
+{
+  if (!canEncode(element,value,hints)) {
+    return;
+  }
+  AttributesImpl ai=new AttributesImpl();
+  if (value instanceof String) {
+    output.startElement(element.getNamespace(),element.getName(),ai);
+    output.characters(value.toString());
+    output.endElement(element.getNamespace(),element.getName());
+    return;
+  }
+  LiteralExpression me=(LiteralExpression)value;
+  output.startElement(element.getNamespace(),element.getName(),ai);
+switch (me.getType()) {
+case org.geotools.filter.ExpressionType.LITERAL_GEOMETRY:
+    if (me.getLiteral() instanceof Geometry) {
+      GMLSchema.getInstance().getElements()[29].getType().encode(GMLSchema.getInstance().getElements()[29],me.getLiteral(),output,hints);
+      break;
+    }
+case org.geotools.filter.ExpressionType.LITERAL_DOUBLE:
+case org.geotools.filter.ExpressionType.LITERAL_INTEGER:
+case org.geotools.filter.ExpressionType.LITERAL_STRING:
+  output.characters(me.getLiteral().toString());
+break;
+}
+output.endElement(element.getNamespace(),element.getName());
+}

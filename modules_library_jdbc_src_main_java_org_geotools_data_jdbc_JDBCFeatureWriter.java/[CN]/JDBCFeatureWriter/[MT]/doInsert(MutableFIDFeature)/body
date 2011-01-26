@@ -1,0 +1,40 @@
+{
+  queryData.startInsert();
+  FIDMapper mapper=queryData.getMapper();
+  Set autoincrementColumns=null;
+  if ((mapper.getColumnCount() > 0) && !mapper.returnFIDColumnsAsAttributes()) {
+    autoincrementColumns=Collections.EMPTY_SET;
+    String ID=mapper.createID(queryData.getConnection(),mutable,null);
+    fidAttributes=mapper.getPKAttributes(ID);
+    if (fidAttributes != null) {
+      mutable.setID(ID);
+      for (int i=0; i < fidAttributes.length; i++) {
+        Object fidAttribute=fidAttributes[i];
+        if (!mapper.isAutoIncrement(i)) {
+          queryData.writeFidColumn(i,fidAttribute);
+        }
+      }
+    }
+  }
+ else {
+    autoincrementColumns=new HashSet();
+    for (int i=0; i < mapper.getColumnCount(); i++) {
+      if (mapper.isAutoIncrement(i)) {
+        autoincrementColumns.add(mapper.getColumnName(i));
+      }
+    }
+  }
+  for (int i=0; i < current.getAttributeCount(); i++) {
+    Object currAtt=current.getAttribute(i);
+    String attName=current.getFeatureType().getDescriptor(i).getLocalName();
+    if (!autoincrementColumns.contains(attName))     queryData.write(i,currAtt);
+  }
+  queryData.doInsert();
+  if (((mapper.getColumnCount() > 0) && mapper.hasAutoIncrementColumns())) {
+    fidAttributes=new Object[mapper.getColumnCount()];
+    for (int i=0; i < fidAttributes.length; i++) {
+      fidAttributes[i]=queryData.readFidColumn(i);
+    }
+    mutable.setID(mapper.getID(fidAttributes));
+  }
+}

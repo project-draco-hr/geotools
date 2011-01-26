@@ -1,0 +1,28 @@
+{
+  Filter result;
+  Filter expected;
+  String cqlUnaryExp;
+  cqlUnaryExp=FilterCQLSample.FILTER_WITH_FUNCTION_ABS;
+  result=CQL.toFilter(cqlUnaryExp);
+  Assert.assertNotNull("filter expected",result);
+  expected=FilterCQLSample.getSample(cqlUnaryExp);
+  Assert.assertEquals("Equals Functions is expected",expected,result);
+  cqlUnaryExp=FilterCQLSample.FILTER__WITH_FUNCTION_STR_CONCAT;
+  result=CQL.toFilter(cqlUnaryExp);
+  Assert.assertNotNull("filter expected",result);
+  expected=FilterCQLSample.getSample(cqlUnaryExp);
+  cqlUnaryExp="A = strConcat(B, 'testParam')";
+  result=CQL.toFilter(cqlUnaryExp);
+  Assert.assertTrue(result instanceof PropertyIsEqualTo);
+  Expression expression=((PropertyIsEqualTo)result).getExpression2();
+  Assert.assertNotNull(expression);
+  Assert.assertTrue(expression instanceof Function);
+  Function function=(Function)expression;
+  Assert.assertEquals(2,function.getParameters().size());
+  Expression arg1=(Expression)function.getParameters().get(0);
+  Expression arg2=(Expression)function.getParameters().get(1);
+  Assert.assertTrue(arg1 instanceof PropertyName);
+  Assert.assertTrue(arg2 instanceof Literal);
+  Assert.assertEquals("B",((PropertyName)arg1).getPropertyName());
+  Assert.assertEquals("testParam",((Literal)arg2).getValue());
+}

@@ -1,0 +1,69 @@
+{
+  if (raster == null) {
+    return;
+  }
+  AttributesImpl atts=new AttributesImpl();
+  Unit<Length> uom=raster.getUnitOfMeasure();
+  if (uom != null)   atts.addAttribute("","uom","uom","",UomOgcMapping.get(uom).getSEString());
+  start("RasterSymbolizer",atts);
+  encodeGeometryExpression(raster.getGeometry());
+  element("Opacity",raster.getOpacity(),1.0);
+  if (raster.getChannelSelection() != null) {
+    final ChannelSelection cs=raster.getChannelSelection();
+    if (cs.getGrayChannel() != null) {
+      start("ChannelSelection");
+      SelectedChannelType gray=cs.getGrayChannel();
+      start("GrayChannel");
+      gray.accept(this);
+      end("GrayChannel");
+      end("ChannelSelection");
+    }
+ else     if (cs.getRGBChannels() != null && cs.getRGBChannels().length == 3 && cs.getRGBChannels()[0] != null && cs.getRGBChannels()[1] != null && cs.getRGBChannels()[2] != null) {
+      start("ChannelSelection");
+      SelectedChannelType[] rgb=cs.getRGBChannels();
+      start("RedChannel");
+      rgb[0].accept(this);
+      end("RedChannel");
+      start("GreenChannel");
+      rgb[1].accept(this);
+      end("GreenChannel");
+      start("BlueChannel");
+      rgb[2].accept(this);
+      end("BlueChannel");
+      end("ChannelSelection");
+    }
+ else {
+    }
+  }
+  if (raster.getOverlap() != null) {
+    Expression overlaps=raster.getOverlap();
+    if (overlaps instanceof PropertyName) {
+      final String pn=((PropertyName)overlaps).getPropertyName();
+      if ("RANDOM".equals(pn)) {
+        start("OverlapBehavior");
+        start(pn);
+        end(pn);
+        end("OverlapBehavior");
+      }
+    }
+ else {
+      elementLiteral("OverlapBehavior",overlaps,"RANDOM");
+    }
+  }
+  ColorMap colorMap=raster.getColorMap();
+  if (colorMap != null && colorMap.getColorMapEntries() != null && colorMap.getColorMapEntries().length > 0) {
+    colorMap.accept(this);
+  }
+  if (raster.getContrastEnhancement() != null) {
+    raster.getContrastEnhancement().accept(this);
+  }
+  if (raster.getShadedRelief() != null) {
+    raster.getShadedRelief().accept(this);
+  }
+  if (raster.getImageOutline() != null) {
+    start("ImageOutline");
+    raster.getImageOutline().accept(this);
+    end("ImageOutline");
+  }
+  end("RasterSymbolizer");
+}

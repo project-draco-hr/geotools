@@ -1,0 +1,43 @@
+{
+  final int imageIndex=getImageIndex();
+  IIOMetadata metadata=spatioTemporalReader.getImageMetadata(imageIndex);
+  double scale=1.0;
+  double offset=0.0;
+  double[] validRange=null;
+  double[] noDataValues=null;
+  if (metadata != null && metadata instanceof BaseImageMetadata) {
+    BaseImageMetadata commonMetadata=(BaseImageMetadata)metadata;
+    try {
+      scale=commonMetadata.getScale(0);
+      offset=commonMetadata.getOffset(0);
+    }
+ catch (    IllegalArgumentException iae) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Using default scale and offset values");
+      }
+    }
+    setScaleAndOffset(new double[]{scale,offset});
+    try {
+      double max=commonMetadata.getMaximum(0);
+      double min=commonMetadata.getMinimum(0);
+      validRange=new double[]{min,max};
+    }
+ catch (    IllegalArgumentException iae) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("ValidRange values not found");
+      }
+    }
+    if (validRange != null)     setValidRange(validRange);
+    try {
+      double noData=commonMetadata.getNoDataValue(0);
+      noDataValues=new double[]{noData};
+    }
+ catch (    IllegalArgumentException iae) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("NoData values not found");
+      }
+    }
+    if (noDataValues != null)     setNoDataValues(noDataValues);
+    setLongName(commonMetadata.getDatasetName());
+  }
+}

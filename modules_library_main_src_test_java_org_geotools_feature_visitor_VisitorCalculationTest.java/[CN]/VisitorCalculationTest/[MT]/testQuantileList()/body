@@ -1,0 +1,16 @@
+{
+  FilterFactory factory=CommonFactoryFinder.getFilterFactory(null);
+  Expression expr=factory.property(ft.getDescriptor(0).getLocalName());
+  QuantileListVisitor visitor=new QuantileListVisitor(expr,2);
+  fc.accepts(visitor,null);
+  CalcResult result=visitor.getResult();
+  List[] qResult=(List[])result.getValue();
+  assertEquals(2,qResult.length);
+  assertEquals(2,qResult[0].size());
+  assertEquals(1,qResult[1].size());
+  QuantileListVisitor emptyVisitor=new QuantileListVisitor(expr,2);
+  empty.accepts(emptyVisitor,null);
+  assertEquals(CalcResult.NULL_RESULT,emptyVisitor.getResult());
+  assertSame(result,emptyVisitor.getResult().merge(result));
+  assertSame(result,result.merge(emptyVisitor.getResult()));
+}

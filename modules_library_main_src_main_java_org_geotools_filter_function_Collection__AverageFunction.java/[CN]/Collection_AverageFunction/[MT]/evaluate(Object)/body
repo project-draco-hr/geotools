@@ -1,0 +1,25 @@
+{
+  if (feature == null) {
+    return new Integer(0);
+  }
+  FeatureCollection<FeatureType,Feature> featureCollection=(FeatureCollection<FeatureType,Feature>)feature;
+synchronized (featureCollection) {
+    if (featureCollection != previousFeatureCollection) {
+      previousFeatureCollection=featureCollection;
+      average=null;
+      try {
+        CalcResult result=calculateAverage(featureCollection,expr);
+        if (result != null) {
+          average=result.getValue();
+        }
+      }
+ catch (      IllegalFilterException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  return average;
+}

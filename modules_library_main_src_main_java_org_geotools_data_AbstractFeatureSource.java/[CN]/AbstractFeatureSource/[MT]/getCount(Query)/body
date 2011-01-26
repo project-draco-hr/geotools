@@ -1,0 +1,35 @@
+{
+  if (query.getFilter() == Filter.EXCLUDE) {
+    return 0;
+  }
+  DataStore dataStore=(DataStore)getDataStore();
+  if ((dataStore == null) || !(dataStore instanceof AbstractDataStore)) {
+    return -1;
+  }
+  Transaction t=getTransaction();
+  int nativeCount=((AbstractDataStore)dataStore).getCount(namedQuery(query));
+  if (nativeCount == -1)   return -1;
+  int delta=0;
+  if (t != Transaction.AUTO_COMMIT) {
+    if (t.getState(dataStore) == null)     return nativeCount;
+    if (!(t.getState(dataStore) instanceof TransactionStateDiff)) {
+      return -1;
+    }
+    Diff diff=((AbstractDataStore)dataStore).state(t).diff(namedQuery(query).getTypeName());
+synchronized (diff) {
+      Iterator it=diff.added.values().iterator();
+      while (it.hasNext()) {
+        Object feature=it.next();
+        if (query.getFilter().evaluate(feature))         delta++;
+      }
+      it=diff.modified2.values().iterator();
+      while (it.hasNext()) {
+        Object feature=it.next();
+        if (feature == TransactionStateDiff.NULL && query.getFilter().evaluate(feature)) {
+          delta--;
+        }
+      }
+    }
+  }
+  return nativeCount + delta;
+}

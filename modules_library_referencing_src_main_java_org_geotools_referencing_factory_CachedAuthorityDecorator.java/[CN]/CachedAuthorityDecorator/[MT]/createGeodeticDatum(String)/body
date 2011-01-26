@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  GeodeticDatum datum=(GeodeticDatum)cache.get(key);
+  if (datum == null) {
+    try {
+      cache.writeLock(key);
+      datum=(GeodeticDatum)cache.peek(key);
+      if (datum == null) {
+        datum=datumAuthority.createGeodeticDatum(code);
+        cache.put(key,datum);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return datum;
+}

@@ -1,0 +1,32 @@
+{
+  testData=new TestData();
+  testData.setUp();
+  final String baseTypeName=testData.getTempTableName();
+  seRowidNoneTable=baseTypeName + "_ROWID_NONE";
+  seRowidSdeTable=baseTypeName + "_ROWID_SDE";
+  seRowidUserTable=baseTypeName + "_ROWID_USER";
+  ISessionPool sessionPool=testData.getConnectionPool();
+  ISession session=sessionPool.getSession();
+  try {
+    SeDBMSInfo dbInfo=session.getDBMSInfo();
+    databaseIsMsSqlServer=dbInfo.dbmsId == SeDBMSInfo.SE_DBMS_IS_SQLSERVER;
+    session.issue(new Command<Void>(){
+      @Override public Void execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        final String rowIdColName="ROW_ID";
+        final boolean createLayer=false;
+        final int shapeTypeMask=-1;
+        int rowIdColumnType=SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_NONE;
+        testData.createTestTable(session,seRowidNoneTable,rowIdColName,rowIdColumnType,createLayer,shapeTypeMask);
+        rowIdColumnType=SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_USER;
+        testData.createTestTable(session,seRowidUserTable,rowIdColName,rowIdColumnType,createLayer,shapeTypeMask);
+        rowIdColumnType=SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE;
+        testData.createTestTable(session,seRowidSdeTable,rowIdColName,rowIdColumnType,createLayer,shapeTypeMask);
+        return null;
+      }
+    }
+);
+  }
+  finally {
+    session.dispose();
+  }
+}

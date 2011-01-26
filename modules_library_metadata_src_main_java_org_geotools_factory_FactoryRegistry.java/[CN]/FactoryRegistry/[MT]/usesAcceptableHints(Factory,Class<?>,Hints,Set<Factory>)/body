@@ -1,0 +1,63 @@
+{
+  if (!testingHints.add(factory)) {
+    return false;
+  }
+  final Map<RenderingHints.Key,?> implementationHints;
+  try {
+    implementationHints=Hints.stripNonKeys(factory.getImplementationHints());
+  }
+  finally {
+    if (!testingHints.remove(factory)) {
+      throw new AssertionError(factory);
+    }
+  }
+  if (implementationHints == null) {
+    return true;
+  }
+  Hints remaining=null;
+  for (  final Map.Entry<?,?> entry : implementationHints.entrySet()) {
+    final Object key=entry.getKey();
+    final Object value=entry.getValue();
+    final Object expected=hints.get(key);
+    if (expected != null) {
+      if (expected instanceof Class<?>) {
+        if (!((Class<?>)expected).isInstance(value)) {
+          return false;
+        }
+      }
+ else       if (expected instanceof Class<?>[]) {
+        final Class<?>[] types=(Class<?>[])expected;
+        int i=0;
+        do         if (i >= types.length)         return false;
+ while (!types[i++].isInstance(value));
+      }
+ else       if (!expected.equals(value)) {
+        return false;
+      }
+    }
+    if (value instanceof Factory) {
+      final Factory dependency=(Factory)value;
+      if (alreadyDone == null) {
+        alreadyDone=new HashSet<Factory>();
+      }
+      if (!alreadyDone.contains(dependency)) {
+        alreadyDone.add(factory);
+        if (remaining == null) {
+          remaining=new Hints(hints);
+          remaining.keySet().removeAll(implementationHints.keySet());
+        }
+        final Class<?> type;
+        if (key instanceof Hints.Key) {
+          type=((Hints.Key)key).getValueClass();
+        }
+ else {
+          type=Factory.class;
+        }
+        if (!usesAcceptableHints(dependency,type,remaining,alreadyDone)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}

@@ -1,0 +1,36 @@
+{
+  final String key=toKey(code);
+  IdentifiedObject obj=(IdentifiedObject)cache.get(key);
+  if (obj == null) {
+    try {
+      cache.writeLock(key);
+      obj=(IdentifiedObject)cache.peek(key);
+      if (obj == null) {
+        AbstractCachedAuthorityFactory worker=null;
+        try {
+          worker=(AbstractCachedAuthorityFactory)getPool().borrowObject();
+          obj=worker.createDerivedCRS(code);
+          cache.put(key,obj);
+        }
+ catch (        FactoryException e) {
+          throw e;
+        }
+catch (        Exception e) {
+          throw new FactoryException(e);
+        }
+ finally {
+          try {
+            getPool().returnObject(worker);
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.WARNING,"Unable to return worker " + e,e);
+          }
+        }
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return obj;
+}

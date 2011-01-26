@@ -1,0 +1,26 @@
+{
+  this.config=config;
+  this.commitCount=commitCount;
+  this.spatialTableName=param.getSpatialTableName();
+  this.typ=param.getTyp();
+  this.tileTableName=param.getTileTableName();
+  if (typ == ImportTyp.SHAPE) {
+    this.shapeFileUrl=param.getSourceURL();
+    this.keyInShapeFile=param.getSourceParam();
+  }
+ else   if (typ == ImportTyp.CSV) {
+    this.csvFileURL=param.getSourceURL();
+    this.csvDelimiter=param.getSourceParam();
+  }
+  if (typ == ImportTyp.DIR) {
+    this.directoryURL=param.getSourceURL();
+    this.extension=param.getSourceParam();
+  }
+  this.logger=Logger.getLogger("Import " + "<" + spatialTableName + "><"+ tileTableName+ ">");
+  this.con=con;
+  calculateSRS();
+  if (isJoined() == false) {
+    sqlInsertImage=con.prepareStatement("insert into  " + tileTableName + " ( "+ config.getBlobAttributeNameInTileTable()+ ","+ config.getKeyAttributeNameInTileTable()+ " ) values (?,?)");
+  }
+  prepareSpatialInsert();
+}

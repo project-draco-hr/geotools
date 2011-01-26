@@ -1,0 +1,19 @@
+{
+  final String featureTypeName="FT";
+  FIDMapper mapper=new TypedFIDMapper(new BasicFIDMapper("id",5),featureTypeName);
+  final SQLEncoder encoder=new SQLEncoder();
+  encoder.setSqlNameEscape("\"");
+  encoder.setFIDMapper(mapper);
+  builder=new DefaultSQLBuilder(encoder);
+  Set<Identifier> ids=new HashSet<Identifier>();
+  ids.add(ff.featureId("discarded.1"));
+  ids.add(ff.gmlObjectId("discarded.2"));
+  final FeatureId validFid=ff.featureId(featureTypeName + ".fid-something");
+  ids.add(validFid);
+  Filter id=ff.id(ids);
+  Filter preFilter=builder.getPreQueryFilter(id);
+  Filter postFilter=builder.getPostQueryFilter(id);
+  final Filter expected=ff.id(Collections.singleton(validFid));
+  assertEquals(expected,preFilter);
+  assertEquals(Filter.INCLUDE,postFilter);
+}

@@ -1,0 +1,32 @@
+{
+  int envSize=envelopes.size();
+  int othSize=otherRestrictions.size();
+  for (Iterator<Filter> it=f.getChildren().iterator(); it.hasNext(); ) {
+    Filter child=(Filter)it.next();
+    child.accept(this,arg1);
+  }
+  if (envelopes.size() >= (envSize + 2)) {
+    Envelope e=(Envelope)envelopes.pop();
+    for (int i=envelopes.size(); i > envSize; i--) {
+      Envelope curr=(Envelope)envelopes.pop();
+      if (curr.equals(EMPTY_ENVELOPE) || e.equals(EMPTY_ENVELOPE)) {
+        e=new Envelope(EMPTY_ENVELOPE);
+      }
+ else       if (curr.equals(UNIVERSE_ENVELOPE)) {
+      }
+ else       if (e.equals(UNIVERSE_ENVELOPE)) {
+        e=curr;
+      }
+ else {
+        e.expandToInclude(curr);
+      }
+    }
+    envelopes.push(e);
+  }
+  multiplePop(otherRestrictions,othSize);
+  Envelope top=envelopes.peek();
+  if (!(top.equals(EMPTY_ENVELOPE))) {
+    otherRestrictions.push(f);
+  }
+  return null;
+}

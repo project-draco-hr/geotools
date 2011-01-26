@@ -1,0 +1,34 @@
+{
+  final MathTransform modelToRaster;
+  final MathTransform rasterToModel;
+  int minx=Integer.MAX_VALUE;
+  int miny=Integer.MAX_VALUE;
+  int maxx=Integer.MIN_VALUE;
+  int maxy=Integer.MIN_VALUE;
+{
+    RasterQueryInfo dimensionChoice=findLowestResolution(results);
+    Long rasterId=dimensionChoice.getRasterId();
+    int pyramidLevel=dimensionChoice.getPyramidLevel();
+    int rasterIndex=rasterInfo.getRasterIndex(rasterId);
+    rasterToModel=rasterInfo.getRasterToModel(rasterIndex,pyramidLevel);
+    try {
+      modelToRaster=rasterToModel.inverse();
+    }
+ catch (    NoninvertibleTransformException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  for (  RasterQueryInfo rasterResultInfo : results) {
+    final GeneralEnvelope rasterResultEnvelope=rasterResultInfo.getResultEnvelope();
+    final GridEnvelope targetRasterGridRange;
+    targetRasterGridRange=getTargetGridRange(modelToRaster,rasterResultEnvelope);
+    rasterResultInfo.setMosaicLocation(targetRasterGridRange);
+    minx=Math.min(minx,targetRasterGridRange.getLow(0));
+    miny=Math.min(miny,targetRasterGridRange.getLow(1));
+    maxx=Math.max(maxx,targetRasterGridRange.getHigh(0));
+    maxy=Math.max(maxy,targetRasterGridRange.getHigh(1));
+  }
+  final GridEnvelope2D mosaicDimension;
+  mosaicDimension=new GridEnvelope2D(minx,miny,1 + (maxx - minx),1 + (maxy - miny));
+  return mosaicDimension;
+}

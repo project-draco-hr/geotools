@@ -1,0 +1,107 @@
+{
+  Style2D retval=null;
+  float opacity=evalOpacity(sldGraphic.getOpacity(),feature);
+  Composite composite=AlphaComposite.getInstance(AlphaComposite.SRC_OVER,opacity);
+  float displacementX=0;
+  float displacementY=0;
+  if (sldGraphic.getDisplacement() != null) {
+    displacementX=evalToFloat(sldGraphic.getDisplacement().getDisplacementX(),feature,0f);
+    displacementY=evalToFloat(sldGraphic.getDisplacement().getDisplacementY(),feature,0f);
+  }
+  double size=0;
+  try {
+    if (sldGraphic.getSize() != null && !Expression.NIL.equals(sldGraphic.getSize()))     size=evalToDouble(sldGraphic.getSize(),feature,0);
+  }
+ catch (  NumberFormatException nfe) {
+  }
+  float rotation=(float)((evalToFloat(sldGraphic.getRotation(),feature,0) * Math.PI) / 180);
+  List<GraphicalSymbol> symbols=sldGraphic.graphicalSymbols();
+  if (symbols.isEmpty()) {
+    symbols=new ArrayList<GraphicalSymbol>();
+    Mark square=StyleFactoryFinder.createStyleFactory().createMark();
+    symbols.add(square);
+  }
+  final int length=symbols.size();
+  ExternalGraphic eg;
+  BufferedImage img=null;
+  double dsize;
+  AffineTransform scaleTx;
+  AffineTransformOp ato;
+  BufferedImage scaledImage;
+  Mark mark;
+  Shape shape;
+  MarkStyle2D ms2d;
+  for (  GraphicalSymbol symbol : symbols) {
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("trying to render symbol " + symbol);
+    }
+    if (symbol instanceof ExternalGraphic) {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("rendering External graphic");
+      }
+      eg=(ExternalGraphic)symbol;
+      if (vectorRenderingEnabled || forceVector || size > MAX_RASTERIZATION_SIZE) {
+        Icon icon=getIcon(eg,feature,-1);
+        if (icon == null) {
+          continue;
+        }
+ else         if (icon instanceof ImageIcon) {
+          GraphicStyle2D g2d=getGraphicStyle(eg,(Feature)feature,size,1);
+          if (g2d == null) {
+            continue;
+          }
+ else {
+            g2d.setRotation(rotation);
+            g2d.setOpacity(opacity);
+            retval=g2d;
+            break;
+          }
+        }
+ else {
+          if (icon.getIconHeight() != size && size != 0) {
+            double scale=((double)size) / icon.getIconHeight();
+            icon=new RescaledIcon(icon,scale);
+          }
+          retval=new IconStyle2D(icon,feature,displacementX,displacementY,rotation,composite);
+          break;
+        }
+      }
+ else {
+        GraphicStyle2D g2d=getGraphicStyle(eg,(Feature)feature,size,1);
+        if (g2d == null) {
+          continue;
+        }
+ else {
+          g2d.setRotation(rotation);
+          g2d.setOpacity(opacity);
+          retval=g2d;
+          break;
+        }
+      }
+    }
+    if (symbol instanceof Mark) {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("rendering mark @ PointRenderer " + symbol.toString());
+      }
+      mark=(Mark)symbol;
+      shape=getShape(mark,feature);
+      if (shape == null)       throw new IllegalArgumentException("The specified mark " + mark.getWellKnownName() + " was not found!");
+      ms2d=new MarkStyle2D();
+      ms2d.setShape(shape);
+      ms2d.setFill(getPaint(mark.getFill(),feature));
+      ms2d.setFillComposite(getComposite(mark.getFill(),feature));
+      ms2d.setStroke(getStroke(mark.getStroke(),feature));
+      ms2d.setContour(getStrokePaint(mark.getStroke(),feature));
+      ms2d.setContourComposite(getStrokeComposite(mark.getStroke(),feature));
+      if (size <= 0)       size=16;
+      ms2d.setSize((int)size);
+      ms2d.setRotation(rotation);
+      retval=ms2d;
+      break;
+    }
+  }
+  if (retval != null) {
+    setScaleRange(retval,scaleRange);
+  }
+  return retval;
+}

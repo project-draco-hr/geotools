@@ -1,0 +1,52 @@
+{
+  int pyramidLevelChoice=0;
+  final List<double[]> resolutions=getValidResolutions();
+  final int numLevels=resolutions.size();
+  final double[] highestRes=getResolution(0);
+  final double reqx=requestedRes[0];
+  final double reqy=requestedRes[1];
+  final double requestedScaleFactorX=reqx / highestRes[0];
+  final double requestedScaleFactorY=reqy / highestRes[1];
+  final int leastReduceAxis=requestedScaleFactorX <= requestedScaleFactorY ? 0 : 1;
+  final double requestedScaleFactor=leastReduceAxis == 0 ? requestedScaleFactorX : requestedScaleFactorY;
+  if (0 == numLevels || requestedScaleFactor <= 1) {
+    pyramidLevelChoice=0;
+  }
+ else {
+    final double[] min=resolutions.get(numLevels - 1);
+    if (requestedScaleFactor >= min[2]) {
+      pyramidLevelChoice=numLevels - 1;
+    }
+ else {
+      double[] prev=highestRes;
+      for (int levelN=1; levelN < numLevels; levelN++) {
+        final double[] curr=resolutions.get(levelN);
+        if (curr[2] == requestedScaleFactor) {
+          pyramidLevelChoice=levelN;
+        }
+ else {
+          if (curr[2] > requestedScaleFactor || levelN == numLevels - 1) {
+            if (policy == OverviewPolicy.QUALITY) {
+              pyramidLevelChoice=levelN - 1;
+            }
+ else             if (policy == OverviewPolicy.SPEED) {
+              return levelN;
+            }
+ else             if (requestedScaleFactor - prev[2] < curr[2] - requestedScaleFactor) {
+              pyramidLevelChoice=levelN - 1;
+            }
+ else {
+              pyramidLevelChoice=levelN;
+            }
+            break;
+          }
+          prev=curr;
+        }
+      }
+    }
+  }
+  if (pyramidLevelChoice > 0 && skipLevelone) {
+    pyramidLevelChoice++;
+  }
+  return pyramidLevelChoice;
+}

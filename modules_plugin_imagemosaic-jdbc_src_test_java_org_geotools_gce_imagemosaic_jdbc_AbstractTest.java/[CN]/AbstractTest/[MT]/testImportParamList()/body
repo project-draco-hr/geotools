@@ -1,0 +1,35 @@
+{
+  URL shapeFileUrl=null, csvFileUrl=null, dirFileUrl=null;
+  try {
+    shapeFileUrl=new URL("file:" + OUTPUTDIR_RESOURCES + "index.shp");
+    csvFileUrl=new URL("file:" + OUTPUTDIR_RESOURCES + "index.csv");
+    dirFileUrl=new URL("file:" + OUTPUTDIR_RESOURCES);
+  }
+ catch (  MalformedURLException ex) {
+  }
+  List<ImportParam> importParamList=null;
+  importParamList=new ArrayList<ImportParam>();
+  Import.fillImportParamList("SPAT","TILE",dirFileUrl,"tif",ImportTyp.DIR,importParamList);
+  assertTrue(importParamList.size() == 3);
+  assertTrue(importParamList.get(0).getTileTableName().equals("TILE_0"));
+  assertTrue(importParamList.get(1).getTileTableName().equals("TILE_1"));
+  assertTrue(importParamList.get(2).getTileTableName().equals("TILE_2"));
+  assertTrue(importParamList.get(0).getSpatialTableName().equals("SPAT_0"));
+  assertTrue(importParamList.get(1).getSpatialTableName().equals("SPAT_1"));
+  assertTrue(importParamList.get(2).getSpatialTableName().equals("SPAT_2"));
+  assertTrue(isSameFile(importParamList.get(0).getSourceURL(),OUTPUTDIR_RESOURCES));
+  assertTrue(isSameFile(importParamList.get(1).getSourceURL(),OUTPUTDIR_RESOURCES + 1));
+  assertTrue(isSameFile(importParamList.get(2).getSourceURL(),OUTPUTDIR_RESOURCES + 2));
+  importParamList=new ArrayList<ImportParam>();
+  Import.fillImportParamList("SPAT","TILE",csvFileUrl,";",ImportTyp.CSV,importParamList);
+  assertTrue(importParamList.size() == 3);
+  assertTrue(isSameFile(importParamList.get(0).getSourceURL(),OUTPUTDIR_RESOURCES + "index.csv"));
+  assertTrue(isSameFile(importParamList.get(1).getSourceURL(),OUTPUTDIR_RESOURCES + "1/index.csv"));
+  assertTrue(isSameFile(importParamList.get(2).getSourceURL(),OUTPUTDIR_RESOURCES + "2/index.csv"));
+  importParamList=new ArrayList<ImportParam>();
+  Import.fillImportParamList("SPAT","TILE",shapeFileUrl,"LOCATION",ImportTyp.SHAPE,importParamList);
+  assertTrue(importParamList.size() == 3);
+  assertTrue(isSameFile(importParamList.get(0).getSourceURL(),OUTPUTDIR_RESOURCES + "index.shp"));
+  assertTrue(isSameFile(importParamList.get(1).getSourceURL(),OUTPUTDIR_RESOURCES + "1/index.shp"));
+  assertTrue(isSameFile(importParamList.get(2).getSourceURL(),OUTPUTDIR_RESOURCES + "2/index.shp"));
+}

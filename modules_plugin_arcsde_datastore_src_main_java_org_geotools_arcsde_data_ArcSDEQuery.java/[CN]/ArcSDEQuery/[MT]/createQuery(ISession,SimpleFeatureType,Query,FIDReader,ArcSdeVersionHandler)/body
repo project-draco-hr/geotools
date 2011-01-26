@@ -1,0 +1,21 @@
+{
+  Filter filter=query.getFilter();
+  LOGGER.fine("Creating new ArcSDEQuery");
+  final String typeName=fullSchema.getTypeName();
+  final SeTable sdeTable=session.getTable(typeName);
+  final SeLayer sdeLayer;
+  if (fullSchema.getGeometryDescriptor() == null) {
+    sdeLayer=null;
+  }
+ else {
+    sdeLayer=session.getLayer(typeName);
+  }
+  final ArcSDEQuery.FilterSet filters=new ArcSDEQuery.FilterSet(sdeTable,sdeLayer,filter,fullSchema,null,null,fidReader);
+  final Filter unsupportedFilter=filters.getUnsupportedFilter();
+  final String[] queryProperties=query.getPropertyNames();
+  final SimpleFeatureType querySchema=getQuerySchema(queryProperties,unsupportedFilter,fullSchema);
+  final String sortByClause=buildSortByClause(fullSchema,query.getSortBy(),fidReader);
+  final ArcSDEQuery sdeQuery;
+  sdeQuery=new ArcSDEQuery(session,querySchema,filters,sortByClause,fidReader,versioningHandler);
+  return sdeQuery;
+}

@@ -1,0 +1,30 @@
+{
+  Element element=parent.pullElement("FITTED_CS");
+  String name=element.pullString("name");
+  Map<String,?> properties=parseAuthority(element,name);
+  final MathTransform toBase=parseMathTransform(element,true);
+  final CoordinateReferenceSystem base=parseCoordinateReferenceSystem(element);
+  final OperationMethod method=getOperationMethod();
+  element.close();
+  final CoordinateSystemAxis[] axis=new CoordinateSystemAxis[toBase.getSourceDimensions()];
+  final StringBuilder buffer=new StringBuilder(name);
+  buffer.append(" axis ");
+  final int start=buffer.length();
+  try {
+    for (int i=0; i < axis.length; i++) {
+      final String number=String.valueOf(i);
+      buffer.setLength(start);
+      buffer.append(number);
+      axis[i]=csFactory.createCoordinateSystemAxis(singletonMap(IdentifiedObject.NAME_KEY,buffer.toString()),number,AxisDirection.OTHER,Unit.ONE);
+    }
+    final Conversion conversion=new DefiningConversion(singletonMap(IdentifiedObject.NAME_KEY,method.getName().getCode()),method,toBase.inverse());
+    final CoordinateSystem cs=new AbstractCS(properties,axis);
+    return crsFactory.createDerivedCRS(properties,base,conversion,cs);
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+catch (  NoninvertibleTransformException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

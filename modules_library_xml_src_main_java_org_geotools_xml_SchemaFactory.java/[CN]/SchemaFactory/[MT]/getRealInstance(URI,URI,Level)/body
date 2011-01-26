@@ -1,0 +1,40 @@
+{
+  URI targetNamespace=targetNamespace2;
+  if ((targetNamespace == null) || (schemas.get(targetNamespace) == null)) {
+    setParser();
+    XSISAXHandler contentHandler=getSAXHandler(desiredSchema);
+    XSISAXHandler.setLogLevel(level);
+    try {
+      parser.parse(desiredSchema.toString(),contentHandler);
+    }
+ catch (    IOException e) {
+      throw new SAXException(e);
+    }
+    Schema schema=contentHandler.getSchema();
+    if ((targetNamespace == null) || "".equals(targetNamespace)) {
+      targetNamespace=schema.getTargetNamespace();
+    }
+    if (schemas.get(targetNamespace) != null) {
+      schema=merge(schema,(Schema)schemas.get(targetNamespace));
+    }
+    schemas.put(targetNamespace,schema);
+    return schema;
+  }
+ else {
+    if (!((Schema)schemas.get(targetNamespace)).includesURI(desiredSchema)) {
+      Schema sh=(Schema)schemas.get(targetNamespace);
+      setParser();
+      XSISAXHandler contentHandler=getSAXHandler(desiredSchema);
+      XSISAXHandler.setLogLevel(level);
+      try {
+        parser.parse(desiredSchema.toString(),contentHandler);
+      }
+ catch (      IOException e) {
+        throw new SAXException(e);
+      }
+      sh=merge(sh,contentHandler.getSchema());
+      schemas.put(targetNamespace,sh);
+    }
+  }
+  return (Schema)schemas.get(targetNamespace);
+}

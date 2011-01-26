@@ -1,0 +1,26 @@
+{
+  MathTransform transform;
+  OperationMethod method=null;
+  try {
+    final String classification=parameters.getDescriptor().getName().getCode();
+    final MathTransformProvider provider=getProvider(classification);
+    method=provider;
+    try {
+      parameters=provider.ensureValidValues(parameters);
+      transform=provider.createMathTransform(parameters);
+    }
+ catch (    IllegalArgumentException exception) {
+      throw new FactoryException(exception);
+    }
+    if (transform instanceof MathTransformProvider.Delegate) {
+      final MathTransformProvider.Delegate delegate=(MathTransformProvider.Delegate)transform;
+      method=delegate.method;
+      transform=delegate.transform;
+    }
+    transform=pool.unique(transform);
+  }
+  finally {
+    lastMethod.set(method);
+  }
+  return transform;
+}

@@ -1,0 +1,17 @@
+{
+  final Element element=parent.pullElement("VERT_DATUM");
+  final String name=element.pullString("name");
+  final int datum=element.pullInteger("datum");
+  final Map<String,?> properties=parseAuthority(element,name);
+  element.close();
+  final VerticalDatumType type=DefaultVerticalDatum.getVerticalDatumTypeFromLegacyCode(datum);
+  if (type == null) {
+    throw element.parseFailed(null,Errors.format(ErrorKeys.UNKNOW_TYPE_$1,datum));
+  }
+  try {
+    return datumFactory.createVerticalDatum(properties,type);
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

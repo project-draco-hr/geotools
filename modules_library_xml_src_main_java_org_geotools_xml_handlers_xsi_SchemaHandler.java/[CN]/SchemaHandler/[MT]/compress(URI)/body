@@ -1,0 +1,192 @@
+{
+  if (schema != null) {
+    return schema;
+  }
+  if (uri == null) {
+    uri=thisURI;
+  }
+ else {
+    if (thisURI != null) {
+      uri=thisURI.resolve(uri);
+    }
+  }
+  if (prefix == null && prefixCache != null) {
+    prefix=(String)prefixCache.get(targetNamespace);
+  }
+  Iterator it=null;
+  if (includes != null) {
+    it=includes.iterator();
+    while (it.hasNext()) {
+      IncludeHandler inc=(IncludeHandler)it.next();
+      logger.finest("compressing include " + inc.getSchemaLocation());
+      if (inc != null && inc.getSchemaLocation() != null) {
+        Schema cs;
+        URI incURI=null;
+        if (thisURI == null) {
+          try {
+            incURI=new URI(inc.getSchemaLocation());
+          }
+ catch (          URISyntaxException e) {
+            logger.warning(e.getMessage());
+          }
+        }
+ else {
+          incURI=thisURI.normalize().resolve(inc.getSchemaLocation());
+        }
+        cs=SchemaFactory.getInstance(targetNamespace,incURI,logger.getLevel());
+        if (uri != null) {
+          uri=incURI.resolve(uri);
+        }
+ else {
+          uri=incURI;
+        }
+        addSchema(cs);
+      }
+    }
+  }
+  includes=null;
+  if (this.imports != null) {
+    LinkedList imports1=new LinkedList();
+    it=this.imports.iterator();
+    while (it.hasNext()) {
+      Object obj=it.next();
+      if (obj instanceof ImportHandler) {
+        ImportHandler imp=(ImportHandler)obj;
+        URI incURI=null;
+        if (imp.getSchemaLocation() != null) {
+          if (thisURI != null) {
+            incURI=thisURI.normalize().resolve(imp.getSchemaLocation());
+          }
+ else {
+            incURI=imp.getSchemaLocation();
+          }
+        }
+        Schema cs=SchemaFactory.getInstance(imp.getNamespace(),incURI,logger.getLevel());
+        imports1.add(cs);
+      }
+ else {
+        imports1.add(obj);
+      }
+    }
+    this.imports=imports1;
+  }
+  DefaultSchema schema1=new DefaultSchema();
+  schema1.attributeFormDefault=attributeFormDefault;
+  schema1.elementFormDefault=elementFormDefault;
+  schema1.finalDefault=finalDefault;
+  schema1.blockDefault=blockDefault;
+  schema1.id=id;
+  schema1.prefix=prefix;
+  schema1.targetNamespace=targetNamespace;
+  schema1.version=version;
+  schema1.uri=uri;
+  if (imports != null) {
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(imports);
+    schema1.imports=(Schema[])tmp.toArray(new Schema[tmp.size()]);
+  }
+  if (simpleTypes != null) {
+    it=simpleTypes.iterator();
+    HashSet cache=new HashSet();
+    while (it.hasNext()) {
+      Object t=it.next();
+      if (t instanceof SimpleTypeHandler) {
+        SimpleTypeHandler tt=(SimpleTypeHandler)t;
+        cache.add(tt.compress(this));
+        it.remove();
+      }
+    }
+    it=cache.iterator();
+    while (it.hasNext())     simpleTypes.add(it.next());
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(simpleTypes);
+    schema1.simpleTypes=(SimpleType[])tmp.toArray(new SimpleType[tmp.size()]);
+  }
+  if (attributeGroups != null) {
+    it=attributeGroups.iterator();
+    HashSet cache=new HashSet();
+    while (it.hasNext()) {
+      Object t=it.next();
+      if (t instanceof AttributeGroupHandler) {
+        AttributeGroupHandler tt=(AttributeGroupHandler)t;
+        cache.add(tt.compress(this));
+        it.remove();
+      }
+    }
+    it=cache.iterator();
+    while (it.hasNext())     attributeGroups.add(it.next());
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(attributeGroups);
+    schema1.attributeGroups=(AttributeGroup[])tmp.toArray(new AttributeGroup[tmp.size()]);
+  }
+  if (attributes != null) {
+    it=attributes.iterator();
+    HashSet cache=new HashSet();
+    while (it.hasNext()) {
+      Object t=it.next();
+      if (t instanceof AttributeHandler) {
+        AttributeHandler tt=(AttributeHandler)t;
+        cache.add(tt.compress(this));
+        it.remove();
+      }
+    }
+    it=cache.iterator();
+    while (it.hasNext())     attributes.add(it.next());
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(attributes);
+    schema1.attributes=(Attribute[])tmp.toArray(new Attribute[tmp.size()]);
+  }
+  if (complexTypes != null) {
+    it=complexTypes.iterator();
+    HashSet cache=new HashSet();
+    while (it.hasNext()) {
+      Object t=it.next();
+      if (t instanceof ComplexTypeHandler) {
+        ComplexTypeHandler tt=(ComplexTypeHandler)t;
+        cache.add(tt.compress(this));
+      }
+    }
+    complexTypes.clear();
+    it=cache.iterator();
+    while (it.hasNext())     complexTypes.add(it.next());
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(complexTypes);
+    schema1.complexTypes=(ComplexType[])tmp.toArray(new ComplexType[tmp.size()]);
+  }
+  if (elements != null) {
+    it=elements.iterator();
+    HashSet cache=new HashSet();
+    while (it.hasNext()) {
+      Object t=it.next();
+      if (t instanceof ElementTypeHandler) {
+        ElementTypeHandler tt=(ElementTypeHandler)t;
+        cache.add(tt.compress(this));
+        it.remove();
+      }
+    }
+    it=cache.iterator();
+    while (it.hasNext())     elements.add(it.next());
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(elements);
+    schema1.elements=(Element[])tmp.toArray(new Element[tmp.size()]);
+  }
+  if (groups != null) {
+    it=groups.iterator();
+    HashSet cache=new HashSet();
+    while (it.hasNext()) {
+      Object t=it.next();
+      if (t instanceof GroupHandler) {
+        GroupHandler tt=(GroupHandler)t;
+        cache.add(tt.compress(this));
+        it.remove();
+      }
+    }
+    it=cache.iterator();
+    while (it.hasNext())     groups.add(it.next());
+    TreeSet tmp=new TreeSet(SchemaComparator.getInstance());
+    tmp.addAll(groups);
+    schema1.groups=(Group[])tmp.toArray(new Group[tmp.size()]);
+  }
+  attributeGroups=attributes=complexTypes=simpleTypes=elements=groups=imports=includes=redefines=null;
+  return schema1;
+}

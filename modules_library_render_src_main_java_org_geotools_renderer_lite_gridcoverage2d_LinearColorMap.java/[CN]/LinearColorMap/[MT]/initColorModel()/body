@@ -1,0 +1,55 @@
+{
+  if (colorModel == null) {
+    BigInteger bits=new BigInteger("0");
+    final boolean preFilteringValuesPresent=preFilteringColor != null;
+    int elementsCount=standardElements.length + (preFilteringValuesPresent ? 1 : 0);
+    int max=-1;
+    for (int i=0; i < elementsCount; i++) {
+      final DefaultLinearPiecewiseTransform1DElement element=i < standardElements.length ? (DefaultLinearPiecewiseTransform1DElement)standardElements[i] : preFilteringElements[0];
+      final int elementMin=(int)element.getOutputMinimum();
+      final int elementMax=(int)element.getOutputMaximum();
+      for (int k=elementMin; k <= elementMax; k++)       bits=bits.setBit(k);
+      max=(int)Math.max(max,elementMax);
+    }
+    max++;
+    int[] ARGB=new int[max];
+    int outMax=0, outMin=0;
+    for (int i=0; i < elementsCount; i++) {
+      final LinearColorMapElement element=i < standardElements.length ? standardElements[i] : preFilteringElements[0];
+      outMin=(int)element.getOutputMinimum();
+      outMax=(int)(element.getOutputMaximum());
+      ColorUtilities.expand(element.getColors(),ARGB,outMin,outMax + 1);
+    }
+    this.preFilteringPiecewise=preFilteringElements == null ? null : new DefaultPiecewiseTransform1D<LinearColorMapElement>(preFilteringElements);
+    final boolean lookForDefaultColor=defaultColor != null;
+    boolean defaultColorFound=!lookForDefaultColor;
+    if (lookForDefaultColor) {
+      int defaultColorIndex=-1;
+      for (int i=0; i < ARGB.length; i++) {
+        if (lookForDefaultColor && defaultColorIndex == -1 && bits.testBit(i) && ARGB[i] == defaultColor.getRGB()) {
+          defaultColorIndex=i;
+          defaultColorFound=true;
+          break;
+        }
+      }
+      if (defaultColorFound)       this.piecewise=new DefaultPiecewiseTransform1D<LinearColorMapElement>(this.standardElements,defaultColorIndex);
+ else {
+        int i=0;
+        for (; i < max; i++)         if (!bits.testBit(i))         break;
+        if (i == max) {
+          max=i == max ? max + 1 : max;
+          bits=bits.setBit(i);
+          final int[] tempARGB=new int[max];
+          System.arraycopy(ARGB,0,tempARGB,0,ARGB.length);
+          tempARGB[tempARGB.length - 1]=defaultColor.getRGB();
+          ARGB=tempARGB;
+        }
+        this.piecewise=new DefaultPiecewiseTransform1D<LinearColorMapElement>(this.standardElements,max);
+      }
+    }
+ else {
+      this.piecewise=new DefaultPiecewiseTransform1D<LinearColorMapElement>(this.standardElements);
+    }
+    colorModel=new IndexColorModel(ColorUtilities.getBitCount(max),max,ARGB,0,ColorUtilities.getTransferType(max),bits);
+  }
+}

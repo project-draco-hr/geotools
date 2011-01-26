@@ -1,0 +1,26 @@
+{
+  RenderingHints hints=ImageUtilities.getRenderingHints(image);
+  if (hints == null) {
+    hints=new RenderingHints(null);
+    if (commonHints != null) {
+      hints.add(commonHints);
+    }
+  }
+ else   if (commonHints != null) {
+    hints.putAll(commonHints);
+  }
+  if (Boolean.FALSE.equals(hints.get(TILING_ALLOWED))) {
+    final ImageLayout layout=getImageLayout(hints);
+    if (commonHints == null || layout != commonHints.get(JAI.KEY_IMAGE_LAYOUT)) {
+      layout.setTileWidth(image.getWidth());
+      layout.setTileHeight(image.getHeight());
+      layout.setTileGridXOffset(image.getMinX());
+      layout.setTileGridYOffset(image.getMinY());
+      hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+  }
+  if (tileCacheDisabled != 0 && (commonHints != null && !commonHints.containsKey(JAI.KEY_TILE_CACHE))) {
+    hints.add(new RenderingHints(JAI.KEY_TILE_CACHE,null));
+  }
+  return hints;
+}

@@ -1,0 +1,27 @@
+{
+  GeneralEnvelope envelope=(GeneralEnvelope)object;
+  if (envelope == null) {
+    return null;
+  }
+  if (name.getLocalPart().equals("timePosition")) {
+    CoordinateReferenceSystem crs=envelope.getCoordinateReferenceSystem();
+    TemporalCRS temporalCRS=null;
+    if (crs instanceof CompoundCRS) {
+      List CRSs=((DefaultCompoundCRS)crs).getCoordinateReferenceSystems();
+      for (      Object item : CRSs) {
+        if (item instanceof TemporalCRS) {
+          temporalCRS=(TemporalCRS)item;
+        }
+      }
+    }
+    if (temporalCRS != null) {
+      List<Position> envelopePositions=new LinkedList<Position>();
+      Position beginning=new DefaultPosition(((DefaultTemporalCRS)temporalCRS).toDate(envelope.getLowerCorner().getOrdinate(envelope.getDimension() - 1)));
+      Position ending=new DefaultPosition(((DefaultTemporalCRS)temporalCRS).toDate(envelope.getUpperCorner().getOrdinate(envelope.getDimension() - 1)));
+      envelopePositions.add(beginning);
+      envelopePositions.add(ending);
+      return envelopePositions;
+    }
+  }
+  return null;
+}

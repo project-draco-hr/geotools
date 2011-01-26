@@ -1,0 +1,23 @@
+{
+  org.geotools.util.logging.Logging.getLogger("org.geotools").setLevel(Level.FINE);
+  File shp=DataUtilities.urlToFile(TestData.url(Rendering2DTest.class,"theme1.shp"));
+  File shx=DataUtilities.urlToFile(TestData.url(Rendering2DTest.class,"theme1.shx"));
+  File prj=DataUtilities.urlToFile(TestData.url(Rendering2DTest.class,"theme1.prj"));
+  File dbf=DataUtilities.urlToFile(TestData.url(Rendering2DTest.class,"theme1.dbf"));
+  directory=TestData.file(Rendering2DTest.class,".");
+  shp2=File.createTempFile("theme2",".shp",directory);
+  typename=shp2.getName().substring(0,shp2.getName().lastIndexOf("."));
+  shx2=new File(directory,typename + ".shx");
+  prj2=new File(directory,typename + ".prj");
+  dbf2=new File(directory,typename + ".dbf");
+  copy(shp,shp2);
+  copy(shx,shx2);
+  copy(prj,prj2);
+  copy(dbf,dbf2);
+  ShapefileDataStore ds=TestUtilites.getDataStore(shp2.getName());
+  SimpleFeatureType type=ds.getSchema();
+  GeometryFactory gf=new GeometryFactory();
+  LineString ls=gf.createLineString(new Coordinate[]{new Coordinate(0,0),new Coordinate(10,10)});
+  MultiLineString mls=gf.createMultiLineString(new LineString[]{ls});
+  sf=SimpleFeatureBuilder.build(type,new Object[]{mls,new Integer(0),"Hi"},"newFeature");
+}

@@ -1,0 +1,18 @@
+{
+  final CoordinateReferenceSystem mapCRS=CRS.parseWKT(WKT.POLAR_STEREOGRAPHIC);
+  final CoordinateReferenceSystem WGS84=DefaultGeographicCRS.WGS84;
+  final CoordinateOperation operation=CRS.getCoordinateOperationFactory(false).createOperation(mapCRS,WGS84);
+  final MathTransform transform=operation.getMathTransform();
+  assertTrue(transform instanceof MathTransform2D);
+  Rectangle2D envelope=XRectangle2D.createFromExtremums(-3943612.4042124213,-4078471.954436003,3729092.5890516187,4033483.085688618);
+  Rectangle2D expected=XRectangle2D.createFromExtremums(-178.49352310409273,-88.99136583196398,137.56220967463082,-40.905775004205864);
+  Rectangle2D actual=CRS.transform((MathTransform2D)transform,envelope,null);
+  assertTrue(XRectangle2D.equalsEpsilon(expected,actual));
+  expected=XRectangle2D.createFromExtremums(-180,-90,180,-40.905775004205864);
+  actual=CRS.transform(operation,envelope,actual);
+  assertTrue(XRectangle2D.equalsEpsilon(expected,actual));
+  envelope=XRectangle2D.createFromExtremums(-4000000,-4000000,300000,30000);
+  expected=XRectangle2D.createFromExtremums(-180,-90,180,-41.03163170198091);
+  actual=CRS.transform(operation,envelope,actual);
+  assertTrue(XRectangle2D.equalsEpsilon(expected,actual));
+}

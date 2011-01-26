@@ -1,0 +1,35 @@
+{
+  final GridCoverage2D sampleByteCoverage=createRaster(DataBuffer.TYPE_BYTE);
+  assertEquals(DataBuffer.TYPE_BYTE,sampleByteCoverage.getRenderedImage().getSampleModel().getDataType());
+  final AffineTransform gridToCRS=getAffineTransform(sampleByteCoverage);
+  assertNotNull(gridToCRS);
+  final PrecisionModel pm=new PrecisionModel();
+  final GeometryFactory gf=new GeometryFactory(pm,0);
+  final Envelope2D envelope=sampleByteCoverage.getEnvelope2D();
+  final double minX=envelope.getMinX();
+  final double maxY=envelope.getMaxY();
+  final double minY=maxY - envelope.getHeight() / 16;
+  final double maxX=minX + envelope.getWidth() / 16;
+  final Coordinate[] coord=new Coordinate[]{new Coordinate(minX,maxY),new Coordinate(maxX,maxY),new Coordinate(maxX,minY),new Coordinate(minX,minY),new Coordinate(minX,maxY)};
+  final LinearRing ring=gf.createLinearRing(coord);
+  final Polygon roi=new Polygon(ring,null,gf);
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  final AbstractOperation op=(AbstractOperation)processor.getOperation("Histogram");
+  assertTrue(op instanceof Histogram);
+  final ParameterValueGroup params=op.getParameters();
+  params.parameter("Source").setValue(sampleByteCoverage);
+  params.parameter("xPeriod").setValue(1 * XAffineTransform.getScaleX0(gridToCRS));
+  params.parameter("yPeriod").setValue(1 * XAffineTransform.getScaleY0(gridToCRS));
+  params.parameter("roi").setValue(roi);
+  GridCoverage2D coverage=(GridCoverage2D)op.doOperation(params,null);
+  javax.media.jai.Histogram histogram=(javax.media.jai.Histogram)coverage.getProperty(Histogram.GT_SYNTHETIC_PROPERTY_HISTOGRAM);
+  assertEquals(0,histogram.getBinSize(0,255));
+  assertEquals(1,histogram.getBinSize(0,60));
+  params.parameter("xPeriod").setValue(7 * XAffineTransform.getScaleX0(gridToCRS));
+  params.parameter("yPeriod").setValue(7 * XAffineTransform.getScaleY0(gridToCRS));
+  coverage=(GridCoverage2D)op.doOperation(params,null);
+  histogram=(javax.media.jai.Histogram)coverage.getProperty(Histogram.GT_SYNTHETIC_PROPERTY_HISTOGRAM);
+  assertEquals(0,histogram.getBinSize(0,255));
+  assertEquals(0,histogram.getBinSize(0,60));
+  assertEquals(1,histogram.getBinSize(0,56));
+}

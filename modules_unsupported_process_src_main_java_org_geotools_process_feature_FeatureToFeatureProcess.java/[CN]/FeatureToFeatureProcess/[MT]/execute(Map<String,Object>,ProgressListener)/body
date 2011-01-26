@@ -1,0 +1,34 @@
+{
+  if (monitor == null) {
+    monitor=new NullProgressListener();
+  }
+  FeatureCollection features=(FeatureCollection)input.get(FeatureToFeatureProcessFactory.FEATURES.key);
+  float scale=100f / features.size();
+  monitor.started();
+  SimpleFeatureType targetSchema=getTargetSchema((SimpleFeatureType)features.getSchema(),input);
+  FeatureCollection result=new DefaultFeatureCollection(null,targetSchema);
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder((SimpleFeatureType)result.getSchema());
+  FeatureIterator fi=features.features();
+  try {
+    int counter=0;
+    while (fi.hasNext()) {
+      fb.init((SimpleFeature)fi.next());
+      SimpleFeature feature=fb.buildFeature(null);
+      try {
+        processFeature(feature,input);
+      }
+ catch (      Exception e) {
+        monitor.exceptionOccurred(e);
+      }
+      monitor.progress(scale * counter++);
+      result.add(feature);
+    }
+  }
+  finally {
+    features.close(fi);
+  }
+  monitor.complete();
+  Map<String,Object> output=new HashMap<String,Object>();
+  output.put(FeatureToFeatureProcessFactory.RESULT.key,result);
+  return output;
+}

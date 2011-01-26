@@ -1,0 +1,36 @@
+{
+  System.out.println("   setGlobalValues");
+  final Map<String,Object> table=new HashMap<String,Object>();
+  table.put("foo",1);
+  table.put("bar",2);
+  EnvFunction.setGlobalValues(table);
+  final CountDownLatch latch=new CountDownLatch(2);
+class Task implements Runnable {
+    final String key;
+    Task(    String key){
+      if (!table.containsKey(key)) {
+        throw new IllegalArgumentException("Invalid arg " + key);
+      }
+      this.key=key;
+    }
+    public void run(){
+      EnvFunction.setGlobalValue(key,table.get(key));
+      latch.countDown();
+      try {
+        latch.await();
+      }
+ catch (      InterruptedException ex) {
+        throw new IllegalStateException(ex);
+      }
+      for (      String name : table.keySet()) {
+        Object result=ff.function("env",ff.literal(name)).evaluate(null);
+        int value=((Number)result).intValue();
+        assertEquals(table.get(name),value);
+      }
+    }
+  }
+  Future f1=executor.submit(new Task("foo"));
+  Future f2=executor.submit(new Task("bar"));
+  f1.get();
+  f2.get();
+}

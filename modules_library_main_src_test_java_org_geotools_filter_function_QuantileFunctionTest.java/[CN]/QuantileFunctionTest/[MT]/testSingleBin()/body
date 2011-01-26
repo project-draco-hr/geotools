@@ -1,0 +1,29 @@
+{
+  SimpleFeatureType dataType=DataUtilities.createType("classification.test1","id:0,value:int");
+  int iVal[]=new int[]{1,2,3,4,5};
+  SimpleFeature[] myfeatures=new SimpleFeature[iVal.length];
+  for (int i=0; i < iVal.length; i++) {
+    myfeatures[i]=SimpleFeatureBuilder.build(dataType,new Object[]{new Integer(i + 1),new Integer(iVal[i])},"classification.test1" + (i + 1));
+  }
+  MemoryDataStore store=new MemoryDataStore();
+  store.createSchema(dataType);
+  store.addFeatures(myfeatures);
+  SimpleFeatureCollection myFeatureCollection=store.getFeatureSource("test1").getFeatures();
+  org.opengis.filter.expression.Expression function=ff.function("Quantile",ff.property("value"),ff.literal(5));
+  Classifier classifier=(Classifier)function.evaluate(myFeatureCollection);
+  assertNotNull(classifier);
+  assertEquals(classifier.getClass(),RangedClassifier.class);
+  RangedClassifier range=(RangedClassifier)classifier;
+  assertEquals(5,range.getSize());
+  for (int i=0; i < 5; i++) {
+    assertTrue(i + 1 == ((Number)range.getMin(i)).doubleValue());
+    if (i != 4) {
+      assertTrue(i + 2 == ((Number)range.getMax(i)).doubleValue());
+      assertEquals((i + 1) + ".." + (i + 2),range.getTitle(i));
+    }
+ else {
+      assertTrue(i + 1 == ((Number)range.getMax(i)).doubleValue());
+      assertEquals((i + 1) + ".." + (i + 1),range.getTitle(i));
+    }
+  }
+}

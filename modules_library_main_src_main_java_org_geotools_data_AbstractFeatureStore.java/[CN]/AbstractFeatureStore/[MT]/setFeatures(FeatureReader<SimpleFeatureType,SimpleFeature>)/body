@@ -1,0 +1,32 @@
+{
+  String typeName=getSchema().getTypeName();
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=getDataStore().getFeatureWriter(typeName,getTransaction());
+  SimpleFeature feature;
+  SimpleFeature newFeature;
+  try {
+    while (writer.hasNext()) {
+      feature=writer.next();
+      writer.remove();
+    }
+    while (reader.hasNext()) {
+      try {
+        feature=reader.next();
+      }
+ catch (      Exception readProblem) {
+        throw new DataSourceException("Could not add Features, problem with provided reader",readProblem);
+      }
+      newFeature=(SimpleFeature)writer.next();
+      try {
+        newFeature.setAttributes(feature.getAttributes());
+      }
+ catch (      IllegalAttributeException writeProblem) {
+        throw new DataSourceException("Could not create " + typeName + " out of provided feature: "+ feature.getID(),writeProblem);
+      }
+      writer.write();
+    }
+  }
+  finally {
+    reader.close();
+    writer.close();
+  }
+}

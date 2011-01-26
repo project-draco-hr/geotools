@@ -1,0 +1,46 @@
+{
+  double lam=x / FXC;
+  double phi=abs(y / FYC);
+  if (phi >= 1d) {
+    if (phi > ONEEPS) {
+      phi=y < 0. ? -PI / 2 : PI / 2;
+      lam/=X[NODES].c0;
+    }
+  }
+ else {
+    int i;
+    for (i=(int)floor(phi * NODES); ; ) {
+      if (Y[i].c0 > phi) {
+        --i;
+      }
+ else       if (Y[i + 1].c0 <= phi) {
+        ++i;
+      }
+ else {
+        break;
+      }
+    }
+    Coeff T=new Coeff(Y[i]);
+    double t=5d * (phi - T.c0) / (Y[i + 1].c0 - T.c0);
+    T.c0-=phi;
+    for (; ; ) {
+      double t1=T.forward(t) / T.inverse(t);
+      t-=t1;
+      if (abs(t1) < EPS) {
+        break;
+      }
+    }
+    phi=toRadians(5 * i + t);
+    if (y < 0d) {
+      phi=-phi;
+    }
+    lam/=X[i].forward(t);
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(lam,phi);
+    return ptDst;
+  }
+ else {
+    return new Point2D.Double(lam,phi);
+  }
+}

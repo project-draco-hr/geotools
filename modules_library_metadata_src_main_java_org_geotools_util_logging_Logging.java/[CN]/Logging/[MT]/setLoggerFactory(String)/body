@@ -1,0 +1,36 @@
+{
+  final LoggerFactory factory;
+  if (className == null) {
+    factory=null;
+  }
+ else {
+    final Class<?> factoryClass;
+    try {
+      factoryClass=Class.forName(className);
+    }
+ catch (    NoClassDefFoundError error) {
+      throw factoryNotFound(className,error);
+    }
+    if (!LoggerFactory.class.isAssignableFrom(factoryClass)) {
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,factoryClass,LoggerFactory.class));
+    }
+    try {
+      final Method method=factoryClass.getMethod("getInstance",(Class[])null);
+      factory=LoggerFactory.class.cast(method.invoke(null,(Object[])null));
+    }
+ catch (    Exception e) {
+      Throwable cause=e;
+      if (e instanceof InvocationTargetException) {
+        cause=e.getCause();
+      }
+      if (cause instanceof ClassNotFoundException) {
+        throw (ClassNotFoundException)e;
+      }
+      if (cause instanceof NoClassDefFoundError) {
+        throw factoryNotFound(className,(NoClassDefFoundError)cause);
+      }
+      throw new IllegalArgumentException(Errors.format(ErrorKeys.CANT_CREATE_FACTORY_$1,className,cause));
+    }
+  }
+  setLoggerFactory(factory);
+}

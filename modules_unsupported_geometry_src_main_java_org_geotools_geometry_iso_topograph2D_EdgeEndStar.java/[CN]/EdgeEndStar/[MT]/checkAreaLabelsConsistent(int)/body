@@ -1,0 +1,24 @@
+{
+  List edges=getEdges();
+  if (edges.size() <= 0)   return true;
+  int lastEdgeIndex=edges.size() - 1;
+  Label startLabel=((EdgeEnd)edges.get(lastEdgeIndex)).getLabel();
+  int startLoc=startLabel.getLocation(geomIndex,Position.LEFT);
+  Assert.isTrue(startLoc != Location.NONE,"Found unlabelled area edge");
+  int currLoc=startLoc;
+  for (Iterator it=iterator(); it.hasNext(); ) {
+    EdgeEnd e=(EdgeEnd)it.next();
+    Label label=e.getLabel();
+    Assert.isTrue(label.isArea(geomIndex),"Found non-area edge");
+    int leftLoc=label.getLocation(geomIndex,Position.LEFT);
+    int rightLoc=label.getLocation(geomIndex,Position.RIGHT);
+    if (leftLoc == rightLoc) {
+      return false;
+    }
+    if (rightLoc != currLoc) {
+      return false;
+    }
+    currLoc=leftLoc;
+  }
+  return true;
+}

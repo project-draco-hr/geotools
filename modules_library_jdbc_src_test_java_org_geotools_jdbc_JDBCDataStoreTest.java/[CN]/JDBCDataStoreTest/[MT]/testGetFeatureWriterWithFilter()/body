@@ -1,0 +1,17 @@
+{
+  FilterFactory ff=dataStore.getFilterFactory();
+  Filter f=ff.equals(ff.property(aname("intProperty")),ff.literal(100));
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("ft1")).getFeatures(f);
+  assertEquals(0,features.size());
+  f=ff.equals(ff.property(aname("intProperty")),ff.literal(1));
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriter(tname("ft1"),f,Transaction.AUTO_COMMIT);
+  while (writer.hasNext()) {
+    SimpleFeature feature=writer.next();
+    feature.setAttribute(aname("intProperty"),new Integer(100));
+    writer.write();
+  }
+  writer.close();
+  f=ff.equals(ff.property(aname("intProperty")),ff.literal(100));
+  features=dataStore.getFeatureSource(tname("ft1")).getFeatures(f);
+  assertEquals(1,features.size());
+}

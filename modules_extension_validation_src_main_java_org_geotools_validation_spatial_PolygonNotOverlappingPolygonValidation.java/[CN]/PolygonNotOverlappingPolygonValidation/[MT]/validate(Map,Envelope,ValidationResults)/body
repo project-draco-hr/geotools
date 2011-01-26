@@ -1,0 +1,31 @@
+{
+  LOGGER.finer("Starting test " + getName() + " ("+ getClass().getName()+ ")");
+  String typeRef1=getPolygonTypeRef();
+  LOGGER.finer(typeRef1 + ": looking up SimpleFeatureSource ");
+  SimpleFeatureSource polySource1=(SimpleFeatureSource)layers.get(typeRef1);
+  LOGGER.finer(typeRef1 + ": found " + polySource1.getSchema().getTypeName());
+  SimpleFeatureCollection collection1=polySource1.getFeatures();
+  Object[] poly1=collection1.toArray();
+  String typeRef2=getRestrictedPolygonTypeRef();
+  LOGGER.finer(typeRef2 + ": looking up SimpleFeatureSource ");
+  SimpleFeatureSource polySource2=(SimpleFeatureSource)layers.get(typeRef2);
+  LOGGER.finer(typeRef2 + ": found " + polySource2.getSchema().getTypeName());
+  SimpleFeatureCollection collection2=polySource2.getFeatures();
+  Object[] poly2=collection2.toArray();
+  boolean success=true;
+  for (int i=0; i < poly1.length; i++) {
+    SimpleFeature tmp=(SimpleFeature)poly1[i];
+    LOGGER.finest("Polgon overlap test for:" + tmp.getID());
+    Geometry gt=(Geometry)tmp.getDefaultGeometry();
+    for (int j=0; j < poly2.length; j++) {
+      SimpleFeature tmp2=(SimpleFeature)poly2[j];
+      LOGGER.finest("Polgon overlap test against:" + tmp2.getID());
+      Geometry gt2=(Geometry)tmp2.getDefaultGeometry();
+      if (gt2.overlaps(gt) != expected) {
+        results.error(tmp,"Polygon " + typeRef1 + " overlapped Polygon "+ typeRef2+ "("+ tmp2.getID()+ ") was not "+ expected);
+        success=false;
+      }
+    }
+  }
+  return success;
+}

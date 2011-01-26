@@ -1,0 +1,42 @@
+{
+  if (filter == null) {
+    throw new NullPointerException("getFeatureReader requires Filter: " + "did you mean Filter.INCLUDE?");
+  }
+  if (filter == Filter.EXCLUDE) {
+    SimpleFeatureType featureType=getSchema(typeName);
+    return new EmptyFeatureWriter(featureType);
+  }
+  if (transaction == null) {
+    throw new NullPointerException("getFeatureWriter requires Transaction: " + "did you mean to use Transaction.AUTO_COMMIT?");
+  }
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  if (transaction == Transaction.AUTO_COMMIT) {
+    try {
+      writer=createFeatureWriter(typeName,transaction);
+    }
+ catch (    UnsupportedOperationException e) {
+      try {
+        writer=getFeatureWriter(typeName);
+      }
+ catch (      UnsupportedOperationException eek) {
+        throw e;
+      }
+    }
+  }
+ else {
+    TransactionStateDiff state=state(transaction);
+    if (state != null) {
+      writer=state.writer(typeName,filter);
+    }
+ else {
+      throw new UnsupportedOperationException("Subclass sould implement");
+    }
+  }
+  if (lockingManager != null) {
+    writer=lockingManager.checkedWriter(writer,transaction);
+  }
+  if (filter != Filter.INCLUDE) {
+    writer=new FilteringFeatureWriter(writer,filter);
+  }
+  return writer;
+}

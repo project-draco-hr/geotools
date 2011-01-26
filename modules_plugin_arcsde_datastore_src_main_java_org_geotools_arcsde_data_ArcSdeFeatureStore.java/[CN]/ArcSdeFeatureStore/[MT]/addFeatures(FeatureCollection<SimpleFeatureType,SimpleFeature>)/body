@@ -1,0 +1,23 @@
+{
+  final String typeName=typeInfo.getFeatureTypeName();
+  final FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=dataStore.getFeatureWriterAppend(typeName,transaction);
+  final FeatureIterator<SimpleFeature> iterator=collection.features();
+  List<FeatureId> featureIds=new LinkedList<FeatureId>();
+  try {
+    SimpleFeature toAdd;
+    SimpleFeature newFeature;
+    while (iterator.hasNext()) {
+      toAdd=iterator.next();
+      newFeature=writer.next();
+      newFeature.setAttributes(toAdd.getAttributes());
+      writer.write();
+      featureIds.add(newFeature.getIdentifier());
+    }
+  }
+  finally {
+    iterator.close();
+    writer.close();
+  }
+  return featureIds;
+}

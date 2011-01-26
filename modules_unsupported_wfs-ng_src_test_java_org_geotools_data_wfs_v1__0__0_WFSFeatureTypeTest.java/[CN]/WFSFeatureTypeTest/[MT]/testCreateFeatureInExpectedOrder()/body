@@ -1,0 +1,51 @@
+{
+  SimpleFeatureType ft=createFeatureType();
+  ft.getUserData().put("lenient",true);
+  Point point=fac.createPoint(new Coordinate(10,10));
+  Integer id=new Integer(2);
+  String name="name1";
+  String name2="name2";
+  Double double1=new Double(3.0);
+  Object[] atts=new Object[]{point,id,name,double1,name2};
+  SimpleFeature feature=LenientBuilder.build(ft,atts,null);
+  assertNotNull(feature.getID());
+  assertEquals(point,feature.getAttribute(0));
+  assertEquals(id,feature.getAttribute(1));
+  assertEquals(name,feature.getAttribute(2));
+  assertEquals(name2,feature.getAttribute(3));
+  assertEquals(double1,feature.getAttribute(4));
+  atts[1]=null;
+  String fid="fid";
+  feature=LenientBuilder.build(ft,atts,fid);
+  assertEquals(fid,feature.getID());
+  assertEquals(point,feature.getAttribute(0));
+  assertNull(feature.getAttribute(1));
+  assertEquals(name,feature.getAttribute(2));
+  assertEquals(name2,feature.getAttribute(3));
+  assertEquals(double1,feature.getAttribute(4));
+  atts=new Object[]{point,name,name2,double1};
+  assertEquals(fid,feature.getID());
+  assertEquals(point,feature.getAttribute(0));
+  assertNull(feature.getAttribute(1));
+  assertEquals(name,feature.getAttribute(2));
+  assertEquals(name2,feature.getAttribute(3));
+  assertEquals(double1,feature.getAttribute(4));
+  atts=new Object[]{point,id,name2,double1};
+  feature=LenientBuilder.build(ft,atts,fid);
+  assertEquals(fid,feature.getID());
+  assertEquals(point,feature.getAttribute(0));
+  assertEquals(id,feature.getAttribute(1));
+  assertEquals(name2,feature.getAttribute(2));
+  if (false) {
+    assertNull(feature.getAttribute(3));
+    assertEquals(double1,feature.getAttribute(4));
+  }
+  atts=new Object[]{point,id,null,name2,double1};
+  feature=LenientBuilder.build(ft,atts,fid);
+  assertEquals(fid,feature.getID());
+  assertEquals(point,feature.getAttribute(0));
+  assertEquals(id,feature.getAttribute(1));
+  assertNull(feature.getAttribute(2));
+  assertEquals(name2,feature.getAttribute(3));
+  assertEquals(double1,feature.getAttribute(4));
+}

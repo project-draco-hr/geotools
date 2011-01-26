@@ -1,0 +1,63 @@
+{
+  if (!closeMe) {
+    inStream.reset();
+    inStream.mark();
+  }
+  final ImageReadParam readP=new ImageReadParam();
+  final Integer imageChoice;
+  try {
+    imageChoice=setReadParams(overviewPolicy,readP,requestedEnvelope,requestedDim);
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    return null;
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    return null;
+  }
+  final ParameterBlock pbjImageRead=new ParameterBlock();
+  if (source instanceof File) {
+    if (!gzipped) {
+      if (inStreamSPI != null)       pbjImageRead.add(inStreamSPI.createInputStreamInstance(source,ImageIO.getUseCache(),ImageIO.getCacheDirectory()));
+ else       pbjImageRead.add(ImageIO.createImageInputStream(source));
+    }
+ else     pbjImageRead.add(ImageIO.createImageInputStream(new GZIPInputStream(new FileInputStream((File)source))));
+  }
+ else   if (source instanceof ImageInputStream || source instanceof InputStream)   pbjImageRead.add(inStream);
+ else   if (source instanceof URL) {
+    if (gzipped)     ImageIO.createImageInputStream(new GZIPInputStream(((URL)source).openConnection().getInputStream()));
+ else     pbjImageRead.add(ImageIO.createImageInputStream(((URL)source).openConnection().getInputStream()));
+  }
+  pbjImageRead.add(imageChoice);
+  pbjImageRead.add(Boolean.FALSE);
+  pbjImageRead.add(Boolean.FALSE);
+  pbjImageRead.add(Boolean.FALSE);
+  pbjImageRead.add(null);
+  pbjImageRead.add(null);
+  pbjImageRead.add(readP);
+  pbjImageRead.add(readerSPI.createReaderInstance());
+  final RenderedOp asciiCoverage=JAI.create("ImageRead",pbjImageRead,hints);
+  try {
+    Unit<?> uom=null;
+    final Category nan;
+    if (Double.isNaN(inNoData)) {
+      nan=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color(0,0,0,0),0);
+    }
+ else {
+      nan=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color[]{new Color(0,0,0,0)},NumberRange.create(0,0),NumberRange.create(inNoData,inNoData));
+    }
+    final SampleModel sm=asciiCoverage.getSampleModel();
+    final ColorModel cm=asciiCoverage.getColorModel();
+    final ColorInterpretation colorInterpretation=TypeMap.getColorInterpretation(cm,0);
+    if (colorInterpretation == null)     throw new IOException("Unrecognized sample dimension type");
+    final GridSampleDimension band=new GridSampleDimension(coverageName,new Category[]{nan},uom).geophysics(true);
+    final Map<String,Double> properties=new HashMap<String,Double>();
+    properties.put("GC_NODATA",new Double(inNoData));
+    return coverageFactory.create(coverageName,asciiCoverage,originalEnvelope,new GridSampleDimension[]{band},null,properties);
+  }
+ catch (  NoSuchElementException e) {
+    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    throw new DataSourceException(e);
+  }
+}

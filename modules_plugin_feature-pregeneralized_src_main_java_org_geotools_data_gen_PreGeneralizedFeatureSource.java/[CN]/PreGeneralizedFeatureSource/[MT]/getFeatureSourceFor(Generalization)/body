@@ -1,0 +1,12 @@
+{
+  if (di == null)   return getBaseFeatureSource();
+  SimpleFeatureSource fs=featureSourceCache.get(di);
+  if (fs != null)   return fs;
+  DataStore ds=repository.dataStore(new NameImpl(di.getDataSourceNameSpace(),di.getDataSourceName()));
+  if (ds == null)   dsNotFoundException(di.getDataSourceNameSpace(),di.getDataSourceName());
+  fs=ds.getFeatureSource(di.getFeatureName());
+  featureSourceCache.put(di,fs);
+  int[] mapping=calculateIndexMapping(fs.getSchema(),info.getGeomPropertyName(),di.getGeomPropertyName());
+  indexMapping.put(di.getDistance(),mapping);
+  return fs;
+}

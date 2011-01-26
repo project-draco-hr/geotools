@@ -1,0 +1,22 @@
+{
+  typeCheck(typeName);
+  existsOrCreateFidIndex();
+  FeatureReader<SimpleFeatureType,SimpleFeature> featureReader;
+  IndexedShapefileAttributeReader attReader;
+  try {
+    SimpleFeatureType schema=getSchema();
+    if (schema == null) {
+      throw new IOException("To create a shapefile, you must first call createSchema()");
+    }
+    attReader=getAttributesReader(true,true,null,schema);
+    featureReader=createFeatureReader(typeName,attReader,schema);
+  }
+ catch (  Exception e) {
+    attReader=getAttributesReader(true,true,null,schema);
+    featureReader=new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(schema);
+  }
+  if (featureReader == null) {
+    return new EmptyFeatureWriter(schema);
+  }
+  return new IndexedShapefileFeatureWriter(typeName,shpFiles,attReader,featureReader,this,dbfCharset);
+}

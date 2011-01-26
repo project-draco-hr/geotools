@@ -1,0 +1,20 @@
+{
+  testData.truncateTempTable();
+  final String typeName=testData.getTempTableName();
+  final int featureCount=1;
+  SimpleFeature feature;
+  feature=testData.createTestFeatures(LineString.class,featureCount).features().next();
+  final DataStore ds=testData.getDataStore();
+  SimpleFeatureStore store=(SimpleFeatureStore)ds.getFeatureSource(typeName);
+  SimpleFeatureType ftype=store.getSchema();
+  assertFalse(ftype.getDescriptor("INT32_COL").isNillable());
+  feature.setAttribute("INT32_COL",null);
+  SimpleFeatureCollection collection=DataUtilities.collection(feature);
+  try {
+    store.addFeatures(collection);
+    fail("Expected IAE");
+  }
+ catch (  IllegalArgumentException e) {
+    assertTrue(true);
+  }
+}

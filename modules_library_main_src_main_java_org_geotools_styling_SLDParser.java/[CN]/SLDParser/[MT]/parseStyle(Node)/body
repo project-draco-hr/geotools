@@ -1,0 +1,53 @@
+{
+  if (dom == null) {
+    try {
+      javax.xml.parsers.DocumentBuilderFactory dbf=javax.xml.parsers.DocumentBuilderFactory.newInstance();
+      javax.xml.parsers.DocumentBuilder db=dbf.newDocumentBuilder();
+      dom=db.newDocument();
+    }
+ catch (    javax.xml.parsers.ParserConfigurationException pce) {
+      throw new RuntimeException(pce);
+    }
+  }
+  Style style=factory.createStyle();
+  NodeList children=n.getChildNodes();
+  final int length=children.getLength();
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("" + children.getLength() + " children to process");
+  }
+  for (int j=0; j < length; j++) {
+    Node child=children.item(j);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE) || (child.getFirstChild() == null)) {
+      continue;
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("processing " + child.getLocalName());
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    String firstChildValue=getFirstChildValue(child);
+    if (childName.equalsIgnoreCase("Name")) {
+      style.setName(firstChildValue);
+    }
+ else     if (childName.equalsIgnoreCase("Title")) {
+      style.setTitle(firstChildValue);
+    }
+ else     if (childName.equalsIgnoreCase("Abstract")) {
+      style.setAbstract(firstChildValue);
+    }
+ else     if (childName.equalsIgnoreCase("IsDefault")) {
+      if ("1".equals(firstChildValue)) {
+        style.setDefault(true);
+      }
+ else {
+        style.setDefault(Boolean.valueOf(firstChildValue).booleanValue());
+      }
+    }
+ else     if (childName.equalsIgnoreCase("FeatureTypeStyle")) {
+      style.addFeatureTypeStyle(parseFeatureTypeStyle(child));
+    }
+  }
+  return style;
+}

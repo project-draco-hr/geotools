@@ -1,0 +1,44 @@
+{
+  LOGGER.fine("Reading colormap for raster column " + rasterColumnId);
+  final String auxTableName=getAuxTableName(rasterColumnId,scon);
+  LOGGER.fine("Quering auxiliary table " + auxTableName + " for color map data");
+  Map<Long,IndexColorModel> colorMaps=new HashMap<Long,IndexColorModel>();
+  SeQuery query=null;
+  try {
+    SeSqlConstruct sqlConstruct=new SeSqlConstruct();
+    sqlConstruct.setTables(new String[]{auxTableName});
+    String whereClause="TYPE = 3";
+    sqlConstruct.setWhere(whereClause);
+    query=new SeQuery(scon,new String[]{"RASTERBAND_ID","OBJECT"},sqlConstruct);
+    query.prepareQuery();
+    query.execute();
+    long bandId;
+    ByteArrayInputStream colorMapIS;
+    DataBuffer colorMapData;
+    IndexColorModel colorModel;
+    SeRow row=query.fetch();
+    while (row != null) {
+      bandId=((Number)row.getObject(0)).longValue();
+      colorMapIS=row.getBlob(1);
+      colorMapData=readColorMap(colorMapIS);
+      colorModel=RasterUtils.sdeColorMapToJavaColorModel(colorMapData,bitsPerSample);
+      colorMaps.put(Long.valueOf(bandId),colorModel);
+      row=query.fetch();
+    }
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException("Error fetching colormap data for column " + rasterColumnId + " from table "+ auxTableName,e);
+  }
+ finally {
+    if (query != null) {
+      try {
+        query.close();
+      }
+ catch (      SeException e) {
+        LOGGER.log(Level.INFO,"ignoring exception when closing query to " + "fetch colormap data",e);
+      }
+    }
+  }
+  LOGGER.fine("Read color map data for " + colorMaps.size() + " rasters");
+  return colorMaps;
+}

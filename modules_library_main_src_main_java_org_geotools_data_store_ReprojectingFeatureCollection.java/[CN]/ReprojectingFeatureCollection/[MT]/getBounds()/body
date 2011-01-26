@@ -1,0 +1,23 @@
+{
+  SimpleFeatureIterator r=features();
+  try {
+    Envelope newBBox=new Envelope();
+    Envelope internal;
+    SimpleFeature feature;
+    while (r.hasNext()) {
+      feature=r.next();
+      final Geometry geom=((Geometry)feature.getDefaultGeometry());
+      if (geom != null) {
+        internal=geom.getEnvelopeInternal();
+        newBBox.expandToInclude(internal);
+      }
+    }
+    return ReferencedEnvelope.reference(newBBox);
+  }
+ catch (  Exception e) {
+    throw new RuntimeException("Exception occurred while computing reprojected bounds",e);
+  }
+ finally {
+    r.close();
+  }
+}

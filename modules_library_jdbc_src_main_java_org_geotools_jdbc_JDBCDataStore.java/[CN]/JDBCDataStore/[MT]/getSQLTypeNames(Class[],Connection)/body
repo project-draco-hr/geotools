@@ -1,0 +1,48 @@
+{
+  int[] sqlTypes=new int[classes.length];
+  String[] sqlTypeNames=new String[sqlTypes.length];
+  for (int i=0; i < classes.length; i++) {
+    Class clazz=classes[i];
+    Integer sqlType=getMapping(clazz);
+    if (sqlType == null) {
+      LOGGER.warning("No sql type mapping for: " + clazz);
+      sqlType=Types.OTHER;
+    }
+    sqlTypes[i]=sqlType;
+    if (Geometry.class.isAssignableFrom(clazz)) {
+      String sqlTypeName=dialect.getGeometryTypeName(sqlType);
+      if (sqlTypeName != null) {
+        sqlTypeNames[i]=sqlTypeName;
+      }
+    }
+    String sqlTypeName=getSqlTypeToSqlTypeNameOverrides().get(sqlType);
+    if (sqlTypeName != null) {
+      sqlTypeNames[i]=sqlTypeName;
+    }
+  }
+  DatabaseMetaData metaData=cx.getMetaData();
+  ResultSet types=metaData.getTypeInfo();
+  try {
+    while (types.next()) {
+      int sqlType=types.getInt("DATA_TYPE");
+      String sqlTypeName=types.getString("TYPE_NAME");
+      for (int i=0; i < sqlTypes.length; i++) {
+        if (sqlTypeNames[i] != null) {
+          continue;
+        }
+        if (sqlType == sqlTypes[i]) {
+          sqlTypeNames[i]=sqlTypeName;
+        }
+      }
+    }
+  }
+  finally {
+    closeSafe(types);
+  }
+  Map<Integer,String> overrides=getSqlTypeToSqlTypeNameOverrides();
+  for (int i=0; i < sqlTypes.length; i++) {
+    String override=overrides.get(sqlTypes[i]);
+    if (override != null)     sqlTypeNames[i]=override;
+  }
+  return sqlTypeNames;
+}

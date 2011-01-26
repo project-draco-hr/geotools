@@ -1,0 +1,20 @@
+{
+  ensureDimensionMatch("coord1",coord1);
+  ensureDimensionMatch("coord2",coord2);
+  final Unit<?> unit=getDistanceUnit();
+  UnitConverter[] converters=this.converters;
+  if (converters == null) {
+    converters=new UnitConverter[getDimension()];
+    for (int i=0; i < converters.length; i++) {
+      converters[i]=getAxis(i).getUnit().getConverterTo(unit);
+    }
+    this.converters=converters;
+  }
+  double sum=0;
+  for (int i=0; i < converters.length; i++) {
+    final UnitConverter c=converters[i];
+    final double delta=c.convert(coord1[i]) - c.convert(coord2[i]);
+    sum+=delta * delta;
+  }
+  return new Measure(Math.sqrt(sum),unit);
+}

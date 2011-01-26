@@ -1,0 +1,24 @@
+{
+  Resource resource=schema.eResource();
+  if (resource == null) {
+    final ResourceSet resourceSet=new ResourceSetImpl();
+    resource=(XSDResourceImpl)resourceSet.createResource(URI.createURI(".xsd"));
+    resource.getContents().add(schema);
+  }
+  XSDImport imprt=XSDFactory.eINSTANCE.createXSDImport();
+  imprt.setNamespace(importee.getTargetNamespace());
+  schema.getContents().add(imprt);
+  List<XSDSchemaLocator> locators=new ArrayList<XSDSchemaLocator>();
+  locators.add(new XSDSchemaLocator(){
+    public XSDSchema locateSchema(    XSDSchema xsdSchema,    String namespaceURI,    String rawSchemaLocationURI,    String resolvedSchemaLocationURI){
+      if (importee.getTargetNamespace().equals(namespaceURI)) {
+        return importee;
+      }
+      return null;
+    }
+  }
+);
+  AdapterFactory adapterFactory=new SchemaLocatorAdapterFactory(locators);
+  resource.getResourceSet().getAdapterFactories().add(adapterFactory);
+  return imprt;
+}

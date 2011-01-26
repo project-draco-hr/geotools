@@ -1,0 +1,28 @@
+{
+  if ((config == null) || (config.size() == 0)) {
+    return;
+  }
+  PropertyDescriptor property;
+  for (Iterator i=config.entrySet().iterator(); i.hasNext(); ) {
+    Map.Entry entry=(Map.Entry)i.next();
+    property=propertyInfo((String)entry.getKey());
+    if (property == null) {
+      continue;
+    }
+    try {
+      property.getWriteMethod().invoke(bean,new Object[]{entry.getValue()});
+    }
+ catch (    IllegalArgumentException e) {
+      String val=entry.getValue() == null ? entry.getValue().toString() : "null";
+      throw new ValidationException("test failed to configure " + plugInName + " "+ entry.getKey()+ " "+ val,e);
+    }
+catch (    IllegalAccessException e) {
+      String val=entry.getValue() == null ? entry.getValue().toString() : "null";
+      throw new ValidationException("test failed to configure " + plugInName + " "+ entry.getKey()+ " "+ val,e);
+    }
+catch (    InvocationTargetException e) {
+      String val=entry.getValue() == null ? entry.getValue().toString() : "null";
+      throw new ValidationException("test failed to configure " + plugInName + " "+ entry.getKey()+ " "+ val,e);
+    }
+  }
+}

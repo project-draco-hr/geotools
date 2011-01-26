@@ -1,0 +1,44 @@
+{
+  Map<String,FileEntry> result=new TreeMap<String,FileEntry>();
+  Map<File,FileEntry> fileCache=new HashMap<File,FileEntry>();
+  for (  FileEntry entry : ftCache.values()) {
+    fileCache.put(entry.file,entry);
+  }
+  for (  File file : directory.listFiles()) {
+    if (file.isDirectory()) {
+      continue;
+    }
+    FileEntry entry=fileCache.get(file);
+    if (entry == null) {
+      DataStore store=factory.getDataStore(file);
+      if (store != null) {
+        entry=new FileEntry(file,store);
+      }
+    }
+    if (entry != null) {
+      for (      String typeName : entry.getStore(true).getTypeNames()) {
+        if (!result.containsKey(typeName))         result.put(typeName,entry);
+ else {
+          LOGGER.log(Level.WARNING,"Type name " + typeName + " is available from multiple datastores");
+        }
+      }
+    }
+  }
+  Set<String> removedFTs=new HashSet<String>(ftCache.keySet());
+  removedFTs.removeAll(result.keySet());
+  Set<FileEntry> disposable=new HashSet<FileEntry>();
+  for (  String removedFT : removedFTs) {
+    disposable.add(ftCache.remove(removedFT));
+  }
+  for (  FileEntry entry : result.values()) {
+    disposable.remove(entry);
+  }
+  for (  FileEntry entry : disposable) {
+    entry.dispose();
+  }
+  Set<String> added=new HashSet<String>(result.keySet());
+  added.removeAll(ftCache.keySet());
+  for (  String newFeatureType : added) {
+    ftCache.put(newFeatureType,result.get(newFeatureType));
+  }
+}

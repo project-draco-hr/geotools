@@ -1,0 +1,54 @@
+{
+  DefaultPiecewiseTransform1DElement t0=new DefaultPiecewiseTransform1DElement("t0",NumberRange.create(0.0,true,1.0,true),PiecewiseUtilities.createLinearTransform1D(NumberRange.create(0.0,true,1.0,true),NumberRange.create(200,201)));
+  Assert.assertEquals(t0.transform(0.5),200.5,0.0);
+  Assert.assertTrue(t0.contains(0.5));
+  Assert.assertTrue(t0.contains(NumberRange.create(0.1,0.9)));
+  Assert.assertFalse(t0.contains(1.5));
+  Assert.assertFalse(t0.contains(NumberRange.create(0.1,1.9)));
+  Assert.assertTrue(t0.equals(t0));
+  Assert.assertEquals(t0.transform(new GeneralDirectPosition(new double[]{0.5}),null).getOrdinate(0),200.5,0.0);
+  Assert.assertEquals(t0.inverse().transform(new GeneralDirectPosition(new double[]{200.5}),null).getOrdinate(0),0.5,0.0);
+  Assert.assertEquals(t0.derivative(1.0),1.0,0.0);
+  t0=DefaultPiecewiseTransform1DElement.create("t0",NumberRange.create(0.0,true,1.0,true),NumberRange.create(200,201));
+  Assert.assertFalse(t0.equals(DefaultPiecewiseTransform1DElement.create("t0",NumberRange.create(0.0,true,1.0,true),NumberRange.create(200,202))));
+  Assert.assertEquals(t0.transform(0.5),200.5,0.0);
+  Assert.assertEquals(t0.transform(new GeneralDirectPosition(new double[]{0.5}),null).getOrdinate(0),200.5,0.0);
+  Assert.assertEquals(t0.inverse().transform(new GeneralDirectPosition(new double[]{200.5}),null).getOrdinate(0),0.5,0.0);
+  Assert.assertEquals(t0.derivative(1.0),1.0,0.0);
+  DefaultPiecewiseTransform1DElement t1=DefaultPiecewiseTransform1DElement.create("t1",NumberRange.create(1.0,false,2.0,true),201);
+  Assert.assertEquals(t1.transform(1.5),201,0.0);
+  Assert.assertEquals(t1.transform(1.6),201,0.0);
+  Assert.assertFalse(t0.equals(t1));
+  Assert.assertEquals(t1.transform(new GeneralDirectPosition(new double[]{1.8}),null).getOrdinate(0),201,0.0);
+  try {
+    Assert.assertEquals(t1.inverse().transform(new GeneralDirectPosition(new double[]{201}),null).getOrdinate(0),0.5,0.0);
+    Assert.assertTrue(false);
+  }
+ catch (  UnsupportedOperationException e) {
+  }
+  Assert.assertEquals(t1.derivative(2.0),0.0,0.0);
+  t1=new DefaultConstantPiecewiseTransformElement("t1",NumberRange.create(1.0,false,2.0,true),201);
+  Assert.assertEquals(t1.transform(1.5),201,0.0);
+  Assert.assertEquals(t1.transform(1.6),201,0.0);
+  Assert.assertEquals(t1.transform(new GeneralDirectPosition(new double[]{1.8}),null).getOrdinate(0),201,0.0);
+  try {
+    Assert.assertEquals(t1.inverse().transform(new GeneralDirectPosition(new double[]{201}),null).getOrdinate(0),0.5,0.0);
+    Assert.assertTrue(false);
+  }
+ catch (  UnsupportedOperationException e) {
+  }
+  Assert.assertEquals(t1.derivative(2.0),0.0,0.0);
+  DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement> transform=new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement>(new DefaultPiecewiseTransform1DElement[]{t1},12);
+  Assert.assertEquals(transform.getName().toString(),t1.getName().toString());
+  Assert.assertEquals(transform.getApproximateDomainRange().getMinimum(),1.0,0.0);
+  Assert.assertEquals(transform.getApproximateDomainRange().getMaximum(),2.0,0.0);
+  Assert.assertEquals(transform.transform(1.5),201,0.0);
+  Assert.assertEquals(transform.transform(new GeneralDirectPosition(new double[]{1.5}),null).getOrdinate(0),201,0.0);
+  Assert.assertEquals(transform.transform(2.5),0.0,12.0);
+  try {
+    transform=new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement>(new DefaultPiecewiseTransform1DElement[]{DefaultLinearPiecewiseTransform1DElement.create("",NumberRange.create(0,100),NumberRange.create(Double.NEGATIVE_INFINITY,Double.POSITIVE_INFINITY))});
+    Assert.assertTrue(false);
+  }
+ catch (  IllegalArgumentException e) {
+  }
+}

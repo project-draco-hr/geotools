@@ -1,0 +1,44 @@
+{
+  final Set<ClassLoader> loaders=new HashSet<ClassLoader>();
+  for (int i=0; i < 4; i++) {
+    final ClassLoader loader;
+    try {
+switch (i) {
+case 0:
+        loader=getClass().getClassLoader();
+      break;
+case 1:
+    loader=FactoryRegistry.class.getClassLoader();
+  break;
+case 2:
+loader=Thread.currentThread().getContextClassLoader();
+break;
+case 3:
+loader=ClassLoader.getSystemClassLoader();
+break;
+default :
+throw new AssertionError(i);
+}
+}
+ catch (SecurityException exception) {
+continue;
+}
+loaders.add(loader);
+}
+loaders.remove(null);
+final ClassLoader[] asArray=loaders.toArray(new ClassLoader[loaders.size()]);
+for (int i=0; i < asArray.length; i++) {
+ClassLoader loader=asArray[i];
+try {
+while ((loader=loader.getParent()) != null) {
+loaders.remove(loader);
+}
+}
+ catch (SecurityException exception) {
+}
+}
+if (loaders.isEmpty()) {
+LOGGER.warning("No class loaders available.");
+}
+return loaders;
+}

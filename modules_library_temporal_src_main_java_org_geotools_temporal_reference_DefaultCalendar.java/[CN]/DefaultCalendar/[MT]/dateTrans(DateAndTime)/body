@@ -1,0 +1,65 @@
+{
+  JulianDate response;
+  GregorianCalendar gc=new GregorianCalendar(-4713,1,1);
+  gc.set(GregorianCalendar.ERA,GregorianCalendar.BC);
+  final int julianGre=15 + 31 * (10 + 12 * 1582);
+  TemporalCoordinateSystem refSystem=new DefaultTemporalCoordinateSystem(new NamedIdentifier(Citations.CRS,new SimpleInternationalString("Julian calendar")),null,gc.getTime(),new SimpleInternationalString("day"));
+  Number coordinateValue=0;
+  int year=0, month=0, day=0;
+  Number hour=0, minute=0, second=0;
+  if (dateAndTime == null) {
+    throw new IllegalArgumentException("The DateAndTime cannot be null ! ");
+  }
+  if (dateAndTime.getCalendarDate() != null) {
+    int[] cal=dateAndTime.getCalendarDate();
+    if (cal.length > 3) {
+      throw new IllegalArgumentException("The CalendarDate integer array is malformed ! see ISO 8601 format.");
+    }
+ else {
+      year=cal[0];
+      if (cal.length > 0) {
+        month=cal[1];
+      }
+      if (cal.length > 1) {
+        day=cal[2];
+      }
+      int julianYear=year;
+      if (year < 0) {
+        julianYear++;
+      }
+      int julianMonth=month;
+      if (month > 2) {
+        julianMonth++;
+      }
+ else {
+        julianYear--;
+        julianMonth+=13;
+      }
+      double julian=(java.lang.Math.floor(365.25 * julianYear) + java.lang.Math.floor(30.6001 * julianMonth) + day+ 1720995.0);
+      if (day + 31 * (month + 12 * year) >= julianGre) {
+        int ja=(int)(0.01 * julianYear);
+        julian+=2 - ja + (0.25 * ja);
+      }
+      coordinateValue=java.lang.Math.floor(julian);
+    }
+  }
+  if (dateAndTime.getClockTime() != null) {
+    Number[] clk=dateAndTime.getClockTime();
+    if (clk.length > 3) {
+      throw new IllegalArgumentException("The ClockTime Number array is malformed ! see ISO 8601 format.");
+    }
+ else {
+      hour=clk[0];
+      if (clk.length > 0) {
+        minute=clk[1];
+      }
+      if (clk.length > 1) {
+        second=clk[2];
+      }
+      double julian=((hour.doubleValue() - 12) / 24) + (minute.doubleValue() / 1440) + (second.doubleValue() / 86400);
+      coordinateValue=coordinateValue.doubleValue() + julian;
+    }
+  }
+  response=new DefaultJulianDate(refSystem,null,coordinateValue);
+  return response;
+}

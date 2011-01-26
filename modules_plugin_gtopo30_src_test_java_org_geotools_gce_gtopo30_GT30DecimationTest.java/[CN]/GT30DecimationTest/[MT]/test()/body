@@ -1,0 +1,27 @@
+{
+  URL statURL=TestData.url(this,(new StringBuffer(this.fileName).append(".DEM").toString()));
+  AbstractGridFormat format=(AbstractGridFormat)new GTopo30FormatFactory().createFormat();
+  final JAI jaiDef=JAI.getDefaultInstance();
+  final TileCache cache=jaiDef.getTileCache();
+  cache.setMemoryCapacity(64 * 1024 * 1024);
+  cache.setMemoryThreshold(1.0f);
+  jaiDef.setRenderingHint(JAI.KEY_CACHED_TILE_RECYCLING_ENABLED,Boolean.TRUE);
+  final RecyclingTileFactory recyclingFactory=new RecyclingTileFactory();
+  jaiDef.setRenderingHint(JAI.KEY_TILE_FACTORY,recyclingFactory);
+  jaiDef.setRenderingHint(JAI.KEY_TILE_RECYCLER,recyclingFactory);
+  if (format.accepts(statURL)) {
+    AbstractGridCoverage2DReader reader=(AbstractGridCoverage2DReader)format.getReader(statURL);
+    final ParameterValueGroup params=reader.getFormat().getReadParameters();
+    params.parameter(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName().toString()).setValue(new GridGeometry2D(new GridEnvelope2D(new Rectangle(0,0,640,480)),reader.getOriginalEnvelope()));
+    gc=((GridCoverage2D)reader.read((GeneralParameterValue[])params.values().toArray(new GeneralParameterValue[1])));
+    assertTrue(CoverageUtilities.hasRenderingCategories(gc));
+    if (TestData.isInteractiveTest()) {
+      logger.info(gc.getCoordinateReferenceSystem2D().toWKT());
+      logger.info(gc.toString());
+      gc.show();
+    }
+ else {
+      PlanarImage.wrapRenderedImage(gc.getRenderedImage()).getTiles();
+    }
+  }
+}

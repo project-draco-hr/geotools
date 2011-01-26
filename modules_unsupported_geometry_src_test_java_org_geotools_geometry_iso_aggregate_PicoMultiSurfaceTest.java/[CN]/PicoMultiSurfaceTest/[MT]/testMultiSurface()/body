@@ -1,0 +1,22 @@
+{
+  CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
+  PicoContainer container=container(crs);
+  PositionFactoryImpl pf=(PositionFactoryImpl)container.getComponentInstanceOfType(PositionFactory.class);
+  PrimitiveFactoryImpl primf=(PrimitiveFactoryImpl)container.getComponentInstanceOfType(PrimitiveFactory.class);
+  AggregateFactoryImpl agf=(AggregateFactoryImpl)container.getComponentInstanceOfType(AggregateFactory.class);
+  List<DirectPosition> directPositionList=new ArrayList<DirectPosition>();
+  directPositionList.add(pf.createDirectPosition(new double[]{20,10}));
+  directPositionList.add(pf.createDirectPosition(new double[]{40,10}));
+  directPositionList.add(pf.createDirectPosition(new double[]{50,40}));
+  directPositionList.add(pf.createDirectPosition(new double[]{30,50}));
+  directPositionList.add(pf.createDirectPosition(new double[]{10,30}));
+  directPositionList.add(pf.createDirectPosition(new double[]{20,10}));
+  Ring exteriorRing=primf.createRingByDirectPositions(directPositionList);
+  List<Ring> interiors=new ArrayList<Ring>();
+  SurfaceBoundaryImpl surfaceBoundary1=primf.createSurfaceBoundary(exteriorRing,interiors);
+  Surface surface=primf.createSurface(surfaceBoundary1);
+  Set<OrientableSurface> surfaces=new HashSet<OrientableSurface>();
+  surfaces.add(surface);
+  MultiSurfaceImpl ms=(MultiSurfaceImpl)agf.createMultiSurface(surfaces);
+  assertTrue(ms.equals(new MultiSurfaceImpl(ms.getCoordinateReferenceSystem(),surfaces)));
+}

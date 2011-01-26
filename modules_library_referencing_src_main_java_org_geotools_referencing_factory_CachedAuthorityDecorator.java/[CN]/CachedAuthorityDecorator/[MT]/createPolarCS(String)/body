@@ -1,0 +1,18 @@
+{
+  final String key=toKey(code);
+  PolarCS cs=(PolarCS)cache.get(key);
+  if (cs == null) {
+    try {
+      cache.writeLock(key);
+      cs=(PolarCS)cache.peek(key);
+      if (cs == null) {
+        cs=csAuthority.createPolarCS(code);
+        cache.put(key,cs);
+      }
+    }
+  finally {
+      cache.writeUnLock(key);
+    }
+  }
+  return cs;
+}

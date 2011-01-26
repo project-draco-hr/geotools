@@ -1,0 +1,23 @@
+{
+  final int necessaryNumber=getMinimumPointCount();
+  if (points.length < necessaryNumber) {
+    throw new MismatchedSizeException(Errors.format(ErrorKeys.INSUFFICIENT_POINTS_$2,points.length,necessaryNumber));
+  }
+  CoordinateReferenceSystem crs=null;
+  final int dimension=getDimension();
+  for (int i=0; i < points.length; i++) {
+    final DirectPosition point=points[i];
+    final int pointDim=point.getDimension();
+    if (pointDim != dimension) {
+      throw new MismatchedDimensionException(Errors.format(ErrorKeys.MISMATCHED_DIMENSION_$3,label + '[' + i+ ']',pointDim,dimension));
+    }
+    crs=getCoordinateReferenceSystem(point,crs);
+  }
+  if (crs != null) {
+    final CoordinateSystem cs=crs.getCoordinateSystem();
+    if (!getCoordinateSystemType().isAssignableFrom(cs.getClass())) {
+      throw new MismatchedReferenceSystemException(Errors.format(ErrorKeys.UNSUPPORTED_COORDINATE_SYSTEM_$1,cs.getName()));
+    }
+  }
+  return crs;
+}

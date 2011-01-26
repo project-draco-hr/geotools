@@ -1,0 +1,16 @@
+{
+  LOGGER.finer("starting testLiteRender2");
+  final GeometryFactory geomFac=new GeometryFactory(PackedCoordinateSequenceFactory.DOUBLE_FACTORY);
+  final SimpleFeatureCollection ft=createTestFeatureCollection(DefaultGeographicCRS.WGS84,geomFac,POINT);
+  final Style style=createTestStyle();
+  final MapContext map=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+  map.addLayer(ft,style);
+  final CoordinateReferenceSystem crs=CRS.parseWKT("PROJCS[\"NAD83 / BC" + "Albers\",GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\",SPHEROID[\"GRS" + "1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],"+ "TOWGS84[0,0,0],AUTHORITY[\"EPSG\",\"6269\"]],"+ "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"+ "UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],"+ "AUTHORITY[\"EPSG\",\"4269\"]],"+ "PROJECTION[\"Albers_Conic_Equal_Area\"],"+ "PARAMETER[\"standard_parallel_1\",50],"+ "PARAMETER[\"standard_parallel_2\",58.5],"+ "PARAMETER[\"latitude_of_center\",45],"+ "PARAMETER[\"longitude_of_center\",-126],"+ "PARAMETER[\"false_easting\",1000000],"+ "PARAMETER[\"false_northing\",0],"+ "UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],"+ "AUTHORITY[\"EPSG\",\"3005\"]]");
+  final StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setRendererHints(rendererHints);
+  renderer.setContext(map);
+  ReferencedEnvelope env=map.getLayerBounds();
+  env=new ReferencedEnvelope(env.getMinX() - 20,env.getMaxX() + 20,env.getMinY() - 20,env.getMaxY() + 20,DefaultGeographicCRS.WGS84);
+  final ReferencedEnvelope newbounds=env.transform(crs,true);
+  RendererBaseTest.showRender("testPointReprojection",renderer,1000,newbounds);
+}

@@ -1,0 +1,15 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  ds.setVersioned("tree",true,"gimbo","versioning trees");
+  FeatureWriter<SimpleFeatureType,SimpleFeature> fw=ds.getFeatureWriter("tree",Transaction.AUTO_COMMIT);
+  assertTrue(fw.hasNext());
+  SimpleFeature f=fw.next();
+  ReferencedEnvelope oldBounds=ReferencedEnvelope.reference(f.getBounds());
+  f.setAttribute(0,gf.createPoint(new Coordinate(50,50)));
+  fw.write();
+  fw.close();
+  DefaultQuery q=new DefaultQuery();
+  q.setVersion("1");
+  ReferencedEnvelope e=ds.getFeatureSource("tree").getBounds(q);
+  assertEquals(oldBounds,e);
+}

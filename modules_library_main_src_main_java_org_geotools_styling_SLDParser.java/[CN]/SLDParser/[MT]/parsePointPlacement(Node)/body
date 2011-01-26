@@ -1,0 +1,35 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("parsing pointPlacement");
+  }
+  Expression rotation=ff.literal(0.0);
+  AnchorPoint ap=null;
+  Displacement dp=null;
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase("AnchorPoint")) {
+      ap=(parseAnchorPoint(child));
+    }
+ else     if (childName.equalsIgnoreCase("Displacement")) {
+      dp=(parseDisplacement(child));
+    }
+ else     if (childName.equalsIgnoreCase("Rotation")) {
+      rotation=(parseCssParameter(child));
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("setting anchorPoint " + ap);
+    LOGGER.fine("setting displacement " + dp);
+  }
+  PointPlacement dpp=factory.createPointPlacement(ap,dp,rotation);
+  return dpp;
+}

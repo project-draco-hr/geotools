@@ -1,0 +1,21 @@
+{
+  for (  RasterQueryInfo queryInfo : queries) {
+    final Long rasterId=queryInfo.getRasterId();
+    final RenderedImage rasterImage;
+    try {
+      final int pyramidLevel=queryInfo.getPyramidLevel();
+      final GridEnvelope matchingTiles=queryInfo.getMatchingTiles();
+      rasterImage=rasterReader.read(rasterId,pyramidLevel,matchingTiles);
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.SEVERE,"Fetching data for " + queryInfo.toString(),e);
+      throw e;
+    }
+    queryInfo.setResultImage(rasterImage);
+{
+      LOGGER.finer(queryInfo.toString());
+      log.appendLoggingGeometries(LoggingHelper.MOSAIC_EXPECTED,queryInfo.getMosaicLocation());
+      log.appendLoggingGeometries(LoggingHelper.MOSAIC_ENV,queryInfo.getResultEnvelope());
+    }
+  }
+}

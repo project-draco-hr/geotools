@@ -1,0 +1,13 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  buildRiverHistory();
+  Transaction t=createTransaction("Mambo","Restarting the world");
+  VersionedPostgisFeatureStore fs=(VersionedPostgisFeatureStore)ds.getFeatureSource("river");
+  fs.setTransaction(t);
+  fs.rollback("1",Filter.INCLUDE,null);
+  t.commit();
+  FeatureDiffReader reader=fs.getDifferences("1",null,null,null);
+  assertFalse(reader.hasNext());
+  reader.close();
+  t.close();
+}

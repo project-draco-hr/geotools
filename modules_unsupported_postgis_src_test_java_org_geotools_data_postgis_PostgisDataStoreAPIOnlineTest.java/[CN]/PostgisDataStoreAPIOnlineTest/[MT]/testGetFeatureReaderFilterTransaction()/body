@@ -1,0 +1,47 @@
+{
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureType type=data.getSchema("road");
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=data.getFeatureReader(new DefaultQuery("road",Filter.EXCLUDE),t);
+  assertFalse(reader.hasNext());
+  assertEquals(type,reader.getFeatureType());
+  assertEquals(0,count(reader));
+  reader.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",Filter.INCLUDE),t);
+  assertEquals(type,reader.getFeatureType());
+  assertEquals(roadFeatures.length,count(reader));
+  reader.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",rd1Filter),t);
+  assertEquals(type,reader.getFeatureType());
+  assertEquals(1,count(reader));
+  reader.close();
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=data.getFeatureWriter("road",Filter.INCLUDE,t);
+  SimpleFeature feature;
+  while (writer.hasNext()) {
+    feature=(SimpleFeature)writer.next();
+    if (feature.getID().equals(roadFeatures[0].getID())) {
+      writer.remove();
+    }
+  }
+  writer.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",Filter.EXCLUDE),t);
+  assertEquals(0,count(reader));
+  reader.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",Filter.INCLUDE),t);
+  assertEquals(roadFeatures.length - 1,count(reader));
+  reader.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",rd1Filter),t);
+  assertEquals(0,count(reader));
+  reader.close();
+  t.rollback();
+  reader=data.getFeatureReader(new DefaultQuery("road",Filter.EXCLUDE),t);
+  assertEquals(0,count(reader));
+  reader.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",Filter.INCLUDE),t);
+  assertEquals(roadFeatures.length,count(reader));
+  reader.close();
+  reader=data.getFeatureReader(new DefaultQuery("road",rd1Filter),t);
+  assertEquals(1,count(reader));
+  reader.close();
+  t.close();
+}

@@ -1,0 +1,23 @@
+{
+switch (combinedFilters.size()) {
+case 0:
+    throw new IllegalArgumentException("No filters to combine");
+case 1:
+  Filter filter=(Filter)combinedFilters.get(0);
+if (filter instanceof BinaryComparisonOperator) {
+  Expression exp=((BinaryComparisonOperator)filter).getExpression1();
+  if (exp != null && exp instanceof NestedAttributeExpression) {
+    filter=new MultiValuedOrImpl(ff,filter,(NestedAttributeExpression)((BinaryComparisonOperator)filter).getExpression1());
+  }
+ else {
+    exp=((BinaryComparisonOperator)filter).getExpression2();
+    if (exp != null && exp instanceof NestedAttributeExpression) {
+      filter=new MultiValuedOrImpl(ff,filter,(NestedAttributeExpression)((BinaryComparisonOperator)filter).getExpression2());
+    }
+  }
+}
+return filter;
+default :
+return ff.or(combinedFilters);
+}
+}

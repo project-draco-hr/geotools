@@ -1,0 +1,54 @@
+{
+  double x=0, y=0, b=0;
+  boolean xFound=false, yFound=false;
+  int sln=br.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+case X_1:
+      if (xFound && yFound) {
+        DXFLwVertex e=new DXFLwVertex(x,y,b);
+        log.debug(e.toString(b,x,y));
+        theVertices.add(e);
+        xFound=false;
+        yFound=false;
+        x=0;
+        y=0;
+        b=0;
+      }
+    if (gc == DXFGroupCode.TYPE) {
+      br.reset();
+      doLoop=false;
+      break;
+    }
+  x=cvp.getDoubleValue();
+xFound=true;
+break;
+case Y_1:
+y=cvp.getDoubleValue();
+yFound=true;
+break;
+case DOUBLE_3:
+b=cvp.getDoubleValue();
+break;
+default :
+break;
+}
+}
+log.debug(">Exit at line: " + br.getLineNumber());
+}

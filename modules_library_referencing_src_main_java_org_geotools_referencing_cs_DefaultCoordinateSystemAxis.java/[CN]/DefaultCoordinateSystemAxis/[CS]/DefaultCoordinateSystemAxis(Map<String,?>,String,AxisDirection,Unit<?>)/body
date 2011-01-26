@@ -1,0 +1,30 @@
+{
+  super(properties);
+  this.abbreviation=abbreviation;
+  this.direction=direction;
+  this.unit=unit;
+  ensureNonNull("abbreviation",abbreviation);
+  ensureNonNull("direction",direction);
+  ensureNonNull("unit",unit);
+  if (unit.isCompatible(NonSI.DEGREE_ANGLE)) {
+    final UnitConverter fromDegrees=NonSI.DEGREE_ANGLE.getConverterTo(unit);
+    final AxisDirection dir=direction.absolute();
+    if (dir.equals(AxisDirection.NORTH)) {
+      final double range=Math.abs(fromDegrees.convert(90));
+      minimum=-range;
+      maximum=+range;
+      rangeMeaning=RangeMeaning.EXACT;
+      return;
+    }
+    if (dir.equals(AxisDirection.EAST)) {
+      final double range=Math.abs(fromDegrees.convert(180));
+      minimum=-range;
+      maximum=+range;
+      rangeMeaning=RangeMeaning.WRAPAROUND;
+      return;
+    }
+  }
+  minimum=Double.NEGATIVE_INFINITY;
+  maximum=Double.POSITIVE_INFINITY;
+  rangeMeaning=RangeMeaning.EXACT;
+}

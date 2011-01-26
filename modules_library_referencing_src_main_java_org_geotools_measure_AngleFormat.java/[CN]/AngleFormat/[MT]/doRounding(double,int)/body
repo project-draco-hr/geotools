@@ -1,0 +1,25 @@
+{
+  final double scale=XMath.pow10(precision);
+  final double eps=XMath.pow10(-precision - 2);
+  double scaledValue=scale * (value + eps);
+  long rounded;
+  if (Double.compare(scaledValue,Long.MAX_VALUE) < 0) {
+    RoundingMethod rm=instanceRoundingMethod;
+    if (rm == RoundingMethod.ROUND_HALF_EVEN) {
+      double d=scaledValue / 10d;
+      boolean even=((int)((d - (int)d) * 10)) % 2 == 0;
+      rm=even ? RoundingMethod.ROUND_HALF_DOWN : RoundingMethod.ROUND_HALF_UP;
+    }
+switch (rm) {
+case ROUND_HALF_DOWN:
+      rounded=Math.round(scaledValue - 0.5d);
+    return rounded / scale;
+case ROUND_HALF_UP:
+  rounded=Math.round(scaledValue);
+return rounded / scale;
+}
+}
+Logger logger=Logger.getLogger(AngleFormat.class.getName());
+logger.log(Level.WARNING,String.format("Can't round the value %s to the given precision %d",String.valueOf(value),precision));
+return value;
+}

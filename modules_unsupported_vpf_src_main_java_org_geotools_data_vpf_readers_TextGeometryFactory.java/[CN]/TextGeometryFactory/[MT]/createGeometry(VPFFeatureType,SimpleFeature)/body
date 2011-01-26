@@ -1,0 +1,15 @@
+{
+  Geometry result=null;
+  int textId=Integer.parseInt(values.getAttribute("txt_id").toString());
+  String baseDirectory=featureType.getFeatureClass().getDirectoryName();
+  String tileDirectory=baseDirectory;
+  if (!new File(tileDirectory.concat(File.separator).concat(TEXT_PRIMITIVE)).exists()) {
+    Short tileId=new Short(Short.parseShort(values.getAttribute("tile_id").toString()));
+    tileDirectory=tileDirectory.concat(File.separator).concat(featureType.getFeatureClass().getCoverage().getLibrary().getTileMap().get(tileId).toString()).trim();
+  }
+  String textTableName=tileDirectory.concat(File.separator).concat(TEXT_PRIMITIVE);
+  VPFFile textFile=VPFFileFactory.getInstance().getFile(textTableName);
+  SimpleFeature row=textFile.getRowFromId("id",textId);
+  result=(Geometry)row.getAttribute("shape_line");
+  values.setDefaultGeometry(result);
+}

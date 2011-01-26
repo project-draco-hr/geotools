@@ -1,0 +1,33 @@
+{
+  String identifier=this.identifier;
+  if (identifier == null) {
+    final Class<? extends CodeList> codeType=getClass();
+    Field field;
+    try {
+      field=codeType.getField(name);
+    }
+ catch (    NoSuchFieldException e) {
+      field=null;
+    }
+    if (field != null && Modifier.isStatic(field.getModifiers())) {
+      final Object value;
+      try {
+        value=field.get(null);
+      }
+ catch (      IllegalAccessException e) {
+        throw new AssertionError(e);
+      }
+      if (equals(value)) {
+        final UML annotation=field.getAnnotation(UML.class);
+        if (annotation != null) {
+          identifier=annotation.identifier();
+        }
+      }
+    }
+    if (identifier == null) {
+      identifier="";
+    }
+    this.identifier=identifier;
+  }
+  return identifier.length() != 0 ? identifier : null;
+}

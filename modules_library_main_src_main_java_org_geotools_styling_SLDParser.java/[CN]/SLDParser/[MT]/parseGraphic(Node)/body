@@ -1,0 +1,41 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("processing graphic " + root);
+  }
+  Graphic graphic=factory.createGraphic(null,null,null,null,null,null);
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase(geomString)) {
+      graphic.setGeometryPropertyName(parseGeometryName(child));
+    }
+ else     if (childName.equalsIgnoreCase("ExternalGraphic")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("parsing extgraphic " + child);
+      graphic.addExternalGraphic(parseExternalGraphic(child));
+    }
+ else     if (childName.equalsIgnoreCase("Mark")) {
+      graphic.addMark(parseMark(child));
+    }
+ else     if (childName.equalsIgnoreCase(opacityString)) {
+      graphic.setOpacity(parseCssParameter(child));
+    }
+ else     if (childName.equalsIgnoreCase("size")) {
+      graphic.setSize(parseCssParameter(child));
+    }
+ else     if (childName.equalsIgnoreCase("displacement")) {
+      graphic.setDisplacement(parseDisplacement(child));
+    }
+ else     if (childName.equalsIgnoreCase("rotation")) {
+      graphic.setRotation(parseCssParameter(child));
+    }
+  }
+  return graphic;
+}

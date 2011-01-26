@@ -1,0 +1,53 @@
+{
+  GeneralEnvelope requestedEnvelope=null;
+  Rectangle dim=null;
+  OverviewPolicy overviewPolicy=null;
+  if (params != null) {
+    if (params != null) {
+      for (int i=0; i < params.length; i++) {
+        final ParameterValue param=(ParameterValue)params[i];
+        final String name=param.getDescriptor().getName().getCode();
+        if (name.equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName().toString())) {
+          final GridGeometry2D gg=(GridGeometry2D)param.getValue();
+          requestedEnvelope=new GeneralEnvelope((Envelope)gg.getEnvelope2D());
+          dim=gg.getGridRange2D().getBounds();
+          continue;
+        }
+        if (name.equals(AbstractGridFormat.OVERVIEW_POLICY.getName().toString())) {
+          overviewPolicy=(OverviewPolicy)param.getValue();
+          continue;
+        }
+      }
+    }
+  }
+  Integer imageChoice=new Integer(0);
+  final ImageReadParam readP=new ImageReadParam();
+  try {
+    imageChoice=setReadParams(overviewPolicy,readP,requestedEnvelope,dim);
+  }
+ catch (  TransformException e) {
+    new DataSourceException(e);
+  }
+  final Hints newHints=(Hints)hints.clone();
+  final ParameterBlock pbjRead=new ParameterBlock();
+  pbjRead.add(ImageIO.createImageInputStream(source));
+  pbjRead.add(imageChoice);
+  pbjRead.add(Boolean.FALSE);
+  pbjRead.add(Boolean.FALSE);
+  pbjRead.add(Boolean.FALSE);
+  pbjRead.add(null);
+  pbjRead.add(null);
+  pbjRead.add(readP);
+  pbjRead.add(readerSPI.createReaderInstance());
+  final RenderedOp coverageRaster=JAI.create("ImageRead",pbjRead,(RenderingHints)newHints);
+  final int ssWidth=coverageRaster.getWidth();
+  final int ssHeight=coverageRaster.getHeight();
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.log(Level.FINE,"Coverage read: width = " + ssWidth + " height = "+ ssHeight);
+  }
+  final double scaleX=originalGridRange.getSpan(0) / (1.0 * ssWidth);
+  final double scaleY=originalGridRange.getSpan(1) / (1.0 * ssHeight);
+  final AffineTransform tempRaster2Model=new AffineTransform((AffineTransform)raster2Model);
+  tempRaster2Model.concatenate(new AffineTransform(scaleX,0,0,scaleY,0,0));
+  return createCoverage(coverageRaster,ProjectiveTransform.create((AffineTransform)tempRaster2Model));
+}

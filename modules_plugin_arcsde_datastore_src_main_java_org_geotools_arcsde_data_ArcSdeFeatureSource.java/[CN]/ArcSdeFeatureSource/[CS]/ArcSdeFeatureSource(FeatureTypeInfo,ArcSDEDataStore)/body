@@ -1,0 +1,26 @@
+{
+  this.typeInfo=typeInfo;
+  this.dataStore=dataStore;
+  this.queryCapabilities=new QueryCapabilities(){
+    @Override public boolean supportsSorting(    final SortBy[] sortAttributes){
+      final SimpleFeatureType featureType=typeInfo.getFeatureType();
+      for (      SortBy sortBy : sortAttributes) {
+        if (SortBy.NATURAL_ORDER == sortBy || SortBy.REVERSE_ORDER == sortBy) {
+          return false;
+        }
+ else {
+          String attName=sortBy.getPropertyName().getPropertyName();
+          AttributeDescriptor descriptor=featureType.getDescriptor(attName);
+          if (descriptor == null) {
+            return false;
+          }
+          if (descriptor instanceof GeometryDescriptor) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+  }
+;
+}

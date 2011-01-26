@@ -1,0 +1,16 @@
+{
+  tableName="SDE.RASTER.COLOROQ_TEST";
+  final AbstractGridCoverage2DReader reader=getReader();
+  assertNotNull("Couldn't obtain a reader for " + tableName,reader);
+  System.out.println(reader.getInfo().getDescription());
+  final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope();
+  final int reqWidth=225;
+  final int reqHeight=512;
+  GeneralEnvelope reqEnvelope=originalEnvelope;
+  assertTrue(originalEnvelope.intersects(reqEnvelope,true));
+  final GridCoverage2D coverage=readCoverage(reader,reqWidth,reqHeight,reqEnvelope);
+  assertNotNull("read coverage returned null",coverage);
+  writeToDisk(coverage,"testRead_" + tableName);
+  RenderedImage image=coverage.view(ViewType.RENDERED).getRenderedImage();
+  writeToDisk(image,tableName);
+}

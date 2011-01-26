@@ -1,0 +1,25 @@
+{
+  final AffineTransform gridToWorld=(AffineTransform)gc.getGridGeometry().getGridToCRS();
+  final boolean lonFirst=(XAffineTransform.getSwapXY(gridToWorld) != -1);
+  final double xPixelSize=(lonFirst) ? gridToWorld.getScaleX() : gridToWorld.getShearY();
+  final double rotation1=(lonFirst) ? gridToWorld.getShearX() : gridToWorld.getScaleX();
+  final double rotation2=(lonFirst) ? gridToWorld.getShearY() : gridToWorld.getScaleY();
+  final double yPixelSize=(lonFirst) ? gridToWorld.getScaleY() : gridToWorld.getShearX();
+  final double xLoc=gridToWorld.getTranslateX();
+  final double yLoc=gridToWorld.getTranslateY();
+  final StringBuffer buff=new StringBuffer(baseFile);
+  final Set ext=WorldImageFormat.getWorldExtension(extension);
+  final Iterator it=ext.iterator();
+  if (!it.hasNext())   throw new DataSourceException("Unable to parse extension " + extension);
+  buff.append((String)it.next());
+  final File worldFile=new File(buff.toString());
+  final PrintWriter out=new PrintWriter(new FileOutputStream(worldFile));
+  out.println(xPixelSize);
+  out.println(rotation1);
+  out.println(rotation2);
+  out.println(yPixelSize);
+  out.println(xLoc);
+  out.println(yLoc);
+  out.flush();
+  out.close();
+}

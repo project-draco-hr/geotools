@@ -1,0 +1,71 @@
+{
+  Raster currentTile=tileCache.getTile(this,tileX,tileY);
+  if (currentTile != null) {
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("! GOT TILE FROM TileCache " + tileX + ", "+ tileY+ ", plevel "+ tileReader.getPyramidLevel());
+    }
+    return currentTile;
+  }
+  final int xOrigin=tileXToX(tileX);
+  final int yOrigin=tileYToY(tileY);
+  currentTile=tileFactory.createTile(tileSampleModel,new Point(xOrigin,yOrigin));
+  if (shallIgnoreTile(tileX,tileY)) {
+    return currentTile;
+  }
+  final int readerTileX=tileX;
+  final int readerTileY=tileY;
+  try {
+switch (tileSampleModel.getDataType()) {
+case DataBuffer.TYPE_BYTE:
+{
+        DataBufferByte dataBuffer=(DataBufferByte)currentTile.getDataBuffer();
+        byte[][] bankData=dataBuffer.getBankData();
+        tileReader.getTile(readerTileX,readerTileY,bankData);
+      }
+    break;
+case DataBuffer.TYPE_USHORT:
+{
+    DataBufferUShort dataBuffer=(DataBufferUShort)currentTile.getDataBuffer();
+    short[][] bankData=dataBuffer.getBankData();
+    tileReader.getTile(readerTileX,readerTileY,bankData);
+  }
+break;
+case DataBuffer.TYPE_SHORT:
+{
+DataBufferShort dataBuffer=(DataBufferShort)currentTile.getDataBuffer();
+short[][] bankData=dataBuffer.getBankData();
+tileReader.getTile(readerTileX,readerTileY,bankData);
+}
+break;
+case DataBuffer.TYPE_INT:
+{
+DataBufferInt dataBuffer=(DataBufferInt)currentTile.getDataBuffer();
+int[][] bankData=dataBuffer.getBankData();
+tileReader.getTile(readerTileX,readerTileY,bankData);
+}
+break;
+case DataBuffer.TYPE_FLOAT:
+{
+DataBufferFloat dataBuffer=(DataBufferFloat)currentTile.getDataBuffer();
+float[][] bankData=dataBuffer.getBankData();
+tileReader.getTile(readerTileX,readerTileY,bankData);
+}
+break;
+case DataBuffer.TYPE_DOUBLE:
+{
+DataBufferDouble dataBuffer=(DataBufferDouble)currentTile.getDataBuffer();
+double[][] bankData=dataBuffer.getBankData();
+tileReader.getTile(readerTileX,readerTileY,bankData);
+}
+break;
+default :
+throw new IllegalStateException("Unrecognized DataBuffer type: " + tileSampleModel.getDataType());
+}
+}
+ catch (IOException e) {
+e.printStackTrace();
+throw new RuntimeException(e);
+}
+tileCache.add(this,tileX,tileY,currentTile);
+return currentTile;
+}

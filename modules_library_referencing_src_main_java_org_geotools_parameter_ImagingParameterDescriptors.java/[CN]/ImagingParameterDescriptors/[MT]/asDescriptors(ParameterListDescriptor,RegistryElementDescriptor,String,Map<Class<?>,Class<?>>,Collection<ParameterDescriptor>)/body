@@ -1,0 +1,98 @@
+{
+  ensureNonNull("descriptor",descriptor);
+  final Map<String,ParameterDescriptor> replacements=new LinkedHashMap<String,ParameterDescriptor>();
+  if (extension != null) {
+    for (    final ParameterDescriptor d : extension) {
+      final String name=d.getName().getCode().trim().toLowerCase();
+      if (replacements.put(name,d) != null) {
+        throw new InvalidParameterNameException(Errors.format(ErrorKeys.DUPLICATED_VALUES_$1,name),name);
+      }
+    }
+  }
+  final int numSources;
+  final int numParameters=descriptor.getNumParameters();
+  final Map<String,CharSequence> properties=new HashMap<String,CharSequence>();
+  ParameterDescriptor[] desc;
+  if (operation instanceof OperationDescriptor) {
+    final OperationDescriptor op=(OperationDescriptor)operation;
+    final String[] names=op.getSourceNames();
+    final Class<?>[] types=op.getSourceClasses(registryMode);
+    numSources=op.getNumSources();
+    desc=new ParameterDescriptor[numParameters + numSources];
+    for (int i=0; i < numSources; i++) {
+      Class<?> type=(Class<?>)sourceTypeMap.get(types[i]);
+      if (type == null) {
+        type=types[i];
+      }
+      String name=names[i];
+      properties.clear();
+      if (numSources == 1) {
+        final int length=name.length();
+        if (length != 0) {
+          final char c=name.charAt(length - 1);
+          if (c == '0' || c == '1') {
+            properties.put(ALIAS_KEY,name);
+            name=name.substring(0,length - 1);
+          }
+        }
+      }
+      properties.put(NAME_KEY,name);
+      desc[i]=new DefaultParameterDescriptor(properties,type,null,null,null,null,null,true);
+    }
+  }
+ else {
+    numSources=0;
+    desc=new ParameterDescriptor[numParameters];
+  }
+  final String[] names=descriptor.getParamNames();
+  final Class<?>[] classes=descriptor.getParamClasses();
+  final Object[] defaults=descriptor.getParamDefaults();
+  for (int i=0; i < numParameters; i++) {
+    final String name=names[i];
+    final ParameterDescriptor replacement=replacements.remove(name.trim().toLowerCase());
+    if (replacement != null) {
+      desc[i + numSources]=replacement;
+      continue;
+    }
+    final Class<?> type=classes[i];
+    final Range range=descriptor.getParamValueRange(name);
+    final Comparable<?> min, max;
+    if (range != null) {
+      min=range.getMinValue();
+      max=range.getMaxValue();
+    }
+ else {
+      min=null;
+      max=null;
+    }
+    EnumeratedParameter[] validValues;
+    if (EnumeratedParameter.class.isAssignableFrom(type))     try {
+      validValues=descriptor.getEnumeratedParameterValues(name);
+    }
+ catch (    UnsupportedOperationException exception) {
+      validValues=null;
+    }
+ else {
+      validValues=null;
+    }
+    Object defaultValue=defaults[i];
+    if (defaultValue == ParameterListDescriptor.NO_PARAMETER_DEFAULT) {
+      defaultValue=null;
+    }
+    properties.clear();
+    properties.put(NAME_KEY,name);
+    if (operation instanceof OperationDescriptor) {
+      final ImagingParameterDescription remark=new ImagingParameterDescription((OperationDescriptor)operation,i);
+      if (remark.exists()) {
+        properties.put(REMARKS_KEY,remark);
+      }
+    }
+    desc[i + numSources]=new DefaultParameterDescriptor(properties,type,validValues,defaultValue,min,max,null,true);
+  }
+  int i=desc.length;
+  desc=XArray.resize(desc,i + replacements.size());
+  for (  final ParameterDescriptor d : replacements.values()) {
+    desc[i++]=d;
+  }
+  return desc;
+}

@@ -1,0 +1,27 @@
+{
+  PropertyIsEqualTo equals=ff.equals(ff.property("measurement/result"),ff.literal(1.1));
+  PropertyIsGreaterThan greater=ff.greater(ff.property("measurement/determinand_description"),ff.literal("desc1"));
+  And logicFilter=ff.and(equals,greater);
+  Filter unrolled=(Filter)logicFilter.accept(visitor,null);
+  assertNotNull(unrolled);
+  assertTrue(unrolled instanceof And);
+  assertNotSame(equals,unrolled);
+  And sourceAnd=(And)unrolled;
+  assertEquals(2,sourceAnd.getChildren().size());
+  Filter sourceEquals=(Filter)sourceAnd.getChildren().get(0);
+  assertTrue(sourceEquals instanceof PropertyIsEqualTo);
+  Expression left=((PropertyIsEqualTo)sourceEquals).getExpression1();
+  Expression right=((PropertyIsEqualTo)sourceEquals).getExpression2();
+  assertTrue(left instanceof PropertyName);
+  assertTrue(right instanceof Literal);
+  assertEquals("results_value",((PropertyName)left).getPropertyName());
+  assertEquals(new Double(1.1),((Literal)right).getValue());
+  Filter sourceGreater=(Filter)sourceAnd.getChildren().get(1);
+  assertTrue(sourceGreater instanceof PropertyIsGreaterThan);
+  left=((PropertyIsGreaterThan)sourceGreater).getExpression1();
+  right=((PropertyIsGreaterThan)sourceGreater).getExpression2();
+  assertTrue(left instanceof PropertyName);
+  assertTrue(right instanceof Literal);
+  assertEquals("determinand_description",((PropertyName)left).getPropertyName());
+  assertEquals("desc1",((Literal)right).getValue());
+}

@@ -1,0 +1,29 @@
+{
+  this.layerQualifiedName=layerQName;
+  this.layerFidFieldName=layerFidColName;
+  this.featureType=ft;
+  this.definitionQuery=definitionQuery;
+  if (definitionQuery != null) {
+    attributeNames=new HashMap();
+    List selectItems=definitionQuery.getSelectItems();
+    SelectItem item;
+    for (Iterator it=selectItems.iterator(); it.hasNext(); ) {
+      item=(SelectItem)it.next();
+      if (!(item instanceof SelectExpressionItem)) {
+        String msg="for item '" + item + "': only SelectExpressionItems should be in query at this stage."+ " AllColumns and AllTableColumns instances should be resolved to their list "+ " of column names at view registration time.";
+        LOGGER.severe(msg);
+        throw new IllegalStateException(msg);
+      }
+      SelectExpressionItem colDef=(SelectExpressionItem)item;
+      String alias=colDef.getAlias();
+      if (alias == null) {
+        if (!(colDef.getExpression() instanceof Column)) {
+          throw new RuntimeException("if select item is not a plain column an alias should be provided: " + colDef);
+        }
+        Column column=(Column)colDef.getExpression();
+        alias=column.getColumnName();
+      }
+      attributeNames.put(alias,colDef);
+    }
+  }
+}

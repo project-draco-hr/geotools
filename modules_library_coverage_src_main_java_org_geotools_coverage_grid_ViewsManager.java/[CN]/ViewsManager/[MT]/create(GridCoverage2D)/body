@@ -1,0 +1,31 @@
+{
+  final Class<? extends GridCoverage2D> viewClass=coverage.getViewClass();
+  if (viewClass != null) {
+    Collection<GridCoverage> sources=coverage.getSources();
+    while (sources != null) {
+      Collection<GridCoverage> next=null;
+      for (      final GridCoverage source : sources) {
+        if (source instanceof GridCoverage2D) {
+          final GridCoverage2D candidate=(GridCoverage2D)source;
+          if (Utilities.equals(coverage.image,candidate.image) && Utilities.equals(coverage.gridGeometry,candidate.gridGeometry) && Arrays.equals(coverage.sampleDimensions,candidate.sampleDimensions)&& viewClass.equals(candidate.getViewClass())) {
+            return candidate.copyViewsTo(coverage);
+          }
+        }
+        if (source == null) {
+          continue;
+        }
+        final Collection<GridCoverage> more=source.getSources();
+        if (more != null && !more.isEmpty()) {
+          if (next == null) {
+            next=new LinkedHashSet<GridCoverage>(more);
+          }
+ else {
+            next.addAll(more);
+          }
+        }
+      }
+      sources=next;
+    }
+  }
+  return new ViewsManager(coverage);
+}

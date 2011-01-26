@@ -1,0 +1,24 @@
+{
+  final Set<Identifier> identifiers=filter.getIdentifiers();
+  if (identifiers.size() == 0) {
+    Filter.EXCLUDE.accept(this,unused);
+    return unused;
+  }
+  long[] fids=ArcSDEAdapter.getNumericFids(identifiers);
+  int nFids=fids.length;
+  if (nFids == 0) {
+    return unused;
+  }
+  String fidField=layerFidFieldName;
+  try {
+    String sql=buildFilter(fids,fidField + " IN(",")",",",1000," OR ");
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("added fid filter: " + sql);
+    }
+    this.out.write(sql);
+  }
+ catch (  Exception ex) {
+    throw new RuntimeException(ex.getMessage(),ex);
+  }
+  return unused;
+}

@@ -1,0 +1,24 @@
+{
+  final int numBands;
+  final SeRasterBand[] seBands;
+  final RasterCellType cellType;
+  try {
+    numBands=rasterAttributes.getNumBands();
+    seBands=rasterAttributes.getBands();
+    cellType=RasterCellType.valueOf(rasterAttributes.getPixelType());
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException(e);
+  }
+  List<RasterBandInfo> detachedBandInfo=new ArrayList<RasterBandInfo>(numBands);
+  RasterBandInfo bandInfo;
+  SeRasterBand band;
+  for (int bandN=0; bandN < numBands; bandN++) {
+    band=seBands[bandN];
+    bandInfo=new RasterBandInfo();
+    final int bitsPerSample=cellType.getBitsPerSample();
+    setBandInfo(numBands,bandInfo,band,scon,bitsPerSample,rastersColorMaps);
+    detachedBandInfo.add(bandInfo);
+  }
+  return detachedBandInfo;
+}

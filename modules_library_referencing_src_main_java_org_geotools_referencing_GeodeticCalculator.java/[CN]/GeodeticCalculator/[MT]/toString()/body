@@ -1,0 +1,47 @@
+{
+  final Vocabulary resources=Vocabulary.getResources(null);
+  final TableWriter buffer=new TableWriter(null," ");
+  if (coordinateReferenceSystem != null) {
+    buffer.write(resources.getLabel(VocabularyKeys.COORDINATE_REFERENCE_SYSTEM));
+    buffer.nextColumn();
+    buffer.write(coordinateReferenceSystem.getName().getCode());
+    buffer.nextLine();
+  }
+  if (ellipsoid != null) {
+    buffer.write(resources.getLabel(VocabularyKeys.ELLIPSOID));
+    buffer.nextColumn();
+    buffer.write(ellipsoid.getName().getCode());
+    buffer.nextLine();
+  }
+  final CoordinateFormat cf=new CoordinateFormat();
+  final Format nf=cf.getFormat(0);
+  if (true) {
+    buffer.write(resources.getLabel(VocabularyKeys.SOURCE_POINT));
+    buffer.nextColumn();
+    buffer.write(format(cf,long1,lat1));
+    buffer.nextLine();
+  }
+  if (destinationValid) {
+    buffer.write(resources.getLabel(VocabularyKeys.TARGET_POINT));
+    buffer.nextColumn();
+    buffer.write(format(cf,long2,lat2));
+    buffer.nextLine();
+  }
+  if (directionValid) {
+    buffer.write(resources.getLabel(VocabularyKeys.AZIMUTH));
+    buffer.nextColumn();
+    buffer.write(nf.format(new Angle(toDegrees(azimuth))));
+    buffer.nextLine();
+  }
+  if (directionValid) {
+    buffer.write(resources.getLabel(VocabularyKeys.ORTHODROMIC_DISTANCE));
+    buffer.nextColumn();
+    buffer.write(nf.format(distance));
+    if (ellipsoid != null) {
+      buffer.write(' ');
+      buffer.write(ellipsoid.getAxisUnit().toString());
+    }
+    buffer.nextLine();
+  }
+  return buffer.toString();
+}

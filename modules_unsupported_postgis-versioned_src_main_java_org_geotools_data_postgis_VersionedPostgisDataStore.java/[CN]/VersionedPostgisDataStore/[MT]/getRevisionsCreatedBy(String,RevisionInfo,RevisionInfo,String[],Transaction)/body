@@ -1,0 +1,26 @@
+{
+  if (users == null || users.length == 0)   return null;
+  List filters=new ArrayList(users.length);
+  for (int i=0; i < users.length; i++) {
+    filters.add(ff.equals(ff.property("author"),ff.literal(users[i])));
+  }
+  Filter revisionFilter=ff.between(ff.property("revision"),ff.literal(r1.revision),ff.literal(r2.revision));
+  Filter userFilter=ff.and(ff.or(filters),revisionFilter);
+  Query query=new DefaultQuery(VersionedPostgisDataStore.TBL_CHANGESETS,userFilter,new String[]{"revision"});
+  Set revisions=new HashSet();
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=null;
+  try {
+    fr=wrapped.getFeatureReader(query,transaction);
+    while (fr.hasNext()) {
+      SimpleFeature f=fr.next();
+      revisions.add(f.getAttribute("revision"));
+    }
+  }
+ catch (  IllegalAttributeException e) {
+    throw new DataSourceException("Error reading revisions modified by users " + Arrays.asList(users),e);
+  }
+ finally {
+    if (fr != null)     fr.close();
+  }
+  return revisions;
+}

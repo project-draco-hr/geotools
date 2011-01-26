@@ -1,0 +1,22 @@
+{
+  final URL statURL=TestData.getResource(this,this.fileName + ".DEM");
+  final AbstractGridFormat format=(AbstractGridFormat)new GTopo30FormatFactory().createFormat();
+  final TileCache defaultInstance=JAI.getDefaultInstance().getTileCache();
+  defaultInstance.setMemoryCapacity(1024 * 1024 * 64);
+  defaultInstance.setMemoryThreshold(1.0f);
+  final GTopo30WriteParams wp=new GTopo30WriteParams();
+  wp.setCompressionMode(GTopo30WriteParams.MODE_EXPLICIT);
+  wp.setCompressionType("ZIP");
+  ParameterValueGroup params=format.getWriteParameters();
+  params.parameter(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString()).setValue(wp);
+  if (format.accepts(statURL)) {
+    final GridCoverageReader reader=format.getReader(statURL);
+    final GridCoverage2D gc=((GridCoverage2D)reader.read(null));
+    File testDir=TestData.file(this,"");
+    newDir=new File(testDir.getAbsolutePath() + "/newDir");
+    newDir.mkdir();
+    final GridCoverageWriter writer=format.getWriter(newDir);
+    writer.write(gc,(GeneralParameterValue[])params.values().toArray(new GeneralParameterValue[1]));
+    gc.dispose(false);
+  }
+}

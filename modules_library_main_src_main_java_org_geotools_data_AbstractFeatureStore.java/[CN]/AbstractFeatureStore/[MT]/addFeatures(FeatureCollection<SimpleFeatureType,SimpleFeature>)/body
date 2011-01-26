@@ -1,0 +1,31 @@
+{
+  List<FeatureId> addedFids=new LinkedList<FeatureId>();
+  String typeName=getSchema().getTypeName();
+  SimpleFeature feature=null;
+  SimpleFeature newFeature;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=getDataStore().getFeatureWriterAppend(typeName,getTransaction());
+  Iterator iterator=collection.iterator();
+  try {
+    while (iterator.hasNext()) {
+      feature=(SimpleFeature)iterator.next();
+      newFeature=(SimpleFeature)writer.next();
+      try {
+        newFeature.setAttributes(feature.getAttributes());
+      }
+ catch (      Exception writeProblem) {
+        throw new DataSourceException("Could not create " + typeName + " out of provided feature: "+ feature.getID(),writeProblem);
+      }
+      boolean useExisting=Boolean.TRUE.equals(feature.getUserData().get(Hints.USE_PROVIDED_FID));
+      if (getQueryCapabilities().isUseProvidedFIDSupported() && useExisting) {
+        ((FeatureIdImpl)newFeature.getIdentifier()).setID(feature.getID());
+      }
+      writer.write();
+      addedFids.add(newFeature.getIdentifier());
+    }
+  }
+  finally {
+    collection.close(iterator);
+    writer.close();
+  }
+  return addedFids;
+}

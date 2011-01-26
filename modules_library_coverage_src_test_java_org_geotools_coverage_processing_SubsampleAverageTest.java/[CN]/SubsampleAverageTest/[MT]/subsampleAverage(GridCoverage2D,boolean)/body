@@ -1,0 +1,38 @@
+{
+  final RenderedImage originalImage=coverage.getRenderedImage();
+  int w=originalImage.getWidth();
+  int h=originalImage.getHeight();
+  final CoverageProcessor processor=photographic ? photographicProcessor : defaultProcessor;
+  final ParameterValueGroup param=processor.getOperation("SubsampleAverage").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("scaleX").setValue(Double.valueOf(0.5));
+  param.parameter("scaleY").setValue(Double.valueOf(0.5));
+  GridCoverage2D scaled=(GridCoverage2D)processor.doOperation(param);
+  RenderedImage scaledImage=scaled.getRenderedImage();
+  assertEquals(w / 2.0,scaledImage.getWidth(),EPS);
+  assertEquals(h / 2.0,scaledImage.getHeight(),EPS);
+  w=scaledImage.getWidth();
+  h=scaledImage.getHeight();
+  assertEnvelopeEquals(scaled,coverage);
+  if (SHOW) {
+    Viewer.show(coverage);
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(coverage.getRenderedImage().getData());
+    assertNotNull(scaled.getRenderedImage().getData());
+  }
+  scaled=(GridCoverage2D)Operations.DEFAULT.subsampleAverage(scaled,0.3333,0.3333);
+  assertEnvelopeEquals(scaled,coverage);
+  scaledImage=scaled.getRenderedImage();
+  if (false) {
+    assertEquals(w / 3.0,scaledImage.getWidth(),EPS);
+    assertEquals(h / 3.0,scaledImage.getHeight(),EPS);
+  }
+  if (SHOW) {
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(scaled.getRenderedImage().getData());
+  }
+}

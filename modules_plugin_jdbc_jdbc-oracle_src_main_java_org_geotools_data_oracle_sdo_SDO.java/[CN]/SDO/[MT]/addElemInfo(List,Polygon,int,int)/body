@@ -1,0 +1,24 @@
+{
+  final int HOLES=polygon.getNumInteriorRing();
+  if (HOLES == 0) {
+    addInt(elemInfoList,STARTING_OFFSET);
+    addInt(elemInfoList,elemInfoEType(polygon));
+    addInt(elemInfoList,elemInfoInterpretation(polygon,ETYPE.POLYGON_EXTERIOR));
+    return;
+  }
+  int LEN=D(GTYPE) + L(GTYPE);
+  int offset=STARTING_OFFSET;
+  LineString ring;
+  ring=polygon.getExteriorRing();
+  addInt(elemInfoList,offset);
+  addInt(elemInfoList,elemInfoEType(polygon));
+  addInt(elemInfoList,elemInfoInterpretation(polygon,ETYPE.POLYGON_EXTERIOR));
+  offset+=(ring.getNumPoints() * LEN);
+  for (int i=1; i <= HOLES; i++) {
+    ring=polygon.getInteriorRingN(i - 1);
+    addInt(elemInfoList,offset);
+    addInt(elemInfoList,ETYPE.POLYGON_INTERIOR);
+    addInt(elemInfoList,elemInfoInterpretation(ring,ETYPE.POLYGON_INTERIOR));
+    offset+=(ring.getNumPoints() * LEN);
+  }
+}

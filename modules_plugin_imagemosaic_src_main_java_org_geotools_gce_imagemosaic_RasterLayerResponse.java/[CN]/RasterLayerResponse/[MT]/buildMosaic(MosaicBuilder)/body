@@ -1,0 +1,45 @@
+{
+  final ImageLayout layout=new ImageLayout(rasterBounds.x,rasterBounds.y,rasterBounds.width,rasterBounds.height);
+  final Dimension tileDimensions=request.getTileDimensions();
+  if (tileDimensions != null)   layout.setTileHeight(tileDimensions.width).setTileWidth(tileDimensions.height);
+  final RenderingHints localHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+  if (hints != null && !hints.isEmpty()) {
+    if (hints.containsKey(JAI.KEY_TILE_CACHE)) {
+      final Object tc=hints.get(JAI.KEY_TILE_CACHE);
+      if (tc != null && tc instanceof TileCache)       localHints.add(new RenderingHints(JAI.KEY_TILE_CACHE,(TileCache)tc));
+    }
+    boolean addBorderExtender=true;
+    if (hints != null && hints.containsKey(JAI.KEY_BORDER_EXTENDER)) {
+      final Object extender=hints.get(JAI.KEY_BORDER_EXTENDER);
+      if (extender != null && extender instanceof BorderExtender) {
+        localHints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,(BorderExtender)extender));
+        addBorderExtender=false;
+      }
+    }
+    if (addBorderExtender) {
+      localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
+    }
+    if (hints.containsKey(JAI.KEY_TILE_SCHEDULER)) {
+      final Object ts=hints.get(JAI.KEY_TILE_SCHEDULER);
+      if (ts != null && ts instanceof TileScheduler)       localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,(TileScheduler)ts));
+    }
+  }
+  final ROI[] sourceRoi=visitor.sourceRoi;
+  final RenderedImage mosaic=MosaicDescriptor.create(visitor.getSourcesAsArray(),request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,(alphaIn || visitor.doInputTransparency) ? visitor.alphaChannels : null,sourceRoi,visitor.sourceThreshold,backgroundValues,localHints);
+  if (setRoiProperty) {
+    RenderedOp rop=(RenderedOp)mosaic;
+    ROI globalRoi=null;
+    ROI[] rois=sourceRoi;
+    for (int i=0; i < rois.length; i++) {
+      if (globalRoi == null) {
+        globalRoi=new ROI(rois[i].getAsImage());
+      }
+ else {
+        globalRoi=globalRoi.add(rois[i]);
+      }
+    }
+    rop.setProperty("ROI",globalRoi);
+  }
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuffer("Mosaic created ").toString());
+  return mosaic;
+}

@@ -1,0 +1,50 @@
+{
+  Properties props=new Properties();
+  for (Enumeration e=info.keys(); e.hasMoreElements(); ) {
+    String key=(String)e.nextElement();
+    String value=info.getProperty(key);
+    if (value != null) {
+      props.setProperty(key.toUpperCase(),value);
+    }
+  }
+  StringBuffer token=new StringBuffer(128);
+  int pos=0;
+  pos=nextToken(url,pos,token);
+  if (!token.toString().equalsIgnoreCase("jdbc")) {
+    LOGGER.severe("expected token jdbc in urlprefix " + url);
+    return null;
+  }
+  pos=nextToken(url,pos,token);
+  if (!token.toString().equalsIgnoreCase("postgresql")) {
+    LOGGER.severe("expected token postgresql in urlprefix " + url);
+    return null;
+  }
+  pos=nextToken(url,pos,token);
+  if (token.length() > 0) {
+    LOGGER.severe("There should be no token between : and // in urlprefix " + url);
+    return null;
+  }
+  pos=nextToken(url,pos,token);
+  String host=token.toString();
+  if (host == null || host.length() == 0) {
+    LOGGER.severe("Missing server (host) name in urlprefix " + url);
+    return null;
+  }
+  props.setProperty("ServerName",host);
+  if (url.charAt(pos - 1) == ':' && pos < url.length()) {
+    pos=nextToken(url,pos,token);
+    try {
+      int port=Integer.parseInt(token.toString());
+      props.setProperty("PortNumber",Integer.toString(port));
+    }
+ catch (    NumberFormatException e) {
+      LOGGER.severe("Bad port number in urlprefix " + url);
+      return null;
+    }
+  }
+  if (url.charAt(pos - 1) == '/' && pos < url.length()) {
+    pos=nextToken(url,pos,token);
+    props.setProperty("DatabaseName",token.toString());
+  }
+  return props;
+}

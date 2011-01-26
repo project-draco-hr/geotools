@@ -1,0 +1,31 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("parsing mark");
+  }
+  Mark mark=factory.createMark();
+  mark.setFill(null);
+  mark.setStroke(null);
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase(strokeString)) {
+      mark.setStroke(parseStroke(child));
+    }
+ else     if (childName.equalsIgnoreCase(fillSt)) {
+      mark.setFill(parseFill(child));
+    }
+ else     if (childName.equalsIgnoreCase("WellKnownName")) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.finest("setting mark to " + getFirstChildValue(child));
+      mark.setWellKnownName(parseCssParameter(child));
+    }
+  }
+  return mark;
+}

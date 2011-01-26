@@ -1,0 +1,31 @@
+{
+  try {
+    if (requestedGridToWorld instanceof LinearTransform) {
+      if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
+        requestedResolution=null;
+        final Rectangle sourceRasterArea=new GeneralGridEnvelope(CRS.transform(PixelTranslation.translate(rasterManager.getRaster2Model(),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER).inverse(),cropBBox),PixelInCell.CELL_CORNER,false).toRectangle();
+        XRectangle2D.intersect(sourceRasterArea,rasterManager.domainManager.coverageRasterArea,sourceRasterArea);
+        if (sourceRasterArea.isEmpty())         throw new DataSourceException("aaa");
+        final GeneralEnvelope envelope=CRS.transform(destinationToSourceTransform.inverse(),cropBBox);
+        final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(sourceRasterArea),envelope);
+        final AffineTransform tempTransform=geMapper.createAffineTransform();
+        final double scaleX=XAffineTransform.getScaleX0((AffineTransform)requestedGridToWorld) / XAffineTransform.getScaleX0(tempTransform);
+        final double scaleY=XAffineTransform.getScaleY0((AffineTransform)requestedGridToWorld) / XAffineTransform.getScaleY0(tempTransform);
+        requestedRasterScaleFactors=new double[2];
+        requestedRasterScaleFactors[0]=scaleX * 1.0;
+        requestedRasterScaleFactors[1]=scaleY * 1.0;
+        final GridToEnvelopeMapper geMapper1=new GridToEnvelopeMapper(new GridEnvelope2D(destinationRasterArea),cropBBox);
+        requestedGridToWorld=geMapper1.createAffineTransform();
+      }
+ else {
+        requestedResolution=new double[]{XAffineTransform.getScaleX0(requestedGridToWorld),XAffineTransform.getScaleY0(requestedGridToWorld)};
+      }
+    }
+    return;
+  }
+ catch (  Throwable e) {
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.log(Level.INFO,"Unable to compute requested resolution",e);
+  }
+  LOGGER.log(Level.WARNING,"Unable to compute requested resolution, using highest available");
+  requestedResolution=rasterManager.domainManager.coverageFullResolution;
+}

@@ -1,0 +1,40 @@
+{
+  if (this == o) {
+    return true;
+  }
+  if (!(o instanceof GeometryAttributeImpl)) {
+    return false;
+  }
+  GeometryAttributeImpl att=(GeometryAttributeImpl)o;
+  if (!Utilities.equals(descriptor,att.descriptor))   return false;
+  if (!Utilities.equals(id,att.id))   return false;
+  if (value != null && att.value != null) {
+    if (att.value instanceof GeometryCollection && !(att.value instanceof MultiPoint) && !(att.value instanceof MultiLineString)&& !(att.value instanceof MultiPolygon)) {
+      if (value instanceof GeometryCollection) {
+        GeometryCollection c1=(GeometryCollection)value;
+        GeometryCollection c2=(GeometryCollection)att.value;
+        if (c1.getNumGeometries() != c2.getNumGeometries()) {
+          return false;
+        }
+        for (int i=0; i < c1.getNumGeometries(); i++) {
+          Geometry g1=c1.getGeometryN(i);
+          Geometry g2=c2.getGeometryN(i);
+          if (!g1.equals(g2)) {
+            return false;
+          }
+        }
+        return true;
+      }
+ else {
+        return false;
+      }
+    }
+    if (!((Geometry)value).equals((Geometry)att.value)) {
+      return false;
+    }
+  }
+ else {
+    return Utilities.deepEquals(value,this.value);
+  }
+  return true;
+}

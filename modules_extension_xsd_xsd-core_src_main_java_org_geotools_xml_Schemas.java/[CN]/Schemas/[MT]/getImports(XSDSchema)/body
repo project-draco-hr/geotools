@@ -1,0 +1,28 @@
+{
+  LinkedList queue=new LinkedList();
+  ArrayList imports=new ArrayList();
+  HashSet added=new HashSet();
+  queue.addLast(schema);
+  while (!queue.isEmpty()) {
+    schema=(XSDSchema)queue.removeFirst();
+    List contents=schema.getContents();
+    for (Iterator itr=contents.iterator(); itr.hasNext(); ) {
+      XSDSchemaContent content=(XSDSchemaContent)itr.next();
+      if (content instanceof XSDImport) {
+        XSDImport imprt=(XSDImport)content;
+        if (!added.contains(imprt.getNamespace())) {
+          imports.add(imprt);
+          added.add(imprt.getNamespace());
+          XSDSchema resolvedSchema=imprt.getResolvedSchema();
+          if (resolvedSchema == null) {
+            LOGGER.info("Schema import wasn't resolved: " + imprt.getNamespace() + " declared location: "+ imprt.getSchemaLocation());
+          }
+ else {
+            queue.addLast(resolvedSchema);
+          }
+        }
+      }
+    }
+  }
+  return imports;
+}

@@ -1,0 +1,36 @@
+{
+  System.out.println("------------------------------------------");
+  System.out.println("Creating a CRS by hand:");
+  CRSFactory crsFactory=ReferencingFactoryFinder.getCRSFactory(null);
+  DatumFactory datumFactory=ReferencingFactoryFinder.getDatumFactory(null);
+  CSFactory csFactory=ReferencingFactoryFinder.getCSFactory(null);
+  Map<String,Object> map=new HashMap<String,Object>();
+  map.put("name","Clarke 1866");
+  Ellipsoid clark1866ellipse=datumFactory.createFlattenedSphere(map,6378206.4,294.978698213901,SI.METER);
+  PrimeMeridian greenwichMeridian=org.geotools.referencing.datum.DefaultPrimeMeridian.GREENWICH;
+  final BursaWolfParameters toWGS84=new BursaWolfParameters(DefaultGeodeticDatum.WGS84);
+  toWGS84.dx=-3.0;
+  toWGS84.dy=142;
+  toWGS84.dz=183;
+  map.clear();
+  map.put("name","North American Datum 1927");
+  map.put(DefaultGeodeticDatum.BURSA_WOLF_KEY,toWGS84);
+  GeodeticDatum clark1866datum=datumFactory.createGeodeticDatum(map,clark1866ellipse,greenwichMeridian);
+  System.out.println(clark1866datum.toWKT());
+  System.out.println("Identified Datum object:");
+  printIdentifierStuff(clark1866datum);
+  map.clear();
+  map.put("name","<lat>, <long>");
+  CoordinateSystemAxis latAxis=org.geotools.referencing.cs.DefaultCoordinateSystemAxis.GEODETIC_LATITUDE;
+  CoordinateSystemAxis longAxis=org.geotools.referencing.cs.DefaultCoordinateSystemAxis.GEODETIC_LONGITUDE;
+  EllipsoidalCS ellipsCS=csFactory.createEllipsoidalCS(map,latAxis,longAxis);
+  map.clear();
+  map.put("name","NAD 27");
+  map.put("authority","9999");
+  GeographicCRS nad27CRS=crsFactory.createGeographicCRS(map,clark1866datum,ellipsCS);
+  System.out.println(nad27CRS.toWKT());
+  System.out.println("Identified CRS object:");
+  printIdentifierStuff(nad27CRS);
+  System.out.println("------------------------------------------");
+  this.nad27CRS=nad27CRS;
+}

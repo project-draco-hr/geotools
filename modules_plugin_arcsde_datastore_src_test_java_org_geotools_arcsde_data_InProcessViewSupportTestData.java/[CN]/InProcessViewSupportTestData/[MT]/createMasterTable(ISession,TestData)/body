@@ -1,0 +1,32 @@
+{
+  final SeTable table=session.createSeTable(MASTER);
+  final Command<SeLayer> createLayerCmd=new Command<SeLayer>(){
+    @Override public SeLayer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      SeLayer layer;
+      try {
+        table.delete();
+      }
+ catch (      SeException e) {
+      }
+      SeColumnDefinition[] colDefs=new SeColumnDefinition[2];
+      colDefs[0]=new SeColumnDefinition("ID",SeColumnDefinition.TYPE_INT32,10,0,false);
+      colDefs[1]=new SeColumnDefinition("NAME",SeColumnDefinition.TYPE_STRING,255,0,false);
+      layer=new SeLayer(connection);
+      layer.setTableName(MASTER);
+      table.create(colDefs,td.getConfigKeyword());
+      layer.setSpatialColumnName("SHAPE");
+      layer.setShapeTypes(SeLayer.SE_POINT_TYPE_MASK);
+      layer.setGridSizes(1100.0,0.0,0.0);
+      layer.setDescription("Geotools sde pluing join support testing master table");
+      SeCoordinateReference coordref=new SeCoordinateReference();
+      coordref.setCoordSysByDescription(testCrs.toWKT());
+      layer.setCreationKeyword(td.getConfigKeyword());
+      layer.create(3,4);
+      return layer;
+    }
+  }
+;
+  SeLayer layer=session.issue(createLayerCmd);
+  insertMasterData(session,layer);
+  LOGGER.info("successfully created master table " + MASTER);
+}

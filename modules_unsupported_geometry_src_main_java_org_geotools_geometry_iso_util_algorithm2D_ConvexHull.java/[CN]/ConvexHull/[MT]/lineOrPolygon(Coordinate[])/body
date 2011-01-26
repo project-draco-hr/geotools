@@ -1,0 +1,21 @@
+{
+  coordinates=cleanRing(coordinates);
+  List<Position> positions=CoordinateArrays.toPositionList(this.crs,coordinates);
+  if (coordinates.length == 3) {
+    positions.remove(2);
+    LineStringImpl lineString=new LineStringImpl(new PointArrayImpl(positions),0.0);
+    List<CurveSegment> segments=new ArrayList<CurveSegment>();
+    segments.add(lineString);
+    return new CurveImpl(this.crs,segments);
+  }
+  LineStringImpl lineString=new LineStringImpl(new PointArrayImpl(positions),0.0);
+  List<CurveSegment> segments=new ArrayList<CurveSegment>();
+  segments.add(lineString);
+  OrientableCurve curve=new CurveImpl(crs,segments);
+  List<OrientableCurve> orientableCurves=new ArrayList<OrientableCurve>();
+  orientableCurves.add(curve);
+  Ring exterior=new RingImpl(orientableCurves);
+  List<Ring> interiorList=new ArrayList<Ring>();
+  SurfaceBoundaryImpl sb=new SurfaceBoundaryImpl(crs,exterior,interiorList);
+  return new SurfaceImpl(sb);
+}

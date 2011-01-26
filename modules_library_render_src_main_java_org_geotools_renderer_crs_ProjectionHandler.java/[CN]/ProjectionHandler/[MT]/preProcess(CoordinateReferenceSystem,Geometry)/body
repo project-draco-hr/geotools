@@ -1,0 +1,17 @@
+{
+  if (CRS.equalsIgnoreMetadata(geomCRS,renderingEnvelope.getCoordinateReferenceSystem())) {
+    return geometry;
+  }
+  if (validArea == null)   return geometry;
+  ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geomCRS);
+  ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
+  if (validArea.contains((Envelope)geWGS84)) {
+    return geometry;
+  }
+  ReferencedEnvelope envIntWgs84=new ReferencedEnvelope(validArea.intersection(geWGS84),WGS84);
+  if (envIntWgs84.isEmpty())   return null;
+  ReferencedEnvelope envInt=envIntWgs84.transform(geomCRS,true);
+  Geometry result=geometry.intersection(JTS.toGeometry((Envelope)envInt));
+  if (result instanceof GeometryCollection && ((GeometryCollection)result).isEmpty())   return null;
+ else   return result;
+}

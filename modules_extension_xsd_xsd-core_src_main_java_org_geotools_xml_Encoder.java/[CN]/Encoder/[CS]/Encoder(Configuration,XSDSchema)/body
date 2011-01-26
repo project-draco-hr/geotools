@@ -1,0 +1,30 @@
+{
+  this.schema=schema;
+  index=new SchemaIndexImpl(new XSDSchema[]{schema});
+  bindingLoader=new BindingLoader(configuration.setupBindings());
+  bindingWalker=new BindingWalker(bindingLoader);
+  context=new DefaultPicoContainer();
+  BindingFactory bindingFactory=new BindingFactoryImpl(bindingLoader);
+  context.registerComponentInstance(bindingFactory);
+  encoder=new ElementEncoder(bindingWalker,context);
+  context.registerComponentInstance(encoder);
+  context.registerComponentInstance(index);
+  context.registerComponentInstance(new BindingWalkerFactoryImpl(bindingLoader,context));
+  context=configuration.setupContext(context);
+  encoder.setContext(context);
+  schemaLocations=new HashMap();
+  logger=(Logger)context.getComponentInstanceOfType(Logger.class);
+  if (logger == null) {
+    logger=org.geotools.util.logging.Logging.getLogger("org.geotools.xml");
+    context.registerComponentInstance(logger);
+  }
+  encoder.setLogger(logger);
+  namespaces=new NamespaceSupport();
+  context.registerComponentInstance(namespaces);
+  context.registerComponentInstance(new NamespaceSupportWrapper(namespaces));
+  context.registerComponentInstance(configuration);
+  propertyExtractors=Schemas.getComponentInstancesOfType(context,PropertyExtractor.class);
+  propertyExtractors.add(0,new BindingPropertyExtractor(this,context));
+  outputFormat=new OutputFormat();
+  configuration.setupEncoder(this);
+}

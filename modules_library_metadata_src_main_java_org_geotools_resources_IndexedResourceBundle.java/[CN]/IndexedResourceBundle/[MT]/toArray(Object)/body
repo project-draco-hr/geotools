@@ -1,0 +1,40 @@
+{
+  Object[] array;
+  if (arguments instanceof Object[]) {
+    array=(Object[])arguments;
+  }
+ else {
+    array=new Object[]{arguments};
+  }
+  for (int i=0; i < array.length; i++) {
+    final Object element=array[i];
+    if (element instanceof CharSequence) {
+      final String s0;
+      if (element instanceof InternationalString) {
+        s0=((InternationalString)element).toString(getFormatLocale());
+      }
+ else {
+        s0=element.toString();
+      }
+      final String s1=summarize(s0,MAX_STRING_LENGTH);
+      if (s0 != s1 && !s0.equals(s1)) {
+        if (array == arguments) {
+          array=new Object[array.length];
+          System.arraycopy(arguments,0,array,0,array.length);
+        }
+        array[i]=s1;
+      }
+    }
+ else     if (element instanceof Throwable) {
+      String message=((Throwable)element).getLocalizedMessage();
+      if (message == null) {
+        message=Classes.getShortClassName(element);
+      }
+      array[i]=message;
+    }
+ else     if (element instanceof Class) {
+      array[i]=Classes.getShortName((Class<?>)element);
+    }
+  }
+  return array;
+}

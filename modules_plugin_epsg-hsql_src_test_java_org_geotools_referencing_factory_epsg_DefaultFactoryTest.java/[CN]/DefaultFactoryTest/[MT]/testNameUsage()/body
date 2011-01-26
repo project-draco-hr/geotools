@@ -1,0 +1,24 @@
+{
+  assertSame(factory.createUnit("9002"),factory.createUnit("foot"));
+  assertNotSame(factory.createUnit("9001"),factory.createUnit("foot"));
+  final CoordinateReferenceSystem primary, byName;
+  primary=factory.createCoordinateReferenceSystem("27581");
+  assertEquals("27581",getIdentifier(primary));
+  assertTrue(primary instanceof ProjectedCRS);
+  assertEquals(2,primary.getCoordinateSystem().getDimension());
+  byName=factory.createCoordinateReferenceSystem("NTF (Paris) / France I");
+  assertEquals(primary,byName);
+  factory.dispose();
+  assertEquals(primary,factory.createObject("27581"));
+  assertEquals(byName,factory.createObject("NTF (Paris) / France I"));
+  assertEquals("NTF (Paris) / France I",factory.getDescriptionText("27581").toString());
+  final IdentifiedObject cs=factory.createCoordinateSystem("Ellipsoidal 2D CS. Axes: latitude, longitude. Orientations: north, east. UoM: DMS");
+  assertEquals("6411",getIdentifier(cs));
+  try {
+    factory.createGeographicCRS("WGS84");
+    fail();
+  }
+ catch (  NoSuchAuthorityCodeException e) {
+    assertEquals("WGS84",e.getAuthorityCode());
+  }
+}

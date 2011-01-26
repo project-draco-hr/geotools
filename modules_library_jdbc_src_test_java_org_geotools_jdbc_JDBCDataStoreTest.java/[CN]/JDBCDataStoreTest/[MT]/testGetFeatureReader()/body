@@ -1,0 +1,36 @@
+{
+  GeometryFactory gf=dataStore.getGeometryFactory();
+  DefaultQuery query=new DefaultQuery(tname("ft1"));
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=dataStore.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  for (int i=0; i < 3; i++) {
+    assertTrue(reader.hasNext());
+    SimpleFeature feature=reader.next();
+    assertNotNull(feature);
+    assertEquals(4,feature.getAttributeCount());
+    Point p=gf.createPoint(new Coordinate(i,i));
+    assertTrue(p.equals((Geometry)feature.getAttribute(aname("geometry"))));
+    Number ip=(Number)feature.getAttribute(aname("intProperty"));
+    assertEquals(i,ip.intValue());
+  }
+  assertFalse(reader.hasNext());
+  reader.close();
+  query.setPropertyNames(new String[]{aname("intProperty")});
+  reader=dataStore.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  for (int i=0; i < 3; i++) {
+    assertTrue(reader.hasNext());
+    SimpleFeature feature=reader.next();
+    assertEquals(1,feature.getAttributeCount());
+  }
+  assertFalse(reader.hasNext());
+  reader.close();
+  FilterFactory ff=dataStore.getFilterFactory();
+  Filter f=ff.equals(ff.property(aname("intProperty")),ff.literal(1));
+  query.setFilter(f);
+  reader=dataStore.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  for (int i=0; i < 1; i++) {
+    assertTrue(reader.hasNext());
+    SimpleFeature feature=reader.next();
+  }
+  assertFalse(reader.hasNext());
+  reader.close();
+}

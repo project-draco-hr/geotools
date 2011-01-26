@@ -1,0 +1,22 @@
+{
+  Iterator iter=queryLayers.iterator();
+  String initialQueryLayerString=properties.getProperty(QUERY_LAYERS) == null ? "" : properties.getProperty(QUERY_LAYERS);
+  String queryLayerString=properties.getProperty(QUERY_LAYERS) == null ? "" : properties.getProperty(QUERY_LAYERS);
+  while (iter.hasNext()) {
+    Layer layer=(Layer)iter.next();
+    try {
+      queryLayerString=queryLayerString + URLEncoder.encode(layer.getName(),"UTF-8");
+    }
+ catch (    UnsupportedEncodingException e) {
+      queryLayerString=queryLayerString + layer.getName();
+    }
+    if (iter.hasNext()) {
+      queryLayerString=queryLayerString + ",";
+    }
+  }
+  setProperty(QUERY_LAYERS,queryLayerString);
+  setProperty(GetMapRequest.LAYERS,queryLayerString);
+  URL url=super.getFinalURL();
+  setProperty(QUERY_LAYERS,initialQueryLayerString);
+  return url;
+}

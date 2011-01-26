@@ -1,0 +1,26 @@
+{
+  CoordinateReferenceSystem crs=null;
+  SeCoordinateReference seCRS=sdeLayer.getCoordRef();
+  String WKT=seCRS.getProjectionDescription();
+  LOGGER.finer("About to parse CRS for layer " + sdeLayer.getName() + ": "+ WKT);
+  try {
+    LOGGER.fine(sdeLayer.getName() + " has CRS envelope: " + seCRS.getXYEnvelope());
+  }
+ catch (  SeException e1) {
+  }
+  if ("UNKNOWN".equalsIgnoreCase(WKT)) {
+    LOGGER.fine("ArcSDE layer " + sdeLayer.getName() + " does not provides a Coordinate Reference System");
+  }
+ else {
+    try {
+      CRSFactory crsFactory=ReferencingFactoryFinder.getCRSFactory(null);
+      crs=crsFactory.createFromWKT(WKT);
+      LOGGER.fine("ArcSDE CRS correctly parsed from layer " + sdeLayer.getName());
+    }
+ catch (    FactoryException e) {
+      String msg="CRS factory does not knows how to parse the " + "CRS for layer " + sdeLayer.getName() + ": "+ WKT;
+      LOGGER.log(Level.CONFIG,msg,e);
+    }
+  }
+  return crs;
+}

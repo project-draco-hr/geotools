@@ -1,0 +1,40 @@
+{
+  if (!hasFidFilter(startOfFilterStack)) {
+    return Collections.EMPTY_SET;
+  }
+  Set toRemove=new HashSet();
+  List fidSet=new ArrayList();
+  boolean doRemove=true;
+  for (int i=startOfFilterStack; i < current.size(); i++) {
+    Data data=(Data)current.get(i);
+    if (data.fids.isEmpty()) {
+      toRemove.add(data);
+    }
+ else {
+      fidSet.add(data.fids);
+      if (data.filter != Filter.EXCLUDE) {
+        doRemove=false;
+      }
+    }
+  }
+  if (doRemove) {
+    current.removeAll(toRemove);
+  }
+  if (fidSet.size() == 0) {
+    return Collections.EMPTY_SET;
+  }
+  if (fidSet.size() == 1) {
+    return (Set)fidSet.get(0);
+  }
+  HashSet set=new HashSet();
+  for (int i=0; i < fidSet.size(); i++) {
+    Set tmp=(Set)fidSet.get(i);
+    for (Iterator iter=tmp.iterator(); iter.hasNext(); ) {
+      String fid=(String)iter.next();
+      if (allContain(fid,fidSet)) {
+        set.add(fid);
+      }
+    }
+  }
+  return set;
+}

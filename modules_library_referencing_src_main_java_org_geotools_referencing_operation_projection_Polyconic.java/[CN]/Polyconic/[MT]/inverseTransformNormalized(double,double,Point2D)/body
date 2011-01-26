@@ -1,0 +1,35 @@
+{
+  double lam, phi;
+  y+=ml0;
+  if (abs(y) <= EPSILON) {
+    lam=x;
+    phi=0.;
+  }
+ else {
+    final double r=y * y + x * x;
+    phi=y;
+    int i=0;
+    for (; i <= MAXIMUM_ITERATIONS; i++) {
+      final double sp=sin(phi);
+      final double cp=cos(phi);
+      if (abs(cp) < ITERATION_TOLERANCE)       throw new ProjectionException(ErrorKeys.NO_CONVERGENCE);
+      final double s2ph=sp * cp;
+      double mlp=sqrt(1. - excentricitySquared * sp * sp);
+      final double c=sp * mlp / cp;
+      final double ml=mlfn(phi,sp,cp);
+      final double mlb=ml * ml + r;
+      mlp=(1. - excentricitySquared) / (mlp * mlp * mlp);
+      final double dPhi=(ml + ml + c * mlb - 2. * y * (c * ml + 1.)) / (excentricitySquared * s2ph * (mlb - 2. * y * ml) / c + 2. * (y - ml) * (c * mlp - 1. / s2ph) - mlp - mlp);
+      if (abs(dPhi) <= ITERATION_TOLERANCE)       break;
+      phi+=dPhi;
+    }
+    if (i > MAXIMUM_ITERATIONS)     throw new ProjectionException(ErrorKeys.NO_CONVERGENCE);
+    final double c=sin(phi);
+    lam=asin(x * tan(phi) * sqrt(1. - excentricitySquared * c * c)) / sin(phi);
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(lam,phi);
+    return ptDst;
+  }
+  return new Point2D.Double(lam,phi);
+}

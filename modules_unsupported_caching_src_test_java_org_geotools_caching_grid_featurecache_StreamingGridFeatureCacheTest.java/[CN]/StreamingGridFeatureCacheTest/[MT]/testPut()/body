@@ -1,0 +1,25 @@
+{
+  resetDatasets();
+  double x_min=450;
+  double x_max=500;
+  double y_min=450;
+  double y_max=500;
+  FilterFactory filterFactory=new FilterFactoryImpl();
+  FeatureType ft=rawDataset.getFeatureSource("mycollection").getSchema();
+  String localname=ft.getGeometryDescriptor().getLocalName();
+  String srs=ft.getGeometryDescriptor().getCoordinateReferenceSystem().toString();
+  Filter bb=filterFactory.bbox(localname,x_min,y_min,x_max,y_max,srs);
+  assertEquals(numFeatures,rawDataset.getFeatureSource("mycollection").getFeatures().size());
+  assertEquals(numFeatures,cacheDataset.getFeatures().size());
+  int size=rawDataset.getFeatureSource("mycollection").getFeatures(bb).size();
+  assertEquals(size,cacheDataset.getFeatures(bb).size());
+  SimpleFeature newFeature=makeFeature(rawDataset.getFeatureSource("mycollection").getSchema(),450,500);
+  DefaultFeatureCollection dfc=new DefaultFeatureCollection("mycollection",rawDataset.getFeatureSource("mycollection").getSchema());
+  dfc.add(newFeature);
+  try {
+    cacheDataset.put(dfc);
+  }
+ catch (  Exception ex) {
+    assertTrue(true);
+  }
+}

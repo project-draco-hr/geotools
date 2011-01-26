@@ -1,0 +1,44 @@
+{
+  Utilities.ensureNonNull("footprintSummaryFile",footprintSummaryFile);
+  if (!footprintSummaryFile.exists() || !footprintSummaryFile.canRead()) {
+    throw new IllegalArgumentException("Unable to access to the provided footprint file " + footprintSummaryFile.getAbsolutePath());
+  }
+  Utilities.ensureNonNull("footprintsID_GeometryMap",footprintsIDGeometryMap);
+  FileReader reader=null;
+  try {
+    reader=new FileReader(footprintSummaryFile);
+    BufferedReader bReader=new BufferedReader(reader);
+    String footprint;
+    final WKTReader geometryReader=new WKTReader();
+    while ((footprint=bReader.readLine()) != null) {
+      String fpt[]=footprint.split("=");
+      if (fpt.length == 2) {
+        footprintsIDGeometryMap.put(fpt[0],geometryReader.read(fpt[1]));
+      }
+    }
+    bReader.close();
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+  }
+catch (  ParseException e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+  }
+ finally {
+    try {
+      if (reader != null) {
+        reader.close();
+      }
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+      IOUtils.closeQuietly(reader);
+    }
+  }
+}

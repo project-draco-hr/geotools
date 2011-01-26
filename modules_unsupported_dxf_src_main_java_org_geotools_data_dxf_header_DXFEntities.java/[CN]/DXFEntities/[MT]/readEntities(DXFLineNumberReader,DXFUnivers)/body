@@ -1,0 +1,82 @@
+{
+  Vector<DXFEntity> sEnt=new Vector<DXFEntity>();
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  int sln=br.getLineNumber();
+  log.debug(">Enter at line: " + sln);
+  boolean doLoop=true;
+  while (doLoop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      gc=cvp.read(br);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      doLoop=false;
+      break;
+    }
+switch (gc) {
+case TYPE:
+      DXFEntity dxfe=null;
+    String type=cvp.getStringValue();
+  if (type.equals(ENDSEC) || type.equals(ENDBLK)) {
+    doLoop=false;
+    break;
+  }
+ else   if (type.equals(LINE)) {
+    dxfe=DXFLine.read(br,univers);
+  }
+ else   if (type.equals(ARC)) {
+    dxfe=DXFArc.read(br,univers);
+  }
+ else   if (type.equals(CIRCLE)) {
+    dxfe=DXFCircle.read(br,univers);
+  }
+ else   if (type.equals(POLYLINE)) {
+    dxfe=DXFPolyline.read(br,univers);
+  }
+ else   if (type.equals(LWPOLYLINE)) {
+    dxfe=DXFLwPolyline.read(br,univers);
+  }
+ else   if (type.equals(POINT)) {
+    dxfe=DXFPoint.read(br,univers);
+  }
+ else   if (type.equals(SOLID)) {
+    dxfe=DXFSolid.read(br,univers);
+  }
+ else   if (type.equals(TEXT)) {
+    dxfe=DXFText.read(br,univers);
+  }
+ else   if (type.equals(MTEXT)) {
+    dxfe=DXFText.read(br,univers);
+  }
+ else   if (type.equals(INSERT)) {
+    dxfe=DXFInsert.read(br,univers);
+  }
+ else   if (type.equals(DIMENSION)) {
+    dxfe=DXFDimension.read(br,univers);
+  }
+ else   if (type.equals(TRACE)) {
+    dxfe=DXFTrace.read(br,univers);
+  }
+ else   if (type.equals(ELLIPSE)) {
+    dxfe=DXFEllipse.read(br,univers);
+  }
+ else   if (type.equals(SPLINE)) {
+    dxfe=DXFSpLine.read(br,univers);
+  }
+if (dxfe != null) {
+  sEnt.add(dxfe);
+}
+break;
+default :
+break;
+}
+}
+DXFEntities e=new DXFEntities(sEnt);
+log.debug(e.toString(sEnt.size()));
+log.debug(">Exit at line: " + br.getLineNumber());
+return e;
+}

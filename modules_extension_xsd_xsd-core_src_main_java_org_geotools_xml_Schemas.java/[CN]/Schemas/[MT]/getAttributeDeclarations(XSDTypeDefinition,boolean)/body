@@ -1,0 +1,39 @@
+{
+  final ArrayList attributes=new ArrayList();
+  TypeWalker.Visitor visitor=new TypeWalker.Visitor(){
+    public boolean visit(    XSDTypeDefinition type){
+      if (type instanceof XSDSimpleTypeDefinition) {
+        return true;
+      }
+      XSDComplexTypeDefinition cType=(XSDComplexTypeDefinition)type;
+      List attContent=cType.getAttributeContents();
+      for (Iterator itr=attContent.iterator(); itr.hasNext(); ) {
+        XSDAttributeGroupContent content=(XSDAttributeGroupContent)itr.next();
+        if (content instanceof XSDAttributeUse) {
+          XSDAttributeUse use=(XSDAttributeUse)content;
+          attributes.add(use.getAttributeDeclaration());
+        }
+ else         if (content instanceof XSDAttributeGroupDefinition) {
+          XSDAttributeGroupDefinition attGrp=(XSDAttributeGroupDefinition)content;
+          if (attGrp.isAttributeGroupDefinitionReference()) {
+            attGrp=attGrp.getResolvedAttributeGroupDefinition();
+          }
+          List uses=attGrp.getAttributeUses();
+          for (Iterator aitr=uses.iterator(); aitr.hasNext(); ) {
+            XSDAttributeUse use=(XSDAttributeUse)aitr.next();
+            attributes.add(use.getAttributeDeclaration());
+          }
+        }
+      }
+      return true;
+    }
+  }
+;
+  if (includeParents) {
+    new TypeWalker().walk(type,visitor);
+  }
+ else {
+    visitor.visit(type);
+  }
+  return attributes;
+}

@@ -1,0 +1,24 @@
+{
+  extentSelect="SELECT ";
+  extentSelect+=("min(" + config.getTileMinXAttribute() + "),");
+  extentSelect+=("min(" + config.getTileMinYAttribute() + "),");
+  extentSelect+=("max(" + config.getTileMaxXAttribute() + "),");
+  extentSelect+=("max(" + config.getTileMaxYAttribute() + ")");
+  extentSelect+=" FROM {0}";
+  String spatialSelectClause="SELECT ";
+  spatialSelectClause+=("s." + config.getKeyAttributeNameInSpatialTable() + ",");
+  spatialSelectClause+=("s." + config.getTileMinXAttribute() + ",");
+  spatialSelectClause+=("s." + config.getTileMinYAttribute() + ",");
+  spatialSelectClause+=("s." + config.getTileMaxXAttribute() + ",");
+  spatialSelectClause+=("s." + config.getTileMaxYAttribute());
+  allSelect=spatialSelectClause + ",s." + config.getBlobAttributeNameInTileTable()+ " FROM {0} s";
+  allSelectJoined=spatialSelectClause + ",t." + config.getBlobAttributeNameInTileTable()+ " FROM {0} s, {1} t WHERE ";
+  allSelectJoined+=(" s." + config.getKeyAttributeNameInSpatialTable() + " = t."+ config.getKeyAttributeNameInTileTable());
+  String whereClause="";
+  whereClause+=(" ? > s." + config.getTileMinXAttribute() + " AND ");
+  whereClause+=(" ? > s." + config.getTileMinYAttribute() + " AND ");
+  whereClause+=(" ? < s." + config.getTileMaxXAttribute() + " AND ");
+  whereClause+=(" ? < s." + config.getTileMaxYAttribute());
+  gridSelect=allSelect + " WHERE " + whereClause;
+  gridSelectJoined=allSelectJoined + " AND " + whereClause;
+}

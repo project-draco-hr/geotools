@@ -1,0 +1,24 @@
+{
+  if (!isCompatible(resultsToAdd)) {
+    throw new IllegalArgumentException("Parameter is not a compatible type");
+  }
+  if (resultsToAdd == CalcResult.NULL_RESULT) {
+    return this;
+  }
+  if (resultsToAdd instanceof MaxResult) {
+    Comparable toAdd=(Comparable)resultsToAdd.getValue();
+    Comparable newMax=maxValue;
+    if (newMax.getClass() != toAdd.getClass()) {
+      Class bestClass=CalcUtil.bestClass(new Object[]{toAdd,newMax});
+      if (bestClass != toAdd.getClass())       toAdd=(Comparable)CalcUtil.convert(toAdd,bestClass);
+      if (bestClass != newMax.getClass())       newMax=(Comparable)CalcUtil.convert(newMax,bestClass);
+    }
+    if (newMax.compareTo(toAdd) < 0) {
+      newMax=toAdd;
+    }
+    return new MaxResult(newMax);
+  }
+ else {
+    throw new IllegalArgumentException("The CalcResults claim to be compatible, but the appropriate merge method has not been implemented.");
+  }
+}

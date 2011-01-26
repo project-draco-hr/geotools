@@ -1,0 +1,35 @@
+{
+  if (resolutionsLevels == null || resolutionsLevels.size() <= 0)   return 0;
+  final OverviewLevel max=(OverviewLevel)resolutionsLevels.get(0);
+  final double requestedScaleFactorX;
+  final double requestedScaleFactorY;
+  final double[] requestedRes=request.getRequestedResolution();
+  if (requestedRes != null) {
+    final double reqx=requestedRes[0];
+    final double reqy=requestedRes[1];
+    requestedScaleFactorX=reqx / max.resolutionX;
+    requestedScaleFactorY=reqy / max.resolutionY;
+  }
+ else   return 0;
+  final int leastReduceAxis=requestedScaleFactorX <= requestedScaleFactorY ? 0 : 1;
+  final double requestedScaleFactor=leastReduceAxis == 0 ? requestedScaleFactorX : requestedScaleFactorY;
+  if (requestedScaleFactor <= 1)   return max.imageChoice;
+  final OverviewLevel min=(OverviewLevel)resolutionsLevels.get(resolutionsLevels.size() - 1);
+  if (requestedScaleFactor >= min.scaleFactor)   return min.imageChoice;
+  OverviewLevel prev=max;
+  final int size=resolutionsLevels.size();
+  for (int i=1; i < size; i++) {
+    final OverviewLevel curr=resolutionsLevels.get(i);
+    if (curr.scaleFactor == requestedScaleFactor) {
+      return curr.imageChoice;
+    }
+    if (curr.scaleFactor > requestedScaleFactor || i == size - 1) {
+      if (policy == OverviewPolicy.QUALITY)       return prev.imageChoice;
+ else       if (policy == OverviewPolicy.SPEED)       return curr.imageChoice;
+ else       if (requestedScaleFactor - prev.scaleFactor < curr.scaleFactor - requestedScaleFactor)       return prev.imageChoice;
+ else       return curr.imageChoice;
+    }
+    prev=curr;
+  }
+  return max.imageChoice;
+}

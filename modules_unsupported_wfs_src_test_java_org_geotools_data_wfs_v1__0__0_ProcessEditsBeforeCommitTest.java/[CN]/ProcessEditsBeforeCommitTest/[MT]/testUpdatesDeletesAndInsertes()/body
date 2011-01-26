@@ -1,0 +1,38 @@
+{
+  SimpleFeature createFeature=createFeature(0,0,NAME_ATT);
+  Map updateProperties=new HashMap();
+  updateProperties.put(NAME_ATT,"noMatch");
+  Action.DeleteAction deleteNone=new Action.DeleteAction(typename,CUSTOM_FILTERALL);
+  FidFilter createFidFilter=filterFac.createFidFilter();
+  createFidFilter.addFid(createFeature.getID());
+  createFidFilter.addFid("someotherfid");
+  Action.DeleteAction deleteInsert1=new Action.DeleteAction(typename,createFidFilter);
+  Action.UpdateAction updateAll=new Action.UpdateAction(typename,Filter.INCLUDE,updateProperties);
+  updateProperties.put(NAME_ATT,"newName");
+  Action.UpdateAction updateInsert1=new Action.UpdateAction(typename,filterFac.createFidFilter(createFeature.getID()),updateProperties);
+  updateProperties.put(NAME_ATT,"secondUpdate");
+  CompareFilter matchFilter=filterFac.createCompareFilter(FilterType.COMPARE_EQUALS);
+  matchFilter.addLeftValue(filterFac.createAttributeExpression("name"));
+  matchFilter.addRightValue(filterFac.createLiteralExpression("newName"));
+  Action.UpdateAction updateManyIncludingInsert1=new Action.UpdateAction(typename,matchFilter,updateProperties);
+  updateProperties.put(NAME_ATT,"secondNoMatch");
+  Action.UpdateAction updateNone=new Action.UpdateAction(typename,CUSTOM_FILTERALL,updateProperties);
+  Action.InsertAction insertAction=new Action.InsertAction(createFeature);
+  Action.InsertAction insertAction2=new Action.InsertAction(createFeature(10,10,"name"));
+  state.addAction(featureType.getTypeName(),updateAll);
+  state.addAction(featureType.getTypeName(),insertAction);
+  state.addAction(featureType.getTypeName(),updateInsert1);
+  state.addAction(featureType.getTypeName(),insertAction2);
+  state.addAction(featureType.getTypeName(),deleteInsert1);
+  state.addAction(featureType.getTypeName(),deleteNone);
+  state.addAction(featureType.getTypeName(),updateManyIncludingInsert1);
+  state.addAction(featureType.getTypeName(),updateNone);
+  state.combineActions();
+  assertEquals(6,state.getActions(featureType.getTypeName()).size());
+  assertSame(updateAll,state.getActions(featureType.getTypeName()).get(0));
+  assertSame(deleteInsert1,state.getActions(featureType.getTypeName()).get(1));
+  assertSame(deleteNone,state.getActions(featureType.getTypeName()).get(2));
+  assertSame(updateManyIncludingInsert1,state.getActions(featureType.getTypeName()).get(3));
+  assertSame(updateNone,state.getActions(featureType.getTypeName()).get(4));
+  assertSame(insertAction2,state.getActions(featureType.getTypeName()).get(5));
+}

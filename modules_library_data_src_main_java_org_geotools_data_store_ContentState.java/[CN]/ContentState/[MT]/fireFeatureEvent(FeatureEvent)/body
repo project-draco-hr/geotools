@@ -1,0 +1,22 @@
+{
+  if (this.tx == Transaction.AUTO_COMMIT) {
+    this.entry.notifiyFeatureEvent(this,event);
+  }
+ else {
+    if (batchFeatureEvent == null) {
+      batchFeatureEvent=new BatchFeatureEvent(event.getFeatureSource());
+    }
+    batchFeatureEvent.add(event);
+  }
+  if (listeners.isEmpty()) {
+    return;
+  }
+  for (  FeatureListener listener : listeners) {
+    try {
+      listener.changed(event);
+    }
+ catch (    Throwable t) {
+      this.entry.dataStore.LOGGER.log(Level.WARNING,"Problem issuing batch feature event " + event,t);
+    }
+  }
+}

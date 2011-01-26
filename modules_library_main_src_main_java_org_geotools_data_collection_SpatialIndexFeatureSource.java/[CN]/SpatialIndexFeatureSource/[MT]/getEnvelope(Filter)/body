@@ -1,0 +1,37 @@
+{
+  Envelope result=new Envelope();
+  if (filter instanceof And) {
+    Envelope bounds=new Envelope();
+    for (Iterator iter=((And)filter).getChildren().iterator(); iter.hasNext(); ) {
+      Filter f=(Filter)iter.next();
+      Envelope e=getEnvelope(f);
+      if (e == null) {
+        return null;
+      }
+ else {
+        bounds.expandToInclude(e);
+      }
+    }
+    result=bounds;
+  }
+ else   if (filter instanceof BinarySpatialOperator) {
+    BinarySpatialOperator gf=(BinarySpatialOperator)filter;
+    if (supportedFilterTypes.contains(gf.getClass())) {
+      Expression lg=gf.getExpression1();
+      Expression rg=gf.getExpression2();
+      if (lg instanceof Literal) {
+        Geometry g=(Geometry)((Literal)lg).getValue();
+        if (rg instanceof PropertyName) {
+          result=g.getEnvelopeInternal();
+        }
+      }
+ else       if (rg instanceof Literal) {
+        Geometry g=(Geometry)((Literal)rg).getValue();
+        if (lg instanceof PropertyName) {
+          result=g.getEnvelopeInternal();
+        }
+      }
+    }
+  }
+  return result;
+}

@@ -1,0 +1,63 @@
+{
+  LOGGER.finer("parsing coordinate(s) " + root);
+  List clist=new ArrayList();
+  NodeList kids=root.getChildNodes();
+  for (int i=0; i < kids.getLength(); i++) {
+    Node child=kids.item(i);
+    LOGGER.finer("doing " + child);
+    String childName=child.getNodeName();
+    if (childName == null) {
+      childName=child.getLocalName();
+    }
+    if (!childName.startsWith("gml:")) {
+      childName="gml:" + childName;
+    }
+    if (childName.equalsIgnoreCase("gml:coord")) {
+      Coordinate c=new Coordinate();
+      NodeList grandChildren=child.getChildNodes();
+      for (int t=0; t < grandChildren.getLength(); t++) {
+        Node grandChild=grandChildren.item(t);
+        String grandChildName=grandChild.getNodeName();
+        if (grandChildName == null)         grandChildName=grandChild.getLocalName();
+        if (!grandChildName.startsWith("gml:"))         grandChildName="gml:" + grandChildName;
+        if (grandChildName.equalsIgnoreCase("gml:x")) {
+          c.x=Double.parseDouble(grandChild.getChildNodes().item(0).getNodeValue().trim());
+        }
+ else         if (grandChildName.equalsIgnoreCase("gml:y")) {
+          c.y=Double.parseDouble(grandChild.getChildNodes().item(0).getNodeValue().trim());
+        }
+ else         if (grandChildName.equalsIgnoreCase("gml:z")) {
+          c.z=Double.parseDouble(grandChild.getChildNodes().item(0).getNodeValue().trim());
+        }
+      }
+      clist.add(c);
+    }
+    if (childName.equalsIgnoreCase("gml:coordinates")) {
+      LOGGER.finer("coordinates " + child.getFirstChild().getNodeValue());
+      NodeList grandKids=child.getChildNodes();
+      for (int k=0; k < grandKids.getLength(); k++) {
+        Node grandKid=grandKids.item(k);
+        if (grandKid.getNodeValue() == null) {
+          continue;
+        }
+        if (grandKid.getNodeValue().trim().length() == 0) {
+          continue;
+        }
+        String outer=grandKid.getNodeValue().trim();
+        StringTokenizer ost=new StringTokenizer(outer," \n\t");
+        while (ost.hasMoreTokens()) {
+          String internal=ost.nextToken();
+          StringTokenizer ist=new StringTokenizer(internal,",");
+          double xCoord=Double.parseDouble(ist.nextToken());
+          double yCoord=Double.parseDouble(ist.nextToken());
+          double zCoord=Double.NaN;
+          if (ist.hasMoreTokens()) {
+            zCoord=Double.parseDouble(ist.nextToken());
+          }
+          clist.add(new Coordinate(xCoord,yCoord,zCoord));
+        }
+      }
+    }
+  }
+  return clist;
+}

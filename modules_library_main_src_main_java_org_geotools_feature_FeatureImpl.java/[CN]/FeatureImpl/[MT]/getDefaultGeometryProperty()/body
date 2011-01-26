@@ -1,0 +1,25 @@
+{
+  if (defaultGeometry != null) {
+    return defaultGeometry;
+  }
+synchronized (this) {
+    if (defaultGeometry == null) {
+      if (((FeatureType)getType()).getGeometryDescriptor() == null) {
+        return null;
+      }
+      GeometryType geometryType=(GeometryType)getType().getGeometryDescriptor().getType();
+      if (geometryType != null) {
+        for (Iterator itr=getValue().iterator(); itr.hasNext(); ) {
+          Property property=(Property)itr.next();
+          if (property instanceof GeometryAttribute) {
+            if (property.getType().equals(geometryType)) {
+              defaultGeometry=(GeometryAttribute)property;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  return defaultGeometry;
+}

@@ -1,0 +1,51 @@
+{
+  Filter filter=query.getFilter();
+  String typeName=query.getTypeName();
+  String propertyNames[]=query.getPropertyNames();
+  if (filter == null) {
+    throw new NullPointerException("getFeatureReader requires Filter: " + "did you mean Filter.INCLUDE?");
+  }
+  if (typeName == null) {
+    throw new NullPointerException("getFeatureReader requires typeName: " + "use getTypeNames() for a list of available types");
+  }
+  if (transaction == null) {
+    throw new NullPointerException("getFeatureReader requires Transaction: " + "did you mean to use Transaction.AUTO_COMMIT?");
+  }
+  SimpleFeatureType featureType=getSchema(query.getTypeName());
+  if (propertyNames != null || query.getCoordinateSystem() != null) {
+    try {
+      featureType=DataUtilities.createSubType(featureType,propertyNames,query.getCoordinateSystem());
+    }
+ catch (    SchemaException e) {
+      LOGGER.log(Level.FINEST,e.getMessage(),e);
+      throw new DataSourceException("Could not create Feature Type for query",e);
+    }
+  }
+  if (filter == Filter.EXCLUDE || filter.equals(Filter.EXCLUDE)) {
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(featureType);
+  }
+  filter=getUnsupportedFilter(typeName,filter);
+  if (filter == null) {
+    throw new NullPointerException("getUnsupportedFilter shouldn't return null. Do you mean Filter.INCLUDE?");
+  }
+  Diff diff=null;
+  if (transaction != Transaction.AUTO_COMMIT) {
+    TransactionStateDiff state=state(transaction);
+    if (state != null) {
+      diff=state.diff(typeName);
+    }
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=getFeatureReader(typeName,query);
+  if (diff != null)   reader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(reader,diff,query.getFilter());
+  if (!filter.equals(Filter.INCLUDE)) {
+    reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,filter);
+  }
+  if (!featureType.equals(reader.getFeatureType())) {
+    LOGGER.fine("Recasting feature type to subtype by using a ReTypeFeatureReader");
+    reader=new ReTypeFeatureReader(reader,featureType,false);
+  }
+  if (query.getMaxFeatures() != Query.DEFAULT_MAX) {
+    reader=new MaxFeatureReader<SimpleFeatureType,SimpleFeature>(reader,query.getMaxFeatures());
+  }
+  return reader;
+}

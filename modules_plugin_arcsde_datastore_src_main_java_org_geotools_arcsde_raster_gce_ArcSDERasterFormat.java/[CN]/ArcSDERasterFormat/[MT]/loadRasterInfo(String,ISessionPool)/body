@@ -1,0 +1,29 @@
+{
+  final String rasterTable;
+{
+    String sdeUrl=coverageUrl;
+    if (sdeUrl.indexOf(";") != -1) {
+      sdeUrl=sdeUrl.substring(0,sdeUrl.indexOf(";"));
+    }
+    rasterTable=sdeUrl.substring(sdeUrl.indexOf("#") + 1);
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Building ArcSDEGridCoverageReader2D for " + rasterTable);
+    }
+  }
+  ISession scon;
+  try {
+    scon=connectionPool.getSession(false);
+  }
+ catch (  UnavailableConnectionException e) {
+    throw new RuntimeException(e);
+  }
+  RasterDatasetInfo rasterInfo;
+  try {
+    GatherCoverageMetadataCommand command=new GatherCoverageMetadataCommand(rasterTable,statisticsMandatory);
+    rasterInfo=scon.issue(command);
+  }
+  finally {
+    scon.dispose();
+  }
+  return rasterInfo;
+}

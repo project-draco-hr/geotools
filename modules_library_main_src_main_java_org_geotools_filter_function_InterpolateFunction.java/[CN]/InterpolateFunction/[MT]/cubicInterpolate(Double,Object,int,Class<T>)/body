@@ -1,0 +1,48 @@
+{
+  if (segment < 1 || segment >= interpPoints.size()) {
+    throw new IllegalArgumentException("segment index outside valid range");
+  }
+  double[] xi=new double[4];
+  double[] yi=new double[4];
+  List<InterpPoint> workingPoints=new ArrayList<InterpPoint>(interpPoints);
+  if (segment == 1) {
+    double data0=workingPoints.get(0).data.evaluate(object,Double.class);
+    double data1=workingPoints.get(1).data.evaluate(object,Double.class);
+    workingPoints.add(0,new InterpPoint(ff2.literal(2 * data0 - data1),workingPoints.get(0).value));
+    segment++;
+  }
+ else   if (segment == interpPoints.size() - 1) {
+    double data0=workingPoints.get(segment).data.evaluate(object,Double.class);
+    double data1=workingPoints.get(segment - 1).data.evaluate(object,Double.class);
+    workingPoints.add(new InterpPoint(ff2.literal(2 * data0 - data1),workingPoints.get(segment).value));
+  }
+  for (int i=segment - 2, k=0; k < 4; i++, k++) {
+    xi[k]=workingPoints.get(i).data.evaluate(object,Double.class);
+  }
+  if (method == Method.COLOR) {
+    Color[] ci=new Color[4];
+    for (int i=segment - 2, k=0; k < 4; i++, k++) {
+      ci[k]=workingPoints.get(i).value.evaluate(object,Color.class);
+    }
+    for (int i=0; i < 4; i++) {
+      yi[i]=ci[i].getRed();
+    }
+    int r=(int)clamp(Math.round(doCubic(lookupValue,xi,yi)),0,255);
+    for (int i=0; i < 4; i++) {
+      yi[i]=ci[i].getGreen();
+    }
+    int g=(int)clamp(Math.round(doCubic(lookupValue,xi,yi)),0,255);
+    for (int i=0; i < 4; i++) {
+      yi[i]=ci[i].getBlue();
+    }
+    int b=(int)clamp(Math.round(doCubic(lookupValue,xi,yi)),0,255);
+    return (T)new Color(r,g,b);
+  }
+ else {
+    for (int i=segment - 2, k=0; k < 4; i++, k++) {
+      yi[k]=workingPoints.get(i).value.evaluate(object,Double.class);
+    }
+    double interpolated=doCubic(lookupValue,xi,yi);
+    return Converters.convert(interpolated,context);
+  }
+}

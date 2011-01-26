@@ -1,0 +1,30 @@
+{
+  SimpleFeatureType TYPE=DataUtilities.createType("location","geom:Point,name:String");
+  File locationFile=new File("location.xsd");
+  locationFile=locationFile.getCanonicalFile();
+  locationFile.deleteOnExit();
+  if (locationFile.exists()) {
+    locationFile.delete();
+  }
+  locationFile.createNewFile();
+  URL locationURL=locationFile.toURI().toURL();
+  URL baseURL=locationFile.getParentFile().toURI().toURL();
+  FileOutputStream out=new FileOutputStream(locationFile);
+  GML encode=new GML(Version.GML2);
+  encode.setBaseURL(baseURL);
+  encode.setNamespace("location",locationURL.toExternalForm());
+  encode.encode(out,TYPE);
+  out.close();
+  SimpleFeatureCollection collection=FeatureCollections.newCollection("internal");
+  WKTReader2 wkt=new WKTReader2();
+  collection.add(SimpleFeatureBuilder.build(TYPE,new Object[]{wkt.read("POINT (1 2)"),"name1"},null));
+  collection.add(SimpleFeatureBuilder.build(TYPE,new Object[]{wkt.read("POINT (4 4)"),"name2"},null));
+  ByteArrayOutputStream out2=new ByteArrayOutputStream();
+  GML encode2=new GML(Version.GML2);
+  encode2.setBaseURL(baseURL);
+  encode2.setNamespace("location","location.xsd");
+  encode2.encode(out2,collection);
+  out.close();
+  String gml=out.toString();
+  assertTrue(gml.indexOf("<gml:Point>") != -1);
+}

@@ -1,0 +1,22 @@
+{
+  tableName="SDE.IMG_USGSQUADM";
+  final AbstractGridCoverage2DReader reader=getReader();
+  assertNotNull("Couldn't obtain a reader for " + tableName,reader);
+  final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope();
+  GridEnvelope originalGridRange=reader.getOriginalGridRange();
+  LOGGER.info("original envelope  : " + originalEnvelope);
+  LOGGER.info("original grid range: " + originalGridRange);
+  int reqWidth=294;
+  int reqHeight=184;
+  GeneralEnvelope reqEnv=new GeneralEnvelope(originalEnvelope.getCoordinateReferenceSystem());
+  reqEnv.setEnvelope(33192.0,774244.0,333224.0,962136.0);
+  GridCoverage2D coverage=readCoverage(reader,reqWidth,reqHeight,reqEnv);
+  GridGeometry2D gridGeometry=coverage.getGridGeometry();
+  GridEnvelope gridRange=gridGeometry.getGridRange();
+  Envelope2D envelope2d=gridGeometry.getEnvelope2D();
+  System.out.println("requested size: " + reqWidth + "x"+ reqHeight);
+  System.out.println("result size   : " + gridRange.getSpan(0) + "x"+ gridRange.getSpan(1));
+  System.out.println("requested envelope: " + reqEnv);
+  System.out.println("result envelope   : " + envelope2d);
+  writeToDisk(coverage.getRenderedImage(),tableName);
+}

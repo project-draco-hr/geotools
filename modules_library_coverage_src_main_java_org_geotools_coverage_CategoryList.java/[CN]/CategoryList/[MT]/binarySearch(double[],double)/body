@@ -1,0 +1,33 @@
+{
+  int low=0;
+  int high=array.length - 1;
+  final boolean keyIsNaN=Double.isNaN(key);
+  while (low <= high) {
+    final int mid=(low + high) >> 1;
+    final double midVal=array[mid];
+    if (midVal < key) {
+      low=mid + 1;
+      continue;
+    }
+    if (midVal > key) {
+      high=mid - 1;
+      continue;
+    }
+    final long midRawBits=Double.doubleToRawLongBits(midVal);
+    final long keyRawBits=Double.doubleToRawLongBits(key);
+    if (midRawBits == keyRawBits) {
+      return mid;
+    }
+    final boolean midIsNaN=Double.isNaN(midVal);
+    final boolean adjustLow;
+    if (keyIsNaN) {
+      adjustLow=(!midIsNaN || midRawBits < keyRawBits);
+    }
+ else {
+      adjustLow=(!midIsNaN && midRawBits < keyRawBits);
+    }
+    if (adjustLow)     low=mid + 1;
+ else     high=mid - 1;
+  }
+  return -(low + 1);
+}

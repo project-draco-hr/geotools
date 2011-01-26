@@ -1,0 +1,23 @@
+{
+  try {
+    File getCaps=TestData.file(this,capFile);
+    URL getCapsURL=getCaps.toURI().toURL();
+    Map hints=new HashMap();
+    hints.put(DocumentHandler.DEFAULT_NAMESPACE_HINT_KEY,WMSSchema.getInstance());
+    Object object=DocumentFactory.getInstance(getCapsURL.openStream(),hints,Level.WARNING);
+    Schema schema=WMSSchema.getInstance();
+    SchemaFactory.getInstance(WMSSchema.NAMESPACE);
+    assertTrue("Capabilities failed to parse",object instanceof WMSCapabilities);
+    WMSCapabilities capabilities=(WMSCapabilities)object;
+    return capabilities;
+  }
+ catch (  java.net.ConnectException ce) {
+    if (ce.getMessage().indexOf("timed out") > 0) {
+      System.err.println("Unable to test - timed out: " + ce);
+      return null;
+    }
+ else {
+      throw (ce);
+    }
+  }
+}

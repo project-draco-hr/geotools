@@ -1,0 +1,39 @@
+{
+  if (this.randomAccessEnabled) {
+    long newPosition=this.header.getHeaderLength() + this.header.getRecordLength() * (long)(recno - 1);
+    if (this.useMemoryMappedBuffer) {
+      if (newPosition < this.currentOffset || (this.currentOffset + buffer.limit()) < (newPosition + header.getRecordLength())) {
+        NIOUtilities.clean(buffer);
+        FileChannel fc=(FileChannel)channel;
+        if (fc.size() > newPosition + Integer.MAX_VALUE) {
+          currentOffset=newPosition;
+        }
+ else {
+          currentOffset=fc.size() - Integer.MAX_VALUE;
+        }
+        buffer=fc.map(MapMode.READ_ONLY,currentOffset,Integer.MAX_VALUE);
+        buffer.position((int)(newPosition - currentOffset));
+      }
+ else {
+        buffer.position((int)(newPosition - currentOffset));
+      }
+    }
+ else {
+      if (this.currentOffset <= newPosition && this.currentOffset + buffer.limit() >= newPosition) {
+        buffer.position((int)(newPosition - this.currentOffset));
+      }
+ else {
+        FileChannel fc=(FileChannel)this.channel;
+        fc.position(newPosition);
+        this.currentOffset=newPosition;
+        buffer.limit(buffer.capacity());
+        buffer.position(0);
+        fill(buffer,fc);
+        buffer.position(0);
+      }
+    }
+  }
+ else {
+    throw new UnsupportedOperationException("Random access not enabled!");
+  }
+}

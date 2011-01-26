@@ -1,0 +1,36 @@
+{
+  final int numBands=getNumBands();
+  List<GridSampleDimension> dimensions=new ArrayList<GridSampleDimension>(numBands);
+  final Color transparent=new Color(0,0,0,0);
+  List<RasterBandInfo> bands=subRasterInfo.get(0).getBands();
+  for (  RasterBandInfo band : bands) {
+    final RasterCellType targetCellType=getNativeCellType();
+    String bandName=band.getBandName();
+    final double statsMin=band.getStatsMin();
+    final double statsMax=band.getStatsMax();
+    NumberRange<?> sampleValueRange;
+    if (Double.isNaN(statsMin) || Double.isNaN(statsMax)) {
+      sampleValueRange=targetCellType.getSampleValueRange();
+    }
+ else {
+      sampleValueRange=NumberRange.create(statsMin,statsMax);
+      Class elementClass=targetCellType.getSampleValueRange().getElementClass();
+      sampleValueRange=sampleValueRange.castTo(elementClass);
+    }
+    final Color[] colorRange=null;
+    final boolean geophysics=isGeoPhysics();
+    Category valuesCat=new Category("values",colorRange,sampleValueRange,LinearTransform1D.IDENTITY).geophysics(geophysics);
+    Category[] categories;
+    if (geophysics) {
+      double noDataValue=band.getNoDataValue().doubleValue();
+      Category nodataCat=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),transparent,noDataValue);
+      categories=new Category[]{valuesCat,nodataCat};
+    }
+ else {
+      categories=new Category[]{valuesCat};
+    }
+    GridSampleDimension sampleDim=new GridSampleDimension(bandName,categories,null).geophysics(false);
+    dimensions.add(sampleDim);
+  }
+  return dimensions;
+}

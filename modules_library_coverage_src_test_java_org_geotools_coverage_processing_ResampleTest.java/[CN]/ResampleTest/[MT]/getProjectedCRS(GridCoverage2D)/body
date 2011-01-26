@@ -1,0 +1,25 @@
+{
+  try {
+    final GeographicCRS base=(GeographicCRS)coverage.getCoordinateReferenceSystem();
+    final Ellipsoid ellipsoid=base.getDatum().getEllipsoid();
+    final DefaultMathTransformFactory factory=new DefaultMathTransformFactory();
+    final ParameterValueGroup parameters=factory.getDefaultParameters("Oblique_Stereographic");
+    parameters.parameter("semi_major").setValue(ellipsoid.getSemiMajorAxis());
+    parameters.parameter("semi_minor").setValue(ellipsoid.getSemiMinorAxis());
+    parameters.parameter("central_meridian").setValue(5);
+    parameters.parameter("latitude_of_origin").setValue(-5);
+    final MathTransform mt;
+    try {
+      mt=factory.createParameterizedTransform(parameters);
+    }
+ catch (    FactoryException exception) {
+      fail(exception.getLocalizedMessage());
+      return null;
+    }
+    return new DefaultProjectedCRS("Stereographic",base,mt,DefaultCartesianCS.PROJECTED);
+  }
+ catch (  NoSuchIdentifierException exception) {
+    fail(exception.getLocalizedMessage());
+    return null;
+  }
+}

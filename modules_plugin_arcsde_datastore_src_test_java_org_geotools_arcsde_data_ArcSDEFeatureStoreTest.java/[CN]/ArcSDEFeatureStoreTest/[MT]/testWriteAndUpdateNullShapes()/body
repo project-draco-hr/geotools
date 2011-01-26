@@ -1,0 +1,65 @@
+{
+  final String typeName=testData.getTempTableName();
+  testData.truncateTempTable();
+  DataStore ds=testData.getDataStore();
+  SimpleFeature feature;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=ds.getFeatureWriter(typeName,Transaction.AUTO_COMMIT);
+  try {
+    feature=writer.next();
+    feature.setAttribute("INT32_COL",Integer.valueOf(1000));
+    writer.write();
+  }
+  finally {
+    writer.close();
+  }
+  LOGGER.info("Wrote null-geom feature to sde");
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=ds.getFeatureReader(new Query(typeName,Filter.INCLUDE),Transaction.AUTO_COMMIT);
+  String newId;
+  try {
+    assertTrue(reader.hasNext());
+    feature=reader.next();
+    LOGGER.info("recovered geometry " + feature.getDefaultGeometry() + " from single inserted feature.");
+    assertNull(feature.getDefaultGeometry());
+    newId=feature.getID();
+    assertFalse(reader.hasNext());
+  }
+  finally {
+    reader.close();
+  }
+  LOGGER.info("Confirmed exactly one feature in new sde layer");
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  HashSet<FeatureId> ids=new HashSet<FeatureId>();
+  ids.add(ff.featureId(newId));
+  Filter idFilter=ff.id(ids);
+  writer=ds.getFeatureWriter(typeName,idFilter,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(writer.hasNext());
+    LOGGER.info("Confirmed feature is fetchable via it's api-determined FID");
+    GeometryFactory gf=new GeometryFactory();
+    int index=10;
+    Coordinate[] coords1={new Coordinate(0,0),new Coordinate(++index,++index)};
+    Coordinate[] coords2={new Coordinate(0,index),new Coordinate(index,0)};
+    LineString[] lines={gf.createLineString(coords1),gf.createLineString(coords2)};
+    MultiLineString sampleMultiLine=gf.createMultiLineString(lines);
+    SimpleFeature toBeUpdated=writer.next();
+    toBeUpdated.setAttribute("SHAPE",sampleMultiLine);
+    writer.write();
+  }
+  finally {
+    writer.close();
+  }
+  LOGGER.info("Null-geom feature updated with a sample geometry.");
+  Query query=new Query(testData.getTempTableName(),idFilter);
+  reader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(reader.hasNext());
+    feature=reader.next();
+    MultiLineString recoveredMLS=(MultiLineString)feature.getDefaultGeometry();
+    assertTrue(!recoveredMLS.isEmpty());
+  }
+  finally {
+    reader.close();
+  }
+}

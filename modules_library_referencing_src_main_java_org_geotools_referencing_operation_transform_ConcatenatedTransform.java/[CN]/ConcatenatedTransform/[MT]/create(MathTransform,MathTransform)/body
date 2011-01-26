@@ -1,0 +1,44 @@
+{
+  final int dim1=tr1.getTargetDimensions();
+  final int dim2=tr2.getSourceDimensions();
+  if (dim1 != dim2) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.CANT_CONCATENATE_TRANSFORMS_$2,getName(tr1),getName(tr2)) + ' ' + Errors.format(ErrorKeys.MISMATCHED_DIMENSION_$2,dim1,dim2));
+  }
+  MathTransform mt=createOptimized(tr1,tr2);
+  if (mt != null) {
+    return mt;
+  }
+  int stepCount=getStepCount(tr1) + getStepCount(tr2);
+  boolean tryAgain=true;
+  for (int k=0; ; k++) {
+    MathTransform c1=tr1;
+    MathTransform c2=tr2;
+    final boolean first=(k & 1) == 0;
+    MathTransform candidate=first ? c1 : c2;
+    while (candidate instanceof ConcatenatedTransform) {
+      final ConcatenatedTransform ctr=(ConcatenatedTransform)candidate;
+      if (first) {
+        c1=candidate=ctr.transform1;
+        c2=create(ctr.transform2,c2);
+      }
+ else {
+        c1=create(c1,ctr.transform1);
+        c2=candidate=ctr.transform2;
+      }
+      final int c=getStepCount(c1) + getStepCount(c2);
+      if (c < stepCount) {
+        tr1=c1;
+        tr2=c2;
+        stepCount=c;
+        tryAgain=true;
+      }
+    }
+    if (!tryAgain)     break;
+    tryAgain=false;
+  }
+  mt=createOptimized(tr1,tr2);
+  if (mt != null) {
+    return mt;
+  }
+  return createConcatenatedTransform(tr1,tr2);
+}

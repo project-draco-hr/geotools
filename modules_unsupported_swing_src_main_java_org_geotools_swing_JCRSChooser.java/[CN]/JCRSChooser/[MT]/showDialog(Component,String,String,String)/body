@@ -1,0 +1,25 @@
+{
+  CoordinateReferenceSystem crs=null;
+  if (title == null) {
+    title="Choose Projection";
+  }
+  try {
+    CRSAuthorityFactory authorityFactory=ReferencingFactoryFinder.getCRSAuthorityFactory("EPSG",null);
+    Set<String> codes=authorityFactory.getAuthorityCodes(CoordinateReferenceSystem.class);
+    List<String> desc=new ArrayList<String>();
+    for (    String code : codes) {
+      desc.add(code + ": " + authorityFactory.getDescriptionText("EPSG:" + code).toString());
+    }
+    String selected=(String)JOptionPane.showInputDialog(parent,message,title,JOptionPane.QUESTION_MESSAGE,null,desc.toArray(),initialSelection);
+    if (selected == null) {
+      return null;
+    }
+    String selectedCode=selected.substring(0,selected.indexOf(':'));
+    crs=CRS.decode("EPSG:" + selectedCode,true);
+  }
+ catch (  Exception ex) {
+    ex.printStackTrace();
+    return null;
+  }
+  return crs;
+}

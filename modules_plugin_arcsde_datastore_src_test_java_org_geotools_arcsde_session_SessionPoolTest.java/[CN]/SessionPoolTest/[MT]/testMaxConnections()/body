@@ -1,0 +1,24 @@
+{
+  final int MIN_CONNECTIONS=2;
+  final int MAX_CONNECTIONS=2;
+  Map<String,Serializable> params=new HashMap<String,Serializable>(this.connectionParameters);
+  params.put(MIN_CONNECTIONS_PARAM_NAME,Integer.valueOf(MIN_CONNECTIONS));
+  params.put(MAX_CONNECTIONS_PARAM_NAME,Integer.valueOf(MAX_CONNECTIONS));
+  createPool(params);
+  ISession[] sessions=new ISession[MAX_CONNECTIONS];
+  for (int i=0; i < MAX_CONNECTIONS; i++) {
+    sessions[i]=pool.getSession();
+  }
+  try {
+    this.pool.getSession();
+    fail("since the max number of connections was reached, the pool should have throwed an UnavailableArcSDEConnectionException");
+  }
+ catch (  UnavailableConnectionException ex) {
+    LOGGER.fine("maximun number of connections reached, got an UnavailableArcSDEConnectionException, it's OK");
+  }
+  ISession expected=sessions[0];
+  expected.dispose();
+  Thread.sleep(1000);
+  ISession session=this.pool.getSession();
+  assertEquals(expected,session);
+}

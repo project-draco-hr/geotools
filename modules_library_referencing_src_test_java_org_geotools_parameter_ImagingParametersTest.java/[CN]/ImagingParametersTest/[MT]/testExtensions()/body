@@ -1,0 +1,21 @@
+{
+  final ParameterDescriptor SPATIAL_SUBSAMPLING_X=new DefaultParameterDescriptor(Citations.OGC,"xPeriod",Double.class,null,null,0.0,null,null,false);
+  final OperationRegistry registry=JAI.getDefaultInstance().getOperationRegistry();
+  final OperationDescriptor operation=(OperationDescriptor)registry.getDescriptor(RenderedRegistryMode.MODE_NAME,"Extrema");
+  final List<ParameterDescriptor> replacingDescriptors=new ArrayList<ParameterDescriptor>(1);
+  replacingDescriptors.add(SPATIAL_SUBSAMPLING_X);
+  final ImagingParameterDescriptors ripd=new ImagingParameterDescriptors(operation,replacingDescriptors);
+  final ParameterValueGroup rip=ripd.createValue();
+  assertSame(ripd,rip.getDescriptor());
+  final ParameterValue p=rip.parameter("xPeriod");
+  assertSame(SPATIAL_SUBSAMPLING_X,p.getDescriptor());
+  p.setValue(Double.valueOf(2.3));
+  assertTrue(p.toString().startsWith("xPeriod = 2.3"));
+  final ParameterList pl=((ImagingParameters)rip).parameters;
+  assertSame(pl,pl.setParameter("xPeriod",2));
+  assertSame(pl,pl.setParameter("yPeriod",2));
+  assertEquals(2,pl.getIntParameter("xPeriod"));
+  assertEquals(2,pl.getIntParameter("yPeriod"));
+  assertEquals("Setting 'xPeriod' on ParameterList should have no effect on ParameterValue.",2.3,p.doubleValue(),1E-6);
+  assertEquals("'yPeriod' should still backed by the ParameterList.",2,rip.parameter("yPeriod").intValue());
+}

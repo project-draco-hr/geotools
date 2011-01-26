@@ -1,0 +1,28 @@
+{
+  DataStore ds=testData.getDataStore();
+  SimpleFeatureSource fSource=ds.getFeatureSource(testData.getTempTableName());
+  SimpleFeatureType type=fSource.getSchema();
+  Query attOnlyQuery=new Query(type.getTypeName());
+  List<String> propNames=new ArrayList<String>(type.getAttributeCount() - 1);
+  for (int i=0; i < type.getAttributeCount(); i++) {
+    if (type.getDescriptor(i) instanceof GeometryDescriptor) {
+      continue;
+    }
+    propNames.add(type.getDescriptor(i).getLocalName());
+  }
+  attOnlyQuery.setPropertyNames(propNames);
+  SimpleFeatureCollection results=fSource.getFeatures(attOnlyQuery);
+  SimpleFeatureType resultSchema=results.getSchema();
+  assertEquals(propNames.size(),resultSchema.getAttributeCount());
+  for (int i=0; i < propNames.size(); i++) {
+    assertEquals(propNames.get(i),resultSchema.getDescriptor(i).getLocalName());
+  }
+  SimpleFeatureIterator iterator=results.features();
+  SimpleFeature feature=iterator.next();
+  iterator.close();
+  assertNotNull(feature);
+  String id=feature.getID();
+  assertNotNull(id);
+  assertFalse(id.endsWith(".-1"));
+  assertFalse(id.endsWith(".0"));
+}

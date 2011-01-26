@@ -1,0 +1,28 @@
+{
+  MapProjection mapProjection=CRS.getMapProjection(renderingEnvelope.getCoordinateReferenceSystem());
+  if (renderingEnvelope != null && mapProjection instanceof PolarStereographic) {
+    boolean north;
+    ParameterValue<?> stdParallel=mapProjection.getParameterValues().parameter(AbstractProvider.STANDARD_PARALLEL_1.getName().getCode());
+    if (stdParallel != null) {
+      north=stdParallel.doubleValue() > 0;
+    }
+ else {
+      ParameterValue<?> latOrigin=mapProjection.getParameterValues().parameter(AbstractProvider.LATITUDE_OF_ORIGIN.getName().getCode());
+      if (latOrigin != null) {
+        north=latOrigin.doubleValue() > 0;
+      }
+ else {
+        return null;
+      }
+    }
+    ReferencedEnvelope validArea;
+    if (north) {
+      validArea=new ReferencedEnvelope(-Double.MAX_VALUE,Double.MAX_VALUE,-0,90,DefaultGeographicCRS.WGS84);
+    }
+ else {
+      validArea=new ReferencedEnvelope(-Double.MAX_VALUE,Double.MAX_VALUE,-90,0,DefaultGeographicCRS.WGS84);
+    }
+    return new ProjectionHandler(renderingEnvelope,validArea);
+  }
+  return null;
+}

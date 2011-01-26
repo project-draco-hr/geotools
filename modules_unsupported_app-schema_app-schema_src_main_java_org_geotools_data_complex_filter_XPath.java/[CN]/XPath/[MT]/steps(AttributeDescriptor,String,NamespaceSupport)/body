@@ -1,0 +1,65 @@
+{
+  if (root == null) {
+    throw new NullPointerException("root");
+  }
+  if (xpathExpression == null) {
+    throw new NullPointerException("xpathExpression");
+  }
+  String expression=xpathExpression.trim();
+  if ("".equals(expression)) {
+    throw new IllegalArgumentException("expression is empty");
+  }
+  StepList steps=new StepList();
+  if ("/".equals(expression)) {
+    expression=root.getName().getLocalPart();
+  }
+  if (expression.startsWith("/")) {
+    expression=expression.substring(1);
+  }
+  final String[] partialSteps=expression.split("[/]");
+  if (partialSteps.length == 0) {
+    throw new IllegalArgumentException("no steps provided");
+  }
+  int startIndex=0;
+  for (int i=startIndex; i < partialSteps.length; i++) {
+    String step=partialSteps[i];
+    if ("..".equals(step)) {
+      steps.remove(steps.size() - 1);
+    }
+ else     if (".".equals(step)) {
+      continue;
+    }
+ else {
+      int index=1;
+      boolean isXmlAttribute=false;
+      boolean isIndexed=false;
+      String stepName=step;
+      if (step.indexOf('[') != -1) {
+        int start=step.indexOf('[');
+        int end=step.indexOf(']');
+        stepName=step.substring(0,start);
+        Scanner scanner=new Scanner(step.substring(start + 1,end));
+        if (scanner.hasNextInt()) {
+          index=scanner.nextInt();
+          isIndexed=true;
+        }
+      }
+      if (step.charAt(0) == '@') {
+        isXmlAttribute=true;
+        stepName=stepName.substring(1);
+      }
+      QName qName=deglose(stepName,root,namespaces,isXmlAttribute);
+      steps.add(new Step(qName,index,isXmlAttribute,isIndexed));
+    }
+  }
+  if (root != null && steps.size() > 1) {
+    Step step=(Step)steps.get(0);
+    Name rootName=root.getName();
+    QName stepName=step.getName();
+    if (Types.equals(rootName,stepName)) {
+      LOGGER.fine("removing root name from xpath " + steps + " as it is redundant");
+      steps.remove(0);
+    }
+  }
+  return steps;
+}

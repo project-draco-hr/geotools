@@ -1,0 +1,32 @@
+{
+  if (requestedEnvelope != null) {
+    if (!CRS.equalsIgnoreMetadata(requestedEnvelope.getCoordinateReferenceSystem(),this.crs)) {
+      try {
+        final MathTransform transform=CRS.findMathTransform(requestedEnvelope.getCoordinateReferenceSystem(),crs,true);
+        if (!transform.isIdentity()) {
+          requestedEnvelope=CRS.transform(transform,requestedEnvelope);
+          requestedEnvelope.setCoordinateReferenceSystem(this.crs);
+          if (LOGGER.isLoggable(Level.FINE))           LOGGER.fine(new StringBuilder("Reprojected envelope ").append(requestedEnvelope.toString()).append(" crs ").append(crs.toWKT()).toString());
+        }
+      }
+ catch (      TransformException e) {
+        throw new DataSourceException("Unable to create a coverage for this source",e);
+      }
+catch (      FactoryException e) {
+        throw new DataSourceException("Unable to create a coverage for this source",e);
+      }
+    }
+    if (!requestedEnvelope.intersects(this.originalEnvelope,false))     return null;
+    requestedEnvelope.intersect(originalEnvelope);
+  }
+ else {
+    requestedEnvelope=new GeneralEnvelope(originalEnvelope);
+  }
+  requestedEnvelope.setCoordinateReferenceSystem(this.crs);
+  try {
+    return loadRequestedTiles(requestedEnvelope,dim,params,overviewPolicy);
+  }
+ catch (  TransformException e) {
+    throw new DataSourceException(e);
+  }
+}

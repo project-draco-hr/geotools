@@ -1,0 +1,80 @@
+{
+  try {
+    Connection.commit();
+  }
+ catch (  SQLException e) {
+    e.printStackTrace();
+  }
+  try {
+    Connection.prepareStatement(getDBDialect().getDropTableStatement(getDBDialect().getConfig().getMasterTable())).execute();
+    Connection.commit();
+  }
+ catch (  SQLException e) {
+    try {
+      Connection.rollback();
+    }
+ catch (    SQLException ex) {
+    }
+    ;
+  }
+  ;
+  for (  String tn : getTileTableNames()) {
+    try {
+      Connection.prepareStatement((getDBDialect().getDropTableStatement(tn))).execute();
+      Connection.commit();
+    }
+ catch (    SQLException e) {
+      try {
+        Connection.rollback();
+      }
+ catch (      SQLException ex) {
+      }
+      ;
+    }
+  }
+  for (  String tn : getSpatialTableNames()) {
+    try {
+      Connection.prepareStatement((getDBDialect().getDropIndexStatment(tn))).execute();
+      try {
+        Connection.rollback();
+      }
+ catch (      SQLException ex) {
+      }
+      ;
+    }
+ catch (    SQLException e) {
+      try {
+        Connection.rollback();
+      }
+ catch (      SQLException ex) {
+      }
+      ;
+    }
+    ;
+  }
+  for (  String tn : getSpatialTableNames()) {
+    try {
+      String stmt=getDBDialect().getUnregisterSpatialStatement((tn));
+      if (stmt != null) {
+        executeUnRegister(stmt);
+      }
+      Connection.prepareStatement((getDBDialect().getDropTableStatement(tn))).execute();
+      Connection.commit();
+    }
+ catch (    SQLException e) {
+      try {
+        Connection.rollback();
+      }
+ catch (      SQLException ex) {
+      }
+      ;
+    }
+    ;
+  }
+  try {
+    Connection.commit();
+  }
+ catch (  SQLException e) {
+    e.printStackTrace();
+  }
+}

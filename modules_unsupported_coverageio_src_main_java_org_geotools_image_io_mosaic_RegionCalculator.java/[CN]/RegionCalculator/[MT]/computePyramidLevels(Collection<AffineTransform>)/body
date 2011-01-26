@@ -1,0 +1,30 @@
+{
+  final List<Map<AffineTransform,Dimension>> results=new ArrayList<Map<AffineTransform,Dimension>>(2);
+  AffineTransform[] transforms=gridToCRS.toArray(new AffineTransform[gridToCRS.size()]);
+  Arrays.sort(transforms,X_COMPARATOR);
+  int length=transforms.length;
+  while (length != 0) {
+    final Map<AffineTransform,Dimension> result=new IdentityHashMap<AffineTransform,Dimension>();
+    if (length <= (length=computePyramidLevels(transforms,length,result,false))) {
+      throw new AssertionError(length);
+    }
+    results.add(result);
+  }
+  final Iterator<Map<AffineTransform,Dimension>> iterator=results.iterator();
+  while (iterator.hasNext()) {
+    final Map<AffineTransform,Dimension> result=iterator.next();
+    length=result.size();
+    transforms=result.keySet().toArray(transforms);
+    Arrays.sort(transforms,0,length,Y_COMPARATOR);
+    length=computePyramidLevels(transforms,length,result,true);
+    while (--length >= 0) {
+      if (result.remove(transforms[length]) == null) {
+        throw new AssertionError(length);
+      }
+    }
+    if (result.isEmpty()) {
+      iterator.remove();
+    }
+  }
+  return results;
+}

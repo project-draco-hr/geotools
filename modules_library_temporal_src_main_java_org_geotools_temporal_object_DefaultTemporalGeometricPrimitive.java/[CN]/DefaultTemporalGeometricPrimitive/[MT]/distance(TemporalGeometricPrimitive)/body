@@ -1,0 +1,63 @@
+{
+  Duration response=null;
+  long diff=0L;
+  if (this instanceof Instant && other instanceof Instant) {
+    if (((Instant)this).getPosition().anyOther() != null && ((Instant)other).getPosition().anyOther() != null) {
+      if (!((DefaultTemporalPosition)((Instant)this).getPosition().anyOther()).getFrame().equals(((DefaultTemporalPosition)((Instant)other).getPosition().anyOther()).getFrame())) {
+        try {
+          throw new Exception("the TM_TemporalPositions are not both associated with the same TM_ReferenceSystem !");
+        }
+ catch (        Exception ex) {
+          Logger.getLogger(DefaultTemporalGeometricPrimitive.class.getName()).log(Level.SEVERE,null,ex);
+        }
+      }
+    }
+ else     if (((Instant)this).getPosition().anyOther() != null) {
+      if (((Instant)this).getPosition().anyOther().getIndeterminatePosition() != null || ((DefaultTemporalPosition)((Instant)this).getPosition().anyOther()).getFrame() instanceof OrdinalReferenceSystem) {
+        try {
+          throw new Exception("either of the two TM_TemporalPositions is indeterminate or is associated with a TM_OrdianlReferenceSystem !");
+        }
+ catch (        Exception ex) {
+          Logger.getLogger(DefaultTemporalGeometricPrimitive.class.getName()).log(Level.SEVERE,null,ex);
+        }
+      }
+    }
+ else     if (((Instant)other).getPosition().anyOther() != null) {
+      if (((Instant)other).getPosition().anyOther().getIndeterminatePosition() != null || ((DefaultTemporalPosition)((Instant)other).getPosition().anyOther()).getFrame() instanceof OrdinalReferenceSystem) {
+        try {
+          throw new Exception("either of the two TM_TemporalPositions is indeterminate or is associated with a TM_OrdianlReferenceSystem !");
+        }
+ catch (        Exception ex) {
+          Logger.getLogger(DefaultTemporalGeometricPrimitive.class.getName()).log(Level.SEVERE,null,ex);
+        }
+      }
+    }
+  }
+  if (this.relativePosition(other).equals(RelativePosition.BEFORE) || this.relativePosition(other).equals(RelativePosition.AFTER)) {
+    if (this instanceof Instant && other instanceof Instant) {
+      diff=Math.min(Math.abs(((Instant)other).getPosition().getDate().getTime() - ((Instant)this).getPosition().getDate().getTime()),Math.abs(((Instant)this).getPosition().getDate().getTime() - ((Instant)other).getPosition().getDate().getTime()));
+    }
+ else {
+      if (this instanceof Instant && other instanceof Period) {
+        diff=Math.min(Math.abs(((Period)other).getBeginning().getPosition().getDate().getTime() - ((Instant)this).getPosition().getDate().getTime()),Math.abs(((Period)other).getEnding().getPosition().getDate().getTime() - ((Instant)this).getPosition().getDate().getTime()));
+      }
+ else {
+        if (this instanceof Period && other instanceof Instant) {
+          diff=Math.min(Math.abs(((Instant)other).getPosition().getDate().getTime() - ((Period)this).getEnding().getPosition().getDate().getTime()),Math.abs(((Instant)other).getPosition().getDate().getTime() - ((Period)this).getBeginning().getPosition().getDate().getTime()));
+        }
+ else {
+          if (this instanceof Period && other instanceof Period) {
+            diff=Math.min(Math.abs(((Period)other).getEnding().getPosition().getDate().getTime() - ((Period)this).getBeginning().getPosition().getDate().getTime()),Math.abs(((Period)other).getBeginning().getPosition().getDate().getTime() - ((Period)this).getEnding().getPosition().getDate().getTime()));
+          }
+        }
+      }
+    }
+  }
+ else {
+    if (this.relativePosition(other).equals(RelativePosition.BEGINS) || this.relativePosition(other).equals(RelativePosition.BEGUN_BY) || this.relativePosition(other).equals(RelativePosition.CONTAINS)|| this.relativePosition(other).equals(RelativePosition.DURING)|| this.relativePosition(other).equals(RelativePosition.ENDED_BY)|| this.relativePosition(other).equals(RelativePosition.ENDS)|| this.relativePosition(other).equals(RelativePosition.EQUALS)|| this.relativePosition(other).equals(RelativePosition.MEETS)|| this.relativePosition(other).equals(RelativePosition.MET_BY)|| this.relativePosition(other).equals(RelativePosition.OVERLAPPED_BY)|| this.relativePosition(other).equals(RelativePosition.OVERLAPS)) {
+      diff=0L;
+    }
+  }
+  response=new DefaultPeriodDuration(Math.abs(diff));
+  return response;
+}

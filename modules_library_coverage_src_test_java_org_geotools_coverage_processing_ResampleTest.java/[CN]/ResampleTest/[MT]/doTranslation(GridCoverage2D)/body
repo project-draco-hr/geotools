@@ -1,0 +1,27 @@
+{
+  final int transX=-253;
+  final int transY=-456;
+  final double scaleX=0.04;
+  final double scaleY=-0.04;
+  final ParameterBlock block=new ParameterBlock().addSource(grid.getRenderedImage()).add((float)transX).add((float)transY);
+  RenderedImage image=JAI.create("Translate",block);
+  assertEquals("Incorrect X translation",transX,image.getMinX());
+  assertEquals("Incorrect Y translation",transY,image.getMinY());
+  AffineTransform expected=getAffineTransform(grid);
+  assertNotNull(expected);
+  expected=new AffineTransform(expected);
+  final GridCoverageFactory factory=CoverageFactoryFinder.getGridCoverageFactory(null);
+  grid=factory.create("Translated",image,grid.getEnvelope(),grid.getSampleDimensions(),new GridCoverage2D[]{grid},grid.getProperties());
+  expected.translate(-transX,-transY);
+  assertTransformEquals(expected,getAffineTransform(grid));
+  final AffineTransform at=AffineTransform.getScaleInstance(scaleX,scaleY);
+  final MathTransform tr=ProjectiveTransform.create(at);
+  final MathTransform correctedTransform=PixelTranslation.translate(tr,PixelInCell.CELL_CORNER,PixelInCell.CELL_CENTER);
+  final GridGeometry2D geometry=new GridGeometry2D(null,correctedTransform,null);
+  final GridCoverage2D newGrid=(GridCoverage2D)Operations.DEFAULT.resample(grid,grid.getCoordinateReferenceSystem(),geometry,null);
+  assertEquals(correctedTransform,getAffineTransform(newGrid));
+  image=newGrid.getRenderedImage();
+  expected.preConcatenate(at.createInverse());
+  final Point point=new Point(transX,transY);
+  assertSame(point,expected.transform(point,point));
+}

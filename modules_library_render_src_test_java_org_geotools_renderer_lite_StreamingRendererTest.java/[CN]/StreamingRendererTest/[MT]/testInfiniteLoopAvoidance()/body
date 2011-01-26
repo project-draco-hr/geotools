@@ -1,0 +1,42 @@
+{
+  final Exception sentinel=new RuntimeException("This is the one that should be thrown in hasNext()");
+  Iterator it2=createNiceMock(Iterator.class);
+  expect(it2.hasNext()).andThrow(sentinel).anyTimes();
+  replay(it2);
+  SimpleFeatureCollection fc=createNiceMock(SimpleFeatureCollection.class);
+  expect(fc.iterator()).andReturn(it2);
+  expect(fc.size()).andReturn(200);
+  expect(fc.getSchema()).andReturn(testFeatureType).anyTimes();
+  replay(fc);
+  SimpleFeatureSource fs=createNiceMock(SimpleFeatureSource.class);
+  expect(fs.getFeatures((Query)anyObject())).andReturn(fc);
+  expect(fs.getSchema()).andReturn(testFeatureType).anyTimes();
+  expect(fs.getSupportedHints()).andReturn(new HashSet()).anyTimes();
+  replay(fs);
+  MapContext mapContext=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+  mapContext.addLayer(fs,createLineStyle());
+  final StreamingRenderer sr=new StreamingRenderer();
+  sr.setContext(mapContext);
+  sr.addRenderListener(new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+      features++;
+    }
+    public void errorOccurred(    Exception e){
+      errors++;
+      if (errors > 2) {
+        sr.stopRendering();
+      }
+      Throwable t=e;
+      while (t != sentinel && t.getCause() != null)       t=t.getCause();
+      assertSame(sentinel,t);
+    }
+  }
+);
+  errors=0;
+  features=0;
+  BufferedImage image=new BufferedImage(200,200,BufferedImage.TYPE_4BYTE_ABGR);
+  ReferencedEnvelope reWgs=new ReferencedEnvelope(new Envelope(-180,-170,20,40),DefaultGeographicCRS.WGS84);
+  sr.paint((Graphics2D)image.getGraphics(),new Rectangle(200,200),reWgs);
+  assertEquals(0,features);
+  assertEquals(1,errors);
+}

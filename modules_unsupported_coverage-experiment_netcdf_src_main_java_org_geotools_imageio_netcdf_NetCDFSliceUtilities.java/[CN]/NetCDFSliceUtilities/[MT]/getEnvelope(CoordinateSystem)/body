@@ -1,0 +1,58 @@
+{
+  double[] envelope=null;
+  if (cs != null) {
+    final List<CoordinateAxis> axes=cs.getCoordinateAxes();
+    envelope=new double[]{Double.NaN,Double.NaN,Double.NaN,Double.NaN};
+    for (int i=axes.size(); --i >= 0; ) {
+      final CoordinateAxis axis=axes.get(i);
+      final AxisType type=axis.getAxisType();
+      if (axis.isNumeric() && axis instanceof CoordinateAxis1D && !AxisType.Time.equals(type)) {
+        final CoordinateAxis1D axis1D=(CoordinateAxis1D)axis;
+        final int length=axis1D.getDimension(0).getLength();
+        if (length > 2 && axis1D.isRegular()) {
+          final double increment=axis1D.getIncrement();
+          final double start=axis1D.getStart();
+          final double end=start + increment * (length - 1);
+          if (AxisType.Lon.equals(type) || AxisType.GeoX.equals(type)) {
+            if (increment > 0) {
+              envelope[0]=start;
+              envelope[2]=end;
+            }
+ else {
+              envelope[0]=end;
+              envelope[2]=start;
+            }
+          }
+          if (AxisType.Lat.equals(type) || AxisType.GeoY.equals(type)) {
+            if (increment > 0) {
+              envelope[1]=start;
+              envelope[3]=end;
+            }
+ else {
+              envelope[1]=end;
+              envelope[3]=start;
+            }
+          }
+        }
+ else {
+          final double[] values=axis1D.getCoordValues();
+          final double val0=values[0];
+          final double valN=values[values.length - 1];
+          if (AxisType.Lon.equals(type) || AxisType.GeoX.equals(type)) {
+            envelope[0]=val0;
+            envelope[2]=valN;
+          }
+          if (AxisType.Lat.equals(type) || AxisType.GeoY.equals(type)) {
+            envelope[1]=val0;
+            envelope[3]=valN;
+          }
+        }
+      }
+    }
+    for (int i=0; i < envelope.length; i++)     if (Double.isNaN(envelope[i])) {
+      envelope=null;
+      break;
+    }
+  }
+  return envelope;
+}

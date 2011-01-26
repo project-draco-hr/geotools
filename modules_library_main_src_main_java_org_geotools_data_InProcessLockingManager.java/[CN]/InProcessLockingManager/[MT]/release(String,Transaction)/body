@@ -1,0 +1,34 @@
+{
+  if (authID == null) {
+    throw new IllegalArgumentException("lockID required");
+  }
+  if ((transaction == null) || (transaction == Transaction.AUTO_COMMIT)) {
+    throw new IllegalArgumentException("Tansaction required (with authorization for " + authID + ")");
+  }
+  Lock lock;
+  boolean release=false;
+  for (Iterator i=lockTables.values().iterator(); i.hasNext(); ) {
+    Map fidMap=(Map)i.next();
+    Set unLockedFids=new HashSet();
+    for (Iterator j=fidMap.keySet().iterator(); j.hasNext(); ) {
+      String fid=(String)j.next();
+      lock=(Lock)fidMap.get(fid);
+      if (lock.isExpired()) {
+        unLockedFids.add(fid);
+      }
+ else       if (lock.isMatch(authID)) {
+        if (lock.isAuthorized(transaction)) {
+          unLockedFids.add(fid);
+          release=true;
+        }
+ else {
+          throw new IOException("Not authorized to release " + lock);
+        }
+      }
+    }
+    for (Iterator k=unLockedFids.iterator(); k.hasNext(); ) {
+      fidMap.remove(k.next());
+    }
+  }
+  return release;
+}

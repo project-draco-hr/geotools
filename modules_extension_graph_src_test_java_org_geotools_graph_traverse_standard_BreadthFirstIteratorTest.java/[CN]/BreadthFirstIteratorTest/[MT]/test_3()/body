@@ -1,0 +1,39 @@
+{
+  int k=4;
+  Object[] obj=GraphTestUtil.buildPerfectBinaryTree(builder(),k);
+  Node root=(Node)obj[0];
+  final Map obj2node=(Map)obj[1];
+  GraphVisitor initializer=new GraphVisitor(){
+    public int visit(    Graphable component){
+      component.setCount(-1);
+      return 0;
+    }
+  }
+;
+  CountingWalker walker=new CountingWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      element.setCount(getCount());
+      return super.visit(element,traversal);
+    }
+  }
+;
+  BreadthFirstIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  iterator.setSource(root);
+  traversal.traverse();
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      assertTrue(component.isVisited());
+      int level=component.getObject().toString().length();
+      for (Iterator itr=builder().getGraph().getNodes().iterator(); itr.hasNext(); ) {
+        Node other=(Node)itr.next();
+        if (other.getObject().toString().length() > level)         assertTrue(other.getCount() > component.getCount());
+      }
+      return 0;
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == Math.pow(2,k + 1) - 1);
+}

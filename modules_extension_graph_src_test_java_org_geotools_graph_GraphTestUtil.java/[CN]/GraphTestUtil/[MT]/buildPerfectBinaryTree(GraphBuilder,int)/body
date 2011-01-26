@@ -1,0 +1,32 @@
+{
+  HashMap id2node=new HashMap();
+  Node root=builder.buildNode();
+  root.setObject(new String("0"));
+  id2node.put(root.getObject(),root);
+  builder.addNode(root);
+  FIFOQueue queue=new FIFOQueue((int)Math.pow(2,levels + 1));
+  queue.enq(root);
+  int level=0;
+  while (level < levels) {
+    int nnodes=(int)Math.pow(2,level);
+    for (int i=0; i < nnodes; i++) {
+      Node n=(Node)queue.deq();
+      Node ln=builder.buildNode();
+      ln.setObject(n.getObject() + ".0");
+      id2node.put(ln.getObject(),ln);
+      Node rn=builder.buildNode();
+      rn.setObject(n.getObject() + ".1");
+      id2node.put(rn.getObject(),rn);
+      Edge le=builder.buildEdge(n,ln);
+      Edge re=builder.buildEdge(n,rn);
+      builder.addNode(ln);
+      builder.addNode(rn);
+      builder.addEdge(le);
+      builder.addEdge(re);
+      queue.enq(ln);
+      queue.enq(rn);
+    }
+    level++;
+  }
+  return (new Object[]{root,id2node});
+}

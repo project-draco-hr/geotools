@@ -1,0 +1,34 @@
+{
+  WPSCapabilitiesType capabilities=wps.getCapabilities();
+  ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
+  EList processes=processOfferings.getProcess();
+  boolean found=false;
+  Iterator iterator=processes.iterator();
+  while (iterator.hasNext()) {
+    ProcessBriefType process=(ProcessBriefType)iterator.next();
+    if (process.getIdentifier().getValue().equalsIgnoreCase(processIden)) {
+      found=true;
+      break;
+    }
+  }
+  if (!found) {
+    return;
+  }
+  DescribeProcessRequest descRequest=wps.createDescribeProcessRequest();
+  descRequest.setIdentifier(processIden);
+  DescribeProcessResponse descResponse=wps.issueRequest(descRequest);
+  ProcessDescriptionsType processDesc=descResponse.getProcessDesc();
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(processIden);
+  setLocalInputDataBufferPoly(exeRequest,processDesc,geom1);
+  ExecuteProcessResponse response=wps.issueRequest(exeRequest);
+  assertNotNull(response);
+  ExecuteResponseType executeResponse=response.getExecuteResponse();
+  assertNotNull(executeResponse);
+  ExceptionReportType exceptionResponse=response.getExceptionResponse();
+  assertNull(exceptionResponse);
+  Geometry expected=geom1.buffer(350);
+  EList outputs=executeResponse.getProcessOutputs().getOutput();
+  OutputDataType output=(OutputDataType)outputs.get(0);
+  Geometry result=(Geometry)output.getData().getComplexData().getData().get(0);
+}

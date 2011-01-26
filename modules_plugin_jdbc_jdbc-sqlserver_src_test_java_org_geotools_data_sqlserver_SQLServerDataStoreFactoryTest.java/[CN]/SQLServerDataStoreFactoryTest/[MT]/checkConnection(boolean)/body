@@ -1,0 +1,24 @@
+{
+  Properties db=new Properties();
+  db.load(getClass().getResourceAsStream("factory.properties"));
+  Map<String,Object> params=new HashMap<String,Object>();
+  params.put(HOST.key,db.getProperty(HOST.key));
+  if (includedb) {
+    params.put(DATABASE.key,db.getProperty(DATABASE.key));
+  }
+  params.put(PORT.key,db.getProperty(PORT.key));
+  params.put(USER.key,db.getProperty(USER.key));
+  params.put(PASSWD.key,db.getProperty(PASSWD.key));
+  SQLServerDataStoreFactory factory=new SQLServerDataStoreFactory();
+  params.put(DBTYPE.key,factory.getDatabaseID());
+  assertTrue(factory.canProcess(params));
+  JDBCDataStore store=factory.createDataStore(params);
+  assertNotNull(store);
+  try {
+    assertTrue(store.getSQLDialect() instanceof SQLServerDialect);
+    assertNotNull(store.getSchema("ft1"));
+  }
+  finally {
+    store.dispose();
+  }
+}

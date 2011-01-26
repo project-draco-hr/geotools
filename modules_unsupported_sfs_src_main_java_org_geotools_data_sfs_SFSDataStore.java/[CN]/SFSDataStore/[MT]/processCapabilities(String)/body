@@ -1,0 +1,34 @@
+{
+  JSONParser parser=new JSONParser();
+  try {
+    Object obj=parser.parse(capabilitiesJSON);
+    JSONArray array=(JSONArray)obj;
+    Iterator itr=array.iterator();
+    while (itr.hasNext()) {
+      Map tmpMap=(HashMap)itr.next();
+      String strName=((String)tmpMap.get("name")).trim();
+      Name name=new NameImpl(namespaceURI,strName);
+      boolean xyOrder=(!tmpMap.containsKey("axisorder")) ? true : (tmpMap.get("axisorder").equals("xy"));
+      String strCRS=null;
+      CoordinateReferenceSystem crs=null;
+      if (tmpMap.containsKey("crs")) {
+        strCRS=((String)tmpMap.get("crs")).trim();
+        crs=SFSDataStoreUtil.decodeXY(strCRS);
+      }
+      Envelope envelope=null;
+      if (tmpMap.containsKey("bbox")) {
+        JSONArray boundingArray=(JSONArray)tmpMap.get("bbox");
+        if (!xyOrder) {
+          SFSDataStoreUtil.flipYXInsideTheBoundingBox(boundingArray);
+        }
+        envelope=new Envelope(((Number)boundingArray.get(0)).doubleValue(),((Number)boundingArray.get(2)).doubleValue(),((Number)boundingArray.get(1)).doubleValue(),((Number)boundingArray.get(3)).doubleValue());
+      }
+      SFSLayer layer=new SFSLayer(name,xyOrder,strCRS,crs,envelope);
+      layers.put(name,layer);
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,"Exception occurred while parsing the capabilities",e);
+    throw (IOException)new IOException().initCause(e);
+  }
+}

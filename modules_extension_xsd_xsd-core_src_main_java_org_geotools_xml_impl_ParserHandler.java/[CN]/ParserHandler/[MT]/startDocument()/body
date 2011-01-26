@@ -1,0 +1,22 @@
+{
+  configure(config);
+  DocumentHandler docHandler=handlerFactory.createDocumentHandler(this);
+  context=new DefaultPicoContainer();
+  context=config.setupContext(context);
+  docHandler.setContext(context);
+  handlers=new Stack();
+  handlers.push(docHandler);
+  logger=(Logger)context.getComponentInstanceOfType(Logger.class);
+  if (logger == null) {
+    logger=org.geotools.util.logging.Logging.getLogger("org.geotools.xml");
+    context.registerComponentInstance(logger);
+  }
+  context.registerComponentInstance(namespaces);
+  context.registerComponentInstance(new NamespaceSupportWrapper(namespaces));
+  bindingFactory=new BindingFactoryImpl(bindingLoader);
+  context.registerComponentInstance(bindingFactory);
+  context.registerComponentInstance(new BindingWalkerFactoryImpl(bindingLoader,context));
+  context.registerComponentInstance(config);
+  validator.startDocument();
+  docHandler.startDocument();
+}

@@ -1,0 +1,53 @@
+{
+{
+    SimpleFeatureCollection features;
+    features=dstore.getFeatureSource(typeName).getFeatures();
+    SimpleFeatureIterator reader=features.features();
+    SimpleFeatureType featureType=features.getSchema();
+    GeometryDescriptor defaultGeometry=featureType.getGeometryDescriptor();
+    ReferencedEnvelope real=new ReferencedEnvelope(defaultGeometry.getCoordinateReferenceSystem());
+    try {
+      while (reader.hasNext()) {
+        real.include(reader.next().getBounds());
+      }
+    }
+  finally {
+      reader.close();
+    }
+    ArcSDEQuery queryAll=getQueryAll();
+    Envelope actual;
+    try {
+      actual=queryAll.calculateQueryExtent();
+    }
+  finally {
+      queryAll.close();
+    }
+    Envelope expected=new Envelope(real);
+    assertNotNull(actual);
+    assertEquals(expected,actual);
+  }
+{
+    FeatureReader<SimpleFeatureType,SimpleFeature> featureReader;
+    featureReader=dstore.getFeatureReader(filteringQuery,Transaction.AUTO_COMMIT);
+    ReferencedEnvelope real=new ReferencedEnvelope();
+    try {
+      while (featureReader.hasNext()) {
+        real.include(featureReader.next().getBounds());
+      }
+    }
+  finally {
+      featureReader.close();
+    }
+    ArcSDEQuery queryFiltered=createFilteringQuery();
+    Envelope actual;
+    try {
+      actual=queryFiltered.calculateQueryExtent();
+    }
+  finally {
+      queryFiltered.close();
+    }
+    assertNotNull(actual);
+    Envelope expected=new Envelope(real);
+    assertEquals(expected,actual);
+  }
+}

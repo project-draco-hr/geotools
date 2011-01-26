@@ -1,0 +1,58 @@
+{
+  File plugInDir=null;
+  plugInDir=new File(transProp.getProperty("PlugInDir"));
+  if (plugInDir == null) {
+    System.err.println("PlugIn Dir does not exist");
+    System.exit(1);
+  }
+  if (!plugInDir.exists()) {
+    System.err.println("PlugIn Dir does not exist");
+    System.err.println(plugInDir.toString());
+    System.exit(1);
+  }
+  if (!plugInDir.isDirectory()) {
+    System.err.println("PlugIn Dir is not a directory");
+    System.err.println(plugInDir.toString());
+    System.exit(1);
+  }
+  if (!plugInDir.canRead()) {
+    System.err.println("PlugIn Dir cannot be read");
+    System.err.println(plugInDir.toString());
+    System.exit(1);
+  }
+  Map plugIns=null;
+  try {
+    plugIns=XMLReader.loadPlugIns(plugInDir);
+  }
+ catch (  ValidationException e) {
+    System.err.println("PlugIn load had errors.");
+    System.err.println(plugInDir.toString());
+    e.printStackTrace();
+    System.exit(1);
+  }
+  if (plugIns == null) {
+    System.err.println("PlugIn load had errors.");
+    System.err.println("No plugins were loaded");
+    System.err.println(plugInDir.toString());
+    System.exit(1);
+  }
+  if (plugIns.size() == 0) {
+    System.err.println("PlugIn load had errors.");
+    System.err.println("No plugins were found");
+    System.err.println(plugInDir.toString());
+    System.exit(1);
+  }
+  int numSuites=0;
+  try {
+    numSuites=Integer.parseInt(transProp.getProperty("NumberTestSuites"));
+  }
+ catch (  Exception e) {
+  }
+  Map ts=new HashMap(numSuites);
+  for (int i=0; i < numSuites; i++) {
+    String path=transProp.getProperty("TestSuiteFile." + (i + 1));
+    loadTestSuite(ts,plugIns,path);
+  }
+  BatchValidatorProcessor gv=new BatchValidatorProcessor(ts,plugIns);
+  return gv;
+}

@@ -1,0 +1,26 @@
+{
+  if (entry(featureType.getName()) != null) {
+    String msg="Schema '" + featureType.getName() + "' already exists";
+    throw new IllegalArgumentException(msg);
+  }
+  Connection cx=createConnection();
+  try {
+    String sql=createTableSQL(featureType,cx);
+    LOGGER.log(Level.FINE,"Create schema: {0}",sql);
+    Statement st=cx.createStatement();
+    try {
+      st.execute(sql);
+    }
+  finally {
+      closeSafe(st);
+    }
+    dialect.postCreateTable(databaseSchema,featureType,cx);
+  }
+ catch (  Exception e) {
+    String msg="Error occurred creating table";
+    throw (IOException)new IOException(msg).initCause(e);
+  }
+ finally {
+    closeSafe(cx);
+  }
+}

@@ -1,0 +1,29 @@
+{
+  final List<String> columnNames=new ArrayList<String>();
+  if ((queryProperties == null) || (queryProperties.length == 0)) {
+    final List<AttributeDescriptor> attNames=fullSchema.getAttributeDescriptors();
+    for (Iterator<AttributeDescriptor> it=attNames.iterator(); it.hasNext(); ) {
+      AttributeDescriptor att=it.next();
+      String attName=att.getLocalName();
+      if (attName.indexOf(":") != -1) {
+        attName=attName.substring(attName.indexOf(":") + 1);
+      }
+      columnNames.add(attName);
+    }
+  }
+ else {
+    columnNames.addAll(Arrays.asList(queryProperties));
+    if (unsupportedFilter != null) {
+      final FilterAttributeExtractor attExtractor;
+      attExtractor=new FilterAttributeExtractor(fullSchema);
+      unsupportedFilter.accept(attExtractor,null);
+      final String[] filterAtts=attExtractor.getAttributeNames();
+      for (      String attName : filterAtts) {
+        if (!columnNames.contains(attName)) {
+          columnNames.add(attName);
+        }
+      }
+    }
+  }
+  return columnNames;
+}

@@ -1,0 +1,28 @@
+{
+  VersionedPostgisDataStore ds=getDataStore();
+  ds.setVersioned("gless",true,"mambo","Testing UUID fid mapper");
+  VersioningFeatureStore fs=(VersioningFeatureStore)ds.getFeatureSource("gless");
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(ds.getSchema("gless"));
+  fs.addFeatures(DataUtilities.collection(fb.buildFeature(null,new Object[]{"third",150.3})));
+  Query third=new DefaultQuery("gless",ff.equals(ff.property("name"),ff.literal("third")));
+  SimpleFeatureIterator fi=fs.getFeatures(third).features();
+  SimpleFeature f=fi.next();
+  fi.close();
+  assertTrue(f.getID().startsWith("gless."));
+  assertEquals(36,f.getID().substring(6).length());
+  String fid="gless.bbaa3bb9-7ba9-4dfc-9ffb-6eb437a257d9";
+  fs.addFeatures(DataUtilities.collection(fb.buildFeature(fid,new Object[]{"fourth",150.3})));
+  Query fourth=new DefaultQuery("gless",ff.equals(ff.property("name"),ff.literal("fourth")));
+  fi=fs.getFeatures(fourth).features();
+  f=fi.next();
+  fi.close();
+  assertEquals(fid,f.getID());
+  SimpleFeatureType ft=fs.getSchema();
+  Id fidFilter=ff.id(Collections.singleton(ff.featureId(fid)));
+  fs.modifyFeatures(ft.getDescriptor("name"),"4th",fidFilter);
+  fi=fs.getFeatures(fidFilter).features();
+  assertTrue(fi.hasNext());
+  f=fi.next();
+  fi.close();
+  assertEquals("4th",f.getAttribute("name"));
+}

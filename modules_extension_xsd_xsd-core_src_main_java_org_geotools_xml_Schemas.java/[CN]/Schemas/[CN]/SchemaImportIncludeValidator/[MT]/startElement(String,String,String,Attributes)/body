@@ -1,0 +1,40 @@
+{
+  if ("import".equals(localName)) {
+    String namespace=attributes.getValue("namespace");
+    String schemaLocation=attributes.getValue("schemaLocation");
+    if (seen.contains(namespace)) {
+      return;
+    }
+    seen.add(namespace);
+    if (schemaLocation != null) {
+      for (Iterator l=locators.iterator(); l.hasNext(); ) {
+        XSDSchemaLocator locator=(XSDSchemaLocator)l.next();
+        if (locator instanceof SchemaLocator) {
+          if (((SchemaLocator)locator).canHandle(null,namespace,schemaLocation,null)) {
+            return;
+          }
+        }
+      }
+      String resolvedSchemaLocation=resolve(namespace,schemaLocation);
+      if (resolvedSchemaLocation != null) {
+        recurse(resolvedSchemaLocation);
+      }
+ else {
+        errors.add("Could not resolve import: " + namespace + ","+ schemaLocation);
+      }
+    }
+ else {
+      errors.add("No schemaLocation attribute for namespace import: " + namespace);
+    }
+  }
+ else   if ("include".equals(localName)) {
+    String location=attributes.getValue("location");
+    String resolvedLocation=resolve(null,location);
+    if (resolvedLocation != null) {
+      recurse(resolvedLocation);
+    }
+ else {
+      errors.add("Could not resolve include: " + location);
+    }
+  }
+}

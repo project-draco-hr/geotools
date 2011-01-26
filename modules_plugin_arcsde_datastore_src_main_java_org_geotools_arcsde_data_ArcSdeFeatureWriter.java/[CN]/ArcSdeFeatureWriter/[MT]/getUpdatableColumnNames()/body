@@ -1,0 +1,42 @@
+{
+  if (mutableColumnNames == null) {
+    final String typeName=this.featureType.getTypeName();
+    final SeColumnDefinition[] columnDefinitions=session.describe(typeName);
+    final String shapeAttributeName;
+    if (this.featureType.getGeometryDescriptor() == null) {
+      shapeAttributeName=null;
+    }
+ else {
+      shapeAttributeName=session.issue(new Command<String>(){
+        @Override public String execute(        ISession session,        SeConnection connection) throws SeException, IOException {
+          SeLayer layer=session.getLayer(typeName);
+          return layer.getShapeAttributeName(SeLayer.SE_SHAPE_ATTRIBUTE_FID);
+        }
+      }
+);
+    }
+    LinkedHashMap<Integer,String> columnList=new LinkedHashMap<Integer,String>();
+    SeColumnDefinition columnDefinition;
+    String columnName;
+    int usedIndex=0;
+    for (int actualIndex=0; actualIndex < columnDefinitions.length; actualIndex++) {
+      columnDefinition=columnDefinitions[actualIndex];
+      columnName=columnDefinition.getName();
+      if (columnName.equals(shapeAttributeName)) {
+        continue;
+      }
+      final int sdeType=columnDefinition.getType();
+      if (SeColumnDefinition.TYPE_SHAPE != sdeType && null == ArcSDEAdapter.getJavaBinding(new Integer(sdeType))) {
+        continue;
+      }
+      final short rowIdType=columnDefinition.getRowIdType();
+      if (SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_SDE == rowIdType) {
+        continue;
+      }
+      columnList.put(Integer.valueOf(usedIndex),columnName);
+      usedIndex++;
+    }
+    this.mutableColumnNames=columnList;
+  }
+  return this.mutableColumnNames;
+}

@@ -1,0 +1,54 @@
+{
+  Enumeration polys=polyLineSet.keys();
+  int t=0;
+  while (polys.hasMoreElements()) {
+    Long polyid=(Long)polys.nextElement();
+    long polyid_long=polyid.longValue();
+    ArrayList lines=(ArrayList)polyLineSet.get(polyid);
+    if (lines.size() == 0) {
+      throw new Exception("polygon has no edges");
+    }
+    Polygonizer polyizer=new Polygonizer();
+    polyizer.add(lines);
+    Collection builtpolys=polyizer.getPolygons();
+    if (polyizer.getCutEdges().size() != 0) {
+      throw new Exception("polygon has cut edges");
+    }
+    if (polyizer.getDangles().size() != 0) {
+      throw new Exception("polygon has dandgle edges");
+    }
+    if (polyizer.getInvalidRingLines().size() != 0) {
+      throw new Exception("polygon has invalid edges");
+    }
+    Geometry finalPolygon=null;
+    Iterator it=builtpolys.iterator();
+    ArrayList seenPolyIDs=new ArrayList();
+    while (it.hasNext()) {
+      Polygon p=(Polygon)it.next();
+      long polyidPIP;
+      try {
+        polyidPIP=getPIP(p,polyid_long,0);
+      }
+ catch (      Exception e) {
+        if (!allowHolesWithNoPIP) {
+          throw e;
+        }
+        polyidPIP=-666;
+        System.out.println("found a polygon without a PIP!  Try adding a PIP at " + p.getInteriorPoint() + " module = "+ MODULE);
+      }
+      if (polyidPIP == polyid_long) {
+        if (finalPolygon != null) {
+          throw new Exception("poly has 2 pips - that we're looking for!");
+        }
+        finalPolygon=p;
+        finalPolygon.setUserData(polyid);
+      }
+    }
+    if (finalPolygon == null) {
+      throw new Exception("couldnt find a pip for a main polygon - " + polyid.longValue());
+    }
+    finishedPolys.put(polyid,finalPolygon);
+    finalPolygon=null;
+    t++;
+  }
+}

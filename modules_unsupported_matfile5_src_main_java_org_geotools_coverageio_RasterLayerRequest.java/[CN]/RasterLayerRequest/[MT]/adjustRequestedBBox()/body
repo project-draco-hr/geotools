@@ -1,0 +1,40 @@
+{
+  final CoordinateReferenceSystem requestedBBoxCRS2D=requestedBBox.getCoordinateReferenceSystem();
+  try {
+    MathTransform destinationToSourceTransform=null;
+    if (!CRS.equalsIgnoreMetadata(requestedBBoxCRS2D,coverageCRS2D))     destinationToSourceTransform=CRS.findMathTransform(requestedBBoxCRS2D,coverageCRS2D,true);
+    if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
+      final GeneralEnvelope temp=CRS.transform(destinationToSourceTransform,requestedBBox);
+      temp.setCoordinateReferenceSystem(coverageCRS2D);
+      requestedBBox=new ReferencedEnvelope(temp);
+    }
+ else     requestedBBox=new ReferencedEnvelope(requestedBBox.getMinX(),requestedBBox.getMaxX(),requestedBBox.getMinY(),requestedBBox.getMaxY(),coverageCRS2D);
+    if (!requestedBBox.intersects((BoundingBox)coverageBBox)) {
+      requestedBBox=null;
+      return;
+    }
+    requestedBBox=new ReferencedEnvelope(((ReferencedEnvelope)requestedBBox).intersection(coverageBBox),coverageCRS2D);
+    final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(requestedRasterArea),requestedBBox);
+    requestedResolution=CoverageUtilities.getResolution(geMapper.createAffineTransform());
+    return;
+  }
+ catch (  TransformException te) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,te.getLocalizedMessage(),te);
+  }
+catch (  FactoryException fe) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,fe.getLocalizedMessage(),fe);
+  }
+  final GeographicBoundingBoxImpl geographicRequestedBBox=new GeographicBoundingBoxImpl(requestedBBox);
+  ReferencedEnvelope approximateWGS84requestedBBox=GridCoverageUtilities.getReferencedEnvelopeFromGeographicBoundingBox(geographicRequestedBBox);
+  if (!approximateWGS84requestedBBox.intersects((BoundingBox)coverageGeographicBBox)) {
+    requestedBBox=null;
+    return;
+  }
+  final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(requestedRasterArea),approximateWGS84requestedBBox);
+  approximateWGS84RequestedResolution=CoverageUtilities.getResolution(geMapper.createAffineTransform());
+  approximateWGS84requestedBBox=new ReferencedEnvelope(approximateWGS84requestedBBox.intersection(coverageGeographicBBox),DefaultGeographicCRS.WGS84);
+  final MathTransform transform=CRS.findMathTransform(DefaultGeographicCRS.WGS84,coverageCRS2D,true);
+  final GeneralEnvelope approximateRequestedBBoInNativeCRS=CRS.transform(transform,approximateWGS84requestedBBox);
+  approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(coverageCRS2D);
+  requestedBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
+}

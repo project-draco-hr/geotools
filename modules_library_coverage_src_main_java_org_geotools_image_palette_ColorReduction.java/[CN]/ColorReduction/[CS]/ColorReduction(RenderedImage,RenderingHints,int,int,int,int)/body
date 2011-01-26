@@ -1,0 +1,16 @@
+{
+  super(image,new ImageLayout(image),null,false);
+  this.numColors=numColors;
+  this.alphaThreshold=alpaThreshold;
+  if (image.getColorModel().hasAlpha()) {
+    RenderedImage alpha=BandSelectDescriptor.create(image,new int[]{image.getSampleModel().getNumBands() - 1},null);
+    alpha=MultiplyConstDescriptor.create(alpha,new double[]{alphaThreshold},null);
+    image=BandSelectDescriptor.create(image,new int[]{0,1,2},null);
+    final ImageLayout layout=new ImageLayout();
+    layout.setColorModel(new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),true,false,Transparency.BITMASK,DataBuffer.TYPE_BYTE));
+    image=BandMergeDescriptor.create(image,alpha,new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout)).getNewRendering();
+    this.setSource(image,0);
+  }
+  this.paletteBuilder=new CustomPaletteBuilder(image,this.numColors,subsx,subsy,1);
+  this.hints=hints;
+}

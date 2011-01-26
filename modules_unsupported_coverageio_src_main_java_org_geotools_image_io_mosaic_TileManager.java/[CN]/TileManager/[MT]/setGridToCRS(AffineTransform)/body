@@ -1,0 +1,20 @@
+{
+  if (geometry != null) {
+    throw new IllegalStateException();
+  }
+  final Map<Dimension,AffineTransform> shared=new HashMap<Dimension,AffineTransform>();
+  AffineTransform at=new XAffineTransform(gridToCRS);
+  shared.put(new Dimension(1,1),at);
+  geometry=new ImageGeometry(getRegion(),at);
+  for (  final Tile tile : getInternalTiles()) {
+    final Dimension subsampling=tile.getSubsampling();
+    at=shared.get(subsampling);
+    if (at == null) {
+      at=new AffineTransform(gridToCRS);
+      at.scale(subsampling.width,subsampling.height);
+      at=new XAffineTransform(at);
+      shared.put(subsampling,at);
+    }
+    tile.setGridToCRS(at);
+  }
+}

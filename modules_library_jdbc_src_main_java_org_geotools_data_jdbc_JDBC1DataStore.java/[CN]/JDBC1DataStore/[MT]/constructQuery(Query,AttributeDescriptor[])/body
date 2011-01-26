@@ -1,0 +1,31 @@
+{
+  String typeName=query.getTypeName();
+  SQLBuilder sqlBuilder=getSqlBuilder(query.getTypeName());
+  sqlBuilder.setHints(query.getHints());
+  org.opengis.filter.Filter preFilter=sqlBuilder.getPreQueryFilter(query.getFilter());
+  FIDMapper mapper=getFIDMapper(typeName);
+  String sqlQuery;
+  try {
+    LOGGER.fine("calling sql builder with filter " + preFilter);
+    if (query.getFilter() == Filter.EXCLUDE) {
+      StringBuffer buf=new StringBuffer("SELECT ");
+      sqlBuilder.sqlColumns(buf,mapper,attrTypes);
+      sqlBuilder.sqlFrom(buf,typeName);
+      buf.append(" WHERE '1' = '0'");
+      sqlQuery=buf.toString();
+    }
+ else {
+      final Integer offset=query.getStartIndex();
+      Integer limit=null;
+      if (query.getMaxFeatures() != Integer.MAX_VALUE) {
+        limit=new Integer(query.getMaxFeatures());
+      }
+      sqlQuery=sqlBuilder.buildSQLQuery(typeName,mapper,attrTypes,preFilter,query.getSortBy(),offset,limit);
+    }
+    LOGGER.fine("sql is " + sqlQuery);
+  }
+ catch (  SQLEncoderException e) {
+    throw new DataSourceException("Error building SQL Query",e);
+  }
+  return sqlQuery;
+}

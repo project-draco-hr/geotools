@@ -1,0 +1,29 @@
+{
+  final Set<String> codes=getAuthorityCodes(CoordinateReferenceSystem.class);
+  final Map<String,String> failures=new TreeMap<String,String>();
+  for (  final String code : codes) {
+    try {
+      createCoordinateReferenceSystem(code);
+    }
+ catch (    FactoryException exception) {
+      failures.put(code,exception.getLocalizedMessage());
+    }
+  }
+  if (!failures.isEmpty()) {
+    final TableWriter writer=new TableWriter(out," ");
+    for (    final Map.Entry<String,String> entry : failures.entrySet()) {
+      writer.write(entry.getKey());
+      writer.write(':');
+      writer.nextColumn();
+      writer.write(entry.getValue());
+      writer.nextLine();
+    }
+    try {
+      writer.flush();
+    }
+ catch (    IOException e) {
+      throw new AssertionError(e);
+    }
+  }
+  return failures.keySet();
+}

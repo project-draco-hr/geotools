@@ -1,0 +1,22 @@
+{
+  Statement st=cx.createStatement();
+  try {
+    String sql="SELECT pg_get_serial_sequence('\"";
+    if (schemaName != null && !"".equals(schemaName))     sql+=schemaName + "\".\"";
+    sql+=tableName + "\"', '" + columnName+ "')";
+    dataStore.getLogger().fine(sql);
+    ResultSet rs=st.executeQuery(sql);
+    try {
+      if (rs.next()) {
+        return rs.getString(1);
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+  return null;
+}

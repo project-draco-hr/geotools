@@ -1,0 +1,104 @@
+{
+  ensureNonNull("code",code);
+  CoordinateSystem returnValue=null;
+  final PreparedStatement stmt;
+  try {
+    final String primaryKey=toPrimaryKey(CoordinateSystem.class,code,"[Coordinate System]","COORD_SYS_CODE","COORD_SYS_NAME");
+    stmt=prepareStatement("CoordinateSystem","SELECT COORD_SYS_CODE," + " COORD_SYS_NAME," + " COORD_SYS_TYPE,"+ " DIMENSION,"+ " REMARKS"+ " FROM [Coordinate System]"+ " WHERE COORD_SYS_CODE = ?");
+    stmt.setInt(1,Integer.parseInt(primaryKey));
+    final ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final String epsg=getString(result,1,code);
+      final String name=getString(result,2,code);
+      final String type=getString(result,3,code).trim().toLowerCase();
+      final int dimension=getInt(result,4,code);
+      final String remarks=result.getString(5);
+      final CoordinateSystemAxis[] axis=createAxesForCoordinateSystem(primaryKey,dimension);
+      final Map<String,Object> properties=createProperties(name,epsg,remarks);
+      final CSFactory factory=factories.getCSFactory();
+      CoordinateSystem cs=null;
+      if (type.equals("ellipsoidal")) {
+switch (dimension) {
+case 2:
+          cs=factory.createEllipsoidalCS(properties,axis[0],axis[1]);
+        break;
+case 3:
+      cs=factory.createEllipsoidalCS(properties,axis[0],axis[1],axis[2]);
+    break;
+}
+}
+ else if (type.equals("cartesian")) {
+switch (dimension) {
+case 2:
+  cs=factory.createCartesianCS(properties,axis[0],axis[1]);
+break;
+case 3:
+cs=factory.createCartesianCS(properties,axis[0],axis[1],axis[2]);
+break;
+}
+}
+ else if (type.equals("spherical")) {
+switch (dimension) {
+case 3:
+cs=factory.createSphericalCS(properties,axis[0],axis[1],axis[2]);
+break;
+}
+}
+ else if (type.equals("vertical") || type.equals("gravity-related")) {
+switch (dimension) {
+case 1:
+cs=factory.createVerticalCS(properties,axis[0]);
+break;
+}
+}
+ else if (type.equals("linear")) {
+switch (dimension) {
+case 1:
+cs=factory.createLinearCS(properties,axis[0]);
+break;
+}
+}
+ else if (type.equals("polar")) {
+switch (dimension) {
+case 2:
+cs=factory.createPolarCS(properties,axis[0],axis[1]);
+break;
+}
+}
+ else if (type.equals("cylindrical")) {
+switch (dimension) {
+case 3:
+cs=factory.createCylindricalCS(properties,axis[0],axis[1],axis[2]);
+break;
+}
+}
+ else if (type.equals("affine")) {
+switch (dimension) {
+case 2:
+cs=factory.createAffineCS(properties,axis[0],axis[1]);
+break;
+case 3:
+cs=factory.createAffineCS(properties,axis[0],axis[1],axis[2]);
+break;
+}
+}
+ else {
+result.close();
+throw new FactoryException(Errors.format(ErrorKeys.UNKNOW_TYPE_$1,type));
+}
+if (cs == null) {
+result.close();
+throw new FactoryException(Errors.format(ErrorKeys.UNEXPECTED_DIMENSION_FOR_CS_$1,type));
+}
+returnValue=ensureSingleton(cs,returnValue,code);
+}
+result.close();
+}
+ catch (SQLException exception) {
+throw databaseFailure(CoordinateSystem.class,code,exception);
+}
+if (returnValue == null) {
+throw noSuchAuthorityCode(CoordinateSystem.class,code);
+}
+return returnValue;
+}

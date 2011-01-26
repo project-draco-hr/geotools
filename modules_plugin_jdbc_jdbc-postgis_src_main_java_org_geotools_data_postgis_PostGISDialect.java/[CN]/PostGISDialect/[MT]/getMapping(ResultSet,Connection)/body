@@ -1,0 +1,23 @@
+{
+  String typeName=columnMetaData.getString("TYPE_NAME");
+  String gType=null;
+  if ("geometry".equalsIgnoreCase(typeName)) {
+    gType=lookupGeometryType(columnMetaData,cx,"geometry_columns","f_geometry_column");
+  }
+ else   if ("geography".equalsIgnoreCase(typeName)) {
+    gType=lookupGeometryType(columnMetaData,cx,"geography_columns","f_geography_column");
+  }
+ else {
+    return null;
+  }
+  if (gType == null) {
+    return Geometry.class;
+  }
+ else {
+    Class geometryClass=(Class)TYPE_TO_CLASS_MAP.get(gType.toUpperCase());
+    if (geometryClass == null) {
+      geometryClass=Geometry.class;
+    }
+    return geometryClass;
+  }
+}

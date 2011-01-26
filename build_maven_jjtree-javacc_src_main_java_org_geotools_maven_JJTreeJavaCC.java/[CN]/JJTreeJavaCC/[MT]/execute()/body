@@ -1,0 +1,77 @@
+{
+  final boolean windowsOs=System.getProperty("os.name").indexOf("Windows") != -1;
+  outputPackageDirectory=createPackageDirectory(outputDirectory);
+  if (!FileUtils.fileExists(timestampDirectory)) {
+    FileUtils.mkdir(timestampDirectory);
+  }
+  final Set userNodes=searchNodeFiles();
+  for (final Iterator it=userNodes.iterator(); it.hasNext(); ) {
+    final File nodeFile=(File)it.next();
+    try {
+      FileUtils.copyFileToDirectory(nodeFile,outputPackageDirectory);
+    }
+ catch (    IOException e) {
+      throw new MojoExecutionException("Failed to copy Node.java files for JJTree.",e);
+    }
+  }
+  final Set staleTrees=searchStaleGrammars(new File(sourceDirectory),".jjt");
+  for (final Iterator it=staleTrees.iterator(); it.hasNext(); ) {
+    final File sourceFile=(File)it.next();
+    final JJTree parser=new JJTree();
+    final String[] args=generateJJTreeArgumentList(sourceFile.getPath());
+    final int status=parser.main(args);
+    if (status != 0) {
+      throw new MojoFailureException("JJTree failed with error code " + status + '.');
+    }
+    try {
+      FileUtils.copyFileToDirectory(sourceFile,new File(timestampDirectory));
+    }
+ catch (    IOException e) {
+      throw new MojoExecutionException("Failed to copy processed .jjt file.",e);
+    }
+  }
+  final Set staleGrammars=searchStaleGrammars(new File(outputDirectory),".jj");
+  for (final Iterator it=staleGrammars.iterator(); it.hasNext(); ) {
+    final File sourceFile=(File)it.next();
+    try {
+      if (windowsOs) {
+        fixHeader(sourceFile);
+      }
+    }
+ catch (    IOException e) {
+      throw new MojoExecutionException("Failed to fix header for .jj file.",e);
+    }
+    final String[] args=generateJavaCCArgumentList(sourceFile.getPath());
+    final int status;
+    try {
+      status=Main.mainProgram(args);
+    }
+ catch (    Exception e) {
+      throw new MojoExecutionException("Failed to run javacc.",e);
+    }
+    if (status != 0) {
+      throw new MojoFailureException("JavaCC failed with error code " + status + '.');
+    }
+    try {
+      FileUtils.copyFileToDirectory(sourceFile,new File(timestampDirectory));
+    }
+ catch (    IOException e) {
+      throw new MojoExecutionException("Failed to copy processed .jj file.",e);
+    }
+  }
+  if (windowsOs) {
+    try {
+      String[] files=FileUtils.getFilesFromExtension(outputDirectory,new String[]{"java"});
+      for (int i=0; i < files.length; i++) {
+        System.out.println("Fixing " + files[i]);
+        fixHeader(new File(files[i]));
+      }
+    }
+ catch (    IOException e) {
+      throw new MojoExecutionException("Failed to fix header for java file.",e);
+    }
+  }
+  if (project != null) {
+    project.addCompileSourceRoot(outputDirectory);
+  }
+}

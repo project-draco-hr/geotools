@@ -1,0 +1,33 @@
+{
+  testData.truncateTempTable();
+  ISession session=testData.getConnectionPool().getSession();
+  SeLayer layer=testData.getTempLayer(session);
+  Geometry[] fetched=new Geometry[original.length];
+  try {
+    testData.insertData(original,layer,session);
+    final SeSqlConstruct sqlCons=new SeSqlConstruct(layer.getName());
+    SeQuery query=session.createAndExecuteQuery(new String[]{"SHAPE"},sqlCons);
+    SdeRow row;
+    SeShape shape;
+    int i=0;
+    row=session.fetch(query);
+    while (i < fetched.length && row != null) {
+      shape=row.getShape(0);
+      assertNotNull(shape);
+      Class<? extends Geometry> clazz=ArcSDEAdapter.getGeometryTypeFromSeShape(shape);
+      ArcSDEGeometryBuilder builder=ArcSDEGeometryBuilder.builderFor(clazz);
+      fetched[i]=builder.construct(shape,new GeometryFactory());
+      i++;
+      row=session.fetch(query);
+    }
+    session.close(query);
+  }
+  finally {
+    session.dispose();
+  }
+  for (int i=0; i < fetched.length; i++) {
+    final Geometry expected=original[i];
+    final Geometry actual=fetched[i];
+    assertEquals(expected,actual,1E-6);
+  }
+}

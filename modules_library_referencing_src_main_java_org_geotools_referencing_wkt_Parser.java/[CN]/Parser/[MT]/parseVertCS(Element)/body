@@ -1,0 +1,21 @@
+{
+  final Element element=parent.pullElement("VERT_CS");
+  if (element == null) {
+    return null;
+  }
+  String name=element.pullString("name");
+  VerticalDatum datum=parseVertDatum(element);
+  Unit<Length> linearUnit=parseUnit(element,SI.METER);
+  CoordinateSystemAxis axis=parseAxis(element,linearUnit,false);
+  Map<String,?> properties=parseAuthority(element,name);
+  element.close();
+  try {
+    if (axis == null) {
+      axis=createAxis(null,"Z",AxisDirection.UP,linearUnit);
+    }
+    return crsFactory.createVerticalCRS(properties,datum,csFactory.createVerticalCS(singletonMap("name",name),axis));
+  }
+ catch (  FactoryException exception) {
+    throw element.parseFailed(exception,null);
+  }
+}

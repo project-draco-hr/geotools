@@ -1,0 +1,42 @@
+{
+  JDBCAccess access=getJDBCAccess();
+  for (int i=0; i <= access.getNumOverviews(); i++) {
+    ImageLevelInfo li=access.getLevelInfo(i);
+    li.setTileTableName(li.getSpatialTableName());
+  }
+  try {
+    Connection.prepareStatement(getDBDialect().getCreateMasterStatement()).execute();
+    for (    String tn : getSpatialTableNames()) {
+      Connection.prepareStatement(getDBDialect().getCreateSpatialTableStatementJoined(tn)).execute();
+      String stmt=getDBDialect().getRegisterSpatialStatement(tn,getSrsId());
+      if (stmt != null) {
+        executeRegister(stmt);
+      }
+    }
+    Connection.commit();
+    for (int i=0; i < getTileTableNames().length; i++) {
+      Import imp=null;
+      if (i == 0) {
+        URL dirFileUrl=new URL("file:" + OUTPUTDIR_RESOURCES);
+        imp=new Import(getDBDialect().getConfig(),new ImportParam(getSpatialTableNames()[i],getSpatialTableNames()[i],dirFileUrl,"tif",Import.ImportTyp.DIR),2,Connection);
+      }
+      if (i == 1) {
+        URL shapeFileUrl=new URL("file:" + OUTPUTDIR_RESOURCES + i+ "/index.shp");
+        imp=new Import(getDBDialect().getConfig(),new ImportParam(getSpatialTableNames()[i],getSpatialTableNames()[i],shapeFileUrl,"LOCATION",Import.ImportTyp.SHAPE),2,Connection);
+      }
+      if (i == 2) {
+        URL csvFileUrl=new URL("file:" + OUTPUTDIR_RESOURCES + i+ "/index.csv");
+        imp=new Import(getDBDialect().getConfig(),new ImportParam(getSpatialTableNames()[i],getSpatialTableNames()[i],csvFileUrl,";",Import.ImportTyp.CSV),2,Connection);
+      }
+      imp.fillSpatialTable();
+    }
+    for (    String tn : getSpatialTableNames()) {
+      Connection.prepareStatement(getDBDialect().getCreateIndexStatement(tn)).execute();
+    }
+    Connection.commit();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    Assert.fail(e.getMessage());
+  }
+}

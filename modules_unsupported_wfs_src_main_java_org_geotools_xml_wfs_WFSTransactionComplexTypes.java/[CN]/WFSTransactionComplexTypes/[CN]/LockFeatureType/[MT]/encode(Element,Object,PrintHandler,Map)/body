@@ -1,0 +1,21 @@
+{
+  if (!canEncode(element,value,hints)) {
+    throw new IOException("Cannot encode");
+  }
+  AttributesImpl attributes=new AttributesImpl();
+  attributes.addAttribute(WFSSchema.NAMESPACE.toString(),attrs[0].getName(),null,"string",attrs[0].getFixed());
+  attributes.addAttribute(WFSSchema.NAMESPACE.toString(),attrs[1].getName(),null,"string",attrs[1].getFixed());
+  attributes.addAttribute(WFSSchema.NAMESPACE.toString(),attrs[3].getName(),null,"string","ALL");
+  LockRequest lockRequest=(LockRequest)value;
+  if ((lockRequest != null) && (lockRequest.getDuration() > 0)) {
+    attributes.addAttribute(WFSSchema.NAMESPACE.toString(),elems[2].getName(),null,"integer","" + lockRequest.getDuration());
+  }
+  output.startElement(element.getNamespace(),element.getName(),attributes);
+  Object[] t=new Object[2];
+  for (int i=0; i < lockRequest.getTypeNames().length; i++) {
+    t[0]=lockRequest.getTypeNames()[i];
+    t[1]=lockRequest.getFilters()[i];
+    elems[0].getType().encode(elems[0],t,output,hints);
+  }
+  output.endElement(element.getNamespace(),element.getName());
+}

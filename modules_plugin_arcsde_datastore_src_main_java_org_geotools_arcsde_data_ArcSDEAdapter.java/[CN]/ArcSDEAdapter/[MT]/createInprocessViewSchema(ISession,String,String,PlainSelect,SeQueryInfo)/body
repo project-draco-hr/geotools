@@ -1,0 +1,48 @@
+{
+  List<AttributeDescriptor> attributeDescriptors;
+  String mainTable;
+  try {
+    mainTable=queryInfo.getConstruct().getTables()[0];
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException(e);
+  }
+  SeLayer layer=null;
+  try {
+    layer=session.getLayer(mainTable);
+  }
+ catch (  NoSuchElementException e) {
+    LOGGER.info(mainTable + " is not an SeLayer, so no CRS info will be parsed");
+  }
+  LOGGER.fine("testing query");
+  final Command<SeColumnDefinition[]> testQueryCmd=new Command<SeColumnDefinition[]>(){
+    @Override public SeColumnDefinition[] execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      final SeQuery testQuery=new SeQuery(connection);
+      try {
+        testQuery.prepareQueryInfo(queryInfo);
+        testQuery.execute();
+        LOGGER.fine("definition query executed successfully");
+        LOGGER.fine("fetching row to obtain view's types");
+        SeRow testRow=testQuery.fetch();
+        SeColumnDefinition[] colDefs=testRow.getColumns();
+        return colDefs;
+      }
+  finally {
+        try {
+          testQuery.close();
+        }
+ catch (        SeException e) {
+          throw new ArcSdeException(e);
+        }
+      }
+    }
+  }
+;
+  final SeColumnDefinition[] colDefs=session.issue(testQueryCmd);
+  attributeDescriptors=createAttributeDescriptors(layer,namespace,colDefs);
+  final SimpleFeatureType type=createSchema(typeName,namespace,attributeDescriptors);
+  final FIDReader fidStrategy=FIDReader.NULL_READER;
+  FeatureTypeInfo typeInfo;
+  typeInfo=new FeatureTypeInfo(type,fidStrategy,qualifiedSelect,queryInfo);
+  return typeInfo;
+}

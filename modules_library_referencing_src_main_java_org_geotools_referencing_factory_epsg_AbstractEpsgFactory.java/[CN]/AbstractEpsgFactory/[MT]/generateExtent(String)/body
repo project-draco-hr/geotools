@@ -1,0 +1,46 @@
+{
+  ensureNonNull("code",code);
+  Extent returnValue=null;
+  try {
+    final String primaryKey=toPrimaryKey(Extent.class,code,"[Area]","AREA_CODE","AREA_NAME");
+    final PreparedStatement stmt;
+    stmt=prepareStatement("Area","SELECT AREA_OF_USE," + " AREA_SOUTH_BOUND_LAT," + " AREA_NORTH_BOUND_LAT,"+ " AREA_WEST_BOUND_LON,"+ " AREA_EAST_BOUND_LON"+ " FROM [Area]"+ " WHERE AREA_CODE = ?");
+    stmt.setString(1,primaryKey);
+    final ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      ExtentImpl extent=null;
+      final String description=result.getString(1);
+      if (description != null) {
+        extent=new ExtentImpl();
+        extent.setDescription(new SimpleInternationalString(description));
+      }
+      final double ymin=result.getDouble(2);
+      if (!result.wasNull()) {
+        final double ymax=result.getDouble(3);
+        if (!result.wasNull()) {
+          final double xmin=result.getDouble(4);
+          if (!result.wasNull()) {
+            final double xmax=result.getDouble(5);
+            if (!result.wasNull()) {
+              if (extent == null) {
+                extent=new ExtentImpl();
+              }
+              extent.setGeographicElements(Collections.singleton(new GeographicBoundingBoxImpl(xmin,xmax,ymin,ymax)));
+            }
+          }
+        }
+      }
+      if (extent != null) {
+        returnValue=(Extent)ensureSingleton(extent.unmodifiable(),returnValue,code);
+      }
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(Extent.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(Extent.class,code);
+  }
+  return returnValue;
+}

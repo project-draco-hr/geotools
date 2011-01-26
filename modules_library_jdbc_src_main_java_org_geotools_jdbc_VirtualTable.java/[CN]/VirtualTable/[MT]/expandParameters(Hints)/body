@@ -1,0 +1,35 @@
+{
+  if (parameters.size() == 0) {
+    return sql;
+  }
+  Map<String,String> values=null;
+  if (hints != null) {
+    values=(Map<String,String>)hints.get(Hints.VIRTUAL_TABLE_PARAMETERS);
+  }
+  if (values == null) {
+    values=Collections.emptyMap();
+  }
+  String result=sql;
+  for (  VirtualTableParameter param : parameters.values()) {
+    String value=values.get(param.getName());
+    if (value == null) {
+      value=param.getDefaultValue();
+      if (value == null) {
+        value="";
+      }
+    }
+ else {
+      if (param.getValidator() != null) {
+        try {
+          param.getValidator().validate(value);
+        }
+ catch (        IllegalArgumentException e) {
+          LOGGER.log(Level.SEVERE,"Invalid value for parameter " + param.getName(),e);
+          throw new SQLException("Invalid value for parameter " + param.getName());
+        }
+      }
+    }
+    result=result.replace("%" + param.getName() + "%",value);
+  }
+  return result;
+}

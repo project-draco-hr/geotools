@@ -1,0 +1,25 @@
+{
+  final CitationImpl citation=new CitationImpl();
+  final PropertyAccessor accessor=createPropertyAccessor(citation);
+  int hashCode=accessor.hashCode(citation);
+  assertEquals("Empty metadata.",0,hashCode);
+  final String ISBN="Dummy ISBN";
+  citation.setISBN(ISBN);
+  hashCode=accessor.hashCode(citation);
+  assertEquals("Metadata with a single String value.",ISBN.hashCode(),hashCode);
+  final Set<Object> set=new HashSet<Object>();
+  assertEquals("By Set.hashCode() contract.",0,set.hashCode());
+  assertTrue(set.add(ISBN));
+  assertEquals("Expected Metadata.hashCode() == Set.hashCode().",set.hashCode(),hashCode);
+  final InternationalString title=new SimpleInternationalString("Dummy title");
+  citation.setTitle(title);
+  hashCode=accessor.hashCode(citation);
+  assertEquals("Metadata with two values.",ISBN.hashCode() + title.hashCode(),hashCode);
+  assertTrue(set.add(title));
+  assertEquals("Expected Metadata.hashCode() == Set.hashCode().",set.hashCode(),hashCode);
+  assertEquals("CitationsImpl.hashCode() should delegate.",hashCode,citation.hashCode());
+  final Collection<Object> values=citation.asMap().values();
+  assertEquals(hashCode,new HashSet<Object>(values).hashCode());
+  assertTrue(values.containsAll(set));
+  assertTrue(set.containsAll(values));
+}

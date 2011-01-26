@@ -1,0 +1,42 @@
+{
+  if (original == null)   original=filter;
+  if (fcs.supports(PropertyIsBetween.class)) {
+    int i=postStack.size();
+    Expression lowerBound=filter.getLowerBoundary();
+    Expression expr=filter.getExpression();
+    Expression upperBound=filter.getUpperBoundary();
+    if (lowerBound == null || upperBound == null || expr == null) {
+      postStack.push(filter);
+      return null;
+    }
+    lowerBound.accept(this,null);
+    if (i < postStack.size()) {
+      postStack.pop();
+      postStack.push(filter);
+      return null;
+    }
+    expr.accept(this,null);
+    if (i < postStack.size()) {
+      preStack.pop();
+      postStack.pop();
+      postStack.push(filter);
+      return null;
+    }
+    upperBound.accept(this,null);
+    if (i < postStack.size()) {
+      postStack.pop();
+      preStack.pop();
+      preStack.pop();
+      postStack.push(filter);
+      return null;
+    }
+    preStack.pop();
+    preStack.pop();
+    preStack.pop();
+    preStack.push(filter);
+  }
+ else {
+    postStack.push(filter);
+  }
+  return null;
+}

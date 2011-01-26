@@ -1,0 +1,34 @@
+{
+  final SeTable table=session.getTable(typeName);
+  SeLayer layer=null;
+  final SeColumnDefinition[] seColumns=session.describe(typeName);
+  for (  SeColumnDefinition col : seColumns) {
+    if (col.getType() == SeColumnDefinition.TYPE_SHAPE) {
+      layer=session.getLayer(typeName);
+      break;
+    }
+  }
+  final List<AttributeDescriptor> properties=createAttributeDescriptors(layer,namespace,seColumns);
+  final SimpleFeatureType featureType=createSchema(typeName,namespace,properties);
+  SeRegistration registration=session.createSeRegistration(typeName);
+  final boolean isMultiVersioned=registration.isMultiVersion();
+  final boolean isView=registration.isView();
+  final FIDReader fidStrategy;
+  fidStrategy=FIDReader.getFidReader(session,table,layer,registration);
+  final boolean canDoTransactions;
+{
+    final Integer permMask=session.issue(new Command<Integer>(){
+      @Override public Integer execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        return new Integer(table.getPermissions());
+      }
+    }
+);
+    final boolean hasWritePermissions=userHasWritePermissions(permMask.intValue());
+    canDoTransactions=hasWritePermissions && (fidStrategy instanceof FIDReader.SdeManagedFidReader || fidStrategy instanceof FIDReader.UserManagedFidReader) && !hasReadOnlyColumn(seColumns);
+    if (hasWritePermissions && !canDoTransactions) {
+      LOGGER.fine(typeName + " is writable bu has no primary key, thus we're using it " + "read-only as can't get a propper feature id out of it");
+    }
+  }
+  FeatureTypeInfo typeInfo=new FeatureTypeInfo(featureType,fidStrategy,canDoTransactions,isMultiVersioned,isView);
+  return typeInfo;
+}

@@ -1,0 +1,37 @@
+{
+  Identifier identifier=info.getName();
+  if (authority == null) {
+    return identifier.getCode();
+  }
+  String name=null;
+  Citation infoAuthority=identifier.getAuthority();
+  if (infoAuthority != null) {
+    if (Citations.identifierMatches(authority,infoAuthority)) {
+      name=identifier.getCode();
+    }
+ else {
+      for (      final GenericName alias : info.getAlias()) {
+        if (alias instanceof Identifier) {
+          identifier=(Identifier)alias;
+          infoAuthority=identifier.getAuthority();
+          if (infoAuthority != null) {
+            if (Citations.identifierMatches(authority,infoAuthority)) {
+              name=identifier.getCode();
+              break;
+            }
+          }
+        }
+ else {
+          final GenericName scope=alias.scope().name();
+          if (scope != null) {
+            if (Citations.identifierMatches(authority,scope.toString())) {
+              name=alias.tip().toString();
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  return name;
+}

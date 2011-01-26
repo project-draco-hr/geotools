@@ -1,0 +1,31 @@
+{
+  if (collection instanceof FeatureCollection) {
+    return addAll((FeatureCollection<?,?>)collection);
+  }
+  try {
+    FeatureWriter writer=writer();
+    if (writer == null) {
+      return false;
+    }
+    try {
+      while (writer.hasNext()) {
+        Feature feature=writer.next();
+      }
+      for (      Object obj : collection) {
+        if (obj instanceof SimpleFeature) {
+          SimpleFeature copy=(SimpleFeature)obj;
+          SimpleFeature feature=(SimpleFeature)writer.next();
+          feature.setAttributes(copy.getAttributes());
+          writer.write();
+        }
+      }
+    }
+  finally {
+      if (writer != null)       writer.close();
+    }
+    return true;
+  }
+ catch (  IOException ignore) {
+    return false;
+  }
+}

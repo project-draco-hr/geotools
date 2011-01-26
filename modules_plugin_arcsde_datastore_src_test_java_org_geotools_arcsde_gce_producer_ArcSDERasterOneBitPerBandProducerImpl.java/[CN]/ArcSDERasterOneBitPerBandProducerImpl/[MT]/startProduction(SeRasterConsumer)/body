@@ -1,0 +1,27 @@
+{
+  Thread runme;
+  if (consumer instanceof SeRasterRenderedImage) {
+    runme=new Thread(){
+      @Override public void run(){
+        try {
+          final int imageHeight=sourceImage.getHeight();
+          for (int i=0; i < sourceImage.getData().getNumBands(); i++) {
+            final byte[] imgBandData=((DataBufferByte)sourceImage.getData().getDataBuffer()).getData(i);
+            consumer.setScanLines(imageHeight,imgBandData,null);
+            consumer.rasterComplete(SeRasterConsumer.SINGLEFRAMEDONE);
+          }
+          consumer.rasterComplete(SeRasterConsumer.STATICIMAGEDONE);
+        }
+ catch (        Exception se) {
+          se.printStackTrace();
+          consumer.rasterComplete(SeRasterConsumer.IMAGEERROR);
+        }
+      }
+    }
+;
+  }
+ else {
+    throw new IllegalArgumentException("You must set SeRasterAttr.setImportMode(false) to " + "load data using this SeProducer implementation.");
+  }
+  runme.start();
+}

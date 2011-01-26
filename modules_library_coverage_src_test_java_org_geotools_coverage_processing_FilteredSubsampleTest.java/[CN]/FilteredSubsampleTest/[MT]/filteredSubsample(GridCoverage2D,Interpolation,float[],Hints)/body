@@ -1,0 +1,42 @@
+{
+  RenderedImage originalImage=coverage.getRenderedImage();
+  boolean isIndexed=originalImage.getColorModel() instanceof IndexColorModel;
+  int w=originalImage.getWidth();
+  int h=originalImage.getHeight();
+  final CoverageProcessor processor=(hints != null) ? CoverageProcessor.getInstance(hints) : this.processor;
+  final ParameterValueGroup param=processor.getOperation("FilteredSubsample").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("scaleX").setValue(Integer.valueOf(2));
+  param.parameter("scaleY").setValue(Integer.valueOf(2));
+  param.parameter("qsFilterArray").setValue(filter);
+  param.parameter("Interpolation").setValue(interp);
+  GridCoverage2D scaled=(GridCoverage2D)processor.doOperation(param);
+  RenderedImage scaledImage=scaled.getRenderedImage();
+  assertEquals(w / 2.0,scaledImage.getWidth(),EPS);
+  assertEquals(h / 2.0,scaledImage.getHeight(),EPS);
+  assertTrue(!isIndexed || (interp instanceof InterpolationNearest) || !(scaledImage.getColorModel() instanceof IndexColorModel)|| CoverageUtilities.preferredViewForOperation(coverage,interp,false,null) == GEOPHYSICS);
+  isIndexed=scaledImage.getColorModel() instanceof IndexColorModel;
+  w=scaledImage.getWidth();
+  h=scaledImage.getHeight();
+  assertEnvelopeEquals(coverage,scaled);
+  if (SHOW) {
+    Viewer.show(coverage);
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(coverage.getRenderedImage().getData());
+    assertNotNull(scaled.getRenderedImage().getData());
+  }
+  scaled=(GridCoverage2D)Operations.DEFAULT.filteredSubsample(scaled,3,3,filter,interp);
+  scaledImage=scaled.getRenderedImage();
+  assertEquals(w / 3.0,scaledImage.getWidth(),1.0 / 3 + EPS);
+  assertEquals(h / 3.0,scaledImage.getHeight(),1.0 / 3 + EPS);
+  assertTrue(!isIndexed || (interp instanceof InterpolationNearest) || !(scaledImage.getColorModel() instanceof IndexColorModel)|| CoverageUtilities.preferredViewForOperation(coverage,interp,false,null) == GEOPHYSICS);
+  assertEnvelopeEquals(coverage,scaled);
+  if (SHOW) {
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(scaledImage.getData());
+  }
+}

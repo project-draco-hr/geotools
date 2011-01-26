@@ -1,0 +1,16 @@
+{
+  final String geoWKT="GEOGCS[\"S-JTSK (Ferro)\", " + "DATUM[\"S_JTSK_Ferro\", " + "SPHEROID[\"Bessel 1841\", 6377397.155, 299.1528128], "+ "TOWGS84[570.8,85.7,462.8,4.998,1.587,5.261,3.56]], "+ "PRIMEM[\"Greenwich\",0], "+ "UNIT[\"degree\",0.0174532925199433]]";
+  final String prjWKT="PROJCS[\"S-JTSK(Ferro) / krovak\", " + geoWKT + ", "+ "PROJECTION[\"Krovak\"], "+ "UNIT[\"metre\",1.0], "+ "AXIS[\"y\",WEST], "+ "AXIS[\"x\",SOUTH]]";
+  final CoordinateReferenceSystem sourceCRS=CRS.parseWKT(geoWKT);
+  final CoordinateReferenceSystem targetCRS=CRS.parseWKT(prjWKT);
+  final MathTransform transform=CRS.findMathTransform(sourceCRS,targetCRS);
+  assertTrue(transform instanceof ConcatenatedTransform);
+  final ConcatenatedTransform ct=(ConcatenatedTransform)transform;
+  assertTrue(ct.transform2 instanceof LinearTransform);
+  final Matrix matrix=((LinearTransform)ct.transform2).getMatrix();
+  assertDiagonal(matrix);
+  assertEquals("East-West direction should be reverted. ",-1,matrix.getElement(0,0),EPS);
+  assertEquals("North-South direction should be reverted.",-1,matrix.getElement(1,1),EPS);
+  assertEquals("No easting expected.",0,matrix.getElement(0,2),EPS);
+  assertEquals("No northing expected.",0,matrix.getElement(1,2),EPS);
+}

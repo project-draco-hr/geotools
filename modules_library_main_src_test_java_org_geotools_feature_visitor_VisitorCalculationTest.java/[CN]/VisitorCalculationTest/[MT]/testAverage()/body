@@ -1,0 +1,41 @@
+{
+  AverageVisitor averageVisitor=new AverageVisitor(0,ft);
+  fc.accepts(averageVisitor,null);
+  AverageVisitor averageVisitor2=new AverageVisitor(3,ft2);
+  fc2.accepts(averageVisitor2,null);
+  int value1=averageVisitor.getResult().toInt();
+  assertEquals(2,value1);
+  double value2=averageVisitor2.getResult().toDouble();
+  assertEquals((double)3.75,value2,0);
+  CalcResult averageResult1=averageVisitor.getResult();
+  CalcResult averageResult2=averageVisitor2.getResult();
+  CalcResult averageResult3=averageResult1.merge(averageResult2);
+  assertEquals((double)2.7,averageResult3.toDouble(),0);
+  assertEquals((double)3.75,averageResult2.toDouble(),0);
+  averageVisitor2.setValue(5,new Integer(100));
+  averageResult2=averageVisitor2.getResult();
+  assertEquals(20,averageResult2.toInt());
+  averageResult3=averageResult1.merge(averageResult2);
+  assertEquals((double)13.25,averageResult3.toDouble(),0);
+  averageVisitor2.setValue(new Double(15.4));
+  averageResult2=averageVisitor2.getResult();
+  assertEquals((double)15.4,averageResult2.toDouble(),0);
+  try {
+    averageResult3=averageResult1.merge(averageResult2);
+    fail();
+  }
+ catch (  Exception e) {
+    assertEquals("Optimized average results cannot be merged.",e.getMessage());
+  }
+  averageVisitor.setValue(5,new Integer(10));
+  averageResult1=averageVisitor.getResult();
+  averageVisitor2.setValue(5,new Double(33.3));
+  averageResult2=averageVisitor2.getResult();
+  averageResult3=averageResult1.merge(averageResult2);
+  assertEquals((double)4.33,averageResult3.toDouble(),0);
+  averageVisitor.reset();
+  empty.accepts(averageVisitor,null);
+  assertEquals(CalcResult.NULL_RESULT,averageVisitor.getResult());
+  assertSame(averageResult2,averageVisitor.getResult().merge(averageResult2));
+  assertSame(averageResult2,averageResult2.merge(averageVisitor.getResult()));
+}

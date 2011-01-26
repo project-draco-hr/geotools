@@ -1,0 +1,39 @@
+{
+  if (pendingValues.size() >= MAX_PENDING_VALUES || (force && pendingValues.size() > 0)) {
+    WritableRenderedImage writableImage=null;
+    if (super.isDataEditable()) {
+      writableImage=(WritableRenderedImage)image;
+    }
+ else {
+      writableImage=new TiledImage(wrapped.getRenderedImage(),true);
+    }
+    WritableRandomIter writeIter=RandomIterFactory.createWritable(writableImage,null);
+    int dataType=writableImage.getSampleModel().getDataType();
+    GridCoordinates2D gridPos=null;
+    for (    PendingValue pv : pendingValues) {
+      if (pv.isGeographic) {
+        try {
+          gridPos=wrapped.getGridGeometry().worldToGrid((DirectPosition)pv.pos);
+        }
+ catch (        TransformException ex) {
+          throw new RuntimeException("Could not transform location [" + pv.pos + "] to grid coords");
+        }
+      }
+ else {
+        gridPos=(GridCoordinates2D)pv.pos;
+      }
+switch (dataType) {
+case DataBuffer.TYPE_INT:
+        writeIter.setSample(gridPos.x,gridPos.y,0,(Integer)pv.value);
+      break;
+case DataBuffer.TYPE_FLOAT:
+    writeIter.setSample(gridPos.x,gridPos.y,0,(Float)pv.value);
+  break;
+case DataBuffer.TYPE_DOUBLE:
+writeIter.setSample(gridPos.x,gridPos.y,0,(Double)pv.value);
+break;
+}
+}
+pendingValues.clear();
+}
+}

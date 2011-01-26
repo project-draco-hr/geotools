@@ -1,0 +1,32 @@
+{
+  Stopwatch sw=new Stopwatch();
+  SimpleFeatureCollection features;
+  features=fs.getFeatures(query);
+  SimpleFeatureIterator iterator;
+  iterator=features.features();
+  log("- Iterating: " + Arrays.asList(query.getPropertyNames()));
+  SimpleFeature feature;
+  final int shapeIdx=fs.getSchema().getAttributeCount() - 1;
+  try {
+    Geometry defaultGeometry;
+    featureCount=0;
+    totalPoints=0;
+    int npoints;
+    sw.start();
+    while (iterator.hasNext()) {
+      feature=iterator.next();
+      featureCount++;
+      defaultGeometry=(Geometry)feature.getDefaultGeometry();
+      npoints=defaultGeometry == null ? 0 : defaultGeometry.getNumPoints();
+      totalPoints+=npoints;
+      largerPoints=Math.max(largerPoints,npoints);
+    }
+    sw.stop();
+  }
+  finally {
+    iterator.close();
+  }
+  log("\t- " + featureCount + " features iterated in "+ sw.getTimeString());
+  log("\t\t- total poinst: " + totalPoints + ", larger geometry: "+ largerPoints+ " points, avg points:"+ (totalPoints / featureCount));
+  return sw.getTime();
+}

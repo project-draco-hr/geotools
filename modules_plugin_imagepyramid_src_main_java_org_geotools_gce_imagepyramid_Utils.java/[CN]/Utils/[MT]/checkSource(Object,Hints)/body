@@ -1,0 +1,118 @@
+{
+  URL sourceURL=null;
+  File sourceFile=null;
+  if (source instanceof File) {
+    sourceFile=(File)source;
+    sourceURL=DataUtilities.fileToURL(sourceFile);
+  }
+ else   if (source instanceof URL) {
+    sourceURL=(URL)source;
+    if (sourceURL.getProtocol().equals("file")) {
+      sourceFile=DataUtilities.urlToFile(sourceURL);
+    }
+  }
+ else   if (source instanceof String) {
+    final String tempSource=(String)source;
+    File tempFile=new File(tempSource);
+    if (!tempFile.exists()) {
+      try {
+        sourceURL=new URL(tempSource);
+        source=DataUtilities.urlToFile(sourceURL);
+      }
+ catch (      MalformedURLException e) {
+        sourceURL=null;
+        source=null;
+      }
+    }
+ else {
+      sourceURL=DataUtilities.fileToURL(tempFile);
+      sourceFile=tempFile;
+    }
+  }
+ else {
+    return null;
+  }
+  if (sourceFile == null || !sourceFile.exists())   return sourceURL;
+  if (!sourceFile.isDirectory())   return sourceURL;
+  File directory=sourceFile;
+  sourceFile=new File(directory,directory.getName() + ".properties");
+  if (sourceFile.exists())   return DataUtilities.fileToURL(sourceFile);
+  File zeroLevelDirectory=new File(directory,"0");
+  IOFileFilter directoryFilter=FileFilterUtils.directoryFileFilter();
+  File[] numericDirectories=directory.listFiles(new NumericDirectoryFilter());
+  File[] directories=directory.listFiles((FileFilter)directoryFilter);
+  if (directories.length == 0)   return null;
+  if (!zeroLevelDirectory.exists() && numericDirectories.length == directories.length) {
+    LOGGER.log(Level.INFO,"Detected gdal_retile file structure, " + "moving root files to the '0' subdirectory");
+    if (zeroLevelDirectory.mkdir()) {
+      FileFilter notDirFilter=FileFilterUtils.notFileFilter(directoryFilter);
+      for (      File f : directory.listFiles(notDirFilter)) {
+        if (!f.renameTo(new File(zeroLevelDirectory,f.getName())))         LOGGER.log(Level.INFO,"Could not move " + f.getAbsolutePath() + " to "+ zeroLevelDirectory);
+      }
+      directories=directory.listFiles((FileFilter)directoryFilter);
+    }
+  }
+  List<MosaicInfo> mosaics=new ArrayList<MosaicInfo>();
+  ImageMosaicFormat mosaicFactory=new ImageMosaicFormat();
+  for (  File subdir : directories) {
+    if (mosaicFactory.accepts(subdir,hints)) {
+      mosaics.add(new MosaicInfo(subdir,mosaicFactory.getReader(subdir,hints)));
+    }
+  }
+  if (mosaics.size() == 0)   return null;
+  Collections.sort(mosaics);
+  for (int i=1; i < mosaics.size(); i++) {
+    double[] resprev=mosaics.get(i - 1).getResolutions();
+    double[] res=mosaics.get(i).getResolutions();
+    if (resprev[1] > res[1]) {
+      LOGGER.log(Level.INFO,"Invalid mosaic, y resolution in " + mosaics.get(i - 1).getPath() + " is greater than the one in "+ mosaics.get(i).getPath()+ " whilst x resolutions "+ "have the opposite relationship");
+      return null;
+    }
+  }
+  Properties properties=new Properties();
+  properties.put("Name",directory.getName());
+  properties.put("LevelsNum",String.valueOf(mosaics.size()));
+  StringBuilder sbDirNames=new StringBuilder();
+  StringBuilder sbLevels=new StringBuilder();
+  for (  MosaicInfo mi : mosaics) {
+    sbDirNames.append(mi.getName()).append(" ");
+    double[] resolutions=mi.getResolutions();
+    sbLevels.append(resolutions[0]).append(",").append(resolutions[1]).append(" ");
+  }
+  properties.put("LevelsDirs",sbDirNames.toString());
+  properties.put("Levels",sbLevels.toString());
+  GeneralEnvelope envelope=mosaics.get(0).getEnvelope();
+  properties.put("Envelope2D",envelope.getMinimum(0) + "," + envelope.getMinimum(1)+ " "+ envelope.getMaximum(0)+ ","+ envelope.getMaximum(1));
+  OutputStream os=null;
+  try {
+    os=new FileOutputStream(sourceFile);
+    properties.store(os,"Automatically generated");
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.INFO,"We could not generate the pyramid propert file " + sourceFile.getPath(),e);
+    return null;
+  }
+ finally {
+    if (os != null)     try {
+      os.close();
+    }
+ catch (    IOException e) {
+    }
+  }
+  if (envelope.getCoordinateReferenceSystem() != null) {
+    File prjFile=new File(directory,directory.getName() + ".prj");
+    PrintWriter pw=null;
+    try {
+      pw=new PrintWriter(new FileOutputStream(prjFile));
+      pw.print(envelope.getCoordinateReferenceSystem().toString());
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.INFO,"We could not write out the projection file " + prjFile.getPath(),e);
+      return null;
+    }
+ finally {
+      pw.close();
+    }
+  }
+  return DataUtilities.fileToURL(sourceFile);
+}

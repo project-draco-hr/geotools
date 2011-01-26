@@ -1,0 +1,57 @@
+{
+  int last=0;
+  RuntimeException cause=null;
+  for (int fieldNumber=0; ; fieldNumber++) {
+    final String field;
+switch (fieldNumber) {
+case 0:
+      field="{level:";
+    break;
+case 1:
+  field="{column:";
+break;
+case 2:
+field="{row:";
+break;
+default :
+{
+suffix=pattern.substring(last);
+return;
+}
+}
+int i=pattern.indexOf(field,last);
+if (i < 0) {
+break;
+}
+final String separator=pattern.substring(last,i);
+i+=field.length();
+last=pattern.indexOf('}',i);
+if (last < 0) {
+break;
+}
+final int n;
+try {
+n=Integer.parseInt(pattern.substring(i,last));
+}
+ catch (NumberFormatException e) {
+cause=e;
+break;
+}
+last++;
+switch (fieldNumber) {
+case 0:
+prefix=separator;
+levelFieldSize=n;
+break;
+case 1:
+levelSeparator=separator;
+columnFieldSize=n;
+break;
+case 2:
+locationSeparator=separator;
+rowFieldSize=n;
+break;
+}
+}
+throw new IllegalArgumentException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"pattern",pattern),cause);
+}

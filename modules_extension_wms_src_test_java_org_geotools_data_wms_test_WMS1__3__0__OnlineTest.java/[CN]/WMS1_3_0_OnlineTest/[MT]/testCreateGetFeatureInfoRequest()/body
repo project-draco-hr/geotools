@@ -1,0 +1,40 @@
+{
+  try {
+    URL featureURL=new URL("http://demo.cubewerx.com/cipi12/cubeserv/cubeserv.cgi?service=wms&request=getcapabilities");
+    WebMapServer wms=getCustomWMS(featureURL);
+    WMSCapabilities caps=wms.getCapabilities();
+    assertNotNull(caps);
+    assertNotNull(caps.getRequest().getGetFeatureInfo());
+    GetMapRequest getMapRequest=wms.createGetMapRequest();
+    getMapRequest.setProperty(GetMapRequest.LAYERS,"ETOPO2:Foundation");
+    getMapRequest.setSRS("EPSG:4326");
+    getMapRequest.setDimensions("400","400");
+    getMapRequest.setFormat("image/png");
+    getMapRequest.setBBox("-34.12087,15.503481,1.8462441,35.6043956");
+    URL url2=getMapRequest.getFinalURL();
+    GetFeatureInfoRequest request=wms.createGetFeatureInfoRequest(getMapRequest);
+    request.setProperty(GetFeatureInfoRequest.QUERY_LAYERS,"ETOPO2:Foundation");
+    request.setQueryPoint(200,200);
+    request.setInfoFormat("text/html");
+    GetFeatureInfoResponse response=(GetFeatureInfoResponse)wms.issueRequest(request);
+    assertTrue(response.getContentType().indexOf("text/html") != -1);
+    BufferedReader in=new BufferedReader(new InputStreamReader(response.getInputStream()));
+    String line;
+    boolean textFound=false;
+    while ((line=in.readLine()) != null) {
+      if (line.indexOf("CubeSERV Feature Query") != -1) {
+        textFound=true;
+        break;
+      }
+    }
+    assertTrue(textFound);
+  }
+ catch (  java.net.ConnectException ce) {
+    if (ce.getMessage().indexOf("timed out") > 0) {
+      System.err.println("Unable to test - timed out: " + ce);
+    }
+ else {
+      throw (ce);
+    }
+  }
+}

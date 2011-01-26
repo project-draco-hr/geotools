@@ -1,0 +1,43 @@
+{
+  final List<SeTable> registeredTables=connection.getTables(SeDefs.SE_SELECT_PRIVILEGE);
+  final List<String> rasterColumns=session.getRasterColumns();
+  final List<String> typeNames=new ArrayList<String>(registeredTables.size());
+  for (  SeTable table : registeredTables) {
+    String tableName=table.getQualifiedName().toUpperCase();
+    SeRegistration reg;
+    try {
+      reg=new SeRegistration(connection,tableName);
+    }
+ catch (    SeException e) {
+      if (e.getSeError().getSdeError() == SeError.SE_TABLE_NOREGISTERED) {
+        LOGGER.finest("Ignoring non registered table " + tableName);
+        continue;
+      }
+      throw e;
+    }
+    boolean isSystemTable=reg.getRowIdAllocation() == SeRegistration.SE_REGISTRATION_ROW_ID_ALLOCATION_SINGLE;
+    if (isSystemTable) {
+      LOGGER.finer("Ignoring ArcSDE registered table " + tableName + " as it is a system table");
+      continue;
+    }
+    if (reg.isHidden()) {
+      LOGGER.finer("Ignoring ArcSDE registered table " + tableName + " as it is hidden");
+      continue;
+    }
+    boolean hasLayer=reg.hasLayer();
+    if (!hasLayer) {
+      if (!allowNonSpatialTables) {
+        LOGGER.finer("Ignoring ArcSDE registered table " + tableName + " as it is non spatial");
+        continue;
+      }
+      if (reg.getRowIdColumnType() == SeRegistration.SE_REGISTRATION_ROW_ID_COLUMN_TYPE_NONE) {
+        LOGGER.finer("Ignoring ArcSDE registered table " + tableName + " as it has no row id column");
+        continue;
+      }
+    }
+    if (!rasterColumns.contains(tableName)) {
+      typeNames.add(tableName);
+    }
+  }
+  return typeNames;
+}

@@ -1,0 +1,42 @@
+{
+  init(reader);
+  final HDF4SpatioTemporalImageReader hdf4Reader=((HDF4SpatioTemporalImageReader)reader);
+  final Band band=addBand();
+  final int imageIndex=getImageIndex();
+  String imageMetadataFormat=null;
+  String unitAttributeName=null;
+switch (hdf4_type) {
+case TeraScan:
+    imageMetadataFormat=HDF4TeraScanImageMetadata.nativeMetadataFormatName;
+  unitAttributeName=HDF4TeraScanProperties.DatasetAttribs.UNITS;
+break;
+case APS:
+imageMetadataFormat=HDF4APSImageMetadata.nativeMetadataFormatName;
+unitAttributeName="productUnits";
+break;
+}
+try {
+final IIOMetadata metadata=hdf4Reader.getImageMetadata(imageIndex,imageMetadataFormat);
+if (metadata instanceof BaseImageMetadata) {
+final BaseImageMetadata commonMetadata=(BaseImageMetadata)metadata;
+setBandFromCommonMetadata(band,commonMetadata);
+Node node=commonMetadata.getAsTree(imageMetadataFormat);
+node=node.getFirstChild();
+if (node != null) {
+final NamedNodeMap attributesMap=node.getAttributes();
+if (attributesMap != null) {
+final Node units=attributesMap.getNamedItem(unitAttributeName);
+if (units != null) {
+String unit=units.getNodeValue();
+if (unit != null) {
+  band.setUoM(unit);
+}
+}
+}
+}
+}
+}
+ catch (IOException e) {
+if (LOGGER.isLoggable(Level.WARNING)) LOGGER.warning("Unable to set band metadata");
+}
+}

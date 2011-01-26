@@ -1,0 +1,16 @@
+{
+  int maxfeatures=10;
+  SimpleFeatureType schema=dataset.getSchema();
+  ArrayList<String> attributes=new ArrayList<String>();
+  for (int i=0; i < schema.getAttributeCount(); i++) {
+    AttributeDescriptor attr=schema.getDescriptor(i);
+    if (!(attr instanceof GeometryDescriptor)) {
+      attributes.add(attr.getName().getLocalPart());
+    }
+  }
+  DefaultQuery query=new DefaultQuery(schema.getTypeName(),Filter.INCLUDE,maxfeatures,attributes.toArray(new String[0]),null);
+  FeatureCollection features=cache.getFeatures(query);
+  assertTrue(features.size() <= maxfeatures);
+  SimpleFeatureType ftype=(SimpleFeatureType)features.getSchema();
+  assertEquals(attributes.size(),ftype.getAttributeCount());
+}

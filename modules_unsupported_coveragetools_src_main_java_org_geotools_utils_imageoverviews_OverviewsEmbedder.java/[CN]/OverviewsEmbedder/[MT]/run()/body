@@ -1,0 +1,248 @@
+{
+  if (sourcePath == null) {
+    fireEvent("Provided sourcePath is null",0);
+    return;
+  }
+  final File file=new File(sourcePath);
+  final File[] files;
+  int numFiles=1;
+  StringBuilder message;
+  if (!file.canRead() || !file.exists()) {
+    fireEvent("Provided file " + file.getAbsolutePath() + " cannot be read or does not exist",0);
+    return;
+  }
+  if (file.isDirectory()) {
+    if (wildcardString == null) {
+      fireEvent("Provided wildcardString is null",0);
+      return;
+    }
+    final FileFilter fileFilter=new WildcardFileFilter(wildcardString);
+    files=file.listFiles(fileFilter);
+    numFiles=files.length;
+    if (numFiles <= 0) {
+      message=new StringBuilder("No files to process!");
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine(message.toString());
+      }
+      fireEvent(message.toString(),100);
+    }
+  }
+ else   files=new File[]{file};
+  if (files == null || files.length == 0) {
+    fireEvent("Unable to find input files for the provided wildcard " + wildcardString + " and input path "+ sourcePath,0);
+    return;
+  }
+  for (fileBeingProcessed=0; fileBeingProcessed < numFiles; fileBeingProcessed++) {
+    message=new StringBuilder("Managing file  ").append(fileBeingProcessed).append(" of ").append(files[fileBeingProcessed]).append(" files");
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine(message.toString());
+    }
+    fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+    if (getStopThread()) {
+      message=new StringBuilder("Stopping requested at file  ").append(fileBeingProcessed).append(" of ").append(numFiles).append(" files");
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine(message.toString());
+      }
+      fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+      return;
+    }
+    ImageInputStream stream=null;
+    ImageWriter writer=null;
+    ImageOutputStream streamOut=null;
+    TileCache baseTC=null;
+    TileCache scaleTC=null;
+    RenderedOp currentImage=null;
+    RenderedOp newImage=null;
+    try {
+      stream=ImageIO.createImageInputStream(files[fileBeingProcessed]);
+      if (stream == null) {
+        message=new StringBuilder("Unable to create an input stream for file").append(files[fileBeingProcessed]);
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.severe(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        break;
+      }
+      stream.mark();
+      final Iterator<ImageReader> it=ImageIO.getImageReaders(stream);
+      if (!it.hasNext()) {
+        message=new StringBuilder("Unable to find a reader for file").append(files[fileBeingProcessed]);
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.severe(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        break;
+      }
+      final ImageReader reader=(ImageReader)it.next();
+      stream.reset();
+      stream.mark();
+      reader.setInput(stream);
+      ImageLayout layout=null;
+      int actualTileW=reader.getTileWidth(0);
+      int actualTileH=reader.getTileHeight(0);
+      final int numImages=reader.getNumImages(true);
+      if (!reader.isImageTiled(0) || (reader.isImageTiled(0) && (actualTileH != tileH && tileH != -1) || (actualTileW != tileW && tileW != -1))) {
+        message=new StringBuilder("Retiling image  ").append(fileBeingProcessed);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        layout=createTiledLayout(tileW,tileH,0,0);
+      }
+      stream.reset();
+      reader.reset();
+      reader.dispose();
+      streamOut=ImageIO.createImageOutputStream(files[fileBeingProcessed]);
+      if (streamOut == null) {
+        message=new StringBuilder("Unable to acquire an ImageOutputStream for the file ").append(files[fileBeingProcessed].toString());
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.severe(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        break;
+      }
+      writer=new TIFFImageWriterSpi().createWriterInstance();
+      writer.setOutput(streamOut);
+      writer.addIIOWriteProgressListener(writeProgressListener);
+      writer.addIIOWriteWarningListener(writeProgressListener);
+      ImageWriteParam param=writer.getDefaultWriteParam();
+      if (!(param.canWriteTiles())) {
+        message=new StringBuilder("This format do not support tiling!");
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.severe(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        break;
+      }
+      if (!(writer.canInsertImage(numImages))) {
+        message=new StringBuilder("This format do not support overviews!");
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.severe(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        break;
+      }
+      if (tileH != -1 & tileW != -1) {
+        param.setTilingMode(ImageWriteParam.MODE_EXPLICIT);
+        param.setTiling(tileW,tileH,0,0);
+      }
+ else {
+        param.setTilingMode(ImageWriteParam.MODE_EXPLICIT);
+        param.setTiling(actualTileW,actualTileH,0,0);
+      }
+      if (this.compressionScheme != null && !Double.isNaN(compressionRatio)) {
+        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        param.setCompressionType(compressionScheme);
+        param.setCompressionQuality((float)this.compressionRatio);
+      }
+      final long tilecacheSize=this.getTileCacheSize() <= 0 ? DEFAULT_TILE_CACHE_SIZE : super.getTileCacheSize();
+      baseTC=JAI.createTileCache();
+      baseTC.setMemoryCapacity(tilecacheSize / 2);
+      baseTC.setMemoryThreshold(1.0f);
+      scaleTC=JAI.createTileCache();
+      scaleTC.setMemoryCapacity(tilecacheSize / 2);
+      scaleTC.setMemoryThreshold(1.0f);
+      final RenderingHints newHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+      newHints.add(new RenderingHints(JAI.KEY_TILE_CACHE,baseTC));
+      ParameterBlock pbjRead=new ParameterBlock();
+      pbjRead.add(stream);
+      pbjRead.add(Integer.valueOf(0));
+      pbjRead.add(Boolean.FALSE);
+      pbjRead.add(Boolean.FALSE);
+      pbjRead.add(Boolean.FALSE);
+      pbjRead.add(null);
+      pbjRead.add(null);
+      pbjRead.add(null);
+      pbjRead.add(null);
+      currentImage=JAI.create("ImageRead",pbjRead,newHints);
+      message=new StringBuilder("Read original image  ").append(fileBeingProcessed);
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine(message.toString());
+      }
+      fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+      for (overviewInProcess=0; overviewInProcess < numSteps; overviewInProcess++) {
+        message=new StringBuilder("Subsampling step ").append(overviewInProcess).append(" of image  ").append(fileBeingProcessed);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine(message.toString());
+        }
+        fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+        if (currentImage.getWidth() / downsampleStep <= 0 || currentImage.getHeight() / downsampleStep <= 0)         break;
+        final SubsampleAlgorithm algorithm=SubsampleAlgorithm.valueOf(scaleAlgorithm);
+switch (algorithm) {
+case Average:
+          newImage=scaleAverage(currentImage,scaleTC);
+        break;
+case Filtered:
+      newImage=filteredSubsample(currentImage,scaleTC);
+    break;
+case Bilinear:
+  newImage=subsample(currentImage,scaleTC,new InterpolationBilinear());
+break;
+case Bicubic:
+newImage=subsample(currentImage,scaleTC,new InterpolationBicubic(2));
+break;
+case Nearest:
+newImage=subsample(currentImage,scaleTC,new InterpolationNearest());
+break;
+default :
+throw new IllegalArgumentException("Invalid scaling algorithm " + scaleAlgorithm);
+}
+IIOMetadata imageMetadata=null;
+if (writer instanceof TIFFImageWriter) {
+imageMetadata=writer.getDefaultImageMetadata(new ImageTypeSpecifier(newImage),param);
+if (imageMetadata != null) ((TIFFImageMetadata)imageMetadata).addShortOrLongField(BaselineTIFFTagSet.TAG_NEW_SUBFILE_TYPE,BaselineTIFFTagSet.NEW_SUBFILE_TYPE_REDUCED_RESOLUTION);
+}
+writer.writeInsert(-1,new IIOImage(newImage,null,imageMetadata),param);
+message=new StringBuilder("Step ").append(overviewInProcess).append(" of image  ").append(fileBeingProcessed).append(" done!");
+if (LOGGER.isLoggable(Level.FINE)) {
+LOGGER.fine(message.toString());
+}
+fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
+baseTC.flush();
+final TileCache appo=baseTC;
+baseTC=scaleTC;
+scaleTC=appo;
+currentImage=newImage;
+}
+message=new StringBuilder("Done with  image  ").append(fileBeingProcessed);
+if (LOGGER.isLoggable(Level.FINE)) {
+LOGGER.fine(message.toString());
+}
+fireEvent(message.toString(),(((fileBeingProcessed + 1) * 100.0) / numFiles));
+}
+ catch (Throwable e) {
+fireException(e);
+}
+ finally {
+baseTC.flush();
+scaleTC.flush();
+try {
+streamOut.flush();
+}
+ catch (Throwable e) {
+if (LOGGER.isLoggable(Level.FINE)) LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+}
+try {
+streamOut.close();
+}
+ catch (Throwable e) {
+if (LOGGER.isLoggable(Level.FINE)) LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+}
+try {
+writer.dispose();
+}
+ catch (Throwable e) {
+if (LOGGER.isLoggable(Level.FINE)) LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+}
+currentImage.dispose();
+if (newImage != null) newImage.dispose();
+try {
+stream.close();
+}
+ catch (Throwable e) {
+if (LOGGER.isLoggable(Level.FINE)) LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+}
+}
+}
+if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Done!!!");
+}

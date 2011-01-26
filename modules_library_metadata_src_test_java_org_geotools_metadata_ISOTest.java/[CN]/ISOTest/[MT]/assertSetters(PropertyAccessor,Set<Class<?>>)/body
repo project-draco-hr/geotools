@@ -1,0 +1,39 @@
+{
+  if (done.add(accessor.type)) {
+    final Object dummyInstance;
+    final boolean isImplemented=isImplemented(accessor.type);
+    if (isImplemented)     try {
+      dummyInstance=accessor.implementation.getConstructor((Class[])null).newInstance((Object[])null);
+    }
+ catch (    Exception e) {
+      fail(e.toString());
+      return;
+    }
+ else {
+      dummyInstance=null;
+    }
+    final String classname=Classes.getShortName(accessor.type) + '.';
+    final int count=accessor.count();
+    for (int i=0; i < count; i++) {
+      final String name=accessor.name(i);
+      assertNotNull(String.valueOf(i),name);
+      final String fullname=classname + name;
+      assertEquals(fullname,i,accessor.indexOf(name));
+      if (!isImplemented) {
+        continue;
+      }
+      assertTrue(fullname,accessor.isWritable(i));
+      Class<?> type=accessor.type(i);
+      if (Collection.class.isAssignableFrom(type)) {
+        final Object example=accessor.get(i,dummyInstance);
+        if (example instanceof CheckedCollection) {
+          type=((CheckedCollection)example).getElementType();
+        }
+      }
+      final Class<?> impl=getImplementation(type);
+      if (impl != null) {
+        assertSetters(new PropertyAccessor(impl,type),done);
+      }
+    }
+  }
+}

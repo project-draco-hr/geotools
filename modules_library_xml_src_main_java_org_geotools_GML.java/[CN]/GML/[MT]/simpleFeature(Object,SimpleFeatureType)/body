@@ -1,0 +1,28 @@
+{
+  if (schema == null) {
+    schema=simpleType(obj);
+  }
+  if (obj instanceof SimpleFeature) {
+    return (SimpleFeature)obj;
+  }
+  if (obj instanceof Map<?,?>) {
+    Map<?,?> map=(Map<?,?>)obj;
+    Object values[]=new Object[schema.getAttributeCount()];
+    for (int i=0; i < schema.getAttributeCount(); i++) {
+      AttributeDescriptor descriptor=schema.getDescriptor(i);
+      String key=descriptor.getLocalName();
+      Object value=map.get(key);
+      values[i]=value;
+    }
+    SimpleFeature feature=SimpleFeatureBuilder.build(schema,values,null);
+    return feature;
+  }
+  if (obj instanceof Geometry) {
+    Geometry geom=(Geometry)obj;
+    SimpleFeatureBuilder build=new SimpleFeatureBuilder(schema);
+    build.set(schema.getGeometryDescriptor().getName(),geom);
+    SimpleFeature feature=build.buildFeature(null);
+    return feature;
+  }
+  return null;
+}

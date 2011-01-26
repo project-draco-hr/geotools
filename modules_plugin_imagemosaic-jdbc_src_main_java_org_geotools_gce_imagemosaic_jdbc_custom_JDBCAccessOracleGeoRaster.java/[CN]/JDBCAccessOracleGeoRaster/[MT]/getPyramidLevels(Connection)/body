@@ -1,0 +1,27 @@
+{
+  LOGGER.fine("getPyrmidLevels Method");
+  String sqlPyramidLevels="select sdo_geor.getPyramidMaxLevel(" + getConfig().getGeoRasterAttribute() + ") from "+ getConfig().getMasterTable()+ " where "+ getConfig().getCoverageNameAttribute()+ " = ?";
+  PreparedStatement stmt=null;
+  ResultSet rs=null;
+  int numberOfPyramidLevels=0;
+  try {
+    LOGGER.fine("get pyramid level sql: " + sqlPyramidLevels);
+    stmt=con.prepareStatement(sqlPyramidLevels);
+    stmt.setString(1,getConfig().getCoverageName());
+    rs=stmt.executeQuery();
+    if (rs.next()) {
+      LOGGER.fine("Assiging number of levels");
+      numberOfPyramidLevels=rs.getInt(1) + 1;
+      LOGGER.fine("Assigned number of levels");
+    }
+  }
+ catch (  SQLException e) {
+    throw new RuntimeException(e);
+  }
+ finally {
+    closeResultSet(rs);
+    closePreparedStmt(stmt);
+  }
+  LOGGER.fine("Returning Pyramid Levels");
+  return numberOfPyramidLevels;
+}

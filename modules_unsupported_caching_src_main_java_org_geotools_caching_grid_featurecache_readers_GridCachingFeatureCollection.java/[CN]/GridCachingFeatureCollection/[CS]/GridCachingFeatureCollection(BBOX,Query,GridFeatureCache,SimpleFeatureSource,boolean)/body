@@ -1,0 +1,32 @@
+{
+  this(preFilter,query.getFilter(),g,fs,cacheFeatures);
+  this.query=query;
+  CoordinateReferenceSystem source=g.getSchema().getCoordinateReferenceSystem();
+  CoordinateReferenceSystem dest=null;
+  if (query.getCoordinateSystemReproject() != null) {
+    dest=query.getCoordinateSystemReproject();
+  }
+ else   if (query.getCoordinateSystem() != null) {
+    dest=query.getCoordinateSystem();
+  }
+  if (query.getCoordinateSystem() != null) {
+    source=query.getCoordinateSystem();
+  }
+  if (dest != null && !dest.equals(source)) {
+    try {
+      reproject=CRS.findMathTransform(source,dest);
+    }
+ catch (    FactoryException ex) {
+      IOException newex=new IOException("Could not reproject data to " + dest);
+      newex.initCause(ex);
+      throw newex;
+    }
+  }
+  this.newFeatureType=createSchema((SimpleFeatureType)featureType,query,dest);
+  if (query.getSortBy() != null && query.getSortBy().length > 0) {
+    throw new IOException("Sorting not supported by this feature collection.");
+  }
+  if (query.getStartIndex() != null && query.getStartIndex() > 0) {
+    throw new IOException("Start index not supported by this feature collection.");
+  }
+}

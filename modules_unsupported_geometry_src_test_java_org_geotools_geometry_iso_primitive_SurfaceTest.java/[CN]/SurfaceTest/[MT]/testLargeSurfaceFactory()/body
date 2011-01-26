@@ -1,0 +1,29 @@
+{
+  DefaultGeographicCRS crs=DefaultGeographicCRS.WGS84;
+  PositionFactory postitionFactory=new PositionFactoryImpl(crs);
+  PrimitiveFactory primitiveFactory=new PrimitiveFactoryImpl(crs,postitionFactory);
+  GeometryFactory geometryFactory=new GeometryFactoryImpl(crs,postitionFactory);
+  int NUMBER=100000;
+  double delta=360.0 / (double)NUMBER;
+  PointArray points=postitionFactory.createPointArray();
+  for (double angle=0.0; angle < 360.0; angle+=delta) {
+    double ordinates[]=new double[]{Math.sin(Math.toRadians(angle)),Math.cos(Math.toRadians(angle))};
+    DirectPosition point=postitionFactory.createDirectPosition(ordinates);
+    points.add(point);
+  }
+  List<OrientableCurve> curves=new ArrayList<OrientableCurve>();
+  List<CurveSegment> segmentList=new ArrayList<CurveSegment>();
+  for (int i=0; i < points.length(); i++) {
+    int start=i;
+    int end=(i + 1) % points.size();
+    DirectPosition point1=points.getDirectPosition(start,null);
+    DirectPosition point2=points.getDirectPosition(end,null);
+    LineSegment segment=geometryFactory.createLineSegment(point1,point2);
+    segmentList.add(segment);
+  }
+  Curve curve=primitiveFactory.createCurve(segmentList);
+  curves.add(curve);
+  Ring ring=primitiveFactory.createRing(curves);
+  SurfaceBoundary boundary=primitiveFactory.createSurfaceBoundary(ring,new ArrayList());
+  Surface surface=primitiveFactory.createSurface(boundary);
+}

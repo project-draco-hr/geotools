@@ -1,0 +1,30 @@
+{
+  if (minSize <= 1 || minSize > maxSize) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_RANGE_$2,minSize,maxSize));
+  }
+  if (tileSize < minSize || tileSize > maxSize) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.VALUE_OUT_OF_BOUNDS_$3,tileSize,minSize,maxSize));
+  }
+  if (imageSize <= minSize) {
+    return imageSize;
+  }
+  int numDivisors=0;
+  int best=tileSize;
+  for (int i=minSize; i <= maxSize; i++) {
+    if (imageSize % i != 0) {
+      continue;
+    }
+    final int n=XMath.divisors(Fraction.round(imageSize,i)).length;
+    if (n < numDivisors) {
+      continue;
+    }
+    if (n == numDivisors) {
+      if (Math.abs(i - tileSize) >= Math.abs(best - tileSize)) {
+        continue;
+      }
+    }
+    best=i;
+    numDivisors=n;
+  }
+  return best;
+}

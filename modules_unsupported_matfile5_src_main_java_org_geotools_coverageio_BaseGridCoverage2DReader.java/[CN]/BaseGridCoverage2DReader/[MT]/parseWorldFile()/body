@@ -1,0 +1,33 @@
+{
+  final String worldFilePath=new StringBuffer(this.parentPath).append(GridCoverageUtilities.SEPARATOR).append(localCoverageName).toString();
+  File file2Parse=null;
+  boolean worldFileExists=false;
+  if (worldFileExt != null && worldFileExt.length() > 0) {
+    file2Parse=new File(worldFilePath + worldFileExt);
+    worldFileExists=file2Parse.exists();
+  }
+  if (!worldFileExists) {
+    file2Parse=new File(worldFilePath + GridCoverageUtilities.DEFAULT_WORLDFILE_EXT);
+    worldFileExists=file2Parse.exists();
+  }
+  if (worldFileExists) {
+    final WorldFileReader reader=new WorldFileReader(file2Parse);
+    raster2Model=reader.getTransform();
+    MathTransform tempTransform=PixelTranslation.translate(raster2Model,PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER);
+    try {
+      final Envelope gridRange=new GeneralEnvelope(getCoverageGridRange().getBounds2D());
+      final GeneralEnvelope coverageEnvelope=CRS.transform(tempTransform,gridRange);
+      setCoverageEnvelope(coverageEnvelope);
+    }
+ catch (    TransformException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+catch (    IllegalStateException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  int problemCount=0;
+  IOException io=null;
+  State state;
+  for (Iterator i=stateLookup.values().iterator(); i.hasNext(); ) {
+    state=(State)i.next();
+    try {
+      state.rollback();
+    }
+ catch (    IOException e) {
+      problemCount++;
+      io=e;
+    }
+  }
+  if (io != null) {
+    if (problemCount == 1) {
+      throw io;
+    }
+    throw new DataSourceException("Rollback encountered " + problemCount + " problems - the first was",io);
+  }
+  authorizations.clear();
+}

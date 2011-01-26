@@ -1,0 +1,65 @@
+{
+  if (Boolean.TRUE.equals(inProgress.get())) {
+    return Collections.emptySet();
+  }
+  final Set<String> codes=new LinkedHashSet<String>();
+  final Set<AuthorityFactory> done=new HashSet<AuthorityFactory>();
+  done.add(this);
+  try {
+    inProgress.set(Boolean.TRUE);
+    for (    String authority : getAuthorityNames()) {
+      authority=authority.trim();
+      final char separator=getSeparator(authority);
+      final StringBuilder code=new StringBuilder(authority);
+      int codeBase=code.length();
+      if (codeBase != 0 && code.charAt(codeBase - 1) != separator) {
+        code.append(separator);
+        codeBase=code.length();
+      }
+      code.append("all");
+      final String dummyCode=code.toString();
+      scanForType:       for (int i=0; i < FACTORY_TYPES.length; i++) {
+        if (!OBJECT_TYPES[i].isAssignableFrom(type)) {
+          continue;
+        }
+        final Class<? extends AuthorityFactory> factoryType=FACTORY_TYPES[i];
+        final AuthorityFactory factory;
+        try {
+          factory=getAuthorityFactory(factoryType,dummyCode);
+        }
+ catch (        NoSuchAuthorityCodeException e) {
+          continue;
+        }
+        if (!done.add(factory)) {
+          continue;
+        }
+        AuthorityFactory wrapped=factory;
+        while (wrapped instanceof AuthorityFactoryAdapter) {
+          final AuthorityFactoryAdapter adapter=(AuthorityFactoryAdapter)wrapped;
+          try {
+            wrapped=adapter.getAuthorityFactory(factoryType,dummyCode);
+          }
+ catch (          NoSuchAuthorityCodeException exception) {
+            continue scanForType;
+          }
+          if (!done.add(wrapped)) {
+            continue scanForType;
+          }
+        }
+        for (        String candidate : factory.getAuthorityCodes(type)) {
+          candidate=candidate.trim();
+          if (candidate.length() < codeBase || Character.isLetterOrDigit(candidate.charAt(codeBase - 1)) || !authority.equalsIgnoreCase(candidate.substring(0,codeBase - 1))) {
+            code.setLength(codeBase);
+            code.append(candidate);
+            candidate=code.toString();
+          }
+          codes.add(candidate);
+        }
+      }
+    }
+  }
+  finally {
+    inProgress.remove();
+  }
+  return codes;
+}

@@ -1,0 +1,59 @@
+{
+  GridCoverage2D primarySource=sources[PRIMARY_SOURCE_INDEX];
+  final GridSampleDimension[][] list=new GridSampleDimension[sources.length][];
+  for (int i=0; i < list.length; i++) {
+    if (sources[i] == null) {
+      continue;
+    }
+    list[i]=sources[i].getSampleDimensions();
+  }
+  final GridSampleDimension[] sampleDims=deriveSampleDimension(list,parameters);
+  int primarySourceIndex=-1;
+  for (int i=0; i < list.length; i++) {
+    if (list[i] != null && Arrays.equals(sampleDims,list[i])) {
+      primarySource=sources[i];
+      primarySourceIndex=i;
+      break;
+    }
+  }
+  RenderingHints hints=ImageUtilities.getRenderingHints(parameters.getSource());
+  ImageLayout layout=(hints != null) ? (ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT) : null;
+  if (layout == null || !layout.isValid(ImageLayout.COLOR_MODEL_MASK)) {
+    if (sampleDims != null && sampleDims.length != 0) {
+      int visibleBand=CoverageUtilities.getVisibleBand(primarySource.getRenderedImage());
+      if (visibleBand >= sampleDims.length) {
+        visibleBand=0;
+      }
+      final ColorModel colors;
+      colors=sampleDims[visibleBand].getColorModel(visibleBand,sampleDims.length);
+      if (colors != null) {
+        if (layout == null) {
+          layout=new ImageLayout();
+        }
+        layout=layout.setColorModel(colors);
+      }
+    }
+  }
+  if (layout != null) {
+    if (hints == null) {
+      hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+ else {
+      hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+  }
+  if (parameters.hints != null) {
+    if (hints != null) {
+      hints.add(parameters.hints);
+    }
+ else {
+      hints=parameters.hints;
+    }
+  }
+  final InternationalString name=deriveName(sources,primarySourceIndex,parameters);
+  final CoordinateReferenceSystem crs=primarySource.getCoordinateReferenceSystem();
+  final MathTransform toCRS=primarySource.getGridGeometry().getGridToCRS();
+  final RenderedImage data=createRenderedImage(parameters.parameters,hints);
+  final Map properties=getProperties(data,crs,name,toCRS,sources,parameters);
+  return getFactory(parameters.hints).create(name,data,crs,toCRS,sampleDims,sources,properties);
+}

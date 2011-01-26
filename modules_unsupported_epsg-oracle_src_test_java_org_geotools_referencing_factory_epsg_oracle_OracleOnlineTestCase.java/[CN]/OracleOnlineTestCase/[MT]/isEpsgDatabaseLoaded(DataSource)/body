@@ -1,0 +1,20 @@
+{
+  if (source == null)   return false;
+  Connection connection=source.getConnection();
+  try {
+    DatabaseMetaData metaData=connection.getMetaData();
+    String user=fixture.getProperty("user").toUpperCase();
+    ResultSet epsgTables=metaData.getTables(null,user,"EPSG%",null);
+    List list=new ArrayList();
+    while (epsgTables.next()) {
+      list.add(epsgTables.getObject(3));
+    }
+    if (list.isEmpty()) {
+      throw new SQLException("Could not find EPSG tables");
+    }
+    return true;
+  }
+  finally {
+    connection.close();
+  }
+}

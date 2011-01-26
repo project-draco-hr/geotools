@@ -1,0 +1,31 @@
+{
+  Filter[] splitted=delegate.splitFilter(filter);
+  Filter preFilter=splitted[0];
+  Filter postFilter=splitted[1];
+  if (postFilter != null && !Filter.INCLUDE.equals(postFilter)) {
+    super.removeFeatures(filter);
+  }
+ else {
+    Connection cx=getDataStore().getConnection(getState());
+    SimpleFeatureType featureType=getSchema();
+    try {
+      getDataStore().ensureAuthorization(featureType,preFilter,getTransaction(),cx);
+    }
+ catch (    SQLException e) {
+      throw (IOException)new IOException().initCause(e);
+    }
+    ContentState state=getEntry().getState(transaction);
+    ReferencedEnvelope bounds=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+    if (state.hasListener()) {
+      ReferencedEnvelope before=getBounds(new DefaultQuery(getSchema().getTypeName(),preFilter));
+      if (before != null && !before.isEmpty()) {
+        bounds=before;
+      }
+    }
+    getDataStore().delete(featureType,preFilter,cx);
+    if (state.hasListener()) {
+      FeatureEvent event=new FeatureEvent(this,Type.REMOVED,bounds,preFilter);
+      state.fireFeatureEvent(event);
+    }
+  }
+}

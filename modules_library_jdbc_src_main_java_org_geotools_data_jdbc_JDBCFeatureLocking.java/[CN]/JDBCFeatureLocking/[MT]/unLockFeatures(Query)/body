@@ -1,0 +1,23 @@
+{
+  LockingManager lockingManager=getDataStore().getLockingManager();
+  if (lockingManager == null) {
+    throw new UnsupportedOperationException("DataStore not using lockingManager, must provide alternate implementation");
+  }
+  SimpleFeatureIterator reader=getFeatures(query).features();
+  String typeName=query.getTypeName();
+  SimpleFeature feature;
+  try {
+    while (reader.hasNext()) {
+      try {
+        feature=reader.next();
+        lockingManager.unLockFeatureID(typeName,feature.getID(),getTransaction(),featureLock);
+      }
+ catch (      NoSuchElementException nosuch) {
+        throw new DataSourceException("Problem with " + query.getHandle() + " while locking",nosuch);
+      }
+    }
+  }
+  finally {
+    reader.close();
+  }
+}

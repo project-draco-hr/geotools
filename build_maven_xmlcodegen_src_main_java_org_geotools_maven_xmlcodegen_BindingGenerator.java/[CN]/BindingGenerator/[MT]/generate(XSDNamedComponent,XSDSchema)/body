@@ -1,0 +1,32 @@
+{
+  if (!target(c,schema)) {
+    return;
+  }
+  if (!included(c)) {
+    return;
+  }
+  Class bindingBaseClass=simpleBindingBaseClass;
+  if (c instanceof XSDComplexTypeDefinition) {
+    bindingBaseClass=complexBindingBaseClass;
+  }
+  logger.info("Generating binding for " + c.getName());
+  try {
+    String result=execute("CLASS",new Object[]{c,bindingConstructorArguments,bindingBaseClass});
+    write(result,name(c),sourceLocation);
+  }
+ catch (  Exception ioe) {
+    String msg="Unable to generate binding for " + c;
+    logger.log(Level.WARNING,msg,ioe);
+  }
+  if (generateTests) {
+    logger.info("Generating binding test for " + c.getName());
+    try {
+      String result=execute("BindingTestClass",new Object[]{c});
+      write(result,testName(c),testLocation);
+    }
+ catch (    Exception ioe) {
+      String msg="Unable to generate binding test for " + c;
+      logger.log(Level.WARNING,msg,ioe);
+    }
+  }
+}

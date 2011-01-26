@@ -1,0 +1,63 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if ((attribute.getId() != null) && (attribute.getId() != "")) {
+    ai.addAttribute("","id","","ID",attribute.getId());
+  }
+  boolean nested=false;
+  if (attribute.getNamespace().equals(schema.getTargetNamespace())) {
+    Attribute[] elems=schema.getAttributes();
+    boolean found=false;
+    for (int i=0; (i < elems.length) && !found; i++)     if (attribute.getName().equals(elems[i].getName())) {
+      found=true;
+      ai.addAttribute("","ref","","QName",attribute.getName());
+    }
+    if (!found) {
+      if (!attribute.getSimpleType().getNamespace().equals(schema.getTargetNamespace())) {
+        found=true;
+        XSISAXHandler.setLogLevel(logger.getLevel());
+        Schema s=SchemaFactory.getInstance(attribute.getNamespace());
+        if ((attribute.getName() != null) && (attribute.getName() != "")) {
+          ai.addAttribute("","name","","QName",attribute.getName());
+        }
+        ai.addAttribute("","type","","QName",s.getPrefix() + ":" + attribute.getSimpleType().getName());
+      }
+      SimpleType[] types=schema.getSimpleTypes();
+      for (int i=0; (i < types.length) && !found; i++)       if (attribute.getSimpleType().getName().equals(types[i].getName())) {
+        found=true;
+        if ((attribute.getName() != null) && (attribute.getName() != "")) {
+          ai.addAttribute("","name","","QName",attribute.getName());
+        }
+        ai.addAttribute("","type","","QName",attribute.getSimpleType().getName());
+      }
+      if (!found) {
+        nested=true;
+        if ((attribute.getName() != null) && (attribute.getName() != "")) {
+          ai.addAttribute("","name","","QName",attribute.getName());
+        }
+      }
+    }
+  }
+ else {
+    Schema s=SchemaFactory.getInstance(attribute.getNamespace());
+    ai.addAttribute("","ref","","QName",s.getPrefix() + ":" + attribute.getName());
+  }
+  if (attribute.getUse() != Attribute.OPTIONAL) {
+    ai.addAttribute("","use","","NMTOKEN",AttributeHandler.writeUse(attribute.getUse()));
+  }
+  if ((attribute.getDefault() != null) && (attribute.getDefault() != "")) {
+    ai.addAttribute("","default","","String",attribute.getDefault());
+  }
+ else {
+    if ((attribute.getFixed() != null) && (attribute.getFixed() != "")) {
+      ai.addAttribute("","fixed","","String",attribute.getFixed());
+    }
+  }
+  if (attribute.isForm()) {
+    ai.addAttribute("","form","","NMTOKEN","qualified");
+  }
+  ph.startElement(XSISimpleTypes.NAMESPACE,"attribute",ai);
+  if (nested) {
+    writeSimpleType(attribute.getSimpleType(),schema,ph,hints);
+  }
+  ph.endElement(XSISimpleTypes.NAMESPACE,"attribute");
+}

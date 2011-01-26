@@ -1,0 +1,25 @@
+{
+  IsValidGeometryValidation geom=new IsValidGeometryValidation();
+  geom.setName("IsValidGeometry");
+  geom.setDescription("IsValid geomtry test for Junit Test +" + getName());
+  geom.setTypeRef("*");
+  processor.addValidation(geom);
+  processor.runFeatureTests("dataStoreId",DataUtilities.collection(this.roadFeatures),results);
+  assertTrue(results.getFailedMessages().length == 0);
+  try {
+    this.newRoad=SimpleFeatureBuilder.build(this.roadType,new Object[]{new Integer(2),line(new int[]{1,2,1,2}),"r4"},"road.rd4");
+  }
+ catch (  IllegalAttributeException e) {
+  }
+  SimpleFeature[] singleRoad=new SimpleFeature[1];
+  singleRoad[0]=this.newRoad;
+  SimpleFeatureCollection features=DataUtilities.collection(singleRoad);
+  processor.runFeatureTests("dataStoreId",features,results);
+  assertTrue(results.getFailedMessages().length > 0);
+  HashMap map=new HashMap();
+  String[] typeNames=this.store.getTypeNames();
+  for (int i=0; i < typeNames.length; i++)   map.put(typeNames[i],this.store.getFeatureSource(typeNames[i]));
+  map.put("newThing",this.store.getFeatureSource(typeNames[0]));
+  processor.runIntegrityTests(null,map,null,results);
+  assertTrue(results.getFailedMessages().length > 0);
+}

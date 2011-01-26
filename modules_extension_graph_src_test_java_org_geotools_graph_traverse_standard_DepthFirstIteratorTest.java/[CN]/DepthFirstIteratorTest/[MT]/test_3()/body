@@ -1,0 +1,56 @@
+{
+  int k=4;
+  Object[] obj=GraphTestUtil.buildPerfectBinaryTree(builder(),k);
+  Node root=(Node)obj[0];
+  final Map obj2node=(Map)obj[1];
+  GraphVisitor initializer=new GraphVisitor(){
+    public int visit(    Graphable component){
+      component.setCount(-1);
+      return 0;
+    }
+  }
+;
+  CountingWalker walker=new CountingWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      element.setCount(getCount());
+      return super.visit(element,traversal);
+    }
+  }
+;
+  DepthFirstIterator iterator=createIterator();
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  iterator.setSource(root);
+  traversal.traverse();
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      assertTrue(component.isVisited());
+      Node ln=(Node)obj2node.get(component.getObject().toString() + ".0");
+      Node rn=(Node)obj2node.get(component.getObject().toString() + ".1");
+      if (ln != null) {
+        Node n1=ln;
+        Node n2=rn;
+        if (ln.getCount() > rn.getCount()) {
+          n1=rn;
+          n2=ln;
+        }
+        FIFOQueue queue=new FIFOQueue(256);
+        queue.enq(n1);
+        while (!queue.isEmpty()) {
+          Node n=(Node)queue.deq();
+          ln=(Node)obj2node.get(n.getObject().toString() + ".0");
+          rn=(Node)obj2node.get(n.getObject().toString() + ".1");
+          if (ln == null)           continue;
+          assertTrue(ln.getCount() < n2.getCount());
+          assertTrue(rn.getCount() < n2.getCount());
+          queue.enq(ln);
+          queue.enq(rn);
+        }
+      }
+      return 0;
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == (int)Math.pow(2,k + 1) - 1);
+}

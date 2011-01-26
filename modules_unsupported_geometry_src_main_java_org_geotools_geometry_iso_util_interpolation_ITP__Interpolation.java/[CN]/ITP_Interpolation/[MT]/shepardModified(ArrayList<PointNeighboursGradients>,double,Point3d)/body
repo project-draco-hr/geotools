@@ -1,0 +1,38 @@
+{
+  PointNeighboursGradients png0;
+  double[] dist=new double[pngColl.size()];
+  double distMax=0.0;
+  for (int i=0; i < pngColl.size(); ++i) {
+    png0=(PointNeighboursGradients)pngColl.get(i);
+    if (q == 2) {
+      dist[i]=(p_eval.x - png0.mP.x) * (p_eval.x - png0.mP.x) + (p_eval.y - png0.mP.y) * (p_eval.y - png0.mP.y);
+    }
+ else {
+      dist[i]=Math.pow(p_eval.distance(png0.mP),q);
+    }
+    distMax=Math.max(dist[i],distMax);
+  }
+  double sum0=0.0;
+  double sum1=0.0;
+  Point2D p0=new Point2D.Double();
+  Point2D p1=new Point2D.Double();
+  for (int i=0; i < pngColl.size(); ++i) {
+    png0=(PointNeighboursGradients)pngColl.get(i);
+    double prod=1.0;
+    for (int j=0; j < pngColl.size(); ++j) {
+      if (i != j) {
+        prod*=dist[j] / distMax;
+        if (prod == 0.0) {
+          PointNeighboursGradients png1=(PointNeighboursGradients)pngColl.get(j);
+          p_eval.z=png1.mP.z;
+          return;
+        }
+      }
+    }
+    p0.setLocation(p_eval.x,p_eval.y);
+    p1.setLocation(png0.mP.x,png0.mP.y);
+    sum0+=(png0.mP.z + AlgoPoint2D.scalar(AlgoPoint2D.subtract(p0,p1),png0.mGradXY)) * prod;
+    sum1+=prod;
+  }
+  p_eval.z=(sum0 / sum1);
+}

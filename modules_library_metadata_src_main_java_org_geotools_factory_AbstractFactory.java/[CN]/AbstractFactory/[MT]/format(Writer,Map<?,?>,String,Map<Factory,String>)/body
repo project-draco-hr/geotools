@@ -1,0 +1,29 @@
+{
+  for (  final Map.Entry<?,?> entry : hints.entrySet()) {
+    final Object k=entry.getKey();
+    String key=(k instanceof RenderingHints.Key) ? Hints.nameOf((RenderingHints.Key)k) : String.valueOf(k);
+    Object value=entry.getValue();
+    table.write(indent);
+    table.write(key);
+    table.write("\t= ");
+    Factory recursive=null;
+    if (value instanceof Factory) {
+      recursive=(Factory)value;
+      value=format(recursive);
+      final String previous=done.put(recursive,key);
+      if (previous != null) {
+        done.put(recursive,previous);
+        table.write("(same as ");
+        table.write(previous);
+        value=")";
+        recursive=null;
+      }
+    }
+    table.write(String.valueOf(value));
+    table.write('\n');
+    if (recursive != null) {
+      final String nextIndent=Utilities.spaces(indent.length() + 2);
+      format(table,recursive.getImplementationHints(),nextIndent,done);
+    }
+  }
+}

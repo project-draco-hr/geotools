@@ -1,0 +1,61 @@
+{
+  FilterFactory ff=FilterFactory.createFilterFactory();
+  LikeFilter like=ff.createLikeFilter();
+  like.setPattern(MODULE + "*","*","?","!");
+  like.setValue(ff.createAttributeExpression(null,"module"));
+  String[] ps=new String[]{"the_geom","cfcc","name","altname1","altname2","altname3","altname4","altname5","altname6","altname7","altname8","altname9"};
+  Query q=new DefaultQuery("delme_major",like,ps);
+  FeatureReader fr=ds.getFeatureReader(q,new DefaultTransaction());
+  while (fr.hasNext()) {
+    Feature f=fr.next();
+    f.getDefaultGeometry().setUserData(f.getAttribute(1));
+    Integer interstate_num=null;
+    Integer ushwy_num=null;
+    Integer statehwy_num=null;
+    String other_nam=null;
+    interstate_num=getInterstate(f);
+    if (interstate_num == null) {
+      ushwy_num=getUShwy(f);
+      if (ushwy_num == null) {
+        statehwy_num=getStateHwy(f);
+        if (ushwy_num == null) {
+          other_nam=getOtherName(f);
+        }
+      }
+    }
+    if (interstate_num != null) {
+      ArrayList al=(ArrayList)interstate.get(interstate_num);
+      if (al == null) {
+        al=new ArrayList();
+        interstate.put(interstate_num,al);
+      }
+      al.add(f.getDefaultGeometry());
+    }
+ else     if (ushwy_num != null) {
+      ArrayList al=(ArrayList)ushighway.get(ushwy_num);
+      if (al == null) {
+        al=new ArrayList();
+        ushighway.put(ushwy_num,al);
+      }
+      al.add(f.getDefaultGeometry());
+    }
+ else     if (statehwy_num != null) {
+      ArrayList al=(ArrayList)statehighway.get(statehwy_num);
+      if (al == null) {
+        al=new ArrayList();
+        statehighway.put(statehwy_num,al);
+      }
+      al.add(f.getDefaultGeometry());
+    }
+ else {
+      String name=(String)f.getAttribute("name");
+      ArrayList al=(ArrayList)other.get(name);
+      if (al == null) {
+        al=new ArrayList();
+        other.put(name,al);
+      }
+      al.add(f.getDefaultGeometry());
+    }
+  }
+  fr.close();
+}

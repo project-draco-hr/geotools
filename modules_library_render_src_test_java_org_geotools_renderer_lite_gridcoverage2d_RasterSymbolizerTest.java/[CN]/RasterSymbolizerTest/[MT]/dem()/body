@@ -1,0 +1,24 @@
+{
+  java.net.URL surl=TestData.url(this,"raster_dem.sld");
+  SLDParser stylereader=new SLDParser(sf,surl);
+  StyledLayerDescriptor sld=stylereader.parseSLD();
+  GridCoverage2D gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("name",JAI.create("ImageRead",TestData.file(this,"smalldem.tif")),new GeneralEnvelope(new double[]{-90,-180},new double[]{90,180}),new GridSampleDimension[]{new GridSampleDimension("dem")},null,null);
+  SubchainStyleVisitorCoverageProcessingAdapter rsh=new RasterSymbolizerHelper(gc,null);
+  final RasterSymbolizer rs=extractRasterSymbolizer(sld);
+  rsh.visit(rs);
+  testRasterSymbolizerHelper(rsh);
+  gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("name",JAI.create("ImageRead",TestData.file(this,"smalldem.tif")),new GeneralEnvelope(new double[]{-90,-180},new double[]{90,180}));
+  StyleBuilder sldBuilder=new StyleBuilder();
+  rsh=new RasterSymbolizerHelper(gc,null);
+  final RasterSymbolizer rsb_1=sldBuilder.createRasterSymbolizer();
+  final ChannelSelection chSel=new ChannelSelectionImpl();
+  final SelectedChannelType chTypeGray=new SelectedChannelTypeImpl();
+  chTypeGray.setChannelName("1");
+  chSel.setGrayChannel(chTypeGray);
+  rsb_1.setChannelSelection(chSel);
+  rsb_1.setOpacity(sldBuilder.literalExpression(1.0));
+  final ColorMap cm=sldBuilder.createColorMap(new String[]{"category","category","category"},new double[]{0.1,50.0,200.0},new Color[]{new Color(255,0,0,255),new Color(0,255,0,40),new Color(0,0,255,125)},ColorMap.TYPE_RAMP);
+  rsb_1.setColorMap(cm);
+  rsh.visit(rsb_1);
+  testRasterSymbolizerHelper(rsh);
+}

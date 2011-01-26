@@ -1,0 +1,80 @@
+{
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("processing " + style.getFeatureTypeStyles().length + " stylers");
+  }
+  FeatureTypeStyle[] featureStylers=style.getFeatureTypeStyles();
+  SimpleFeatureType type;
+  try {
+    type=createFeatureType(query,style,datastore);
+  }
+ catch (  Exception e) {
+    fireErrorEvent(e);
+    LOGGER.logp(Level.WARNING,"org.geotools.renderer.shape.ShapefileRenderer","processStylers","Could not prep style for rendering",e);
+    return;
+  }
+  for (int i=0; i < featureStylers.length; i++) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("processing style " + i);
+    }
+    FeatureTypeStyle fts=featureStylers[i];
+    String typeName=datastore.getSchema().getTypeName();
+    if ((typeName != null) && (FeatureTypes.isDecendedFrom(datastore.getSchema(),null,fts.getFeatureTypeName()) || typeName.equalsIgnoreCase(fts.getFeatureTypeName()))) {
+      Rule[] rules=fts.getRules();
+      List<Rule> ruleList=new ArrayList<Rule>();
+      List<Rule> elseRuleList=new ArrayList<Rule>();
+      for (int j=0; j < rules.length; j++) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("processing rule " + j);
+        }
+        Rule r=rules[j];
+        Filter f=r.getFilter();
+        if (f != null) {
+          GeometryFilterChecker checker=new GeometryFilterChecker();
+          f.accept(checker,null);
+          if (checker.isGeometryFilterPresent()) {
+            DuplicatingStyleVisitor duplicator=new DuplicatingStyleVisitor();
+            r.accept(duplicator);
+            r=(Rule)duplicator.getCopy();
+            FilterTransformer transformer=new FilterTransformer(mt);
+            r.setFilter((Filter)r.getFilter().accept(transformer,null));
+          }
+        }
+        if (isWithInScale(r)) {
+          if (r.hasElseFilter()) {
+            elseRuleList.add(r);
+          }
+ else {
+            ruleList.add(r);
+          }
+        }
+      }
+      double pixelsPerMeters=RendererUtilities.calculatePixelsPerMeterRatio(scaleDenominator,rendererHints);
+      UomRescaleStyleVisitor rescaleVisitor=new UomRescaleStyleVisitor(pixelsPerMeters);
+      for (int j=0; j < ruleList.size(); j++) {
+        rescaleVisitor.visit(ruleList.get(j));
+        ruleList.set(j,(Rule)rescaleVisitor.getCopy());
+      }
+      for (int j=0; j < elseRuleList.size(); j++) {
+        rescaleVisitor.visit(elseRuleList.get(j));
+        elseRuleList.set(j,(Rule)rescaleVisitor.getCopy());
+      }
+      double dpi=RendererUtilities.getDpi(getRendererHints());
+      double standardDpi=RendererUtilities.getDpi(Collections.emptyMap());
+      if (dpi != standardDpi) {
+        double scaleFactor=dpi / standardDpi;
+        RescaleStyleVisitor dpiVisitor=new RescaleStyleVisitor(scaleFactor);
+        for (int j=0; j < ruleList.size(); j++) {
+          dpiVisitor.visit(ruleList.get(j));
+          ruleList.set(j,(Rule)dpiVisitor.getCopy());
+        }
+        for (int j=0; j < elseRuleList.size(); j++) {
+          dpiVisitor.visit(elseRuleList.get(j));
+          elseRuleList.set(j,(Rule)dpiVisitor.getCopy());
+        }
+      }
+      NumberRange scaleRange=new NumberRange(scaleDenominator,scaleDenominator);
+      Set modifiedFIDs=processTransaction(graphics,bbox,mt,datastore,transaction,typeName,query,ruleList,elseRuleList,scaleRange,layerId);
+      if (ruleList.size() > 0 || elseRuleList.size() > 0)       processShapefile(graphics,datastore,bbox,screenSize,mt,info,type,query,ruleList,elseRuleList,modifiedFIDs,scaleRange,layerId);
+    }
+  }
+}

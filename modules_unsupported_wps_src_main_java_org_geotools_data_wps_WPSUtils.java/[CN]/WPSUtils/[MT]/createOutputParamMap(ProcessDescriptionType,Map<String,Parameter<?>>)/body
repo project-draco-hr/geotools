@@ -1,0 +1,34 @@
+{
+  if (map == null) {
+    map=new TreeMap<String,Parameter<?>>();
+  }
+  ProcessOutputsType processOutputs=processDesc.getProcessOutputs();
+  if (processOutputs == null)   return null;
+  EList outputs=processOutputs.getOutput();
+  if (outputs == null || outputs.isEmpty())   return null;
+  Iterator iterator=outputs.iterator();
+  while (iterator.hasNext()) {
+    OutputDescriptionType odt=(OutputDescriptionType)iterator.next();
+    LiteralOutputType literalOutput=odt.getLiteralOutput();
+    SupportedComplexDataType complexOutput=odt.getComplexOutput();
+    Class type=Object.class;
+    if (literalOutput != null) {
+      String reference=literalOutput.getDataType().getReference();
+      type=getLiteralTypeFromReference(reference);
+    }
+ else     if (complexOutput != null) {
+      ComplexDataDescriptionType format=complexOutput.getDefault().getFormat();
+      String encoding=format.getEncoding();
+      String mimetype=format.getMimeType();
+      String schema=format.getSchema();
+      if (encoding == null)       encoding="";
+      if (mimetype == null)       mimetype="";
+      if (schema == null)       schema="";
+      type=getComplexType(encoding,mimetype,schema);
+    }
+    InternationalString description=Text.text(odt.getAbstract() == null ? "" : odt.getAbstract().getValue());
+    Parameter param=new Parameter(odt.getIdentifier().getValue(),type,Text.text(odt.getTitle().getValue()),description);
+    map.put(odt.getIdentifier().getValue(),param);
+  }
+  return map;
+}

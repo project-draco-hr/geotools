@@ -1,0 +1,26 @@
+{
+  if (localName == null) {
+    return null;
+  }
+  if (namespaceURI == null || "".equals(namespaceURI.toString())) {
+    namespaceURI=defaultNS;
+  }
+  logger.finest("Trying to create an element handler for " + localName + " :: "+ namespaceURI);
+  Schema s=(Schema)targSchemas.get(namespaceURI);
+  if (s == null) {
+    logger.finest("Could not find Schema " + namespaceURI);
+    return null;
+  }
+  logger.finest("Found Schema " + s.getTargetNamespace());
+  Element[] eth=s.getElements();
+  if (eth == null) {
+    return null;
+  }
+  for (int i=0; i < eth.length; i++) {
+    String name=eth[i].getName();
+    if (localName.equalsIgnoreCase(name) || name.equals(IgnoreHandler.NAME)) {
+      return createElementHandler(eth[i]);
+    }
+  }
+  return null;
+}

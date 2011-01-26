@@ -1,0 +1,31 @@
+{
+  final boolean isRoot=parent.isRoot();
+  final Element element=parent.pullOptionalElement("AUTHORITY");
+  Map<String,Object> properties;
+  if (element == null) {
+    if (isRoot) {
+      properties=new HashMap<String,Object>(4);
+      properties.put(IdentifiedObject.NAME_KEY,name);
+    }
+ else {
+      properties=singletonMap(IdentifiedObject.NAME_KEY,(Object)name);
+    }
+  }
+ else {
+    final String auth=element.pullString("name");
+    String code=element.pullOptionalString("code");
+    if (code == null) {
+      int codeNumber=element.pullInteger("code");
+      code=String.valueOf(codeNumber);
+    }
+    element.close();
+    final Citation authority=Citations.fromName(auth);
+    properties=new HashMap<String,Object>(4);
+    properties.put(IdentifiedObject.NAME_KEY,new NamedIdentifier(authority,name));
+    properties.put(IdentifiedObject.IDENTIFIERS_KEY,new NamedIdentifier(authority,code));
+  }
+  if (isRoot) {
+    properties=alterProperties(properties);
+  }
+  return properties;
+}

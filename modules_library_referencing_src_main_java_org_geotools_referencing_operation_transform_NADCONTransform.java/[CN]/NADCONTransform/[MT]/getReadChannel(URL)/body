@@ -1,0 +1,16 @@
+{
+  ReadableByteChannel channel=null;
+  if (url.getProtocol().equals("file")) {
+    File file=new File(url.getFile());
+    if (!file.exists() || !file.canRead()) {
+      throw new IOException(Errors.format(ErrorKeys.FILE_DOES_NOT_EXIST_$1,file));
+    }
+    FileInputStream in=new FileInputStream(file);
+    channel=in.getChannel();
+  }
+ else {
+    InputStream in=url.openConnection().getInputStream();
+    channel=Channels.newChannel(in);
+  }
+  return channel;
+}

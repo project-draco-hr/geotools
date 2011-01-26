@@ -1,0 +1,31 @@
+{
+  System.out.println("Welcome to GeoTools:" + GeoTools.getVersion());
+  File file;
+  if (args.length == 0) {
+    file=JFileDataStoreChooser.showOpenFile("shp",null);
+  }
+ else {
+    file=new File(args[0]);
+  }
+  if (file == null || !file.exists()) {
+    System.exit(1);
+  }
+  Map<String,Object> connect=new HashMap<String,Object>();
+  connect.put("url",file.toURI().toURL());
+  DataStore dataStore=DataStoreFinder.getDataStore(connect);
+  String[] typeNames=dataStore.getTypeNames();
+  String typeName=typeNames[0];
+  System.out.println("Reading content " + typeName);
+  SimpleFeatureSource featureSource=dataStore.getFeatureSource(typeName);
+  SimpleFeatureCollection collection=featureSource.getFeatures();
+class DistanceVisitor implements FeatureVisitor {
+    int length=0;
+    public void visit(    Feature feature){
+      Geometry geometry=(Geometry)feature.getDefaultGeometryProperty().getValue();
+      length+=geometry.getLength();
+    }
+  }
+  DistanceVisitor distance=new DistanceVisitor();
+  collection.accepts(distance,new ProgressWindow(null));
+  System.out.println("Total length " + distance.length);
+}

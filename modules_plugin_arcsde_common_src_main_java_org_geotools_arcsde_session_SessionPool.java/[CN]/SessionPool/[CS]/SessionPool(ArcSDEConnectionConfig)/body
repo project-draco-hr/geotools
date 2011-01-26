@@ -1,0 +1,57 @@
+{
+  if (config == null) {
+    throw new NullPointerException("parameter config can't be null");
+  }
+  this.config=config;
+  LOGGER.fine("populating ArcSDE connection pool");
+  this.seConnectionFactory=createConnectionFactory();
+  final int minConnections=config.getMinConnections().intValue();
+  final int maxConnections=config.getMaxConnections().intValue();
+  if (minConnections > maxConnections) {
+    throw new IllegalArgumentException("pool.minConnections > pool.maxConnections");
+  }
+{
+    Config poolCfg=new Config();
+    poolCfg.maxActive=config.getMaxConnections().intValue();
+    poolCfg.minIdle=0;
+    poolCfg.maxIdle=-1;
+    poolCfg.maxWait=config.getConnTimeOut().longValue();
+    if (poolCfg.maxWait > 0) {
+      poolCfg.whenExhaustedAction=GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+    }
+ else {
+      poolCfg.whenExhaustedAction=GenericObjectPool.WHEN_EXHAUSTED_FAIL;
+    }
+    poolCfg.testOnBorrow=true;
+    poolCfg.testOnReturn=false;
+    poolCfg.testWhileIdle=false;
+    poolCfg.minEvictableIdleTimeMillis=5 * 60 * 1000;
+    pool=new GenericObjectPool(seConnectionFactory,poolCfg);
+    LOGGER.fine("Created ArcSDE connection pool for " + config);
+  }
+  ISession[] preload=new ISession[minConnections];
+  try {
+    for (int i=0; i < minConnections; i++) {
+      preload[i]=(ISession)pool.borrowObject();
+      if (i == 0) {
+        SeRelease seRelease=preload[i].getRelease();
+        String sdeDesc=seRelease.getDesc();
+        int major=seRelease.getMajor();
+        int minor=seRelease.getMinor();
+        int bugFix=seRelease.getBugFix();
+        String desc="ArcSDE " + major + "."+ minor+ "."+ bugFix+ " "+ sdeDesc;
+        LOGGER.fine("Connected to " + desc);
+      }
+    }
+    for (int i=0; i < minConnections; i++) {
+      pool.returnObject(preload[i]);
+    }
+  }
+ catch (  Exception e) {
+    close();
+    if (e instanceof IOException) {
+      throw (IOException)e;
+    }
+    throw (IOException)new IOException().initCause(e);
+  }
+}

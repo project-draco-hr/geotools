@@ -1,0 +1,97 @@
+{
+  if (Boolean.TRUE.equals(processing.get())) {
+    return null;
+  }
+  final CoordinateOperationAuthorityFactory authorityFactory=getAuthorityFactory();
+  final Citation authority=authorityFactory.getAuthority();
+  final Identifier sourceID=AbstractIdentifiedObject.getIdentifier(sourceCRS,authority);
+  if (sourceID == null) {
+    return null;
+  }
+  final Identifier targetID=AbstractIdentifiedObject.getIdentifier(targetCRS,authority);
+  if (targetID == null) {
+    return null;
+  }
+  final String sourceCode=sourceID.getCode().trim();
+  final String targetCode=targetID.getCode().trim();
+  if (sourceCode.equals(targetCode)) {
+    return null;
+  }
+  final boolean inverse;
+  Set<CoordinateOperation> operations;
+  try {
+    operations=authorityFactory.createFromCoordinateReferenceSystemCodes(sourceCode,targetCode);
+    inverse=(operations == null || operations.isEmpty());
+    if (inverse) {
+      operations=authorityFactory.createFromCoordinateReferenceSystemCodes(targetCode,sourceCode);
+    }
+  }
+ catch (  NoSuchAuthorityCodeException exception) {
+    return null;
+  }
+catch (  FactoryException exception) {
+    log(exception,authorityFactory);
+    return null;
+  }
+  if (operations != null) {
+    for (final Iterator<CoordinateOperation> it=operations.iterator(); it.hasNext(); ) {
+      CoordinateOperation candidate;
+      try {
+        candidate=it.next();
+        if (candidate == null) {
+          continue;
+        }
+        if (inverse) {
+          candidate=inverse(candidate);
+        }
+      }
+ catch (      NoninvertibleTransformException e) {
+        continue;
+      }
+catch (      FactoryException exception) {
+        log(exception,authorityFactory);
+        continue;
+      }
+catch (      BackingStoreException exception) {
+        log(exception,authorityFactory);
+        continue;
+      }
+      CoordinateReferenceSystem source=candidate.getSourceCRS();
+      CoordinateReferenceSystem target=candidate.getTargetCRS();
+      try {
+        final MathTransform prepend, append;
+        if (!equalsIgnoreMetadata(sourceCRS,source))         try {
+          processing.set(Boolean.TRUE);
+          prepend=createOperation(sourceCRS,source).getMathTransform();
+          source=sourceCRS;
+        }
+  finally {
+          processing.remove();
+        }
+ else {
+          prepend=null;
+        }
+        if (!equalsIgnoreMetadata(target,targetCRS))         try {
+          processing.set(Boolean.TRUE);
+          append=createOperation(target,targetCRS).getMathTransform();
+          target=targetCRS;
+        }
+  finally {
+          processing.remove();
+        }
+ else {
+          append=null;
+        }
+        candidate=transform(source,prepend,candidate,append,target);
+      }
+ catch (      FactoryException exception) {
+        log(exception,authorityFactory);
+        return null;
+      }
+      if (accept(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  return null;
+}

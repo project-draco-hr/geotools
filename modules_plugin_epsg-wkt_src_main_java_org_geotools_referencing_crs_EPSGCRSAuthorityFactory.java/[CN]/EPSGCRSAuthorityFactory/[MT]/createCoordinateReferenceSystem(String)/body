@@ -1,0 +1,37 @@
+{
+  if (code == null) {
+    return null;
+  }
+  if (!code.startsWith(AUTHORITY_PREFIX)) {
+    throw new NoSuchAuthorityCodeException("This factory only understand EPSG codes",AUTHORITY,code);
+  }
+  final String EPSG_NUMBER=code.substring(code.indexOf(':') + 1).trim();
+  if (cache.containsKey(EPSG_NUMBER)) {
+    Object value=cache.get(EPSG_NUMBER);
+    if (value instanceof Throwable) {
+      throw new FactoryException("WKT for " + code + " could not be parsed",(Throwable)value);
+    }
+    if (value instanceof CoordinateReferenceSystem) {
+      return (CoordinateReferenceSystem)value;
+    }
+  }
+  String wkt=epsg.getProperty(EPSG_NUMBER);
+  if (wkt == null) {
+    throw new NoSuchAuthorityCodeException("Unknown EPSG_NUMBER",AUTHORITY,code);
+  }
+  if (wkt.indexOf(EPSG_NUMBER) == -1) {
+    wkt=wkt.trim();
+    wkt=wkt.substring(0,wkt.length() - 1);
+    wkt+=",AUTHORITY[\"EPSG\",\"" + EPSG_NUMBER + "\"]]";
+    LOGGER.log(Level.WARNING,"EPSG:" + EPSG_NUMBER + " lacks a proper identifying authority in its Well-Known Text. It is being added programmatically.");
+  }
+  try {
+    CoordinateReferenceSystem crs=crsFactory.createFromWKT(wkt);
+    cache.put(EPSG_NUMBER,crs);
+    return crs;
+  }
+ catch (  FactoryException fex) {
+    cache.put(EPSG_NUMBER,fex);
+    throw fex;
+  }
+}

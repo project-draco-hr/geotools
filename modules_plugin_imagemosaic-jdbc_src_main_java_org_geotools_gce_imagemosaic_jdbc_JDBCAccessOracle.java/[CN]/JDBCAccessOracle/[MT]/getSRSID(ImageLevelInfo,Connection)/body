@@ -1,0 +1,41 @@
+{
+  Number result=null;
+  String schema=null;
+  try {
+    schema=getSchemaFromSpatialTable(li.getSpatialTableName());
+    PreparedStatement s=null;
+    if (schema == null) {
+      s=con.prepareStatement(SRSSelectCurrentSchema);
+      s.setString(1,li.getSpatialTableName());
+      s.setString(2,config.getGeomAttributeNameInSpatialTable());
+    }
+ else {
+      s=con.prepareStatement(SRSSelect);
+      s.setString(1,schema);
+      s.setString(2,li.getSpatialTableName());
+      s.setString(3,config.getGeomAttributeNameInSpatialTable());
+    }
+    ResultSet r=s.executeQuery();
+    if (r.next()) {
+      result=(Number)r.getObject(1);
+    }
+    r.close();
+    s.close();
+  }
+ catch (  SQLException e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    throw new IOException(e.getMessage());
+  }
+  if (result == null) {
+    String msg=null;
+    if (schema != null) {
+      msg=MessageFormat.format("No entry in ALL_SDO_GEOM_METADATA where for {0},{1},{2}",new Object[]{schema,li.getSpatialTableName(),config.getGeomAttributeNameInSpatialTable()});
+    }
+ else {
+      msg=MessageFormat.format("No entry in USER_SDO_GEOM_METADATA where for {0},{1}",new Object[]{li.getSpatialTableName(),config.getGeomAttributeNameInSpatialTable()});
+    }
+    LOGGER.log(Level.SEVERE,msg);
+    throw new IOException(msg);
+  }
+  return result.intValue();
+}

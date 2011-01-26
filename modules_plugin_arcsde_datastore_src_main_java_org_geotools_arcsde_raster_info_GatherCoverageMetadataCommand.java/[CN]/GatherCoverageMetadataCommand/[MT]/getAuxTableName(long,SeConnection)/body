@@ -1,0 +1,43 @@
+{
+  final String owner;
+  SeQuery query=null;
+  try {
+    final String dbaName=scon.getSdeDbaName();
+    String rastersColumnsTable=dbaName + ".SDE_RASTER_COLUMNS";
+    SeSqlConstruct sqlCons=new SeSqlConstruct(rastersColumnsTable);
+    sqlCons.setWhere("RASTERCOLUMN_ID = " + rasterColumnId);
+    try {
+      query=new SeQuery(scon,new String[]{"OWNER"},sqlCons);
+      query.prepareQuery();
+    }
+ catch (    SeException e) {
+      rastersColumnsTable=dbaName + ".RASTER_COLUMNS";
+      sqlCons=new SeSqlConstruct(rastersColumnsTable);
+      sqlCons.setWhere("RASTERCOLUMN_ID = " + rasterColumnId);
+      query=new SeQuery(scon,new String[]{"OWNER"},sqlCons);
+      query.prepareQuery();
+    }
+    query.execute();
+    SeRow row=query.fetch();
+    if (row == null) {
+      throw new IllegalArgumentException("No raster column registered with id " + rasterColumnId);
+    }
+    owner=row.getString(0);
+    query.close();
+  }
+ catch (  SeException e) {
+    throw new ArcSdeException("Error getting auxiliary table for raster column " + rasterColumnId,e);
+  }
+ finally {
+    if (query != null) {
+      try {
+        query.close();
+      }
+ catch (      SeException e) {
+        LOGGER.log(Level.INFO,"ignoring exception when closing query to " + "fetch colormap data",e);
+      }
+    }
+  }
+  final String auxTableName=owner + ".SDE_AUX_" + rasterColumnId;
+  return auxTableName;
+}

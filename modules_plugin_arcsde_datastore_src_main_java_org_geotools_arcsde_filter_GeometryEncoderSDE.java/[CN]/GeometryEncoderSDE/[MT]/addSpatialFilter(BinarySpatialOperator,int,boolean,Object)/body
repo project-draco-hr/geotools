@@ -1,0 +1,68 @@
+{
+  boolean appliedTruth=truth;
+  if (extraData instanceof Boolean) {
+    boolean andValue=((Boolean)extraData).booleanValue();
+    appliedTruth=truth && andValue;
+  }
+  org.opengis.filter.expression.Expression left, right;
+  PropertyName propertyExpr;
+  Literal geomLiteralExpr;
+  left=filter.getExpression1();
+  right=filter.getExpression2();
+  if (left instanceof PropertyName && right instanceof Literal) {
+    propertyExpr=(PropertyName)left;
+    geomLiteralExpr=(Literal)right;
+  }
+ else   if (right instanceof PropertyName && left instanceof Literal) {
+    propertyExpr=(PropertyName)right;
+    geomLiteralExpr=(Literal)left;
+  }
+ else {
+    String err="SDE currently supports one geometry and one " + "attribute expr.  You gave: " + left + ", "+ right;
+    throw new IllegalArgumentException(err);
+  }
+  final String spatialCol=featureType.getGeometryDescriptor().getLocalName();
+  final String rawPropName=propertyExpr.getPropertyName();
+  String localPropName=rawPropName;
+  if (rawPropName.indexOf(":") != -1) {
+    localPropName=rawPropName.substring(rawPropName.indexOf(":") + 1);
+  }
+  if ("".equals(localPropName)) {
+    log.fine("Empty property name found on filter, using default geometry property");
+    localPropName=spatialCol;
+  }
+  if (!rawPropName.equalsIgnoreCase(spatialCol) && !localPropName.equalsIgnoreCase(spatialCol)) {
+    throw new IllegalArgumentException("When querying against a spatial " + "column, your property name must match the spatial" + " column name.You used '" + propertyExpr.getPropertyName() + "', but the DB's spatial column name is '"+ spatialCol+ "'");
+  }
+  Geometry geom=(Geometry)geomLiteralExpr.getValue();
+  ArcSDEGeometryBuilder gb=ArcSDEGeometryBuilder.builderFor(Polygon.class);
+  SeExtent seExtent=this.sdeLayer.getExtent();
+  if (seExtent.getMaxX() == seExtent.getMinX()) {
+    seExtent=new SeExtent(seExtent.getMinX() - 100,seExtent.getMinY(),seExtent.getMaxX() + 100,seExtent.getMaxY());
+  }
+  if (seExtent.getMaxY() == seExtent.getMinY()) {
+    seExtent=new SeExtent(seExtent.getMinX(),seExtent.getMinY() - 100,seExtent.getMaxX(),seExtent.getMaxY() + 100);
+  }
+  try {
+    SeShape extent=new SeShape(this.sdeLayer.getCoordRef());
+    extent.generateRectangle(seExtent);
+    Geometry layerEnv=gb.construct(extent,new GeometryFactory());
+    geom=geom.intersection(layerEnv);
+    SeShape filterShape;
+    if (geom.getClass() == GeometryCollection.class) {
+      filterShape=new SeShape(this.sdeLayer.getCoordRef());
+    }
+ else {
+      gb=ArcSDEGeometryBuilder.builderFor(geom.getClass());
+      filterShape=gb.constructShape(geom,this.sdeLayer.getCoordRef());
+    }
+    SeShapeFilter shapeFilter=new SeShapeFilter(getLayerName(),this.sdeLayer.getSpatialColumn(),filterShape,sdeMethod,appliedTruth);
+    this.sdeSpatialFilters.add(shapeFilter);
+  }
+ catch (  IOException ioe) {
+    throw new RuntimeException(ioe);
+  }
+catch (  SeException se) {
+    throw new RuntimeException(se);
+  }
+}

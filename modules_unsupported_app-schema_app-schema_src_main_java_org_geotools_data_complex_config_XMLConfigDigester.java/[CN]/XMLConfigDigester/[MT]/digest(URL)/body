@@ -1,0 +1,54 @@
+{
+  if (dataStoreConfigUrl == null) {
+    throw new NullPointerException("datastore config url");
+  }
+  InputStream configStream=null;
+  String configString=null;
+  try {
+    configStream=dataStoreConfigUrl.openStream();
+    if (configStream == null) {
+      throw new IOException("Can't open datastore config file " + dataStoreConfigUrl);
+    }
+ else {
+      configString=PropertyInterpolationUtils.interpolate(PropertyInterpolationUtils.loadProperties(AppSchemaDataAccessFactory.DBTYPE_STRING),PropertyInterpolationUtils.readAll(configStream));
+    }
+  }
+  finally {
+    if (configStream != null) {
+      configStream.close();
+    }
+  }
+  XMLConfigDigester.LOGGER.fine("parsing complex datastore config: " + dataStoreConfigUrl.toExternalForm());
+  Digester digester=new Digester();
+  XMLConfigDigester.LOGGER.fine("digester created");
+  digester.setValidating(false);
+  digester.setNamespaceAware(true);
+  digester.setRuleNamespaceURI(XMLConfigDigester.CONFIG_NS_URI);
+  AppSchemaDataAccessDTO configDto=new AppSchemaDataAccessDTO();
+  configDto.setBaseSchemasUrl(dataStoreConfigUrl.toExternalForm());
+  digester.push(configDto);
+  try {
+    setNamespacesRules(digester);
+    setIncludedTypesRules(digester);
+    setSourceDataStoresRules(digester);
+    setTargetSchemaUriRules(digester);
+    setTypeMappingsRules(digester);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    XMLConfigDigester.LOGGER.log(Level.SEVERE,"setting digester properties: ",e);
+    throw new IOException("Error setting digester properties: " + e.getMessage());
+  }
+  try {
+    digester.parse(new StringReader(configString));
+  }
+ catch (  SAXException e) {
+    e.printStackTrace();
+    XMLConfigDigester.LOGGER.log(Level.SEVERE,"parsing " + dataStoreConfigUrl,e);
+    IOException ioe=new IOException("Can't parse complex datastore config. ");
+    ioe.initCause(e);
+    throw ioe;
+  }
+  AppSchemaDataAccessDTO config=(AppSchemaDataAccessDTO)digester.getRoot();
+  return config;
+}

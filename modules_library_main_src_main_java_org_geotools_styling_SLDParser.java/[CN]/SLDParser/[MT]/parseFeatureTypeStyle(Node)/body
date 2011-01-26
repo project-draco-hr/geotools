@@ -1,0 +1,46 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("Parsing featuretype style " + style.getLocalName());
+  }
+  FeatureTypeStyle ft=factory.createFeatureTypeStyle();
+  ArrayList<Rule> rules=new ArrayList<Rule>();
+  ArrayList<String> sti=new ArrayList<String>();
+  NodeList children=style.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("processing " + child.getLocalName());
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (childName.equalsIgnoreCase("Name")) {
+      ft.setName(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("Title")) {
+      ft.setTitle(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("Abstract")) {
+      ft.setAbstract(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("FeatureTypeName")) {
+      ft.setFeatureTypeName(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("SemanticTypeIdentifier")) {
+      sti.add(getFirstChildValue(child));
+    }
+ else     if (childName.equalsIgnoreCase("Rule")) {
+      rules.add(parseRule(child));
+    }
+  }
+  if (sti.size() > 0) {
+    ft.setSemanticTypeIdentifiers((String[])sti.toArray(new String[0]));
+  }
+  ft.setRules((Rule[])rules.toArray(new Rule[0]));
+  return ft;
+}

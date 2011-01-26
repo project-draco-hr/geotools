@@ -1,0 +1,23 @@
+{
+  FileDataStoreFactorySpi factory=new ShapefileDataStoreFactory();
+  String shapeFileName=shapeFile.getAbsolutePath();
+  String newShapeFileRelativeName=null;
+  int index=shapeFileName.lastIndexOf(File.separator);
+  if (index == -1)   newShapeFileRelativeName=shapeFileName;
+ else   newShapeFileRelativeName=shapeFileName.substring(index + 1);
+  DataStore[] result=new DataStore[distanceArray.length];
+  for (int i=0; i < distanceArray.length; i++) {
+    String newShapeFileDirName=targetDir.getAbsolutePath();
+    if (newShapeFileDirName.endsWith(File.separator) == false)     newShapeFileDirName+=File.separator;
+    newShapeFileDirName+=distanceArray[i] + File.separator;
+    File dir=new File(newShapeFileDirName);
+    if (dir.exists() == false)     dir.mkdir();
+    File file=new File(newShapeFileDirName + newShapeFileRelativeName);
+    Map<String,Serializable> params=new HashMap<String,Serializable>();
+    params.put(ShapefileDataStoreFactory.URLP.key,file.toURI().toURL());
+    result[i]=factory.createNewDataStore(params);
+    result[i].createSchema(ft);
+    ((ShapefileDataStore)result[i]).forceSchemaCRS(ft.getCoordinateReferenceSystem());
+  }
+  return result;
+}

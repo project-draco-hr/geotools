@@ -1,0 +1,37 @@
+{
+  final CoordinateReferenceSystem tempCRS=CRS.getHorizontalCRS(coordinateReferenceSystem);
+  if (tempCRS == null)   throw new TransformException(Errors.format(ErrorKeys.CANT_REDUCE_TO_TWO_DIMENSIONS_$1,coordinateReferenceSystem));
+  final double[] cs=new double[4];
+  final double[] csLatLong=new double[4];
+  final Coordinate p1=new Coordinate(envelope.getMinX(),envelope.getMinY());
+  final Coordinate p2=new Coordinate(envelope.getMaxX(),envelope.getMaxY());
+  cs[0]=p1.x;
+  cs[1]=p1.y;
+  cs[2]=p2.x;
+  cs[3]=p2.y;
+  final MathTransform transform=CRS.findMathTransform(tempCRS,DefaultGeographicCRS.WGS84,true);
+  transform.transform(cs,0,csLatLong,0,2);
+  if ((csLatLong[0] < -180) || (csLatLong[0] > 180) || (csLatLong[2] < -180)|| (csLatLong[2] > 180)|| (csLatLong[1] < -90)|| (csLatLong[1] > 90)|| (csLatLong[3] < -90)|| (csLatLong[3] > 90)) {
+    if ((csLatLong[0] > csLatLong[2]) || (csLatLong[1] > csLatLong[3]))     throw new IllegalArgumentException("BBox is backwards");
+    if (((csLatLong[0] < -180) || (csLatLong[0] > 180)) && ((csLatLong[2] < -180) || (csLatLong[2] > 180)) && ((csLatLong[1] < -90) || (csLatLong[1] > 90))&& ((csLatLong[3] < -90) || (csLatLong[3] > 90)))     throw new IllegalArgumentException("World isn't in the requested bbox");
+    final double[] newCsLatLong=new double[4];
+    newCsLatLong[0]=Math.min(Math.max(csLatLong[0],-180),180);
+    newCsLatLong[1]=Math.min(Math.max(csLatLong[1],-90),90);
+    newCsLatLong[2]=Math.min(Math.max(csLatLong[2],-180),180);
+    newCsLatLong[3]=Math.min(Math.max(csLatLong[3],-90),90);
+    double[] origProject=new double[4];
+    transform.transform(newCsLatLong,0,origProject,0,2);
+    double image_min_x=(origProject[0] - envelope.getMinX()) / envelope.getWidth() * imageWidth;
+    double image_max_x=(origProject[2] - envelope.getMinX()) / envelope.getWidth() * imageWidth;
+    double image_min_y=(origProject[1] - envelope.getMinY()) / envelope.getHeight() * imageHeight;
+    double image_max_y=(origProject[3] - envelope.getMinY()) / envelope.getHeight() * imageHeight;
+    double distance_ground=JTS.orthodromicDistance(new Coordinate(newCsLatLong[0],newCsLatLong[1]),new Coordinate(newCsLatLong[2],newCsLatLong[3]),DefaultGeographicCRS.WGS84);
+    double pixel_distance=Math.sqrt((image_max_x - image_min_x) * (image_max_x - image_min_x) + (image_max_y - image_min_y) * (image_max_y - image_min_y));
+    double pixel_distance_m=pixel_distance / DPI * 2.54 / 100.0;
+    return distance_ground / pixel_distance_m;
+  }
+  double diagonalGroundDistance=JTS.orthodromicDistance(new Coordinate(csLatLong[0],csLatLong[1]),new Coordinate(csLatLong[2],csLatLong[3]),DefaultGeographicCRS.WGS84);
+  double diagonalPixelDistancePixels=Math.sqrt(imageWidth * imageWidth + imageHeight * imageHeight);
+  double diagonalPixelDistanceMeters=diagonalPixelDistancePixels / DPI * 2.54 / 100;
+  return diagonalGroundDistance / diagonalPixelDistanceMeters;
+}

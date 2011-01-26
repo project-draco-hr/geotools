@@ -1,0 +1,17 @@
+{
+  IIOMetadata metadata=null;
+  if (input instanceof TileManager[]) {
+    final Set<ReaderInputPair> done=new HashSet<ReaderInputPair>();
+    for (    final TileManager manager : (TileManager[])input) {
+      for (      final Tile tile : manager.getTiles()) {
+        final ImageReader reader=tile.getImageReader(this,true,ignoreMetadata);
+        final Object input=reader.getInput();
+        if (done.add(new ReaderInputPair(reader,input))) {
+          final IIOMetadata candidate=reader.getStreamMetadata(formatName,nodeNames);
+          metadata=MetadataMerge.merge(candidate,metadata);
+        }
+      }
+    }
+  }
+  return metadata;
+}

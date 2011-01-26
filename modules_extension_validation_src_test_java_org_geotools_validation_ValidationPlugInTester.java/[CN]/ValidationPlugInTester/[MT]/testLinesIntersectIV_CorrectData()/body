@@ -1,0 +1,32 @@
+{
+  RoadNetworkValidationResults roadValidationResults=new RoadNetworkValidationResults();
+  LinesNotIntersectValidation noIntersectingLinesValidatorAll=new LinesNotIntersectValidation();
+  noIntersectingLinesValidatorAll.setName("linesIntersect");
+  noIntersectingLinesValidatorAll.setDescription("Tests to see if any line geometries cross!");
+  noIntersectingLinesValidatorAll.setLineTypeRef("road");
+  noIntersectingLinesValidatorAll.setLineTypeRef("river");
+  try {
+    processor.addValidation(noIntersectingLinesValidatorAll);
+  }
+ catch (  Exception e) {
+    assertTrue(false);
+  }
+  HashMap layers=new HashMap();
+  try {
+    layers.put("dataStoreId:road",DataUtilities.source(new SimpleFeature[]{newRoad}));
+    layers.put("dataStoreId:river",DataUtilities.source(riverFeatures));
+  }
+ catch (  Exception e) {
+    assertTrue(false);
+  }
+  try {
+    processor.runIntegrityTests(null,layers,null,roadValidationResults);
+  }
+ catch (  Exception e1) {
+    assertTrue(false);
+  }
+  System.out.println("NoLinesIntersect - correct");
+  String[] messages=roadValidationResults.getFailedMessages();
+  for (int i=0; i < messages.length; i++)   System.out.println(messages[i]);
+  assertTrue(roadValidationResults.getFailedMessages().length == 0);
+}

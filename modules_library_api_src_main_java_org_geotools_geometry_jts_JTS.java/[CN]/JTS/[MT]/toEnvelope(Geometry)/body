@@ -1,0 +1,27 @@
+{
+  if (geom == null) {
+    return null;
+  }
+  String srsName=null;
+  Object userData=geom.getUserData();
+  if (userData != null && userData instanceof String) {
+    srsName=(String)userData;
+  }
+ else   if (geom.getSRID() > 0) {
+    srsName="EPSG:" + geom.getSRID();
+  }
+  CoordinateReferenceSystem crs=null;
+  if (userData != null && userData instanceof CoordinateReferenceSystem) {
+    crs=(CoordinateReferenceSystem)userData;
+  }
+ else   if (srsName != null) {
+    try {
+      crs=CRS.decode(srsName);
+    }
+ catch (    NoSuchAuthorityCodeException e) {
+    }
+catch (    FactoryException e) {
+    }
+  }
+  return new ReferencedEnvelope(geom.getEnvelopeInternal(),crs);
+}

@@ -1,0 +1,33 @@
+{
+  if (icon == null) {
+    URL image=WebMapServer.class.getResource("image.png");
+    icon=new ImageIcon(image);
+    if (layer.getChildren() != null && layer.getChildren().length != 0) {
+      return icon;
+    }
+    OperationType getLegendGraphic=getCapabilities().getRequest().getGetLegendGraphic();
+    if (getLegendGraphic == null) {
+      return icon;
+    }
+    GetLegendGraphicRequest request=createGetLegendGraphicRequest();
+    request.setLayer(layer.getName());
+    request.setWidth("16");
+    request.setHeight("16");
+    String desiredFormat=null;
+    List<String> formats=getLegendGraphic.getFormats();
+    if (formats.contains("image/png")) {
+      desiredFormat="image/png";
+    }
+ else     if (formats.contains("image/gif")) {
+      desiredFormat="image/gif";
+    }
+ else {
+      return icon;
+    }
+    request.setFormat(desiredFormat);
+    request.setStyle("");
+    URL legendGraphics=request.getFinalURL();
+    icon=new ImageIcon(legendGraphics);
+  }
+  return icon;
+}

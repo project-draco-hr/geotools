@@ -1,0 +1,64 @@
+{
+  String prjPath=null;
+  this.crs=null;
+  prjPath=this.parentPath + File.separatorChar + coverageName+ ".prj";
+  PrjFileReader projReader=null;
+  FileInputStream inStream=null;
+  FileChannel channel=null;
+  try {
+    final File prj=new File(prjPath);
+    if (prj.exists() && prj.canRead()) {
+      inStream=new FileInputStream(prj);
+      channel=inStream.getChannel();
+      projReader=new PrjFileReader(channel);
+      this.crs=projReader.getCoordinateReferenceSystem();
+    }
+  }
+ catch (  FileNotFoundException e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    }
+  }
+catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    }
+  }
+catch (  FactoryException e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    }
+  }
+ finally {
+    if (projReader != null) {
+      try {
+        projReader.close();
+      }
+ catch (      IOException e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+        }
+      }
+    }
+    if (inStream != null) {
+      try {
+        inStream.close();
+      }
+ catch (      Throwable e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+        }
+      }
+    }
+    if (channel != null) {
+      try {
+        channel.close();
+      }
+ catch (      Throwable e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+        }
+      }
+    }
+  }
+}

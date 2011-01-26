@@ -1,0 +1,29 @@
+{
+  String exceptionMsg="";
+  Object ns=params.get(NAMESPACE_PARAM_NAME);
+  this.namespaceUri=ns == null ? null : String.valueOf(ns);
+  Integer minConnections=getInt(params.get(MIN_CONNECTIONS_PARAM_NAME),DEFAULT_CONNECTIONS);
+  Integer maxConnections=getInt(params.get(MAX_CONNECTIONS_PARAM_NAME),DEFAULT_MAX_CONNECTIONS);
+  Integer connTimeOut=getInt(params.get(CONNECTION_TIMEOUT_PARAM_NAME),DEFAULT_MAX_WAIT_TIME);
+  this.version=(String)params.get(VERSION_PARAM_NAME);
+  Object nonSpatial=params.get(ALLOW_NON_SPATIAL_TABLES_PARAM_NAME);
+  this.allowNonSpatialTables=nonSpatial == null ? false : Boolean.valueOf(String.valueOf(nonSpatial));
+  if (minConnections.intValue() <= 0) {
+    exceptionMsg+=MIN_CONNECTIONS_PARAM_NAME + " must be a positive integer. ";
+  }
+  if (maxConnections.intValue() <= 0) {
+    exceptionMsg+=MAX_CONNECTIONS_PARAM_NAME + " must be a positive integer. ";
+  }
+  if (connTimeOut.intValue() <= 0) {
+    exceptionMsg+=CONNECTION_TIMEOUT_PARAM_NAME + " must be a positive integer. ";
+  }
+  if (minConnections.intValue() > maxConnections.intValue()) {
+    exceptionMsg+=MIN_CONNECTIONS_PARAM_NAME + " must be lower than " + MAX_CONNECTIONS_PARAM_NAME+ ".";
+  }
+  if (exceptionMsg.length() != 0) {
+    throw new IllegalArgumentException(exceptionMsg);
+  }
+  sessionConfig.setMinConnections(minConnections);
+  sessionConfig.setMaxConnections(maxConnections);
+  sessionConfig.setConnTimeOut(connTimeOut);
+}

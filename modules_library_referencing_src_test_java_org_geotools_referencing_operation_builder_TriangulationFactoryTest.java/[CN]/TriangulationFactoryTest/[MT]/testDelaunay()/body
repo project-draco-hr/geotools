@@ -1,0 +1,25 @@
+{
+  DirectPosition2D leftDown=new DirectPosition2D(100,100);
+  DirectPosition2D rightDown=new DirectPosition2D(200,100);
+  DirectPosition2D rightTop=new DirectPosition2D(200,250);
+  DirectPosition2D leftTop=new DirectPosition2D(100,250);
+  Random randomCoord=new Random(872066443);
+  int number=5;
+  DirectPosition[] vertices=new DirectPosition[number];
+  for (int i=0; i < number; i++) {
+    double x=leftDown.x + (randomCoord.nextDouble() * (rightDown.x - leftDown.x));
+    double y=leftDown.y + (randomCoord.nextDouble() * (leftTop.y - leftDown.y));
+    vertices[i]=new DirectPosition2D(x,y);
+  }
+  Quadrilateral quad=new Quadrilateral(leftDown,rightDown,rightTop,leftTop);
+  List<TINTriangle> triangles=new ArrayList<TINTriangle>();
+  TriangulationFactory trigfac=new TriangulationFactory(quad,vertices);
+  triangles=trigfac.getTriangulation();
+  int j=1;
+  for (Iterator<TINTriangle> i=triangles.iterator(); i.hasNext(); ) {
+    TINTriangle triangle=i.next();
+    for (j=0; j < vertices.length; j++) {
+      assertFalse(triangle.getCircumCicle().contains(vertices[j]));
+    }
+  }
+}

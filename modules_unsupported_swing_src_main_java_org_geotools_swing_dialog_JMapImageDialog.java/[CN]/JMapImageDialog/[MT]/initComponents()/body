@@ -1,0 +1,100 @@
+{
+  MigLayout layout=new MigLayout("","[][]30px[][]","[][][][]30px[]");
+  JPanel panel=new JPanel(layout);
+  JLabel fileLabel=new JLabel("File");
+  panel.add(fileLabel,"cell 0 0");
+  fileField=new JTextField(20);
+  panel.add(fileField,"cell 1 0 3 1");
+  JButton browseBtn=new JButton("Browse...");
+  browseBtn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      brosweFile();
+    }
+  }
+);
+  panel.add(browseBtn,"cell 1 0");
+  int[] baseScales={10,25,50};
+  int[] multipliers={1,10,100,1000,10000,100000};
+  Object[] scales=new Object[baseScales.length * multipliers.length];
+  for (int i=0, k=0; i < multipliers.length; i++) {
+    for (int j=0; j < baseScales.length; j++, k++) {
+      scales[k]=new Integer(multipliers[i] * baseScales[j]);
+    }
+  }
+  final JCheckBox scaleCheck=new JCheckBox("Set by pixel scale",false);
+  panel.add(scaleCheck,"cell 1 1");
+  JLabel scaleLabel=new JLabel("Scale 1:");
+  panel.add(scaleLabel,"cell 1 2, gapbefore indent");
+  DefaultComboBoxModel scaleModel=new DefaultComboBoxModel(scales);
+  scaleCombo=new JComboBox(scaleModel);
+  scaleCombo.setEditable(true);
+  scaleCombo.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      onScaleChange();
+    }
+  }
+);
+  panel.add(scaleCombo,"cell 1 2");
+  final JCheckBox sizeCheck=new JCheckBox("Set by image size",true);
+  panel.add(sizeCheck,"cell 2 1 2 1");
+  JLabel widthLabel=new JLabel("width");
+  panel.add(widthLabel,"cell 2 2, gapbefore indent");
+  widthField=new JIntegerField();
+  widthField.addValueChangedListener(new ValueChangedListener(){
+    public void onValueChanged(    ValueChangedEvent ev){
+      onImageSizeChange(WIDTH_FIELD);
+    }
+  }
+);
+  final int fieldWidth=widthField.getFontMetrics(widthField.getFont()).stringWidth("00000000");
+  panel.add(widthField,String.format("cell 3 2, w %d!",fieldWidth));
+  JLabel heightLabel=new JLabel("height");
+  panel.add(heightLabel,"cell 2 3, gapbefore indent");
+  heightField=new JIntegerField();
+  heightField.addValueChangedListener(new ValueChangedListener(){
+    public void onValueChanged(    ValueChangedEvent ev){
+      onImageSizeChange(HEIGHT_FIELD);
+    }
+  }
+);
+  panel.add(heightField,String.format("cell 3 3, w %d!",fieldWidth));
+  JButton okBtn=new JButton("OK");
+  okBtn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      completed=true;
+      setVisible(false);
+    }
+  }
+);
+  panel.add(okBtn,"cell 1 4 3 1");
+  JButton cancelBtn=new JButton("Cancel");
+  cancelBtn.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      completed=false;
+      setVisible(false);
+    }
+  }
+);
+  panel.add(cancelBtn,"cell 1 4");
+  ButtonGroup grp=new ButtonGroup();
+  grp.add(scaleCheck);
+  grp.add(sizeCheck);
+  scaleCheck.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      setByScale=scaleCheck.isSelected();
+      enableItems();
+    }
+  }
+);
+  sizeCheck.addActionListener(new ActionListener(){
+    public void actionPerformed(    ActionEvent e){
+      setByScale=scaleCheck.isSelected();
+      enableItems();
+    }
+  }
+);
+  setByScale=scaleCheck.isSelected();
+  enableItems();
+  getContentPane().add(panel);
+  pack();
+}

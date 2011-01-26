@@ -1,0 +1,22 @@
+{
+  final Transaction transaction=Transaction.AUTO_COMMIT;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  writer=addFeatures(tableName,transaction);
+  writer.close();
+  assertEquals(2,ds.getFeatureSource(tableName).getCount(Query.ALL));
+  Query query=new Query(tableName,CQL.toFilter("STRING_COL = 'modified'"));
+  assertEquals(0,ds.getFeatureSource(tableName).getCount(query));
+  Filter f=CQL.toFilter("INT_COL = 1000");
+  writer=ds.getFeatureWriter(tableName,f,transaction);
+  assertTrue(writer.hasNext());
+  writer.next().setAttribute("STRING_COL","modified");
+  writer.write();
+  writer.close();
+  assertEquals(1,ds.getFeatureSource(tableName).getCount(query));
+  writer=ds.getFeatureWriter(tableName,f,transaction);
+  assertTrue(writer.hasNext());
+  assertNotNull(writer.next());
+  writer.remove();
+  assertFalse(writer.hasNext());
+  writer.close();
+}

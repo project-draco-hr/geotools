@@ -1,0 +1,71 @@
+{
+  SimpleFeatureCollection fromCache;
+  SimpleFeatureCollection fromSource;
+  List<Envelope> notcached=null;
+  String geometryname=getSchema().getGeometryDescriptor().getLocalName();
+  String srs=getSchema().getGeometryDescriptor().getCoordinateReferenceSystem().toString();
+  lock.readLock().lock();
+  try {
+    notcached=match(e);
+    if (notcached.isEmpty()) {
+      fromCache=peek(e);
+      return fromCache;
+    }
+  }
+  finally {
+    lock.readLock().unlock();
+  }
+  lock.writeLock().lock();
+  try {
+    notcached=match(e);
+    if (notcached.isEmpty()) {
+      fromCache=peek(e);
+      return fromCache;
+    }
+    fromCache=peek(e);
+    Filter filter=null;
+    if (notcached.size() == 1) {
+      Envelope env=notcached.get(0);
+      filter=ff.bbox(geometryname,env.getMinX(),env.getMinY(),env.getMaxX(),env.getMaxY(),srs);
+    }
+ else {
+      ArrayList<Filter> filters=new ArrayList<Filter>(notcached.size());
+      for (Iterator<Envelope> it=notcached.iterator(); it.hasNext(); ) {
+        Envelope next=(Envelope)it.next();
+        Filter bbox=ff.bbox(geometryname,next.getMinX(),next.getMinY(),next.getMaxX(),next.getMaxY(),srs);
+        filters.add(bbox);
+      }
+      filter=ff.or(filters);
+    }
+    try {
+      SimpleFeatureCollection localSource=new MemoryFeatureCollection(getSchema());
+      fromSource=this.fs.getFeatures(filter);
+      localSource.addAll(fromSource);
+      fromSource=localSource;
+    }
+ catch (    Exception ex) {
+      logger.log(Level.INFO,"Error getting data for cache from source feature store.",ex);
+      return fromCache;
+    }
+    source_hits++;
+    source_feature_reads+=fromSource.size();
+    fromCache.addAll(fromSource);
+    try {
+      isOversized(fromSource);
+      try {
+        register(filter);
+        put(fromCache);
+      }
+ catch (      Exception ex) {
+        unregister(filter);
+      }
+    }
+ catch (    CacheOversizedException e1) {
+      logger.log(Level.INFO,"Adding data to cache : " + e1.toString());
+    }
+  }
+  finally {
+    lock.writeLock().unlock();
+  }
+  return fromCache;
+}

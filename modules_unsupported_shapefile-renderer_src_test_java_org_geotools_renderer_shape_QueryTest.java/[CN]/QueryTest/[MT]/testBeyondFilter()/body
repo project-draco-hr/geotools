@@ -1,0 +1,19 @@
+{
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  GeometryFactory gf=new GeometryFactory();
+  Literal point=ff.literal(gf.createPoint(new Coordinate(1,0)));
+  Beyond filter=ff.beyond(ff.property("the_geom"),point,0.3,(String)null);
+  Query q=new DefaultQuery("theme1",filter);
+  map.getLayer(0).setQuery(q);
+  ShapefileRenderer renderer=new ShapefileRenderer(map);
+  renderer.addRenderListener(new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+      assertEquals("theme1.2",feature.getID());
+    }
+    public void errorOccurred(    Exception e){
+      throw new RuntimeException(e);
+    }
+  }
+);
+  TestUtilites.showRender("testFidFilter",renderer,1000,bounds,1);
+}

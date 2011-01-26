@@ -1,0 +1,21 @@
+{
+  SpatialSubsetType spatialSubset=Wcs10Factory.eINSTANCE.createSpatialSubsetType();
+  List<Node> envelopes=node.getChildren("Envelope");
+  for (  Node envelopeNode : envelopes) {
+    ReferencedEnvelope envelope=(ReferencedEnvelope)envelopeNode.getValue();
+    EnvelopeType env=Gml4wcsFactory.eINSTANCE.createEnvelopeType();
+    env.setSrsName(CRS.lookupIdentifier(envelope.getCoordinateReferenceSystem(),true));
+    DirectPositionType pos1=Gml4wcsFactory.eINSTANCE.createDirectPositionType();
+    DirectPositionType pos2=Gml4wcsFactory.eINSTANCE.createDirectPositionType();
+    pos1.setDimension(BigInteger.valueOf(2));
+    pos2.setDimension(BigInteger.valueOf(2));
+    pos1.setValue(Arrays.asList(envelope.getMinX(),envelope.getMinY()));
+    pos2.setValue(Arrays.asList(envelope.getMaxX(),envelope.getMaxY()));
+    env.getPos().add(pos1);
+    env.getPos().add(pos2);
+    spatialSubset.getEnvelope().add(envelope);
+  }
+  List<Node> gridsNode=node.getChildren("Grid");
+  for (  Node grid : gridsNode)   spatialSubset.getGrid().add(grid.getValue());
+  return spatialSubset;
+}

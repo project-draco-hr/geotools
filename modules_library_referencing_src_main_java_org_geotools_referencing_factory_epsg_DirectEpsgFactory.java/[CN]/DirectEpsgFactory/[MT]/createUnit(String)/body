@@ -1,0 +1,39 @@
+{
+  ensureNonNull("code",code);
+  Unit<?> returnValue=null;
+  try {
+    final String primaryKey=toPrimaryKey(Unit.class,code,"[Unit of Measure]","UOM_CODE","UNIT_OF_MEAS_NAME");
+    final PreparedStatement stmt;
+    stmt=prepareStatement("Unit","SELECT UOM_CODE," + " FACTOR_B," + " FACTOR_C,"+ " TARGET_UOM_CODE"+ " FROM [Unit of Measure]"+ " WHERE UOM_CODE = ?");
+    stmt.setInt(1,Integer.parseInt(primaryKey));
+    final ResultSet result=stmt.executeQuery();
+    while (result.next()) {
+      final int source=getInt(result,1,code);
+      final double b=result.getDouble(2);
+      final double c=result.getDouble(3);
+      final int target=getInt(result,4,code);
+      final Unit<?> base=getUnit(target);
+      if (base == null) {
+        throw noSuchAuthorityCode(Unit.class,String.valueOf(target));
+      }
+      Unit<?> unit=getUnit(source);
+      if (unit != null) {
+      }
+ else       if (b != 0 && c != 0) {
+        unit=(b == c) ? base : base.times(b / c);
+      }
+ else {
+        throw new FactoryException("Unsupported unit: " + code);
+      }
+      returnValue=ensureSingleton(unit,returnValue,code);
+    }
+    result.close();
+  }
+ catch (  SQLException exception) {
+    throw databaseFailure(Unit.class,code,exception);
+  }
+  if (returnValue == null) {
+    throw noSuchAuthorityCode(Unit.class,code);
+  }
+  return returnValue;
+}

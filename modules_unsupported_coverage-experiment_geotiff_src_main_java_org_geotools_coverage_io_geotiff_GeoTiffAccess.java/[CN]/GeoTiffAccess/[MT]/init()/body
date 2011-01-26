@@ -1,0 +1,44 @@
+{
+  if (this.mustCreate) {
+    this.numberOfCoverages=0;
+    return;
+  }
+  try {
+    read(new Read<Object>(){
+      @Override public Object run(      GeoTiffReader reader,      GeoTiffAccess access) throws IOException {
+        numberOfCoverages=reader.getGridCoverageCount();
+        final GeneralEnvelope envelope=reader.getOriginalEnvelope();
+        final CoordinateReferenceSystem crs=reader.getCrs();
+        final GridEnvelope range=reader.getOriginalGridRange();
+        final MathTransform2D g2w=(MathTransform2D)reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER);
+        name=new NameImpl(reader.getCoverageName());
+        Info info=new Info(name);
+        info.setGeometry(new GridGeometry2D(range,g2w,crs));
+        info.setExtent(envelope);
+        coverageInfo.put(name,info);
+        final GridCoverage2D gc=(GridCoverage2D)reader.read(null);
+        for (        RangePolicy policy : rangeDefinitions) {
+          try {
+            if (policy.match(gc)) {
+              rangeType=policy.describe(gc);
+            }
+          }
+ catch (          Throwable eek) {
+          }
+        }
+        return null;
+      }
+    }
+);
+  }
+ catch (  Throwable t) {
+    numberOfCoverages=0;
+    coverageInfo.clear();
+    if (t instanceof IOException) {
+      throw (IOException)t;
+    }
+ else {
+      throw new DataSourceException("Could not initialize FieldType information",t);
+    }
+  }
+}

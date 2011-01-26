@@ -1,0 +1,80 @@
+{
+  final FactoryNotFoundException notFound;
+  try {
+    return super.getServiceProvider(category,filter,hints,key);
+  }
+ catch (  FactoryNotFoundException exception) {
+    notFound=exception;
+  }
+  final Class<?>[] types;
+  if (hints == null || key == null) {
+    types=null;
+  }
+ else {
+    final Object hint=hints.get(key);
+    if (hint == null) {
+      types=null;
+    }
+ else {
+      if (hint instanceof Class<?>[]) {
+        types=(Class<?>[])hint;
+      }
+ else {
+        types=new Class<?>[]{(Class<?>)hint};
+      }
+      final int length=types.length;
+      for (int i=0; i < length; i++) {
+        final Class<?> type=types[i];
+        if (type != null && category.isAssignableFrom(type)) {
+          final int modifiers=type.getModifiers();
+          if (!Modifier.isAbstract(modifiers)) {
+            final T candidate=createSafe(category,type,hints);
+            if (candidate == null) {
+              continue;
+            }
+            if (isAcceptable(candidate,category,hints,filter)) {
+              cache(category,candidate);
+              return candidate;
+            }
+            dispose(candidate);
+          }
+        }
+      }
+    }
+  }
+  for (final Iterator<T> it=getUnfilteredProviders(category); it.hasNext(); ) {
+    final T factory=it.next();
+    final Class<?> implementation=factory.getClass();
+    if (types != null && !isTypeOf(types,implementation)) {
+      continue;
+    }
+    if (filter != null && !filter.filter(factory)) {
+      continue;
+    }
+    final T candidate;
+    try {
+      candidate=createSafe(category,implementation,hints);
+    }
+ catch (    FactoryNotFoundException exception) {
+      Logging.recoverableException(LOGGER,FactoryCreator.class,"getServiceProvider",exception);
+      continue;
+    }
+catch (    FactoryRegistryException exception) {
+      if (exception.getCause() instanceof NoSuchMethodException) {
+        continue;
+      }
+ else {
+        throw exception;
+      }
+    }
+    if (candidate == null) {
+      continue;
+    }
+    if (isAcceptable(candidate,category,hints,filter)) {
+      cache(category,candidate);
+      return candidate;
+    }
+    dispose(candidate);
+  }
+  throw notFound;
+}

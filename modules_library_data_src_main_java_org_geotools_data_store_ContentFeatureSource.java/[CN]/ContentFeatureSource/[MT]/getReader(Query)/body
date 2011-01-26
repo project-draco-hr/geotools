@@ -1,0 +1,52 @@
+{
+  query=joinQuery(query);
+  query=resolvePropertyNames(query);
+  final int offset=query.getStartIndex() != null ? query.getStartIndex() : 0;
+  if (offset > 0 & query.getSortBy() == null) {
+    if (!getQueryCapabilities().supportsSorting(query.getSortBy()))     throw new IOException("Feature source does not support this sorting " + "so there is no way a stable paging (offset/limit) can be performed");
+    Query dq=new Query(query);
+    dq.setSortBy(new SortBy[]{SortBy.NATURAL_ORDER});
+    query=dq;
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReaderInternal(query);
+  if (!canFilter()) {
+    if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE) {
+      reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,query.getFilter());
+    }
+  }
+  if (!canReproject()) {
+    if (query.getCoordinateSystemReproject() != null) {
+      try {
+        reader=new ReprojectFeatureReader(reader,query.getCoordinateSystemReproject());
+      }
+ catch (      Exception e) {
+        if (e instanceof IOException)         throw (IOException)e;
+ else         throw (IOException)new IOException("Error occurred trying to reproject data").initCause(e);
+      }
+    }
+  }
+  if (!canOffset() && offset > 0) {
+    for (int i=0; i < offset && reader.hasNext(); i++) {
+      reader.next();
+    }
+  }
+  if (!canLimit()) {
+    if (query.getMaxFeatures() != -1 && query.getMaxFeatures() < Integer.MAX_VALUE) {
+      reader=new MaxFeatureReader<SimpleFeatureType,SimpleFeature>(reader,query.getMaxFeatures());
+    }
+  }
+  if (!canSort()) {
+    if (query.getSortBy() != null && query.getSortBy().length != 0) {
+      throw new UnsupportedOperationException("sorting unsupported");
+    }
+  }
+  if (!canRetype()) {
+    if (query.getPropertyNames() != Query.ALL_NAMES) {
+      SimpleFeatureType target=SimpleFeatureTypeBuilder.retype(getSchema(),query.getPropertyNames());
+      if (!target.equals(reader.getFeatureType())) {
+        reader=new ReTypeFeatureReader(reader,target,false);
+      }
+    }
+  }
+  return reader;
+}

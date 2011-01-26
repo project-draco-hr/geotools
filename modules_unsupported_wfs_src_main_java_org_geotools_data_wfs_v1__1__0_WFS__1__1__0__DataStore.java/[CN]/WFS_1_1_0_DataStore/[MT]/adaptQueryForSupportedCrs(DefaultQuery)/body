@@ -1,0 +1,49 @@
+{
+  final String typeName=query.getTypeName();
+  final CoordinateReferenceSystem queryCrs=query.getCoordinateSystem();
+  final String defaultCrs=wfs.getDefaultCRS(typeName);
+  if (queryCrs == null) {
+    LOGGER.warning("Query does not provide a CRS, using default: " + query);
+    return defaultCrs;
+  }
+  String epsgCode;
+  final CoordinateReferenceSystem crsNative=getFeatureTypeCRS(typeName);
+  if (CRS.equalsIgnoreMetadata(queryCrs,crsNative)) {
+    epsgCode=defaultCrs;
+    LOGGER.fine("request and native crs for " + typeName + " are the same: "+ epsgCode);
+  }
+ else {
+    boolean transform=false;
+    epsgCode=GML2EncodingUtils.epsgCode(queryCrs);
+    if (epsgCode == null) {
+      LOGGER.fine("Can't find the identifier for the request CRS, " + "query will be performed in native CRS");
+      transform=true;
+    }
+ else {
+      epsgCode="EPSG:" + epsgCode;
+      LOGGER.fine("Request CRS is " + epsgCode + ", checking if its supported for "+ typeName);
+      Set<String> supportedCRSIdentifiers=wfs.getSupportedCRSIdentifiers(typeName);
+      if (supportedCRSIdentifiers.contains(epsgCode)) {
+        LOGGER.fine(epsgCode + " is supported, request will be performed asking " + "for reprojection over it");
+      }
+ else {
+        LOGGER.fine(epsgCode + " is not supported for " + typeName+ ". Query will be adapted to default CRS "+ defaultCrs);
+        transform=true;
+      }
+      if (transform) {
+        epsgCode=defaultCrs;
+        FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+        SimpleFeatureType ftype=getSchema(typeName);
+        ReprojectingFilterVisitor visitor=new ReprojectingFilterVisitor(ff,ftype);
+        Filter filter=query.getFilter();
+        Filter reprojectedFilter=(Filter)filter.accept(visitor,null);
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.finer("Original Filter: " + filter + "\nReprojected filter: "+ reprojectedFilter);
+        }
+        LOGGER.fine("Query filter reprojected to native CRS for " + typeName);
+        query.setFilter(reprojectedFilter);
+      }
+    }
+  }
+  return epsgCode;
+}

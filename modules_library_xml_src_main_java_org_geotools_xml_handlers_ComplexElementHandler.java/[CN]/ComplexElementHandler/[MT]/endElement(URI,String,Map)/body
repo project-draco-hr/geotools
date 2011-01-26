@@ -1,0 +1,41 @@
+{
+  text=(text == null) ? null : text.trim();
+  if (hints == null) {
+    hints=new HashMap();
+    hints.put(ElementHandlerFactory.KEY,ehf);
+  }
+ else {
+    if (!hints.containsKey(ElementHandlerFactory.KEY))     hints.put(ElementHandlerFactory.KEY,ehf);
+  }
+  if (elements == null) {
+    if (type != null) {
+      ElementValue[] vals;
+      if (type.isMixed()) {
+        vals=new ElementValue[1];
+        vals[0]=new DefaultElementValue(null,text);
+      }
+ else {
+        vals=new ElementValue[0];
+      }
+      value=type.getValue(elem,vals,attr,hints);
+    }
+ else {
+      value=text;
+    }
+    return;
+  }
+  boolean validate=hints == null || !hints.containsKey(DocumentFactory.VALIDATION_HINT) || hints.get(DocumentFactory.VALIDATION_HINT) == null || !(hints.get(DocumentFactory.VALIDATION_HINT) instanceof Boolean) || ((Boolean)hints.get(DocumentFactory.VALIDATION_HINT)).booleanValue();
+  if (validate)   validateElementOrder();
+  ElementValue[] vals=new ElementValue[elements.size() + (type.isMixed() ? 1 : 0)];
+  for (int i=0; i < elements.size(); i++) {
+    XMLElementHandler xeh=(XMLElementHandler)elements.get(i);
+    vals[i]=new DefaultElementValue(xeh.getElement(),xeh.getValue());
+  }
+  if (type.isMixed()) {
+    vals[vals.length - 1]=new DefaultElementValue(null,text);
+  }
+  value=type.getValue(elem,vals,attr,hints);
+  attr=null;
+  elements=null;
+  text=null;
+}

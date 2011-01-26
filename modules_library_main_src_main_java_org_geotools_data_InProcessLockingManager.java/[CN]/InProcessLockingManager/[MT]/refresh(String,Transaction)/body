@@ -1,0 +1,26 @@
+{
+  if (authID == null) {
+    throw new IllegalArgumentException("lockID required");
+  }
+  if ((transaction == null) || (transaction == Transaction.AUTO_COMMIT)) {
+    throw new IllegalArgumentException("Tansaction required (with authorization for " + authID + ")");
+  }
+  Lock lock;
+  boolean refresh=false;
+  for (Iterator i=allLocks().iterator(); i.hasNext(); ) {
+    lock=(Lock)i.next();
+    if (lock.isExpired()) {
+      i.remove();
+    }
+ else     if (lock.isMatch(authID)) {
+      if (lock.isAuthorized(transaction)) {
+        lock.refresh();
+        refresh=true;
+      }
+ else {
+        throw new IOException("Not authorized to refresh " + lock);
+      }
+    }
+  }
+  return refresh;
+}

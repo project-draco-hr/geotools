@@ -1,0 +1,34 @@
+{
+  if (method != null) {
+    if (method instanceof MathTransformProvider) {
+      final Class<? extends Operation> candidate=((MathTransformProvider)method).getOperationType();
+      if (candidate != null) {
+        if (type == null || type.isAssignableFrom(candidate)) {
+          type=candidate.asSubclass(type);
+        }
+      }
+    }
+    if (type != null) {
+      if (Transformation.class.isAssignableFrom(type)) {
+        return new DefaultTransformation(properties,sourceCRS,targetCRS,transform,method);
+      }
+      if (ConicProjection.class.isAssignableFrom(type)) {
+        return new DefaultConicProjection(properties,sourceCRS,targetCRS,transform,method);
+      }
+      if (CylindricalProjection.class.isAssignableFrom(type)) {
+        return new DefaultCylindricalProjection(properties,sourceCRS,targetCRS,transform,method);
+      }
+      if (PlanarProjection.class.isAssignableFrom(type)) {
+        return new DefaultPlanarProjection(properties,sourceCRS,targetCRS,transform,method);
+      }
+      if (Projection.class.isAssignableFrom(type)) {
+        return new DefaultProjection(properties,sourceCRS,targetCRS,transform,method);
+      }
+      if (Conversion.class.isAssignableFrom(type)) {
+        return new DefaultConversion(properties,sourceCRS,targetCRS,transform,method);
+      }
+    }
+    return new DefaultOperation(properties,sourceCRS,targetCRS,transform,method);
+  }
+  return new DefaultSingleOperation(properties,sourceCRS,targetCRS,transform);
+}

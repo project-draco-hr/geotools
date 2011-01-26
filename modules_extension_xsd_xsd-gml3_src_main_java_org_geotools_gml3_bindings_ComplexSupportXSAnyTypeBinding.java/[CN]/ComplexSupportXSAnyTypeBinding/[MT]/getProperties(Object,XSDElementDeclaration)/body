@@ -1,0 +1,128 @@
+{
+  List<Object[]> properties=new ArrayList<Object[]>();
+  XSDTypeDefinition typeDef=element.getTypeDefinition();
+  boolean isAnyType=typeDef.getName() != null && typeDef.getTargetNamespace() != null && typeDef.getName().equals(XS.ANYTYPE.getLocalPart()) && typeDef.getTargetNamespace().equals(XS.NAMESPACE);
+  if (isAnyType) {
+    Collection complexAtts;
+    if (object instanceof Collection) {
+      complexAtts=(Collection)object;
+    }
+ else     if (object instanceof ComplexAttribute) {
+      complexAtts=((ComplexAttribute)object).getProperties();
+    }
+ else {
+      return null;
+    }
+    for (    Object complex : complexAtts) {
+      if (complex instanceof ComplexAttribute) {
+        PropertyDescriptor descriptor=((Attribute)complex).getDescriptor();
+        if (descriptor.getUserData() != null) {
+          Object propertyElement=descriptor.getUserData().get(XSDElementDeclaration.class);
+          if (propertyElement != null && propertyElement instanceof XSDElementDeclaration) {
+            XSDParticle substitutedChildParticle=XSDFactory.eINSTANCE.createXSDParticle();
+            substitutedChildParticle.setMaxOccurs(descriptor.getMaxOccurs());
+            substitutedChildParticle.setMinOccurs(descriptor.getMinOccurs());
+            XSDElementDeclaration wrapper=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+            wrapper.setResolvedElementDeclaration((XSDElementDeclaration)propertyElement);
+            substitutedChildParticle.setContent(wrapper);
+            properties.add(new Object[]{substitutedChildParticle,complex});
+          }
+        }
+      }
+    }
+    return properties;
+  }
+  if (object instanceof ComplexAttribute) {
+    ComplexAttribute complex=(ComplexAttribute)object;
+    for (    XSDParticle childParticle : (List<XSDParticle>)Schemas.getChildElementParticles(element.getTypeDefinition(),true)) {
+      XSDElementDeclaration childElement=(XSDElementDeclaration)childParticle.getContent();
+      if (childElement.isElementDeclarationReference()) {
+        childElement=childElement.getResolvedElementDeclaration();
+      }
+      for (      XSDElementDeclaration e : (List<XSDElementDeclaration>)childElement.getSubstitutionGroup()) {
+        Name name=new NameImpl(e.getTargetNamespace(),e.getName());
+        Collection<Property> nameProperties=complex.getProperties(name);
+        if (!nameProperties.isEmpty()) {
+          XSDParticle substitutedChildParticle=XSDFactory.eINSTANCE.createXSDParticle();
+          substitutedChildParticle.setMaxOccurs(childParticle.getMaxOccurs());
+          substitutedChildParticle.setMinOccurs(childParticle.getMinOccurs());
+          XSDElementDeclaration wrapper=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+          wrapper.setResolvedElementDeclaration(e);
+          substitutedChildParticle.setContent(wrapper);
+          for (          Property property : nameProperties) {
+            if (property instanceof ComplexAttribute) {
+              properties.add(new Object[]{substitutedChildParticle,property});
+            }
+          }
+        }
+      }
+    }
+  }
+  List<XSDParticle> anyElementParticles=new ArrayList<XSDParticle>(Schemas.getAnyElementParticles(element.getTypeDefinition()));
+  if (anyElementParticles.size() > 0) {
+    Collection complexAtts=null;
+    if (object instanceof Collection) {
+      complexAtts=(Collection)object;
+    }
+ else     if (object instanceof ComplexAttribute) {
+      complexAtts=((ComplexAttribute)object).getProperties();
+    }
+    if (properties.isEmpty()) {
+      for (      Object complex : complexAtts) {
+        if (complex instanceof ComplexAttribute) {
+          ComplexAttribute newComplexAtt=(ComplexAttribute)complex;
+          PropertyDescriptor descriptor=newComplexAtt.getDescriptor();
+          if (descriptor.getUserData() != null) {
+            Object propertyElement=descriptor.getUserData().get(XSDElementDeclaration.class);
+            if (propertyElement != null && propertyElement instanceof XSDElementDeclaration) {
+              XSDParticle substitutedChildParticle=XSDFactory.eINSTANCE.createXSDParticle();
+              substitutedChildParticle.setMaxOccurs(descriptor.getMaxOccurs());
+              substitutedChildParticle.setMinOccurs(descriptor.getMinOccurs());
+              XSDElementDeclaration wrapper=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+              wrapper.setResolvedElementDeclaration((XSDElementDeclaration)propertyElement);
+              substitutedChildParticle.setContent(wrapper);
+              properties.add(new Object[]{substitutedChildParticle,newComplexAtt});
+            }
+          }
+        }
+      }
+    }
+ else {
+      List<XSDParticle> elementParticles=new ArrayList<XSDParticle>(Schemas.getChildElementParticles(element.getTypeDefinition(),false));
+      for (      Object complex : complexAtts) {
+        if (complex instanceof ComplexAttribute) {
+          ComplexAttribute newComplexAtt=(ComplexAttribute)complex;
+          PropertyDescriptor descriptor=((Attribute)complex).getDescriptor();
+          if (descriptor.getUserData() != null) {
+            Object propertyElement=descriptor.getUserData().get(XSDElementDeclaration.class);
+            if (propertyElement != null && propertyElement instanceof XSDElementDeclaration) {
+              XSDParticle substitutedChildParticle=XSDFactory.eINSTANCE.createXSDParticle();
+              substitutedChildParticle.setMaxOccurs(descriptor.getMaxOccurs());
+              substitutedChildParticle.setMinOccurs(descriptor.getMinOccurs());
+              XSDElementDeclaration wrapper=XSDFactory.eINSTANCE.createXSDElementDeclaration();
+              wrapper.setResolvedElementDeclaration((XSDElementDeclaration)propertyElement);
+              substitutedChildParticle.setContent(wrapper);
+              boolean propertyExist=false;
+              for (              XSDParticle childParticle : elementParticles) {
+                XSDElementDeclaration childElement=(XSDElementDeclaration)childParticle.getContent();
+                if (childElement.isElementDeclarationReference()) {
+                  childElement=childElement.getResolvedElementDeclaration();
+                }
+                String existingName=childElement.getName();
+                String newName=newComplexAtt.getDescriptor().getName().getLocalPart();
+                if (existingName.equals(newName)) {
+                  propertyExist=true;
+                  break;
+                }
+              }
+              if (!propertyExist) {
+                properties.add(new Object[]{substitutedChildParticle,newComplexAtt});
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return properties;
+}

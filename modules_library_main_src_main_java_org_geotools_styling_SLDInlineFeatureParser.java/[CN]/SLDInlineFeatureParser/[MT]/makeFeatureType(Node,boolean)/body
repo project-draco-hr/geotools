@@ -1,0 +1,47 @@
+{
+  Node feature=null;
+  Node featureMember=root;
+  if (isCollection)   featureMember=getNode(root,"featureMember");
+  NodeList children=featureMember.getChildNodes();
+  for (int i=0; i < children.getLength(); i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (!(childName.equalsIgnoreCase("boundedBy"))) {
+      feature=child;
+      break;
+    }
+  }
+  if (feature == null)   throw new Exception("couldnt find a Feature in the Inline Features!");
+  String featureName=feature.getLocalName();
+  if (featureName == null) {
+    featureName=feature.getNodeName();
+  }
+  SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+  build.setName(featureName);
+  build.setNamespaceURI(new URI("http://temp.inline.feature.sld.com"));
+  children=feature.getChildNodes();
+  for (int i=0; i < children.getLength(); i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if (isGeometry(child)) {
+      getValue(child);
+      build.add(childName,Geometry.class,SRS);
+    }
+ else {
+      build.add(childName,String.class);
+    }
+  }
+  return build.buildFeatureType();
+}

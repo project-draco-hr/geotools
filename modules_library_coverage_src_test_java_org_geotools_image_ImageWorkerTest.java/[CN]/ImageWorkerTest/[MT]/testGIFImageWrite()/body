@@ -1,0 +1,29 @@
+{
+  assertTrue("Assertions should be enabled.",ImageWorker.class.desiredAssertionStatus());
+  ImageWorker worker=new ImageWorker(worldDEMImage);
+  show(worker,"Input GIF");
+  RenderedImage image=worker.getRenderedImage();
+  ColorModel cm=image.getColorModel();
+  assertTrue("wrong color model",cm instanceof IndexColorModel);
+  assertEquals("wrong transparency model",Transparency.OPAQUE,cm.getTransparency());
+  final File outFile=TestData.temp(this,"temp.gif");
+  worker.writeGIF(outFile,"LZW",0.75f);
+  final ImageWorker readWorker=new ImageWorker(ImageIO.read(outFile));
+  show(readWorker,"GIF to file");
+  image=readWorker.getRenderedImage();
+  cm=image.getColorModel();
+  assertTrue("wrong color model",cm instanceof IndexColorModel);
+  assertEquals("wrong transparency model",Transparency.OPAQUE,cm.getTransparency());
+  final OutputStream os=new FileOutputStream(outFile);
+  worker=new ImageWorker(worldImage);
+  worker.forceIndexColorModelForGIF(true);
+  worker.writeGIF(os,"LZW",0.75f);
+  readWorker.setImage(ImageIO.read(outFile));
+  show(readWorker,"GIF to output stream");
+  image=readWorker.getRenderedImage();
+  cm=image.getColorModel();
+  assertTrue("wrong color model",cm instanceof IndexColorModel);
+  assertEquals("wrong transparency model",Transparency.BITMASK,cm.getTransparency());
+  assertEquals("wrong transparent color index",255,((IndexColorModel)cm).getTransparentPixel());
+  outFile.delete();
+}

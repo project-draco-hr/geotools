@@ -1,0 +1,51 @@
+{
+  super.connect();
+  StringBuffer sb=new StringBuffer();
+  sb.append("select ");
+  dialect.encodeColumnName(aname("id"),sb);
+  sb.append(", ");
+  dialect.encodeColumnName(aname("geom"),sb);
+  sb.append(", ");
+  dialect.encodeColumnName(aname("river"),sb);
+  sb.append(", ");
+  dialect.encodeColumnName(aname("flow"),sb);
+  sb.append(" * 2 as ");
+  dialect.encodeColumnName(aname("doubleFlow"),sb);
+  sb.append(" from ");
+  if (dbSchemaName != null) {
+    dialect.encodeSchemaName(dbSchemaName,sb);
+    sb.append(".");
+  }
+  dialect.encodeTableName(tname("river"),sb);
+  sb.append(" where ");
+  dialect.encodeColumnName(aname("flow"),sb);
+  sb.append(" > 4");
+  VirtualTable vt=new VirtualTable("riverReduced",sb.toString());
+  vt.addGeometryMetadatata("geom",LineString.class,4326);
+  dataStore.addVirtualTable(vt);
+  vt=new VirtualTable("riverReducedPk",sb.toString());
+  vt.addGeometryMetadatata("geom",LineString.class,4326);
+  vt.setPrimaryKeyColumns(Arrays.asList(aname("id")));
+  dataStore.addVirtualTable(vt);
+  sb=new StringBuffer();
+  sb.append("select ");
+  dialect.encodeColumnName(aname("id"),sb);
+  sb.append(", ");
+  dialect.encodeColumnName(aname("geom"),sb);
+  sb.append(", ");
+  dialect.encodeColumnName("flow",sb);
+  sb.append(" * %mul% as ");
+  dialect.encodeColumnName("mulflow",sb);
+  sb.append(" from ");
+  if (dbSchemaName != null) {
+    dialect.encodeSchemaName(dbSchemaName,sb);
+    sb.append(".");
+  }
+  dialect.encodeTableName(tname("river"),sb);
+  sb.append(" %where%");
+  vt=new VirtualTable("riverParam",sb.toString());
+  vt.addGeometryMetadatata("geom",LineString.class,4326);
+  vt.addParameter(new VirtualTableParameter("mul","1",new RegexpValidator("[\\d\\.e\\+-]+")));
+  vt.addParameter(new VirtualTableParameter("where",""));
+  dataStore.addVirtualTable(vt);
+}

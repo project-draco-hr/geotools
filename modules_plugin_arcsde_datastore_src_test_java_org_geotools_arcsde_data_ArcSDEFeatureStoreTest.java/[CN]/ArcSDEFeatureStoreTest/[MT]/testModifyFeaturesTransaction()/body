@@ -1,0 +1,60 @@
+{
+  testData.insertTestData();
+  final String typeName=testData.getTempTableName();
+  final DataStore ds=testData.getDataStore();
+  final SimpleFeatureStore store;
+  store=(SimpleFeatureStore)ds.getFeatureSource(typeName);
+  final SimpleFeatureType schema=store.getSchema();
+  final Filter oldValueFilter=CQL.toFilter("INT32_COL = 3");
+  final Filter newValueFilter=CQL.toFilter("INT32_COL = -1000");
+  SimpleFeatureCollection features=store.getFeatures(oldValueFilter);
+  final int initialSize=features.size();
+  assertEquals(1,initialSize);
+  final SimpleFeature originalFeature;
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    originalFeature=iterator.next();
+  }
+  finally {
+    iterator.close();
+  }
+{
+    final Transaction transaction=new DefaultTransaction("testModifyFeaturesTransaction");
+    store.setTransaction(transaction);
+    try {
+      final AttributeDescriptor propDescriptor=schema.getDescriptor("INT32_COL");
+      store.modifyFeatures(propDescriptor.getName(),Integer.valueOf(-1000),oldValueFilter);
+      transaction.commit();
+    }
+ catch (    Exception e) {
+      transaction.rollback();
+    }
+ finally {
+      transaction.close();
+    }
+  }
+  store.setTransaction(Transaction.AUTO_COMMIT);
+  final Query oldValueQuery=new Query(typeName,oldValueFilter);
+  final Query newValueQuery=new Query(typeName,newValueFilter);
+  assertEquals(0,store.getCount(oldValueQuery));
+  assertEquals(1,store.getCount(newValueQuery));
+  final SimpleFeatureIterator newFeatures=store.getFeatures(newValueQuery).features();
+  final SimpleFeature modifiedFeature;
+  try {
+    modifiedFeature=newFeatures.next();
+  }
+  finally {
+    newFeatures.close();
+  }
+  final List<Attribute> originalValues=(List<Attribute>)originalFeature.getValue();
+  final List<Attribute> actualValues=(List<Attribute>)modifiedFeature.getValue();
+  for (int i=0; i < originalValues.size(); i++) {
+    Attribute originalAtt=originalValues.get(i);
+    Attribute actualAtt=actualValues.get(i);
+    Name name=originalAtt.getName();
+    String localName=name.getLocalPart();
+    if (!"INT32_COL".equals(localName) && !"SHAPE".equals(localName) && !"DATE_COL".equals(localName)) {
+      assertEquals(name + " does not match",originalAtt.getValue(),actualAtt.getValue());
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  boolean isSafeOnly=false;
+  if (hints != null) {
+    Object safe=hints.get(ConverterFactory.SAFE_CONVERSION);
+    if (safe instanceof Boolean && ((Boolean)safe).booleanValue()) {
+      isSafeOnly=true;
+    }
+  }
+  if (Date.class.isAssignableFrom(source)) {
+    if (Calendar.class.isAssignableFrom(target)) {
+      if (isSafeOnly && Timestamp.class.isAssignableFrom(source)) {
+        return null;
+      }
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          Calendar calendar=Calendar.getInstance();
+          calendar.setTime((Date)source);
+          return calendar;
+        }
+      }
+;
+    }
+    if (Timestamp.class.isAssignableFrom(target) || Time.class.isAssignableFrom(target) || java.sql.Date.class.isAssignableFrom(target)) {
+      if (isSafeOnly && Time.class.isAssignableFrom(target)) {
+        return null;
+      }
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          Date date=(Date)source;
+          return target.getConstructor(new Class[]{Long.TYPE}).newInstance(new Object[]{new Long(date.getTime())});
+        }
+      }
+;
+    }
+    if (XMLGregorianCalendar.class.isAssignableFrom(target)) {
+      return new Converter(){
+        public <T>T convert(        Object source,        Class<T> target) throws Exception {
+          Date date=(Date)source;
+          Calendar calendar=createConverter(Date.class,Calendar.class,null).convert(date,Calendar.class);
+          return (T)createConverter(Calendar.class,XMLGregorianCalendar.class,null).convert(calendar,XMLGregorianCalendar.class);
+        }
+      }
+;
+    }
+  }
+  if (Calendar.class.isAssignableFrom(source)) {
+    if (Date.class.isAssignableFrom(target)) {
+      if (isSafeOnly && Time.class.isAssignableFrom(target)) {
+        return null;
+      }
+      final Class fTarget=target;
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          Calendar calendar=(Calendar)source;
+          return target.getConstructor(new Class[]{Long.TYPE}).newInstance(new Object[]{new Long(calendar.getTimeInMillis())});
+        }
+      }
+;
+    }
+    if (XMLGregorianCalendar.class.isAssignableFrom(target)) {
+      return new Converter(){
+        public <T>T convert(        Object source,        Class<T> target) throws Exception {
+          if (source instanceof GregorianCalendar) {
+            return (T)DatatypeFactory.newInstance().newXMLGregorianCalendar((GregorianCalendar)source);
+          }
+          return null;
+        }
+      }
+;
+    }
+  }
+  if (XMLGregorianCalendar.class.isAssignableFrom(source)) {
+    if (Calendar.class.isAssignableFrom(target)) {
+      return new Converter(){
+        public <T>T convert(        Object source,        Class<T> target) throws Exception {
+          XMLGregorianCalendar calendar=(XMLGregorianCalendar)source;
+          return (T)calendar.toGregorianCalendar();
+        }
+      }
+;
+    }
+    if (Date.class.isAssignableFrom(target)) {
+      return new Converter(){
+        public <T>T convert(        Object source,        Class<T> target) throws Exception {
+          Calendar calendar=createConverter(XMLGregorianCalendar.class,Calendar.class,null).convert(source,Calendar.class);
+          if (calendar != null) {
+            return (T)createConverter(Calendar.class,Date.class,null).convert(calendar,Date.class);
+          }
+          return null;
+        }
+      }
+;
+    }
+  }
+  return null;
+}

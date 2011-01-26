@@ -1,0 +1,20 @@
+{
+  CoordinateReferenceSystem returnedCRS=null;
+  if (coverage instanceof GridCoverage2D) {
+    returnedCRS=((GridCoverage2D)coverage).getCoordinateReferenceSystem2D();
+  }
+  if (coverage instanceof GridCoverage) {
+    final GridGeometry2D geometry=GridGeometry2D.wrap(((GridCoverage)coverage).getGridGeometry());
+    if (geometry.isDefined(GridGeometry2D.CRS_BITMASK)) {
+      returnedCRS=geometry.getCoordinateReferenceSystem2D();
+    }
+ else     try {
+      returnedCRS=geometry.reduce(coverage.getCoordinateReferenceSystem());
+    }
+ catch (    FactoryException exception) {
+    }
+  }
+  if (returnedCRS == null)   returnedCRS=CRS.getHorizontalCRS(coverage.getCoordinateReferenceSystem());
+  if (returnedCRS == null)   throw new TransformException(Errors.format(ErrorKeys.CANT_REDUCE_TO_TWO_DIMENSIONS_$1,returnedCRS));
+  return returnedCRS;
+}

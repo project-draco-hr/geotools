@@ -1,0 +1,41 @@
+{
+  ContentHandler handler=getContentHandler();
+  if (base.isNamespaceDeclartionEnabled()) {
+    AttributesImpl atts=new AttributesImpl();
+    ContentHandlerFilter filter=new ContentHandlerFilter(handler,atts);
+    translator=base.createTranslator(filter);
+    if (translator.getDefaultNamespace() != null) {
+      atts.addAttribute(XMLNS_NAMESPACE,null,"xmlns","CDATA",translator.getDefaultNamespace());
+      if (translator.getDefaultPrefix() != null) {
+        atts.addAttribute(XMLNS_NAMESPACE,null,"xmlns:" + translator.getDefaultPrefix(),"CDATA",translator.getDefaultNamespace());
+      }
+    }
+    NamespaceSupport ns=translator.getNamespaceSupport();
+    java.util.Enumeration e=ns.getPrefixes();
+    while (e.hasMoreElements()) {
+      String prefix=e.nextElement().toString();
+      if (prefix.equals("xml")) {
+        continue;
+      }
+      String xmlns="xmlns:" + prefix;
+      if (atts.getValue(xmlns) == null) {
+        atts.addAttribute(XMLNS_NAMESPACE,null,xmlns,"CDATA",ns.getURI(prefix));
+      }
+    }
+    String defaultNS=ns.getURI("");
+    if ((defaultNS != null) && (atts.getValue("xmlns:") == null)) {
+      atts.addAttribute(XMLNS_NAMESPACE,null,"xmlns:","CDATA",defaultNS);
+    }
+    SchemaLocationSupport schemaLocSup=translator.getSchemaLocationSupport();
+    if ((schemaLocSup != null) && !schemaLocSup.getSchemaLocation().equals("")) {
+      atts.addAttribute(XMLNS_NAMESPACE,null,"xmlns:xsi","CDATA","http://www.w3.org/2001/XMLSchema-instance");
+      atts.addAttribute(null,null,"xsi:schemaLocation",null,schemaLocSup.getSchemaLocation());
+    }
+  }
+ else {
+    translator=base.createTranslator(handler);
+  }
+  handler.startDocument();
+  translator.encode(object);
+  handler.endDocument();
+}

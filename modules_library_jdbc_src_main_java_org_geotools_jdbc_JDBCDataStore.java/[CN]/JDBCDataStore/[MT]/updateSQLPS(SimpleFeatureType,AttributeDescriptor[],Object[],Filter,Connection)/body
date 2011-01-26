@@ -1,0 +1,72 @@
+{
+  PreparedStatementSQLDialect dialect=(PreparedStatementSQLDialect)getSQLDialect();
+  PrimaryKey key=null;
+  try {
+    key=getPrimaryKey(featureType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  Set<String> pkColumnNames=getColumnNames(key);
+  StringBuffer sql=new StringBuffer();
+  sql.append("UPDATE ");
+  encodeTableName(featureType.getTypeName(),sql,null);
+  sql.append(" SET ");
+  for (int i=0; i < attributes.length; i++) {
+    AttributeDescriptor att=attributes[i];
+    String attName=att.getLocalName();
+    if (pkColumnNames.contains(attName)) {
+      continue;
+    }
+    dialect.encodeColumnName(attName,sql);
+    sql.append(" = ");
+    if (attributes[i] instanceof GeometryDescriptor) {
+      Geometry geometry=(Geometry)values[i];
+      final Class<?> binding=att.getType().getBinding();
+      dialect.prepareGeometryValue(geometry,getDescriptorSRID(att),binding,sql);
+    }
+ else {
+      sql.append("?");
+    }
+    sql.append(",");
+  }
+  sql.setLength(sql.length() - 1);
+  sql.append(" ");
+  PreparedFilterToSQL toSQL=null;
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    try {
+      toSQL=createPreparedFilterToSQL(featureType);
+      sql.append(" ").append(toSQL.encodeToString(filter));
+    }
+ catch (    FilterToSQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  LOGGER.log(Level.FINE,"Updating features with prepared statement: {0}",sql);
+  int i=0;
+  int j=0;
+  for (; i < attributes.length; i++) {
+    AttributeDescriptor att=attributes[i];
+    String attName=att.getLocalName();
+    if (pkColumnNames.contains(attName)) {
+      continue;
+    }
+    Class binding=att.getType().getBinding();
+    if (Geometry.class.isAssignableFrom(binding)) {
+      Geometry g=(Geometry)values[i];
+      dialect.setGeometryValue(g,getDescriptorSRID(att),binding,ps,j + 1);
+    }
+ else {
+      dialect.setValue(values[i],binding,ps,j + 1,cx);
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine((j + 1) + " = " + values[i]);
+    }
+    j++;
+  }
+  if (toSQL != null) {
+    setPreparedFilterValues(ps,toSQL,i,cx);
+  }
+  return ps;
+}

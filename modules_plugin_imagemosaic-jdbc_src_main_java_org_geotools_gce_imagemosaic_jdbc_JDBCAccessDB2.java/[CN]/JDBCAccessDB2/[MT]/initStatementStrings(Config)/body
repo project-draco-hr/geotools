@@ -1,0 +1,11 @@
+{
+  String geomAttr=config.getGeomAttributeNameInSpatialTable();
+  extentSelect="select " + "min(db2gse.st_minx(" + geomAttr + ")), "+ "min(db2gse.st_miny("+ geomAttr+ ")), "+ "max(db2gse.st_maxx("+ geomAttr+ ")), "+ "max(db2gse.st_maxy("+ geomAttr+ ")) "+ " from {0}";
+  String spatialSelectClause="select s." + config.getKeyAttributeNameInSpatialTable() + ","+ "db2gse.st_minx(s."+ geomAttr+ "), "+ "db2gse.st_miny(s."+ geomAttr+ "), "+ "db2gse.st_maxx(s."+ geomAttr+ "), "+ "db2gse.st_maxy(s."+ geomAttr+ ") ";
+  allSelect=spatialSelectClause + ",s." + config.getBlobAttributeNameInTileTable()+ " from {0} s";
+  allSelectJoined=spatialSelectClause + ",t." + config.getBlobAttributeNameInTileTable()+ " from {0} s, {1} t  WHERE ";
+  allSelectJoined+=(" s." + config.getKeyAttributeNameInSpatialTable() + " = t."+ config.getKeyAttributeNameInTileTable());
+  String whereClause="db2gse.st_mbrIntersects(s." + geomAttr + ","+ "db2gse.ST_GEOMETRY(CAST(? AS BLOB(128)),CAST(? AS INT))) = 1 SELECTIVITY 0.0000001";
+  gridSelect=allSelect + " WHERE " + whereClause;
+  gridSelectJoined=allSelectJoined + " AND " + whereClause;
+}

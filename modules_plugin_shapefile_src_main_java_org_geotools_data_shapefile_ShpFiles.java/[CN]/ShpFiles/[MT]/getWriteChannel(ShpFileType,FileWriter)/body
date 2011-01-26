@@ -1,0 +1,32 @@
+{
+  URL url=acquireWrite(type,requestor);
+  try {
+    WritableByteChannel channel;
+    if (isLocal()) {
+      File file=DataUtilities.urlToFile(url);
+      RandomAccessFile raf=new RandomAccessFile(file,"rw");
+      channel=new FileChannelDecorator(raf.getChannel(),this,url,requestor);
+      ((FileChannel)channel).lock();
+    }
+ else {
+      OutputStream out=url.openConnection().getOutputStream();
+      channel=new WritableByteChannelDecorator(Channels.newChannel(out),this,url,requestor);
+    }
+    return channel;
+  }
+ catch (  Throwable e) {
+    unlockWrite(url,requestor);
+    if (e instanceof IOException) {
+      throw (IOException)e;
+    }
+ else     if (e instanceof RuntimeException) {
+      throw (RuntimeException)e;
+    }
+ else     if (e instanceof Error) {
+      throw (Error)e;
+    }
+ else {
+      throw new RuntimeException(e);
+    }
+  }
+}

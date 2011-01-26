@@ -1,0 +1,27 @@
+{
+  final String lineSeparator=System.getProperty("line.separator","\n");
+  final StringWriter buffer=new StringWriter();
+  buffer.write(lineSeparator);
+  try {
+    final GeographicBoundingBox box=getGeographicBoundingBox();
+    buffer.write(GeographicBoundingBoxImpl.toString(box,"DD??MM'SS\"",null));
+    buffer.write(lineSeparator);
+  }
+ catch (  MetadataException exception) {
+  }
+  buffer.write('{');
+  buffer.write(lineSeparator);
+  try {
+    final TableWriter table=new TableWriter(buffer,2);
+    table.setMultiLinesCells(true);
+    table.nextColumn();
+    table.write(OptionalDependencies.toString(OptionalDependencies.xmlToSwing(metadata.getAsTree(GeographicMetadataFormat.FORMAT_NAME))));
+    table.flush();
+  }
+ catch (  IOException exception) {
+    buffer.write(exception.getLocalizedMessage());
+  }
+  buffer.write('}');
+  buffer.write(lineSeparator);
+  return buffer.toString();
+}

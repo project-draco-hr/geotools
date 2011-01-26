@@ -1,0 +1,25 @@
+{
+  BetweenFilterImpl a=new BetweenFilterImpl();
+  SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+  ftb.add("value",Integer.class);
+  ftb.add("geometry",Geometry.class);
+  ftb.setName("testSchema");
+  SimpleFeatureType schema=ftb.buildFeatureType();
+  a.addLeftValue(new LiteralExpressionImpl(new Double(5)));
+  a.addRightValue(new LiteralExpressionImpl(new Double(15)));
+  a.addMiddleValue(new AttributeExpressionImpl(schema,"value"));
+  LOGGER.fine("geometry is " + schema.getDescriptor("geometry"));
+  LOGGER.fine("value is " + schema.getDescriptor("value"));
+  LOGGER.fine("schema has value in it ? " + (schema.getDescriptor("value") != null));
+  GeometryFactory gf=new GeometryFactory(new PrecisionModel());
+  SimpleFeature f1=SimpleFeatureBuilder.build(schema,new Object[]{new Integer(12),gf.createPoint(new Coordinate(12,12))},null);
+  SimpleFeature f2=SimpleFeatureBuilder.build(schema,new Object[]{new Integer(3),gf.createPoint(new Coordinate(3,3))},null);
+  SimpleFeature f3=SimpleFeatureBuilder.build(schema,new Object[]{new Integer(15),gf.createPoint(new Coordinate(15,15))},null);
+  SimpleFeature f4=SimpleFeatureBuilder.build(schema,new Object[]{new Integer(5),gf.createPoint(new Coordinate(5,5))},null);
+  SimpleFeature f5=SimpleFeatureBuilder.build(schema,new Object[]{new Integer(30),gf.createPoint(new Coordinate(30,30))},null);
+  assertEquals(true,a.contains(f1));
+  assertEquals(false,a.contains(f2));
+  assertEquals(true,a.contains(f3));
+  assertEquals(true,a.contains(f4));
+  assertEquals(false,a.contains(f5));
+}

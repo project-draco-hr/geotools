@@ -1,0 +1,55 @@
+{
+  if (flags == 0) {
+    throw new IllegalArgumentException("no write flags set");
+  }
+  Connection cx=getDataStore().getConnection(getState());
+  Filter postFilter;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  try {
+    if ((flags | WRITER_ADD) == WRITER_ADD) {
+      DefaultQuery queryNone=new DefaultQuery(query);
+      queryNone.setFilter(Filter.EXCLUDE);
+      if (getDataStore().getSQLDialect() instanceof PreparedStatementSQLDialect) {
+        PreparedStatement ps=getDataStore().selectSQLPS(getSchema(),queryNone,cx);
+        return new JDBCInsertFeatureWriter(ps,cx,delegate,query.getHints());
+      }
+ else {
+        String sql=getDataStore().selectSQL(getSchema(),queryNone);
+        getDataStore().getLogger().fine(sql);
+        return new JDBCInsertFeatureWriter(sql,cx,delegate,query.getHints());
+      }
+    }
+    Filter[] split=delegate.splitFilter(query.getFilter());
+    Filter preFilter=split[0];
+    postFilter=split[1];
+    DefaultQuery preQuery=new DefaultQuery(query);
+    preQuery.setFilter(preFilter);
+    if (getDataStore().getSQLDialect() instanceof PreparedStatementSQLDialect) {
+      PreparedStatement ps=getDataStore().selectSQLPS(getSchema(),preQuery,cx);
+      if ((flags | WRITER_UPDATE) == WRITER_UPDATE) {
+        writer=new JDBCUpdateFeatureWriter(ps,cx,delegate,query.getHints());
+      }
+ else {
+        writer=new JDBCUpdateInsertFeatureWriter(ps,cx,delegate,query.getPropertyNames(),query.getHints());
+      }
+    }
+ else {
+      String sql=getDataStore().selectSQL(getSchema(),preQuery);
+      getDataStore().getLogger().fine(sql);
+      if ((flags | WRITER_UPDATE) == WRITER_UPDATE) {
+        writer=new JDBCUpdateFeatureWriter(sql,cx,delegate,query.getHints());
+      }
+ else {
+        writer=new JDBCUpdateInsertFeatureWriter(sql,cx,delegate,query.getHints());
+      }
+    }
+  }
+ catch (  Exception e) {
+    getDataStore().closeSafe(cx);
+    throw (IOException)new IOException().initCause(e);
+  }
+  if (postFilter != null && postFilter != Filter.INCLUDE) {
+    writer=new FilteringFeatureWriter(writer,postFilter);
+  }
+  return writer;
+}

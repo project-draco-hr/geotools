@@ -1,0 +1,47 @@
+{
+  ensureNonNull("shape",shape);
+  ensureNonNull("factory",factory);
+  final PathIterator iterator=shape.getPathIterator(null,ShapeUtilities.getFlatness(shape));
+  final double[] buffer=new double[6];
+  final List<Coordinate> coords=new ArrayList<Coordinate>();
+  final List<LineString> lines=new ArrayList<LineString>();
+  while (!iterator.isDone()) {
+switch (iterator.currentSegment(buffer)) {
+case PathIterator.SEG_CLOSE:
+{
+        if (!coords.isEmpty()) {
+          coords.add(coords.get(0));
+          lines.add(factory.createLinearRing((Coordinate[])coords.toArray(new Coordinate[coords.size()])));
+          coords.clear();
+        }
+        break;
+      }
+case PathIterator.SEG_MOVETO:
+{
+      if (!coords.isEmpty()) {
+        lines.add(factory.createLineString((Coordinate[])coords.toArray(new Coordinate[coords.size()])));
+        coords.clear();
+      }
+    }
+case PathIterator.SEG_LINETO:
+{
+    coords.add(new Coordinate(buffer[0],buffer[1]));
+    break;
+  }
+default :
+throw new IllegalPathStateException();
+}
+iterator.next();
+}
+if (!coords.isEmpty()) {
+lines.add(factory.createLineString((Coordinate[])coords.toArray(new Coordinate[coords.size()])));
+}
+switch (lines.size()) {
+case 0:
+return null;
+case 1:
+return (LineString)lines.get(0);
+default :
+return factory.createMultiLineString(GeometryFactory.toLineStringArray(lines));
+}
+}

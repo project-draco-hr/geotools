@@ -1,0 +1,47 @@
+{
+  init(reader);
+  getAttributesMap(reader);
+  BoundedBy bb=getBoundedBy();
+  if (bb == null)   throw new IllegalArgumentException("Provided BoundedBy element is null");
+  final int imageIndex=getImageIndex();
+  int width;
+  int height;
+  try {
+    width=reader.getWidth(imageIndex);
+    height=reader.getHeight(imageIndex);
+    gridRange=new Rectangle(0,0,width,height);
+  }
+ catch (  IOException e) {
+    throw new IllegalArgumentException("Unable to set boundedBy" + e.getLocalizedMessage(),e);
+  }
+  double[] lc=null;
+  double[] uc=null;
+switch (hdf4_type) {
+case TeraScan:
+    if (nativeCrs != null) {
+      if (transform == null)       transform=CRSUtilities.createAffineTransform(attributesMap.get(HDF4TeraScanProperties.ProjAttribs.PROJECT_TO_IMAGE_AFFINE));
+      envelope=CRSUtilities.buildEnvelope(transform,gridRange);
+    }
+  lc=envelope.getLowerCorner().getCoordinate();
+uc=envelope.getUpperCorner().getCoordinate();
+break;
+case APS:
+if (nativeCrs != null) {
+envelope=CRSUtilities.buildEnvelope(WGS84_CRS,nativeCrs,attributesMap.get(HDF4APSStreamMetadata.MAP_LOWER_LEFT),attributesMap.get(HDF4APSStreamMetadata.MAP_UPPER_RIGHT));
+}
+lc=envelope.getLowerCorner().getCoordinate();
+uc=envelope.getUpperCorner().getCoordinate();
+break;
+}
+bb.setLowerCorner(lc);
+bb.setUpperCorner(uc);
+if (isHasTemporalCRS()) {
+final TemporalObject timeExtent;
+if (startInstant != null) {
+if (endInstant != null) timeExtent=new DefaultPeriod(startInstant,endInstant);
+ else timeExtent=startInstant;
+setTimeExtentNode(bb,timeExtent);
+}
+ else throw new IllegalArgumentException("Unavailable time extent");
+}
+}

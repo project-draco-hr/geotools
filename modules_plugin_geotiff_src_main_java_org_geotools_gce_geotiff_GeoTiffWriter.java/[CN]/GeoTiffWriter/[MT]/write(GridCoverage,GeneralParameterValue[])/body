@@ -1,0 +1,51 @@
+{
+  GeoToolsWriteParams gtParams=null;
+  boolean writeTfw=GeoTiffFormat.WRITE_TFW.getDefaultValue();
+  if (params != null) {
+    if (params != null) {
+      Parameter param;
+      final int length=params.length;
+      for (int i=0; i < length; i++) {
+        param=(Parameter)params[i];
+        final ReferenceIdentifier name=param.getDescriptor().getName();
+        if (name.equals(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName())) {
+          gtParams=(GeoToolsWriteParams)param.getValue();
+        }
+        if (name.equals(GeoTiffFormat.WRITE_TFW.getName())) {
+          writeTfw=(Boolean)param.getValue();
+        }
+      }
+    }
+  }
+  if (gtParams == null)   gtParams=new GeoTiffWriteParams();
+  final GridGeometry2D gg=(GridGeometry2D)gc.getGridGeometry();
+  GridEnvelope2D range=gg.getGridRange2D();
+  final Rectangle sourceRegion=gtParams.getSourceRegion();
+  if (sourceRegion != null)   range=new GridEnvelope2D(sourceRegion);
+  final AffineTransform tr=(AffineTransform)gg.getGridToCRS2D();
+  final CoordinateReferenceSystem crs=gg.getCoordinateReferenceSystem2D();
+  final double inNoData=getCandidateNoData(gc);
+  if (crs instanceof ProjectedCRS || crs instanceof GeographicCRS) {
+    final CRS2GeoTiffMetadataAdapter adapter=new CRS2GeoTiffMetadataAdapter(crs);
+    final GeoTiffIIOMetadataEncoder metadata=adapter.parseCoordinateReferenceSystem();
+    if (!Double.isNaN(inNoData))     metadata.setNoData(inNoData);
+    setGeoReference(crs,metadata,tr,range);
+    writeImage(((GridCoverage2D)gc).geophysics(true).getRenderedImage(),this.outStream,metadata,gtParams);
+    if (writeTfw && (destination instanceof File)) {
+      final File destFile=(File)this.destination;
+      final File tfw=new File(destFile.getParentFile(),destFile.getName().replace("tif","tfw"));
+      final BufferedWriter outW=new BufferedWriter(new FileWriter(tfw));
+      try {
+        outW.write(gc.getCoordinateReferenceSystem().toWKT());
+      }
+  finally {
+        try {
+          outW.close();
+        }
+ catch (        Exception e) {
+        }
+      }
+    }
+  }
+ else   throw new GeoTiffException(null,"The supplied grid coverage uses an unsupported crs! You are allowed to use only projected and geographic coordinate reference systems",null);
+}

@@ -1,0 +1,35 @@
+{
+  if (this.started) {
+    throw new IllegalStateException("Process can only be run once");
+  }
+  this.started=true;
+  if (null == monitor) {
+    monitor=new NullProgressListener();
+  }
+  try {
+    monitor.started();
+    monitor.setTask(Text.text("Fetching arguments"));
+    monitor.progress(10.0f);
+    Double input_a=(Double)input.get(DoubleAdditionFactory.INPUT_A.key);
+    Double input_b=(Double)input.get(DoubleAdditionFactory.INPUT_B.key);
+    monitor.setTask(Text.text("Adding values"));
+    monitor.progress(25.0f);
+    if (monitor.isCanceled()) {
+      return null;
+    }
+    Double sum=input_a + input_b;
+    monitor.setTask(Text.text("Encoding result"));
+    monitor.progress(90.0f);
+    Map<String,Object> result=new HashMap<String,Object>();
+    result.put(DoubleAdditionFactory.RESULT.key,sum);
+    monitor.complete();
+    return result;
+  }
+ catch (  Exception e) {
+    monitor.exceptionOccurred(e);
+    return null;
+  }
+ finally {
+    monitor.dispose();
+  }
+}

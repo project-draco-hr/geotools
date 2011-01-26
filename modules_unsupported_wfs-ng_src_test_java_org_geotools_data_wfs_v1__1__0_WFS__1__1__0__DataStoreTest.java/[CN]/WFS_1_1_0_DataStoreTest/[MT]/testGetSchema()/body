@@ -1,0 +1,18 @@
+{
+  final InputStream schemaStream=TestData.openStream(this,CUBEWERX_GOVUNITCE.SCHEMA);
+  TestHttpResponse httpResponse=new TestHttpResponse("","UTF-8",schemaStream);
+  TestHttpProtocol mockHttp=new TestHttpProtocol(httpResponse);
+  createTestProtocol(CUBEWERX_GOVUNITCE.CAPABILITIES,mockHttp);
+  URL describeUrl=TestData.getResource(this,CUBEWERX_GOVUNITCE.SCHEMA);
+  wfs.setDescribeFeatureTypeURLOverride(describeUrl);
+  WFS_1_1_0_DataStore ds=new WFS_1_1_0_DataStore(wfs);
+  try {
+    ds.getSchema("nonExistentTypeName");
+    fail("Expected SchemaNotFoundException");
+  }
+ catch (  SchemaNotFoundException e) {
+    assertTrue(true);
+  }
+  SimpleFeatureType schema=ds.getSchema(CUBEWERX_GOVUNITCE.FEATURETYPENAME);
+  assertNotNull(schema);
+}

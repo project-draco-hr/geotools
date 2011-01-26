@@ -1,0 +1,27 @@
+{
+  final Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,DefaultGeographicCRS.WGS84);
+  GridCoverageReader reader=new ArcGridReader(rf,hints);
+  final GridCoverage2D gc1=(GridCoverage2D)reader.read(null);
+  assertTrue(CoverageUtilities.hasRenderingCategories(gc1));
+  final GridCoverageWriter writer=new ArcGridWriter(wf);
+  ParameterValueGroup params;
+  params=writer.getFormat().getWriteParameters();
+  params.parameter("GRASS").setValue(true);
+  final ArcGridWriteParams wp=new ArcGridWriteParams();
+  wp.setSourceBands(new int[]{0});
+  params.parameter(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString()).setValue(wp);
+  GeneralParameterValue[] gpv={params.parameter("GRASS"),params.parameter(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString())};
+  writer.write(gc1,gpv);
+  writer.dispose();
+  GridCoverageReader reader2=new ArcGridReader(wf,hints);
+  final GridCoverage2D gc2=(GridCoverage2D)reader2.read(null);
+  compare(gc1,gc2);
+  if (TestData.isInteractiveTest()) {
+    gc1.show();
+    gc2.show();
+  }
+ else {
+    gc1.getRenderedImage().getData();
+    gc2.getRenderedImage().getData();
+  }
+}

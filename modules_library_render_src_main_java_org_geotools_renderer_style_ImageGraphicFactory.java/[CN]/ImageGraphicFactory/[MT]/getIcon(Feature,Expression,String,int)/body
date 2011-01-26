@@ -1,0 +1,19 @@
+{
+  if (!supportedGraphicFormats.contains(format.toLowerCase()))   return null;
+  URL location=url.evaluate(feature,URL.class);
+  if (location == null)   throw new IllegalArgumentException("The provided expression cannot be evaluated to a URL");
+  BufferedImage image=imageCache.get(location);
+  if (image == null) {
+    image=ImageIO.read(location);
+    imageCache.put(location,image);
+  }
+  if (size > 0 && image.getHeight() != size) {
+    double dsize=(double)size;
+    double scaleY=dsize / image.getHeight();
+    double scaleX=scaleY;
+    AffineTransform scaleTx=AffineTransform.getScaleInstance(scaleX,scaleY);
+    AffineTransformOp ato=new AffineTransformOp(scaleTx,AffineTransformOp.TYPE_BILINEAR);
+    image=ato.filter(image,null);
+  }
+  return new ImageIcon(image);
+}

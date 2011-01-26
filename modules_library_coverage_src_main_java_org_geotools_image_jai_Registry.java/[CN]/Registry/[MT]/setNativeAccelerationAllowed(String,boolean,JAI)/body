@@ -1,0 +1,31 @@
+{
+  final String product="com.sun.media.jai";
+  final OperationRegistry registry=jai.getOperationRegistry();
+  @SuppressWarnings("unchecked") final List<RenderedImageFactory> factories=registry.getOrderedFactoryList(RenderedRegistryMode.MODE_NAME,operation,product);
+  if (factories != null) {
+    RenderedImageFactory javaFactory=null;
+    RenderedImageFactory nativeFactory=null;
+    Boolean currentState=null;
+    for (    final RenderedImageFactory factory : factories) {
+      final String pack=factory.getClass().getPackage().getName();
+      if (pack.equals("com.sun.media.jai.mlib")) {
+        nativeFactory=factory;
+        if (javaFactory != null) {
+          currentState=Boolean.FALSE;
+        }
+      }
+      if (pack.equals("com.sun.media.jai.opimage")) {
+        javaFactory=factory;
+        if (nativeFactory != null) {
+          currentState=Boolean.TRUE;
+        }
+      }
+    }
+    if (currentState != null && currentState.booleanValue() != allowed) {
+      RIFRegistry.unsetPreference(registry,operation,product,allowed ? javaFactory : nativeFactory,allowed ? nativeFactory : javaFactory);
+      RIFRegistry.setPreference(registry,operation,product,allowed ? nativeFactory : javaFactory,allowed ? javaFactory : nativeFactory);
+      final LogRecord record=Loggings.format(Level.CONFIG,LoggingKeys.NATIVE_ACCELERATION_STATE_$2,operation,Integer.valueOf(allowed ? 1 : 0));
+      log("setNativeAccelerationAllowed",record);
+    }
+  }
+}

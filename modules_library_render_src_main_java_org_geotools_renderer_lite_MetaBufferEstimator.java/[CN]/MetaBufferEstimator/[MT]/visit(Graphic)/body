@@ -1,0 +1,67 @@
+{
+  try {
+    if (gr.getSize() instanceof Literal) {
+      Literal lw=(Literal)gr.getSize();
+      final Number val=(Number)lw.evaluate(null,Double.class);
+      if (val != null) {
+        int iw=(int)Math.ceil((val).doubleValue());
+        if (iw > buffer)         buffer=iw;
+      }
+ else {
+        estimateAccurate=false;
+      }
+    }
+ else {
+      for (      GraphicalSymbol gs : gr.graphicalSymbols()) {
+        if (gs instanceof ExternalGraphic) {
+          ExternalGraphic eg=(ExternalGraphic)gs;
+          String location=eg.getLocation().toExternalForm();
+          Expression expanded=ExpressionExtractor.extractCqlExpressions(location);
+          if (!(expanded instanceof Literal)) {
+            estimateAccurate=false;
+            return;
+          }
+          Iterator<ExternalGraphicFactory> it=DynamicSymbolFactoryFinder.getExternalGraphicFactories();
+          while (it.hasNext()) {
+            try {
+              Icon icon=it.next().getIcon(null,expanded,eg.getFormat(),-1);
+              if (icon != null) {
+                int size=Math.max(icon.getIconHeight(),icon.getIconWidth());
+                if (size > buffer) {
+                  buffer=size;
+                }
+                return;
+              }
+            }
+ catch (            Exception e) {
+              LOGGER.log(Level.FINE,"Error occurred evaluating external graphic",e);
+            }
+          }
+        }
+ else         if (gs instanceof Mark) {
+          Mark m=(Mark)gs;
+          if (m.getSize() instanceof Literal) {
+            int size=(int)Math.ceil(m.getSize().evaluate(null,Double.class));
+            if (size > buffer) {
+              buffer=size;
+            }
+            return;
+          }
+ else {
+            estimateAccurate=false;
+            return;
+          }
+        }
+      }
+      estimateAccurate=false;
+    }
+  }
+ catch (  ClassCastException e) {
+    estimateAccurate=false;
+    LOGGER.info("Could not parse graphic size, " + "it's a literal but not a Number...");
+  }
+catch (  Exception e) {
+    estimateAccurate=false;
+    LOGGER.log(Level.INFO,"Error occured during the graphic size estimation, " + "meta buffer estimate cannot be performed",e);
+  }
+}

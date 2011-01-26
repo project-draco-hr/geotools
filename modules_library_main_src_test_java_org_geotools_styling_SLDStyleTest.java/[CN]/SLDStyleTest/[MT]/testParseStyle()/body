@@ -1,0 +1,22 @@
+{
+  java.net.URL surl=TestData.getResource(this,"test-sld.xml");
+  SLDParser stylereader=new SLDParser(sf,surl);
+  StyledLayerDescriptor sld=stylereader.parseSLD();
+  assertEquals("My Layer",sld.getName());
+  assertEquals("A layer by me",sld.getTitle());
+  assertEquals("this is a sample layer",sld.getAbstract());
+  assertEquals(1,sld.getStyledLayers().length);
+  UserLayer layer=(UserLayer)sld.getStyledLayers()[0];
+  assertNull(layer.getName());
+  assertEquals(1,layer.getUserStyles().length);
+  Style style=layer.getUserStyles()[0];
+  assertEquals(1,style.getFeatureTypeStyles().length);
+  assertEquals("My User Style",style.getName());
+  assertEquals("A style by me",style.getTitle());
+  assertEquals("this is a sample style",style.getAbstract());
+  assertTrue(style.isDefault());
+  FeatureTypeStyle fts=style.getFeatureTypeStyles()[0];
+  Rule rule=fts.getRules()[0];
+  LineSymbolizer lineSym=(LineSymbolizer)rule.getSymbolizers()[0];
+  assertEquals(4,((Number)lineSym.getStroke().getWidth().evaluate(null,Number.class)).intValue());
+}

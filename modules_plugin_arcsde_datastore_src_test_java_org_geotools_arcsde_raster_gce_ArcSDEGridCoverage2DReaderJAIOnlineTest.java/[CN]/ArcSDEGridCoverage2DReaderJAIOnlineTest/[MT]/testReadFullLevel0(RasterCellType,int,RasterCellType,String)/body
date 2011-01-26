@@ -1,0 +1,40 @@
+{
+  final AbstractGridCoverage2DReader reader=getReader();
+  assertNotNull("Couldn't obtain a reader for " + fileNamePostFix,reader);
+  final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope();
+  final GridEnvelope originalGridRange=reader.getOriginalGridRange();
+  final int origWidth=originalGridRange.getSpan(0);
+  final int origHeight=originalGridRange.getSpan(1);
+  final GridCoverage2D coverage=readCoverage(reader,origWidth,origHeight,originalEnvelope);
+  assertNotNull("read coverage returned null",coverage);
+  assertEquals(numBands,coverage.getNumSampleDimensions());
+  assertNotNull(coverage.getEnvelope());
+  GeneralEnvelope envelope=(GeneralEnvelope)coverage.getEnvelope();
+  assertTrue(originalEnvelope.intersects(envelope,true));
+  final String fileName="testReadFullLevel0_" + fileNamePostFix;
+  writeToDisk(coverage,fileName);
+  RenderedImage nativeImage=coverage.view(ViewType.NATIVE).getRenderedImage();
+  final int[] sampleSize=nativeImage.getSampleModel().getSampleSize();
+  final ColorModel colorModel=nativeImage.getColorModel();
+  if (colorModel instanceof IndexColorModel) {
+switch (cellType) {
+case TYPE_1BIT:
+      assertEquals("1-bit image should have been promoted to 8-bit",8,sampleSize[0]);
+    break;
+case TYPE_8BIT_U:
+  assertEquals("8-bit indexed image should have been " + "promoted to 16bit to account for no-data values",16,sampleSize[0]);
+break;
+case TYPE_16BIT_U:
+assertEquals(16,sampleSize[0]);
+break;
+default :
+throw new IllegalArgumentException(cellType.toString());
+}
+}
+ else {
+for (int band=0; band < numBands; band++) {
+assertEquals(resultingCellType.getBitsPerSample(),sampleSize[band]);
+}
+}
+return coverage;
+}

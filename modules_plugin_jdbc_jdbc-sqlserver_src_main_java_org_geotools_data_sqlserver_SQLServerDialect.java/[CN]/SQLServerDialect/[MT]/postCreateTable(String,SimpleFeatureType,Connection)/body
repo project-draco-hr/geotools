@@ -1,0 +1,35 @@
+{
+  Statement st=cx.createStatement();
+  try {
+    for (    AttributeDescriptor ad : featureType.getAttributeDescriptors()) {
+      if (ad instanceof GeometryDescriptor) {
+        String bbox=null;
+        GeometryDescriptor gd=(GeometryDescriptor)ad;
+        if (gd.getCoordinateReferenceSystem() != null) {
+          CoordinateReferenceSystem crs=gd.getCoordinateReferenceSystem();
+          CoordinateSystem cs=crs.getCoordinateSystem();
+          if (cs.getDimension() == 2) {
+            bbox="(" + cs.getAxis(0).getMinimumValue() + ", "+ cs.getAxis(1).getMinimumValue();
+            bbox+=", " + cs.getAxis(0).getMaximumValue() + ", "+ cs.getAxis(1).getMaximumValue()+ ")";
+          }
+        }
+        if (bbox == null) {
+          continue;
+        }
+        StringBuffer sql=new StringBuffer("CREATE SPATIAL INDEX ");
+        encodeTableName(featureType.getTypeName() + "_" + gd.getLocalName()+ "_index",sql);
+        sql.append(" ON ");
+        encodeTableName(featureType.getTypeName(),sql);
+        sql.append("(");
+        encodeColumnName(gd.getLocalName(),sql);
+        sql.append(")");
+        sql.append(" WITH ( BOUNDING_BOX = ").append(bbox).append(")");
+        LOGGER.fine(sql.toString());
+        st.execute(sql.toString());
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

@@ -1,0 +1,44 @@
+{
+  if (fixture == null) {
+    String fixtureId=getFixtureId();
+    if (fixtureId == null) {
+      return;
+    }
+    try {
+      File base=FixtureUtilities.getFixtureDirectory();
+      String profile=System.getProperty(ONLINE_TEST_PROFILE);
+      if (profile != null && !"".equals(profile)) {
+        base=new File(base,profile);
+      }
+      File fixtureFile=FixtureUtilities.getFixtureFile(base,fixtureId);
+      Boolean exists=found.get(fixtureFile.getCanonicalPath());
+      if (exists == null || exists.booleanValue()) {
+        if (fixtureFile.exists()) {
+          fixture=FixtureUtilities.loadProperties(fixtureFile);
+          found.put(fixtureFile.getCanonicalPath(),true);
+        }
+ else {
+          if (profile == null) {
+            Properties exampleFixture=createExampleFixture();
+            if (exampleFixture != null) {
+              File exFixtureFile=new File(fixtureFile.getAbsolutePath() + ".example");
+              if (!exFixtureFile.exists()) {
+                createExampleFixture(exFixtureFile,exampleFixture);
+              }
+            }
+          }
+          found.put(fixtureFile.getCanonicalPath(),false);
+        }
+      }
+      if (fixture == null) {
+        fixture=createOfflineFixture();
+      }
+      if (fixture == null && exists == null) {
+        FixtureUtilities.printSkipNotice(fixtureId,fixtureFile);
+      }
+    }
+ catch (    Exception e) {
+      e.printStackTrace();
+    }
+  }
+}

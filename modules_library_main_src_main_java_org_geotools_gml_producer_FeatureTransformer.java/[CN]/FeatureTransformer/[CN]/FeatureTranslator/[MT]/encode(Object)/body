@@ -1,0 +1,45 @@
+{
+  try {
+    if (o instanceof FeatureCollection) {
+      SimpleFeatureCollection fc=(SimpleFeatureCollection)o;
+      FeatureCollectionIteration.iteration(this,fc);
+    }
+ else     if (o instanceof FeatureCollection[]) {
+      FeatureCollection[] results=(FeatureCollection[])o;
+      startFeatureCollection();
+      if (collectionBounding) {
+        ReferencedEnvelope bounds=null;
+        for (int i=0; i < results.length; i++) {
+          ReferencedEnvelope more=results[i].getBounds();
+          if (bounds == null) {
+            bounds=new ReferencedEnvelope(more);
+          }
+ else {
+            bounds.expandToInclude(more);
+          }
+        }
+        writeBounds(bounds);
+      }
+ else {
+        writeNullBounds();
+      }
+      for (int i=0; i < results.length; i++) {
+        handleFeatureIterator(DataUtilities.simple(results[i]).features());
+      }
+      endFeatureCollection();
+    }
+ else     if (o instanceof FeatureReader) {
+      FeatureReader<SimpleFeatureType,SimpleFeature> r=(FeatureReader<SimpleFeatureType,SimpleFeature>)o;
+      startFeatureCollection();
+      handleFeatureReader(r);
+      endFeatureCollection();
+    }
+ else {
+      throw new IllegalArgumentException("Cannot encode " + o);
+    }
+  }
+ catch (  IOException ioe) {
+    ioe.printStackTrace(System.out);
+    throw new RuntimeException("error reading FeatureResults",ioe);
+  }
+}

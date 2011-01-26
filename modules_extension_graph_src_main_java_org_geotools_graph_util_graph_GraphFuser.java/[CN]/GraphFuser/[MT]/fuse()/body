@@ -1,0 +1,128 @@
+{
+  m_walker=new GraphWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      Node node=(Node)element;
+      if (node.getDegree() != 2) {
+        finish();
+      }
+ else {
+        m_nodes.add(node);
+        m_ndegree2--;
+      }
+      return (GraphTraversal.CONTINUE);
+    }
+    public void finish(){
+      if (!m_nodes.isEmpty()) {
+        m_sets.add(m_nodes);
+        m_nodes=new ArrayList();
+      }
+    }
+  }
+;
+  m_traversal=new BasicGraphTraversal(m_graph,m_walker,new DepthFirstTopologicalIterator());
+  m_sets=new ArrayList();
+  m_nodes=new ArrayList();
+  m_ndegree2=m_graph.getNodesOfDegree(2).size();
+  if (m_ndegree2 == 0)   return (true);
+  m_traversal.init();
+  m_graph.visitNodes(new GraphVisitor(){
+    public int visit(    Graphable component){
+      component.setVisited(false);
+      return 0;
+    }
+  }
+);
+  m_traversal.traverse();
+  if (m_ndegree2 > 0) {
+    Iterator sources=m_graph.queryNodes(new GraphVisitor(){
+      public int visit(      Graphable component){
+        Node node=(Node)component;
+        if (!node.isVisited() && node.getDegree() == 2) {
+          for (Iterator itr=node.getRelated(); itr.hasNext(); ) {
+            Node rel=(Node)itr.next();
+            if (rel.getDegree() > 2)             return (Graph.PASS_AND_CONTINUE);
+          }
+        }
+        return (Graph.FAIL_QUERY);
+      }
+    }
+).iterator();
+    if (!sources.hasNext()) {
+      sources=m_graph.queryNodes(new GraphVisitor(){
+        public int visit(        Graphable component){
+          if (!component.isVisited())           return (Graph.PASS_AND_STOP);
+          return (Graph.FAIL_QUERY);
+        }
+      }
+).iterator();
+    }
+    m_walker=new GraphWalker(){
+      public int visit(      Graphable element,      GraphTraversal traversal){
+        m_ndegree2--;
+        m_nodes.add(element);
+        return (GraphTraversal.CONTINUE);
+      }
+      public void finish(){
+        m_sets.add(m_nodes);
+        m_nodes=new ArrayList();
+      }
+    }
+;
+    m_traversal.setWalker(m_walker);
+    m_traversal.setIterator(new NoBifurcationIterator());
+    m_nodes=new ArrayList();
+    Node source=null;
+    while (sources.hasNext()) {
+      while (sources.hasNext()) {
+        source=(Node)sources.next();
+        if (source.isVisited())         continue;
+        ((SourceGraphIterator)m_traversal.getIterator()).setSource(source);
+        m_traversal.traverse();
+      }
+    }
+  }
+  if (m_ndegree2 == 0) {
+    for (Iterator sitr=m_sets.iterator(); sitr.hasNext(); ) {
+      ArrayList nodes=(ArrayList)sitr.next();
+      ArrayList edges=new ArrayList();
+      Node first=null;
+      Node last=null;
+      if (nodes.size() == 1) {
+        Iterator related=((Node)nodes.get(0)).getRelated();
+        first=(Node)related.next();
+        last=(Node)related.next();
+        edges.addAll(((Node)nodes.get(0)).getEdges());
+      }
+ else {
+        Node node=(Node)nodes.get(0);
+        Iterator rel=node.getRelated();
+        first=(Node)rel.next();
+        if (first.equals(nodes.get(1)))         first=(Node)rel.next();
+        node=(Node)nodes.get(nodes.size() - 1);
+        rel=node.getRelated();
+        last=(Node)rel.next();
+        if (last.equals(nodes.get(nodes.size() - 2)))         last=(Node)rel.next();
+        if (first.getDegree() == 2) {
+          first=(Node)nodes.get(1);
+          last=(Node)nodes.get(0);
+          first=last=(Node)nodes.get(0);
+          nodes.remove(0);
+        }
+        edges.add(first.getEdge((Node)nodes.get(0)));
+        for (int i=1; i < nodes.size(); i++) {
+          Node curr=(Node)nodes.get(i);
+          Node prev=(Node)nodes.get(i - 1);
+          edges.add(curr.getEdge(prev));
+        }
+        edges.add(last.getEdge((Node)nodes.get(nodes.size() - 1)));
+      }
+      Object obj=m_merger.merge(edges);
+      m_builder.removeNodes(nodes);
+      Edge newEdge=m_builder.buildEdge(first,last);
+      m_merger.setMergedObject(newEdge,obj,edges);
+      m_builder.addEdge(newEdge);
+    }
+    return (true);
+  }
+  return (false);
+}

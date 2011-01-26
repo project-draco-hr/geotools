@@ -1,0 +1,14 @@
+{
+  final CoordinateReferenceSystem crs=exteriorRingPoints[0].getCoordinateReferenceSystem();
+  final BasicFactories commonFactory=BasicFactories.getDefault();
+  final GeometryFactory geometryFactory=commonFactory.getGeometryFactory(crs);
+  final PrimitiveFactory primitiveFactory=commonFactory.getPrimitiveFactory(crs);
+  final Ring exteriorRing=createRing(primitiveFactory,exteriorRingPoints);
+  List interiorRingList=interiorRingsPoints.length == 0 ? Collections.EMPTY_LIST : new ArrayList(interiorRingsPoints.length);
+  for (int i=0; i < interiorRingsPoints.length; i++) {
+    final DirectPosition[] interiorRingPoints=interiorRingsPoints[i];
+    interiorRingList.add(createRing(primitiveFactory,interiorRingPoints));
+  }
+  final SurfaceBoundary surfaceBoundary=primitiveFactory.createSurfaceBoundary(exteriorRing,interiorRingList);
+  return geometryFactory.createPolygon(surfaceBoundary);
+}

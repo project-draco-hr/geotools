@@ -1,0 +1,25 @@
+{
+  super(driver);
+  if (source == null) {
+    if (additionalParameters.containsKey(BaseFileDriver.URL.key)) {
+      source=(URL)additionalParameters.get(BaseFileDriver.URL.key);
+    }
+  }
+  if (source == null)   throw new IllegalArgumentException();
+  connectionParameters=new HashMap<String,Serializable>();
+  if (additionalParameters != null) {
+    connectionParameters.putAll(additionalParameters);
+  }
+  connectionParameters.put(BaseFileDriver.URL.key,source);
+  final String protocol=source.getProtocol();
+  if (protocol.equalsIgnoreCase("file")) {
+    final File sourceFile=BaseFileDriver.urlToFile(source);
+    if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead())     throw new IllegalArgumentException("Invalid input");
+    this.input=source;
+    this.init();
+  }
+ else   if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("dods")) {
+    this.input=source;
+    this.init();
+  }
+}
