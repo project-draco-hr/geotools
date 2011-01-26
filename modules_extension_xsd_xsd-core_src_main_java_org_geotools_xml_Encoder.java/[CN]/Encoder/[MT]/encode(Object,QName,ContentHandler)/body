@@ -98,12 +98,12 @@
       }
  else {
         if (entry.element.isAbstract()) {
-          List sub=entry.element.getSubstitutionGroup();
+          List sub=safeCopy(entry.element.getSubstitutionGroup());
           if (sub.size() > 0) {
             List matches=new ArrayList();
             for (Iterator s=sub.iterator(); s.hasNext(); ) {
               XSDElementDeclaration e=(XSDElementDeclaration)s.next();
-              if (e.equals(entry.element)) {
+              if (e == null || e.equals(entry.element)) {
                 continue;
               }
               if (e.getName() == null) {
@@ -112,7 +112,7 @@
               Binding binding=bindingLoader.loadBinding(new QName(e.getTargetNamespace(),e.getName()),context);
               if (binding == null) {
                 XSDTypeDefinition type=e.getType();
-                if (type.getName() == null) {
+                if (type == null || type.getName() == null) {
                   continue;
                 }
                 binding=bindingLoader.loadBinding(new QName(type.getTargetNamespace(),type.getName()),context);
