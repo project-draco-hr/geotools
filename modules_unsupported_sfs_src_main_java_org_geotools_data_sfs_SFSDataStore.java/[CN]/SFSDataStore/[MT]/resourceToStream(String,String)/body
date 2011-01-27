@@ -1,9 +1,10 @@
 {
   URL url=new URL(baseURL + resource);
-  URLConnection urlConnection=url.openConnection();
+  HttpURLConnection urlConnection=(HttpURLConnection)url.openConnection();
+  urlConnection.setRequestProperty("Accept-Encoding","gzip");
   urlConnection.setDoInput(true);
   if (postData != null) {
-    ((HttpURLConnection)urlConnection).setRequestMethod("POST");
+    urlConnection.setRequestMethod("POST");
     urlConnection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
     urlConnection.setDoOutput(true);
     OutputStreamWriter wr=null;
@@ -19,8 +20,17 @@
     }
   }
  else {
-    ((HttpURLConnection)urlConnection).setRequestMethod("GET");
+    urlConnection.setRequestMethod("GET");
   }
-  InputStream is=urlConnection.getInputStream();
-  return is;
+  if (urlConnection.getResponseCode() != 200) {
+    throw new IOException("Server reported and error with code " + urlConnection.getResponseCode() + ": "+ urlConnection.getResponseMessage());
+  }
+ else {
+    InputStream is=urlConnection.getInputStream();
+    String encoding=urlConnection.getContentEncoding();
+    if ("gzip".equalsIgnoreCase(encoding)) {
+      is=new GZIPInputStream(is);
+    }
+    return is;
+  }
 }
