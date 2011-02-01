@@ -3,17 +3,30 @@
   Set<FeatureTypeMapping> featureTypeMappings=new HashSet<FeatureTypeMapping>();
   for (Iterator it=mappingsConfigs.iterator(); it.hasNext(); ) {
     TypeMapping dto=(TypeMapping)it.next();
-    FeatureSource featureSource=getFeatureSource(dto,sourceDataStores);
-    AttributeDescriptor target=getTargetDescriptor(dto,featureSource.getSchema().getCoordinateReferenceSystem());
-    target.getType().getUserData().put("schemaURI",schemaURIs);
-    List attMappings=getAttributeMappings(target,dto.getAttributeMappings(),dto.getItemXpath());
-    FeatureTypeMapping mapping;
-    mapping=FeatureTypeMappingFactory.getInstance(featureSource,target,attMappings,namespaces,dto.getItemXpath(),dto.isXmlDataStore());
-    String mappingName=dto.getMappingName();
-    if (mappingName != null) {
-      mapping.setName(Types.degloseName(mappingName,namespaces));
+    try {
+      FeatureSource featureSource=getFeatureSource(dto,sourceDataStores);
+      CoordinateReferenceSystem crs;
+      try {
+        crs=featureSource.getSchema().getCoordinateReferenceSystem();
+      }
+ catch (      UnsupportedOperationException e) {
+        crs=null;
+      }
+      AttributeDescriptor target=getTargetDescriptor(dto,crs);
+      target.getType().getUserData().put("schemaURI",schemaURIs);
+      List attMappings=getAttributeMappings(target,dto.getAttributeMappings(),dto.getItemXpath());
+      FeatureTypeMapping mapping;
+      mapping=FeatureTypeMappingFactory.getInstance(featureSource,target,attMappings,namespaces,dto.getItemXpath(),dto.isXmlDataStore());
+      String mappingName=dto.getMappingName();
+      if (mappingName != null) {
+        mapping.setName(Types.degloseName(mappingName,namespaces));
+      }
+      featureTypeMappings.add(mapping);
     }
-    featureTypeMappings.add(mapping);
+ catch (    Exception e) {
+      LOGGER.warning("Error creating app-schema data store for '" + dto.getMappingName() != null ? dto.getMappingName() : dto.getTargetElementName() + "', caused by: " + e.getMessage());
+      throw new IOException(e.getMessage());
+    }
   }
   return featureTypeMappings;
 }

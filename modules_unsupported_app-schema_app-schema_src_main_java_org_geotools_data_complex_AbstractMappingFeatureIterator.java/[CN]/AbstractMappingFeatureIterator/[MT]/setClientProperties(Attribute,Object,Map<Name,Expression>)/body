@@ -1,0 +1,38 @@
+{
+  if (target == null) {
+    return;
+  }
+  if (source == null) {
+    return;
+  }
+  final Map<Name,Object> targetAttributes=new HashMap<Name,Object>();
+  if (target.getUserData().containsValue(Attributes.class)) {
+    targetAttributes.putAll((Map<? extends Name,? extends Object>)target.getUserData().get(Attributes.class));
+  }
+  for (  Map.Entry<Name,Expression> entry : clientProperties.entrySet()) {
+    Name propName=entry.getKey();
+    Object propExpr=entry.getValue();
+    Object propValue;
+    if (propExpr instanceof Expression) {
+      propValue=getValue((Expression)propExpr,source);
+    }
+ else {
+      propValue=propExpr;
+    }
+    if (propValue != null) {
+      if (propValue instanceof Collection) {
+        if (!((Collection)propValue).isEmpty()) {
+          propValue=((Collection)propValue).iterator().next();
+          targetAttributes.put(propName,propValue);
+        }
+      }
+ else {
+        targetAttributes.put(propName,propValue);
+      }
+    }
+  }
+  if (targetAttributes.size() > 0) {
+    target.getUserData().put(Attributes.class,targetAttributes);
+  }
+  setGeometryUserData(target,targetAttributes);
+}

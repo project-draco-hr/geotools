@@ -1,0 +1,26 @@
+{
+  final String EMPTY_STRING="";
+  String expressionValue=node.toString();
+  boolean isUnsetNode=Expression.NIL.equals(node) || expressionValue.equals("''");
+  if (isUnsetNode || expressionValue.startsWith("'") || node instanceof LiteralExpressionImpl) {
+    String editedValue=EMPTY_STRING;
+    List<String> ls=new ArrayList<String>(1);
+    if (!isUnsetNode) {
+      editedValue=expressionValue.replace("'","");
+    }
+    ls.add(editedValue);
+    return ls;
+  }
+ else   if (node instanceof FunctionExpressionImpl) {
+    List<String> ls=new ArrayList<String>(1);
+    Object value=node.evaluate(target);
+    if (value != null) {
+      ls.add(Converters.convert(value,String.class));
+    }
+    return ls;
+  }
+ else {
+    expressionValue=xpathPrefix + XPATH_SEPARATOR + expressionValue;
+  }
+  return getValue(expressionValue);
+}

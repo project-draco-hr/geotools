@@ -1,0 +1,25 @@
+{
+  if (isSameSource()) {
+    throw new UnsupportedOperationException("Link field is missing from feature chaining mapping!");
+  }
+  FeatureSource<FeatureType,Feature> fSource=getMappingSource(feature);
+  if (fSource == null) {
+    return null;
+  }
+  ArrayList<Feature> matchingFeatures=new ArrayList<Feature>();
+  Query query=new Query();
+  query.setCoordinateSystemReproject(reprojection);
+  Filter filter;
+  PropertyName propertyName=filterFac.property(this.nestedTargetXPath.toString());
+  filter=filterFac.equals(propertyName,filterFac.literal(foreignKeyValue));
+  query.setFilter(filter);
+  FeatureCollection<FeatureType,Feature> fCollection=fSource.getFeatures(query);
+  if (fCollection instanceof MappingFeatureCollection) {
+    FeatureIterator<Feature> iterator=fCollection.features();
+    while (iterator.hasNext()) {
+      matchingFeatures.add(iterator.next());
+    }
+    iterator.close();
+  }
+  return matchingFeatures;
+}
