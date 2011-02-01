@@ -1,0 +1,128 @@
+{
+  FeatureCollection<FeatureType,Feature> guCollection=(FeatureCollection<FeatureType,Feature>)guFeatureSource.getFeatures();
+  AbstractMappingFeatureIterator iterator=(AbstractMappingFeatureIterator)guCollection.features();
+  FeatureTypeMapping guSchema=AppSchemaDataAccessRegistry.getMappingByElement(GEOLOGIC_UNIT);
+  Hints hints=new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,guSchema.getNamespaces());
+  final String composition="composition";
+  final String occurrence="occurrence";
+  final String commodity="commodityDescription";
+  List<AttributeMapping> otherMappings=new ArrayList<AttributeMapping>();
+  AttributeMapping compositionMapping=null;
+  AttributeMapping occurrenceMapping=null;
+  for (  AttributeMapping attMapping : guSchema.getAttributeMappings()) {
+    String attName=attMapping.getTargetXPath().toString();
+    if (attName.equals("gsml:" + composition)) {
+      compositionMapping=attMapping;
+    }
+ else     if (attName.equals("gsml:" + occurrence)) {
+      occurrenceMapping=attMapping;
+    }
+ else {
+      otherMappings.add(attMapping);
+    }
+  }
+  assertNotNull(occurrenceMapping);
+  assertNotNull(compositionMapping);
+  assertEquals(guSchema.getAttributeMappings().size() - 2,otherMappings.size());
+  int guCount=0;
+  ArrayList<Feature> guFeatures=new ArrayList<Feature>();
+  while (iterator.hasNext()) {
+    Feature next=(Feature)iterator.next();
+    FeatureId fId=next.getIdentifier();
+    Feature moFeature=null;
+    for (    Feature inputFeature : inputFeatures) {
+      if (inputFeature.getIdentifier().equals(fId)) {
+        moFeature=inputFeature;
+      }
+    }
+    assertNotNull(moFeature);
+    Collection<Property> gsmlCompositions=(Collection<Property>)next.getProperties(composition);
+    Collection<Property> moCompositions=(Collection<Property>)moFeature.getProperties(composition);
+    Collection<String> cpIds=new ArrayList<String>();
+    for (    Property inputProperty : moCompositions) {
+      Collection<Attribute> values=(Collection<Attribute>)inputProperty.getValue();
+      for (      Attribute attrib : values) {
+        cpIds.add(attrib.getValue().toString());
+      }
+    }
+    assertTrue(cpIds.size() > 0);
+    assertEquals(gsmlCompositions.size(),cpIds.size());
+    ArrayList<String> nestedCpIds=new ArrayList<String>(cpIds.size());
+    for (    Property outputProperty : gsmlCompositions) {
+      Collection<Feature> values=(Collection<Feature>)outputProperty.getValue();
+      Feature compositionPart=values.iterator().next();
+      assertTrue(cpFeatures.contains(compositionPart));
+      nestedCpIds.add(compositionPart.getIdentifier().toString());
+    }
+    assertTrue(cpIds.containsAll(nestedCpIds));
+    Collection<Property> occurrences=(Collection<Property>)next.getProperties(occurrence);
+    Collection<Property> commodities=(Collection<Property>)moFeature.getProperties(commodity);
+    Collection<String> mfIds=new ArrayList<String>();
+    for (    Property property : commodities) {
+      Collection<Attribute> values=(Collection<Attribute>)property.getValue();
+      for (      Attribute attrib : values) {
+        mfIds.add(attrib.getValue().toString());
+      }
+    }
+    assertTrue(mfIds.size() > 0);
+    assertEquals(occurrences.size(),mfIds.size());
+    ArrayList<String> nestedMfIds=new ArrayList<String>(mfIds.size());
+    for (    Property mf : occurrences) {
+      Collection<Feature> values=(Collection<Feature>)mf.getValue();
+      Feature mfFeature=values.iterator().next();
+      assertTrue(mfFeatures.contains(mfFeature));
+      nestedMfIds.add(mfFeature.getIdentifier().toString());
+    }
+    assertTrue(mfIds.containsAll(nestedMfIds));
+    assertEquals(2,next.getProperties("name").size());
+    for (    AttributeMapping attMapping : otherMappings) {
+      Expression sourceExpr=attMapping.getSourceExpression();
+      if (!(sourceExpr instanceof AttributeExpressionImpl)) {
+        continue;
+      }
+      AttributeExpressionImpl outputExpr=new AttributeExpressionImpl(attMapping.getTargetXPath().toString(),hints);
+      Object inputValue=sourceExpr.evaluate(moFeature);
+      while (inputValue instanceof Attribute) {
+        inputValue=((Attribute)inputValue).getValue();
+      }
+      Object outputValue=outputExpr.evaluate(next);
+      while (outputValue instanceof Attribute) {
+        outputValue=((Attribute)outputValue).getValue();
+      }
+      assertEquals(inputValue,outputValue);
+    }
+    guFeatures.add(next);
+    guCount++;
+  }
+  assertEquals(inputFeatures.size(),guCount);
+  mfDataAccess.dispose();
+  Map<String,Serializable> dsParams=new HashMap<String,Serializable>();
+  URL url=getClass().getResource(schemaBase + "MappedFeaturePropertyfile.xml");
+  assertNotNull(url);
+  dsParams.put("dbtype","app-schema");
+  dsParams.put("url",url.toExternalForm());
+  mfDataAccess=DataAccessFinder.getDataStore(dsParams);
+  assertNotNull(mfDataAccess);
+  FeatureType mappedFeatureType=mfDataAccess.getSchema(MAPPED_FEATURE);
+  assertNotNull(mappedFeatureType);
+  FeatureSource<FeatureType,Feature> mfSource=mfDataAccess.getFeatureSource(MAPPED_FEATURE);
+  FeatureCollection<FeatureType,Feature> mfCollection=mfSource.getFeatures();
+  FeatureIterator<Feature> mfIterator=mfCollection.features();
+  while (mfIterator.hasNext()) {
+    Feature mf=mfIterator.next();
+    Property spec=mf.getProperty("specification");
+    assertNotNull(spec);
+    Object guObject=spec.getValue();
+    assertNotNull(guObject);
+    assertTrue(guObject instanceof Collection);
+    assertEquals(1,((Collection<Feature>)guObject).size());
+    guObject=((Collection<Feature>)guObject).iterator().next();
+    assertTrue(guObject instanceof Feature);
+    Feature guFeature=(Feature)guObject;
+    assertTrue(guFeatures.contains(guFeature));
+    String propertyGuId=FeatureChainingTest.mfToGuMap.get(mf.getIdentifier().toString()).split("gu.")[1];
+    assertEquals(((Feature)guObject).getIdentifier().toString(),propertyGuId);
+  }
+  mfIterator.close();
+  mfDataAccess.dispose();
+}

@@ -1,17 +1,11 @@
 {
   List<String> propNames=null;
+  final AttributeType mappedType=mapping.getSource().getSchema();
   if (mappingProperties != null && mappingProperties.length > 0) {
     Set<String> requestedSurrogateProperties=new HashSet<String>();
     List<AttributeMapping> attMappings=mapping.getAttributeMappings();
     List<String> requestedProperties=new ArrayList<String>(Arrays.asList(mappingProperties));
     requestedProperties.add(mapping.getTargetFeature().getName().getLocalPart());
-    AttributeType mappedType;
-    try {
-      mappedType=mapping.getSource().getSchema();
-    }
- catch (    UnsupportedOperationException e) {
-      mappedType=null;
-    }
     for (    String requestedProperty : requestedProperties) {
       for (      final AttributeMapping entry : attMappings) {
         final StepList targetSteps=entry.getTargetXPath();
@@ -30,18 +24,13 @@
           for (          String mappedAtt : exprAtts) {
             if (!mappedAtt.equals("Expression.NIL")) {
               PropertyName propExpr=filterFac.property(mappedAtt);
-              if (mappedType == null) {
+              Object object=propExpr.evaluate(mappedType);
+              AttributeDescriptor mappedAttribute=(AttributeDescriptor)object;
+              if (mappedAttribute != null) {
                 requestedSurrogateProperties.add(mappedAtt);
               }
  else {
-                Object object=propExpr.evaluate(mappedType);
-                AttributeDescriptor mappedAttribute=(AttributeDescriptor)object;
-                if (mappedAttribute != null) {
-                  requestedSurrogateProperties.add(mappedAtt);
-                }
- else {
-                  LOGGER.info("mapped type does not contains property " + mappedAtt);
-                }
+                LOGGER.info("mapped type does not contains property " + mappedAtt);
               }
             }
           }

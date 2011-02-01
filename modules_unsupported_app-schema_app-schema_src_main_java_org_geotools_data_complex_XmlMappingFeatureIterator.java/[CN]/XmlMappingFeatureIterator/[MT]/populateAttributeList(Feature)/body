@@ -1,21 +1,20 @@
 {
   PathAttributeList elements=new PathAttributeList();
-  String rootPrefix=createIndexedItemXpathString();
-  elements.put(((XmlFeatureTypeMapping)mapping).rootAttribute.getLabel(),rootPrefix,target);
-  setClientProperties(target,rootPrefix,((XmlFeatureTypeMapping)mapping).rootAttribute.getClientProperties());
-  Iterator<AttributeMapping> it=attOrderedTypeList.iterator();
+  elements.put(rootAttribute.getLabel(),createIndexedItemXpathString(),target);
+  Iterator<TreeAttributeMapping> it=attOrderedTypeList.iterator();
   while (it.hasNext()) {
-    AttributeMapping attMapping=it.next();
+    TreeAttributeMapping attMapping=it.next();
     final Expression sourceExpression=attMapping.getIdentifierExpression();
     List<Pair> ls=elements.get(attMapping.getParentLabel());
     if (ls != null) {
       for (int i=0; i < ls.size(); i++) {
         Pair parentAttribute=ls.get(i);
-        String countXpath=parentAttribute.getXpath();
+        int count=1;
+        String countXpath=null;
         if (attMapping.getInstanceXpath() != null) {
-          countXpath+=XPATH_SEPARATOR + attMapping.getInstanceXpath();
+          countXpath=parentAttribute.getXpath() + XPATH_SEPARATOR + attMapping.getInstanceXpath();
+          count=XmlXpathUtilites.countXPathNodes(mapping.getNamespaces(),countXpath,xmlResponse.getDoc());
         }
-        int count=XmlXpathUtilites.countXPathNodes(mapping.getNamespaces(),countXpath,xmlResponse.getDoc());
         createSubFeaturesAndAddToAttributeList(elements,attMapping,sourceExpression,parentAttribute,count,countXpath);
       }
     }

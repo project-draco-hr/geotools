@@ -1,0 +1,70 @@
+{
+  final Name GeologicUnitName=new NameImpl(GSMLNS,"GeologicUnit");
+  final Name GeologicUnitType=new NameImpl(GSMLNS,"GeologicUnitType");
+  final Filter filter=ff.equals(ff.property("gml:name"),ff.literal("Unit Name1233811724109 UC1233811724109 description name"));
+  XmlDataStore ds=(XmlDataStore)MOCK_DATASTORE;
+  ds.setFileName("./src/test/resources/test-data/xmlDataStoreResponse.xml");
+  String s=Filter.INCLUDE.toString();
+  List<Integer> ls=new ArrayList<Integer>();
+  ls.add(1);
+  ls.add(2);
+  MOCK_DATASTORE.setValidElements(ls);
+  List<Feature> results=new ArrayList<Feature>();
+  FeatureCollection features=getFeatures(MAX_FEATURES,filter);
+  FeatureIterator it=features.features();
+  for (; it.hasNext(); ) {
+    results.add((Feature)it.next());
+  }
+  it.close();
+  assertEquals(ls.size(),results.size());
+  final String[] ids=new String[]{"1679161021439131319","1679161041155866313"};
+  for (int i=0; i < ls.size(); i++) {
+    Feature f=results.get(i);
+    assertEquals(ids[i],f.getIdentifier().getID());
+    assertEquals(GeologicUnitName,f.getName());
+    assertEquals(GeologicUnitType,f.getDescriptor().getType().getName());
+  }
+  Feature feature=results.get(0);
+  List<Attribute> attDescList=getAttributesForProperty(feature,"description");
+  assertEquals(1,attDescList.size());
+  Attribute at=attDescList.get(0);
+  assertEquals("Test description 1",getValueForAttribute(at));
+  assertEquals(0,at.getUserData().size());
+  List<Attribute> attNameList=getAttributesForProperty(feature,"name");
+  assertEquals(2,attNameList.size());
+  at=attNameList.get(0);
+  assertEquals("Unit Name1248396531312 UC1248396531312 description name",getValueForAttribute(at));
+  assertEquals(1,((Map)at.getUserData().get(Attributes.class)).size());
+  assertEquals("gsv:NameSpace",getUserDataForAttribute(at,new NameImpl("codeSpace")));
+  at=attNameList.get(1);
+  assertEquals("urn:cgi:feature:GSV:1679161021439131319",getValueForAttribute(at));
+  assertTrue(at.getUserData() != null && ((Map)at.getUserData().get(Attributes.class)).size() == 1);
+  assertEquals("gsv:NameSpace",getUserDataForAttribute(at,new NameImpl("codeSpace")));
+  List<Attribute> attPurposeList=getAttributesForProperty(feature,"purpose");
+  assertEquals(1,attPurposeList.size());
+  at=attPurposeList.get(0);
+  assertEquals("CONSTANT",getValueForAttribute(at));
+  assertEquals(0,at.getUserData().size());
+  List<Attribute> attGUTypeList=getAttributesForProperty(feature,"rank");
+  assertEquals(1,attGUTypeList.size());
+  at=attGUTypeList.get(0);
+  assertEquals("",getValueForAttribute(at));
+  assertEquals(1,at.getUserData().size());
+  assertEquals("urn:cgi:classifier:GSV:LithostratigraphicUnitRank:formation",getUserDataForAttribute(at,new NameImpl("http://www.w3.org/1999/xlink","href")));
+  List<Attribute> attObMethList=getAttributesForProperty(feature,"observationMethod");
+  assertEquals(1,attObMethList.size());
+  at=attObMethList.get(0);
+  assertEquals(null,at.getIdentifier());
+  assertEquals(new NameImpl(GSMLNS,"observationMethod"),at.getName());
+  assertEquals(new NameImpl(GSMLNS,"CGI_TermValuePropertyType"),at.getDescriptor().getType().getName());
+  ComplexAttribute ob=getNestedComplexValueForAttribute(at);
+  assertEquals(null,ob.getIdentifier());
+  assertEquals(new NameImpl(GSMLNS,"CGI_TermValue"),ob.getName());
+  assertEquals(new NameImpl(GSMLNS,"CGI_TermValueType"),ob.getDescriptor().getType().getName());
+  ComplexAttribute ob2=getNestedComplexValueForAttribute(ob);
+  assertEquals(null,ob2.getIdentifier());
+  assertEquals(new NameImpl(GSMLNS,"value"),ob2.getName());
+  assertEquals(new NameImpl(GSMLNS,"ScopedNameType"),ob2.getDescriptor().getType().getName());
+  assertEquals("CONSTANT",getValueForAttribute(ob2));
+  assertEquals("gsv:NameSpace",getUserDataForAttribute(ob2,new NameImpl("codeSpace")));
+}

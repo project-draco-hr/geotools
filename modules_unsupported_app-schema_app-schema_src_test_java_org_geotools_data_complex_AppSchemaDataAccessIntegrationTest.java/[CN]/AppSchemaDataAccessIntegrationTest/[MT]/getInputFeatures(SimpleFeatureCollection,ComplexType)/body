@@ -1,0 +1,58 @@
+{
+  ArrayList<Feature> features=new ArrayList<Feature>();
+  FeatureType earthResourceType=new FeatureTypeImpl(complexType.getName(),complexType.getDescriptors(),null,true,complexType.getRestrictions(),GMLSchema.ABSTRACTFEATURETYPE_TYPE,null);
+  AttributeDescriptor featureDesc=new AttributeDescriptorImpl(earthResourceType,EARTH_RESOURCE,0,-1,false,null);
+  ComplexType mineralDepositType=(ComplexType)typeRegistry.getAttributeType(MINERAL_DEPOSIT_TYPE);
+  ComplexType mineralDepositPropertyType=(ComplexType)typeRegistry.getAttributeType(MINERAL_DEPOSIT_PROPERTY_TYPE);
+  Name name=new NameImpl(null,"simpleContent");
+  AttributeType simpleContentType=typeRegistry.getAttributeType(Types.typeName("http://www.w3.org/2001/XMLSchema","string"));
+  AttributeDescriptor stringDescriptor=new AttributeDescriptorImpl(simpleContentType,name,1,1,true,(Object)null);
+  SimpleFeatureIterator simpleFeatures=fCollection.features();
+  AttributeDescriptor nameDescriptor=(AttributeDescriptor)GMLSchema.ABSTRACTGMLTYPE_TYPE.getDescriptor(Types.typeName(GMLNS,"name"));
+  while (simpleFeatures.hasNext()) {
+    SimpleFeature next=simpleFeatures.next();
+    Collection<Property> properties=new ArrayList<Property>();
+    ArrayList<Property> value=new ArrayList<Property>();
+    String propertyName="FORM";
+    value.add(new AttributeImpl(next.getProperty(propertyName).getValue(),stringDescriptor,null));
+    properties.add(new ComplexAttributeImpl(value,(AttributeDescriptor)earthResourceType.getDescriptor(Types.typeName(ER_URI,"form")),null));
+    value=new ArrayList<Property>();
+    value.add(new AttributeImpl("gu." + next.getID(),stringDescriptor,null));
+    ComplexAttributeImpl name1=new ComplexAttributeImpl(value,nameDescriptor,null);
+    properties.add(name1);
+    value=new ArrayList<Property>();
+    value.add(new AttributeImpl("er." + next.getID(),stringDescriptor,null));
+    ComplexAttributeImpl name2=new ComplexAttributeImpl(value,nameDescriptor,null);
+    properties.add(name2);
+    propertyName="CLASSIFICATION";
+    ComplexAttributeImpl classification=new ComplexAttributeImpl(new ArrayList<Property>(),(AttributeDescriptor)earthResourceType.getDescriptor(Types.typeName(ER_URI,"classification")),null);
+    value=new ArrayList<Property>();
+    value.add(new AttributeImpl(next.getProperty(propertyName).getValue(),stringDescriptor,null));
+    Name leafAttribute=Types.typeName(ER_URI,"mineralDepositGroup");
+    AttributeImpl mineralDepositGroup=new AttributeImpl(value,(AttributeDescriptor)mineralDepositType.getDescriptor(leafAttribute),null);
+    value=new ArrayList<Property>();
+    value.add(mineralDepositGroup);
+    ComplexAttributeImpl mineralDepositModel=new ComplexAttributeImpl(value,(AttributeDescriptor)mineralDepositPropertyType.getDescriptor(Types.typeName(ER_URI,"MineralDepositModel")),null);
+    value=new ArrayList<Property>();
+    value.add(mineralDepositModel);
+    classification.setValue(value);
+    properties.add(classification);
+    propertyName="COMPOSITION";
+    String[] cpIds=next.getProperty(propertyName).getValue().toString().split(",");
+    for (    String cpId : cpIds) {
+      Collection<Property> cpProperties=new ArrayList<Property>(cpIds.length);
+      cpProperties.add(new AttributeImpl(cpId,stringDescriptor,null));
+      properties.add(new AttributeImpl(cpProperties,(AttributeDescriptor)earthResourceType.getDescriptor(Types.typeName(ER_URI,"composition")),null));
+    }
+    propertyName="COMMODITYDESCRIPTION";
+    String[] mfIds=next.getProperty(propertyName).getValue().toString().split(",");
+    for (    String mfId : mfIds) {
+      ArrayList<Property> mfProperties=new ArrayList<Property>();
+      mfProperties.add(new AttributeImpl(mfId,stringDescriptor,null));
+      properties.add(new AttributeImpl(mfProperties,(AttributeDescriptor)earthResourceType.getDescriptor(Types.typeName(ER_URI,"commodityDescription")),null));
+    }
+    features.add(new FeatureImpl(properties,featureDesc,next.getIdentifier()));
+  }
+  simpleFeatures.close();
+  return features;
+}

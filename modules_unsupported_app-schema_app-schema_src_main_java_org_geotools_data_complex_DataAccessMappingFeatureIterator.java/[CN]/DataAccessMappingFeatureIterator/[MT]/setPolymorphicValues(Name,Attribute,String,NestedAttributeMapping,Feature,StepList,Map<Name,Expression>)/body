@@ -1,0 +1,20 @@
+{
+  DataAccess<FeatureType,Feature> da=DataAccessRegistry.getDataAccess((Name)mappingName);
+  if (da instanceof AppSchemaDataAccess) {
+    FeatureTypeMapping fTypeMapping=((AppSchemaDataAccess)da).getMappingByName((Name)mappingName);
+    List<AttributeMapping> polymorphicMappings=fTypeMapping.getAttributeMappings();
+    AttributeDescriptor attDescriptor=fTypeMapping.getTargetFeature();
+    Name polymorphicTypeName=attDescriptor.getName();
+    StepList prefixedXpath=xpath.clone();
+    prefixedXpath.add(new Step(new QName(polymorphicTypeName.getNamespaceURI(),polymorphicTypeName.getLocalPart(),this.namespaces.getPrefix(polymorphicTypeName.getNamespaceURI())),1));
+    Attribute instance=xpathAttributeBuilder.set(target,prefixedXpath,null,id,attDescriptor.getType(),false,attDescriptor,null);
+    setClientProperties(instance,source,clientPropsMappings);
+    for (    AttributeMapping mapping : polymorphicMappings) {
+      if (isTopLevelmapping(polymorphicTypeName,mapping.getTargetXPath())) {
+        setClientProperties(instance,source,mapping.getClientProperties());
+        continue;
+      }
+      setAttributeValue(instance,source,mapping);
+    }
+  }
+}
