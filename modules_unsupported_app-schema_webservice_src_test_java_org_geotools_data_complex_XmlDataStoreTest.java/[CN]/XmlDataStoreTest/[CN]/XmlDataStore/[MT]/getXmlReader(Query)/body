@@ -3,14 +3,11 @@
     return null;
   }
   Query callQuery=new Query(query);
-  Filter[] filters=wsProtocol.splitFilters(query.getFilter());
+  Filter[] filters=getProtocol().splitFilters(query.getFilter());
   Filter supportedFilter=filters[0];
   Filter postFilter=filters[1];
-  LOGGER.fine("Supported filter sent to web service backend:  " + supportedFilter);
-  LOGGER.fine("Unsupported filter to be processed in GeoServer: " + postFilter);
   callQuery.setFilter(supportedFilter);
-  WSResponse response=wsProtocol.issueGetFeature(callQuery);
-  Document doc=getXmlResponse(response);
+  Document doc=getXmlResponse();
   List<Integer> validFeatureIndex=determineValidFeatures(postFilter,doc,query.getMaxFeatures());
   return new XmlResponse(doc,validFeatureIndex);
 }
