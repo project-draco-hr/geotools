@@ -1,16 +1,16 @@
 {
   XmlFeatureTypeMapping xmlMapping=(XmlFeatureTypeMapping)mappings;
-  List<String> candidates;
+  List<Expression> expressions=null;
   if (!propertyName.toString().contains("[")) {
-    candidates=xmlMapping.getStringMappingsIgnoreIndex(propertyName);
+    List<String> candidates=xmlMapping.getStringMappingsIgnoreIndex(propertyName);
+    expressions=getExpressions(candidates);
   }
- else {
-    candidates=new ArrayList<String>();
-    String mapping=xmlMapping.getStringMapping(propertyName);
+  if (expressions == null || expressions.isEmpty()) {
+    expressions=new ArrayList<Expression>(1);
+    AttributeMapping mapping=xmlMapping.getStringMapping(propertyName);
     if (mapping != null) {
-      candidates.add(mapping);
+      expressions.add(mapping.getSourceExpression());
     }
   }
-  List<Expression> expressions=getExpressions(candidates);
   return expressions;
 }

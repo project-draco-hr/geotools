@@ -1,20 +1,35 @@
 {
-  if (clientProperties.size() == 0) {
+  if (target == null) {
     return;
   }
   final Map<Name,Object> targetAttributes=new HashMap<Name,Object>();
+  if (target.getUserData().containsValue(Attributes.class)) {
+    targetAttributes.putAll((Map<? extends Name,? extends Object>)target.getUserData().get(Attributes.class));
+  }
   for (  Map.Entry<Name,Expression> entry : clientProperties.entrySet()) {
     Name propName=entry.getKey();
-    Expression propExpr=entry.getValue();
-    String propValue="";
-    List<String> ls=getValue(propExpr,source);
-    if (!ls.isEmpty()) {
-      propValue=ls.get(0);
+    Object propExpr=entry.getValue();
+    Object propValue;
+    if (propExpr instanceof Expression) {
+      propValue=getValue(String.valueOf(xpathPrefix),(Expression)propExpr,target);
     }
-    if (LOGGER.isLoggable(Level.FINER)) {
-      LOGGER.finer("setting target=" + target.getName() + ", property Name="+ propName+ ", value="+ propValue);
+ else {
+      propValue=propExpr;
     }
-    targetAttributes.put(propName,propValue);
+    if (propValue != null) {
+      if (propValue instanceof Collection) {
+        if (!((Collection)propValue).isEmpty()) {
+          propValue=((Collection)propValue).iterator().next();
+          targetAttributes.put(propName,propValue);
+        }
+      }
+ else {
+        targetAttributes.put(propName,propValue);
+      }
+    }
   }
-  target.getUserData().put(Attributes.class,targetAttributes);
+  if (targetAttributes.size() > 0) {
+    target.getUserData().put(Attributes.class,targetAttributes);
+  }
+  setGeometryUserData(target,targetAttributes);
 }

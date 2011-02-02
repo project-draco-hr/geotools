@@ -1,0 +1,31 @@
+{
+  if (target instanceof GeometryAttribute && (targetAttributes.size() > 0 || target.getIdentifier() != null)) {
+    Geometry geom;
+    if (target.getValue() == null) {
+      geom=new EmptyGeometry();
+    }
+ else {
+      geom=(Geometry)((Geometry)target.getValue()).clone();
+    }
+    if (geom != null) {
+      Object userData=geom.getUserData();
+      Map newUserData=new HashMap<Object,Object>();
+      if (userData != null) {
+        if (userData instanceof Map) {
+          newUserData.putAll((Map)userData);
+        }
+ else         if (userData instanceof CoordinateReferenceSystem) {
+          newUserData.put(CoordinateReferenceSystem.class,userData);
+        }
+      }
+      if (target.getIdentifier() != null) {
+        newUserData.put("gml:id",target.getIdentifier().toString());
+      }
+      if (targetAttributes.size() > 0) {
+        newUserData.put(Attributes.class,targetAttributes);
+      }
+      geom.setUserData(newUserData);
+      target.setValue(geom);
+    }
+  }
+}
