@@ -1,0 +1,20 @@
+{
+  SLDParser parser=new SLDParser(styleFactory,input());
+  Style[] styles=parser.readXML();
+  assertEquals(styles.length,1);
+  Style style=styles[0];
+  List<FeatureTypeStyle> ftstyles=style.featureTypeStyles();
+  assertEquals(ftstyles.size(),1);
+  FeatureTypeStyle ftstyle=ftstyles.get(0);
+  List<Rule> rules=ftstyle.rules();
+  assertEquals(rules.size(),1);
+  Rule rule=rules.get(0);
+  Filter filter=rule.getFilter();
+  assert(filter instanceof PropertyIsEqualTo);
+  Expression expr=((PropertyIsEqualTo)filter).getExpression1();
+  assert(expr instanceof PropertyName);
+  NamespaceSupport ns=((PropertyName)expr).getNamespaceContext();
+  assertEquals(ns.getURI("xlink"),"http://www.w3.org/1999/xlink");
+  assertEquals(ns.getURI("gml"),"http://www.opengis.net/gml");
+  assertEquals(ns.getURI("gsml"),"urn:cgi:xmlns:CGI:GeoSciML:2.0");
+}

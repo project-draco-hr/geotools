@@ -1,0 +1,27 @@
+{
+  Filter filter=Filter.INCLUDE;
+  final int length=attributes.size();
+  Object attType;
+  for (int j=0; j < length; j++) {
+    attType=attributes.get(j).evaluate(schema);
+    if (attType == null) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine(new StringBuffer("Could not find '").append(attributes.get(j)).append("' in the FeatureType (").append(schema.getName()).append(")").toString());
+      throw new IllegalFilterException(new StringBuffer("Could not find '").append(attributes.get(j) + "' in the FeatureType (").append(schema.getName()).append(")").toString());
+    }
+    if (attType instanceof GeometryDescriptor) {
+      Filter gfilter=new FastBBOX(attributes.get(j),bboxes.get(0),filterFactory);
+      if (filter == Filter.INCLUDE) {
+        filter=gfilter;
+      }
+ else {
+        filter=filterFactory.or(filter,gfilter);
+      }
+      if (bboxes.size() > 0) {
+        for (int k=1; k < bboxes.size(); k++) {
+          filter=filterFactory.or(filter,new FastBBOX(attributes.get(j),bboxes.get(k),filterFactory));
+        }
+      }
+    }
+  }
+  return filter;
+}
