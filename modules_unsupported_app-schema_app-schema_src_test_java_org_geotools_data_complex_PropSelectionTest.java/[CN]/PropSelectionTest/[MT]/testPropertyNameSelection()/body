@@ -1,0 +1,31 @@
+{
+  PropertyName propertyName1=ff.property("gsml:specification/gsml:GeologicUnit/gml:description");
+  PropertyName propertyName2=ff.property("gsml:specification/gsml:GeologicUnit/gsml:occurrence");
+  List<PropertyName> properties=new ArrayList<PropertyName>();
+  properties.add(propertyName1);
+  Query query=new Query();
+  query.setProperties(properties);
+  FeatureCollection<FeatureType,Feature> mfCollection=mfSource.getFeatures(query);
+  FeatureIterator iterator=mfCollection.features();
+  int i=0;
+  while (iterator.hasNext()) {
+    Feature feature=iterator.next();
+    assertNotNull(propertyName1.evaluate(feature));
+    assertNull(propertyName2.evaluate(feature));
+    i++;
+  }
+  assertEquals(4,i);
+  properties=new ArrayList<PropertyName>();
+  properties.add(propertyName2);
+  query.setProperties(properties);
+  mfCollection=mfSource.getFeatures(query);
+  iterator=mfCollection.features();
+  i=0;
+  while (iterator.hasNext()) {
+    Feature feature=iterator.next();
+    assertNotNull(propertyName2.evaluate(feature));
+    assertNull(propertyName1.evaluate(feature));
+    i++;
+  }
+  assertEquals(4,i);
+}

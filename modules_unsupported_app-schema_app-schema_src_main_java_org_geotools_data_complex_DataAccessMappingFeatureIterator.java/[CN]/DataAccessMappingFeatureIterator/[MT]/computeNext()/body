@@ -13,28 +13,25 @@
   }
   final AttributeDescriptor targetNode=mapping.getTargetFeature();
   final Name targetNodeName=targetNode.getName();
-  final List<AttributeMapping> mappings=mapping.getAttributeMappings();
   AttributeBuilder builder=new AttributeBuilder(attf);
   builder.setDescriptor(targetNode);
   Feature target=(Feature)builder.build(id);
-  for (  AttributeMapping attMapping : mappings) {
-    if (propertyNames == null || propertyNames.contains(attMapping.getTargetXPath().get(0).getName().getLocalPart())) {
-      try {
-        if (isTopLevelmapping(targetNodeName,attMapping.getTargetXPath())) {
-          continue;
+  for (  AttributeMapping attMapping : selectedMapping) {
+    try {
+      if (isTopLevelmapping(targetNodeName,attMapping.getTargetXPath())) {
+        continue;
+      }
+      if (attMapping.isMultiValued()) {
+        for (        Feature source : sources) {
+          setAttributeValue(target,source,attMapping,null,null,selectedProperties.get(attMapping));
         }
-        if (attMapping.isMultiValued()) {
-          for (          Feature source : sources) {
-            setAttributeValue(target,source,attMapping,null,null);
-          }
-        }
+      }
  else {
-          setAttributeValue(target,sources.get(0),attMapping,null,null);
-        }
+        setAttributeValue(target,sources.get(0),attMapping,null,null,selectedProperties.get(attMapping));
       }
- catch (      Exception e) {
-        throw new RuntimeException("Error applying mapping with targetAttribute " + attMapping.getTargetXPath(),e);
-      }
+    }
+ catch (    Exception e) {
+      throw new RuntimeException("Error applying mapping with targetAttribute " + attMapping.getTargetXPath(),e);
     }
   }
   return target;

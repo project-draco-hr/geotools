@@ -1,3 +1,20 @@
 {
-  throw new UnsupportedOperationException();
+  FeatureIterator iterator=null;
+  if (progress == null)   progress=new NullProgressListener();
+  try {
+    progress.started();
+    for (iterator=features(); !progress.isCanceled() && iterator.hasNext(); ) {
+      try {
+        Feature feature=iterator.next();
+        visitor.visit(feature);
+      }
+ catch (      Exception erp) {
+        progress.exceptionOccurred(erp);
+      }
+    }
+  }
+  finally {
+    progress.complete();
+    iterator.close();
+  }
 }
