@@ -1,0 +1,26 @@
+{
+  List<PropertyDescriptor> descriptors=new ArrayList<PropertyDescriptor>();
+  ComplexType loopType=parentType;
+  while (loopType != null) {
+    descriptors.addAll(loopType.getDescriptors());
+    loopType=loopType.getSuper() instanceof ComplexType ? (ComplexType)loopType.getSuper() : null;
+  }
+  for (Iterator<PropertyDescriptor> it=descriptors.iterator(); it.hasNext(); ) {
+    PropertyDescriptor d=it.next();
+    if (d.getName().equals(name)) {
+      return d;
+    }
+  }
+  for (Iterator<PropertyDescriptor> it=descriptors.iterator(); it.hasNext(); ) {
+    List<AttributeDescriptor> substitutionGroup=(List<AttributeDescriptor>)it.next().getUserData().get("substitutionGroup");
+    if (substitutionGroup != null) {
+      for (Iterator<AttributeDescriptor> it2=substitutionGroup.iterator(); it2.hasNext(); ) {
+        AttributeDescriptor d=it2.next();
+        if (d.getName().equals(name)) {
+          return d;
+        }
+      }
+    }
+  }
+  return null;
+}

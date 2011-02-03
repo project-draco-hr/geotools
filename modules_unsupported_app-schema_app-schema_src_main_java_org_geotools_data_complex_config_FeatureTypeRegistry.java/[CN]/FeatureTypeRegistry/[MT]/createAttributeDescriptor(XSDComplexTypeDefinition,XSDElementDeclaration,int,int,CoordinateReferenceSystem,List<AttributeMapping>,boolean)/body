@@ -1,0 +1,46 @@
+{
+  String targetNamespace=elemDecl.getTargetNamespace();
+  String name=elemDecl.getName();
+  Name elemName=Types.typeName(targetNamespace,name);
+  AttributeType type;
+  try {
+    type=getTypeOf(elemDecl,crs,attMappings);
+  }
+ catch (  NoSuchElementException e) {
+    String msg="Type not found for " + elemName + " at type container "+ container.getTargetNamespace()+ "#"+ container.getName()+ " at "+ container.getSchema().getSchemaLocation();
+    NoSuchElementException nse=new NoSuchElementException(msg);
+    nse.initCause(e);
+    throw nse;
+  }
+  boolean nillable=elemDecl.isNillable();
+  if (maxOccurs == -1) {
+    maxOccurs=Integer.MAX_VALUE;
+  }
+  Object defaultValue=null;
+  AttributeDescriptor descriptor;
+  if (!(type instanceof AttributeTypeProxy) && Geometry.class.isAssignableFrom(type.getBinding())) {
+    GeometryType geomType=new GeometryTypeImpl(type.getName(),type.getBinding(),crs,type.isIdentified(),type.isAbstract(),type.getRestrictions(),type.getSuper(),type.getDescription());
+    descriptor=typeFactory.createGeometryDescriptor(geomType,elemName,minOccurs,maxOccurs,nillable,defaultValue);
+  }
+ else {
+    descriptor=typeFactory.createAttributeDescriptor(type,elemName,minOccurs,maxOccurs,nillable,defaultValue);
+  }
+  descriptor.getUserData().put(XSDElementDeclaration.class,elemDecl);
+  if (useSubstitutionGroups) {
+    List<AttributeDescriptor> substitutionGroup=new ArrayList<AttributeDescriptor>();
+    Iterator it=elemDecl.getSubstitutionGroup().iterator();
+    while (it.hasNext()) {
+      XSDElementDeclaration sub=(XSDElementDeclaration)it.next();
+      if (!sub.getName().equals(elemDecl.getName())) {
+        try {
+          substitutionGroup.add(createAttributeDescriptor(container,sub,minOccurs,maxOccurs,crs,attMappings,false));
+        }
+ catch (        Exception e) {
+          LOGGER.log(Level.WARNING,"Could not create substitution descriptor: " + e.getMessage());
+        }
+      }
+    }
+    descriptor.getUserData().put("substitutionGroup",substitutionGroup);
+  }
+  return descriptor;
+}
