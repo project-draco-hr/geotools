@@ -2,23 +2,28 @@
   final GCpair couple=prepareFinalImage(gridCoverage,symbolizer);
   if (couple == null)   return null;
   final RenderedImage finalImage=couple.getGridCoverage().getRenderedImage();
-  final AffineTransform clonedFinalWorldToGrid=couple.getTransform();
-  boolean hasScaleX=!(Math.abs(clonedFinalWorldToGrid.getScaleX() - 1) < 1E-2 / (finalImage.getWidth() + 1 - finalImage.getMinX()));
-  boolean hasScaleY=!(Math.abs(clonedFinalWorldToGrid.getScaleY() - 1) < 1E-2 / (finalImage.getHeight() + 1 - finalImage.getMinY()));
-  boolean hasShearX=!(clonedFinalWorldToGrid.getShearX() == 0.0);
-  boolean hasShearY=!(clonedFinalWorldToGrid.getShearY() == 0.0);
-  boolean hasTranslateX=!(Math.abs(clonedFinalWorldToGrid.getTranslateX()) < 1E-2);
-  boolean hasTranslateY=!(Math.abs(clonedFinalWorldToGrid.getTranslateY()) < 1E-2);
-  boolean isTranslateXInt=!(Math.abs(clonedFinalWorldToGrid.getTranslateX() - (int)clonedFinalWorldToGrid.getTranslateX()) < 1E-2);
-  boolean isTranslateYInt=!(Math.abs(clonedFinalWorldToGrid.getTranslateY() - (int)clonedFinalWorldToGrid.getTranslateY()) < 1E-2);
-  boolean isIdentity=clonedFinalWorldToGrid.isIdentity() && !hasScaleX && !hasScaleY&& !hasTranslateX&& !hasTranslateY;
+  final AffineTransform finalRaster2Model=couple.getTransform();
+  Rectangle2D finalLayout=layoutHelper(finalImage,(float)finalRaster2Model.getScaleX(),(float)finalRaster2Model.getScaleY(),(float)finalRaster2Model.getTranslateX(),(float)finalRaster2Model.getTranslateY(),interpolation);
+  if (finalLayout.isEmpty()) {
+    if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine("Unable to create a granuleDescriptor " + this.toString() + " due to jai scale bug");
+    return null;
+  }
+  boolean hasScaleX=!(Math.abs(finalRaster2Model.getScaleX() - 1) < 1E-2 / (finalImage.getWidth() + 1 - finalImage.getMinX()));
+  boolean hasScaleY=!(Math.abs(finalRaster2Model.getScaleY() - 1) < 1E-2 / (finalImage.getHeight() + 1 - finalImage.getMinY()));
+  boolean hasShearX=!(finalRaster2Model.getShearX() == 0.0);
+  boolean hasShearY=!(finalRaster2Model.getShearY() == 0.0);
+  boolean hasTranslateX=!(Math.abs(finalRaster2Model.getTranslateX()) < 1E-2);
+  boolean hasTranslateY=!(Math.abs(finalRaster2Model.getTranslateY()) < 1E-2);
+  boolean isTranslateXInt=!(Math.abs(finalRaster2Model.getTranslateX() - (int)finalRaster2Model.getTranslateX()) < 1E-2);
+  boolean isTranslateYInt=!(Math.abs(finalRaster2Model.getTranslateY() - (int)finalRaster2Model.getTranslateY()) < 1E-2);
+  boolean isIdentity=finalRaster2Model.isIdentity() && !hasScaleX && !hasScaleY&& !hasTranslateX&& !hasTranslateY;
   boolean isScale=hasScaleX && hasScaleY && !hasShearX&& !hasShearY;
   if (isIdentity) {
     return finalImage;
   }
   ImageLayout layout_=RIFUtil.getImageLayoutHint(hints);
   if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& isTranslateXInt&& isTranslateYInt&& layout_ == null) {
-    return new TranslateIntOpImage(finalImage,hints,(int)clonedFinalWorldToGrid.getShearX(),(int)clonedFinalWorldToGrid.getShearY());
+    return new TranslateIntOpImage(finalImage,hints,(int)finalRaster2Model.getShearX(),(int)finalRaster2Model.getShearY());
   }
   final ImageLayout layout=new ImageLayout(finalImage);
   layout.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(tileSizeY).setTileWidth(tileSizeX);
@@ -28,10 +33,10 @@
   RenderedImage im=null;
   try {
     if (isScale) {
-      im=ScaleDescriptor.create(finalImage,(float)clonedFinalWorldToGrid.getScaleX(),(float)clonedFinalWorldToGrid.getScaleY(),(float)clonedFinalWorldToGrid.getTranslateX(),(float)clonedFinalWorldToGrid.getTranslateY(),interpolation,hints);
+      im=ScaleDescriptor.create(finalImage,(float)finalRaster2Model.getScaleX(),(float)finalRaster2Model.getScaleY(),(float)finalRaster2Model.getTranslateX(),(float)finalRaster2Model.getTranslateY(),interpolation,hints);
     }
  else {
-      im=AffineDescriptor.create(finalImage,clonedFinalWorldToGrid,interpolation,null,hints);
+      im=AffineDescriptor.create(finalImage,finalRaster2Model,interpolation,null,hints);
     }
   }
   finally {
