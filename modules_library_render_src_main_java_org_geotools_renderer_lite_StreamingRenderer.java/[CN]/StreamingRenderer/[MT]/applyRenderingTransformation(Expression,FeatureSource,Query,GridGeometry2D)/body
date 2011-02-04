@@ -1,0 +1,94 @@
+{
+  Object result=null;
+  FeatureType schema=featureSource.getSchema();
+  if (schema instanceof SimpleFeatureType) {
+    SimpleFeatureType simpleSchema=(SimpleFeatureType)schema;
+    GridCoverage2D coverage=null;
+    if (FeatureUtilities.isWrappedCoverage(simpleSchema)) {
+      throw new UnsupportedOperationException("Don't have support for plain coverages " + "in rendering transformations now");
+    }
+ else     if (FeatureUtilities.isWrappedCoverageReader(simpleSchema)) {
+      GridGeometry2D readGG=gridGeometry;
+      if (transformation instanceof RenderingTransformation) {
+        RenderingTransformation tx=(RenderingTransformation)transformation;
+        readGG=(GridGeometry2D)tx.invertGridGeometry(query,gridGeometry);
+      }
+      Feature gridWrapper=featureSource.getFeatures().features().next();
+      final Object params=paramsPropertyName.evaluate(gridWrapper);
+      final AbstractGridCoverage2DReader reader=(AbstractGridCoverage2DReader)gridPropertyName.evaluate(gridWrapper);
+      coverage=readCoverage(reader,params,readGG);
+      if (coverage != null) {
+        GeneralEnvelope cropEnvelope=new GeneralEnvelope(mapExtent);
+        if (coverage.getEnvelope2D().intersects(cropEnvelope.toRectangle2D())) {
+          final ParameterValueGroup param=CROP.getParameters();
+          param.parameter("Source").setValue(coverage);
+          param.parameter("Envelope").setValue(cropEnvelope);
+          coverage=(GridCoverage2D)PROCESSOR.doOperation(param);
+        }
+ else {
+          coverage=null;
+        }
+        if (coverage != null) {
+          MathTransform2D coverageTx=coverage.getGridGeometry().getGridToCRS2D();
+          if (coverageTx instanceof AffineTransform) {
+            AffineTransform coverageAt=(AffineTransform)coverageTx;
+            AffineTransform renderingAt=(AffineTransform)gridGeometry.getGridToCRS2D();
+            final double ratioX=coverageAt.getScaleX() / renderingAt.getScaleX();
+            final double ratioY=coverageAt.getScaleY() / renderingAt.getScaleY();
+            if (ratioX < 0.7 && ratioY < 0.7) {
+              final ParameterValueGroup param=SCALE.getParameters();
+              param.parameter("Source").setValue(coverage);
+              param.parameter("xScale").setValue(ratioX);
+              param.parameter("yScale").setValue(ratioY);
+              final Interpolation interpolation=(Interpolation)java2dHints.get(JAI.KEY_INTERPOLATION);
+              if (interpolation != null) {
+                param.parameter("Interpolation").setValue(interpolation);
+              }
+              coverage=(GridCoverage2D)PROCESSOR.doOperation(param);
+            }
+          }
+        }
+        if (coverage != null) {
+          result=transformation.evaluate(coverage);
+        }
+ else {
+          result=null;
+        }
+      }
+    }
+  }
+  if (result == null) {
+    FeatureCollection originalFeatures;
+    Query optimizedQuery=null;
+    if (transformation instanceof RenderingTransformation) {
+      RenderingTransformation tx=(RenderingTransformation)transformation;
+      optimizedQuery=tx.invertQuery(query,gridGeometry);
+    }
+    if (optimizedQuery == null) {
+      Envelope bounds=(Envelope)query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,null);
+      Filter bbox=new FastBBOX(filterFactory.property(""),bounds,filterFactory);
+      optimizedQuery=new Query(null,bbox);
+    }
+    originalFeatures=featureSource.getFeatures(optimizedQuery);
+    result=transformation.evaluate(originalFeatures);
+  }
+  if (result == null) {
+    return null;
+  }
+  if (result instanceof FeatureCollection) {
+    final SimpleFeatureSource source=DataUtilities.source((FeatureCollection)result);
+    SimpleFeatureType transformedSchema=source.getSchema();
+    Query adapted=adaptQuery(query,transformedSchema,schema);
+    checkAttributeExistence(transformedSchema,adapted);
+    return source.getFeatures(adapted);
+  }
+ else   if (result instanceof GridCoverage2D) {
+    return FeatureUtilities.wrapGridCoverage((GridCoverage2D)result);
+  }
+ else   if (result instanceof AbstractGridCoverage2DReader) {
+    return FeatureUtilities.wrapGridCoverageReader((AbstractGridCoverage2DReader)result,null);
+  }
+ else {
+    throw new IllegalArgumentException("Don't know how to handle the results of the transformation, " + "the supported result types are FeatureCollection, GridCoverage2D " + "and AbstractGridCoverage2DReader, but we got: "+ result.getClass());
+  }
+}

@@ -1,38 +1,73 @@
 {
   final FeatureTypeStyle[] featureStylers=currLayer.getStyle().getFeatureTypeStyles();
   final FeatureSource featureSource=currLayer.getFeatureSource();
-  Collection collection=null;
-  FeatureCollection features=null;
   final CoordinateReferenceSystem sourceCrs;
   final NumberRange scaleRange=new NumberRange(scaleDenominator,scaleDenominator);
   final ArrayList<LiteFeatureTypeStyle> lfts;
   if (featureSource != null) {
+    FeatureCollection features=null;
     final FeatureType schema=featureSource.getSchema();
     final GeometryDescriptor geometryAttribute=schema.getGeometryDescriptor();
     sourceCrs=geometryAttribute.getType().getCoordinateReferenceSystem();
     if (LOGGER.isLoggable(Level.FINE)) {
-      LOGGER.fine(new StringBuffer("processing ").append(featureStylers.length).append(" stylers for ").append(currLayer.getFeatureSource().getSchema().getName()).toString());
+      LOGGER.fine("Processing " + featureStylers.length + " stylers for "+ currLayer.getFeatureSource().getSchema().getName());
     }
     lfts=createLiteFeatureTypeStyles(featureStylers,schema,graphics);
     if (lfts.size() == 0)     return;
     applyUnitRescale(lfts);
-    LiteFeatureTypeStyle[] featureTypeStyleArray=(LiteFeatureTypeStyle[])lfts.toArray(new LiteFeatureTypeStyle[lfts.size()]);
-    inMemoryGeneralization=true;
-    features=queryLayer(currLayer,featureSource,schema,featureTypeStyleArray,mapArea,destinationCrs,sourceCrs,screenSize,geometryAttribute,at);
-    features=prepFeatureCollection(features,sourceCrs);
+    List<List<LiteFeatureTypeStyle>> txClassified=new ArrayList<List<LiteFeatureTypeStyle>>();
+    txClassified.add(new ArrayList<LiteFeatureTypeStyle>());
+    Expression transformation=null;
+    for (int i=0; i < lfts.size(); i++) {
+      LiteFeatureTypeStyle curr=lfts.get(i);
+      if (i == 0) {
+        transformation=curr.transformation;
+      }
+ else       if (!(transformation == curr.transformation) || (transformation != null && curr.transformation != null && !curr.transformation.equals(transformation))) {
+        txClassified.add(new ArrayList<LiteFeatureTypeStyle>());
+      }
+      txClassified.get(txClassified.size() - 1).add(curr);
+    }
+    for (    List<LiteFeatureTypeStyle> uniform : txClassified) {
+      Expression transform=uniform.get(0).transformation;
+      inMemoryGeneralization=true;
+      Query query=getLayerQuery(currLayer,featureSource,schema,uniform,mapArea,destinationCrs,sourceCrs,screenSize,geometryAttribute,at);
+      FeatureCollection rawFeatures;
+      if (transformation != null) {
+        GridEnvelope2D ge=new GridEnvelope2D(screenSize);
+        ReferencedEnvelope re=new ReferencedEnvelope(mapArea,destinationCrs);
+        GridGeometry2D gridGeometry=new GridGeometry2D(ge,re);
+        rawFeatures=applyRenderingTransformation(transformation,featureSource,query,gridGeometry);
+        if (rawFeatures == null) {
+          return;
+        }
+      }
+ else {
+        checkAttributeExistence(featureSource.getSchema(),query);
+        rawFeatures=featureSource.getFeatures(query);
+      }
+      features=prepFeatureCollection(rawFeatures,sourceCrs);
+      if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
+        drawOptimized(graphics,currLayer,at,destinationCrs,layerId,null,features,scaleRange,uniform);
+      }
+ else {
+        drawPlain(graphics,currLayer,at,destinationCrs,layerId,null,features,scaleRange,uniform);
+      }
+    }
   }
  else {
+    Collection collection=null;
     CollectionSource source=currLayer.getSource();
     collection=queryLayer(currLayer,currLayer.getSource());
     sourceCrs=null;
     lfts=createLiteFeatureTypeStyles(featureStylers,source.describe(),graphics);
     applyUnitRescale(lfts);
-  }
-  if (lfts.size() == 0)   return;
-  if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
-    drawOptimized(graphics,currLayer,at,destinationCrs,layerId,collection,features,scaleRange,lfts);
-  }
+    if (lfts.size() == 0)     return;
+    if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
+      drawOptimized(graphics,currLayer,at,destinationCrs,layerId,collection,null,scaleRange,lfts);
+    }
  else {
-    drawPlain(graphics,currLayer,at,destinationCrs,layerId,collection,features,scaleRange,lfts);
+      drawPlain(graphics,currLayer,at,destinationCrs,layerId,collection,null,scaleRange,lfts);
+    }
   }
 }
