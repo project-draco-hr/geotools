@@ -24,6 +24,28 @@
       if (ts != null && ts instanceof TileScheduler)       localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,(TileScheduler)ts));
     }
   }
+  if (visitor.granulesNumber == 1) {
+    final ROI roi=visitor.rois.get(0);
+    if (roi instanceof ROIShape) {
+      final ROIShape roiShape=(ROIShape)roi;
+      final Shape shape=roiShape.getAsShape();
+      if (shape instanceof Rectangle) {
+        final Rectangle bounds=(Rectangle)shape;
+        final RenderedImage image=visitor.getSourcesAsArray()[0];
+        final Rectangle imageBounds=PlanarImage.wrapRenderedImage(image).getBounds();
+        if (imageBounds.equals(bounds)) {
+          if (!imageBounds.equals(rasterBounds)) {
+            XRectangle2D.intersect(imageBounds,rasterBounds,imageBounds);
+            if (imageBounds.isEmpty()) {
+              return null;
+            }
+            return CropDescriptor.create(image,new Float(imageBounds.x),new Float(imageBounds.y),new Float(imageBounds.width),new Float(imageBounds.height),localHints);
+          }
+          return image;
+        }
+      }
+    }
+  }
   final ROI[] sourceRoi=visitor.sourceRoi;
   final RenderedImage mosaic=MosaicDescriptor.create(visitor.getSourcesAsArray(),request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,(alphaIn || visitor.doInputTransparency) ? visitor.alphaChannels : null,sourceRoi,visitor.sourceThreshold,backgroundValues,localHints);
   if (setRoiProperty) {
@@ -40,6 +62,6 @@
     }
     rop.setProperty("ROI",globalRoi);
   }
-  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuffer("Mosaic created ").toString());
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Mosaic created ");
   return mosaic;
 }

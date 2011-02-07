@@ -1,17 +1,24 @@
 {
   if (finalTransparentColor != null) {
     if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Support for alpha on final mosaic");
-    return Utils.makeColorTransparent(finalTransparentColor,mosaic);
+    return ImageUtilities.maskColor(finalTransparentColor,mosaic);
   }
-  if (oversampledRequest) {
+  if (!needsReprojection) {
     try {
-      final AffineTransform sourceGridToWorld=new AffineTransform((AffineTransform)baseGridToWorld);
-      sourceGridToWorld.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+      final AffineTransform sourceGridToWorld=new AffineTransform((AffineTransform)finalGridToWorldCorner);
       final AffineTransform targetGridToWorld=new AffineTransform(request.getRequestedGridToWorld());
       targetGridToWorld.concatenate(CoverageUtilities.CENTER_TO_CORNER);
       final AffineTransform targetWorldToGrid=targetGridToWorld.createInverse();
       targetWorldToGrid.concatenate(sourceGridToWorld);
-      mosaic=AffineDescriptor.create(mosaic,targetWorldToGrid,interpolation,backgroundValues,hints);
+      finalGridToWorldCorner=new AffineTransform2D(targetGridToWorld);
+      final Hints localHints=new Hints(hints);
+      if (hints != null && !hints.containsKey(JAI.KEY_BORDER_EXTENDER)) {
+        final Object extender=hints.get(JAI.KEY_BORDER_EXTENDER);
+        if (!(extender != null && extender instanceof BorderExtender)) {
+          localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
+        }
+      }
+      mosaic=AffineDescriptor.create(mosaic,targetWorldToGrid,interpolation,backgroundValues,localHints);
     }
  catch (    NoninvertibleTransformException e) {
       if (LOGGER.isLoggable(Level.SEVERE)) {

@@ -39,10 +39,10 @@
       readParameters=imageReadParameters;
     }
     final GranuleOverviewLevelDescriptor selectedlevel=getLevel(imageIndex,reader,inStream);
-    AffineTransform tempCropWorldToGrid=new AffineTransform(selectedlevel.gridToWorldTransformCorner);
-    AffineTransform2D cropWorldToGrid=new AffineTransform2D(tempCropWorldToGrid);
+    AffineTransform2D cropWorldToGrid=new AffineTransform2D(selectedlevel.gridToWorldTransformCorner);
     cropWorldToGrid=(AffineTransform2D)cropWorldToGrid.inverse();
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,intersection).toRectangle2D().getBounds();
+    if (selectedlevel.baseToLevelTransform.isIdentity())     sourceArea.grow(2,2);
     XRectangle2D.intersect(sourceArea,selectedlevel.rasterDimensions,sourceArea);
     if (sourceArea.isEmpty()) {
       if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
@@ -55,7 +55,7 @@
     }
     int newSubSamplingFactor=0;
     final String pluginName=cachedReaderSPI.getPluginClassName();
-    if (pluginName != null && pluginName.equals(Utils.DIRECT_KAKADU_PLUGIN)) {
+    if (pluginName != null && pluginName.equals(ImageUtilities.DIRECT_KAKADU_PLUGIN)) {
       final int ssx=readParameters.getSourceXSubsampling();
       final int ssy=readParameters.getSourceYSubsampling();
       newSubSamplingFactor=Utilities.getSubSamplingFactor2(ssx,ssy);
