@@ -1,4 +1,6 @@
 {
+  if (name.equalsIgnoreCase("HAS_ELEVATION_DOMAIN"))   return String.valueOf(elevationAttribute != null);
+  if (name.equalsIgnoreCase("HAS_TIME_DOMAIN"))   return String.valueOf(timeAttribute != null);
   final boolean getTimeAttribute=(timeAttribute != null && name.equalsIgnoreCase("time_domain"));
   final QueryCapabilities queryCapabilities=rasterManager.granuleCatalog.getQueryCapabilities();
   boolean manualSort=false;
@@ -18,7 +20,7 @@
       rasterManager.granuleCatalog.computeAggregateFunction(query,visitor);
       final ArrayList<Date> result=new ArrayList<Date>();
       result.addAll(visitor.getUnique());
-      Collections.sort(result);
+      if (manualSort)       Collections.sort(result);
       if (result.size() <= 0)       return null;
       final StringBuilder buff=new StringBuilder();
       final SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -44,7 +46,7 @@
  else       manualSort=true;
       final UniqueVisitor visitor=new UniqueVisitor(elevationAttribute);
       rasterManager.granuleCatalog.computeAggregateFunction(query,visitor);
-      final Set<Double> result=new TreeSet<Double>(visitor.getUnique());
+      final Set<Double> result=manualSort ? new TreeSet<Double>(visitor.getUnique()) : visitor.getUnique();
       if (result.size() <= 0)       return null;
       final StringBuilder buff=new StringBuilder();
       for (Iterator<Double> it=result.iterator(); it.hasNext(); ) {
