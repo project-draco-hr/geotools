@@ -1,0 +1,14 @@
+{
+  final QueryCapabilities queryCapabilities=rasterManager.granuleCatalog.getQueryCapabilities();
+  boolean manualSort=false;
+  Query query=new Query(rasterManager.granuleCatalog.getType().getTypeName());
+  query.setPropertyNames(Arrays.asList(attribute));
+  final SortBy[] sortBy=new SortBy[]{new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(attribute),SortOrder.ASCENDING)};
+  if (queryCapabilities.supportsSorting(sortBy))   query.setSortBy(sortBy);
+ else   manualSort=true;
+  final UniqueVisitor visitor=new UniqueVisitor(attribute);
+  rasterManager.granuleCatalog.computeAggregateFunction(query,visitor);
+  final Set result=manualSort ? new TreeSet(visitor.getUnique()) : visitor.getUnique();
+  if (result.size() <= 0)   return null;
+  return result;
+}

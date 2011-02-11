@@ -8,15 +8,19 @@
   assertNotNull(format);
   final String[] metadataNames=reader.getMetadataNames();
   assertNotNull(metadataNames);
-  assertEquals(metadataNames.length,4);
+  assertEquals(metadataNames.length,10);
   assertEquals("true",reader.getMetadataValue("HAS_TIME_DOMAIN"));
   final String timeMetadata=reader.getMetadataValue("TIME_DOMAIN");
   assertNotNull(timeMetadata);
   assertEquals(16,timeMetadata.split(",").length);
+  assertEquals(timeMetadata.split(",")[0],reader.getMetadataValue("TIME_DOMAIN_MINIMUM"));
+  assertEquals(timeMetadata.split(",")[15],reader.getMetadataValue("TIME_DOMAIN_MAXIMUM"));
   assertEquals("true",reader.getMetadataValue("HAS_ELEVATION_DOMAIN"));
   final String elevationMetadata=reader.getMetadataValue("ELEVATION_DOMAIN");
   assertNotNull(elevationMetadata);
   assertEquals(2,elevationMetadata.split(",").length);
+  assertEquals(elevationMetadata.split(",")[0],reader.getMetadataValue("ELEVATION_DOMAIN_MINIMUM"));
+  assertEquals(elevationMetadata.split(",")[1],reader.getMetadataValue("ELEVATION_DOMAIN_MAXIMUM"));
   final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
   final GeneralEnvelope envelope=reader.getOriginalEnvelope();
   final Dimension dim=new Dimension();
@@ -32,10 +36,11 @@
   Date date=sdf.parse("2008-10-20T14:00:00.000Z");
   timeValues.add(date);
   time.setValue(timeValues);
-  final ParameterValue<List> elevation=AbstractGridFormat.ELEVATION.createValue();
-  elevation.setValue(Arrays.asList(10.0));
   final ParameterValue<double[]> bkg=ImageMosaicFormat.BACKGROUND_VALUES.createValue();
   bkg.setValue(new double[]{-9999.0});
-  final GridCoverage2D coverage=getCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation});
-  testCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation},"Time-Elevation Test",coverage);
+  final ParameterValue<List> elevation=ImageMosaicFormat.ELEVATION.createValue();
+  elevation.setValue(Arrays.asList(10.0));
+  checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation},"Time-Elevation Test");
+  elevation.setValue(Arrays.asList(NumberRange.create(0.0,10.0)));
+  checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation},"Time-Elevation Test");
 }
