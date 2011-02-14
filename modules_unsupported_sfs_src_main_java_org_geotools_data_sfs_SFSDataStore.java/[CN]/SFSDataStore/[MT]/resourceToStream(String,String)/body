@@ -2,8 +2,18 @@
   URL url=new URL(baseURL + resource);
   HttpURLConnection urlConnection=(HttpURLConnection)url.openConnection();
   urlConnection.setRequestProperty("Accept-Encoding","gzip");
+  if (user != null && password != null) {
+    String combined=nullToEmpty(user) + ":" + nullToEmpty(password);
+    byte[] authBytes=combined.getBytes("US-ASCII");
+    String encoded=new String(Base64.encodeBase64(authBytes));
+    urlConnection.setRequestProperty("Authorization","Basic " + encoded);
+  }
+  if (timeout > 0) {
+    urlConnection.setConnectTimeout(timeout);
+    urlConnection.setReadTimeout(timeout);
+  }
   urlConnection.setDoInput(true);
-  if (postData != null) {
+  if (postData != null && !"".equals(postData.trim())) {
     urlConnection.setRequestMethod("POST");
     urlConnection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
     urlConnection.setDoOutput(true);
@@ -23,7 +33,7 @@
     urlConnection.setRequestMethod("GET");
   }
   if (urlConnection.getResponseCode() != 200) {
-    throw new IOException("Server reported and error with code " + urlConnection.getResponseCode() + ": "+ urlConnection.getResponseMessage());
+    throw new IOException("Server reported and error with code " + urlConnection.getResponseCode() + ": "+ urlConnection.getResponseMessage()+ " accessing resource "+ url.toExternalForm());
   }
  else {
     InputStream is=urlConnection.getInputStream();
