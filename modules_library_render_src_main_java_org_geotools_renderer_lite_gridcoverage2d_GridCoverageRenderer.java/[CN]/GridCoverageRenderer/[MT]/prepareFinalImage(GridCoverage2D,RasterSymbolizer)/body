@@ -77,22 +77,40 @@
   if (DEBUG) {
     writeRenderedImage(preSymbolizer.geophysics(false).getRenderedImage(),"preSymbolizer");
   }
+  final GridCoverage2D symbolizerGC;
+  final RenderedImage symbolizerImage;
   if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuilder("Raster Symbolizer ").toString());
   if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuffer("Raster Symbolizer ").toString());
-  final RenderedImage finalImage;
-  final GridCoverage2D finalGC;
   if (symbolizer != null) {
     final RasterSymbolizerHelper rsp=new RasterSymbolizerHelper(preSymbolizer,this.hints);
     rsp.visit(symbolizer);
-    finalGC=(GridCoverage2D)rsp.getOutput();
-    finalImage=finalGC.geophysics(false).getRenderedImage();
+    symbolizerGC=(GridCoverage2D)rsp.getOutput();
+    symbolizerImage=symbolizerGC.geophysics(false).getRenderedImage();
   }
  else {
-    finalGC=preSymbolizer;
-    finalImage=finalGC.geophysics(false).getRenderedImage();
+    symbolizerGC=preSymbolizer;
+    symbolizerImage=symbolizerGC.geophysics(false).getRenderedImage();
   }
   if (DEBUG) {
-    writeRenderedImage(finalImage,"postSymbolizer");
+    writeRenderedImage(symbolizerImage,"postSymbolizer");
+  }
+  final RenderedImage finalImage;
+  final GridCoverage2D finalGC;
+  float opacity=getOpacity(symbolizer);
+  if (opacity < 1) {
+    ImageWorker ow=new ImageWorker(symbolizerImage);
+    finalImage=ow.applyOpacity(opacity).getRenderedImage();
+    final int numBands=finalImage.getSampleModel().getNumBands();
+    final GridSampleDimension[] sd=new GridSampleDimension[numBands];
+    for (int i=0; i < numBands; i++) {
+      sd[i]=new GridSampleDimension(TypeMap.getColorInterpretation(finalImage.getColorModel(),i).name());
+    }
+    GridCoverageFactory factory=CoverageFactoryFinder.getGridCoverageFactory(hints);
+    finalGC=factory.create("opacity_" + symbolizerGC.getName().toString(),finalImage,symbolizerGC.getGridGeometry(),sd,new GridCoverage[]{symbolizerGC},symbolizerGC.getProperties());
+  }
+ else {
+    finalImage=symbolizerImage;
+    finalGC=symbolizerGC;
   }
   final GridGeometry2D recoloredCoverageGridGeometry=((GridGeometry2D)finalGC.getGridGeometry());
   final MathTransform2D finalGCTransform=recoloredCoverageGridGeometry.getGridToCRS2D(PixelOrientation.UPPER_LEFT);

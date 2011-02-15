@@ -1,0 +1,51 @@
+{
+  RenderedImage result;
+  ColorModel colorModel=image.getColorModel();
+  if (colorModel instanceof IndexColorModel) {
+    IndexColorModel index=(IndexColorModel)colorModel;
+    byte[] reds=new byte[index.getMapSize()];
+    byte[] greens=new byte[index.getMapSize()];
+    byte[] blues=new byte[index.getMapSize()];
+    byte[] alphas=new byte[index.getMapSize()];
+    index.getReds(reds);
+    index.getGreens(greens);
+    index.getBlues(blues);
+    index.getAlphas(alphas);
+    final int transparentPixel=index.getTransparentPixel();
+    for (int i=0; i < alphas.length; i++) {
+      alphas[i]=(byte)Math.round((0xFF & alphas[i]) * opacity);
+      if (i == transparentPixel) {
+        alphas[i]=0;
+      }
+    }
+    IndexColorModel newColorModel=new IndexColorModel(index.getPixelSize(),index.getMapSize(),reds,greens,blues,alphas);
+    LookupTableJAI table=buildOpacityLookupTable(0,1,-1);
+    ImageLayout layout=new ImageLayout(image);
+    layout.setColorModel(newColorModel);
+    RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    result=LookupDescriptor.create(image,table,hints);
+  }
+ else {
+    RenderedImage expanded;
+    if (!(colorModel instanceof ComponentColorModel)) {
+      expanded=new ImageWorker(image).forceComponentColorModel().getRenderedImage();
+    }
+ else {
+      expanded=image;
+    }
+    if (!expanded.getColorModel().hasAlpha()) {
+      byte alpha=(byte)Math.round(255 * opacity);
+      ImageLayout layout=new ImageLayout(image.getMinX(),image.getMinY(),image.getWidth(),image.getHeight());
+      RenderedOp alphaBand=ConstantDescriptor.create((float)image.getWidth(),(float)image.getHeight(),new Byte[]{new Byte(alpha)},new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
+      result=BandMergeDescriptor.create(expanded,alphaBand,null);
+    }
+ else {
+      final int bands=expanded.getSampleModel().getNumBands();
+      int alphaBand=bands - 1;
+      LookupTableJAI table=buildOpacityLookupTable(opacity,bands,alphaBand);
+      result=LookupDescriptor.create(expanded,table,null);
+    }
+  }
+  image=result;
+  return this;
+}
