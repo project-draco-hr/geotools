@@ -1,0 +1,52 @@
+{
+  Utilities.ensureNonNull("file",file);
+  Histogram histogram=null;
+  if (ehcache != null && ehcache.isKeyInCache(file)) {
+    if (ehcache.isElementInMemory(file)) {
+      final Element element=ehcache.get(file);
+      if (element != null) {
+        final Serializable value=element.getValue();
+        if (value != null && value instanceof Histogram) {
+          histogram=(Histogram)value;
+          return histogram;
+        }
+      }
+    }
+  }
+  if (histogram == null) {
+    FileInputStream fileStream=null;
+    ObjectInputStream objectStream=null;
+    try {
+      fileStream=new FileInputStream(file);
+      objectStream=new ObjectInputStream(fileStream);
+      histogram=(Histogram)objectStream.readObject();
+      if (ehcache != null) {
+        ehcache.put(new Element(file,histogram));
+      }
+    }
+ catch (    FileNotFoundException e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to parse Histogram:" + e.getLocalizedMessage());
+      }
+    }
+catch (    IOException e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to parse Histogram:" + e.getLocalizedMessage());
+      }
+    }
+catch (    ClassNotFoundException e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to parse Histogram:" + e.getLocalizedMessage());
+      }
+    }
+ finally {
+      if (objectStream != null) {
+        IOUtils.closeQuietly(objectStream);
+      }
+      if (fileStream != null) {
+        IOUtils.closeQuietly(fileStream);
+      }
+    }
+  }
+  return histogram;
+}

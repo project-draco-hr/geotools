@@ -1,0 +1,59 @@
+{
+  if (shape instanceof Rectangle) {
+    return (Rectangle)shape;
+  }
+  if (shape == null) {
+    return null;
+  }
+  PathIterator iter=shape.getPathIterator(new AffineTransform());
+  double[] coords=new double[2];
+  if (iter.isDone()) {
+    return null;
+  }
+  iter.next();
+  int action=iter.currentSegment(coords);
+  if (action != PathIterator.SEG_MOVETO && action != PathIterator.SEG_LINETO) {
+    return null;
+  }
+  double minx=coords[0];
+  double miny=coords[1];
+  double maxx=minx;
+  double maxy=miny;
+  double prevx=minx;
+  double prevy=miny;
+  int i=0;
+  for (; i < 4 && !iter.isDone(); i++) {
+    iter.next();
+    action=iter.currentSegment(coords);
+    if (action == PathIterator.SEG_CLOSE) {
+      break;
+    }
+    if (action != PathIterator.SEG_LINETO) {
+      return null;
+    }
+    double x=coords[0];
+    double y=coords[1];
+    if (!(prevx == x && prevy != y) && !(prevx != x && prevy == y)) {
+      return null;
+    }
+    if (x < minx) {
+      minx=x;
+    }
+ else     if (x > maxx) {
+      maxx=x;
+    }
+    if (y < miny) {
+      miny=y;
+    }
+ else     if (y > maxy) {
+      maxy=y;
+    }
+    prevx=x;
+    prevy=y;
+  }
+  iter.next();
+  if (!iter.isDone() || i != 3) {
+    return null;
+  }
+  return new Rectangle2D.Double(minx,miny,maxx - minx,maxy - miny).getBounds();
+}

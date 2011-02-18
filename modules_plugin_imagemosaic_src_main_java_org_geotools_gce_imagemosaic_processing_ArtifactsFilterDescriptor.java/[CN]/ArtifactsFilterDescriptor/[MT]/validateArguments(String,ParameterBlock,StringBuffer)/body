@@ -1,0 +1,34 @@
+{
+  if (pb.getNumSources() == 0 || pb.getNumSources() > 1) {
+    msg.append("ArtifactsFilter operator takes 1 source image");
+    return false;
+  }
+  Object backgroundValues=pb.getObjectParameter(BACKGROUND_ARG);
+  double[] bgValues=null;
+  if (!(backgroundValues instanceof double[])) {
+    msg.append(paramNames[BACKGROUND_ARG] + " arg has to be of type double[]");
+    return false;
+  }
+ else {
+    bgValues=(double[])backgroundValues;
+  }
+  RenderedImage dataImg=pb.getRenderedSource(0);
+  Rectangle dataBounds=new Rectangle(dataImg.getMinX(),dataImg.getMinY(),dataImg.getWidth(),dataImg.getHeight());
+  Object roiObject=pb.getObjectParameter(ROI_ARG);
+  if (roiObject != null) {
+    if (!(roiObject instanceof ROI)) {
+      msg.append("The supplied ROI is not a supported class");
+      return false;
+    }
+    final ROI roi=(ROI)roiObject;
+    final Rectangle roiBounds=roi.getBounds();
+    if (!roiBounds.intersects(dataBounds)) {
+      msg.append("The supplied ROI does not intersect the source image");
+      return false;
+    }
+  }
+ else {
+    msg.append("The ROI parameter is missing ");
+  }
+  return true;
+}

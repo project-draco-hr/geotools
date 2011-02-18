@@ -1,0 +1,20 @@
+{
+  final WritableRaster dest=createWritableRaster(sampleModel,new Point(tileXToX(tileX),tileYToY(tileY)));
+  final Rectangle destRect=getTileRect(tileX,tileY);
+  final int numSources=getNumSources();
+  Raster rasterSources=null;
+  for (int i=0; i < numSources; i++) {
+    final PlanarImage source=getSourceImage(i);
+    final Rectangle srcRect=mapDestRect(destRect,i);
+    rasterSources=srcRect != null && srcRect.isEmpty() ? null : source.getExtendedData(destRect,sourceExtender);
+  }
+  computeRect(rasterSources,dest,destRect);
+  final Raster sourceData=rasterSources;
+  if (sourceData != null) {
+    final PlanarImage source=getSourceImage(0);
+    if (source.overlapsMultipleTiles(sourceData.getBounds())) {
+      recycleTile(sourceData);
+    }
+  }
+  return dest;
+}

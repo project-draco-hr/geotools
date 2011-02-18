@@ -8,6 +8,7 @@
   for (  Future<GranuleLoadingResult> future : tasks) {
     final RenderedImage loadedImage;
     final GranuleLoadingResult result;
+    boolean doFiltering;
     try {
       if (!multithreadingAllowed || rasterManager.parent.multiThreadedLoader == null) {
         final FutureTask<GranuleLoadingResult> task=(FutureTask<GranuleLoadingResult>)future;
@@ -19,6 +20,7 @@
         continue;
       }
       loadedImage=result.getRaster();
+      doFiltering=result.isDoFiltering();
       if (loadedImage == null) {
         if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,"Unable to load the raster for granuleDescriptor " + granuleIndex + " with request "+ request.toString());
         continue;
@@ -50,10 +52,12 @@ catch (    javax.media.jai.util.ImagingException e) {
     if (LOGGER.isLoggable(Level.FINER)) {
       LOGGER.finer("Adding to mosaic image number " + granuleIndex);
     }
-    final RenderedImage raster=processGranuleRaster(loadedImage,granuleIndex,alphaIndex,alphaIn,alphaChannels,doInputTransparency,inputTransparentColor);
-    ROI imageBounds=new ROIShape(PlanarImage.wrapRenderedImage(raster).getBounds());
+    RenderedImage raster=processGranuleRaster(loadedImage,granuleIndex,alphaIndex,alphaIn,alphaChannels,doInputTransparency,inputTransparentColor);
+    Rectangle bounds=PlanarImage.wrapRenderedImage(raster).getBounds();
+    Geometry mask=JTS.toGeometry(new Envelope(bounds.getMinX(),bounds.getMaxX(),bounds.getMinY(),bounds.getMaxY()));
+    ROI imageBounds=new ROIGeometry(mask);
     if (footprintManagement) {
-      final ROIShape footprint=result.getFootprint();
+      final ROI footprint=result.getFootprint();
       if (footprint != null) {
         if (imageBounds.contains(footprint.getBounds())) {
           imageBounds=footprint;
@@ -61,6 +65,28 @@ catch (    javax.media.jai.util.ImagingException e) {
  else {
           imageBounds=imageBounds.intersect(footprint);
         }
+      }
+      if (defaultArtifactsFilterThreshold != Integer.MIN_VALUE && doFiltering) {
+        int artifactThreshold=defaultArtifactsFilterThreshold;
+        if (artifactsFilterPTileThreshold != -1) {
+          final URL url=result.getGranuleUrl();
+          if (url != null) {
+            final File inputFile=DataUtilities.urlToFile(url);
+            final String inputFileName=inputFile.getPath();
+            final String path=FilenameUtils.getFullPath(inputFileName);
+            final String baseName=FilenameUtils.getBaseName(inputFileName);
+            final String histogramPath=path + baseName + "."+ "histogram";
+            final Histogram histogram=Utils.getHistogram(histogramPath);
+            if (histogram != null) {
+              final double[] p=histogram.getPTileThreshold(artifactsFilterPTileThreshold);
+              artifactThreshold=(int)p[0];
+            }
+          }
+        }
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.log(Level.FINE,"Filtering granules artifacts");
+        }
+        raster=ArtifactsFilterDescriptor.create(raster,imageBounds,new double[]{0},artifactThreshold,3,hints);
       }
     }
     rois.add(imageBounds);

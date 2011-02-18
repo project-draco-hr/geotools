@@ -24,25 +24,21 @@
       if (ts != null && ts instanceof TileScheduler)       localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,(TileScheduler)ts));
     }
   }
-  if (visitor.granulesNumber == 1) {
+  if (visitor.granulesNumber == 1 && Utils.OPTIMIZE_CROP) {
     final ROI roi=visitor.rois.get(0);
-    if (roi instanceof ROIShape) {
-      final ROIShape roiShape=(ROIShape)roi;
-      final Shape shape=roiShape.getAsShape();
-      if (shape instanceof Rectangle) {
-        final Rectangle bounds=(Rectangle)shape;
-        final RenderedImage image=visitor.getSourcesAsArray()[0];
-        final Rectangle imageBounds=PlanarImage.wrapRenderedImage(image).getBounds();
-        if (imageBounds.equals(bounds)) {
-          if (!imageBounds.equals(rasterBounds)) {
-            XRectangle2D.intersect(imageBounds,rasterBounds,imageBounds);
-            if (imageBounds.isEmpty()) {
-              return null;
-            }
-            return CropDescriptor.create(image,new Float(imageBounds.x),new Float(imageBounds.y),new Float(imageBounds.width),new Float(imageBounds.height),localHints);
+    Rectangle bounds=toRectangle(roi.getAsShape());
+    if (bounds != null) {
+      final RenderedImage image=visitor.getSourcesAsArray()[0];
+      final Rectangle imageBounds=PlanarImage.wrapRenderedImage(image).getBounds();
+      if (imageBounds.equals(bounds)) {
+        if (!imageBounds.equals(rasterBounds)) {
+          XRectangle2D.intersect(imageBounds,rasterBounds,imageBounds);
+          if (imageBounds.isEmpty()) {
+            return null;
           }
-          return image;
+          return CropDescriptor.create(image,new Float(imageBounds.x),new Float(imageBounds.y),new Float(imageBounds.width),new Float(imageBounds.height),localHints);
         }
+        return image;
       }
     }
   }
@@ -54,7 +50,7 @@
     ROI[] rois=sourceRoi;
     for (int i=0; i < rois.length; i++) {
       if (globalRoi == null) {
-        globalRoi=new ROI(rois[i].getAsImage());
+        globalRoi=new ROIGeometry(((ROIGeometry)rois[i]).getAsGeometry());
       }
  else {
         globalRoi=globalRoi.add(rois[i]);

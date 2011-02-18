@@ -6,6 +6,10 @@
   ImageReadParam readParameters=null;
   int imageIndex;
   final ReferencedEnvelope bbox=inclusionGeometry != null ? new ReferencedEnvelope(granuleBBOX.intersection(inclusionGeometry.getEnvelopeInternal()),granuleBBOX.getCoordinateReferenceSystem()) : granuleBBOX;
+  boolean doFiltering=false;
+  if (filterMe) {
+    doFiltering=checkEqualArea(inclusionGeometry,granuleBBOX);
+  }
   final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
   if (intersection.isEmpty()) {
     if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
@@ -97,18 +101,18 @@
       if (LOGGER.isLoggable(java.util.logging.Level.FINE))       LOGGER.fine("Unable to create a granuleDescriptor " + this.toString() + " due to jai scale bug");
       return null;
     }
-    ROIShape granuleLoadingShape=null;
+    ROI granuleLoadingShape=null;
     if (granuleROIShape != null) {
       final Point2D translate=mosaicWorldToGrid.transform(new DirectPosition2D(x,y),(Point2D)null);
       AffineTransform tx2=new AffineTransform();
       tx2.preConcatenate(AffineTransform.getScaleInstance(((AffineTransform)mosaicWorldToGrid).getScaleX(),-((AffineTransform)mosaicWorldToGrid).getScaleY()));
       tx2.preConcatenate(AffineTransform.getScaleInstance(((AffineTransform)baseGridToWorld).getScaleX(),-((AffineTransform)baseGridToWorld).getScaleY()));
       tx2.preConcatenate(AffineTransform.getTranslateInstance(translate.getX(),translate.getY()));
-      granuleLoadingShape=(ROIShape)granuleROIShape.transform(tx2);
+      granuleLoadingShape=(ROI)granuleROIShape.transform(tx2);
     }
     final RenderingHints localHints=new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE);
     if (XAffineTransform.isIdentity(finalRaster2Model,10E-6)) {
-      return new GranuleLoadingResult(raster,granuleLoadingShape);
+      return new GranuleLoadingResult(raster,granuleLoadingShape,granuleUrl,doFiltering);
     }
  else {
       final Dimension tileDimensions=request.getTileDimensions();
@@ -154,13 +158,13 @@
       boolean isTranslateYInt=!(Math.abs(finalRaster2Model.getTranslateY() - (int)finalRaster2Model.getTranslateY()) < 0.01F);
       boolean isIdentity=finalRaster2Model.isIdentity() && !hasScaleX && !hasScaleY&& !hasTranslateX&& !hasTranslateY;
       if (isIdentity) {
-        return new GranuleLoadingResult(raster,granuleLoadingShape);
+        return new GranuleLoadingResult(raster,granuleLoadingShape,granuleUrl,doFiltering);
       }
       ImageLayout layout=RIFUtil.getImageLayoutHint(localHints);
       if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& isTranslateXInt&& isTranslateYInt&& layout == null) {
-        return new GranuleLoadingResult(new TranslateIntOpImage(raster,localHints,(int)finalRaster2Model.getShearX(),(int)finalRaster2Model.getShearY()),granuleLoadingShape);
+        return new GranuleLoadingResult(new TranslateIntOpImage(raster,localHints,(int)finalRaster2Model.getShearX(),(int)finalRaster2Model.getShearY()),granuleLoadingShape,granuleUrl,doFiltering);
       }
-      return new GranuleLoadingResult(AffineDescriptor.create(raster,finalRaster2Model,interpolation,request.getBackgroundValues(),localHints),granuleLoadingShape);
+      return new GranuleLoadingResult(AffineDescriptor.create(raster,finalRaster2Model,interpolation,request.getBackgroundValues(),localHints),granuleLoadingShape,granuleUrl,doFiltering);
     }
   }
  catch (  IllegalStateException e) {

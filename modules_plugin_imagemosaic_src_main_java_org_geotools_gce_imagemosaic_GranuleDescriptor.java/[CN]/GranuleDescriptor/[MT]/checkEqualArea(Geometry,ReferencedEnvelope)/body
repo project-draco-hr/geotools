@@ -1,0 +1,19 @@
+{
+  final Envelope envelope=granuleFootprint.getEnvelope().getEnvelopeInternal();
+  double deltaMinX=Math.abs(envelope.getMinX() - granuleBBOX.getMinX());
+  double deltaMinY=Math.abs(envelope.getMinY() - granuleBBOX.getMinY());
+  double deltaMaxX=Math.abs(envelope.getMaxX() - granuleBBOX.getMaxX());
+  double deltaMaxY=Math.abs(envelope.getMaxY() - granuleBBOX.getMaxY());
+  final double resX=XAffineTransform.getScaleX0(baseGridToWorld);
+  final double resY=XAffineTransform.getScaleY0(baseGridToWorld);
+  final double toleranceX=resX / SAMEBBOX_THRESHOLD_FACTOR;
+  final double toleranceY=resY / SAMEBBOX_THRESHOLD_FACTOR;
+  final double cellArea=resX * resY;
+  if (deltaMinX > toleranceX || deltaMaxX > toleranceX || deltaMinY > toleranceY || deltaMaxY > toleranceY) {
+    return true;
+  }
+  final double footprintArea=granuleFootprint.getArea();
+  final double bboxArea=granuleBBOX.getHeight() * granuleBBOX.getWidth();
+  if (Math.abs(footprintArea - bboxArea) > cellArea)   return true;
+  return false;
+}

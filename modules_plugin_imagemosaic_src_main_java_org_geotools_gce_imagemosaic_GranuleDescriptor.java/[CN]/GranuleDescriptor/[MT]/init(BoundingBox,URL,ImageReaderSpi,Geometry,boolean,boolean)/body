@@ -1,0 +1,80 @@
+{
+  this.granuleBBOX=ReferencedEnvelope.reference(granuleBBOX);
+  this.granuleUrl=granuleUrl;
+  this.inclusionGeometry=inclusionGeometry;
+  this.handleArtifactsFiltering=handleArtifactsFiltering;
+  filterMe=handleArtifactsFiltering && inclusionGeometry != null;
+  ImageInputStream inStream=null;
+  ImageReader reader=null;
+  try {
+    inStream=Utils.getInputStream(granuleUrl);
+    if (inStream == null)     throw new IllegalArgumentException("Unable to get an input stream for the provided file " + granuleUrl.toString());
+    if (cachedReaderSPI == null) {
+      inStream.mark();
+      if (suggestedSPI != null && suggestedSPI.canDecodeInput(inStream)) {
+        cachedReaderSPI=suggestedSPI;
+        inStream.reset();
+      }
+ else {
+        inStream.mark();
+        reader=Utils.getReader(inStream);
+        if (reader != null)         cachedReaderSPI=reader.getOriginatingProvider();
+        inStream.reset();
+      }
+    }
+    reader=cachedReaderSPI.createReaderInstance();
+    if (reader == null)     throw new IllegalArgumentException("Unable to get an ImageReader for the provided file " + granuleUrl.toString());
+    final Rectangle originalDimension=Utils.getDimension(0,inStream,reader);
+    final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(originalDimension),granuleBBOX);
+    geMapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+    this.baseGridToWorld=geMapper.createAffineTransform();
+    try {
+      if (inclusionGeometry != null) {
+        geMapper.setPixelAnchor(PixelInCell.CELL_CORNER);
+        Geometry mapped=JTS.transform(inclusionGeometry,geMapper.createTransform().inverse());
+        this.granuleROIShape=new ROIGeometry(mapped);
+      }
+    }
+ catch (    TransformException e1) {
+      throw new IllegalArgumentException(e1);
+    }
+    this.granuleLevels.put(Integer.valueOf(0),new GranuleOverviewLevelDescriptor(1,1,originalDimension.width,originalDimension.height));
+    if (heterogeneousGranules) {
+      final GranuleOverviewLevelDescriptor baseOverviewLevelDescriptor=granuleLevels.get(0);
+      final int numberOfOvervies=reader.getNumImages(true) - 1;
+      final AffineTransform2D baseG2W=baseOverviewLevelDescriptor.getGridToWorldTransform();
+      final int width=baseOverviewLevelDescriptor.getWidth();
+      final int height=baseOverviewLevelDescriptor.getHeight();
+      final double resX=AffineTransform2D.getScaleX0(baseG2W);
+      final double resY=AffineTransform2D.getScaleY0(baseG2W);
+      final double[] highestRes=new double[]{resX,resY};
+      final double[][] overviewsResolution=new double[numberOfOvervies][2];
+      for (int i=0; i < numberOfOvervies; i++) {
+        overviewsResolution[i][0]=(highestRes[0] * width) / reader.getWidth(i + 1);
+        overviewsResolution[i][1]=(highestRes[1] * height) / reader.getWidth(i + 1);
+      }
+      overviewsController=new OverviewsController(highestRes,numberOfOvervies,overviewsResolution);
+    }
+  }
+ catch (  IllegalStateException e) {
+    throw new IllegalArgumentException(e);
+  }
+catch (  IOException e) {
+    throw new IllegalArgumentException(e);
+  }
+ finally {
+    try {
+      if (inStream != null) {
+        inStream.close();
+      }
+    }
+ catch (    Throwable e) {
+      throw new IllegalArgumentException(e);
+    }
+ finally {
+      if (reader != null) {
+        reader.dispose();
+      }
+    }
+  }
+}
