@@ -1,7 +1,32 @@
 {
   for (  Symbolizer symbolizer : symbolizers) {
     if (symbolizer instanceof RasterSymbolizer) {
-      requests.put(new RenderRasterRequest(graphics,drawMe.content,(RasterSymbolizer)symbolizer,destinationCrs,at));
+      GridCoverage2D coverage=null;
+      boolean disposeCoverage=false;
+      try {
+        final Object grid=gridPropertyName.evaluate(drawMe.content);
+        if (grid instanceof GridCoverage2D) {
+          coverage=(GridCoverage2D)drawMe.content;
+        }
+ else         if (grid instanceof AbstractGridCoverage2DReader) {
+          final Object params=paramsPropertyName.evaluate(drawMe.content);
+          GridGeometry2D readGG=new GridGeometry2D(new GridEnvelope2D(screenSize),mapExtent);
+          AbstractGridCoverage2DReader reader=(AbstractGridCoverage2DReader)grid;
+          coverage=readCoverage(reader,params,readGG);
+          disposeCoverage=true;
+        }
+      }
+ catch (      IllegalArgumentException e) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+        fireErrorEvent(e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+        fireErrorEvent(e);
+      }
+      if (coverage != null) {
+        requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,(RasterSymbolizer)symbolizer,destinationCrs,at));
+      }
     }
  else {
       LiteShape2 shape=drawMe.getShape(symbolizer,at);
