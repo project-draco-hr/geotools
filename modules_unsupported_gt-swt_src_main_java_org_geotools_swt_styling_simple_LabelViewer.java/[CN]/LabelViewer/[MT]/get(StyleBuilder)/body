@@ -1,0 +1,74 @@
+{
+  if (!this.enabled) {
+    return null;
+  }
+  if (this.font == null || this.font.length == 0) {
+    return null;
+  }
+  if (this.labelType == null || "".equals(this.labelType)) {
+    return null;
+  }
+  String fontName=this.font[0].getName();
+  boolean fontBold=(this.font[0].getStyle() == SWT.BOLD);
+  boolean fontItalic=(this.font[0].getStyle() == SWT.ITALIC);
+  double fontSize=this.font[0].getHeight();
+  Font gtFont=build.createFont(fontName,fontItalic,fontBold,fontSize);
+  Fill fill=build.createFill(this.colour);
+  LabelPlacement placement;
+  if (pointPlacement) {
+    double horiz;
+    if (this.place.getSelectionIndex() < 3) {
+switch (this.place.getSelectionIndex()) {
+case 0:
+        horiz=SLDs.ALIGN_LEFT;
+      break;
+case 1:
+    horiz=SLDs.ALIGN_CENTER;
+  break;
+case 2:
+horiz=SLDs.ALIGN_RIGHT;
+break;
+default :
+horiz=SLDs.ALIGN_CENTER;
+break;
+}
+}
+ else {
+horiz=Double.parseDouble(this.place.getText());
+}
+double vert;
+if (this.place2.getSelectionIndex() < 3) {
+switch (this.place2.getSelectionIndex()) {
+case 0:
+vert=SLDs.ALIGN_BOTTOM;
+break;
+case 1:
+vert=SLDs.ALIGN_MIDDLE;
+break;
+case 2:
+vert=SLDs.ALIGN_TOP;
+break;
+default :
+vert=SLDs.ALIGN_MIDDLE;
+break;
+}
+}
+ else {
+vert=Double.parseDouble(this.place2.getText());
+}
+double rotation=Double.parseDouble(this.place3.getText());
+placement=build.createPointPlacement(vert,horiz,rotation);
+}
+ else {
+double offset=Double.parseDouble(this.place.getText());
+placement=build.createLinePlacement(offset);
+}
+this.labelPlacement=placement;
+Expression exp=(Expression)CommonFactoryFinder.getFilterFactory(GeoTools.getDefaultHints()).property(this.labelType);
+TextSymbolizer text=build.createTextSymbolizer(fill,new Font[]{gtFont},null,exp,placement,null);
+if (SLDs.isLine(this.schema)) {
+text.getOptions().put("group","yes");
+}
+text.getOptions().put("spaceAround","2");
+return text;
+}

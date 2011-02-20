@@ -1,0 +1,29 @@
+{
+  createListeners();
+  mapPane.addMapPaneListener(mapPaneListener);
+  mapPane.getMapContext().addMapBoundsListener(this);
+  Composite mainComposite=new Composite(parent,SWT.NONE);
+  GridLayout gridLayout=new GridLayout(1,false);
+  mainComposite.setLayout(gridLayout);
+  StatusLineLayoutData statusLineLayoutData=new StatusLineLayoutData();
+  mainComposite.setLayoutData(statusLineLayoutData);
+  crsButton=new Button(mainComposite,SWT.PUSH);
+  GridData crsButtonGD=new GridData(SWT.BEGINNING,SWT.CENTER,false,false);
+  crsButtonGD.widthHint=300;
+  crsButton.setLayoutData(crsButtonGD);
+  CoordinateReferenceSystem crs=getCrs();
+  displayCRS(crs);
+  crsButton.addSelectionListener(new SelectionAdapter(){
+    public void widgetSelected(    SelectionEvent e){
+      CRSChooserDialog dialog=new CRSChooserDialog(crsButton.getShell(),getCrs());
+      dialog.setBlockOnOpen(true);
+      dialog.open();
+      CoordinateReferenceSystem newCrs=dialog.getResult();
+      mapPane.setCrs(newCrs);
+      mapPane.redraw();
+      displayCRS(newCrs);
+    }
+  }
+);
+  return mainComposite;
+}

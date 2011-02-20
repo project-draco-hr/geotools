@@ -1,0 +1,20 @@
+{
+  SimpleFeatureCollection collection=null;
+  MapLayer layer=layerRef.get();
+  if (layer != null) {
+    Filter filter=null;
+    if (isPolygonGeometry) {
+      Geometry posGeom=createSearchPos(pos);
+      filter=filterFactory.intersects(filterFactory.property(attrName),filterFactory.literal(posGeom));
+    }
+ else {
+      double radius=((Number)params[0]).doubleValue();
+      ReferencedEnvelope env=createSearchEnv(pos,radius);
+      filter=filterFactory.bbox(filterFactory.property(attrName),env);
+    }
+    DefaultQuery query=new DefaultQuery(null,filter);
+    query.setCoordinateSystemReproject(getMapContext().getCoordinateReferenceSystem());
+    collection=(SimpleFeatureCollection)layer.getFeatureSource().getFeatures(query);
+  }
+  return collection;
+}

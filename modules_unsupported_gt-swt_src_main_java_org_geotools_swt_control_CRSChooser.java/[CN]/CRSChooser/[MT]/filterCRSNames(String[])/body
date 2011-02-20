@@ -1,0 +1,29 @@
+{
+  crsCodeMap=new HashMap<String,String>();
+  Set<String> descriptions=new TreeSet<String>();
+  for (  Object object : ReferencingFactoryFinder.getCRSAuthorityFactories(null)) {
+    CRSAuthorityFactory factory=(CRSAuthorityFactory)object;
+    try {
+      Set<String> codes=factory.getAuthorityCodes(CoordinateReferenceSystem.class);
+      for (      Object codeObj : codes) {
+        String code=(String)codeObj;
+        String description;
+        try {
+          description=factory.getDescriptionText(code).toString();
+        }
+ catch (        Exception e1) {
+          description=Messages.getString("CRSChooser_unnamed");
+        }
+        description+=" (" + code + ")";
+        crsCodeMap.put(code,description);
+        if (matchesFilter(description.toUpperCase(),filter)) {
+          descriptions.add(description);
+        }
+      }
+    }
+ catch (    FactoryException e) {
+      ExceptionMonitor.show(wktText.getShell(),e,"CRS Authority:" + e.getMessage());
+    }
+  }
+  return descriptions;
+}

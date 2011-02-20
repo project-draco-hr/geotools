@@ -1,0 +1,51 @@
+{
+  if (folder == null)   return selectedCRS;
+  if (folder.getSelectionIndex() == 1) {
+    try {
+      String text=wktText.getText();
+      CoordinateReferenceSystem createdCRS=ReferencingFactoryFinder.getCRSFactory(null).createFromWKT(text);
+      if (keywordsText.getText().trim().length() > 0) {
+        Preferences node=findNode(createdCRS.getName().getCode());
+        if (node != null) {
+          Preferences kn=node.node(ALIASES_ID);
+          String[] keywords=keywordsText.getText().split(",");
+          kn.clear();
+          for (          String string : keywords) {
+            string=string.trim().toUpperCase();
+            if (string.length() > 0)             kn.put(string,string);
+          }
+          kn.flush();
+        }
+ else {
+          CoordinateReferenceSystem found=createCRS(createdCRS.getName().getCode());
+          if (found != null && CRS.findMathTransform(found,createdCRS,true).isIdentity()) {
+            saveKeywords(found);
+            return found;
+          }
+          Set<Identifier> identifiers=new HashSet<Identifier>(createdCRS.getIdentifiers());
+          for (          Identifier identifier : identifiers) {
+            found=createCRS(identifier.toString());
+            if (found != null && CRS.findMathTransform(found,createdCRS,true).isIdentity()) {
+              saveKeywords(found);
+              return found;
+            }
+          }
+          return saveCustomizedCRS(text,true,createdCRS);
+        }
+      }
+      return createdCRS;
+    }
+ catch (    Exception e) {
+      ExceptionMonitor.show(wktText.getShell(),e);
+    }
+  }
+  if (selectedCRS == null) {
+    String crsCode=(String)((IStructuredSelection)codesList.getSelection()).getFirstElement();
+    if (sourceCRS != null && crsCode.equals(sourceCRS.getName().toString())) {
+      System.out.println("source crs: " + sourceCRS.getName().toString());
+      return sourceCRS;
+    }
+    return createCRS(searchText.getText());
+  }
+  return selectedCRS;
+}

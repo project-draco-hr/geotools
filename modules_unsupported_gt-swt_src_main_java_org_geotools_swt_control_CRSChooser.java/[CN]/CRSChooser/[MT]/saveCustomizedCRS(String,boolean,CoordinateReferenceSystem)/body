@@ -1,0 +1,41 @@
+{
+  Preferences root=Preferences.userRoot();
+  Preferences node=root.node(CUSTOM_ID);
+  int lastID;
+  String code;
+  String name;
+  String newWKT;
+  if (processWKT) {
+    lastID=Integer.parseInt(node.get(LAST_ID,"0"));
+    code="UDIG:" + lastID;
+    name=createdCRS.getName().toString() + "(" + code+ ")";
+    lastID++;
+    node.putInt(LAST_ID,lastID);
+    newWKT=processingWKT(text,lastID);
+  }
+ else {
+    Set<ReferenceIdentifier> ids=createdCRS.getIdentifiers();
+    if (!ids.isEmpty()) {
+      Identifier id=ids.iterator().next();
+      code=id.toString();
+      name=createdCRS.getName().getCode() + " (" + code+ ")";
+    }
+ else {
+      name=code=createdCRS.getName().getCode();
+    }
+    newWKT=text;
+  }
+  Preferences child=node.node(code);
+  child.put(NAME_ID,name);
+  child.put(WKT_ID,newWKT);
+  String[] keywords=keywordsText.getText().split(",");
+  if (keywords.length > 0) {
+    Preferences keyworkNode=child.node(ALIASES_ID);
+    for (    String string : keywords) {
+      string=string.trim().toUpperCase();
+      keyworkNode.put(string,string);
+    }
+  }
+  node.flush();
+  return createdCRS;
+}

@@ -1,0 +1,77 @@
+{
+  Style style=getStyle();
+  List<FeatureTypeStyle> ftsList=style.featureTypeStyles();
+  FeatureTypeStyle fts=null;
+  if (ftsList.size() > 0) {
+    fts=ftsList.get(0);
+  }
+  SimpleFeatureType schema=featureCollection.getSchema();
+  geometryName.setInput(schema);
+  String name=DEFAULT_GEOMETRY;
+  Stroke stroke=null;
+  Fill fill=null;
+  Graphic graphic=null;
+  TextSymbolizer text=null;
+  LabelPlacement placement=null;
+  List<Rule> rules=Collections.emptyList();
+  if (fts != null)   rules=fts.rules();
+  if (rules.size() > 1) {
+    Rule keepRule=rules.get(0);
+    rules.clear();
+    rules.add(keepRule);
+  }
+  this.mode=determineMode(schema,true);
+  if (mode == Mode.NONE) {
+    pointMode.setSelection(false);
+    polyMode.setSelection(false);
+    lineMode.setSelection(false);
+  }
+ else   if (mode == Mode.LINE) {
+    lineMode.setSelection(true);
+    LineSymbolizer sym=SLDs.lineSymbolizer(fts);
+    stroke=SLDs.stroke(sym);
+    placement=SLDs.getPlacement(SLDs.ALIGN_LEFT,SLDs.ALIGN_MIDDLE,0);
+    name=sym == null ? null : sym.getGeometryPropertyName();
+  }
+ else   if (mode == Mode.POLYGON) {
+    polyMode.setSelection(true);
+    PolygonSymbolizer sym=SLDs.polySymbolizer(fts);
+    stroke=SLDs.stroke(sym);
+    fill=SLDs.fill(sym);
+    placement=SLDs.getPlacement(SLDs.ALIGN_CENTER,SLDs.ALIGN_MIDDLE,0);
+    name=sym == null ? null : sym.getGeometryPropertyName();
+  }
+ else   if (mode == Mode.POINT || mode == Mode.ALL) {
+    pointMode.setSelection(true);
+    PointSymbolizer sym=SLDs.pointSymbolizer(fts);
+    stroke=SLDs.stroke(sym);
+    fill=SLDs.fill(sym);
+    graphic=SLDs.graphic(sym);
+    placement=SLDs.getPlacement(SLDs.ALIGN_LEFT,SLDs.ALIGN_MIDDLE,0);
+    name=sym == null ? null : sym.getGeometryPropertyName();
+  }
+  text=SLDs.textSymbolizer(fts);
+  if (text != null && placement != null) {
+    text.setLabelPlacement(placement);
+  }
+  if (name == null) {
+    name=DEFAULT_GEOMETRY;
+    geometryName.getCombo().setText(name);
+  }
+ else {
+    geometryName.getCombo().setText(name);
+  }
+  Mode raw=determineMode(schema,false);
+  pointMode.setEnabled(raw == Mode.ALL);
+  polyMode.setEnabled(raw == Mode.ALL);
+  lineMode.setEnabled(raw == Mode.ALL);
+  double minScaleDen=SLDs.minScale(fts);
+  double maxScaleDen=SLDs.maxScale(fts);
+  Color defaultColor=Color.red;
+  this.line.setStroke(stroke,this.mode,defaultColor);
+  this.fill.setFill(fill,this.mode,defaultColor);
+  this.point.setGraphic(graphic,this.mode,defaultColor);
+  this.label.set(schema,text,this.mode);
+  this.minScale.setScale(minScaleDen,0l);
+  this.maxScale.setScale(maxScaleDen,1111111l);
+}

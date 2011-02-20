@@ -1,0 +1,33 @@
+{
+  if (code == null)   return null;
+  for (  Object object : ReferencingFactoryFinder.getCRSAuthorityFactories(null)) {
+    CRSAuthorityFactory factory=(CRSAuthorityFactory)object;
+    try {
+      return (CoordinateReferenceSystem)factory.createObject(code);
+    }
+ catch (    FactoryException e2) {
+    }
+catch (    Exception e) {
+      ExceptionMonitor.show(wktText.getShell(),e,"Error creating CRS object, trying more...");
+    }
+  }
+  try {
+    Preferences child=findNode(code);
+    if (child != null) {
+      String wkt=child.get(WKT_ID,null);
+      if (wkt != null) {
+        try {
+          return ReferencingFactoryFinder.getCRSFactory(null).createFromWKT(wkt);
+        }
+ catch (        Exception e) {
+          ExceptionMonitor.show(wktText.getShell(),e);
+          child.removeNode();
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    ExceptionMonitor.show(wktText.getShell(),e);
+  }
+  return null;
+}

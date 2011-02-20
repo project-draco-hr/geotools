@@ -1,0 +1,48 @@
+{
+  String title=context.getTitle();
+  if (title != null) {
+    getShell().setText(title);
+  }
+  Composite mainComposite=null;
+  if (showLayerTable) {
+    SashForm sashForm=new SashForm(parent,SWT.HORIZONTAL | SWT.NULL);
+    mainComposite=sashForm;
+    MapLayerComposite mapLayerTable=new MapLayerComposite(mainComposite,SWT.BORDER);
+    mapPane=new SwtMapPane(mainComposite,SWT.BORDER | SWT.NO_BACKGROUND);
+    mapPane.setMapContext(context);
+    mapLayerTable.setMapPane(mapPane);
+    sashForm.setWeights(new int[]{1,3});
+  }
+ else {
+    mainComposite=parent;
+    mapPane=new SwtMapPane(mainComposite,SWT.BORDER | SWT.NO_BACKGROUND);
+    mapPane.setMapContext(context);
+  }
+  mapPane.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+  mapPane.setRenderer(renderer);
+  infoAction.setMapPane(mapPane);
+  panAction.setMapPane(mapPane);
+  resetAction.setMapPane(mapPane);
+  zoominAction.setMapPane(mapPane);
+  zoomoutAction.setMapPane(mapPane);
+  openShapeAction.setMapPane(mapPane);
+  openCoverageAction.setMapPane(mapPane);
+  StatusLineManager statusLineManager=getStatusLineManager();
+  IContributionItem filler=new ControlContribution("org.geotools.swt.SwtMapFrame.ID"){
+    protected Control createControl(    Composite parent){
+      Label almostParent=new Label(parent,SWT.NONE);
+      StatusLineLayoutData statusLineLayoutData=new StatusLineLayoutData();
+      statusLineLayoutData.widthHint=1;
+      statusLineLayoutData.heightHint=45;
+      almostParent.setLayoutData(statusLineLayoutData);
+      return almostParent;
+    }
+  }
+;
+  CrsStatusBarButton crsButton=new CrsStatusBarButton(mapPane);
+  statusLineManager.add(filler);
+  statusLineManager.add(crsButton);
+  statusLineManager.update(true);
+  new StatusBarNotifier(this,mapPane);
+  return mainComposite;
+}

@@ -1,0 +1,27 @@
+{
+  Composite mainComposite=new Composite(parent,SWT.NONE);
+  GridLayout gridLayout=new GridLayout(1,false);
+  mainComposite.setLayout(gridLayout);
+  List<DataStoreFactorySpi> factoryList=new ArrayList<DataStoreFactorySpi>();
+  for (Iterator<DataStoreFactorySpi> iter=DataStoreFinder.getAvailableDataStores(); iter.hasNext(); ) {
+    factoryList.add(iter.next());
+  }
+  TableViewer viewer=new TableViewer(mainComposite);
+  GridData viewerGD=new GridData(SWT.FILL,SWT.FILL,true,false);
+  viewer.getTable().setLayoutData(viewerGD);
+  viewer.addSelectionChangedListener(this);
+  viewer.setContentProvider(new ArrayContentProvider());
+  viewer.setLabelProvider(new LabelProvider(){
+    public String getText(    Object element){
+      if (element instanceof DataStoreFactorySpi) {
+        DataStoreFactorySpi factory=(DataStoreFactorySpi)element;
+        return factory.getDisplayName();
+      }
+      return super.getText(element);
+    }
+  }
+);
+  viewer.setInput(factoryList.toArray());
+  setControl(mainComposite);
+  canFlip=false;
+}

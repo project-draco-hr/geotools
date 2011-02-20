@@ -1,0 +1,85 @@
+{
+  curPaintArea=getVisibleRect();
+  if (event.type == SWT.MouseDown) {
+    System.out.println("mousedown");
+    startX=event.x;
+    startY=event.y;
+    mouseDown=true;
+  }
+ else   if (event.type == SWT.MouseUp) {
+    System.out.println("mouseup");
+    endX=event.x;
+    endY=event.y;
+    if (baseImageMoved) {
+      afterImageMove();
+      baseImageMoved=false;
+    }
+    mouseDown=false;
+    isDragging=false;
+  }
+ else   if (event.type == SWT.Paint) {
+    if (acceptRepaintRequests) {
+      gc=event.gc;
+      if (baseImageMoved) {
+        if (gc != null && !gc.isDisposed() && swtImage != null) {
+          Image tmpImage=new Image(getDisplay(),curPaintArea.width,curPaintArea.height);
+          GC tmpGc=new GC(tmpImage);
+          tmpGc.drawImage(swtImage,imageOrigin.x,imageOrigin.y);
+          gc.drawImage(tmpImage,0,0);
+          tmpImage.dispose();
+        }
+        return;
+      }
+      if (isDragging) {
+        if (dragEnabled) {
+          if (swtImage != null)           gc.drawImage(swtImage,0,0);
+          gc.setXORMode(true);
+          org.eclipse.swt.graphics.Color fC=gc.getForeground();
+          gc.setLineWidth(2);
+          gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+          gc.drawRectangle(startX,startY,endX - startX,endY - startY);
+          gc.setForeground(fC);
+          gc.setXORMode(false);
+          return;
+        }
+      }
+      System.out.println("PAINT");
+      if (curPaintArea == null || context == null || renderer == null) {
+        return;
+      }
+      if (context.getLayerCount() == 0) {
+        gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+        gc.fillRectangle(0,0,curPaintArea.width + 1,curPaintArea.height + 1);
+        return;
+      }
+      final ReferencedEnvelope mapAOI=context.getAreaOfInterest();
+      if (mapAOI == null) {
+        return;
+      }
+      if (redrawBaseImage) {
+        MapPaneEvent ev=new MapPaneEvent(this,MapPaneEvent.Type.RENDERING_STARTED);
+        publishEvent(ev);
+        baseImage=new BufferedImage(curPaintArea.width + 1,curPaintArea.height + 1,BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d=baseImage.createGraphics();
+        g2d.fillRect(0,0,curPaintArea.width + 1,curPaintArea.height + 1);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+        java.awt.Rectangle awtRectangle=Utils.toAwtRectangle(curPaintArea);
+        renderer.paint(g2d,awtRectangle,mapAOI,getWorldToScreenTransform());
+        if (swtImage != null && !swtImage.isDisposed()) {
+          swtImage.dispose();
+          swtImage=null;
+        }
+        swtImage=new Image(getDisplay(),awtToSwt(baseImage,curPaintArea.width + 1,curPaintArea.height + 1));
+        if (overlayImage != null) {
+          doOverlayImage();
+        }
+        if (gc != null && !gc.isDisposed() && swtImage != null)         gc.drawImage(swtImage,imageOrigin.x,imageOrigin.y);
+        ev=new MapPaneEvent(this,MapPaneEvent.Type.RENDERING_STOPPED);
+        publishEvent(ev);
+        clearLabelCache=true;
+      }
+      onRenderingCompleted();
+      redrawBaseImage=true;
+    }
+  }
+}

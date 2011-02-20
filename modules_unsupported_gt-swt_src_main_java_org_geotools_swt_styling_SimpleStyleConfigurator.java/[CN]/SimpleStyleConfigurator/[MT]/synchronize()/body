@@ -1,0 +1,96 @@
+{
+  List<Symbolizer> acquire=new ArrayList<Symbolizer>();
+  TextSymbolizer textSym=this.label.get(this.build);
+  SimpleFeatureType schema=featureCollection.getSchema();
+  this.mode=determineMode(schema,true);
+  String geometryPropertyName=null;
+  if (geometryName.getCombo().getSelectionIndex() != 0) {
+    geometryPropertyName=geometryName.getCombo().getText();
+  }
+switch (this.mode) {
+case LINE:
+{
+      LineSymbolizer lineSymbolizer=this.build.createLineSymbolizer(this.line.getStroke(this.build));
+      acquire.add(lineSymbolizer);
+      lineSymbolizer.setGeometryPropertyName(geometryPropertyName);
+      if (textSym != null) {
+        acquire.add(textSym);
+      }
+    }
+  break;
+case POLYGON:
+{
+  PolygonSymbolizer polygonSymbolizer=this.build.createPolygonSymbolizer(this.line.getStroke(this.build),this.fill.getFill(this.build));
+  polygonSymbolizer.setGeometryPropertyName(geometryPropertyName);
+  acquire.add(polygonSymbolizer);
+  if (textSym != null) {
+    acquire.add(textSym);
+  }
+}
+break;
+case POINT:
+{
+PointSymbolizer pointSymbolizer=this.build.createPointSymbolizer(this.point.getGraphic(this.fill.getFill(this.build),this.line.getStroke(this.build),this.build));
+pointSymbolizer.setGeometryPropertyName(geometryPropertyName);
+acquire.add(pointSymbolizer);
+if (textSym != null) {
+acquire.add(textSym);
+}
+}
+break;
+case ALL:
+{
+LineSymbolizer lineSymbolizer=this.build.createLineSymbolizer(this.line.getStroke(this.build));
+acquire.add(lineSymbolizer);
+acquire.add(lineSymbolizer);
+PolygonSymbolizer polygonSymbolizer=this.build.createPolygonSymbolizer(this.line.getStroke(this.build),this.fill.getFill(this.build));
+polygonSymbolizer.setGeometryPropertyName(geometryPropertyName);
+acquire.add(polygonSymbolizer);
+PointSymbolizer pointSymbolizer=this.build.createPointSymbolizer(this.point.getGraphic(this.fill.getFill(this.build),this.line.getStroke(this.build),this.build));
+pointSymbolizer.setGeometryPropertyName(geometryPropertyName);
+acquire.add(pointSymbolizer);
+if (textSym != null) {
+acquire.add(textSym);
+}
+}
+break;
+case NONE:
+}
+double minScaleDen=minScale.getScale();
+double maxScaleDen=maxScale.getScale();
+Symbolizer[] array=acquire.toArray(new Symbolizer[acquire.size()]);
+Rule rule=this.build.createRule(array);
+if (minScale.isEnabled()) rule.setMinScaleDenominator(minScaleDen);
+if (maxScale.isEnabled()) rule.setMaxScaleDenominator(maxScaleDen);
+FeatureTypeStyle featureTypeStyle=this.build.createFeatureTypeStyle(SLDs.GENERIC_FEATURE_TYPENAME,rule);
+featureTypeStyle.setName("simple");
+Style style=getStyle();
+style.setDefault(true);
+if (replace.getSelection()) {
+style.featureTypeStyles().clear();
+style.featureTypeStyles().add(featureTypeStyle);
+}
+ else {
+List<FeatureTypeStyle> fts=style.featureTypeStyles();
+boolean match=false;
+for (int i=fts.size() - 1; i > -1; i--) {
+if (SLDs.isSemanticTypeMatch(fts.get(i),"simple")) {
+fts.set(i,featureTypeStyle);
+match=true;
+break;
+}
+}
+if (match) {
+style.featureTypeStyles().clear();
+style.featureTypeStyles().addAll(fts);
+}
+ else {
+List<FeatureTypeStyle> fts2=new ArrayList<FeatureTypeStyle>(fts);
+Collections.copy(fts2,fts);
+fts2.add(featureTypeStyle);
+style.featureTypeStyles().clear();
+style.featureTypeStyles().addAll(fts2);
+}
+}
+this.style=style;
+}

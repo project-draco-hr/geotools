@@ -1,0 +1,42 @@
+{
+  if (crs != null) {
+    final List list=codesList.getList();
+    Set<Identifier> identifiers=new HashSet<Identifier>(crs.getIdentifiers());
+    final Set<Integer> candidates=new HashSet<Integer>();
+    for (int i=0; i < list.getItemCount(); i++) {
+      for (      Identifier identifier : identifiers) {
+        final String item=list.getItem(i);
+        if (sameEPSG(crs,identifier,item) || exactMatch(crs,identifier,item)) {
+          codesList.setSelection(new StructuredSelection(item),false);
+          list.setTopIndex(i);
+          return;
+        }
+        if (isMatch(crs,identifier,item)) {
+          candidates.add(i);
+        }
+      }
+    }
+    if (candidates.isEmpty()) {
+      java.util.List<String> input=(java.util.List<String>)codesList.getInput();
+      String sourceCRSName=crs.getName().toString();
+      sourceCRS=crs;
+      input.add(0,sourceCRSName);
+      codesList.setInput(input);
+      codesList.setSelection(new StructuredSelection(sourceCRSName),false);
+      list.setTopIndex(0);
+      try {
+        String toWKT=crs.toWKT();
+        wktText.setText(toWKT);
+      }
+ catch (      RuntimeException e) {
+        ExceptionMonitor.show(wktText.getShell(),e,crs.toString() + " cannot be formatted as WKT");
+        wktText.setText(Messages.getString("CRSChooser_unknownWKT"));
+      }
+    }
+ else {
+      Integer next=candidates.iterator().next();
+      codesList.setSelection(new StructuredSelection(list.getItem(next)),false);
+      list.setTopIndex(next);
+    }
+  }
+}

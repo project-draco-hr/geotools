@@ -1,0 +1,25 @@
+{
+  try {
+    Preferences root=Preferences.userRoot();
+    Preferences node=root.node(CUSTOM_ID);
+    for (    String id : node.childrenNames()) {
+      Preferences child=node.node(id);
+      String string=child.get(NAME_ID,null);
+      if (string != null && matchesFilter(string.toUpperCase(),searchParms)) {
+        descriptions.add(string);
+        continue;
+      }
+      Preferences aliases=child.node(ALIASES_ID);
+      for (      String alias : aliases.keys()) {
+        if (matchesFilter(alias.toUpperCase(),searchParms)) {
+          descriptions.add(string);
+          continue;
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    ExceptionMonitor.show(wktText.getShell(),e);
+  }
+  return descriptions;
+}

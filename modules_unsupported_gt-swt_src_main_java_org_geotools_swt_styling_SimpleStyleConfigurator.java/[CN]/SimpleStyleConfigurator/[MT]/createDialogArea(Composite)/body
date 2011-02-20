@@ -1,0 +1,58 @@
+{
+  Composite parentPanel=(Composite)super.createDialogArea(parent);
+  setLayout(parentPanel);
+  ((RowLayout)parentPanel.getLayout()).type=SWT.VERTICAL;
+  ((RowLayout)parentPanel.getLayout()).spacing=3;
+  KeyAdapter adp=new KeyAdapter(){
+    @Override public void keyReleased(    KeyEvent e){
+      if (e.keyCode == SWT.KEYPAD_CR || e.character == SWT.CR) {
+        refresh();
+      }
+    }
+  }
+;
+  Composite part=AbstractSimpleConfigurator.subpart(parentPanel,Messages.getString("SimpleStyleConfigurator_GeometryLabel"));
+  geometryName=new ComboViewer(part);
+  geometryName.setContentProvider(new IStructuredContentProvider(){
+    FeatureType schema;
+    public Object[] getElements(    Object inputElement){
+      ArrayList<String> names=new ArrayList<String>();
+      names.add(DEFAULT_GEOMETRY);
+      if (schema != null) {
+        for (        PropertyDescriptor descriptor : schema.getDescriptors()) {
+          if (descriptor instanceof GeometryDescriptor) {
+            names.add(((GeometryDescriptor)descriptor).getLocalName());
+          }
+        }
+      }
+      return names.toArray();
+    }
+    public void inputChanged(    Viewer viewer,    Object oldInput,    Object newInput){
+      schema=(FeatureType)newInput;
+    }
+    public void dispose(){
+    }
+  }
+);
+  geometryName.getCombo().setText(DEFAULT_GEOMETRY);
+  geometryName.getCombo().addSelectionListener(synchronize);
+  part=AbstractSimpleConfigurator.subpart(parentPanel,Messages.getString("SimpleStyleConfigurator_ModeLabel"));
+  this.pointMode=new Button(part,SWT.RADIO);
+  pointMode.setText(Messages.getString("SimpleStyleConfigurator_PointMode"));
+  this.lineMode=new Button(part,SWT.RADIO);
+  lineMode.setText(Messages.getString("SimpleStyleConfigurator_LineMode"));
+  this.polyMode=new Button(part,SWT.RADIO);
+  polyMode.setText(Messages.getString("SimpleStyleConfigurator_PolygonMode"));
+  this.line.createControl(parentPanel,adp);
+  this.fill.createControl(parentPanel,adp);
+  this.point.createControl(parentPanel,adp,this.build);
+  this.label.createControl(parentPanel,adp);
+  this.minScale.createControl(parentPanel,adp);
+  this.maxScale.createControl(parentPanel,adp);
+  Composite replaceComp=AbstractSimpleConfigurator.subpart(parentPanel,Messages.getString("SimpleStyleConfigurator_replaceButton"));
+  this.replace=new Button(replaceComp,SWT.CHECK);
+  replace.addSelectionListener(synchronize);
+  replace.setSelection(true);
+  refresh();
+  return parentPanel;
+}

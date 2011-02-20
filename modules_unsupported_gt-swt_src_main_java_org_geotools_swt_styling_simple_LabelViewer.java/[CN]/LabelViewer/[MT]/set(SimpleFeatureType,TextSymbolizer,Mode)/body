@@ -1,0 +1,110 @@
+{
+  listen(false);
+  try {
+    this.schema=schema;
+    this.enabled=(mode != Mode.NONE && sym != null);
+    this.font=SLDs.textFont(sym);
+    if (this.font == null || this.font.length == 0) {
+      this.font=new FontData[]{new FontData("Arial",12,SWT.NORMAL)};
+    }
+    this.labelType=SLDs.textLabelString(sym);
+    this.colour=SLDs.textFontFill(sym);
+    if (this.colour == null) {
+      this.colour=Color.BLACK;
+    }
+    this.on.setEnabled(mode != Mode.NONE);
+    this.fonter.setColorValue(this.colour);
+    this.fonter.setFontList(this.font);
+    if (schema != null) {
+      AttributeDescriptor[] attrs=schema.getAttributeDescriptors().toArray(new AttributeDescriptor[0]);
+      List<String> list=new ArrayList<String>();
+      for (int i=0; i < attrs.length; i++) {
+        Class<?> cls=attrs[i].getType().getBinding();
+        if (String.class.isAssignableFrom(cls)) {
+          list.add(attrs[i].getName().getLocalPart());
+        }
+ else         if (Number.class.isAssignableFrom(cls)) {
+          list.add(attrs[i].getName().getLocalPart());
+        }
+      }
+      this.field.removeAll();
+      this.field.setItems(list.toArray(new String[0]));
+      if (this.labelType == null) {
+        this.field.select(0);
+      }
+ else {
+        this.field.setText(this.labelType);
+      }
+    }
+    this.on.setSelection(this.enabled);
+    this.field.setEnabled(this.enabled);
+    this.fonter.setEnabled(this.enabled);
+    if (schema != null && (SLDs.isLine(schema) == pointPlacement || this.place == null)) {
+      pointPlacement=!SLDs.isLine(schema);
+      if (pointPlacement) {
+        initPlacementContentsPoint();
+      }
+ else {
+        initPlacementContentsLine();
+      }
+    }
+    this.place.setEnabled(this.enabled);
+    if (pointPlacement) {
+      this.place2.setEnabled(this.enabled);
+      this.place3.setEnabled(this.enabled);
+      if (this.labelPlacement == null || !(this.labelPlacement instanceof PointPlacement)) {
+        if (mode == Mode.POINT) {
+          this.place.select(2);
+          this.place2.select(2);
+        }
+ else {
+          this.place.select(1);
+          this.place2.select(1);
+        }
+        this.place3.select(0);
+      }
+ else {
+        AnchorPoint anchor=((PointPlacement)labelPlacement).getAnchorPoint();
+        String anchorX=anchor.getAnchorPointX().toString();
+        String anchorY=anchor.getAnchorPointY().toString();
+        if (anchorX.equals(Double.toString(SLDs.ALIGN_LEFT))) {
+          this.place2.select(0);
+        }
+ else         if (anchorX.equals(Double.toString(SLDs.ALIGN_CENTER))) {
+          this.place2.select(1);
+        }
+ else         if (anchorX.equals(Double.toString(SLDs.ALIGN_RIGHT))) {
+          this.place2.select(2);
+        }
+ else {
+          this.place2.setText(anchorX);
+        }
+        if (anchorY.equals(Double.toString(SLDs.ALIGN_BOTTOM))) {
+          this.place.select(0);
+        }
+ else         if (anchorY.equals(Double.toString(SLDs.ALIGN_MIDDLE))) {
+          this.place.select(1);
+        }
+ else         if (anchorY.equals(Double.toString(SLDs.ALIGN_TOP))) {
+          this.place.select(2);
+        }
+ else {
+          this.place.setText(anchorY);
+        }
+        this.place3.setText(((PointPlacement)labelPlacement).getRotation().toString());
+      }
+    }
+ else {
+      if (this.labelPlacement == null || !(this.labelPlacement instanceof LinePlacement)) {
+        this.place.setText("0");
+      }
+ else {
+        String offset=((LinePlacement)labelPlacement).getPerpendicularOffset().toString();
+        this.place.setText(offset);
+      }
+    }
+  }
+  finally {
+    listen(true);
+  }
+}

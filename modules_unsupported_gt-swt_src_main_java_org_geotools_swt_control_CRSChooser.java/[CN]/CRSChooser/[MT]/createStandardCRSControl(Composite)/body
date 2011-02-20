@@ -1,0 +1,87 @@
+{
+  Composite composite=new Composite(parent,SWT.NONE);
+  GridLayout layout=new GridLayout();
+  composite.setLayout(layout);
+  GridData gridData=new GridData();
+  Label codesLabel=new Label(composite,SWT.NONE);
+  codesLabel.setText(Messages.getString("CRSChooser_label_crs"));
+  codesLabel.setLayoutData(gridData);
+  gridData=new GridData(SWT.FILL,SWT.FILL,false,false);
+  searchText=new Text(composite,SWT.SINGLE | SWT.BORDER | SWT.SEARCH| SWT.CANCEL);
+  searchText.setLayoutData(gridData);
+  searchText.addModifyListener(new ModifyListener(){
+    public void modifyText(    ModifyEvent e){
+      fillCodesList();
+    }
+  }
+);
+  searchText.addListener(SWT.KeyUp,new Listener(){
+    public void handleEvent(    Event event){
+      if (event.keyCode == SWT.ARROW_DOWN) {
+        codesList.getControl().setFocus();
+      }
+    }
+  }
+);
+  gridData=new GridData(400,300);
+  codesList=new ListViewer(composite);
+  codesList.setContentProvider(new ArrayContentProvider());
+  codesList.setLabelProvider(new LabelProvider());
+  codesList.addSelectionChangedListener(new ISelectionChangedListener(){
+    public void selectionChanged(    SelectionChangedEvent event){
+      selectedCRS=null;
+      String crsCode=(String)((IStructuredSelection)codesList.getSelection()).getFirstElement();
+      if (crsCode == null)       return;
+      matcher.reset(crsCode);
+      if (matcher.matches()) {
+        selectedCRS=createCRS(matcher.group(1));
+        if (selectedCRS != null && wktText != null) {
+          wktText.setEditable(true);
+          String wkt=null;
+          try {
+            wkt=selectedCRS.toWKT();
+          }
+ catch (          Exception e) {
+            wkt=selectedCRS.toString();
+            wktText.setEditable(false);
+          }
+          wktText.setText(wkt);
+          Preferences node=findNode(matcher.group(1));
+          if (node != null) {
+            Preferences kn=node.node(ALIASES_ID);
+            try {
+              String[] keywords=kn.keys();
+              if (keywords.length > 0) {
+                StringBuffer buffer=new StringBuffer();
+                for (                String string : keywords) {
+                  buffer.append(", ");
+                  buffer.append(string);
+                }
+                buffer.delete(0,2);
+                keywordsText.setText(buffer.toString());
+              }
+            }
+ catch (            BackingStoreException e) {
+              ExceptionMonitor.show(wktText.getShell(),e);
+            }
+          }
+ else {
+            keywordsText.setText("");
+          }
+        }
+      }
+    }
+  }
+);
+  codesList.addDoubleClickListener(new IDoubleClickListener(){
+    public void doubleClick(    DoubleClickEvent event){
+      parentPage.handleOk();
+      parentPage.handleClose();
+    }
+  }
+);
+  codesList.getControl().setLayoutData(gridData);
+  fillCodesList();
+  searchText.setFocus();
+  return composite;
+}
