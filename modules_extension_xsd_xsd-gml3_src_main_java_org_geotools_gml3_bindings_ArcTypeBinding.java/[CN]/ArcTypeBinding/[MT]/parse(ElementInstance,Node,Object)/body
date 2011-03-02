@@ -1,0 +1,26 @@
+{
+  LineString arcLineString=GML3ParsingUtils.lineString(node,gFactory,csFactory);
+  Coordinate[] arcCoordinates=arcLineString.getCoordinates();
+  if (arcCoordinates.length != 3) {
+    throw new RuntimeException("GML3 parser exception: The number of coordinates of an Arc should be 3. It currently is: " + arcCoordinates.length + "; "+ arcLineString);
+  }
+  Coordinate c1=arcCoordinates[0];
+  Coordinate c2=arcCoordinates[1];
+  Coordinate c3=arcCoordinates[2];
+  boolean mustReverse=laidOutClockwise(c1,c2,c3);
+  if (mustReverse) {
+    Coordinate cTemp=c1;
+    c1=c3;
+    c3=cTemp;
+  }
+  Circle circle=new Circle(c1,c2,c3);
+  double tolerance=arcParameters.getLinearizationTolerance().getTolerance(circle);
+  Coordinate[] resultCoordinates=circle.linearizeArc(c1,c2,c3,tolerance);
+  if (mustReverse) {
+    List<Coordinate> reversingCoordinates=Arrays.asList(resultCoordinates);
+    Collections.reverse(reversingCoordinates);
+    resultCoordinates=(Coordinate[])reversingCoordinates.toArray(new Coordinate[reversingCoordinates.size()]);
+  }
+  LineString resultLineString=gFactory.createLineString(resultCoordinates);
+  return resultLineString;
+}
