@@ -27,7 +27,16 @@
       finish=partOffsets[part + 1];
     }
     length=finish - start;
-    CoordinateSequence csRing=geometryFactory.getCoordinateSequenceFactory().create(length,dimensions);
+    int close=0;
+    if ((coords.getOrdinate(start,0) != coords.getOrdinate(finish - 1,0)) || (coords.getOrdinate(start,1) != coords.getOrdinate(finish - 1,1))) {
+      close=1;
+    }
+    if (dimensions == 3) {
+      if (coords.getOrdinate(start,2) != coords.getOrdinate(finish - 1,2)) {
+        close=1;
+      }
+    }
+    CoordinateSequence csRing=geometryFactory.getCoordinateSequenceFactory().create(length + close,dimensions);
     for (int i=0; i < length; i++) {
       csRing.setOrdinate(i,0,coords.getOrdinate(offset,0));
       csRing.setOrdinate(i,1,coords.getOrdinate(offset,1));
@@ -35,6 +44,13 @@
         csRing.setOrdinate(i,2,coords.getOrdinate(offset,2));
       }
       offset++;
+    }
+    if (close == 1) {
+      csRing.setOrdinate(length,0,coords.getOrdinate(start,0));
+      csRing.setOrdinate(length,1,coords.getOrdinate(start,1));
+      if (dimensions == 3) {
+        csRing.setOrdinate(length,2,coords.getOrdinate(start,2));
+      }
     }
     if (csRing.size() == 0 || csRing.size() > 3) {
       LinearRing ring=geometryFactory.createLinearRing(csRing);
