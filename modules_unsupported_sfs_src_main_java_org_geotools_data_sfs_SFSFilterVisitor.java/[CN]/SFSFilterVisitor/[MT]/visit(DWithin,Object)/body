@@ -1,16 +1,32 @@
 {
-  Point getPoint=(Point)filter.getExpression2().evaluate(extraData);
-  if (!properties.containsKey("lon")) {
-    properties.put("lon",String.valueOf(getPoint.getX()));
+  boolean valid=true;
+  if (!(filter.getExpression1() instanceof PropertyName)) {
+    valid=false;
+  }
+  if (!(filter.getExpression2() instanceof Literal)) {
+    valid=false;
+  }
+  if (!valid) {
+    throw new UnsupportedOperationException("DWithin filter on this store is supported only " + "if the first operand is the default geometry property and the second " + "is a geometry literal");
+  }
+  Geometry geometry=(Geometry)filter.getExpression2().evaluate(extraData);
+  if (geometry instanceof Point) {
+    Point point=(Point)geometry;
+    if (!properties.containsKey("lon")) {
+      properties.put("lon",String.valueOf(point.getX()));
+    }
+ else {
+      throw new IllegalArgumentException("Long. is already set");
+    }
+    if (!properties.containsKey("lat")) {
+      properties.put("lat",String.valueOf(point.getY()));
+    }
+ else {
+      throw new IllegalArgumentException("Lat is already set");
+    }
   }
  else {
-    throw new IllegalArgumentException("Long. is already set");
-  }
-  if (!properties.containsKey("lat")) {
-    properties.put("lat",String.valueOf(getPoint.getY()));
-  }
- else {
-    throw new IllegalArgumentException("Lat is already set");
+    writeGeometry(geometry);
   }
   if (!properties.containsKey("tolerance")) {
     properties.put("tolerance",String.valueOf(filter.getDistance()));
