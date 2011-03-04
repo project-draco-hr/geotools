@@ -1,13 +1,16 @@
 {
   Object result=null;
   FeatureType schema=featureSource.getSchema();
+  boolean isRasterData=false;
   if (schema instanceof SimpleFeatureType) {
     SimpleFeatureType simpleSchema=(SimpleFeatureType)schema;
     GridCoverage2D coverage=null;
     if (FeatureUtilities.isWrappedCoverage(simpleSchema)) {
+      isRasterData=true;
       throw new UnsupportedOperationException("Don't have support for plain coverages " + "in rendering transformations now");
     }
  else     if (FeatureUtilities.isWrappedCoverageReader(simpleSchema)) {
+      isRasterData=true;
       GridGeometry2D readGG=gridGeometry;
       if (transformation instanceof RenderingTransformation) {
         RenderingTransformation tx=(RenderingTransformation)transformation;
@@ -57,7 +60,7 @@
       }
     }
   }
-  if (result == null) {
+  if (result == null && !isRasterData) {
     FeatureCollection originalFeatures;
     Query optimizedQuery=null;
     if (transformation instanceof RenderingTransformation) {
