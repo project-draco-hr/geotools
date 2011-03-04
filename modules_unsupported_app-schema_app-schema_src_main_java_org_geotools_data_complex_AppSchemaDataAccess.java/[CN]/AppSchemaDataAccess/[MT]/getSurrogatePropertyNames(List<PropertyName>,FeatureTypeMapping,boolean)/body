@@ -1,0 +1,73 @@
+{
+  List<PropertyName> propNames=null;
+  final AttributeDescriptor targetDescriptor=mapping.getTargetFeature();
+  if (requestedProperties != null && requestedProperties.size() > 0) {
+    requestedProperties=new ArrayList<PropertyName>(requestedProperties);
+    Set<PropertyName> requestedSurrogateProperties=new HashSet<PropertyName>();
+    List<AttributeMapping> attMappings=mapping.getAttributeMappings();
+    requestedProperties.add(filterFac.property(mapping.getTargetFeature().getName()));
+    AttributeType mappedType;
+    try {
+      mappedType=mapping.getSource().getSchema();
+    }
+ catch (    UnsupportedOperationException e) {
+      mappedType=null;
+    }
+    for (    final AttributeMapping entry : attMappings) {
+      final StepList targetSteps=entry.getTargetXPath();
+      boolean addThis=false;
+      if (includeMandatory) {
+        PropertyName targetProp=filterFac.property(targetSteps.toString(),mapping.getNamespaces());
+        Object descr=targetProp.evaluate(targetDescriptor.getType());
+        if (descr instanceof PropertyDescriptor) {
+          if (((PropertyDescriptor)descr).getMinOccurs() >= 1) {
+            addThis=true;
+          }
+        }
+      }
+      if (!addThis) {
+        for (        PropertyName requestedProperty : requestedProperties) {
+          StepList requestedPropertySteps=requestedProperty.getNamespaceContext() == null ? null : XPath.steps(targetDescriptor,requestedProperty.getPropertyName(),requestedProperty.getNamespaceContext());
+          if (requestedPropertySteps == null ? matchProperty(requestedProperty.getPropertyName(),targetSteps) : matchProperty(requestedPropertySteps,targetSteps)) {
+            addThis=true;
+            break;
+          }
+        }
+      }
+      if (addThis) {
+        final Expression sourceExpression=entry.getSourceExpression();
+        final Expression idExpression=entry.getIdentifierExpression();
+        final Collection<Expression> clientProperties=entry.getClientProperties().values();
+        FilterAttributeExtractor extractor=new FilterAttributeExtractor();
+        sourceExpression.accept(extractor,null);
+        idExpression.accept(extractor,null);
+        Iterator<Expression> it=clientProperties.iterator();
+        while (it.hasNext()) {
+          it.next().accept(extractor,null);
+        }
+        Set<String> exprAtts=extractor.getAttributeNameSet();
+        for (        String mappedAtt : exprAtts) {
+          if (!mappedAtt.equals("Expression.NIL")) {
+            if (mappedType == null) {
+              requestedSurrogateProperties.add(filterFac.property(mappedAtt));
+            }
+ else {
+              PropertyName propExpr=filterFac.property(mappedAtt);
+              Object object=propExpr.evaluate(mappedType);
+              AttributeDescriptor mappedAttribute=(AttributeDescriptor)object;
+              if (mappedAttribute != null) {
+                requestedSurrogateProperties.add(filterFac.property(mappedAtt));
+              }
+ else {
+                LOGGER.info("mapped type does not contains property " + mappedAtt);
+              }
+            }
+          }
+        }
+        LOGGER.fine("adding atts needed for : " + exprAtts);
+      }
+    }
+    propNames=new ArrayList<PropertyName>(requestedSurrogateProperties);
+  }
+  return propNames;
+}
