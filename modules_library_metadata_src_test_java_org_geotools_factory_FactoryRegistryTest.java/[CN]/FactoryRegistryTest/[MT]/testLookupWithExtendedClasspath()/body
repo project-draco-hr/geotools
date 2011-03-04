@@ -1,0 +1,14 @@
+{
+  URL url=getClass().getResource("foo.jar");
+  assertNotNull(url);
+  FactoryRegistry reg=new FactoryCreator(DummyInterface.class);
+  Iterator it=reg.getServiceProviders(DummyInterface.class,false);
+  assertFalse(it.hasNext());
+  URLClassLoader cl=new URLClassLoader(new URL[]{url});
+  GeoTools.addClassLoader(cl);
+  reg.scanForPlugins();
+  it=reg.getServiceProviders(DummyInterface.class,false);
+  assertTrue(it.hasNext());
+  Object next=it.next();
+  assertEquals("pkg.Foo",next.getClass().getName());
+}
