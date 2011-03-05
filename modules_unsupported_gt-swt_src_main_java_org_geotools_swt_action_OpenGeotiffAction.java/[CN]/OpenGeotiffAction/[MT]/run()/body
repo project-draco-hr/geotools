@@ -1,0 +1,17 @@
+{
+  Display display=Display.getCurrent();
+  Shell shell=new Shell(display);
+  File openFile=JFileImageChooser.showOpenFile(shell);
+  if (openFile != null && openFile.exists()) {
+    AbstractGridFormat format=GridFormatFinder.findFormat(openFile);
+    AbstractGridCoverage2DReader tiffReader=format.getReader(openFile);
+    StyleFactoryImpl sf=new StyleFactoryImpl();
+    RasterSymbolizer symbolizer=sf.getDefaultRasterSymbolizer();
+    Style defaultStyle=SLD.wrapSymbolizers(symbolizer);
+    MapContext mapContext=mapPane.getMapContext();
+    MapLayer layer=new MapLayer(tiffReader,defaultStyle);
+    layer.setTitle(openFile.getName());
+    mapContext.addLayer(layer);
+    mapPane.redraw();
+  }
+}
