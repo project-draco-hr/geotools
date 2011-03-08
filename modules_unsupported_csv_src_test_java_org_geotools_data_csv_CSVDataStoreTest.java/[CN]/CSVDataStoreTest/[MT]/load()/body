@@ -13,4 +13,21 @@
   assertNotNull(rows);
   int count=rows.getCount(Query.ALL);
   assertEquals(9,count);
+  ReferencedEnvelope bounds=rows.getBounds();
+  assertFalse(bounds.isEmpty() || bounds.isNull());
+  SimpleFeatureCollection features=rows.getFeatures();
+  SimpleFeatureIterator cursor=features.features();
+  Set<String> found=new HashSet<String>();
+  try {
+    while (cursor.hasNext()) {
+      SimpleFeature feature=cursor.next();
+      found.add(feature.getID());
+    }
+    String expected="locations.4";
+    System.out.println(found);
+    assertTrue(expected,found.contains(expected));
+  }
+  finally {
+    cursor.close();
+  }
 }
