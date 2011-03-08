@@ -1,9 +1,9 @@
 {
-  final String pc=runConfiguration.getPropertyCollectors();
-  if (pc != null && pc.length() > 0) {
+  final String pcConfig=runConfiguration.getPropertyCollectors();
+  if (pcConfig != null && pcConfig.length() > 0) {
     final Set<PropertiesCollectorSPI> pcSPIs=PropertiesCollectorFinder.getPropertiesCollectorSPI();
     final List<PropertiesCollector> pcs=new ArrayList<PropertiesCollector>();
-    final String[] pcsDefs=pc.split(",");
+    final String[] pcsDefs=pcConfig.split(",");
     for (    String pcDef : pcsDefs) {
       final int squareLPos=pcDef.indexOf("[");
       final int squareRPos=pcDef.indexOf("]");
@@ -32,7 +32,15 @@
       final File configFile=new File(runConfiguration.getRootMosaicDirectory(),config + ".properties");
       if (!Utils.checkFileReadable(configFile))       continue;
       final String propertyNames[]=pcDef.substring(roundLPos + 1,roundRPos).split(",");
-      pcs.add(selectedSPI.create(configFile,Arrays.asList(propertyNames)));
+      final PropertiesCollector pc=selectedSPI.create(configFile,Arrays.asList(propertyNames));
+      if (pc != null) {
+        pcs.add(pc);
+      }
+ else {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Unable to create PropertyCollector from config file:" + configFile);
+        }
+      }
     }
     this.propertiesCollectors=pcs;
   }
