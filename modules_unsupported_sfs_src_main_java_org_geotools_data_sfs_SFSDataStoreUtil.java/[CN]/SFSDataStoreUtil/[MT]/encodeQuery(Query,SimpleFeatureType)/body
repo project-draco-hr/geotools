@@ -13,7 +13,7 @@
     firstChar=false;
     urlBuilder.append("attrs=");
     for (int i=0; i < fnQuery.getPropertyNames().length; i++) {
-      if (fnQuery.getPropertyNames()[i].equalsIgnoreCase("geometry")) {
+      if (targetType.getDescriptor(fnQuery.getPropertyNames()[i]) instanceof GeometryDescriptor) {
         no_geom=false;
       }
       urlBuilder.append(URLEncoder.encode(fnQuery.getPropertyNames()[i],DEFAULT_ENCODING));
@@ -21,9 +21,11 @@
         urlBuilder.append(",");
       }
     }
-    urlBuilder.append(getGlueChar(firstChar));
-    urlBuilder.append("no_geom=");
-    urlBuilder.append(no_geom);
+    if (no_geom) {
+      urlBuilder.append(getGlueChar(firstChar));
+      urlBuilder.append("no_geom=");
+      urlBuilder.append(no_geom);
+    }
   }
   if (fnQuery.getStartIndex() != null) {
     urlBuilder.append(getGlueChar(firstChar));
@@ -61,5 +63,10 @@
       }
     }
   }
-  return urlBuilder.toString();
+  if (urlBuilder.length() > 1) {
+    return urlBuilder.substring(1).toString();
+  }
+ else {
+    return "";
+  }
 }
