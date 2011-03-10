@@ -7,34 +7,38 @@
   Filter postFilter=split[1];
   Query preQuery=new Query(fnQuery);
   preQuery.setFilter(preFilter);
-  SimpleFeatureType querySchema;
   SimpleFeatureType returnedSchema;
-  if (query.getPropertyNames() == Query.ALL_NAMES) {
+  SimpleFeatureType querySchema;
+  if (fnQuery.getPropertyNames() == Query.ALL_NAMES) {
     returnedSchema=querySchema=getSchema();
   }
  else {
-    returnedSchema=SimpleFeatureTypeBuilder.retype(getSchema(),query.getPropertyNames());
+    returnedSchema=SimpleFeatureTypeBuilder.retype(getSchema(),fnQuery.getPropertyNames());
     FilterAttributeExtractor extractor=new FilterAttributeExtractor(getSchema());
-    postFilter.accept(extractor,null);
+    filter.accept(extractor,null);
     String[] extraAttributes=extractor.getAttributeNames();
     if (extraAttributes == null || extraAttributes.length == 0) {
       querySchema=returnedSchema;
     }
  else {
-      List<String> allAttributes=new ArrayList<String>(Arrays.asList(query.getPropertyNames()));
+      List<String> allAttributes=new ArrayList<String>(Arrays.asList(fnQuery.getPropertyNames()));
       for (      String extraAttribute : extraAttributes) {
         if (!allAttributes.contains(extraAttribute)) {
           allAttributes.add(extraAttribute);
         }
       }
       String[] allAttributeArray=(String[])allAttributes.toArray(new String[allAttributes.size()]);
+      preQuery.setPropertyNames(allAttributeArray);
       querySchema=SimpleFeatureTypeBuilder.retype(getSchema(),allAttributeArray);
     }
   }
   FeatureReader<SimpleFeatureType,SimpleFeature> reader;
-  reader=new SFSFeatureReader(getState(),layer,preQuery,returnedSchema);
+  reader=new SFSFeatureReader(getState(),layer,preQuery,querySchema);
   if (filter != null && !Filter.INCLUDE.equals(filter)) {
     reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,filter);
+  }
+  if (querySchema.getAttributeCount() > returnedSchema.getAttributeCount()) {
+    reader=new ReTypeFeatureReader(reader,returnedSchema);
   }
   return reader;
 }
