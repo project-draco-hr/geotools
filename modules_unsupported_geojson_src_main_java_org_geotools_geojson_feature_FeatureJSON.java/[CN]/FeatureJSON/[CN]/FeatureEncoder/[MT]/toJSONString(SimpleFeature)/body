@@ -26,6 +26,7 @@
   }
   int gindex=featureType.getGeometryDescriptor() != null ? featureType.indexOf(featureType.getGeometryDescriptor().getLocalName()) : -1;
   string("properties",sb).append(":").append("{");
+  boolean attributesWritten=false;
   for (int i=0; i < featureType.getAttributeCount(); i++) {
     AttributeDescriptor ad=featureType.getDescriptor(i);
     if (i == gindex) {
@@ -35,6 +36,7 @@
     if (value == null) {
       continue;
     }
+    attributesWritten=true;
     if (value instanceof Envelope) {
       array(ad.getLocalName(),gjson.toString((Envelope)value),sb);
     }
@@ -49,7 +51,9 @@
     }
     sb.append(",");
   }
-  sb.setLength(sb.length() - 1);
+  if (attributesWritten) {
+    sb.setLength(sb.length() - 1);
+  }
   sb.append("},");
   entry("id",feature.getID(),sb);
   sb.append("}");
