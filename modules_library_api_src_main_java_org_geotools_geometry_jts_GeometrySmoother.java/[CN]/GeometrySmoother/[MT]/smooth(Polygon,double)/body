@@ -1,0 +1,24 @@
+{
+  Coordinate[] coords=p.getExteriorRing().getCoordinates();
+  final int N=coords.length - 1;
+  Coordinate[][] controlPoints=getPolygonControlPoints(coords,N,alpha);
+  List<Coordinate> smoothCoords=new ArrayList<Coordinate>();
+  double dist;
+  for (int i=0; i < N; i++) {
+    int next=(i + 1) % N;
+    dist=coords[i].distance(coords[next]);
+    if (dist < control.getMinLength()) {
+      smoothCoords.add(new Coordinate(coords[i]));
+    }
+ else {
+      int smoothN=control.getNumVertices(dist);
+      Coordinate[] segment=cubicBezier(coords[i],coords[next],controlPoints[i][1],controlPoints[next][0],smoothN);
+      int copyN=i < N - 1 ? segment.length - 1 : segment.length;
+      for (int k=0; k < copyN; k++) {
+        smoothCoords.add(segment[k]);
+      }
+    }
+  }
+  LinearRing shell=geomFactory.createLinearRing(smoothCoords.toArray(new Coordinate[0]));
+  return geomFactory.createPolygon(shell,null);
+}

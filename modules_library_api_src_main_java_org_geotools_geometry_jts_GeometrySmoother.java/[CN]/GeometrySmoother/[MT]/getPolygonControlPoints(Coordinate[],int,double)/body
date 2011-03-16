@@ -1,0 +1,37 @@
+{
+  if (alpha < 0.0 || alpha > 1.0) {
+    throw new IllegalArgumentException("alpha must be a value between 0 and 1 inclusive");
+  }
+  Coordinate[][] ctrl=new Coordinate[N][2];
+  Coordinate[] v=new Coordinate[3];
+  Coordinate[] mid=new Coordinate[2];
+  mid[0]=new Coordinate();
+  mid[1]=new Coordinate();
+  Coordinate anchor=new Coordinate();
+  double[] vdist=new double[2];
+  double mdist;
+  v[1]=coords[N - 1];
+  v[2]=coords[0];
+  mid[1].x=(v[1].x + v[2].x) / 2.0;
+  mid[1].y=(v[1].y + v[2].y) / 2.0;
+  vdist[1]=v[1].distance(v[2]);
+  for (int i=0; i < N; i++) {
+    v[0]=v[1];
+    v[1]=v[2];
+    v[2]=coords[(i + 1) % N];
+    mid[0].x=mid[1].x;
+    mid[0].y=mid[1].y;
+    mid[1].x=(v[1].x + v[2].x) / 2.0;
+    mid[1].y=(v[1].y + v[2].y) / 2.0;
+    vdist[0]=vdist[1];
+    vdist[1]=v[1].distance(v[2]);
+    double p=vdist[0] / (vdist[0] + vdist[1]);
+    anchor.x=mid[0].x + p * (mid[1].x - mid[0].x);
+    anchor.y=mid[0].y + p * (mid[1].y - mid[0].y);
+    double xdelta=anchor.x - v[1].x;
+    double ydelta=anchor.y - v[1].y;
+    ctrl[i][0]=new Coordinate(alpha * (v[1].x - mid[0].x + xdelta) + mid[0].x - xdelta,alpha * (v[1].y - mid[0].y + ydelta) + mid[0].y - ydelta);
+    ctrl[i][1]=new Coordinate(alpha * (v[1].x - mid[1].x + xdelta) + mid[1].x - xdelta,alpha * (v[1].y - mid[1].y + ydelta) + mid[1].y - ydelta);
+  }
+  return ctrl;
+}

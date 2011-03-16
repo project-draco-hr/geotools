@@ -1,0 +1,25 @@
+{
+  Geometry[] geoms=new Geometry[3];
+  geoms[0]=factory.createPoint(new Coordinate());
+  geoms[1]=factory.createLineString(getLineCoords());
+  geoms[2]=factory.createPolygon(factory.createLinearRing(getPolyCoords()),null);
+  GeometryCollection gc=factory.createGeometryCollection(geoms);
+  Geometry smoothed=JTS.smooth(gc,0);
+  assertTrue(smoothed instanceof GeometryCollection);
+  assertEquals(3,smoothed.getNumGeometries());
+  assertTrue(geoms[0] == smoothed.getGeometryN(0));
+  Geometry g=smoothed.getGeometryN(1);
+  assertTrue(g instanceof LineString);
+  CoordList list=new CoordList(g.getCoordinates());
+  assertTrue(list.containsAll(geoms[1].getCoordinates()));
+  Envelope inEnv=geoms[1].getEnvelopeInternal();
+  Envelope smoothEnv=g.getEnvelopeInternal();
+  assertTrue(smoothEnv.covers(inEnv));
+  g=smoothed.getGeometryN(2);
+  assertTrue(g instanceof Polygon);
+  list=new CoordList(g.getCoordinates());
+  assertTrue(list.containsAll(geoms[2].getCoordinates()));
+  inEnv=geoms[2].getEnvelopeInternal();
+  smoothEnv=g.getEnvelopeInternal();
+  assertTrue(smoothEnv.covers(inEnv));
+}
