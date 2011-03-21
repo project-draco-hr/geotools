@@ -4,35 +4,36 @@
   ResultSet rs=null;
   ReferencedEnvelope bounds=new ReferencedEnvelope(featureType.getCoordinateReferenceSystem());
   try {
-    List<ReferencedEnvelope> result=dialect.getOptimizedBounds(databaseSchema,featureType,cx);
-    if (result != null && !result.isEmpty()) {
-      for (      ReferencedEnvelope envelope : result) {
-        bounds=mergeEnvelope(bounds,envelope);
+    if (isFullBoundsQuery(query,featureType)) {
+      List<ReferencedEnvelope> result=dialect.getOptimizedBounds(databaseSchema,featureType,cx);
+      if (result != null && !result.isEmpty()) {
+        for (        ReferencedEnvelope envelope : result) {
+          bounds=mergeEnvelope(bounds,envelope);
+        }
+        return bounds;
       }
     }
+    if (dialect instanceof PreparedStatementSQLDialect) {
+      st=selectBoundsSQLPS(featureType,query,cx);
+      rs=((PreparedStatement)st).executeQuery();
+    }
  else {
-      if (dialect instanceof PreparedStatementSQLDialect) {
-        st=selectBoundsSQLPS(featureType,query,cx);
-        rs=((PreparedStatement)st).executeQuery();
-      }
+      String sql=selectBoundsSQL(featureType,query);
+      LOGGER.log(Level.FINE,"Retriving bounding box: {0}",sql);
+      st=cx.createStatement();
+      rs=st.executeQuery(sql);
+    }
+    CoordinateReferenceSystem flatCRS=CRS.getHorizontalCRS(featureType.getCoordinateReferenceSystem());
+    final int columns=rs.getMetaData().getColumnCount();
+    while (rs.next()) {
+      for (int i=1; i <= columns; i++) {
+        final Envelope envelope=dialect.decodeGeometryEnvelope(rs,i,st.getConnection());
+        if (envelope != null) {
+          if (envelope instanceof ReferencedEnvelope) {
+            bounds=mergeEnvelope(bounds,(ReferencedEnvelope)envelope);
+          }
  else {
-        String sql=selectBoundsSQL(featureType,query);
-        LOGGER.log(Level.FINE,"Retriving bounding box: {0}",sql);
-        st=cx.createStatement();
-        rs=st.executeQuery(sql);
-      }
-      CoordinateReferenceSystem flatCRS=CRS.getHorizontalCRS(featureType.getCoordinateReferenceSystem());
-      final int columns=rs.getMetaData().getColumnCount();
-      while (rs.next()) {
-        for (int i=1; i <= columns; i++) {
-          final Envelope envelope=dialect.decodeGeometryEnvelope(rs,i,st.getConnection());
-          if (envelope != null) {
-            if (envelope instanceof ReferencedEnvelope) {
-              bounds=mergeEnvelope(bounds,(ReferencedEnvelope)envelope);
-            }
- else {
-              bounds=mergeEnvelope(bounds,new ReferencedEnvelope(envelope,flatCRS));
-            }
+            bounds=mergeEnvelope(bounds,new ReferencedEnvelope(envelope,flatCRS));
           }
         }
       }
