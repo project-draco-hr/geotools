@@ -1,6 +1,6 @@
 {
   Feature feature=(Feature)object;
-  String id=feature.getIdentifier().getID();
+  String id=(feature.getIdentifier() != null ? feature.getIdentifier().getID() : null);
   Name typeName;
   if (feature.getDescriptor() == null) {
     typeName=feature.getType().getName();
@@ -9,17 +9,19 @@
     typeName=feature.getDescriptor().getName();
   }
   Element encoding=document.createElementNS(typeName.getNamespaceURI(),typeName.getLocalPart());
-  if (!(feature instanceof SimpleFeature) && idSet != null) {
-    if (idSet.idExists(id)) {
-      encoding.setAttributeNS(XLINK.NAMESPACE,XLINK.HREF.getLocalPart(),"#" + id.toString());
-      feature.setValue(Collections.emptyList());
-      return encoding;
-    }
+  if (id != null) {
+    if (!(feature instanceof SimpleFeature) && idSet != null) {
+      if (idSet.idExists(id)) {
+        encoding.setAttributeNS(XLINK.NAMESPACE,XLINK.HREF.getLocalPart(),"#" + id.toString());
+        feature.setValue(Collections.emptyList());
+        return encoding;
+      }
  else {
-      idSet.add(id);
+        idSet.add(id);
+      }
     }
+    encoding.setAttributeNS(gml.getNamespaceURI(),"id",id);
   }
-  encoding.setAttributeNS(gml.getNamespaceURI(),"id",id);
   encodeClientProperties(feature,value);
   return encoding;
 }
