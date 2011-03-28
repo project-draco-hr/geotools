@@ -1,0 +1,14 @@
+{
+  File world=TestData.copy(this,"geotiff/world.tiff");
+  RenderedImage image=ImageIO.read(world);
+  final CoordinateReferenceSystem wgs84=CRS.decode("EPSG:4326",true);
+  Envelope2D envelope=new Envelope2D(wgs84,-180,-90,360,180);
+  GridCoverage2D gcFullWorld=new GridCoverageFactory().create("world",image,envelope);
+  final Envelope2D cropEnvelope=new Envelope2D(wgs84,-180,-80,360,160);
+  GridCoverage2D gcCropWorld=(GridCoverage2D)Operations.DEFAULT.crop(gcFullWorld,cropEnvelope);
+  Hints.putSystemDefault(Hints.RESAMPLE_TOLERANCE,0.333d);
+  GridCoverage2D gcResampledApprox=(GridCoverage2D)Operations.DEFAULT.resample(gcCropWorld,CRS.decode("EPSG:3857"),null,Interpolation.getInstance(Interpolation.INTERP_BILINEAR));
+  Hints.putSystemDefault(Hints.RESAMPLE_TOLERANCE,0d);
+  GridCoverage2D gcResampledAccurate=(GridCoverage2D)Operations.DEFAULT.resample(gcCropWorld,CRS.decode("EPSG:3857"),null,Interpolation.getInstance(Interpolation.INTERP_BILINEAR));
+  ImageAssert.assertEquals(gcResampledAccurate.getRenderedImage(),gcResampledApprox.getRenderedImage(),600);
+}
