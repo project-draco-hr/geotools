@@ -1,30 +1,43 @@
 {
-  Connection conn=null;
   Statement statement=null;
   ResultSet result=null;
   Integer srid=null;
   try {
     if (schemaName == null)     schemaName="public";
     if (supportsGeography(cx)) {
-      String sqlStatement="SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOGRAPHY_COLUMN = '"+ columnName+ "'";
-      LOGGER.log(Level.FINE,"Geography srid check; {0} ",sqlStatement);
+      try {
+        String sqlStatement="SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOGRAPHY_COLUMN = '"+ columnName+ "'";
+        LOGGER.log(Level.FINE,"Geography srid check; {0} ",sqlStatement);
+        statement=cx.createStatement();
+        result=statement.executeQuery(sqlStatement);
+        if (result.next()) {
+          return 4326;
+        }
+      }
+ catch (      SQLException e) {
+        LOGGER.log(Level.WARNING,"Failed to retrieve information about " + schemaName + "."+ tableName+ "."+ columnName+ " from the geometry_columns table, checking geometry_columns instead",e);
+      }
+ finally {
+        dataStore.closeSafe(result);
+      }
+    }
+    try {
+      String sqlStatement="SELECT SRID FROM GEOMETRY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOMETRY_COLUMN = '"+ columnName+ "'";
+      LOGGER.log(Level.FINE,"Geometry srid check; {0} ",sqlStatement);
       statement=cx.createStatement();
       result=statement.executeQuery(sqlStatement);
       if (result.next()) {
-        return 4326;
+        srid=result.getInt(1);
       }
+    }
+ catch (    SQLException e) {
+      LOGGER.log(Level.WARNING,"Failed to retrieve information about " + schemaName + "."+ tableName+ "."+ columnName+ " from the geometry_columns table, checking the first geometry instead",e);
+    }
+ finally {
       dataStore.closeSafe(result);
     }
-    String sqlStatement="SELECT SRID FROM GEOMETRY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOMETRY_COLUMN = '"+ columnName+ "'";
-    LOGGER.log(Level.FINE,"Geometry srid check; {0} ",sqlStatement);
-    statement=cx.createStatement();
-    result=statement.executeQuery(sqlStatement);
-    if (result.next()) {
-      srid=result.getInt(1);
-    }
-    dataStore.closeSafe(result);
     if (srid == null) {
-      sqlStatement="SELECT SRID(\"" + columnName + "\") "+ "FROM \""+ schemaName+ "\".\""+ tableName+ "\" "+ "LIMIT 1";
+      String sqlStatement="SELECT SRID(\"" + columnName + "\") "+ "FROM \""+ schemaName+ "\".\""+ tableName+ "\" "+ "LIMIT 1";
       result=statement.executeQuery(sqlStatement);
       if (result.next()) {
         srid=result.getInt(1);
