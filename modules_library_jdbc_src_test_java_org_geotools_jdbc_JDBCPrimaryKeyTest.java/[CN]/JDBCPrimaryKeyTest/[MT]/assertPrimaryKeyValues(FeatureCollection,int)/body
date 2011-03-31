@@ -1,9 +1,11 @@
 {
-  FeatureIterator i=features.features();
-  for (int j=1; j <= count; j++) {
-    assertTrue(i.hasNext());
-    SimpleFeature f=(SimpleFeature)i.next();
-    assertEquals(tname(features.getSchema().getName().getLocalPart()) + "." + j,f.getID());
+  assertFeatureIterator(1,count,features.features(),new SimpleFeatureAssertion(){
+    @Override public int toIndex(    SimpleFeature feature){
+      return Integer.parseInt(feature.getID().split("\\.",2)[1]);
+    }
+    @Override public void check(    int index,    SimpleFeature feature){
+      assertEquals(tname(features.getSchema().getName().getLocalPart()) + "." + index,feature.getID());
+    }
   }
-  features.close(i);
+);
 }
