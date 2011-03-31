@@ -1,0 +1,23 @@
+{
+  String typeName=columnMetaData.getString("TYPE_NAME");
+  String gType=null;
+  if ("SYSUDTLIB.ST_GEOMETRY".equalsIgnoreCase(typeName)) {
+    gType=lookupGeometryType(columnMetaData,cx,"SYSSPATIAL.GEOMETRY_COLUMNS","F_GEOMETRY_COLUMN");
+  }
+ else   if ("SYSUDTLIB.ST_GEOGRAPHY".equalsIgnoreCase(typeName)) {
+    gType=lookupGeometryType(columnMetaData,cx,"SYSSPATIAL.GEOGRAPHY_COLUMNS","G_GEOGRAPHY_COLUMN");
+  }
+ else {
+    return null;
+  }
+  if (gType == null) {
+    return Geometry.class;
+  }
+ else {
+    Class<?> geometryClass=TYPE_TO_CLASS.get(gType.toUpperCase());
+    if (geometryClass == null) {
+      geometryClass=Geometry.class;
+    }
+    return geometryClass;
+  }
+}

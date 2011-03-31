@@ -1,0 +1,36 @@
+{
+  schemaName=schemaName != null ? schemaName : "";
+  String tableName=featureType.getName().getLocalPart();
+  Statement st=null;
+  try {
+    st=cx.createStatement();
+    for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+      if (att instanceof GeometryDescriptor) {
+        GeometryDescriptor gd=(GeometryDescriptor)att;
+        int srid=-1;
+        try {
+          Integer result=CRS.lookupEpsgCode(gd.getCoordinateReferenceSystem(),true);
+          if (result != null) {
+            String sql="select srid from SYSSPATIAL.spatial_ref_sys" + " where AUTH_SRID = " + result;
+            LOGGER.fine(sql);
+            ResultSet resultSet=st.executeQuery(sql);
+            resultSet.next();
+            srid=resultSet.getInt("srid");
+          }
+        }
+ catch (        FactoryException e) {
+          e.printStackTrace();
+        }
+        String geomType=CLASS_TO_TYPE.get(gd.getType().getBinding());
+        if (geomType == null)         geomType="GEOMETRY";
+        String sql="INSERT INTO SYSSPATIAL.GEOMETRY_COLUMNS (F_TABLE_CATALOG, F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN, COORD_DIMENSION, SRID, GEOM_TYPE) VALUES ('', " + "'" + schemaName + "', "+ "'"+ tableName+ "', "+ "'"+ gd.getLocalName()+ "', "+ "2, "+ srid+ ", "+ "'"+ geomType+ ")";
+        LOGGER.fine(sql);
+        st.execute(sql);
+      }
+      cx.commit();
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}
