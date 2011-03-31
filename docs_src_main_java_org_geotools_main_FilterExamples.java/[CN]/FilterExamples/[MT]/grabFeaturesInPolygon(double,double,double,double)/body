@@ -1,0 +1,14 @@
+{
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  FeatureType schema=featureSource.getSchema();
+  CoordinateReferenceSystem worldCRS=DefaultGeographicCRS.WGS84;
+  String geometryPropertyName=schema.getGeometryDescriptor().getLocalName();
+  CoordinateReferenceSystem targetCRS=schema.getGeometryDescriptor().getCoordinateReferenceSystem();
+  ReferencedEnvelope click=new ReferencedEnvelope(x1,y1,x2,y2,worldCRS);
+  ReferencedEnvelope bbox=click.transform(targetCRS,true);
+  Polygon clickPolygon=JTS.toGeometry(bbox,null,10);
+  MathTransform transform=CRS.findMathTransform(worldCRS,targetCRS);
+  Polygon polygon=(Polygon)JTS.transform(clickPolygon,transform);
+  Filter filter=ff.intersects(ff.property(geometryPropertyName),ff.literal(polygon));
+  return featureSource.getFeatures(filter);
+}

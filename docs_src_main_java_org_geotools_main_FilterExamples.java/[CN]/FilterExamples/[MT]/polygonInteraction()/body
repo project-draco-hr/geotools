@@ -1,0 +1,38 @@
+{
+  SimpleFeatureCollection polygonCollection=null;
+  SimpleFeatureCollection fcResult=null;
+  final SimpleFeatureCollection found=FeatureCollections.newCollection();
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  SimpleFeature feature=null;
+  Filter polyCheck=null;
+  Filter andFil=null;
+  Filter boundsCheck=null;
+  String qryStr=null;
+  SimpleFeatureIterator it=polygonCollection.features();
+  try {
+    while (it.hasNext()) {
+      feature=it.next();
+      BoundingBox bounds=feature.getBounds();
+      boundsCheck=ff.bbox(ff.property("the_geom"),bounds);
+      Geometry geom=(Geometry)feature.getDefaultGeometry();
+      polyCheck=ff.intersects(ff.property("the_geom"),ff.literal(geom));
+      andFil=ff.and(boundsCheck,polyCheck);
+      try {
+        fcResult=featureSource.getFeatures(andFil);
+        fcResult.accepts(new FeatureVisitor(){
+          public void visit(          Feature feature){
+            found.add((SimpleFeature)feature);
+          }
+        }
+,null);
+      }
+ catch (      IOException e1) {
+        System.out.println("Unable to run filter for " + feature.getID() + ":"+ e1);
+        continue;
+      }
+    }
+  }
+  finally {
+    it.close();
+  }
+}

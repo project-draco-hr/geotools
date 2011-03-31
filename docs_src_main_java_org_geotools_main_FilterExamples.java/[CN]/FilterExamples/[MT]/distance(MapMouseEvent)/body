@@ -1,0 +1,13 @@
+{
+  DirectPosition2D worldPosition=ev.getMapPosition();
+  SimpleFeatureType schema=featureSource.getSchema();
+  CoordinateReferenceSystem crs=schema.getGeometryDescriptor().getCoordinateReferenceSystem();
+  Unit<?> uom=crs.getCoordinateSystem().getAxis(0).getUnit();
+  MathTransform transform=CRS.findMathTransform(worldPosition.getCoordinateReferenceSystem(),crs,true);
+  DirectPosition dataPosition=transform.transform(worldPosition,null);
+  Point point=JTS.toGeometry(dataPosition);
+  double distance=10.0d;
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  Filter filter=ff.dwithin(ff.property("POLYGON"),ff.literal(point),distance,uom.toString());
+  return featureSource.getFeatures(filter);
+}

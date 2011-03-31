@@ -1,0 +1,29 @@
+{
+  npoints++;
+  if (bbox == null) {
+    return null;
+  }
+  if (factory == null) {
+    factory=new GeometryFactory();
+  }
+  final Coordinate[] coordinates=new Coordinate[(4 * npoints)];
+  final double xmin=bbox.getMinX();
+  final double xmax=bbox.getMaxX();
+  final double ymin=bbox.getMinY();
+  final double ymax=bbox.getMaxY();
+  final double scaleX=(xmax - xmin) / npoints;
+  final double scaleY=(ymax - ymin) / npoints;
+  int top=0;
+  int right=npoints;
+  int bottom=npoints * 2;
+  int left=npoints * 3;
+  for (int t=0; t < npoints; t++) {
+    final double dx=scaleX * t;
+    final double dy=scaleY * t;
+    coordinates[top + t]=new Coordinate(xmin + dx,ymax);
+    coordinates[left + t]=new Coordinate(xmin,ymin + dy);
+    coordinates[bottom + t]=new Coordinate(xmax - dx,ymin);
+    coordinates[right + t]=new Coordinate(xmax,ymax - dy);
+  }
+  return factory.createPolygon(factory.createLinearRing(coordinates),null);
+}
