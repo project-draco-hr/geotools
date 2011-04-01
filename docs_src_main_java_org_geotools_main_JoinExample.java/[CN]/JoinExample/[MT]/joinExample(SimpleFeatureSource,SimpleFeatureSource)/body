@@ -1,0 +1,35 @@
+{
+  SimpleFeatureType schema=shapes.getSchema();
+  String typeName=schema.getTypeName();
+  String geomName=schema.getGeometryDescriptor().getLocalName();
+  SimpleFeatureType schema2=shapes2.getSchema();
+  String typeName2=schema2.getTypeName();
+  String geomName2=schema2.getGeometryDescriptor().getLocalName();
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  Query outerGeometry=new Query(typeName,Filter.INCLUDE,new String[]{geomName});
+  SimpleFeatureCollection outerFeatures=shapes.getFeatures(outerGeometry);
+  SimpleFeatureIterator iterator=outerFeatures.features();
+  int max=0;
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=iterator.next();
+      try {
+        Geometry geometry=(Geometry)feature.getDefaultGeometry();
+        if (!geometry.isValid()) {
+          continue;
+        }
+        Filter innerFilter=ff.intersects(ff.property(geomName2),ff.literal(geometry));
+        Query innerQuery=new Query(typeName2,innerFilter,Query.NO_NAMES);
+        SimpleFeatureCollection join=shapes2.getFeatures(innerQuery);
+        int size=join.size();
+        max=Math.max(max,size);
+      }
+ catch (      Exception skipBadData) {
+      }
+    }
+  }
+  finally {
+    iterator.close();
+  }
+  System.out.println("At most " + max + " "+ typeName2+ " features in a single "+ typeName+ " feature");
+}
