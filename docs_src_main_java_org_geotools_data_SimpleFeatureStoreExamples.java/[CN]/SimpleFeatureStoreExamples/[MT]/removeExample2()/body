@@ -1,0 +1,22 @@
+{
+  Transaction transaction=new DefaultTransaction("removeExample");
+  SimpleFeatureStore store=(SimpleFeatureStore)dataStore.getFeatureSource(typeName);
+  store.setTransaction(transaction);
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(GeoTools.getDefaultHints());
+  Filter filter=ff.id(Collections.singleton(ff.featureId("fred")));
+  try {
+    final Set<FeatureId> removed=new HashSet<FeatureId>();
+    SimpleFeatureCollection collection=store.getFeatures(new Query(typeName,filter,Query.NO_NAMES));
+    collection.accepts(new FeatureVisitor(){
+      public void visit(      Feature feature){
+        removed.add(feature.getIdentifier());
+      }
+    }
+,null);
+    store.removeFeatures(filter);
+    transaction.commit();
+  }
+ catch (  Exception eek) {
+    transaction.rollback();
+  }
+}
