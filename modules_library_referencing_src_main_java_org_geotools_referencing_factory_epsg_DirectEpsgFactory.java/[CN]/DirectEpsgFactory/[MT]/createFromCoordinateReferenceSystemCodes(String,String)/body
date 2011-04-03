@@ -11,7 +11,7 @@
       final String key, sql;
       if (searchTransformations) {
         key="TransformationFromCRS";
-        sql="SELECT COORD_OP_CODE" + " FROM [Coordinate_Operation]" + " WHERE SOURCE_CRS_CODE = ?"+ " AND TARGET_CRS_CODE = ?"+ " ORDER BY ABS(DEPRECATED), COORD_OP_ACCURACY";
+        sql="SELECT COORD_OP_CODE" + " FROM [Coordinate_Operation] left join [Area] on [Coordinate_Operation].area_of_use_code = [Area].area_code" + " WHERE SOURCE_CRS_CODE = ?"+ " AND TARGET_CRS_CODE = ?"+ " ORDER BY ABS([Coordinate_Operation].DEPRECATED), COORD_OP_ACCURACY,"+ "	(AREA_NORTH_BOUND_LAT - AREA_SOUTH_BOUND_LAT) * "+ " (CASE WHEN AREA_EAST_BOUND_LON > AREA_WEST_BOUND_LON "+ "     THEN (AREA_EAST_BOUND_LON - AREA_WEST_BOUND_LON) "+ "     ELSE (360 - AREA_WEST_BOUND_LON - AREA_EAST_BOUND_LON) END) DESC,"+ " COORD_OP_CODE DESC";
       }
  else {
         key="ConversionFromCRS";
