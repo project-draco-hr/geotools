@@ -1,0 +1,39 @@
+{
+  SimpleFeatureSource featureSource=memory.getFeatureSource(typeName);
+  SimpleFeatureType ft=featureSource.getSchema();
+  String fileName=ft.getTypeName();
+  File file=new File(directory,fileName + ".shp");
+  Map<String,java.io.Serializable> creationParams=new HashMap<String,java.io.Serializable>();
+  creationParams.put("url",DataUtilities.fileToURL(file));
+  FileDataStoreFactorySpi factory=FileDataStoreFinder.getDataStoreFactory("shp");
+  DataStore dataStore=factory.createNewDataStore(creationParams);
+  dataStore.createSchema(ft);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)dataStore.getFeatureSource(typeName);
+  Transaction t=new DefaultTransaction();
+  try {
+    SimpleFeatureCollection collection=featureSource.getFeatures();
+    FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriter(typeName,t);
+    SimpleFeatureIterator iterator=collection.features();
+    SimpleFeature feature;
+    try {
+      while (iterator.hasNext()) {
+        feature=iterator.next();
+        SimpleFeature aNewFeature=(SimpleFeature)writer.next();
+        aNewFeature.setAttributes(feature.getAttributes());
+        writer.write();
+      }
+    }
+ catch (    IOException eek) {
+      eek.printStackTrace();
+      try {
+        t.rollback();
+      }
+ catch (      IOException doubleEeek) {
+      }
+    }
+  }
+  finally {
+    t.close();
+  }
+  return dataStore;
+}
