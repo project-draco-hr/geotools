@@ -11,8 +11,14 @@
   final ParameterValue envelopeParameter=parameters.parameter(PARAMNAME_ENVELOPE);
   final ParameterValue roiParameter=parameters.parameter(PARAMNAME_ROI);
   if ((envelopeParameter == null || envelopeParameter.getValue() == null) && (roiParameter == null || roiParameter.getValue() == null))   throw new CannotCropException(Errors.format(ErrorKeys.NULL_PARAMETER_$2,PARAMNAME_ENVELOPE,GeneralEnvelope.class.toString()));
-  if (envelopeParameter.getValue() != null) {
-    cropEnvelope=new GeneralEnvelope((Envelope)envelopeParameter.getValue());
+  Object envelope=envelopeParameter.getValue();
+  if (envelope != null) {
+    if (envelope instanceof GeneralEnvelope) {
+      cropEnvelope=(GeneralEnvelope)envelope;
+    }
+ else     if (envelope instanceof Envelope) {
+      cropEnvelope=new GeneralEnvelope((Envelope)envelope);
+    }
   }
   try {
     cropRoi=IntersectUtils.unrollGeometries((Geometry)roiParameter.getValue());
