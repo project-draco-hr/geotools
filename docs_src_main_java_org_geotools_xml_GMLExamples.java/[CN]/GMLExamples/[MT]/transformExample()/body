@@ -1,0 +1,24 @@
+{
+  SimpleFeatureCollection collection=null;
+  Charset charset=null;
+  String collectionPrefix=null;
+  String collectionNamespace=null;
+  OutputStream out=null;
+  FeatureTransformer transform=new FeatureTransformer();
+  transform.setEncoding(charset);
+  transform.setIndentation(4);
+  transform.setGmlPrefixing(true);
+  final SimpleFeatureType schema=collection.getSchema();
+  String prefix=(String)schema.getUserData().get("prefix");
+  String namespace=schema.getName().getNamespaceURI();
+  transform.getFeatureTypeNamespaces().declareDefaultNamespace(prefix,namespace);
+  transform.addSchemaLocation(prefix,namespace);
+  String srsName=CRS.toSRS(schema.getCoordinateReferenceSystem());
+  if (srsName != null) {
+    transform.setSrsName(srsName);
+  }
+  transform.setCollectionPrefix(collectionPrefix);
+  transform.setCollectionNamespace(collectionNamespace);
+  transform.setCollectionBounding(true);
+  transform.transform(collection,out);
+}
