@@ -1,0 +1,22 @@
+{
+  for (  XSDSchemaContent content : schema.getContents()) {
+    if (content instanceof XSDSchemaDirective) {
+      XSDSchemaDirective directive=(XSDSchemaDirective)content;
+      XSDSchema resolvedSchema=directive.getResolvedSchema();
+      if (resolvedSchema != null) {
+synchronized (resolvedSchema) {
+          resolvedSchema.getReferencingDirectives().remove(directive);
+          for (          XSDElementDeclaration dec : resolvedSchema.getElementDeclarations()) {
+            List<XSDElementDeclaration> toRemove=new ArrayList<XSDElementDeclaration>();
+            for (            XSDElementDeclaration subs : dec.getSubstitutionGroup()) {
+              if (subs.getContainer().equals(schema)) {
+                toRemove.add(subs);
+              }
+            }
+            dec.getSubstitutionGroup().removeAll(toRemove);
+          }
+        }
+      }
+    }
+  }
+}

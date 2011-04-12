@@ -3,15 +3,20 @@
   URL resource=getClass().getResource(res);
   SchemaIndex schemaIndex=schemaLoader.parse(resource);
   FeatureTypeRegistry registry=new FeatureTypeRegistry();
-  registry.addSchemas(schemaIndex);
-  Name tcl=Types.typeName(NS_URI,"TypedCategoryListType");
-  AttributeType typedCategoryListType=registry.getAttributeType(tcl);
-  assertNotNull(typedCategoryListType);
-  assertTrue(typedCategoryListType instanceof ComplexType);
-  AttributeType superType=typedCategoryListType.getSuper();
-  assertNotNull(superType);
-  Name superName=superType.getName();
-  assertEquals(XS.STRING.getNamespaceURI(),superName.getNamespaceURI());
-  assertEquals(XS.STRING.getLocalPart(),superName.getLocalPart());
-  assertNotNull(typedCategoryListType.getUserData().get(XSDTypeDefinition.class));
+  try {
+    registry.addSchemas(schemaIndex);
+    Name tcl=Types.typeName(NS_URI,"TypedCategoryListType");
+    AttributeType typedCategoryListType=registry.getAttributeType(tcl);
+    assertNotNull(typedCategoryListType);
+    assertTrue(typedCategoryListType instanceof ComplexType);
+    AttributeType superType=typedCategoryListType.getSuper();
+    assertNotNull(superType);
+    Name superName=superType.getName();
+    assertEquals(XS.STRING.getNamespaceURI(),superName.getNamespaceURI());
+    assertEquals(XS.STRING.getLocalPart(),superName.getLocalPart());
+    assertNotNull(typedCategoryListType.getUserData().get(XSDTypeDefinition.class));
+  }
+  finally {
+    registry.disposeSchemaIndexes();
+  }
 }

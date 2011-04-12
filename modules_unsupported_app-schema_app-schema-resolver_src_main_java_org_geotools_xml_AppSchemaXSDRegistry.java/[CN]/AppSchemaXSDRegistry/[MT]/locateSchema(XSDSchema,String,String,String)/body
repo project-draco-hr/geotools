@@ -1,0 +1,25 @@
+{
+  if (xsdSchema != null) {
+    ResourceSet resourceSet=xsdSchema.eResource().getResourceSet();
+    Resource resolvedResource=resourceSet.getResource(URI.createURI(resolvedSchemaLocationURI == null ? "" : resolvedSchemaLocationURI),false);
+    if (resolvedResource != null && resolvedResource instanceof XSDResourceImpl) {
+      return ((XSDResourceImpl)resolvedResource).getSchema();
+    }
+ else {
+      XSDSchema schema=lookUp(resolvedSchemaLocationURI);
+      if (schema == null) {
+        try {
+          schema=Schemas.parse(resolvedSchemaLocationURI,resourceSet);
+          register(schema);
+        }
+ catch (        IOException e) {
+          schema=null;
+        }
+      }
+      return schema;
+    }
+  }
+ else {
+    return lookUp(resolvedSchemaLocationURI);
+  }
+}

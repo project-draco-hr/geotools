@@ -1,16 +1,5 @@
 {
-  File locationFile=null;
-  try {
-    locationFile=DataUtilities.urlToFile(new URL(location));
-  }
- catch (  MalformedURLException e) {
-    locationFile=new File(location);
-  }
-  if (locationFile != null && locationFile.exists()) {
-    location=locationFile.getCanonicalFile().toURI().toString();
-  }
-  URI uri=URI.createURI(location);
-  final ResourceSet resourceSet=new ResourceSetImpl();
+  ResourceSet resourceSet=new ResourceSetImpl();
   if ((resolvers != null) && !resolvers.isEmpty()) {
     AdapterFactory adapterFactory=new SchemaLocationResolverAdapterFactory(resolvers);
     resourceSet.getAdapterFactories().add(adapterFactory);
@@ -19,8 +8,5 @@
     AdapterFactory adapterFactory=new SchemaLocatorAdapterFactory(locators);
     resourceSet.getAdapterFactories().add(adapterFactory);
   }
-  XSDResourceImpl xsdMainResource=(XSDResourceImpl)resourceSet.createResource(URI.createURI(".xsd"));
-  xsdMainResource.setURI(uri);
-  xsdMainResource.load(resourceSet.getLoadOptions());
-  return xsdMainResource.getSchema();
+  return parse(location,resourceSet);
 }
