@@ -1,25 +1,33 @@
 {
-  if (text == null)   return null;
-  if (TYPE == String.class)   return text;
+  if (text == null) {
+    return null;
+  }
+  if (TYPE == String.class) {
+    return TYPE.cast(text);
+  }
   if (TYPE == Integer.class) {
-    return Integer.decode(text);
+    return TYPE.cast(Integer.decode(text));
   }
   if (TYPE == Double.class) {
-    return Double.valueOf(text);
+    return TYPE.cast(Double.valueOf(text));
   }
   if (TYPE == Number.class) {
     try {
-      return Double.valueOf(text);
+      return TYPE.cast(Double.valueOf(text));
     }
  catch (    NumberFormatException ignore) {
     }
-    return Integer.decode(text);
+    return TYPE.cast(Integer.decode(text));
   }
   if (TYPE == Color.class) {
-    return new Color(Integer.decode(text).intValue());
+    return TYPE.cast(new Color(Integer.decode(text).intValue()));
+  }
+  Object value=Converters.convert(text,TYPE);
+  if (value != null) {
+    return TYPE.cast(value);
   }
   try {
-    Constructor create=TYPE.getConstructor(new Class[]{String.class});
+    Constructor<T> create=TYPE.getConstructor(new Class[]{String.class});
     return create.newInstance(new Object[]{text});
   }
  catch (  SecurityException e) {
