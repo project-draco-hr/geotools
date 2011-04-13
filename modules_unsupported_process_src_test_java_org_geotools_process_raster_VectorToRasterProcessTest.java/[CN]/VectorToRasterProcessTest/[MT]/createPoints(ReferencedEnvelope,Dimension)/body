@@ -1,0 +1,31 @@
+{
+  final double PROB_POINT=0.25;
+  final double xres=bounds.getWidth() / gridDim.width;
+  final double yres=bounds.getHeight() / gridDim.height;
+  final GridGeometry2D gridGeom=new GridGeometry2D(new GridEnvelope2D(0,0,gridDim.width,gridDim.height),bounds);
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName("testType");
+  tb.setCRS(bounds.getCoordinateReferenceSystem());
+  tb.add("shape",MultiPoint.class);
+  tb.add("name",String.class);
+  tb.add("value",Integer.class);
+  SimpleFeatureType type=tb.buildFeatureType();
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(type);
+  WKTReader reader=new WKTReader();
+  SimpleFeatureCollection fc=FeatureCollections.newCollection();
+  Random rand=new Random();
+  GridCoordinates2D gridPos=new GridCoordinates2D();
+  int i=1;
+  for (int y=0; y < gridDim.height; y++) {
+    for (int x=0; x < gridDim.width; x++) {
+      if (rand.nextDouble() < PROB_POINT) {
+        gridPos.setLocation(x,y);
+        DirectPosition worldPos=gridGeom.gridToWorld(gridPos);
+        String wkt=String.format("MULTIPOINT((%f %f))",worldPos.getOrdinate(0),worldPos.getOrdinate(1));
+        fc.add(buildFeature(builder,reader,wkt,"p" + i,i));
+        i++;
+      }
+    }
+  }
+  return fc;
+}

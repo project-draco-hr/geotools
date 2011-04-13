@@ -28,26 +28,23 @@ case INTEGRAL:
 break;
 }
 graphics.setColor(valueToColor(value));
-if (geometry.getClass().equals(MultiPolygon.class)) {
-MultiPolygon mp=(MultiPolygon)geometry;
-for (int n=0; n < mp.getNumGeometries(); n++) {
-drawGeometry(mp.getGeometryN(n));
+Geometries geomType=Geometries.get(geometry);
+switch (geomType) {
+case MULTIPOLYGON:
+case MULTILINESTRING:
+case MULTIPOINT:
+final int numGeom=geometry.getNumGeometries();
+for (int i=0; i < numGeom; i++) {
+Geometry geomN=geometry.getGeometryN(i);
+drawGeometry(Geometries.get(geomN),geomN);
 }
-}
- else if (geometry.getClass().equals(MultiLineString.class)) {
-MultiLineString mp=(MultiLineString)geometry;
-for (int n=0; n < mp.getNumGeometries(); n++) {
-drawGeometry(mp.getGeometryN(n));
-}
-}
- else if (geometry.getClass().equals(MultiPoint.class)) {
-MultiPoint mp=(MultiPoint)geometry;
-for (int n=0; n < mp.getNumGeometries(); n++) {
-drawGeometry(mp.getGeometryN(n));
-}
-}
- else {
-drawGeometry(geometry);
+break;
+case POLYGON:
+case LINESTRING:
+case POINT:
+drawGeometry(geomType,geometry);
+default :
+throw new UnsupportedOperationException("Unsupported geometry type: " + geomType.getName());
 }
 }
 }
