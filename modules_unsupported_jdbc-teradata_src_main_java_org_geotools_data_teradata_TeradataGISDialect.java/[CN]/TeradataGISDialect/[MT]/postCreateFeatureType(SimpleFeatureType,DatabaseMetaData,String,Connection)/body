@@ -1,0 +1,28 @@
+{
+  if (featureType.getGeometryDescriptor() == null) {
+    return;
+  }
+  String indexTableName=featureType.getTypeName() + "_" + featureType.getGeometryDescriptor().getLocalName()+ "_idx";
+  ResultSet rs=metadata.getTables(null,schemaName,indexTableName,new String[]{"TABLE"});
+  try {
+    if (rs.next()) {
+      StringBuffer sb=new StringBuffer();
+      if (schemaName != null) {
+        encodeSchemaName(schemaName,sb);
+        sb.append(".");
+      }
+      encodeTableName(featureType.getTypeName(),sb);
+      featureType.getGeometryDescriptor().getUserData().put(TABLE_NAME,sb.toString());
+      sb=new StringBuffer();
+      if (schemaName != null) {
+        encodeSchemaName(schemaName,sb);
+        sb.append(".");
+      }
+      encodeTableName(indexTableName,sb);
+      featureType.getGeometryDescriptor().getUserData().put(SPATIAL_INDEX,sb.toString());
+    }
+  }
+  finally {
+    dataStore.closeSafe(rs);
+  }
+}
