@@ -39,5 +39,39 @@
   if (Boolean.TRUE.equals(usePs)) {
     dataStore.setSQLDialect(new TeradataPSDialect(dataStore,dialect));
   }
+  dataStore.setFeatureTypeFactory(new FeatureTypeFactoryImpl(){
+    private int getInteger(    Param param,    int defaultValue){
+      try {
+        return params.containsKey(param.key) ? (Integer)param.lookUp(params) : defaultValue;
+      }
+ catch (      IOException e) {
+        e.printStackTrace();
+        return defaultValue;
+      }
+    }
+    private double getDouble(    Param param,    double defaultValue){
+      try {
+        return params.containsKey(param.key) ? (Double)param.lookUp(params) : defaultValue;
+      }
+ catch (      IOException e) {
+        e.printStackTrace();
+        return defaultValue;
+      }
+    }
+    @Override public FeatureType createFeatureType(    Name name,    Collection schema,    GeometryDescriptor defaultGeometry,    boolean isAbstract,    List restrictions,    AttributeType superType,    InternationalString description){
+      FeatureType type=super.createFeatureType(name,schema,defaultGeometry,isAbstract,restrictions,superType,description);
+      type.getUserData().put(U_XMIN,getDouble(U_XMIN_PARAM,-180));
+      type.getUserData().put(U_YMIN,getDouble(U_YMIN_PARAM,-90));
+      type.getUserData().put(U_XMAX,getDouble(U_XMAX_PARAM,180));
+      type.getUserData().put(U_YMAX,getDouble(U_YMAX_PARAM,90));
+      type.getUserData().put(G_NX,getInteger(G_NX_PARAM,1000));
+      type.getUserData().put(G_NY,getInteger(G_NY_PARAM,1000));
+      type.getUserData().put(LEVELS,getInteger(LEVELS_PARAM,1));
+      type.getUserData().put(SCALE,getDouble(SCALE_PARAM,0.01));
+      type.getUserData().put(SHIFT,getInteger(SHIFT_PARAM,0));
+      return type;
+    }
+  }
+);
   return dataStore;
 }
