@@ -1,0 +1,18 @@
+{
+  Or childOr=ff.or(Arrays.asList(new Filter[]{b,c,d}));
+  And base=ff.and(a,childOr);
+  Filter results=Filters.removeFilter(base,d,false);
+  assertEquals("Filter should not be removed because it should not recurse",base,results);
+  results=Filters.removeFilter(base,d);
+  assertFalse("Results should be a new object with different children",base.equals(results));
+  childOr=ff.or(b,c);
+  And expected=ff.and(a,childOr);
+  assertEquals(expected,results);
+  results=Filters.removeFilter(results,c);
+  expected=ff.and(a,b);
+  assertEquals(expected,results);
+  results=Filters.removeFilter(results,a);
+  assertEquals(b,results);
+  results=Filters.removeFilter(results,b);
+  assertEquals(Filter.INCLUDE,results);
+}

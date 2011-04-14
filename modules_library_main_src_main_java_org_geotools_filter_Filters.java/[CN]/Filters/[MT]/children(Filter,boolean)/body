@@ -1,0 +1,61 @@
+{
+  final ArrayList<Filter> children=new ArrayList<Filter>();
+  if (filter == null) {
+    return children;
+  }
+  if (all) {
+    filter.accept(new DefaultFilterVisitor(){
+      public Object visit(      And filter,      Object data){
+        List<Filter> childList=filter.getChildren();
+        if (childList != null) {
+          for (          Filter child : childList) {
+            if (child == null)             continue;
+            children.add(child);
+            data=child.accept(this,data);
+          }
+        }
+        return data;
+      }
+      public Object visit(      Or filter,      Object data){
+        List<Filter> childList=filter.getChildren();
+        if (childList != null) {
+          for (          Filter child : childList) {
+            if (child == null)             continue;
+            children.add(child);
+            data=child.accept(this,data);
+          }
+        }
+        return data;
+      }
+      public Object visit(      Not filter,      Object data){
+        Filter child=filter.getFilter();
+        if (child != null) {
+          children.add(child);
+          data=child.accept(this,data);
+        }
+        return data;
+      }
+    }
+,null);
+  }
+ else {
+    if (filter instanceof Not) {
+      Not not=(Not)filter;
+      if (not.getFilter() != null) {
+        children.add(not.getFilter());
+      }
+    }
+    if (filter instanceof BinaryLogicOperator) {
+      BinaryLogicOperator parent=(BinaryLogicOperator)filter;
+      List<Filter> reviewChildren=parent.getChildren();
+      if (reviewChildren != null) {
+        for (        Filter child : reviewChildren) {
+          if (child != null) {
+            children.add(child);
+          }
+        }
+      }
+    }
+  }
+  return children;
+}
