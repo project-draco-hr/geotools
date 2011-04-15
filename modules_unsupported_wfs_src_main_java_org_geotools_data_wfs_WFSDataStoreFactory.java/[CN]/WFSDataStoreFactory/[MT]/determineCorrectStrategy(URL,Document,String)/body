@@ -1,14 +1,33 @@
 {
   WFSStrategy strategy=null;
-  NodeList childNodes=capabilitiesDoc.getChildNodes();
-  for (int i=0; i < childNodes.getLength(); i++) {
-    Node child=childNodes.item(i);
-    if (child.getNodeType() == Node.COMMENT_NODE) {
-      String nodeValue=child.getNodeValue();
-      nodeValue=nodeValue.toLowerCase();
-      if (nodeValue.contains("cubewerx")) {
-        strategy=new CubeWerxStrategy();
-        break;
+  if (override != null) {
+    if (override.equalsIgnoreCase("geoserver")) {
+      strategy=new GeoServerStrategy();
+    }
+ else     if (override.equalsIgnoreCase("arcgis")) {
+      strategy=new ArcGISServerStrategy();
+    }
+ else     if (override.equalsIgnoreCase("cubewerx")) {
+      strategy=new CubeWerxStrategy();
+    }
+ else     if (override.equalsIgnoreCase("ionic")) {
+      strategy=new IonicStrategy();
+    }
+ else {
+      logger.warning("Could not handle wfs strategy override " + override + " proceeding with autodetection");
+    }
+  }
+  if (strategy == null) {
+    NodeList childNodes=capabilitiesDoc.getChildNodes();
+    for (int i=0; i < childNodes.getLength(); i++) {
+      Node child=childNodes.item(i);
+      if (child.getNodeType() == Node.COMMENT_NODE) {
+        String nodeValue=child.getNodeValue();
+        nodeValue=nodeValue.toLowerCase();
+        if (nodeValue.contains("cubewerx")) {
+          strategy=new CubeWerxStrategy();
+          break;
+        }
       }
     }
   }

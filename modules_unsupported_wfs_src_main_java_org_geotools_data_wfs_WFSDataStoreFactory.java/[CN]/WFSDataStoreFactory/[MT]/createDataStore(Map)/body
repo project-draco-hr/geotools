@@ -13,6 +13,8 @@
   final String encoding=(String)ENCODING.lookUp(params);
   final Integer maxFeatures=(Integer)MAXFEATURES.lookUp(params);
   final Charset defaultEncoding=Charset.forName(encoding);
+  final String wfsStrategy=(String)WFS_STRATEGY.lookUp(params);
+  final Integer filterCompliance=(Integer)FILTER_COMPLIANCE.lookUp(params);
   if (((user == null) && (pass != null)) || ((pass == null) && (user != null))) {
     throw new IOException("Cannot define only one of USERNAME or PASSWORD, must define both or neither");
   }
@@ -32,7 +34,7 @@
     final WFS100ProtocolHandler protocolHandler=new WFS100ProtocolHandler(reader,connectionFac);
     try {
       HttpMethod prefferredProtocol=Boolean.TRUE.equals(protocol) ? POST : GET;
-      dataStore=new WFS_1_0_0_DataStore(prefferredProtocol,protocolHandler,timeoutMillis,buffer,lenient);
+      dataStore=new WFS_1_0_0_DataStore(prefferredProtocol,protocolHandler,timeoutMillis,buffer,lenient,wfsStrategy,filterCompliance);
     }
  catch (    SAXException e) {
       logger.warning(e.toString());
@@ -42,7 +44,7 @@
  else {
     InputStream capsIn=new ByteArrayInputStream(wfsCapabilitiesRawData);
     WFS_1_1_0_Protocol wfs=new WFS_1_1_0_Protocol(capsIn,http);
-    WFSStrategy strategy=determineCorrectStrategy(getCapabilitiesRequest,capsDoc);
+    WFSStrategy strategy=determineCorrectStrategy(getCapabilitiesRequest,capsDoc,wfsStrategy);
     wfs.setStrategy(strategy);
     dataStore=new WFS_1_1_0_DataStore(wfs);
     dataStore.setMaxFeatures(maxFeatures);

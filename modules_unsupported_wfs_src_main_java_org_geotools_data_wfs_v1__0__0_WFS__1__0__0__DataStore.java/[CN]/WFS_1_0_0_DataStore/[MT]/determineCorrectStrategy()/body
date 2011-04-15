@@ -1,18 +1,32 @@
 {
   URL host=capabilities.getGetCapabilities().getGet();
-  if (host == null) {
-    host=capabilities.getGetCapabilities().getPost();
+  if (wfsStrategy != null && wfsStrategy.equalsIgnoreCase("mapserver")) {
+    strategy=new MapServerWFSStrategy(this,filterCompliance);
   }
-  if (host.toString().indexOf("mapserv") != -1) {
-    strategy=new MapServerWFSStrategy(this);
+ else   if (wfsStrategy != null && wfsStrategy.equalsIgnoreCase("geoserver")) {
+    strategy=new NonStrictWFSStrategy(this,filterCompliance);
   }
- else   if (host.toString().indexOf("geoserver") != -1) {
-    strategy=new NonStrictWFSStrategy(this);
+ else   if (wfsStrategy != null && wfsStrategy.equalsIgnoreCase("strict")) {
+    strategy=new StrictWFSStrategy(this,filterCompliance);
   }
- else   if (lenient) {
-    strategy=new NonStrictWFSStrategy(this);
+ else   if (wfsStrategy != null && wfsStrategy.equalsIgnoreCase("nonstrict")) {
+    strategy=new NonStrictWFSStrategy(this,filterCompliance);
   }
  else {
-    strategy=new StrictWFSStrategy(this);
+    if (host == null) {
+      host=capabilities.getGetCapabilities().getPost();
+    }
+    if (host.toString().indexOf("mapserv") != -1) {
+      strategy=new MapServerWFSStrategy(this,filterCompliance);
+    }
+ else     if (host.toString().indexOf("geoserver") != -1) {
+      strategy=new NonStrictWFSStrategy(this,filterCompliance);
+    }
+ else     if (lenient) {
+      strategy=new NonStrictWFSStrategy(this,filterCompliance);
+    }
+ else {
+      strategy=new StrictWFSStrategy(this,filterCompliance);
+    }
   }
 }
