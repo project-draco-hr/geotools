@@ -1,8 +1,12 @@
 {
   PlanarImage raster;
+  final ImageReader reader;
+  FileImageInputStreamExtImpl fiis=null;
   if (useJAI) {
+    fiis=new FileImageInputStreamExtImpl(input);
+    reader=readerSpi.createReaderInstance();
     final ParameterBlock pbjImageRead=new ParameterBlock();
-    pbjImageRead.add(new FileImageInputStreamExtImpl(input));
+    pbjImageRead.add(fiis);
     pbjImageRead.add(0);
     pbjImageRead.add(Boolean.FALSE);
     pbjImageRead.add(Boolean.FALSE);
@@ -10,22 +14,35 @@
     pbjImageRead.add(null);
     pbjImageRead.add(null);
     pbjImageRead.add(imageReadParam);
-    pbjImageRead.add(readerSpi.createReaderInstance());
+    pbjImageRead.add(reader);
     final String jaiOperation=useMultithreading ? GridCoverageUtilities.IMAGEREADMT : GridCoverageUtilities.IMAGEREAD;
     raster=JAI.create(jaiOperation,pbjImageRead,hints);
   }
  else {
-    final ImageReader reader=readerSpi.createReaderInstance();
+    reader=readerSpi.createReaderInstance();
+    fiis=new FileImageInputStreamExtImpl(input);
     try {
-      reader.setInput(new FileImageInputStreamExtImpl(input),true,true);
+      reader.setInput(fiis,true,true);
       raster=PlanarImage.wrapRenderedImage(reader.read(0,imageReadParam));
     }
   finally {
+      if (fiis != null) {
+        try {
+          fiis.close();
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+          }
+        }
+      }
       if (reader != null)       try {
         reader.dispose();
       }
  catch (      Exception e) {
-        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+        }
       }
     }
   }
