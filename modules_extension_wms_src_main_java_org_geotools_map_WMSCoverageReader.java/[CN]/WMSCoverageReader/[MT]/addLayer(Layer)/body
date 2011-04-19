@@ -1,15 +1,22 @@
 {
   this.layers.add(layer);
   if (srsName == null) {
-    if (layer.getBoundingBoxes().size() > 0) {
-      CRSEnvelope envelope=layer.getBoundingBoxes().get(layer.getBoundingBoxes().keySet().iterator().next());
-      srsName=envelope.getEPSGCode();
+    for (    String srs : layer.getBoundingBoxes().keySet()) {
+      try {
+        CRS.decode(srs);
+        srsName=srs;
+        break;
+      }
+ catch (      Exception e) {
+      }
     }
- else     if (layer.getSrs().contains("EPSG:4326")) {
-      srsName="EPSG:4326";
-    }
+    if (srsName == null) {
+      if (layer.getSrs().contains("EPSG:4326")) {
+        srsName="EPSG:4326";
+      }
  else {
-      srsName=(String)layer.getSrs().iterator().next();
+        srsName=(String)layer.getSrs().iterator().next();
+      }
     }
     validSRS=layer.getSrs();
   }
