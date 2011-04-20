@@ -1,0 +1,54 @@
+{
+  final File dir=TestData.file(GeoTiffReaderTest.class,"");
+  final File files[]=dir.listFiles(new FilenameFilter(){
+    public boolean accept(    File dir,    String name){
+      if (name.startsWith("no_crs_no_envelope")) {
+        return false;
+      }
+      return true;
+    }
+  }
+);
+  final int numFiles=files.length;
+  final AtomicInteger ai=new AtomicInteger(numFiles);
+  final List<Thread> threads=new ArrayList<Thread>();
+  final int total=numFiles * multiplier;
+  for (int index=0; index < total; index++) {
+    final File file=files[index % multiplier];
+    Runnable testRunner=new Runnable(){
+      public void run(){
+        try {
+          GeoTiffReader reader=new GeoTiffReader(file);
+          reader.read(null);
+        }
+ catch (        Exception e) {
+          throw new RuntimeException("Exception opening file " + file,e);
+        }
+ finally {
+          ai.decrementAndGet();
+        }
+      }
+    }
+;
+    final Thread thread=new Thread(testRunner);
+    thread.start();
+    threads.add(thread);
+  }
+  try {
+    final ThreadMXBean mbean=ManagementFactory.getThreadMXBean();
+    while (ai.get() > 0) {
+      long[] deadlockedThreads=mbean.findMonitorDeadlockedThreads();
+      if (deadlockedThreads != null && deadlockedThreads.length > 0) {
+        fail("Deadlock detected between the following threads: " + Arrays.toString(deadlockedThreads));
+      }
+      Thread.currentThread().sleep(10);
+    }
+  }
+  finally {
+    for (    final Thread thread : threads) {
+      if (thread.isAlive()) {
+        thread.interrupt();
+      }
+    }
+  }
+}

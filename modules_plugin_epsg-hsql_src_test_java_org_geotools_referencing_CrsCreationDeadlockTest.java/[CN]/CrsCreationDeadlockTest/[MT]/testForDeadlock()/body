@@ -1,0 +1,41 @@
+{
+  final AtomicInteger ai=new AtomicInteger(NUMBER_OF_THREADS);
+  final Runnable runnable=new Runnable(){
+    public void run(){
+      try {
+        final CRSAuthorityFactory authorityFactory=ReferencingFactoryFinder.getCRSAuthorityFactory("EPSG",null);
+        authorityFactory.createCoordinateReferenceSystem("4326");
+      }
+ catch (      Exception e) {
+        throw new RuntimeException(e);
+      }
+ finally {
+        ai.decrementAndGet();
+      }
+    }
+  }
+;
+  final List<Thread> threads=new ArrayList<Thread>();
+  for (int index=0; index < NUMBER_OF_THREADS; index++) {
+    final Thread thread=new Thread(runnable);
+    thread.start();
+    threads.add(thread);
+  }
+  try {
+    final ThreadMXBean mbean=ManagementFactory.getThreadMXBean();
+    while (ai.get() > 0) {
+      long[] deadlockedThreads=mbean.findMonitorDeadlockedThreads();
+      if (deadlockedThreads != null && deadlockedThreads.length > 0) {
+        fail("Deadlock detected between the following threads: " + Arrays.toString(deadlockedThreads));
+      }
+      Thread.currentThread().sleep(10);
+    }
+  }
+  finally {
+    for (    final Thread thread : threads) {
+      if (thread.isAlive()) {
+        thread.interrupt();
+      }
+    }
+  }
+}
