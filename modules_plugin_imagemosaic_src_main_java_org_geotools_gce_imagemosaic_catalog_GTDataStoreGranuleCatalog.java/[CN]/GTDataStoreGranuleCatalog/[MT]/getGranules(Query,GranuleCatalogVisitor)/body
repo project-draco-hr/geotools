@@ -19,19 +19,26 @@
   finally {
       it.close();
     }
+    final DefaultProgressListener listener=new DefaultProgressListener();
     features.accepts(new AbstractFeatureVisitor(){
       public void visit(      Feature feature){
         if (feature instanceof SimpleFeature) {
           final SimpleFeature sf=(SimpleFeature)feature;
           final GranuleDescriptor granule=new GranuleDescriptor(sf,suggestedSPI,pathType,locationAttribute,parentLocation,heterogeneous);
           visitor.visit(granule,null);
+          if (listener.isCanceled() || listener.hasExceptions()) {
+            if (listener.hasExceptions())             throw new RuntimeException(listener.getExceptions().peek());
+ else             throw new IllegalStateException("Feature visitor for query " + q + " has been canceled");
+          }
         }
       }
     }
-,new NullProgressListener());
+,listener);
   }
  catch (  Throwable e) {
-    throw new IllegalArgumentException(e);
+    final IOException ioe=new IOException();
+    ioe.initCause(e);
+    throw ioe;
   }
  finally {
     lock.unlock();
