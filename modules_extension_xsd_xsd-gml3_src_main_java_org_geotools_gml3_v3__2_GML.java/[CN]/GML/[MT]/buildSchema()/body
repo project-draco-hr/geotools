@@ -1,5 +1,25 @@
 {
-  XSDSchema schema=super.buildSchema();
+  schema=Schemas.parse(getSchemaLocation(),Collections.EMPTY_LIST,Collections.singletonList(new XSDSchemaLocationResolver(){
+    public String resolveSchemaLocation(    XSDSchema xsdSchema,    String namespaceURI,    String schemaLocationURI){
+      try {
+        URI contextUri=new URI(xsdSchema.getSchemaLocation());
+        if (contextUri.isOpaque()) {
+          URL contextUrl=new URL(xsdSchema.getSchemaLocation());
+          return (new URL(contextUrl,schemaLocationURI)).toString();
+        }
+ else {
+          return contextUri.resolve(schemaLocationURI).toString();
+        }
+      }
+ catch (      URISyntaxException e) {
+        throw new RuntimeException(e);
+      }
+catch (      MalformedURLException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+));
   schema.resolveElementDeclaration(NAMESPACE,"_Feature").eAdapters().add(new SubstitutionGroupLeakPreventer());
   schema.eAdapters().add(new ReferencingDirectiveLeakPreventer());
   return schema;
