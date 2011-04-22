@@ -1,0 +1,31 @@
+{
+  String schemaName=columnMetaData.getString("TABLE_SCHEM");
+  String tableName=columnMetaData.getString("TABLE_NAME");
+  String columnName=columnMetaData.getString("COLUMN_NAME");
+  StringBuffer sql=new StringBuffer("SELECT GEOM_TYPE");
+  sql.append(" FROM ");
+  encodeTableName(SYSSPATIAL,GEOMETRY_COLUMNS,sql);
+  sql.append("WHERE F_TABLE_SCHEMA = ? AND F_TABLE_NAME = ? AND F_GEOMETRY_COLUMN = ?");
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine(String.format("%s; 1=%s, 2=%s, 3=%s",sql.toString(),schemaName,tableName,columnName));
+  }
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  try {
+    ps.setString(1,schemaName);
+    ps.setString(2,tableName);
+    ps.setString(3,columnName);
+    ResultSet rs=ps.executeQuery();
+    try {
+      if (rs.next()) {
+        return rs.getString(1);
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(ps);
+  }
+  return null;
+}

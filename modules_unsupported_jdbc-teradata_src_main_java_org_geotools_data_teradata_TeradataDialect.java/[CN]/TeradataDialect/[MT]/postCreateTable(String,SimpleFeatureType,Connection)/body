@@ -1,0 +1,96 @@
+{
+  String tableName=featureType.getName().getLocalPart();
+  for (  AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+    if (att instanceof GeometryDescriptor) {
+      GeometryDescriptor gd=(GeometryDescriptor)att;
+      int srid=0;
+      Integer epsg=null;
+      if (gd.getCoordinateReferenceSystem() != null) {
+        try {
+          epsg=CRS.lookupEpsgCode(gd.getCoordinateReferenceSystem(),true);
+        }
+ catch (        Exception e) {
+          LOGGER.log(Level.WARNING,"Error looking up epsg code",e);
+        }
+      }
+      if (epsg != null) {
+        String sql="SELECT SRID FROM SYSSPATIAL.spatial_ref_sys" + " WHERE AUTH_SRID = ?";
+        LOGGER.log(Level.FINE,sql + ";{0}",epsg);
+        PreparedStatement ps=cx.prepareStatement(sql);
+        try {
+          ps.setInt(1,epsg);
+          ResultSet rs=ps.executeQuery();
+          try {
+            if (rs.next()) {
+              srid=rs.getInt("SRID");
+            }
+ else {
+              LOGGER.warning("EPSG Code " + epsg + " does not map to SRID");
+            }
+          }
+  finally {
+            dataStore.closeSafe(ps);
+          }
+        }
+  finally {
+          dataStore.closeSafe(ps);
+        }
+      }
+      String geomType=CLASS_TO_TYPE.get(gd.getType().getBinding());
+      geomType=geomType != null ? geomType : "GEOMETRY";
+      String sql="INSERT INTO SYSSPATIAL.GEOMETRY_COLUMNS (F_TABLE_CATALOG, F_TABLE_SCHEMA, " + "F_TABLE_NAME, F_GEOMETRY_COLUMN, COORD_DIMENSION, SRID, GEOM_TYPE) " + "VALUES (?, ?, ?, ?, 2, ?, ?)";
+      LOGGER.log(Level.FINE,sql + ";{0},{1},{2},{3},{4},{5}",new Object[]{"",schemaName,tableName,gd.getLocalName(),srid,geomType});
+      PreparedStatement ps=cx.prepareStatement(sql);
+      try {
+        ps.setString(1,"");
+        ps.setString(2,schemaName);
+        ps.setString(3,tableName);
+        ps.setString(4,gd.getLocalName());
+        ps.setInt(5,srid);
+        ps.setString(6,geomType);
+        ps.execute();
+      }
+  finally {
+        dataStore.closeSafe(ps);
+      }
+      PrimaryKey pkey=dataStore.getPrimaryKeyFinder().getPrimaryKey(dataStore,schemaName,tableName,cx);
+      if (!(pkey instanceof NullPrimaryKey)) {
+        String indexTableName=tableName + "_" + gd.getLocalName()+ "_idx";
+        StringBuffer sb=new StringBuffer("DROP TABLE ");
+        encodeTableName(schemaName,indexTableName,sb);
+        sql=sb.toString();
+        LOGGER.fine(sql);
+        try {
+          ps=cx.prepareStatement(sql);
+          ps.execute();
+        }
+ catch (        SQLException e) {
+        }
+ finally {
+          dataStore.closeSafe(ps);
+        }
+        sb=new StringBuffer("CREATE MULTISET TABLE ");
+        encodeTableName(schemaName,indexTableName,sb);
+        sb.append("( ");
+        for (        PrimaryKeyColumn col : pkey.getColumns()) {
+          encodeColumnName(col.getName(),sb);
+          String typeName=lookupSqlTypeName(cx,schemaName,tableName,col.getName());
+          sb.append(" ").append(typeName).append(", ");
+        }
+        sb.append("cellid INTEGER) PRIMARY INDEX (cellid)");
+        sql=sb.toString();
+        LOGGER.fine(sql);
+        ps=cx.prepareStatement(sql);
+        try {
+          ps.execute();
+        }
+  finally {
+          dataStore.closeSafe(ps);
+        }
+      }
+ else {
+        LOGGER.warning("No primary key for " + schemaName + "."+ tableName+ ". Unable"+ " to create spatial index.");
+      }
+    }
+  }
+}

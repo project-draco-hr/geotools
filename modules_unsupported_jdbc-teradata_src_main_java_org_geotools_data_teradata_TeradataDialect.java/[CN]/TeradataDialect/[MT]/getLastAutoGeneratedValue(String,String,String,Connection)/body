@@ -1,0 +1,26 @@
+{
+  StringBuffer sql=new StringBuffer("SELECT TOP 1 ");
+  encodeColumnName(columnName,sql);
+  sql.append(" FROM ");
+  encodeTableName(schemaName,tableName,sql);
+  sql.append(" ORDER BY ");
+  encodeColumnName(columnName,sql);
+  sql.append(" DESC");
+  LOGGER.fine(sql.toString());
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  try {
+    ResultSet rs=ps.executeQuery();
+    try {
+      if (rs.next()) {
+        return rs.getInt(1);
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(ps);
+  }
+  return null;
+}

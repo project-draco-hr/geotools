@@ -1,0 +1,50 @@
+{
+  TessellationInfo tinfo=(TessellationInfo)currentGeometry.getUserData().get(TessellationInfo.KEY);
+  if (tinfo == null) {
+    LOGGER.info("Tessellation info not available for " + currentGeometry.getLocalName() + ", unable to perform spatially indexed query");
+    return false;
+  }
+  if (primaryKey == null) {
+    LOGGER.info("No primary key for " + featureType.getTypeName() + ", unable to perform spatially indexed query");
+    return false;
+  }
+  Geometry g=(Geometry)geometry.getValue();
+  Envelope oenv=g.getEnvelopeInternal();
+  Envelope uenv=tinfo.getUBounds();
+  if (!uenv.contains(oenv)) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Bounds:" + oenv + " falls outside of univerise bounds: "+ uenv+ ". Unable to perform index query.");
+    }
+    return false;
+  }
+  double coverage=uenv.intersection(oenv).getArea() / uenv.getArea();
+  if (coverage > 0.5) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Bounds:" + oenv + " covers "+ (coverage * 100)+ " of universe bounds: "+ uenv+ ". Forgoing index query.");
+    }
+    return false;
+  }
+  for (Iterator<PrimaryKeyColumn> it=primaryKey.getColumns().iterator(); it.hasNext(); ) {
+    out.write(it.next().getName());
+    if (it.hasNext()) {
+      out.write(", ");
+    }
+  }
+  out.write(" IN (SELECT DISTINCT ");
+  for (Iterator<PrimaryKeyColumn> it=primaryKey.getColumns().iterator(); it.hasNext(); ) {
+    out.write("t." + it.next().getName());
+    if (it.hasNext()) {
+      out.write(", ");
+    }
+  }
+  out.write(" FROM ");
+  if (tinfo.getSchemaName() != null) {
+    out.write(escapeName(tinfo.getSchemaName()));
+    out.write(".");
+  }
+  out.write(escapeName(tinfo.getIndexTableName()));
+  out.write(" t, TABLE (SYSSPATIAL.tessellate_search(1,");
+  out.write(String.format("%f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %d, %f, %d)) AS i ",oenv.getMinX(),oenv.getMinY(),oenv.getMaxX(),oenv.getMaxY(),uenv.getMinX(),uenv.getMinY(),uenv.getMaxX(),uenv.getMaxY(),tinfo.getNx(),tinfo.getNy(),tinfo.getLevels(),tinfo.getScale(),tinfo.getShift()));
+  out.write(" WHERE t.cellid = i.cellid)");
+  return true;
+}

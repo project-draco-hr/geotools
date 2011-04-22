@@ -1,17 +1,34 @@
 {
-  TeradataGISDialect dialect=(TeradataGISDialect)dataStore.getSQLDialect();
+  TeradataDialect dialect=(TeradataDialect)dataStore.getSQLDialect();
   Boolean loose=(Boolean)LOOSEBBOX.lookUp(params);
   dialect.setLooseBBOXEnabled(loose == null || Boolean.TRUE.equals(loose));
   if (!params.containsKey(PK_METADATA_TABLE.key)) {
     dataStore.setPrimaryKeyFinder(KEY_FINDER);
   }
+  Boolean estimatedBounds=(Boolean)ESTIMATED_BOUNDS.lookUp(params);
+  if (estimatedBounds != null && estimatedBounds.booleanValue()) {
+    dialect.setEstimatedBounds(estimatedBounds);
+  }
   if (params.containsKey(QUERY_BANDING_SQL.key)) {
-    dialect.setQueryBandingSql((String)QUERY_BANDING_SQL.lookUp(params));
   }
-  Boolean usePs=(Boolean)PREPARED_STATEMENTS.lookUp(params);
-  if (Boolean.TRUE.equals(usePs)) {
-    dataStore.setSQLDialect(new TeradataPSDialect(dataStore,dialect));
+  String username=null;
+  if (params.containsKey(USER.key)) {
+    username=(String)USER.lookUp(params);
   }
-  fillFeatureType(BasicFeatureTypes.FEATURE,params);
+ else   if (params.containsKey(DATASOURCE.key)) {
+    DataSource dataSource=(DataSource)DATASOURCE.lookUp(params);
+    if (dataSource instanceof BasicDataSource) {
+      username=((BasicDataSource)dataSource).getUsername();
+    }
+ else     if (dataSource instanceof DBCPDataSource) {
+      try {
+        username=((BasicDataSource)((DBCPDataSource)dataSource).unwrap(DataSource.class)).getUsername();
+      }
+ catch (      SQLException e) {
+        throw (IOException)new IOException().initCause(e);
+      }
+    }
+  }
+  dataStore.setDatabaseSchema(username);
   return dataStore;
 }

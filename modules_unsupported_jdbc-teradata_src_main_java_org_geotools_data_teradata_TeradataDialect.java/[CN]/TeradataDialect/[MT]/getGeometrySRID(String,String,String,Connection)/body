@@ -1,0 +1,34 @@
+{
+  StringBuffer sql=new StringBuffer("SELECT ref.AUTH_SRID FROM ");
+  encodeTableName(SYSSPATIAL,SPATIAL_REF_SYS,sql);
+  sql.append(" as ref, ");
+  encodeTableName(SYSSPATIAL,GEOMETRY_COLUMNS,sql);
+  sql.append(" as col ");
+  sql.append(" WHERE col.F_TABLE_SCHEMA = ?");
+  sql.append(" AND col.F_TABLE_NAME = ? ");
+  sql.append(" AND col.F_GEOMETRY_COLUMN = ? ");
+  sql.append(" AND col.SRID = ref.SRID");
+  LOGGER.log(Level.FINE,String.format("%s; 1=%s, 2=%s, 3=%s",sql.toString(),schemaName,tableName,columnName));
+  PreparedStatement ps=cx.prepareStatement(sql.toString());
+  try {
+    ps.setString(1,schemaName);
+    ps.setString(2,tableName);
+    ps.setString(3,columnName);
+    ResultSet rs=ps.executeQuery();
+    try {
+      if (rs.next()) {
+        return rs.getInt(1);
+      }
+ else {
+        LOGGER.warning(String.format("No SRID entry for %s, %s, %s",schemaName,tableName,columnName));
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(ps);
+  }
+  return null;
+}
