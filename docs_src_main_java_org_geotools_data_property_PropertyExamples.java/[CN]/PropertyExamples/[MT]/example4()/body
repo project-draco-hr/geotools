@@ -1,0 +1,26 @@
+{
+  System.out.println("example4 start\n");
+  PropertyDataStore store=new PropertyDataStore(directory);
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  Set<FeatureId> selection=new HashSet<FeatureId>();
+  selection.add(ff.featureId("fid1"));
+  Filter filter=ff.id(selection);
+  Query query=new Query("example",filter);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=store.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    while (reader.hasNext()) {
+      SimpleFeature feature=reader.next();
+      System.out.println("feature " + feature.getID());
+      for (      Property property : feature.getProperties()) {
+        System.out.print("\t");
+        System.out.print(property.getName());
+        System.out.print(" = ");
+        System.out.println(property.getValue());
+      }
+    }
+  }
+  finally {
+    reader.close();
+  }
+  System.out.println("\nexample4 end\n");
+}
