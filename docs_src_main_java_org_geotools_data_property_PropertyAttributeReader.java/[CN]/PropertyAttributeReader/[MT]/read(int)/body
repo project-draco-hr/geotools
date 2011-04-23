@@ -1,0 +1,38 @@
+{
+  if (line == null) {
+    throw new IOException("No content available - did you remeber to call next?");
+  }
+  AttributeDescriptor attType=type.getDescriptor(index);
+  String stringValue=null;
+  try {
+    stringValue=text[index];
+    if (stringValue != null) {
+      stringValue=stringValue.trim();
+    }
+    if ("".equals(stringValue)) {
+      stringValue=null;
+    }
+  }
+ catch (  RuntimeException e1) {
+    e1.printStackTrace();
+    stringValue=null;
+  }
+  if ("<null>".equals(stringValue)) {
+    stringValue=null;
+  }
+  if (stringValue == null) {
+    if (attType.isNillable()) {
+      return null;
+    }
+  }
+  Object value=Converters.convert(stringValue,attType.getType().getBinding());
+  if (attType.getType() instanceof GeometryType) {
+    CoordinateReferenceSystem crs=((GeometryType)attType.getType()).getCoordinateReferenceSystem();
+    if (crs != null) {
+      if (value != null && value instanceof Geometry) {
+        ((Geometry)value).setUserData(crs);
+      }
+    }
+  }
+  return value;
+}
