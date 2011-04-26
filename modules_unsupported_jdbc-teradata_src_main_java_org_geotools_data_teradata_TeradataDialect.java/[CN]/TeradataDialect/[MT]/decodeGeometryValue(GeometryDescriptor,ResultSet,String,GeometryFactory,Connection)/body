@@ -4,11 +4,16 @@
     if (wkb != null) {
       return new WKBReader(factory).read(wkb);
     }
+    Clob clob=rs.getClob(column);
+    InputStream in=clob.getAsciiStream();
+    try {
+      return new WKTReader(factory).read(new InputStreamReader(in));
+    }
+  finally {
+      if (in != null)       in.close();
+    }
   }
- catch (  SQLException e) {
+ catch (  ParseException e) {
+    throw (IOException)new IOException("Error parsing geometry").initCause(e);
   }
-catch (  ParseException e) {
-    throw (IOException)new IOException("Error parsing well known binary").initCause(e);
-  }
-  return getWkbReader(factory).read(rs,column);
 }
