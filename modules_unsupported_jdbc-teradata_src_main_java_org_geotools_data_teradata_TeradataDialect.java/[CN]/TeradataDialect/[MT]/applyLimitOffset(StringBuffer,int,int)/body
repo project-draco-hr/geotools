@@ -1,0 +1,24 @@
+{
+  if (offset == 0) {
+    int i=sql.indexOf("SELECT");
+    sql.insert(i + 6," TOP " + limit);
+  }
+ else {
+    Matcher m=ORDER_BY_QUERY.matcher(sql.toString());
+    String orderBy=null;
+    if (m.matches()) {
+      orderBy=m.group(1);
+      m=ORDER_BY.matcher(sql.toString());
+      String s=m.replaceAll("");
+      sql.setLength(0);
+      sql.append(s);
+    }
+    sql.insert(0,"SELECT t.*, ROW_NUMBER() OVER (ORDER BY 'foo') AS row_num FROM (");
+    sql.append(") AS t ");
+    if (orderBy != null) {
+      sql.append(orderBy).append(" ");
+    }
+    long max=(limit == Integer.MAX_VALUE ? Long.MAX_VALUE : limit + offset);
+    sql.append("QUALIFY row_num > ").append(offset).append(" AND row_num <= ").append(max);
+  }
+}
