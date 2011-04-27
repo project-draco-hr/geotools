@@ -9,7 +9,16 @@
     current=null;
   }
  else   if ((live == null) && (current != null)) {
-    diff.add(current.getID(),current);
+    String fid=current.getID();
+    if (Boolean.TRUE.equals(current.getUserData().get(Hints.USE_PROVIDED_FID))) {
+      if (current.getUserData().containsKey(Hints.PROVIDED_FID)) {
+        fid=(String)current.getUserData().get(Hints.PROVIDED_FID);
+        Map<Object,Object> userData=current.getUserData();
+        current=SimpleFeatureBuilder.build(current.getFeatureType(),current.getAttributes(),fid);
+        current.getUserData().putAll(userData);
+      }
+    }
+    diff.add(fid,current);
     fireNotification(FeatureEvent.FEATURES_ADDED,ReferencedEnvelope.reference(current.getBounds()));
     current=null;
   }
