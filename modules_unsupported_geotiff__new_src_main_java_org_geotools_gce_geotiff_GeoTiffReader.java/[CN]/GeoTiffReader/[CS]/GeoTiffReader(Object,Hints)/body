@@ -1,29 +1,13 @@
 {
-  if (hints == null)   this.hints=new Hints();
+  super(input,uHints);
   if (uHints != null) {
-    uHints.remove(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER);
-    this.hints.add(uHints);
+    this.hints.remove(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER);
     this.hints.add(new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
   }
-  this.coverageFactory=CoverageFactoryFinder.getGridCoverageFactory(this.hints);
-  coverageName="geotiff_coverage";
-  if (input == null) {
-    final IOException ex=new IOException("GeoTiffReader:No source set to read this coverage.");
-    throw new DataSourceException(ex);
-  }
   try {
-    this.source=input;
     if (input instanceof URL) {
       final URL sourceURL=(URL)input;
-      if (sourceURL.getProtocol().equalsIgnoreCase("http") || sourceURL.getProtocol().equalsIgnoreCase("ftp")) {
-        try {
-          source=sourceURL.openStream();
-        }
- catch (        IOException e) {
-          new RuntimeException(e);
-        }
-      }
- else       if (sourceURL.getProtocol().equalsIgnoreCase("file"))       source=new File(URLDecoder.decode(sourceURL.getFile(),"UTF-8"));
+      source=DataUtilities.urlToFile(sourceURL);
     }
     closeMe=true;
     if ((source instanceof InputStream) || (source instanceof ImageInputStream))     closeMe=false;
