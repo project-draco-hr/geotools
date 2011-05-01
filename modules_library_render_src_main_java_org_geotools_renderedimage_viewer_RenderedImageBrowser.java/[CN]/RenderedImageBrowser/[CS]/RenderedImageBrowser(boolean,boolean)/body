@@ -1,0 +1,25 @@
+{
+  this.showHistogram=showHistogram;
+  this.showRoi=showRoi;
+  model=new ImageTreeModel();
+  imageTree=new JTree(model);
+  imageTree.setCellRenderer(new ImageTreeRenderer());
+  imageTree.setShowsRootHandles(true);
+  imageTree.putClientProperty("JTree.lineStyle","Angled");
+  imageInfo=new RenderedImageInfoPanel(showHistogram,showRoi);
+  split=new JSplitPane();
+  split.setLeftComponent(new JScrollPane(imageTree));
+  split.setRightComponent(imageInfo);
+  split.setResizeWeight(0.2);
+  setLayout(new BorderLayout());
+  add(split);
+  imageTree.addTreeSelectionListener(new TreeSelectionListener(){
+    public void valueChanged(    TreeSelectionEvent e){
+      final TreePath selectedpath=imageTree.getSelectionPath();
+      if (selectedpath == null)       imageTree.setSelectionRow(0);
+      RenderedImage image=(RenderedImage)imageTree.getSelectionPath().getLastPathComponent();
+      imageInfo.setImage(image);
+    }
+  }
+);
+}
