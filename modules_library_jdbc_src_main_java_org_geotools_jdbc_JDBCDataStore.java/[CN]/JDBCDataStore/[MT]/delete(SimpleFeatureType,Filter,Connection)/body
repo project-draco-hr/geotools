@@ -4,12 +4,15 @@
     try {
       if (dialect instanceof PreparedStatementSQLDialect) {
         st=deleteSQLPS(featureType,filter,cx);
-        ((PreparedStatement)st).execute();
+        PreparedStatement ps=(PreparedStatement)st;
+        ((PreparedStatementSQLDialect)dialect).onDelete(ps,cx,featureType);
+        ps.execute();
       }
  else {
         String sql=deleteSQL(featureType,filter);
-        LOGGER.log(Level.FINE,"Removing feature(s): {0}",sql);
         st=cx.createStatement();
+        ((BasicSQLDialect)dialect).onDelete(st,cx,featureType);
+        LOGGER.log(Level.FINE,"Removing feature(s): {0}",sql);
         st.execute(sql);
       }
     }

@@ -5,12 +5,15 @@
     ResultSet rs=null;
     if (getSQLDialect() instanceof PreparedStatementSQLDialect) {
       st=selectSQLPS(featureType,query,cx);
-      rs=((PreparedStatement)st).executeQuery();
+      PreparedStatement ps=(PreparedStatement)st;
+      ((PreparedStatementSQLDialect)getSQLDialect()).onSelect(ps,cx,featureType);
+      rs=ps.executeQuery();
     }
  else {
       String sql=selectSQL(featureType,query);
-      LOGGER.fine(sql);
       st=cx.createStatement();
+      ((BasicSQLDialect)getSQLDialect()).onSelect(st,cx,featureType);
+      LOGGER.fine(sql);
       rs=st.executeQuery(sql);
     }
     try {
