@@ -1,0 +1,48 @@
+{
+  CoordinateReferenceSystem crs=null;
+  if (source instanceof File || (source instanceof URL && (((URL)source).getProtocol() == "file"))) {
+    final String sourceAsString;
+    if (source instanceof File) {
+      sourceAsString=((File)source).getAbsolutePath();
+    }
+ else {
+      String auth=((URL)source).getAuthority();
+      String path=((URL)source).getPath();
+      if (auth != null && !auth.equals("")) {
+        sourceAsString="//" + auth + path;
+      }
+ else {
+        sourceAsString=path;
+      }
+    }
+    final int index=sourceAsString.lastIndexOf(".");
+    final StringBuilder base=new StringBuilder(sourceAsString.substring(0,index)).append(".prj");
+    final File prjFile=new File(base.toString());
+    if (prjFile.exists()) {
+      PrjFileReader projReader=null;
+      try {
+        final FileChannel channel=new FileInputStream(prjFile).getChannel();
+        projReader=new PrjFileReader(channel);
+        crs=projReader.getCoordinateReferenceSystem();
+      }
+ catch (      FileNotFoundException e) {
+        LOGGER.log(Level.INFO,e.getLocalizedMessage(),e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.INFO,e.getLocalizedMessage(),e);
+      }
+catch (      FactoryException e) {
+        LOGGER.log(Level.INFO,e.getLocalizedMessage(),e);
+      }
+ finally {
+        if (projReader != null)         try {
+          projReader.close();
+        }
+ catch (        IOException e) {
+          LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+        }
+      }
+    }
+  }
+  return crs;
+}

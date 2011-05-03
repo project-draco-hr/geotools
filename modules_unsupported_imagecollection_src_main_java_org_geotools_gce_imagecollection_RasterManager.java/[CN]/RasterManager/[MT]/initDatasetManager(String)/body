@@ -1,0 +1,47 @@
+{
+  ImageManager imageManager=null;
+  final File file=new File(filePath);
+  ImageInputStream stream=null;
+  ImageReader reader=null;
+  try {
+    if (file.exists() && file.canRead()) {
+      stream=ImageIO.createImageInputStream(file);
+      reader=Utils.getReader(stream);
+      if (reader != null) {
+        reader.setInput(stream);
+        final ImageReaderSpi spi=reader.getOriginatingProvider();
+        final int width=reader.getWidth(0);
+        final int height=reader.getHeight(0);
+        final int numOverviews=reader.getNumImages(false) - 1;
+        final long lastModified=file.lastModified();
+        final ImageProperty property=new ImageProperty(filePath,width,height,numOverviews,spi,lastModified);
+        imageManager=new ImageManager(property);
+      }
+ else {
+        throw new DataSourceException("Unable to get a reader for the specified path " + filePath);
+      }
+    }
+  }
+ catch (  IOException ioe) {
+    DataSourceException dse=new DataSourceException("IOException occurred while accessing the specified path " + filePath);
+    dse.initCause(ioe);
+    throw dse;
+  }
+ finally {
+    if (stream != null) {
+      try {
+        stream.close();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+  return imageManager;
+}

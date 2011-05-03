@@ -1,0 +1,41 @@
+{
+synchronized (granuleLevels) {
+    if (granuleLevels.containsKey(Integer.valueOf(index)))     return granuleLevels.get(Integer.valueOf(index));
+ else {
+      ImageInputStream inStream=null;
+      ImageReader reader=null;
+      try {
+        inStream=Utils.getInputStream(granuleFile);
+        if (inStream == null)         throw new IllegalArgumentException();
+        reader=Utils.getReader(inStream);
+        if (reader == null) {
+          throw new IllegalArgumentException();
+        }
+        final Rectangle levelDimension=Utils.getDimension(index,inStream,reader);
+        final Level baseLevel=granuleLevels.get(0);
+        final double scaleX=baseLevel.width / (1.0 * levelDimension.width);
+        final double scaleY=baseLevel.height / (1.0 * levelDimension.height);
+        final Level newLevel=new Level(scaleX,scaleY,levelDimension.width,levelDimension.height);
+        this.granuleLevels.put(Integer.valueOf(index),newLevel);
+        return newLevel;
+      }
+ catch (      IllegalStateException e) {
+        throw new IllegalArgumentException(e);
+      }
+catch (      IOException e) {
+        throw new IllegalArgumentException(e);
+      }
+ finally {
+        try {
+          if (inStream != null)           inStream.close();
+        }
+ catch (        Throwable e) {
+          throw new IllegalArgumentException(e);
+        }
+ finally {
+          if (reader != null)           reader.dispose();
+        }
+      }
+    }
+  }
+}

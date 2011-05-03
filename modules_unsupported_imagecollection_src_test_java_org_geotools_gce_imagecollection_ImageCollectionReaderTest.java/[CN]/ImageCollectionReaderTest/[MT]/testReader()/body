@@ -1,0 +1,22 @@
+{
+  final File file=null;
+  final String string="PATH='folder2/subfolder1/a.TIF'";
+  Filter filter=CQL.toFilter(string);
+  ImageCollectionReader reader=new ImageCollectionReader(file);
+  final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  final GeneralEnvelope envelope=new GeneralEnvelope(new Rectangle(3000,3000,4000,4000));
+  envelope.setCoordinateReferenceSystem(DefaultEngineeringCRS.CARTESIAN_2D);
+  final Rectangle rasterArea=new Rectangle(3000,3000,500,500);
+  final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+  gg.setValue(new GridGeometry2D(range,envelope));
+  final ParameterValue<Filter> ff=ImageCollectionFormat.FILTER.createValue();
+  ff.setValue(filter);
+  final ParameterValue<double[]> background=ImageCollectionFormat.BACKGROUND_VALUES.createValue();
+  background.setValue(new double[]{0});
+  GeneralParameterValue[] params=new GeneralParameterValue[]{ff,gg,background};
+  if (reader != null) {
+    GridCoverage2D coverage=(GridCoverage2D)reader.read(params);
+    if (TestData.isInteractiveTest())     coverage.show();
+ else     coverage.getRenderedImage().getData();
+  }
+}

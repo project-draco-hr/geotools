@@ -1,0 +1,32 @@
+{
+  Utilities.ensureNonNull("readParameters",readParameters);
+  Utilities.ensureNonNull("request",request);
+  final double[] requestedRes=request.getRequestedResolution();
+  if (requestedRes == null) {
+    readParameters.setSourceSubsampling(1,1,0,0);
+    return;
+  }
+  final int rasterWidth, rasterHeight;
+  double selectedRes[]=new double[2];
+  final OverviewLevel level=request.imageManager.overviewsController.resolutionsLevels.get(imageIndex);
+  selectedRes[0]=level.resolutionX;
+  selectedRes[1]=level.resolutionY;
+  if (imageIndex == 0) {
+    rasterWidth=request.imageManager.coverageRasterArea.width;
+    rasterHeight=request.imageManager.coverageRasterArea.height;
+  }
+ else {
+    final RasterLayout selectedLevelLayout=request.imageManager.overviewsController.resolutionsLevels.get(imageIndex).rasterLayout;
+    rasterWidth=selectedLevelLayout.width;
+    rasterHeight=selectedLevelLayout.height;
+  }
+  int subSamplingFactorX=(int)Math.floor(requestedRes[0] / selectedRes[0]);
+  subSamplingFactorX=subSamplingFactorX == 0 ? 1 : subSamplingFactorX;
+  while (rasterWidth / subSamplingFactorX <= 0 && subSamplingFactorX >= 0)   subSamplingFactorX--;
+  subSamplingFactorX=subSamplingFactorX <= 0 ? 1 : subSamplingFactorX;
+  int subSamplingFactorY=(int)Math.floor(requestedRes[1] / selectedRes[1]);
+  subSamplingFactorY=subSamplingFactorY == 0 ? 1 : subSamplingFactorY;
+  while (rasterHeight / subSamplingFactorY <= 0 && subSamplingFactorY >= 0)   subSamplingFactorY--;
+  subSamplingFactorY=subSamplingFactorY <= 0 ? 1 : subSamplingFactorY;
+  readParameters.setSourceSubsampling(subSamplingFactorX,subSamplingFactorY,0,0);
+}
