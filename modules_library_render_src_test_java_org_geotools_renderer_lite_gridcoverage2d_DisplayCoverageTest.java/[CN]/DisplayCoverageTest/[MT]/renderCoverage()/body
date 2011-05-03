@@ -1,0 +1,33 @@
+{
+  System.out.println("   render grid coverage");
+  if (headless) {
+    System.out.println("      Skipping test in headless build");
+    return;
+  }
+  GridCoverage2D coverage=createCoverage();
+  Style style=createCoverageStyle("1");
+  MapContext context=new MapContext();
+  context.addLayer(coverage,style);
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setContext(context);
+  RenderListener listener=new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+    }
+    public void errorOccurred(    Exception e){
+      fail("Failed to render coverage");
+    }
+  }
+;
+  renderer.addRenderListener(listener);
+  BufferedImage image=new BufferedImage(WIDTH,WIDTH,BufferedImage.TYPE_INT_ARGB);
+  Graphics2D g2D=image.createGraphics();
+  Logger logger=Logger.getLogger(LOGGER_NAME);
+  final Level savedLevel=logger.getLevel();
+  logger.setLevel(Level.OFF);
+  try {
+    renderer.paint(g2D,bounds,env);
+  }
+  finally {
+    logger.setLevel(savedLevel);
+  }
+}
