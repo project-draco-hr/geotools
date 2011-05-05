@@ -17,14 +17,12 @@
     final MathTransform2D cropWorldToGrid=cropGridToWorldCorner.inverse();
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
     XRectangle2D.intersect(sourceArea,selectedlevel.rasterDimensions,sourceArea);
-    final Rectangle sourceAreaWithCollar=(Rectangle)sourceArea.clone();
-    sourceAreaWithCollar.grow((int)(sourceArea.width * 0.05),(int)(sourceArea.height * 0.05));
     if (sourceArea.isEmpty()) {
       if (LOGGER.isLoggable(java.util.logging.Level.WARNING))       LOGGER.warning("Got empty area for rasterGranuleLoader " + this.toString() + " with request "+ request.toString());
       return null;
     }
  else     if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine((new StringBuffer("Loading level ").append(imageIndex).append(" with source region ").append(sourceArea).toString()));
-    readParameters.setSourceRegion(sourceAreaWithCollar);
+    readParameters.setSourceRegion(sourceArea);
     RenderedImage raster=request.getReadType().read(readParameters,imageIndex,granuleFile,selectedlevel.rasterDimensions,tileDimension);
     if (raster == null)     return null;
     try {
@@ -33,13 +31,6 @@
  catch (    Throwable e) {
       if (LOGGER.isLoggable(java.util.logging.Level.FINE))       LOGGER.log(java.util.logging.Level.FINE,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
       return null;
-    }
-    if (!sourceArea.equals(sourceAreaWithCollar)) {
-      if (raster instanceof BufferedImage) {
-        final BufferedImage image=(BufferedImage)raster;
-        raster=image.getSubimage(sourceArea.x - sourceAreaWithCollar.x,sourceArea.y - sourceAreaWithCollar.y,sourceArea.width,sourceArea.height);
-      }
- else       raster=CropDescriptor.create(raster,(float)sourceArea.x - sourceAreaWithCollar.x,(float)sourceArea.y - sourceAreaWithCollar.y,(float)sourceArea.width,(float)sourceArea.height,null);
     }
     sourceArea.setRect(readParameters.getSourceRegion());
     double decimationScaleX=((1.0 * sourceArea.width) / raster.getWidth());
