@@ -27,7 +27,7 @@
  else     if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine((new StringBuffer("Loading level ").append(imageIndex).append(" with source region ").append(sourceArea).toString()));
     final int ssx=readParameters.getSourceXSubsampling();
     final int ssy=readParameters.getSourceYSubsampling();
-    final int newSubSamplingFactor=Utilities.getSubSamplingFactor2(ssx,ssy);
+    final int newSubSamplingFactor=ImageIOUtilities.getSubSamplingFactor2(ssx,ssy);
     if (newSubSamplingFactor != 0) {
       readParameters.setSourceSubsampling(newSubSamplingFactor,newSubSamplingFactor,0,0);
     }
@@ -48,13 +48,13 @@
     final AffineTransform afterDecimationTranslateTranform=XAffineTransform.getTranslateInstance(sourceArea.x,sourceArea.y);
     final AffineTransform backToBaseLevelScaleTransform=selectedlevel.baseToLevelTransform;
     final AffineTransform finalRaster2Model=new AffineTransform(baseGridToWorld);
-    finalRaster2Model.concatenate(Utils.CENTER_TO_CORNER);
+    finalRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
     if (!XAffineTransform.isIdentity(backToBaseLevelScaleTransform,EPS))     finalRaster2Model.concatenate(backToBaseLevelScaleTransform);
     if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,EPS))     finalRaster2Model.concatenate(afterDecimationTranslateTranform);
     if (!XAffineTransform.isIdentity(decimationScaleTranform,EPS))     finalRaster2Model.concatenate(decimationScaleTranform);
     finalRaster2Model.preConcatenate((AffineTransform)worldToGrid);
     final InterpolationNearest nearest=new InterpolationNearest();
-    Rectangle2D finalLayout=layoutHelper(raster,(float)finalRaster2Model.getScaleX(),(float)finalRaster2Model.getScaleY(),(float)finalRaster2Model.getTranslateX(),(float)finalRaster2Model.getTranslateY(),nearest);
+    Rectangle2D finalLayout=ImageUtilities.layoutHelper(raster,(float)finalRaster2Model.getScaleX(),(float)finalRaster2Model.getScaleY(),(float)finalRaster2Model.getTranslateX(),(float)finalRaster2Model.getTranslateY(),nearest);
     if (finalLayout.isEmpty()) {
       if (LOGGER.isLoggable(java.util.logging.Level.FINE))       LOGGER.fine("Unable to create a granule " + this.toString() + " due to jai scale bug");
       return null;
