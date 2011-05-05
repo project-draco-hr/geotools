@@ -1,20 +1,11 @@
 {
   imageOrigin=new Point(0,0);
   acceptRepaintRequests=true;
-  needNewBaseImage=true;
-  redrawBaseImage=true;
-  baseImageMoved=false;
-  clearLabelCache=false;
+  baseImageMoved=new AtomicBoolean();
+  clearLabelCache=new AtomicBoolean();
   resizingPaintDelay=DEFAULT_RESIZING_PAINT_DELAY;
-  resizeTimer=new Timer(resizingPaintDelay,new ActionListener(){
-    public void actionPerformed(    ActionEvent e){
-      onResizingCompleted();
-    }
-  }
-);
-  resizeTimer.setRepeats(false);
-  setRenderer(renderer);
-  setMapContext(context);
+  doSetRenderer(renderer);
+  doSetMapContext(context);
   renderingExecutor=new RenderingExecutor(this);
   toolManager=new MapToolManager(this);
   dragBox=new DragBox();
@@ -33,11 +24,21 @@
     }
   }
 );
-  addComponentListener(new ComponentAdapter(){
-    @Override public void componentResized(    ComponentEvent ev){
-      acceptRepaintRequests=false;
-      renderingExecutor.cancelTask();
-      resizeTimer.restart();
+  addHierarchyListener(new HierarchyListener(){
+    public void hierarchyChanged(    HierarchyEvent he){
+      if ((he.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+        if (isShowing() && baseImage == null) {
+          onShownOrResized();
+        }
+      }
+    }
+  }
+);
+  addHierarchyBoundsListener(new HierarchyBoundsAdapter(){
+    @Override public void ancestorResized(    HierarchyEvent he){
+      if (isShowing()) {
+        onShownOrResized();
+      }
     }
   }
 );

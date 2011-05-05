@@ -1,0 +1,23 @@
+{
+  if (currentPaintArea == null) {
+    return;
+  }
+  if (acceptRepaintRequests) {
+    if (createNewImage) {
+      baseImage=new BufferedImage(currentPaintArea.width + 1,currentPaintArea.height + 1,BufferedImage.TYPE_INT_ARGB);
+      if (baseImageGraphics != null) {
+        baseImageGraphics.dispose();
+      }
+      baseImageGraphics=baseImage.createGraphics();
+      clearLabelCache.set(true);
+    }
+    if (renderingExecutor.submit(currentDisplayArea,currentPaintArea,baseImageGraphics)) {
+      MapPaneEvent ev=new MapPaneEvent(this,MapPaneEvent.Type.RENDERING_STARTED);
+      publishEvent(ev);
+    }
+ else {
+      onRenderingRejected();
+    }
+  }
+  return;
+}
