@@ -1,0 +1,19 @@
+{
+  if (destination instanceof ImageOutputStream) {
+    return (ImageOutputStream)destination;
+  }
+  if (destination instanceof OutputStream && filesystemThreshold != null && image != null) {
+    OutputStream stream=(OutputStream)destination;
+    long imageSize=computeImageSize(image);
+    if (imageSize > filesystemThreshold) {
+      File cacheDirectory=getCacheDirectory();
+      return new FileCacheImageOutputStream(stream,cacheDirectory);
+    }
+ else {
+      return new MemoryCacheImageOutputStream(stream);
+    }
+  }
+ else {
+    return ImageIO.createImageOutputStream(destination);
+  }
+}

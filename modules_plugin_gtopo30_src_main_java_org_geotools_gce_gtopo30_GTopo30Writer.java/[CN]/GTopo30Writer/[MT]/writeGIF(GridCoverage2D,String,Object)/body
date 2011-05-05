@@ -1,17 +1,18 @@
 {
   ImageOutputStream out=null;
+  final GridCoverage2D gc1=rescaleCoverage(gc);
+  final GridCoverage2D gc2=gc1.geophysics(false);
+  final RenderedImage image=gc2.getRenderedImage();
   if (dest instanceof File) {
-    out=ImageIO.createImageOutputStream(new File((File)dest,new StringBuffer(name).append(".GIF").toString()));
+    final File file=new File((File)dest,new StringBuffer(name).append(".GIF").toString());
+    out=ImageIOExt.createImageOutputStream(image,file);
   }
  else {
     final ZipOutputStream outZ=(ZipOutputStream)dest;
     final ZipEntry e=new ZipEntry(gc.getName().toString() + ".GIF");
     outZ.putNextEntry(e);
-    out=ImageIO.createImageOutputStream(outZ);
+    out=ImageIOExt.createImageOutputStream(image,outZ);
   }
-  final GridCoverage2D gc1=rescaleCoverage(gc);
-  final GridCoverage2D gc2=gc1.geophysics(false);
-  final RenderedImage image=gc2.getRenderedImage();
   final ParameterBlockJAI pbj=new ParameterBlockJAI("ImageWrite");
   pbj.addSource(image);
   pbj.setParameter("Output",out);
