@@ -1,9 +1,19 @@
 {
-  MosaicIndexBuilder builder=new MosaicIndexBuilder();
-  builder.addProcessingEventListener(slaveToolsListener);
-  builder.setLocationPath(new File(outputLocation,String.valueOf(level)).getAbsolutePath());
-  builder.setIndexName(name);
+  final CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
+  configuration.setRootMosaicDirectory(new File(outputLocation,String.valueOf(level)).getAbsolutePath());
+  configuration.setIndexName(name);
+  configuration.setIndexingDirectories(Arrays.asList(configuration.getRootMosaicDirectory()));
+  final CatalogBuilder builder=new CatalogBuilder(configuration);
   builder.run();
+  builder.addProcessingEventListener(new CatalogBuilder.ProcessingEventListener(){
+    @Override public void getNotification(    org.geotools.gce.imagemosaic.catalogbuilder.CatalogBuilder.ProcessingEvent event){
+      slaveToolsListener.getNotification(new ProcessingEvent(event.getSource(),event.getMessage(),event.getPercentage()));
+    }
+    @Override public void exceptionOccurred(    org.geotools.gce.imagemosaic.catalogbuilder.CatalogBuilder.ExceptionEvent event){
+      slaveToolsListener.exceptionOccurred(new ExceptionEvent(event.getSource(),event.getMessage(),event.getPercentage(),event.getException()));
+    }
+  }
+);
   builder.removeAllProcessingEventListeners();
-  return new double[]{builder.getResolutionX(),builder.getResolutionY()};
+  return new double[]{builder.getMosaicConfiguration().getLevels()[0][0],builder.getMosaicConfiguration().getLevels()[0][1]};
 }
