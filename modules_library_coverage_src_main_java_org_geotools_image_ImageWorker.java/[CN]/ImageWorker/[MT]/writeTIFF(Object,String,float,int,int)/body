@@ -1,0 +1,38 @@
+{
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Encoding input image to write out as TIFF.");
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Getting a TIFF writer and configuring it.");
+  final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("TIFF");
+  if (!it.hasNext()) {
+    throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+  }
+  ImageWriter writer=it.next();
+  final ImageWriteParam iwp=writer.getDefaultWriteParam();
+  final ImageOutputStream outStream=ImageIOExt.createImageOutputStream(image,destination);
+  if (outStream == null)   throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
+  iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+  iwp.setCompressionType(compression);
+  iwp.setCompressionQuality(compressionRate);
+  if (tileSizeX > 0 && tileSizeY > 0) {
+    iwp.setTilingMode(ImageWriteParam.MODE_EXPLICIT);
+    iwp.setTiling(tileSizeX,tileSizeY,0,0);
+  }
+  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Writing out...");
+  try {
+    writer.setOutput(outStream);
+    writer.write(null,new IIOImage(image,null,null),iwp);
+  }
+  finally {
+    try {
+      writer.dispose();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+    try {
+      outStream.close();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+  }
+}
