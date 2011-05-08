@@ -1,9 +1,14 @@
 {
-  final File file=TestData.file(this,"test.tif");
-  final GeoTiffReader reader=new GeoTiffReader(file);
-  final GridCoverage2D coverage2D=(GridCoverage2D)reader.read(null);
+  final File tiff=TestData.file(this,"test.tif");
+  final File tfw=TestData.file(this,"test.tfw");
+  final TIFFImageReader reader=(it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReader)new TIFFImageReaderSpi().createReaderInstance();
+  reader.setInput(ImageIO.createImageInputStream(tiff));
+  final BufferedImage image=reader.read(0);
+  reader.dispose();
+  final MathTransform transform=new WorldFileReader(tfw).getTransform();
+  final GridCoverage2D coverage2D=CoverageFactoryFinder.getGridCoverageFactory(null).create("coverage",image,new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(image).getBounds()),transform,DefaultGeographicCRS.WGS84),new GridSampleDimension[]{new GridSampleDimension("coverage")},null,null);
   final File fileshp=TestData.file(this,"testpolygon.shp");
-  final DataStore store=FileDataStoreFinder.getDataStore(fileshp.toURL());
+  final DataStore store=FileDataStoreFinder.getDataStore(fileshp.toURI().toURL());
   FeatureSource<SimpleFeatureType,SimpleFeature> featureSource=store.getFeatureSource(store.getNames().get(0));
   FeatureCollection<SimpleFeatureType,SimpleFeature> featureCollection=featureSource.getFeatures();
   List<SimpleFeature> polygonList=new ArrayList<SimpleFeature>();
@@ -42,4 +47,6 @@
   assertEquals(statistics.get(Statistic.MAX).get(0).getValue().doubleValue(),1300.0,DELTA);
   assertEquals(statistics.get(Statistic.MAX).get(1).getValue().doubleValue(),1598.0,DELTA);
   reader.dispose();
+  coverage2D.dispose(true);
+  image.flush();
 }
