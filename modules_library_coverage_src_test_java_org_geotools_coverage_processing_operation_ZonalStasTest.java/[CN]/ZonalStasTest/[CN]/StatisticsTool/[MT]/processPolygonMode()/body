@@ -1,0 +1,55 @@
+{
+  final AffineTransform gridToWorldTransformCorrected=new AffineTransform((AffineTransform)((GridGeometry2D)gridCoverage2D.getGridGeometry()).getGridToCRS2D(PixelOrientation.UPPER_LEFT));
+  final MathTransform worldToGridTransform;
+  try {
+    worldToGridTransform=ProjectiveTransform.create(gridToWorldTransformCorrected.createInverse());
+  }
+ catch (  NoninvertibleTransformException e) {
+    throw new IllegalArgumentException(e.getLocalizedMessage());
+  }
+  for (  SimpleFeature feature : featureList) {
+    final String fid=feature.getID();
+    final Geometry geometry=(Geometry)feature.getDefaultGeometry();
+    if (geometry instanceof Polygon || geometry instanceof MultiPolygon) {
+      final BoundingBox bbox=feature.getBounds();
+      final CoverageProcessor processor=CoverageProcessor.getInstance();
+      final ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+      param.parameter("Source").setValue(gridCoverage2D);
+      param.parameter("Envelope").setValue(new GeneralEnvelope(bbox));
+      final GridCoverage2D cropped=(GridCoverage2D)processor.doOperation(param);
+      ROI roi=null;
+      final int numGeometries=geometry.getNumGeometries();
+      for (int i=0; i < numGeometries; i++) {
+        Geometry geometryN=geometry.getGeometryN(i);
+        java.awt.Polygon awtPolygon=toAWTPolygon((Polygon)geometryN,worldToGridTransform);
+        if (roi == null) {
+          roi=new ROIShape(awtPolygon);
+        }
+ else {
+          ROI newRoi=new ROIShape(awtPolygon);
+          roi.add(newRoi);
+        }
+      }
+      final Statistic[] statistis=statisticsSet.toArray(new Statistic[statisticsSet.size()]);
+      final OperationJAI op=new OperationJAI("ZonalStats");
+      ParameterValueGroup params=op.getParameters();
+      params.parameter("dataImage").setValue(cropped);
+      params.parameter("stats").setValue(statistis);
+      params.parameter("bands").setValue(bands);
+      params.parameter("roi").setValue(roi);
+      params.parameter("ranges").setValue(inclusionRanges);
+      params.parameter("rangesType").setValue(rangesType);
+      params.parameter("rangeLocalStats").setValue(isLocal);
+      final GridCoverage2D coverage=(GridCoverage2D)op.doOperation(params,null);
+      final ZonalStats stats=(ZonalStats)coverage.getProperty(ZonalStatsDescriptor.ZONAL_STATS_PROPERTY);
+      final Map<Statistic,List<Result>> statsMap=new HashMap<Statistic,List<Result>>();
+      for (      Statistic statistic : statistis) {
+        final List<Range> inclRanges=CollectionFactory.list();
+        inclRanges.addAll(inclusionRanges);
+        List<Result> statsResult=stats.ranges(inclRanges).statistic(statistic).results();
+        statsMap.put(statistic,statsResult);
+      }
+      feature2StatisticsMap.put(fid,statsMap);
+    }
+  }
+}

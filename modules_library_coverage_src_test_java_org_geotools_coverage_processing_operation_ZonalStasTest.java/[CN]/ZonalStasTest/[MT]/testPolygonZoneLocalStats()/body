@@ -1,0 +1,45 @@
+{
+  final File file=TestData.file(this,"test.tif");
+  final GeoTiffReader reader=new GeoTiffReader(file);
+  final GridCoverage2D coverage2D=(GridCoverage2D)reader.read(null);
+  final File fileshp=TestData.file(this,"testpolygon.shp");
+  final DataStore store=FileDataStoreFinder.getDataStore(fileshp.toURL());
+  FeatureSource<SimpleFeatureType,SimpleFeature> featureSource=store.getFeatureSource(store.getNames().get(0));
+  FeatureCollection<SimpleFeatureType,SimpleFeature> featureCollection=featureSource.getFeatures();
+  List<SimpleFeature> polygonList=new ArrayList<SimpleFeature>();
+  FeatureIterator<SimpleFeature> featureIterator=featureCollection.features();
+  while (featureIterator.hasNext()) {
+    SimpleFeature feature=featureIterator.next();
+    polygonList.add(feature);
+  }
+  featureIterator.close();
+  Set<Statistic> statsSet=new LinkedHashSet<Statistic>();
+  statsSet.add(Statistic.MIN);
+  statsSet.add(Statistic.MAX);
+  statsSet.add(Statistic.MEAN);
+  statsSet.add(Statistic.VARIANCE);
+  statsSet.add(Statistic.SDEV);
+  statsSet.add(Statistic.RANGE);
+  Integer[] bands=new Integer[]{0};
+  List<Range<Double>> inclusionRanges=new ArrayList<Range<Double>>();
+  inclusionRanges.add(new Range<Double>(Double.valueOf(0),false,Double.valueOf(1300),true));
+  inclusionRanges.add(new Range<Double>(Double.valueOf(1370),true,Double.valueOf(1600),true));
+  StatisticsTool statisticsTool=new StatisticsTool(statsSet,coverage2D,bands,polygonList,inclusionRanges,Range.Type.INCLUDE,true);
+  statisticsTool.run();
+  String id="testpolygon.1";
+  Map<Statistic,List<Result>> statistics=statisticsTool.getStatistics(id);
+  LOGGER.info(id + statistics.toString());
+  assertEquals(statistics.get(Statistic.RANGE).get(0).getValue().doubleValue(),45.0,DELTA);
+  assertEquals(statistics.get(Statistic.RANGE).get(1).getValue().doubleValue(),228.0,DELTA);
+  assertEquals(statistics.get(Statistic.SDEV).get(0).getValue().doubleValue(),11.7972,DELTA);
+  assertEquals(statistics.get(Statistic.SDEV).get(1).getValue().doubleValue(),63.7335,DELTA);
+  assertEquals(statistics.get(Statistic.MIN).get(0).getValue().doubleValue(),1255.0,DELTA);
+  assertEquals(statistics.get(Statistic.MIN).get(1).getValue().doubleValue(),1370.0,DELTA);
+  assertEquals(statistics.get(Statistic.MEAN).get(0).getValue().doubleValue(),1283.1634,DELTA);
+  assertEquals(statistics.get(Statistic.MEAN).get(1).getValue().doubleValue(),1433.8979,DELTA);
+  assertEquals(statistics.get(Statistic.VARIANCE).get(0).getValue().doubleValue(),139.1754,DELTA);
+  assertEquals(statistics.get(Statistic.VARIANCE).get(1).getValue().doubleValue(),4061.9665,DELTA);
+  assertEquals(statistics.get(Statistic.MAX).get(0).getValue().doubleValue(),1300.0,DELTA);
+  assertEquals(statistics.get(Statistic.MAX).get(1).getValue().doubleValue(),1598.0,DELTA);
+  reader.dispose();
+}
