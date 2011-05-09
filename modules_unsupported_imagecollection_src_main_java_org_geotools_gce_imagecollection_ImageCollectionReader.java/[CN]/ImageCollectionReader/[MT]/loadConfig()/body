@@ -1,0 +1,66 @@
+{
+  final String propertiesPath=parentPath + Utils.CONFIG_FILE;
+  final File propertiesFile=new File(propertiesPath);
+  String coverage=null;
+  if (Utils.checkFileReadable(propertiesFile)) {
+    Properties props=new Properties();
+    FileInputStream fis=null;
+    try {
+      fis=new FileInputStream(propertiesFile);
+      props.load(fis);
+      if (props.containsKey(Utils.ImageCollectionProperties.COVERAGE_NAME)) {
+        final String coverageName=(String)props.get(Utils.ImageCollectionProperties.COVERAGE_NAME);
+        if (coverageName != null && coverageName.trim().length() > 0) {
+          coverage=coverageName;
+        }
+      }
+      if (props.containsKey(Utils.ImageCollectionProperties.DEFAULT_PATH)) {
+        final String defaultPath=(String)props.get(Utils.ImageCollectionProperties.DEFAULT_PATH);
+        if (defaultPath != null && defaultPath.trim().length() > 0) {
+          this.defaultPath=defaultPath;
+        }
+      }
+      if (props.containsKey(Utils.ImageCollectionProperties.EXPAND_RGB)) {
+        final String expand=(String)props.get(Utils.ImageCollectionProperties.EXPAND_RGB);
+        if (expand != null && expand.trim().length() > 0) {
+          this.expandMe=Boolean.parseBoolean(expand);
+        }
+      }
+    }
+ catch (    FileNotFoundException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,"Unable to parse the config file: " + propertiesPath,e);
+      }
+    }
+catch (    IOException e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,"Unable to parse the config file: " + propertiesPath,e);
+      }
+    }
+ finally {
+      if (fis != null) {
+        try {
+          fis.close();
+        }
+ catch (        Throwable t) {
+        }
+      }
+    }
+  }
+  if (coverage == null) {
+    coverageName=FilenameUtils.getBaseName(FilenameUtils.getFullPathNoEndSeparator(parentPath));
+  }
+ else {
+    coverageName=coverage;
+  }
+  if (defaultPath == null) {
+    final File parent=new File(parentPath);
+    final List<File> files;
+    if (parent.exists() && parent.isDirectory() && parent.canRead()) {
+      files=Utils.getFileList(parent,Utils.FILE_FILTER,true);
+      if (!files.isEmpty()) {
+        defaultPath=files.get(0).getAbsolutePath();
+      }
+    }
+  }
+}
