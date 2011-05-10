@@ -1,0 +1,133 @@
+{
+  if (param != null) {
+    Rectangle srcRegion=param.getSourceRegion();
+    int intRealRowsToRead=srcRegion.height;
+    int intRealColsToRead=srcRegion.width;
+    int sourceXSubsampling=param.getSourceXSubsampling();
+    int sourceYSubsampling=param.getSourceYSubsampling();
+    double xRes=nativeRasterRegion.getWEResolution();
+    double yRes=nativeRasterRegion.getNSResolution();
+    double newWest=nativeRasterRegion.getWest() + srcRegion.getMinX() * xRes;
+    double newEast=nativeRasterRegion.getWest() + srcRegion.getMaxX() * xRes;
+    double minY=srcRegion.getMinY();
+    double newNorth=nativeRasterRegion.getNorth() - minY * yRes;
+    double newSouth=newNorth - srcRegion.height * yRes;
+    activeReadRegion=new JGrassRegion(newWest,newEast,newSouth,newNorth,intRealRowsToRead,intRealColsToRead);
+    int colsAtMaxRes=activeReadRegion.getCols();
+    int rowsAtMaxRes=activeReadRegion.getRows();
+    if (!useSubSamplingAsRequestedRowcols) {
+      rasterMapWidth=colsAtMaxRes / sourceXSubsampling;
+      rasterMapHeight=rowsAtMaxRes / sourceYSubsampling;
+    }
+ else {
+      rasterMapWidth=sourceXSubsampling;
+      rasterMapHeight=sourceYSubsampling;
+    }
+    activeReadRegion.setCols(rasterMapWidth);
+    activeReadRegion.setRows(rasterMapHeight);
+  }
+ else {
+    activeReadRegion=new JGrassRegion(nativeRasterRegion);
+    rasterMapWidth=nativeRasterRegion.getCols();
+    rasterMapHeight=nativeRasterRegion.getRows();
+  }
+  final WritableRaster raster;
+  if (numberOfBytesPerValue == 8) {
+    if (!castDoubleToFloating) {
+      raster=RasterFactory.createBandedRaster(DataBuffer.TYPE_DOUBLE,rasterMapWidth,rasterMapHeight,1,null);
+    }
+ else {
+      raster=RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT,rasterMapWidth,rasterMapHeight,1,null);
+    }
+  }
+ else   if (numberOfBytesPerValue == 4 && readerMapType < 0) {
+    raster=RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT,rasterMapWidth,rasterMapHeight,1,null);
+  }
+ else   if (readerMapType > -1) {
+    raster=RasterFactory.createBandedRaster(DataBuffer.TYPE_INT,rasterMapWidth,rasterMapHeight,1,null);
+  }
+ else {
+    throw new IOException("Raster type not supported.");
+  }
+  int activeRows=activeReadRegion.getRows();
+  int activeCols=activeReadRegion.getCols();
+  int bufferSize=activeRows * activeCols * numberOfBytesPerValue;
+  ByteBuffer rasterByteBuffer=ByteBuffer.allocate(bufferSize);
+  byte[] nullRow=null;
+  byte[] rowDataCache=new byte[activeCols * numberOfBytesPerValue];
+  rowCacheRow=-1;
+  firstDataRow=-1;
+  int rowindex=-1;
+  int filerows=nativeRasterRegion.getRows();
+  double filenorth=nativeRasterRegion.getNorth();
+  double filensres=nativeRasterRegion.getNSResolution();
+  double datanorth=activeReadRegion.getNorth();
+  double datansres=activeReadRegion.getNSResolution();
+  monitor.started();
+  monitor.setTask(new SimpleInternationalString("Read raster map: " + readerGrassEnv.getMapName()));
+  float progress=0f;
+  for (double row=0; row < activeRows; row++) {
+    double filerow=(filenorth - (datanorth - (row * datansres))) / filensres;
+    filerow=Math.floor(filerow);
+    if (filerow < 0 || filerow >= filerows) {
+      if (firstDataRow == -1)       rowindex++;
+      if (nullRow == null)       nullRow=initNullRow(activeCols);
+      rasterByteBuffer.put(nullRow);
+    }
+ else {
+      if (firstDataRow == -1)       firstDataRow=rowindex + 1;
+      if (filerow == rowCacheRow) {
+        rasterByteBuffer.put(rowDataCache);
+      }
+ else {
+        readRasterRow((int)filerow,rowDataCache,activeReadRegion);
+        rowCacheRow=(int)filerow;
+        rasterByteBuffer.put(rowDataCache);
+      }
+    }
+    progress=(float)(progress + 100f * row / activeRows);
+    monitor.progress(progress);
+  }
+  monitor.complete();
+  rasterByteBuffer.rewind();
+  rowCacheRow=-1;
+  nullRow=null;
+  if (numberOfBytesPerValue == 8) {
+    if (!castDoubleToFloating) {
+      for (int y=0; y < activeRows; y++) {
+        for (int x=0; x < activeCols; x++) {
+          double value=rasterByteBuffer.getDouble();
+          raster.setSample(x,y,0,value);
+        }
+      }
+    }
+ else {
+      for (int y=0; y < activeRows; y++) {
+        for (int x=0; x < activeCols; x++) {
+          float value=(float)rasterByteBuffer.getDouble();
+          raster.setSample(x,y,0,value);
+        }
+      }
+    }
+  }
+ else   if (numberOfBytesPerValue == 4 && readerMapType < 0) {
+    for (int y=0; y < activeRows; y++) {
+      for (int x=0; x < activeCols; x++) {
+        float value=rasterByteBuffer.getFloat();
+        raster.setSample(x,y,0,value);
+      }
+    }
+  }
+ else   if (readerMapType > -1) {
+    for (int y=0; y < activeRows; y++) {
+      for (int x=0; x < activeCols; x++) {
+        int value=rasterByteBuffer.getInt();
+        if (value == Integer.MAX_VALUE) {
+          value=noData.intValue();
+        }
+        raster.setSample(x,y,0,value);
+      }
+    }
+  }
+  return raster;
+}

@@ -1,0 +1,21 @@
+{
+  int cellValue=0;
+  ByteBuffer cell=ByteBuffer.allocate(readerMapType);
+  int filerowsize=nativeRasterRegion.getCols() * readerMapType;
+  imageIS.seek((currentrow * (long)filerowsize));
+  ByteBuffer tmpBuffer=ByteBuffer.allocate(filerowsize);
+  imageIS.read(tmpBuffer.array());
+  while (tmpBuffer.hasRemaining()) {
+    tmpBuffer.get(cell.array());
+    if (readerMapType == 1) {
+      cellValue=(cell.get(0) & 0xff);
+    }
+ else     if (readerMapType == 2) {
+      cellValue=cell.getShort(0);
+    }
+ else     if (readerMapType == 4) {
+      cellValue=cell.getInt(0);
+    }
+    rowdata.putInt(cellValue);
+  }
+}

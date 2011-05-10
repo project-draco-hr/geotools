@@ -1,0 +1,68 @@
+{
+  colorRulesString=metaDataTable.get(GrassBinaryImageMetadata.COLOR_RULES_DESCRIPTOR);
+  categoriesString=metaDataTable.get(GrassBinaryImageMetadata.CATEGORIES_DESCRIPTOR);
+  String[] colorRulesSplit;
+  if (colorRulesString.length() > 3 && !colorRulesString.matches(".*Infinty.*|.*NaN.*")) {
+    colorRulesSplit=colorRulesString.split(GrassBinaryImageMetadata.RULESSPLIT);
+  }
+ else {
+    List<String> defColorTable=JGrassColorTable.createDefaultColorTable(range,255);
+    colorRulesSplit=(String[])defColorTable.toArray(new String[defColorTable.size()]);
+    File colrFile=jgMapEnvironment.getCOLR();
+    JGrassUtilities.makeColorRulesPersistent(colrFile,defColorTable,range,255);
+  }
+  if (colorRulesSplit != null) {
+    int COLORNUM=60000;
+    int rulesNum=colorRulesSplit.length;
+    if (colorRulesSplit.length > COLORNUM) {
+      COLORNUM=colorRulesSplit.length + 1;
+    }
+    if (COLORNUM > 65500) {
+      COLORNUM=65500;
+    }
+    List<Category> catsList=new ArrayList<Category>();
+    double[][] values=new double[rulesNum][2];
+    Color[][] colors=new Color[rulesNum][2];
+    for (int i=0; i < rulesNum; i++) {
+      String colorRule=colorRulesSplit[i];
+      JGrassColorTable.parseColorRule(colorRule,values[i],colors[i]);
+      if (values[i][0] == values[i][1]) {
+        colors[i][1]=colors[i][0];
+      }
+    }
+    Category noData=new Category("novalue",new Color(Color.WHITE.getRed(),Color.WHITE.getGreen(),Color.WHITE.getBlue(),0),0);
+    catsList.add(noData);
+    double a=(values[values.length - 1][1] - values[0][0]) / (double)(COLORNUM - 1);
+    double pmin=1.0;
+    double scale=a;
+    if (scale == 0) {
+      scale=1;
+    }
+    double offSet=values[0][0] - scale * pmin;
+    int previousUpper=-Integer.MAX_VALUE;
+    for (int i=0; i < rulesNum; i++) {
+      StringBuilder sB=new StringBuilder();
+      sB.append(name);
+      sB.append("_");
+      sB.append(i);
+      double tmpLower=values[i][0];
+      double tmpUpper=values[i][1];
+      int lower=(int)((tmpLower - values[0][0]) / scale + pmin);
+      int upper=(int)((tmpUpper - values[0][0]) / scale + pmin);
+      if (lower <= previousUpper) {
+        lower=previousUpper + 1;
+      }
+      if (lower >= upper) {
+        upper=lower + 1;
+      }
+      previousUpper=upper;
+      Category dataCategory=new Category(sB.toString(),colors[i],lower,upper,scale,offSet);
+      catsList.add(dataCategory);
+    }
+    Category[] array=(Category[])catsList.toArray(new Category[catsList.size()]);
+    return new GridSampleDimension(name,array,null);
+  }
+ else {
+    return new GridSampleDimension(name,new Category[]{},null);
+  }
+}

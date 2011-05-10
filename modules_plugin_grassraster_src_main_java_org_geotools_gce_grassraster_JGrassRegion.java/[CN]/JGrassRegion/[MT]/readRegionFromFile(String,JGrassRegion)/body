@@ -1,0 +1,78 @@
+{
+  String line;
+  BufferedReader windReader=new BufferedReader(new FileReader(filePath));
+  LinkedHashMap<String,String> store=new LinkedHashMap<String,String>();
+  while ((line=windReader.readLine()) != null) {
+    if (line.matches(".*reclass.*")) {
+      String mapLine=windReader.readLine();
+      String mapsetLine=windReader.readLine();
+      if (mapLine == null || mapsetLine == null) {
+        throw new IOException("Wrong reclass file format");
+      }
+      String mapName=mapLine.trim().split(":")[1].trim();
+      String mapsetName=mapsetLine.trim().split(":")[1].trim();
+      File f=new File(filePath).getParentFile().getParentFile().getParentFile();
+      File reclassMap=new File(f,mapsetName + "/" + JGrassConstants.CELLHD+ "/"+ mapName);
+      if (!reclassMap.exists()) {
+        throw new IOException("The reclass cellhead file doesn't seem to exist. Unable to read the file region.");
+      }
+      windReader.close();
+      windReader=new BufferedReader(new FileReader(reclassMap));
+      line=windReader.readLine();
+    }
+    if (line == null) {
+      throw new IOException("Wrong reclass file format");
+    }
+    String[] lineSplit=line.split(":",2);
+    if (lineSplit.length == 2) {
+      String key=lineSplit[0].trim();
+      String value=lineSplit[1].trim();
+      if ((key.indexOf("res") != -1 && key.indexOf("resol") == -1) || key.indexOf("res3") != -1) {
+        if (!key.startsWith("compressed"))         store.put(key.replaceAll("res","resol"),value);
+      }
+ else {
+        store.put(key,value);
+      }
+    }
+  }
+  try {
+    region.setProj(Integer.parseInt(store.get("proj")));
+    region.setZone(Integer.parseInt(store.get("zone")));
+    store.remove("proj");
+    store.remove("zone");
+  }
+ catch (  Exception e) {
+  }
+  String tmpNorth=store.get("north");
+  String tmpSouth=store.get("south");
+  String tmpEast=store.get("east");
+  String tmpWest=store.get("west");
+  double[] nsew=nsewStringsToNumbers(tmpNorth,tmpSouth,tmpEast,tmpWest);
+  region.setNorth(nsew[0]);
+  region.setSouth(nsew[1]);
+  region.setEast(nsew[2]);
+  region.setWest(nsew[3]);
+  store.remove("north");
+  store.remove("south");
+  store.remove("east");
+  store.remove("west");
+  if (!store.containsKey("e-w resol") && !store.containsKey("n-s resol")) {
+    region.setCols(Integer.parseInt(store.get("cols")));
+    region.setRows(Integer.parseInt(store.get("rows")));
+    store.remove("cols");
+    store.remove("rows");
+    region.fixResolution();
+  }
+ else {
+    double[] xyRes=xyResStringToNumbers(store.get("e-w resol"),store.get("n-s resol"));
+    region.setWEResolution(xyRes[0]);
+    region.setNSResolution(xyRes[1]);
+    store.remove("e-w resol");
+    store.remove("n-s resol");
+    region.fixRowsAndCols();
+  }
+  region.setAdditionalGrassEntries(store);
+  windReader.close();
+  windReader=null;
+  store=null;
+}
