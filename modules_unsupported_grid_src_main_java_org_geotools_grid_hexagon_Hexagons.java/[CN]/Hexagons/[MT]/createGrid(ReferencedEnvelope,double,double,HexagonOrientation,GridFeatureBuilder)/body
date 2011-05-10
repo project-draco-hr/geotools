@@ -1,0 +1,20 @@
+{
+  if (bounds == null || bounds.isEmpty() || bounds.isNull()) {
+    throw new IllegalArgumentException("bounds should not be null or empty");
+  }
+  if (sideLen <= 0) {
+    throw new IllegalArgumentException("sideLen must be greater than 0");
+  }
+  if (orientation == null) {
+    throw new IllegalArgumentException("orientation should not be null");
+  }
+  CoordinateReferenceSystem boundsCRS=bounds.getCoordinateReferenceSystem();
+  CoordinateReferenceSystem builderCRS=gridFeatureBuilder.getType().getCoordinateReferenceSystem();
+  if (boundsCRS != null && builderCRS != null && !CRS.equalsIgnoreMetadata(boundsCRS,builderCRS)) {
+    throw new IllegalArgumentException("Different CRS set for bounds and the feature builder");
+  }
+  final SimpleFeatureCollection fc=new ListFeatureCollection(gridFeatureBuilder.getType());
+  HexagonGridBuilder gridBuilder=new HexagonGridBuilder(bounds,sideLen,orientation);
+  gridBuilder.buildGrid(fc,gridFeatureBuilder,vertexSpacing);
+  return DataUtilities.source(fc);
+}
