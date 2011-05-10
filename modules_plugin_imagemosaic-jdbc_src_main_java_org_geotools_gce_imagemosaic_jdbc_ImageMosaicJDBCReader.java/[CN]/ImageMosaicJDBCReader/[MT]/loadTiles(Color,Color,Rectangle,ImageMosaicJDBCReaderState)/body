@@ -7,7 +7,7 @@
     LOGGER.warning("The requested envelope does not intersect the envelope of this mosaic, result is a nodata image");
     LOGGER.warning(state.getRequestEnvelopeTransformed().toString());
     LOGGER.warning(originalEnvelope.toString());
-    return coverageFactory.create(coverageName,getEmptyImage((int)pixelDimension.getWidth(),(int)pixelDimension.getHeight(),outputTransparentColor),state.getRequestedEnvelope());
+    return coverageFactory.create(coverageName,getEmptyImage((int)pixelDimension.getWidth(),(int)pixelDimension.getHeight(),backgroundColor,outputTransparentColor),state.getRequestedEnvelope());
   }
   final ImageReadParam readP=new ImageReadParam();
   final Integer imageChoice;
@@ -18,7 +18,7 @@
     }
  catch (    TransformException e) {
       LOGGER.severe(e.getLocalizedMessage());
-      return coverageFactory.create(coverageName,getEmptyImage((int)pixelDimension.getWidth(),(int)pixelDimension.getHeight(),outputTransparentColor),state.getRequestedEnvelope());
+      return coverageFactory.create(coverageName,getEmptyImage((int)pixelDimension.getWidth(),(int)pixelDimension.getHeight(),backgroundColor,outputTransparentColor),state.getRequestedEnvelope());
     }
   }
  else {
@@ -26,7 +26,7 @@
   }
   ImageLevelInfo info=jdbcAccess.getLevelInfo(imageChoice.intValue());
   LOGGER.info("Coverage " + info.getCoverageName() + " using spatial table "+ info.getSpatialTableName()+ ", image table "+ info.getTileTableName());
-  ImageComposerThread imageComposerThread=new ImageComposerThread(outputTransparentColor,pixelDimension,state.getRequestEnvelopeTransformed(),info,state.getTileQueue(),config,state.isXAxisSwitch(),coverageFactory);
+  ImageComposerThread imageComposerThread=new ImageComposerThread(backgroundColor,outputTransparentColor,pixelDimension,state.getRequestEnvelopeTransformed(),info,state.getTileQueue(),config,state.isXAxisSwitch(),coverageFactory);
   imageComposerThread.start();
   jdbcAccess.startTileDecoders(pixelDimension,state.getRequestEnvelopeTransformed(),info,state.getTileQueue(),coverageFactory);
   try {

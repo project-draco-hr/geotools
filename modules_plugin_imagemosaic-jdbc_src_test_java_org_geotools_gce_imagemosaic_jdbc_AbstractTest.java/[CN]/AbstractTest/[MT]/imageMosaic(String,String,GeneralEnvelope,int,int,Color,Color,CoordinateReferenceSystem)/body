@@ -5,7 +5,7 @@
   }
   AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(configUrl);
   ImageMosaicJDBCReader reader=(ImageMosaicJDBCReader)format.getReader(configUrl,hints);
-  ParameterValue gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
   if (envelope == null) {
     envelope=reader.getOriginalEnvelope();
   }
@@ -13,8 +13,10 @@
     envelope.setCoordinateReferenceSystem(reader.getOriginalEnvelope().getCoordinateReferenceSystem());
   }
   gg.setValue(new GridGeometry2D(new GridEnvelope2D(new Rectangle(0,0,width,heigth)),envelope));
-  final ParameterValue outTransp=ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.createValue();
-  outTransp.setValue((bColor == null) ? ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.getDefaultValue() : bColor);
-  GridCoverage2D coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,outTransp});
+  final ParameterValue<Color> outTransp=ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.createValue();
+  outTransp.setValue((transparentColor == null) ? ImageMosaicJDBCFormat.OUTPUT_TRANSPARENT_COLOR.getDefaultValue() : transparentColor);
+  final ParameterValue<Color> bgColor=ImageMosaicJDBCFormat.BACKGROUND_COLOR.createValue();
+  bgColor.setValue((bColor == null) ? ImageMosaicJDBCFormat.BACKGROUND_COLOR.getDefaultValue() : bColor);
+  GridCoverage2D coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,outTransp,bgColor});
   ImageIO.write(coverage.getRenderedImage(),"tif",new File(getOutPutDir() + File.separator + name+ ".tif"));
 }
