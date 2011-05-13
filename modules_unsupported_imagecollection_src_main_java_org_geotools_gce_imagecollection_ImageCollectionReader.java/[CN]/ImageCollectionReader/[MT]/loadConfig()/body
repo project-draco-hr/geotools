@@ -9,37 +9,7 @@
     try {
       fis=new FileInputStream(propertiesFile);
       props.load(fis);
-      if (props.containsKey(Utils.ImageCollectionProperties.COVERAGE_NAME)) {
-        final String coverageName=(String)props.get(Utils.ImageCollectionProperties.COVERAGE_NAME);
-        if (coverageName != null && coverageName.trim().length() > 0) {
-          coverage=coverageName;
-        }
-      }
-      if (props.containsKey(Utils.ImageCollectionProperties.DEFAULT_PATH)) {
-        final String defaultPath=(String)props.get(Utils.ImageCollectionProperties.DEFAULT_PATH);
-        if (defaultPath != null && defaultPath.trim().length() > 0) {
-          this.defaultPath=defaultPath;
-        }
-      }
-      if (props.containsKey(Utils.ImageCollectionProperties.EXPAND_RGB)) {
-        final String expand=(String)props.get(Utils.ImageCollectionProperties.EXPAND_RGB);
-        if (expand != null && expand.trim().length() > 0) {
-          this.expandMe=Boolean.parseBoolean(expand);
-        }
-      }
-      if (props.containsKey(Utils.ImageCollectionProperties.TIME_BETWEEN_CHECKS)) {
-        final String timeCheck=(String)props.get(Utils.ImageCollectionProperties.TIME_BETWEEN_CHECKS);
-        if (timeCheck != null && timeCheck.trim().length() > 0) {
-          try {
-            this.timeBetweenChecks=Long.parseLong(timeCheck) * 1000;
-          }
- catch (          NumberFormatException nfe) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
-              LOGGER.log(Level.WARNING,"Unable to parse the specified time interval check.",nfe);
-            }
-          }
-        }
-      }
+      coverage=initProperties(props);
     }
  catch (    FileNotFoundException e) {
       if (LOGGER.isLoggable(Level.WARNING)) {
@@ -67,16 +37,16 @@ catch (    IOException e) {
  else {
     coverageName=coverage;
   }
-  if (defaultPath == null) {
+  if (defaultValues.path == null) {
     final File parent=new File(rootPath);
     final List<File> files;
     if (parent.exists() && parent.isDirectory() && parent.canRead()) {
       files=Utils.getFileList(parent,Utils.FILE_FILTER,true);
       if (!files.isEmpty()) {
         String path=files.get(0).getAbsolutePath();
-        defaultPath=path;
+        defaultValues.path=path;
         if (path.startsWith(rootPath)) {
-          defaultPath=path.substring(rootPath.length());
+          defaultValues.path=path.substring(rootPath.length());
         }
       }
     }
