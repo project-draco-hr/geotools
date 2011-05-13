@@ -1,21 +1,20 @@
 {
   List<Object> values=new ArrayList<Object>();
+  if (startIndex > fullSteps.size() || endIndex > fullSteps.size()) {
+    return values;
+  }
   while (startIndex <= endIndex) {
     List<AttributeMapping> attMappings=new ArrayList<AttributeMapping>();
     StepList steps=null;
-    if (endIndex == fullSteps.size()) {
-      if (startIndex < fullSteps.size() - 1) {
-        startIndex++;
-        endIndex=startIndex;
-      }
- else {
-        return values;
-      }
+    Step lastStep=null;
+    if (isLastStep(endIndex)) {
+      return values;
     }
     while (attMappings.isEmpty() && endIndex < fullSteps.size()) {
       endIndex++;
       steps=fullSteps.subList(startIndex,endIndex);
-      if (steps.get(steps.size() - 1).isXmlAttribute()) {
+      lastStep=steps.get(steps.size() - 1);
+      if (isLastStep(endIndex) && lastStep.isXmlAttribute()) {
         if (steps.size() == 1) {
           if (prevMapping == null) {
             return values;
@@ -36,22 +35,20 @@
  else {
         attMappings=fMapping.getAttributeMappingsIgnoreIndex(steps);
       }
-      if (attMappings.isEmpty()) {
-        if (steps.size() == 1) {
-          if (Types.equals(fMapping.getTargetFeature().getName(),steps.get(0).getName())) {
-            startIndex++;
-            endIndex=startIndex;
-          }
+      if (steps.size() == 1) {
+        if (Types.equals(fMapping.getTargetFeature().getName(),steps.get(0).getName())) {
+          startIndex++;
+          endIndex=startIndex;
+          continue;
         }
-        continue;
       }
     }
     if (attMappings.isEmpty()) {
       continue;
     }
-    if (steps.get(steps.size() - 1).isXmlAttribute()) {
+    if (lastStep.isXmlAttribute()) {
       for (      AttributeMapping mapping : attMappings) {
-        Expression exp=getClientPropertyExpression(steps.get(steps.size() - 1),mapping,this.attPath);
+        Expression exp=getClientPropertyExpression(lastStep,mapping,this.attPath);
         if (exp != null) {
           for (          Feature root : roots) {
             Object value=getValue(exp,root);
@@ -63,6 +60,7 @@
       }
     }
  else {
+      int nextIndex=startIndex + 1;
       for (      AttributeMapping mapping : attMappings) {
         if (mapping instanceof NestedAttributeMapping) {
           NestedAttributeMapping nestedMapping=((NestedAttributeMapping)mapping);
@@ -76,7 +74,7 @@
             if (fMapping != null && nestedMapping.isSameSource()) {
               List<Feature> nestedRoots=new ArrayList<Feature>(1);
               nestedRoots.add(root);
-              List<Object> nestedValues=getValues(++startIndex,startIndex,nestedRoots,fMapping,mapping);
+              List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedRoots,fMapping,mapping);
               if (nestedValues != null) {
                 values.addAll(nestedValues);
               }
@@ -88,15 +86,14 @@
               if (nestedFeatures == null || nestedFeatures.isEmpty()) {
                 continue;
               }
-              Step step=steps.get(steps.size() - 1);
-              if (step.isIndexed()) {
-                int index=step.getIndex() - 1;
+              if (lastStep.isIndexed()) {
+                int index=lastStep.getIndex() - 1;
                 Feature f=nestedFeatures.get(index);
                 nestedFeatures.clear();
                 nestedFeatures.add(f);
               }
               if (fMapping != null) {
-                List<Object> nestedValues=getValues(++startIndex,startIndex,nestedFeatures,fMapping,mapping);
+                List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedFeatures,fMapping,mapping);
                 if (nestedValues != null) {
                   values.addAll(nestedValues);
                 }
@@ -105,7 +102,7 @@
                 throw new UnsupportedOperationException("FeatureTypeMapping not found for " + attPath + ". This shouldn't happen if it's set in AppSchemaDataAccess mapping file!");
               }
  else {
-                List<Object> nestedValues=getValues(++startIndex,endIndex,nestedFeatures,fMapping,mapping);
+                List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedFeatures,fMapping,mapping);
                 if (nestedValues != null) {
                   values.addAll(nestedValues);
                 }
