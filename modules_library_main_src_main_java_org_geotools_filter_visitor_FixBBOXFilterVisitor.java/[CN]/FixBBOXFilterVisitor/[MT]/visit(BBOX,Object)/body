@@ -1,0 +1,50 @@
+{
+  Envelope bbox=null;
+  Expression leftGeometry=filter.getExpression1();
+  Expression rightGeometry=filter.getExpression2();
+  boolean clipped=false;
+  Literal le=null;
+  if (leftGeometry != null && leftGeometry instanceof Literal) {
+    le=(Literal)leftGeometry;
+  }
+ else   if (rightGeometry != null && rightGeometry instanceof Literal) {
+    le=(Literal)rightGeometry;
+  }
+  if (le != null && le.getValue() != null && le.getValue() instanceof Geometry) {
+    Geometry geometry=(Geometry)le.getValue();
+    bbox=geometry.getEnvelopeInternal();
+  }
+  if (bbox == null) {
+    return super.visit(filter,extraData);
+  }
+  double minx=bbox.getMinX();
+  double miny=bbox.getMinY();
+  double maxx=bbox.getMaxX();
+  double maxy=bbox.getMaxY();
+  if (maxbbox != null) {
+    if (minx < maxbbox.getMinX()) {
+      minx=maxbbox.getMinX();
+      clipped=true;
+    }
+    if (maxx > maxbbox.getMaxX()) {
+      maxx=maxbbox.getMaxX();
+      clipped=true;
+    }
+    if (miny < maxbbox.getMinY()) {
+      miny=maxbbox.getMinY();
+      clipped=true;
+    }
+    if (maxy > maxbbox.getMaxY()) {
+      maxy=maxbbox.getMaxY();
+      clipped=true;
+    }
+  }
+  if (clipped) {
+    String propertyName=filter.getPropertyName();
+    String srs=filter.getSRS();
+    return getFactory(extraData).bbox(propertyName,minx,miny,maxx,maxy,srs);
+  }
+ else {
+    return super.visit(filter,extraData);
+  }
+}
