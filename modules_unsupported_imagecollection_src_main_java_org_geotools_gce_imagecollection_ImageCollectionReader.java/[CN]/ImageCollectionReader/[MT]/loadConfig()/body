@@ -1,8 +1,9 @@
 {
-  final String propertiesPath=parentPath + Utils.CONFIG_FILE;
+  final String propertiesPath=rootPath + Utils.CONFIG_FILE;
   final File propertiesFile=new File(propertiesPath);
   String coverage=null;
-  if (Utils.checkFileReadable(propertiesFile)) {
+  final boolean hasPropertiesFile=Utils.checkFileReadable(propertiesFile);
+  if (hasPropertiesFile) {
     Properties props=new Properties();
     FileInputStream fis=null;
     try {
@@ -26,10 +27,17 @@
           this.expandMe=Boolean.parseBoolean(expand);
         }
       }
-      if (props.containsKey(Utils.ImageCollectionProperties.EPSG_CODE)) {
-        final String epsgCode=(String)props.get(Utils.ImageCollectionProperties.EPSG_CODE);
-        if (epsgCode != null && epsgCode.trim().length() > 0) {
-          this.epsgCode=Integer.parseInt(epsgCode);
+      if (props.containsKey(Utils.ImageCollectionProperties.TIME_BETWEEN_CHECKS)) {
+        final String timeCheck=(String)props.get(Utils.ImageCollectionProperties.TIME_BETWEEN_CHECKS);
+        if (timeCheck != null && timeCheck.trim().length() > 0) {
+          try {
+            this.timeBetweenChecks=Long.parseLong(timeCheck) * 1000;
+          }
+ catch (          NumberFormatException nfe) {
+            if (LOGGER.isLoggable(Level.WARNING)) {
+              LOGGER.log(Level.WARNING,"Unable to parse the specified time interval check.",nfe);
+            }
+          }
         }
       }
     }
@@ -54,19 +62,26 @@ catch (    IOException e) {
     }
   }
   if (coverage == null) {
-    coverageName=FilenameUtils.getBaseName(FilenameUtils.getFullPathNoEndSeparator(parentPath));
+    coverageName=FilenameUtils.getBaseName(FilenameUtils.getFullPathNoEndSeparator(rootPath));
   }
  else {
     coverageName=coverage;
   }
   if (defaultPath == null) {
-    final File parent=new File(parentPath);
+    final File parent=new File(rootPath);
     final List<File> files;
     if (parent.exists() && parent.isDirectory() && parent.canRead()) {
       files=Utils.getFileList(parent,Utils.FILE_FILTER,true);
       if (!files.isEmpty()) {
-        defaultPath=files.get(0).getAbsolutePath();
+        String path=files.get(0).getAbsolutePath();
+        defaultPath=path;
+        if (path.startsWith(rootPath)) {
+          defaultPath=path.substring(rootPath.length());
+        }
       }
     }
+  }
+  if (!hasPropertiesFile) {
+    updatePropertiesFile(propertiesFile);
   }
 }
