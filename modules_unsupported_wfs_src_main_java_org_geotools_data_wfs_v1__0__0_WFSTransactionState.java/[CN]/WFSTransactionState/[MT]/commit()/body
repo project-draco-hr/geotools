@@ -1,16 +1,18 @@
 {
   TransactionResult transactionResult=null;
-  Map copiedActions;
+  Map<String,List<Action>> copiedActions;
 synchronized (actionMap) {
     combineActions();
     copiedActions=copy(actionMap);
   }
-  Iterator iter=copiedActions.entrySet().iterator();
+  Iterator<Entry<String,List<Action>>> iter=copiedActions.entrySet().iterator();
   while (iter.hasNext()) {
-    Map.Entry entry=(Entry)iter.next();
-    List actions=(List)entry.getValue();
+    Entry<String,List<Action>> entry=iter.next();
+    List<Action> actions=entry.getValue();
     String typeName=(String)entry.getKey();
-    if (actions.isEmpty())     continue;
+    if (actions.isEmpty()) {
+      continue;
+    }
     if (transactionResult == null) {
       try {
         transactionResult=commitPost(actions);
@@ -30,17 +32,19 @@ catch (      SAXException e) {
     if (transactionResult.getStatus() == TransactionResult.FAILED) {
       throw new IOException(transactionResult.getError().toString());
     }
-    List newFids=transactionResult.getInsertResult();
+    List<String> newFids=transactionResult.getInsertResult();
     int currentInsertIndex=0;
-    for (Iterator iter2=actions.iterator(); iter2.hasNext(); ) {
-      Object action=iter2.next();
+    for (Iterator<Action> iter2=actions.iterator(); iter2.hasNext(); ) {
+      Action action=iter2.next();
       if (action instanceof InsertAction) {
         InsertAction insertAction=(InsertAction)action;
         if (currentInsertIndex >= newFids.size()) {
           Logging.getLogger("org.geotools.data.wfs").severe("Expected more fids to be returned by " + "TransactionResponse!");
           break;
         }
-        ds.addFidMapping(insertAction.getFeature().getID(),(String)newFids.get(currentInsertIndex));
+        String tempFid=insertAction.getFeature().getID();
+        String finalFid=newFids.get(currentInsertIndex);
+        ds.addFidMapping(tempFid,finalFid);
         currentInsertIndex++;
       }
     }
@@ -51,7 +55,7 @@ synchronized (this.fids) {
       Logging.getLogger("org.geotools.data.wfs").severe("number of fids inserted do not match number of fids returned " + "by Transaction Response.  Got:" + newFids.size() + " expected: "+ currentInsertIndex);
     }
 synchronized (actionMap) {
-      ((List)actionMap.get(typeName)).removeAll(actions);
+      ((List<Action>)actionMap.get(typeName)).removeAll(actions);
     }
   }
 }
