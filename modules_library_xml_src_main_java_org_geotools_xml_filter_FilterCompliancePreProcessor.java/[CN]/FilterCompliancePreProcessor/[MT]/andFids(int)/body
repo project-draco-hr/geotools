@@ -1,0 +1,39 @@
+{
+  if (!hasFidFilter(startOfFilterStack)) {
+    return Collections.emptySet();
+  }
+  Set<Data> toRemove=new HashSet<Data>();
+  List<Set<String>> fidSet=new ArrayList<Set<String>>();
+  boolean doRemove=true;
+  for (int i=startOfFilterStack; i < current.size(); i++) {
+    Data data=(Data)current.get(i);
+    if (data.fids.isEmpty()) {
+      toRemove.add(data);
+    }
+ else {
+      fidSet.add(data.fids);
+      if (data.filter != Filter.EXCLUDE) {
+        doRemove=false;
+      }
+    }
+  }
+  if (doRemove) {
+    current.removeAll(toRemove);
+  }
+  if (fidSet.size() == 0) {
+    return Collections.emptySet();
+  }
+  if (fidSet.size() == 1) {
+    return fidSet.get(0);
+  }
+  HashSet<String> set=new HashSet<String>();
+  for (int i=0; i < fidSet.size(); i++) {
+    Set<String> tmp=fidSet.get(i);
+    for (    String fid : tmp) {
+      if (allContain(fid,fidSet)) {
+        set.add(fid);
+      }
+    }
+  }
+  return set;
+}
