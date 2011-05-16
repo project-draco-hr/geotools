@@ -1,0 +1,39 @@
+{
+  Iterator<ImageInputStreamSpi> iter;
+  try {
+    iter=IIORegistry.getDefaultInstance().getServiceProviders(ImageInputStreamSpi.class,true);
+  }
+ catch (  IllegalArgumentException e) {
+    return null;
+  }
+  boolean usecache=ImageIO.getUseCache();
+  ImageInputStreamSpi spi=null;
+  while (iter.hasNext()) {
+    spi=(ImageInputStreamSpi)iter.next();
+    if (spi.getInputClass().isInstance(input)) {
+      if (streamCreationCheck) {
+        ImageInputStream stream=null;
+        try {
+          stream=spi.createInputStreamInstance(input,usecache,ImageIO.getCacheDirectory());
+          break;
+        }
+ catch (        IOException e) {
+          return null;
+        }
+ finally {
+          if (stream != null) {
+            try {
+              stream.close();
+            }
+ catch (            Throwable t) {
+            }
+          }
+        }
+      }
+ else {
+        break;
+      }
+    }
+  }
+  return spi;
+}
