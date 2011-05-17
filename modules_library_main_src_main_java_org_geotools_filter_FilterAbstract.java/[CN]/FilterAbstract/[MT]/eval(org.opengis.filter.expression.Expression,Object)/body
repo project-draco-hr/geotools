@@ -1,17 +1,12 @@
 {
   if (expression == null)   return null;
   Object value=expression.evaluate(object);
-  if (value instanceof org.opengis.feature.ComplexAttribute) {
-    Property simpleContent=((org.opengis.feature.ComplexAttribute)value).getProperty(new NameImpl("simpleContent"));
-    if (simpleContent == null) {
-      value=null;
+  if (value instanceof Collection) {
+    List<Object> list=new ArrayList<Object>();
+    for (    Object member : (Collection<Object>)value) {
+      list.add(unpack(member));
     }
- else {
-      value=simpleContent.getValue();
-    }
+    return list;
   }
-  if (value instanceof org.opengis.feature.Attribute) {
-    value=((org.opengis.feature.Attribute)value).getValue();
-  }
-  return value;
+  return unpack(value);
 }
