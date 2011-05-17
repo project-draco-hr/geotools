@@ -1,0 +1,16 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.add("CFCC",String.class);
+  tb.add("NAME",String.class);
+  tb.add("the_geom",MultiLineString.class);
+  tb.setName("layerAsia");
+  SimpleFeatureType ft=tb.buildFeatureType();
+  Query q=new DefaultQuery("layerAsia");
+  q.setFilter(FF.less(FF.property(PROPERTY_NAME),FF.literal(PROPERTY_VALUE)));
+  Map<String,String> vtParams=new HashMap<String,String>();
+  vtParams.put("first","a=b");
+  vtParams.put("second","a%b");
+  q.setHints(new Hints(Hints.VIRTUAL_TABLE_PARAMETERS,vtParams));
+  String result=SFSDataStoreUtil.encodeQuery(q,ft);
+  assertEquals("aProperty__lt=342&queryable=aProperty&hints=first:a%3Db;second:a%25b",result);
+}
