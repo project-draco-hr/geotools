@@ -1,9 +1,19 @@
 {
   Utilities.ensureNonNull("inStream",inStream);
-  inStream.mark();
-  final Iterator<ImageReader> readersIt=ImageIO.getImageReaders(inStream);
-  if (!readersIt.hasNext()) {
-    return null;
+  try {
+    inStream.mark();
+    final Iterator<ImageReader> readersIt=ImageIO.getImageReaders(inStream);
+    if (!readersIt.hasNext()) {
+      return null;
+    }
+    return readersIt.next();
   }
-  return readersIt.next();
+  finally {
+    try {
+      inStream.reset();
+    }
+ catch (    IOException e) {
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+  }
 }
