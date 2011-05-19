@@ -7,16 +7,38 @@
     return false;
   }
   if (value instanceof Collection) {
+    int count=0;
     for (    Object element : (Collection<Object>)value) {
       Matcher matcher=getMatcher(element.toString());
-      if (matcher.matches()) {
-        return true;
+      boolean temp=matcher.matches();
+      if (temp) {
+        count++;
       }
-    }
-    return false;
-  }
+switch (matchAction) {
+case ONE:
+        if (count > 1)         return false;
+      break;
+case ALL:
+    if (!temp)     return false;
+  break;
+case ANY:
+if (temp) return true;
+break;
+}
+}
+switch (matchAction) {
+case ONE:
+return (count == 1);
+case ALL:
+return true;
+case ANY:
+return false;
+default :
+return false;
+}
+}
  else {
-    Matcher matcher=getMatcher(value.toString());
-    return matcher.matches();
-  }
+Matcher matcher=getMatcher(value.toString());
+return matcher.matches();
+}
 }

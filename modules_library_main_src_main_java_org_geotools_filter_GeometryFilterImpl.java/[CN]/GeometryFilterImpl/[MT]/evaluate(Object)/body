@@ -9,12 +9,34 @@
   }
   Collection<Geometry> leftValues=object1 instanceof Collection ? (Collection<Geometry>)object1 : Collections.<Geometry>singletonList((Geometry)object1);
   Collection<Geometry> rightValues=object2 instanceof Collection ? (Collection<Geometry>)object2 : Collections.<Geometry>singletonList((Geometry)object2);
+  int count=0;
   for (  Geometry leftValue : leftValues) {
     for (    Geometry rightValue : rightValues) {
-      if (evaluateInternal(leftValue,rightValue)) {
-        return true;
+      boolean temp=evaluateInternal(leftValue,rightValue);
+      if (temp) {
+        count++;
       }
-    }
-  }
-  return false;
+switch (matchAction) {
+case ONE:
+        if (count > 1)         return false;
+      break;
+case ALL:
+    if (!temp)     return false;
+  break;
+case ANY:
+if (temp) return true;
+break;
+}
+}
+}
+switch (matchAction) {
+case ONE:
+return (count == 1);
+case ALL:
+return true;
+case ANY:
+return false;
+default :
+return false;
+}
 }
