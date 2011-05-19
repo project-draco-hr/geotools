@@ -1,10 +1,32 @@
 {
   try {
-    byte[] wkb=rs.getBytes(column + "_inline");
+    byte[] wkb=null;
+    try {
+      wkb=rs.getBytes(column + "_inline");
+    }
+ catch (    SQLException e) {
+    }
     if (wkb != null) {
       return new WKBReader(factory).read(wkb);
     }
+    int index=-1;
+    for (int i=0; i < rs.getMetaData().getColumnCount(); i++) {
+      if (column.equals(rs.getMetaData().getColumnName(i + 1))) {
+        index=i + 1;
+        break;
+      }
+    }
+    if ("java.lang.String".equals(rs.getMetaData().getColumnClassName(index))) {
+      String wkt=rs.getString(index);
+      if (wkt == null) {
+        return null;
+      }
+      return new WKTReader(factory).read(wkt);
+    }
     Clob clob=rs.getClob(column);
+    if (clob == null) {
+      return null;
+    }
     InputStream in=clob.getAsciiStream();
     try {
       return new WKTReader(factory).read(new InputStreamReader(in));
