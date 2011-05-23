@@ -2,6 +2,11 @@
   query=joinQuery(query);
   query=resolvePropertyNames(query);
   FeatureWriter<SimpleFeatureType,SimpleFeature> writer=getWriterInternal(query,flags);
+  if (!canFilter()) {
+    if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE) {
+      writer=new FilteringFeatureWriter(writer,query.getFilter());
+    }
+  }
   LockingManager lockingManager=getDataStore().getLockingManager();
   return ((InProcessLockingManager)lockingManager).checkedWriter(writer,transaction);
 }
