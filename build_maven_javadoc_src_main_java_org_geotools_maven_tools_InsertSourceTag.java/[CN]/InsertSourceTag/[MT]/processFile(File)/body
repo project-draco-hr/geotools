@@ -6,16 +6,23 @@
   int commentStartLine=-1;
   int commentEndLine=-1;
   int sourceTagLine=-1;
+  boolean replaceLine=false;
   Matcher matcher=null;
   String text;
   String sourceTagText;
   matcher=findSVNLine.matcher(file.getAbsolutePath());
   if (matcher.matches()) {
     int pos=matcher.start(1);
-    StringBuilder sb=new StringBuilder(" * @source $URL: ");
-    sb.append("http://svn.somewhere.foo/org/geotools/");
+    String repoURL=Source.SVN_REPO_URL;
+    StringBuilder sb=new StringBuilder(" * @source ");
+    if (addSVNKeyword) {
+      sb.append("$URL: ");
+    }
+    sb.append(Source.SVN_REPO_URL);
     sb.append(file.getAbsolutePath().substring(pos));
-    sb.append(" $");
+    if (addSVNKeyword) {
+      sb.append(" $");
+    }
     sourceTagText=sb.toString();
   }
  else {
@@ -54,14 +61,23 @@
           for (int i=commentStartLine; i <= commentEndLine; i++) {
             matcher=findSourceTag.matcher(buffer.get(i));
             if (matcher.find()) {
-              return false;
+              if (replaceExistingTag) {
+                sourceTagLine=i;
+                buffer.remove(i);
+                break;
+              }
+ else {
+                return false;
+              }
             }
           }
-          for (int i=commentStartLine; i <= commentEndLine; i++) {
-            matcher=findVersionTag.matcher(buffer.get(i));
-            if (matcher.find()) {
-              sourceTagLine=i;
-              break;
+          if (sourceTagLine < 0) {
+            for (int i=commentStartLine; i <= commentEndLine; i++) {
+              matcher=findVersionTag.matcher(buffer.get(i));
+              if (matcher.find()) {
+                sourceTagLine=i;
+                break;
+              }
             }
           }
           if (sourceTagLine < 0) {
