@@ -1,14 +1,5 @@
 {
-  List<String> buffer=new ArrayList<String>();
-  boolean inCommentBlock=false;
-  boolean nonEmptyLines=false;
-  boolean completedSearch=false;
-  int commentStartLine=-1;
-  int commentEndLine=-1;
-  int sourceTagLine=-1;
-  boolean replaceLine=false;
   Matcher matcher=null;
-  String text;
   String sourceTagText;
   matcher=findSVNLine.matcher(file.getAbsolutePath());
   if (matcher.matches()) {
@@ -26,75 +17,114 @@
     sourceTagText=sb.toString();
   }
  else {
+    System.out.println("   --- skipped this file");
+    System.out.println();
     return false;
   }
-  LineNumberReader reader=new LineNumberReader(new FileReader(file));
-  reader.setLineNumber(-1);
-  while ((text=reader.readLine()) != null) {
-    buffer.add(text);
-    if (completedSearch) {
-      continue;
-    }
-    if (inCommentBlock) {
+  BufferedReader reader=new BufferedReader(new FileReader(file));
+  List<String> buffer=new ArrayList<String>();
+  String line;
+  while ((line=reader.readLine()) != null) {
+    buffer.add(line);
+  }
+  reader.close();
+  boolean inJavadocBlock=false;
+  boolean inCommentBlock=false;
+  boolean unknownPrecedingContent=false;
+  boolean classFound=false;
+  int javadocStartLine=-1;
+  int javadocEndLine=-1;
+  int sourceTagLine=-1;
+  for (int lineNo=0; sourceTagLine < 0 && lineNo < buffer.size(); lineNo++) {
+    String text=buffer.get(lineNo);
+    if (inJavadocBlock || inCommentBlock) {
       matcher=findCommentEnd.matcher(text);
       if (matcher.find()) {
-        inCommentBlock=false;
-        commentEndLine=reader.getLineNumber();
-      }
-    }
- else {
-      matcher=findCommentStart.matcher(text);
-      if (matcher.find()) {
-        inCommentBlock=true;
-        nonEmptyLines=false;
-        commentStartLine=reader.getLineNumber();
-      }
- else {
-        matcher=findClass.matcher(text);
-        if (matcher.find()) {
-          if (commentStartLine < 0) {
-            return false;
-          }
-          if (nonEmptyLines) {
-            return false;
-          }
-          for (int i=commentStartLine; i <= commentEndLine; i++) {
-            matcher=findSourceTag.matcher(buffer.get(i));
-            if (matcher.find()) {
-              if (replaceExistingTag) {
-                sourceTagLine=i;
-                buffer.remove(i);
-                break;
-              }
- else {
-                return false;
-              }
-            }
-          }
-          if (sourceTagLine < 0) {
-            for (int i=commentStartLine; i <= commentEndLine; i++) {
-              matcher=findVersionTag.matcher(buffer.get(i));
-              if (matcher.find()) {
-                sourceTagLine=i;
-                break;
-              }
-            }
-          }
-          if (sourceTagLine < 0) {
-            sourceTagLine=commentEndLine;
-          }
-          completedSearch=true;
+        if (inJavadocBlock) {
+          inJavadocBlock=false;
+          javadocEndLine=lineNo;
+        }
+ else         if (inCommentBlock) {
+          inCommentBlock=false;
         }
  else {
-          if (text.trim().length() > 0) {
-            nonEmptyLines=true;
+          System.out.println("   *** Mis-placed end marker for comment block " + "- skipping this file ***");
+          System.out.println();
+          return false;
+        }
+      }
+    }
+ else     if (findJavadocStart.matcher(text).find()) {
+      inJavadocBlock=true;
+      unknownPrecedingContent=false;
+      javadocStartLine=lineNo;
+    }
+ else     if (findCommentStart.matcher(text).find()) {
+      inCommentBlock=true;
+    }
+ else     if (!inJavadocBlock && !inCommentBlock && !classFound) {
+      if (processAnyClass) {
+        matcher=findClass.matcher(text);
+      }
+ else {
+        matcher=findPublicClass.matcher(text);
+      }
+      if (matcher.find()) {
+        classFound=true;
+        if (javadocStartLine < 0) {
+          System.out.println("   *** No class javadocs - skipping file ***");
+          System.out.println();
+          return false;
+        }
+        if (unknownPrecedingContent) {
+          System.out.println("   *** Javadocs do not directly precede class" + " - skipping file ***");
+          System.out.println();
+          return false;
+        }
+        for (int i=javadocStartLine; i <= javadocEndLine; i++) {
+          String commentText=buffer.get(i);
+          matcher=findSourceTag.matcher(commentText);
+          if (matcher.find()) {
+            matcher=findCompleteSourceTag.matcher(commentText);
+            if (!matcher.find()) {
+              System.out.println("   *** Incomplete source tag detected" + "- skipping this file ***");
+              System.out.println();
+              return false;
+            }
+            if (replaceExistingTag) {
+              sourceTagLine=i;
+              buffer.remove(i);
+              break;
+            }
+ else {
+              return false;
+            }
+          }
+        }
+        if (sourceTagLine < 0) {
+          for (int i=javadocStartLine; i <= javadocEndLine; i++) {
+            matcher=findVersionTag.matcher(buffer.get(i));
+            if (matcher.find()) {
+              sourceTagLine=i;
+              break;
+            }
+          }
+        }
+        if (sourceTagLine < 0) {
+          sourceTagLine=javadocEndLine;
+        }
+      }
+ else {
+        if (text.trim().length() > 0) {
+          matcher=findAnnotation.matcher(text);
+          if (!matcher.find()) {
+            unknownPrecedingContent=true;
           }
         }
       }
     }
   }
-  reader.close();
-  if (completedSearch) {
+  if (sourceTagLine > 0) {
     return writeFile(file,buffer,sourceTagLine,sourceTagText);
   }
   return false;

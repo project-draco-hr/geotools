@@ -1,44 +1,47 @@
 {
-  if (tags == null || tags.length == 0) {
+  if (tags == null || tags.length != 1) {
     return "";
   }
-  final StringBuilder buffer=new StringBuilder("\n<DT><B>Module:</B></DT>");
-  for (int i=0; i < tags.length; i++) {
-    final Matcher matchURL=findURL.matcher(tags[i].text());
-    if (!matchURL.matches()) {
-      continue;
-    }
-    final String url=matchURL.group(URL_CAPTURE_GROUP).trim();
-    final Matcher matchModule=findModule.matcher(url);
-    if (!matchModule.matches()) {
-      continue;
-    }
-    final String modulePath=matchModule.group(6);
-    int pos=modulePath.indexOf('/');
-    final String module;
-    if (pos == -1) {
-      module=modulePath;
-    }
- else {
-      module=modulePath.substring(pos + 1);
-    }
-    final String group, category;
-    if (matchModule.group(2).equals("demo")) {
-      group=matchModule.group(2);
-      category=null;
-    }
- else {
-      group=matchModule.group(4);
-      category=matchModule.group(5);
-    }
-    buffer.append('\n').append(i == 0 ? "<DD>" : "    ").append("<CODE><B>");
-    buffer.append(group).append('/');
-    if (category != null) {
-      buffer.append(category).append('/');
-    }
-    buffer.append(module);
-    buffer.append(" (gt-").append(module).append(".jar)");
-    buffer.append("</B></CODE>");
+  StringBuilder sb=new StringBuilder();
+  sb.append("\n<DT><B>Module:</B></DT>");
+  String tagText=tags[0].text();
+  final Matcher matchURL=findURL.matcher(tagText);
+  if (!matchURL.matches()) {
+    return "";
   }
-  return buffer.append("</DD>\n").toString();
+  final String url=matchURL.group(URL_CAPTURE_GROUP).trim();
+  final Matcher matchModule=findModule.matcher(url);
+  if (!matchModule.matches()) {
+    return "";
+  }
+  final String modulePath=matchModule.group(6);
+  int pos=modulePath.indexOf('/');
+  final String module;
+  if (pos == -1) {
+    module=modulePath;
+  }
+ else {
+    module=modulePath.substring(pos + 1);
+  }
+  final String group, category;
+  if (matchModule.group(2).equals("demo")) {
+    group=matchModule.group(2);
+    category=null;
+  }
+ else {
+    group=matchModule.group(4);
+    category=matchModule.group(5);
+  }
+  sb.append("\n<DD><CODE><B>");
+  sb.append(group).append('/');
+  if (category != null) {
+    sb.append(category).append('/');
+  }
+  sb.append(module);
+  sb.append(" (gt-").append(module).append(".jar)");
+  sb.append("</B></CODE>");
+  sb.append("</DD>\n");
+  sb.append("\n<DT><B>Source repository:</B></DT>").append('\n');
+  sb.append("<DD>   <CODE>").append(url).append("</CODE></DD>\n");
+  return sb.toString();
 }
