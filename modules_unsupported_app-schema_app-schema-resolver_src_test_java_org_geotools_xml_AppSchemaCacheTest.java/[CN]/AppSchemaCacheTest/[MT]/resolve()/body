@@ -1,8 +1,10 @@
 {
-  File cacheDirectory=DataUtilities.urlToFile(AppSchemaCacheTest.class.getResource("/test-data/cache"));
+  File cacheDirectory=new File(DataUtilities.urlToFile(AppSchemaCacheTest.class.getResource("/test-data/cache")),"../cache");
   AppSchemaResolver resolver=new AppSchemaResolver(new AppSchemaCache(cacheDirectory,false));
   String resolvedLocation=resolver.resolve("http://schemas.example.org/cache-test/cache-test.xsd");
   Assert.assertTrue(resolvedLocation.startsWith("file:"));
   Assert.assertTrue(resolvedLocation.endsWith("cache-test.xsd"));
-  Assert.assertTrue(DataUtilities.urlToFile(new URL(resolvedLocation)).exists());
+  Assert.assertTrue(DataUtilities.urlToFile((new URI(resolvedLocation)).toURL()).exists());
+  Assert.assertFalse(cacheDirectory.toString().equals(cacheDirectory.getCanonicalFile().toString()));
+  Assert.assertEquals(resolvedLocation,DataUtilities.urlToFile((new URI(resolvedLocation)).toURL()).getCanonicalFile().toURI().toString());
 }

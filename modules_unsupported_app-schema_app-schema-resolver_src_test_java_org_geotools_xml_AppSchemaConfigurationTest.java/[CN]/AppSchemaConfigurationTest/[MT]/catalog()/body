@@ -1,15 +1,25 @@
 {
   Configuration configuration=new AppSchemaConfiguration("http://schemas.example.org/catalog-test","http://schemas.example.org/catalog-test/catalog-test.xsd",new AppSchemaResolver(AppSchemaCatalog.build(getClass().getResource("/test-data/catalog.xml"))));
-  SchemaIndex schemaIndex=Schemas.findSchemas(configuration);
-  Assert.assertEquals(3,schemaIndex.getSchemas().length);
-  String schemaLocation=null;
-  for (  XSDSchema schema : schemaIndex.getSchemas()) {
-    if (schema.getSchemaLocation().endsWith("catalog-test.xsd")) {
-      schemaLocation=schema.getSchemaLocation();
-      break;
+  SchemaIndex schemaIndex=null;
+  try {
+    schemaIndex=Schemas.findSchemas(configuration);
+    Assert.assertEquals(3,schemaIndex.getSchemas().length);
+    String schemaLocation=null;
+    for (    XSDSchema schema : schemaIndex.getSchemas()) {
+      if (schema.getSchemaLocation().endsWith("catalog-test.xsd")) {
+        schemaLocation=schema.getSchemaLocation();
+        break;
+      }
+    }
+    Assert.assertNotNull(schemaLocation);
+    Assert.assertTrue(schemaLocation.startsWith("file:"));
+    Assert.assertTrue(DataUtilities.urlToFile(new URL(schemaLocation)).exists());
+    Assert.assertNotNull(schemaIndex.getElementDeclaration(new QName("http://schemas.example.org/demo","GeologicUnit")));
+    Assert.assertNotNull(schemaIndex.getElementDeclaration(new QName("http://schemas.example.org/demo","InnerGeologicUnit")));
+  }
+  finally {
+    if (schemaIndex != null) {
+      schemaIndex.destroy();
     }
   }
-  Assert.assertNotNull(schemaLocation);
-  Assert.assertTrue(schemaLocation.startsWith("file:"));
-  Assert.assertTrue(DataUtilities.urlToFile(new URL(schemaLocation)).exists());
 }
