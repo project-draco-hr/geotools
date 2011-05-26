@@ -1,0 +1,34 @@
+{
+  LinkedHashMap<String,Object> prepped=new LinkedHashMap<String,Object>();
+  List<Parameter<?>> args=getFunctionName().getArguments();
+  List<Expression> expr=getParameters();
+  if (expr.size() < args.size()) {
+    Parameter<?> last=args.get(args.size() - 1);
+    if (args.get(0).getMinOccurs() != 0) {
+      throw new IllegalArgumentException(String.format("No arguments specified for arg " + "%s, minOccurs = %d",last.getName().toString(),last.getMinOccurs()));
+    }
+  }
+  for (int i=0; i < expr.size(); i++) {
+    Parameter<?> arg=args.get(Math.min(i,args.size() - 1));
+    String argName=arg.getName().toString();
+    Object o=expr.get(i).evaluate(obj);
+    if (prepped.containsKey(argName)) {
+      if (arg.getMaxOccurs() == 1) {
+        throw new IllegalArgumentException(String.format("Multiple values specified for " + "argument %s  but maxOccurs = 1",argName));
+      }
+      List l=(List)prepped.get(argName);
+      l.add(o);
+    }
+ else {
+      if (arg.getMaxOccurs() < 0 || arg.getMaxOccurs() > 1) {
+        List l=new ArrayList();
+        l.add(o);
+        prepped.put(argName,l);
+      }
+ else {
+        prepped.put(argName,o);
+      }
+    }
+  }
+  return prepped;
+}

@@ -1,0 +1,38 @@
+{
+  Matcher m=PARAM.matcher(param);
+  if (!m.matches()) {
+    throw new IllegalArgumentException("Illegal parameter syntax: " + param);
+  }
+  String name=m.group(1);
+  Class type=Object.class;
+  int min=1;
+  int max=1;
+  String grp=m.group(2);
+  if (grp != null) {
+    try {
+      type=Class.forName(grp);
+    }
+ catch (    ClassNotFoundException e) {
+      try {
+        type=Class.forName("java.lang." + grp);
+      }
+ catch (      ClassNotFoundException e1) {
+        try {
+          type=Class.forName("com.vividsolutions.jts.geom." + grp);
+        }
+ catch (        ClassNotFoundException e2) {
+          throw (IllegalArgumentException)new IllegalArgumentException("Unknown type: " + grp).initCause(e);
+        }
+      }
+    }
+  }
+  grp=m.group(3);
+  if (grp != null) {
+    min=!"".equals(grp) ? Integer.parseInt(grp) : -1;
+  }
+  grp=m.group(4);
+  if (grp != null) {
+    max=!"".equals(grp) ? Integer.parseInt(grp) : -1;
+  }
+  return new org.geotools.data.Parameter(name,type,min,max);
+}
