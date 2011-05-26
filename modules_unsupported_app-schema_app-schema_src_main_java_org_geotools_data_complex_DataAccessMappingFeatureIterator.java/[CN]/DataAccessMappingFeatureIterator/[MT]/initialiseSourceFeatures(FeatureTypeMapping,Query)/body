@@ -1,5 +1,13 @@
 {
   mappedSource=mapping.getSource();
+  if (query instanceof JoiningQuery) {
+    if (mappedSource instanceof JDBCFeatureSource) {
+      mappedSource=new JoiningJDBCFeatureSource((JDBCFeatureSource)mappedSource);
+    }
+ else {
+      throw new IllegalArgumentException("Joining Query only works on JDBC Feature Source!");
+    }
+  }
   this.reprojection=query.getCoordinateSystemReproject();
   query.setMaxFeatures(Query.DEFAULT_MAX);
   sourceFeatures=mappedSource.getFeatures(query);
@@ -10,11 +18,11 @@
     }
   }
   if (!(this instanceof XmlMappingFeatureIterator)) {
-    try {
-      this.sourceFeatureIterator=sourceFeatures.iterator();
-    }
- catch (    Exception e) {
-      throw new IOException(e.getMessage());
+    this.sourceFeatureIterator=sourceFeatures.iterator();
+  }
+  for (  AttributeMapping attMapping : selectedMapping) {
+    if (attMapping instanceof JoiningNestedAttributeMapping) {
+      ((JoiningNestedAttributeMapping)attMapping).open(this,query);
     }
   }
 }

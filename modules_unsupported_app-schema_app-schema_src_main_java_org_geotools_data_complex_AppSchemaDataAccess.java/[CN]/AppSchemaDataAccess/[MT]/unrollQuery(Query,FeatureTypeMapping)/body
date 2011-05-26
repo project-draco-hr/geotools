@@ -15,7 +15,21 @@
     newQuery.setCoordinateSystemReproject(query.getCoordinateSystemReproject());
     newQuery.setHandle(query.getHandle());
     newQuery.setMaxFeatures(query.getMaxFeatures());
-    unrolledQuery=newQuery;
+    if (query instanceof JoiningQuery) {
+      FilterAttributeExtractor extractor=new FilterAttributeExtractor();
+      mapping.getFeatureIdExpression().accept(extractor,null);
+      List<SortBy> sort=new ArrayList<SortBy>();
+      for (      String att : extractor.getAttributeNameSet()) {
+        sort.add(new SortByImpl(filterFac.property(att),SortOrder.ASCENDING));
+      }
+      newQuery.setSortBy(sort.toArray(new SortBy[sort.size()]));
+      JoiningQuery jQuery=new JoiningQuery(newQuery);
+      jQuery.setJoins(((JoiningQuery)query).getJoins());
+      unrolledQuery=jQuery;
+    }
+ else {
+      unrolledQuery=newQuery;
+    }
   }
   return unrolledQuery;
 }

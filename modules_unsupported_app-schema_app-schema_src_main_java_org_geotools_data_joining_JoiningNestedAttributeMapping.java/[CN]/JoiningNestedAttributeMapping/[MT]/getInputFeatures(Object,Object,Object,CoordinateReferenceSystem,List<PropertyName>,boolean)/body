@@ -1,0 +1,36 @@
+{
+  if (isSameSource()) {
+    throw new UnsupportedOperationException("Link field is missing from feature chaining mapping!");
+  }
+  Instance instance=instances.get(caller);
+  if (instance == null) {
+    throw new IllegalArgumentException("Trying to read Joining Nested Attribute Mapping that is not open.");
+  }
+  Object featureTypeName=getNestedFeatureType(feature);
+  if (featureTypeName == null || !(featureTypeName instanceof Name)) {
+    throw new IllegalArgumentException("Internal error: Feature type name expected but found " + featureTypeName);
+  }
+  DataAccessMappingFeatureIterator featureIterator=instance.featureIterators.get((Name)featureTypeName);
+  if (featureIterator == null) {
+    featureIterator=initSourceFeatures(instance,(Name)featureTypeName,reprojection,selectedProperties,includeMandatory);
+  }
+  Expression nestedSourceExpression=instance.nestedSourceExpressions.get((Name)featureTypeName);
+  if (nestedSourceExpression == null) {
+    throw new IllegalArgumentException("Internal error: nested source expression expected but found " + featureTypeName);
+  }
+  ArrayList<Feature> matchingFeatures=new ArrayList<Feature>();
+  if (featureIterator != null) {
+    while (featureIterator.hasNext() && featureIterator.peekNextValue(nestedSourceExpression).equals(foreignKeyValue)) {
+      matchingFeatures.addAll(featureIterator.skip());
+    }
+  }
+  for (  DataAccessMappingFeatureIterator fIt : instance.featureIterators.values()) {
+    if (fIt != featureIterator) {
+      while (fIt.hasNext() && fIt.peekNextValue(nestedSourceExpression).equals(foreignKeyValue)) {
+        fIt.skip();
+      }
+    }
+  }
+  instance.skipped.add(foreignKeyValue);
+  return matchingFeatures;
+}

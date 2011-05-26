@@ -1,0 +1,53 @@
+{
+  JoiningQuery query=new JoiningQuery();
+  query.setCoordinateSystemReproject(reprojection);
+  FeatureTypeMapping fMapping=AppSchemaDataAccessRegistry.getMappingByName(featureTypeName);
+  List<AttributeMapping> mappings=fMapping.getAttributeMappingsIgnoreIndex(this.nestedTargetXPath);
+  if (mappings.size() < 1) {
+    throw new IllegalArgumentException("Mapping is missing for: '" + this.nestedTargetXPath + "'!");
+  }
+  Expression nestedSourceExpression=mappings.get(0).getSourceExpression();
+  List<JoiningQuery.Join> joins=new ArrayList<JoiningQuery.Join>();
+  if (instance.baseTableQuery instanceof JoiningQuery) {
+    if (((JoiningQuery)instance.baseTableQuery).getJoins() != null) {
+      joins.addAll(((JoiningQuery)instance.baseTableQuery).getJoins());
+    }
+  }
+  JoiningQuery.Join join=new JoiningQuery.Join();
+  join.setForeignKeyName(sourceExpression);
+  join.setJoiningKeyName(nestedSourceExpression);
+  join.setJoiningTypeName(instance.baseTableQuery.getTypeName());
+  join.setSortBy(instance.baseTableQuery.getSortBy());
+  joins.add(0,join);
+  query.setJoins(joins);
+  if (selectedProperties != null) {
+    selectedProperties=new ArrayList<PropertyName>(selectedProperties);
+    selectedProperties.add(filterFac.property(this.nestedTargetXPath.toString()));
+  }
+  final Hints hints=new Hints();
+  hints.put(Query.INCLUDE_MANDATORY_PROPS,includeMandatory);
+  query.setHints(hints);
+  query.setProperties(selectedProperties);
+  FeatureSource fSource=DataAccessRegistry.getFeatureSource((Name)featureTypeName);
+  if (fSource == null) {
+    throw new IOException("Internal error: Source could not be found");
+  }
+  FeatureCollection collection=fSource.getFeatures(query);
+  if (!(collection instanceof MappingFeatureCollection)) {
+    throw new IOException("Internal error: Mapping feature Collection expected but found " + collection);
+  }
+  ((MappingFeatureCollection)collection).setUnrolledFilter(instance.baseTableQuery.getFilter());
+  FeatureIterator featureIterator=collection.features();
+  if (!(featureIterator instanceof DataAccessMappingFeatureIterator)) {
+    throw new IOException("Internal error: Data Access Mapping feature Iterator expected but found " + featureIterator);
+  }
+  DataAccessMappingFeatureIterator daFeatureIterator=(DataAccessMappingFeatureIterator)featureIterator;
+  instance.featureIterators.put(featureTypeName,daFeatureIterator);
+  instance.nestedSourceExpressions.put(featureTypeName,nestedSourceExpression);
+  for (  Object toSkip : instance.skipped) {
+    while (daFeatureIterator.hasNext() && daFeatureIterator.peekNextValue(nestedSourceExpression).equals(toSkip)) {
+      daFeatureIterator.skip();
+    }
+  }
+  return daFeatureIterator;
+}

@@ -1,0 +1,11 @@
+{
+  AtomicReference<PreparedFilterToSQL> toSQLref=new AtomicReference<PreparedFilterToSQL>();
+  String sql=selectSQL(featureType,query,toSQLref);
+  LOGGER.fine(sql);
+  PreparedStatement ps=cx.prepareStatement(sql,ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
+  ps.setFetchSize(getDataStore().fetchSize);
+  if (toSQLref.get() != null) {
+    getDataStore().setPreparedFilterValues(ps,toSQLref.get(),0,cx);
+  }
+  return ps;
+}

@@ -1,0 +1,54 @@
+{
+  Filter[] split=splitFilter(query.getFilter());
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  if (postFilter != null && postFilter != Filter.INCLUDE) {
+    throw new IllegalArgumentException("Postfilters not allowed in Joining Queries");
+  }
+  JoiningQuery preQuery=new JoiningQuery(query);
+  preQuery.setFilter(preFilter);
+  SimpleFeatureType querySchema;
+  SimpleFeatureType returnedSchema;
+  if (query.getPropertyNames() == Query.ALL_NAMES) {
+    returnedSchema=querySchema=getSchema();
+  }
+ else {
+    returnedSchema=SimpleFeatureTypeBuilder.retype(getSchema(),query.getPropertyNames());
+    FilterAttributeExtractor extractor=new FilterAttributeExtractor(getSchema());
+    postFilter.accept(extractor,null);
+    String[] extraAttributes=extractor.getAttributeNames();
+    if (extraAttributes == null || extraAttributes.length == 0) {
+      querySchema=returnedSchema;
+    }
+ else {
+      List<String> allAttributes=new ArrayList<String>(Arrays.asList(query.getPropertyNames()));
+      for (      String extraAttribute : extraAttributes) {
+        if (!allAttributes.contains(extraAttribute))         allAttributes.add(extraAttribute);
+      }
+      String[] allAttributeArray=(String[])allAttributes.toArray(new String[allAttributes.size()]);
+      querySchema=SimpleFeatureTypeBuilder.retype(getSchema(),allAttributeArray);
+    }
+  }
+  Connection cx=getDataStore().getConnection(getState());
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  try {
+    if (getState().getTransaction() == Transaction.AUTO_COMMIT) {
+      cx.setAutoCommit(false);
+    }
+    SQLDialect dialect=getDataStore().getSQLDialect();
+    if (dialect instanceof PreparedStatementSQLDialect) {
+      PreparedStatement ps=selectSQLPS(querySchema,preQuery,cx);
+      reader=new JDBCFeatureReader(ps,cx,this,querySchema,query.getHints());
+    }
+ else {
+      String sql=selectSQL(querySchema,preQuery,null);
+      getDataStore().getLogger().fine(sql);
+      reader=new JDBCFeatureReader(sql,cx,this,querySchema,query.getHints());
+    }
+  }
+ catch (  Exception e) {
+    getDataStore().closeSafe(cx);
+    throw (IOException)new IOException().initCause(e);
+  }
+  return reader;
+}
