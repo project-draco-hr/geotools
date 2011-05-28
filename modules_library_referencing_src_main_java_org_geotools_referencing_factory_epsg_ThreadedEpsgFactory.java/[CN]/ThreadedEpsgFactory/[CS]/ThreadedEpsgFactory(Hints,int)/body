@@ -18,7 +18,22 @@
     datasource=(DataSource)hint;
     hints.put(Hints.EPSG_DATA_SOURCE,datasource);
     datasourceName=DATASOURCE_NAME;
+    dynamicDataSource=false;
   }
   factories=ReferencingFactoryContainer.instance(userHints);
-  setTimeout(30 * 60 * 1000L);
+  long timeout=30 * 60 * 1000;
+  String defaultTimeout=System.getProperty("org.geotools.epsg.factory.timeout",String.valueOf(30 * 60 * 1000));
+  try {
+    timeout=Long.valueOf(defaultTimeout);
+  }
+ catch (  NumberFormatException e) {
+    LOGGER.log(Level.WARNING,"Invalid value for org.geotools.epsg.factory.timeout, " + "using the default (30 minutes) instead");
+  }
+  if (timeout > 0) {
+    LOGGER.log(Level.INFO,"Setting the EPSG factory " + getClass().getName() + " to a "+ timeout+ "ms timeout");
+    setTimeout(timeout);
+  }
+ else {
+    LOGGER.log(Level.INFO,"The EPSG factory " + getClass().getName() + " will not timeout");
+  }
 }
