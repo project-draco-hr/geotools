@@ -1,0 +1,26 @@
+{
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put("dbtype","app-schema");
+  params.put("url",AppSchemaExample.class.getResource("/gsml_MappedFeature.xml").toURI().toString());
+  DataAccess<FeatureType,Feature> dataAccess=null;
+  try {
+    dataAccess=DataAccessFinder.getDataStore(params);
+    FeatureSource<FeatureType,Feature> source=dataAccess.getFeatureSource(new NameImpl("urn:cgi:xmlns:CGI:GeoSciML:2.0","MappedFeature"));
+    FeatureCollection<FeatureType,Feature> features=source.getFeatures();
+    FeatureIterator<Feature> iterator=features.features();
+    try {
+      while (iterator.hasNext()) {
+        Feature f=iterator.next();
+        System.out.println("Feature " + f.getIdentifier().toString() + " has gml:name = "+ ((ComplexAttribute)f.getProperty(new NameImpl(GML.name))).getProperty("simpleContent").getValue());
+      }
+    }
+  finally {
+      iterator.close();
+    }
+  }
+  finally {
+    if (dataAccess != null) {
+      dataAccess.dispose();
+    }
+  }
+}
