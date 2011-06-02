@@ -1,0 +1,47 @@
+{
+  SimpleFeatureType featureType=feature.getFeatureType();
+  StringBuilder sb=new StringBuilder();
+  sb.append("{");
+  GeoJSONUtil.entry("type","Feature",sb);
+  sb.append(',');
+  GeoJSONUtil.entry("featureClass",featureClass,sb);
+  sb.append(',');
+  if (feature.getDefaultGeometry() != null) {
+    GeoJSONUtil.string("geometry",sb).append(":").append(gjson.toString((Geometry)feature.getDefaultGeometry()));
+    sb.append(",");
+  }
+  int gindex=featureType.getGeometryDescriptor() != null ? featureType.indexOf(featureType.getGeometryDescriptor().getLocalName()) : -1;
+  GeoJSONUtil.string("properties",sb).append(":").append("{");
+  boolean attributesWritten=false;
+  for (int i=0; i < featureType.getAttributeCount(); i++) {
+    AttributeDescriptor ad=featureType.getDescriptor(i);
+    if (i == gindex) {
+      continue;
+    }
+    Object value=feature.getAttribute(i);
+    if (value == null) {
+      continue;
+    }
+    attributesWritten=true;
+    if (value instanceof Envelope) {
+      GeoJSONUtil.array(ad.getLocalName(),gjson.toString((Envelope)value),sb);
+    }
+ else     if (value instanceof BoundingBox) {
+      GeoJSONUtil.array(ad.getLocalName(),gjson.toString((BoundingBox)value),sb);
+    }
+ else     if (value instanceof Geometry) {
+      GeoJSONUtil.string(ad.getLocalName(),sb).append(":").append(gjson.toString((Geometry)value));
+    }
+ else {
+      GeoJSONUtil.entry(ad.getLocalName(),value,sb);
+    }
+    sb.append(",");
+  }
+  if (attributesWritten) {
+    sb.setLength(sb.length() - 1);
+  }
+  sb.append("},");
+  GeoJSONUtil.entry("id",feature.getID(),sb);
+  sb.append("}");
+  return sb.toString();
+}

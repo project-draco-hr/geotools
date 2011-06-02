@@ -1,0 +1,14 @@
+{
+  db.postBulk(loadJSON("morocco.json","countries"));
+  JSONArray data=loadJSON("italy.json","countries");
+  JSONObject italy=(JSONObject)data.get(0);
+  FeatureJSON json=new FeatureJSON();
+  json.setFeatureType(CouchDBUtils.createFeatureType(italy,"countries"));
+  Feature feature=json.readFeature(italy.toString());
+  ContentFeatureStore featureStore=(ContentFeatureStore)store.getFeatureSource("gttestdb.countries");
+  featureStore.addFeatures(Collections.singleton(feature));
+  ContentFeatureCollection features=featureStore.getFeatures();
+  assertEquals(2,features.size());
+  featureStore.addFeatures(Arrays.asList(feature,feature));
+  assertEquals(4,features.size());
+}
