@@ -1,30 +1,31 @@
 {
   boolean orderby=false;
-  if (query.getJoins() != null) {
-    for (int j=query.getJoins().size() - 1; j >= 0; j--) {
-      JoiningQuery.Join join=query.getJoins().get(j);
-      SortBy[] sort=join.getSortBy();
-      if ((sort != null) && (sort.length > 0)) {
-        if (!orderby) {
-          orderby=true;
-          sql.append(" ORDER BY ");
+  for (int j=query.getJoins() == null ? -1 : query.getJoins().size() - 1; j >= -1; j--) {
+    JoiningQuery.Join join=j < 0 ? null : query.getJoins().get(j);
+    SortBy[] sort=j < 0 ? query.getSortBy() : join.getSortBy();
+    if ((sort != null) && (sort.length > 0)) {
+      if (!orderby) {
+        orderby=true;
+        sql.append(" ORDER BY ");
+      }
+      if (j < 0) {
+        sort(query.getTypeName(),sort,sql,false);
+        if (query.getJoins() != null && query.getJoins().size() > 0) {
+          addMultiValuedSort(query.getTypeName(),sort,sql,query.getJoins().get(0));
         }
+      }
+ else {
         if (aliases != null && aliases[j] != null) {
           sort(aliases[j],sort,sql,true);
         }
  else {
           sort(join.getJoiningTypeName(),sort,sql,false);
         }
+        if (query.getJoins().size() > j + 1) {
+          addMultiValuedSort(join.getJoiningTypeName(),sort,sql,query.getJoins().get(j + 1));
+        }
       }
     }
-  }
-  SortBy[] sort=query.getSortBy();
-  if ((sort != null) && (sort.length > 0)) {
-    if (!orderby) {
-      orderby=true;
-      sql.append(" ORDER BY ");
-    }
-    sort(query.getTypeName(),sort,sql,false);
   }
   if (orderby) {
     sql.setLength(sql.length() - 1);
