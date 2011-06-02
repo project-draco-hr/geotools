@@ -1,0 +1,24 @@
+{
+  Set<FeatureId> fids=new HashSet();
+  String fid1="station_no.1";
+  String fid2="station_no.500";
+  fids.add(ff.featureId(fid1));
+  fids.add(ff.featureId(fid2));
+  Id fidFilter=ff.id(fids);
+  Filter unrolled=(Filter)fidFilter.accept(visitor,null);
+  assertNotNull(unrolled);
+  assertTrue(unrolled instanceof OrImpl);
+  List<Filter> filters=((OrImpl)unrolled).getChildren();
+  assertEquals(2,filters.size());
+  for (  Filter f : filters) {
+    assertTrue(f instanceof IsEqualsToImpl);
+  }
+  FeatureCollection<SimpleFeatureType,SimpleFeature> results=mapping.getSource().getFeatures(unrolled);
+  assertEquals(1,getCount(results));
+  Iterator<SimpleFeature> features=results.iterator();
+  SimpleFeature unmappedFeature=(SimpleFeature)features.next();
+  results.close(features);
+  assertNotNull(unmappedFeature);
+  Object object=unmappedFeature.getProperty("station_no").getValue();
+  assertEquals(fid1,object);
+}
