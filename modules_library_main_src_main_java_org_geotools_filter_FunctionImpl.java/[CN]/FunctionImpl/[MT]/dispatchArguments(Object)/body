@@ -11,7 +11,12 @@
   for (int i=0; i < expr.size(); i++) {
     Parameter<?> arg=args.get(Math.min(i,args.size() - 1));
     String argName=arg.getName().toString();
-    Object o=expr.get(i).evaluate(obj);
+    Object o=expr.get(i).evaluate(obj,arg.getType());
+    if (o == null) {
+      if (expr.get(i).evaluate(obj) != null) {
+        throw new IllegalArgumentException(String.format("Failure converting value for " + "argument %s. %s could not be converted to %s",arg.getName(),obj.toString(),arg.getType().getName()));
+      }
+    }
     if (prepped.containsKey(argName)) {
       if (arg.getMaxOccurs() == 1) {
         throw new IllegalArgumentException(String.format("Multiple values specified for " + "argument %s  but maxOccurs = 1",argName));
