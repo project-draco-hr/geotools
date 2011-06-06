@@ -1,0 +1,23 @@
+{
+  EFeatureStatus eStatus=eFeatureInfoCache.detach(eInfo);
+  if (eStatus.isSuccess()) {
+    EFeatureFolderInfo eFolderInfo=eInfo.eParentInfo(false);
+    if (eFolderInfo != null) {
+      EFeatureInfo eRemoved=eFolderInfo.eFeatureInfoMap.remove(eInfo.eName());
+      if (eInfo != eRemoved) {
+        return true;
+      }
+      if (eRemoved != null) {
+        eFolderInfo.eFeatureInfoMap.put(eInfo.eName(),eInfo);
+      }
+    }
+ else {
+      return true;
+    }
+  }
+  eStatus=eFeatureInfoCache.attach(eInfo);
+  if (eStatus.isFailure()) {
+    throw new IllegalStateException("Release failed. EFeatureInfoCache is inconsistent.");
+  }
+  return false;
+}

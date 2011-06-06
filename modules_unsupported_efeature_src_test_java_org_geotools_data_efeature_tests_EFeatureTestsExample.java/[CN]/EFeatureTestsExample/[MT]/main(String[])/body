@@ -1,0 +1,37 @@
+{
+  ResourceSet resourceSet=new ResourceSetImpl();
+  resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put(Resource.Factory.Registry.DEFAULT_EXTENSION,new EFeatureTestsResourceFactoryImpl());
+  resourceSet.getPackageRegistry().put(EFeatureTestsPackage.eNS_URI,EFeatureTestsPackage.eINSTANCE);
+  if (args.length == 0) {
+    System.out.println("Enter a list of file paths or URIs that have content like this:");
+    try {
+      Resource resource=resourceSet.createResource(URI.createURI("http:///My.xmi"));
+      EFeatureData<?,?> root=EFeatureTestsFactory.eINSTANCE.createEFeatureData();
+      resource.getContents().add(root);
+      resource.save(System.out,null);
+    }
+ catch (    IOException exception) {
+      exception.printStackTrace();
+    }
+  }
+ else {
+    for (int i=0; i < args.length; ++i) {
+      File file=new File(args[i]);
+      URI uri=file.isFile() ? URI.createFileURI(file.getAbsolutePath()) : URI.createURI(args[i]);
+      try {
+        Resource resource=resourceSet.getResource(uri,true);
+        System.out.println("Loaded " + uri);
+        for (        EObject eObject : resource.getContents()) {
+          Diagnostic diagnostic=Diagnostician.INSTANCE.validate(eObject);
+          if (diagnostic.getSeverity() != Diagnostic.OK) {
+            printDiagnostic(diagnostic,"");
+          }
+        }
+      }
+ catch (      RuntimeException exception) {
+        System.out.println("Problem loading " + uri);
+        exception.printStackTrace();
+      }
+    }
+  }
+}

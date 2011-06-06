@@ -1,0 +1,35 @@
+{
+  EFeatureIDFactory eIDFactory=eIDFactory();
+  if (!(eIDFactory instanceof EFeatureVoidIDFactory)) {
+    if (msg.getEventType() == Notification.ADD) {
+      Object value=msg.getNewValue();
+      if (value instanceof EFeature) {
+        EFeature eFeature=(EFeature)value;
+        eAdapt(eFeature,true);
+        String eID=eFeature.getID();
+        String eNewID;
+        if (!(eID == null || eID.length() == 0)) {
+          eNewID=eIDFactory.useID(eFeature,eID);
+        }
+ else {
+          eNewID=eIDFactory.createID(eFeature);
+        }
+        if (!eNewID.equals(eID)) {
+          eFeature.setID(eNewID);
+        }
+      }
+ else       if (value instanceof Resource) {
+        ((Resource)value).eAdapters().add(this);
+      }
+    }
+ else     if (msg.getEventType() == Notification.REMOVE) {
+      Object value=msg.getOldValue();
+      if (value instanceof EFeature) {
+      }
+ else       if (value instanceof Resource) {
+        ((Resource)value).eAdapters().remove(this);
+      }
+    }
+  }
+ else   System.out.println();
+}

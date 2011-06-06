@@ -1,0 +1,22 @@
+{
+  Set<Identifier> ids=filter.getIdentifiers();
+  if (ids.isEmpty()) {
+    throw new RuntimeException("Id filter " + filter + " has no identifier");
+  }
+ else   if (ids.size() > 1) {
+    throw new RuntimeException("Id filter " + filter + " has more than one identifier");
+  }
+  Object id=ids.iterator().next().getID();
+  if (id == null) {
+    throw new NullPointerException("Identifier is null");
+  }
+  EAttribute eAttribute=eFeatureInfo.eIDAttribute();
+  try {
+    EAttributeValueIsID eCondition=new EAttributeValueIsID(eAttribute,id.toString());
+    eConditionStack.push(eCondition);
+    return eCondition;
+  }
+ catch (  EFeatureEncoderException e) {
+    throw new RuntimeException("Failed to create IS ID condition",e);
+  }
+}

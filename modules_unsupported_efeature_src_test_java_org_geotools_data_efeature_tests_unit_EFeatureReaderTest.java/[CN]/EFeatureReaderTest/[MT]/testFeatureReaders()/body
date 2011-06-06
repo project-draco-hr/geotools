@@ -1,0 +1,38 @@
+{
+  EFeatureDataStore eStore;
+  Map<String,Serializable> params;
+  try {
+    params=eParams.createParams(eResourceURI.toString(),null);
+    eStore=eStoreFactory.createDataStore(params);
+    dTime();
+    for (    Object[] it : eTypeData) {
+      String eType=it[0].toString();
+      Class<?> cls=(Class<?>)it[1];
+      int count=0;
+      int icount=Integer.valueOf(it[2].toString());
+      EFeatureReader eReader=eStore.getFeatureReader(eType);
+      while (eReader.hasNext()) {
+        SimpleFeature feature=eReader.next();
+        assertTrue("Feature does not implement ESimpleFeature",feature instanceof ESimpleFeature);
+        EObject eObject=((ESimpleFeature)feature).eObject();
+        assertNotNull("Feature is not contained by an EObject",eObject);
+        assertTrue("EObject returned by ESimpleFeature is not an " + eType + " instance",cls.isInstance(eObject));
+        EFeature eFeature=((ESimpleFeature)feature).eFeature();
+        assertNotNull("Feature is not contained by an EFeature",eFeature);
+        assertTrue("EFeature data and Feature are not identical",feature == eFeature.getData());
+        Object n=feature.getAttribute("attribute");
+        assertNotNull("Attribute data is null",n);
+        Object g=feature.getAttribute("geometry");
+        assertNotNull("Geometry data is null",g);
+        count++;
+      }
+      assertEquals("Feature count mismatch",icount,count);
+      trace("Count[" + eType + "]: "+ count,TIME_DELTA);
+    }
+    eStore.dispose();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    fail(e);
+  }
+}

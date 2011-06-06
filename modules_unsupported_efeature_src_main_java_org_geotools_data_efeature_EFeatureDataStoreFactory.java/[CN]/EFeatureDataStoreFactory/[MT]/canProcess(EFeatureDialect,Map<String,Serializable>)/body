@@ -1,0 +1,40 @@
+{
+  if (params != null) {
+    String eContextID;
+    String eDomainID;
+    String eNsURI;
+    URI eURI;
+    String eFolders;
+    try {
+      eContextID=(String)EFEATURE_CONTEXT_ID_PARAM.lookUp(params);
+      eDomainID=(String)EDITING_DOMAIN_ID_PARAM.lookUp(params);
+      eNsURI=(String)EPACKAGE_NS_URI_PARAM.lookUp(params);
+      eURI=URI.createURI((String)ERESOURCE_URI_PARAM.lookUp(params));
+      eFolders=(String)EFOLDERS_QUERY_PARAM.lookUp(params);
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.WARNING,e.getMessage(),e);
+      return false;
+    }
+    if (params.containsKey(EFEATURE_CONTEXT_ID) && params.containsKey(EDITING_DOMAIN_ID) && params.containsKey(ERESOURCE_URI)) {
+      EditingDomain eDomain=eDomain(eContextID,eDomainID);
+      if (eDomain != null) {
+        if (params.containsKey(EFOLDERS_QUERY)) {
+          if (!(eFolders == null || eFolders.length() == 0)) {
+            for (            String eFolder : dialect.toFolderQueries(eFolders)) {
+              EFeatureDataStoreInfo info=eDataStoreInfo(eContextID,eDomainID,eNsURI);
+              if (info == null)               return false;
+              String eURIFragment=dialect.getFolderFragment(eFolder);
+              if (!(eURIFragment == null || eURIFragment.length() == 0)) {
+                URI uri=eURI.appendFragment(eURIFragment);
+                if (eDomain.getResourceSet().getEObject(uri,true) == null)                 return false;
+              }
+            }
+          }
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}

@@ -1,0 +1,56 @@
+{
+  EFeatureStatus s;
+  doInvalidate(false);
+  EReference eReference=null;
+  if (!eIsRoot) {
+    if (eParent == null) {
+      return failure(this,eName(),"Feature mismatch: Flagged as !eIsRoot() but parent class is null");
+    }
+    eReference=EFeatureUtils.eGetReference(eParent,this.eReferenceName);
+    if (eReference == null) {
+      return failure(this,eName(),"Feature mismatch: EReference " + this.eReferenceName + " not found");
+    }
+  }
+  EClassifier eClassifier=ePackage.getEClassifier(eClassName);
+  if (!(eClassifier instanceof EClass)) {
+    return failure(this,eName(),"Feature mismatch: EClass " + eClassName + " not found");
+  }
+  EClass eClass=((EClass)eClassifier);
+  Map<String,EAttribute> eAttrMap=EFeatureUtils.eGetAttributeMap(eClass);
+  EAttribute eAttribute=eClass.getEIDAttribute();
+  if (eAttribute != null) {
+    String eName=eAttribute.getName();
+    EFeatureAttributeInfo eInfo=eGetAttributeInfo(eName,true);
+    if (!(s=eInfo.validate(true,eAttribute)).isSuccess()) {
+      return s;
+    }
+  }
+ else   if (!eAttrMap.containsKey(eIDAttributeName)) {
+    return failure(this,eName(),"Feature mismatch: ID EAttribute '" + eIDAttributeName + "' not found");
+  }
+  eAttrMap.remove(eAttribute);
+  for (  EFeatureAttributeInfo it : eAttributeInfoMap.values()) {
+    eAttribute=eAttrMap.get(it.eName);
+    if (eAttribute == null) {
+      return failure(this,eName(),"Feature mismatch: EAttribute " + it.eName + " not found in EClass");
+    }
+    boolean isID=eAttribute.getName().equals(eIDAttributeName);
+    if (!(s=it.validate(isID,eAttribute)).isSuccess()) {
+      return s;
+    }
+  }
+  for (  EFeatureGeometryInfo it : eGeometryInfoMap.values()) {
+    eAttribute=eAttrMap.get(it.eName);
+    if (eAttribute == null) {
+      return failure(this,eName(),"Feature mismatch: EGeometry " + it.eName + " not found in EClass");
+    }
+    boolean isID=eAttribute.getName().equals(eIDAttributeName);
+    if (!(s=it.validate(isID,eAttribute)).isSuccess()) {
+      return s;
+    }
+  }
+  this.isValid=true;
+  this.eParentClass=new WeakReference<EClass>(eParent);
+  this.eReference=new WeakReference<EReference>(eReference);
+  return structureIsValid(eName());
+}

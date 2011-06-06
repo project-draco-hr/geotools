@@ -1,0 +1,34 @@
+{
+  Expression expr=filter.getExpression();
+  Expression lowerbounds=filter.getLowerBoundary();
+  Expression upperbounds=filter.getUpperBoundary();
+  Class<?> type;
+  AttributeDescriptor attType=(AttributeDescriptor)expr.evaluate(featureType);
+  if (attType != null) {
+    type=attType.getType().getBinding();
+  }
+ else {
+    type=String.class;
+  }
+  if (!DataTypes.supports(type)) {
+    throw new RuntimeException("Type " + type + " not supported.");
+  }
+  expr.accept(this,false);
+  PropertyName name=toType(eExpressionStack.pop(),PropertyName.class,"PropertyIsBetween expression is not a PropertyName");
+  lowerbounds.accept(this,type);
+  Literal lower=toType(eExpressionStack.pop(),Literal.class,"PropertyIsBetween lower bound expression is not a Literal");
+  upperbounds.accept(this,type);
+  Literal upper=toType(eExpressionStack.pop(),Literal.class,"PropertyIsBetween uppder bound expression is not a Literal");
+  EAttribute eAttribute=eFeatureInfo.getEAttribute(name.getPropertyName());
+  if (eAttribute == null) {
+    throw new IllegalArgumentException("EAttribute " + name.getPropertyName() + " not found");
+  }
+  try {
+    EAttributeValueIsBetween eCondition=new EAttributeValueIsBetween(eAttribute,lower,upper);
+    eConditionStack.push(eCondition);
+    return eCondition;
+  }
+ catch (  EFeatureEncoderException e) {
+    throw new RuntimeException("Failed to create BETWEEN condition",e);
+  }
+}

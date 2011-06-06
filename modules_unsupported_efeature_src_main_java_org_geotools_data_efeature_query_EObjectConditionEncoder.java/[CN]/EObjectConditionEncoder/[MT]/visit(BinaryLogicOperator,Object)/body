@@ -1,0 +1,39 @@
+{
+  Condition eCondition=null;
+  String operator=((String)extraData).toUpperCase();
+  Iterator<Filter> list=filter.getChildren().iterator();
+  if (filter instanceof org.opengis.filter.Not) {
+    list.next().accept(this,extraData);
+    eCondition=new Not(eConditionStack.pop());
+  }
+ else   if ("OR".equals(operator)) {
+    while (list.hasNext()) {
+      list.next().accept(this,extraData);
+      if (eCondition == null) {
+        eCondition=eConditionStack.pop();
+      }
+ else {
+        eCondition=eCondition.OR(eConditionStack.pop());
+      }
+    }
+  }
+ else   if ("AND".equals(operator)) {
+    while (list.hasNext()) {
+      list.next().accept(this,extraData);
+      if (eCondition == null) {
+        eCondition=eConditionStack.pop();
+      }
+ else {
+        eCondition=eCondition.AND(eConditionStack.pop());
+      }
+    }
+  }
+ else {
+    throw new RuntimeException("Binary logical " + "operator " + operator + " filter not supported");
+  }
+  if (eCondition == null) {
+    throw new NullPointerException("Binary logical " + "operator " + operator + " filter not supported");
+  }
+  eConditionStack.push(eCondition);
+  return eCondition;
+}

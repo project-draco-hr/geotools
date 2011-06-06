@@ -1,0 +1,63 @@
+{
+  Literal value=null;
+  PropertyName name=null;
+  Condition eCondition=null;
+  Expression left=filter.getExpression1();
+  Expression right=filter.getExpression2();
+  if (left instanceof PropertyName && right instanceof PropertyName) {
+    throw new IllegalArgumentException("Implicit inner joint predicates not supported");
+  }
+  if (left instanceof PropertyName) {
+    name=(PropertyName)left;
+  }
+ else   if (left instanceof Literal) {
+    value=(Literal)left;
+  }
+ else {
+    throw new IllegalArgumentException("Left argument must be a Literal");
+  }
+  if (right instanceof PropertyName) {
+    name=(PropertyName)right;
+  }
+ else   if (left instanceof Literal) {
+    value=(Literal)right;
+  }
+ else {
+    throw new IllegalArgumentException("Right argument must be a Literal");
+  }
+  EAttribute eAttribute=eFeatureInfo.getEAttribute(name.getPropertyName());
+  if (eAttribute == null) {
+    throw new IllegalArgumentException("EAttribute " + name.getPropertyName() + " not found");
+  }
+  String comparator=(String)extraData;
+  try {
+    if (PropertyIsEqualTo.NAME.equals(comparator)) {
+      eCondition=new EAttributeValueIsEqual(eAttribute,value);
+    }
+ else     if (PropertyIsLessThan.NAME.equals(comparator)) {
+      eCondition=new EAttributeValueIsEqual(eAttribute,value);
+    }
+ else     if (PropertyIsLessThanOrEqualTo.NAME.equals(comparator)) {
+      eCondition=new EAttributeValueIsEqual(eAttribute,value);
+    }
+ else     if (PropertyIsGreaterThan.NAME.equals(comparator)) {
+      eCondition=new EAttributeValueIsEqual(eAttribute,value);
+    }
+ else     if (PropertyIsGreaterThanOrEqualTo.NAME.equals(comparator)) {
+      eCondition=new EAttributeValueIsEqual(eAttribute,value);
+    }
+ else     if (PropertyIsNotEqualTo.NAME.equals(comparator)) {
+      eCondition=new EAttributeValueIsEqual(eAttribute,value);
+    }
+ else {
+      throw new IllegalArgumentException("Comparator " + comparator + " not supported");
+    }
+  }
+ catch (  EFeatureEncoderException e) {
+    String msg="Failed to create " + "EObjectCondition (" + comparator + ")";
+    LOGGER.warning(msg);
+    throw new IllegalArgumentException(msg,e);
+  }
+  eConditionStack.push(eCondition);
+  return eCondition;
+}

@@ -1,0 +1,41 @@
+{
+  if (!isInit) {
+    addNonGeoEObjects(ncount);
+    int gcount=fcount + ccount;
+    if (gcount > 0) {
+      List<Class<Number>> aTypes=DataTypes.getSubTypes(Number.class);
+      int acount=aTypes.size();
+      int tcount=(int)Math.ceil((double)gcount / (double)acount);
+      int i=0;
+      int n=Math.min(tcount,gcount);
+      int count=n;
+      Number[] attributes=new Number[0];
+      while (i < acount && count <= gcount) {
+        Class<Number> type=aTypes.get(i);
+        Number nmin=DataTypes.getMinValue(type);
+        Number nmax=DataTypes.getMaxValue(type);
+        attributes=attributes(Number.class,type,attributes,n,nmin,nmax);
+        count+=(n=Math.min(tcount,gcount - count));
+        i++;
+      }
+      tcount=(int)Math.ceil(gcount / 3.0);
+      i=0;
+      count=(n=Math.min(tcount,gcount));
+      Geometry[] geometries=geometries(null,Geometry.class,generatePointWKTs(n,0,20));
+      count+=(n=Math.min(tcount,gcount - count));
+      if (count <= gcount) {
+        geometries=geometries(geometries,Geometry.class,generateLineStringWKTs(n,0,20,1,5));
+        count+=(n=Math.min(tcount,gcount - count));
+      }
+      if (count <= gcount) {
+        geometries=geometries(geometries,Geometry.class,generatePolygonWKTs(n,0,20,1,5,1,10));
+      }
+      addFeatureData(0,fcount,attributes,geometries);
+      addFeatureCompatibleData(fcount,gcount,attributes,geometries);
+    }
+    nonGeoEObjectCount=ncount;
+    eFeatureDataCount=fcount;
+    eFeatureCompatibleDataCount=ccount;
+    isInit=true;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  if (eFeatureStoreFactory == null || eFeatureStoreFactory.get() == null) {
+synchronized (EFeatureFactoryFinder.class) {
+      Iterator<DataAccessFactory> factories=DataAccessFinder.getAllDataStores();
+      while (factories.hasNext()) {
+        DataAccessFactory it=factories.next();
+        if (it instanceof EFeatureDataStoreFactory) {
+          eFeatureStoreFactory=new WeakReference<EFeatureDataStoreFactory>((EFeatureDataStoreFactory)it);
+        }
+      }
+    }
+  }
+  if (eFeatureStoreFactory == null || eFeatureStoreFactory.get() == null) {
+    throw new FactoryRegistryException("EFeatureDataStoreFactory instance not found. " + "Have you registered a EFeatureContext instance?");
+  }
+  return eFeatureStoreFactory.get();
+}

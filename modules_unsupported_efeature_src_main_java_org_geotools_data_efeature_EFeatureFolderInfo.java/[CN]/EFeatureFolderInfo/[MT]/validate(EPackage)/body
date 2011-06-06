@@ -1,0 +1,21 @@
+{
+  doInvalidate(false);
+  if (eName == null || eName.length() == 0) {
+    return failure(this,eName(),"Folder name is missing");
+  }
+  EClass eParent=null;
+  if (eIsObject) {
+    EClassifier eClassifier=ePackage.getEClassifier(eName);
+    if (eClassifier instanceof EClass) {
+      eParent=(EClass)eClassifier;
+    }
+ else     return failure(this,eName(),"Folder mismatch: Parent " + eName + " not an EClass");
+  }
+  EFeatureStatus s;
+  for (  EFeatureInfo it : eFeatureInfoMap.values()) {
+    if (!(s=it.validate(ePackage,eParent)).isSuccess()) {
+      return s;
+    }
+  }
+  return structureIsValid(eName());
+}

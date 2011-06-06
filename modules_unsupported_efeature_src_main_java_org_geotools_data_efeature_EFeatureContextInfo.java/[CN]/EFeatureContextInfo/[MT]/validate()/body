@@ -1,0 +1,19 @@
+{
+  if (isDisposed) {
+    return failure(this,eContextID,"Is disposed");
+  }
+  invalidate(false);
+  if (eContext(false).eIDFactory() == null) {
+    return failure(this,eContextID,"No EFeatureIDFactory instance found");
+  }
+  EChange eChange=new EChange();
+  Map<String,EFeatureDomainInfo> eDomainMap=eChange.synchronize(this);
+  for (  EFeatureDomainInfo it : eDomainMap.values()) {
+    EFeatureStatus s;
+    if ((s=it.validate()).isFailure()) {
+      return s;
+    }
+  }
+  eChange.commit(this);
+  return structureIsValid(eContextID());
+}

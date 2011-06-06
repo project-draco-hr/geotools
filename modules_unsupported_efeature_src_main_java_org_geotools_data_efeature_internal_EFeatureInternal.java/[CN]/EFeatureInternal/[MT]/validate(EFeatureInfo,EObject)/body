@@ -1,0 +1,22 @@
+{
+synchronized (eClassValidatedMap) {
+    EClass eClass=eObject.eClass();
+    EPackage ePackage=eClass.getEPackage();
+    Set<Long> eValidSet=eClassValidatedMap.get(eClass);
+    if (eValidSet == null) {
+      eValidSet=new HashSet<Long>();
+      eClassValidatedMap.put(eClass,eValidSet);
+    }
+    if (!eValidSet.contains(eStructure.eUID)) {
+      EClass eParent=null;
+      if (!eStructure.isRoot()) {
+        eParent=EFeatureUtils.eGetContainingClass(eObject);
+      }
+      EFeatureStatus s;
+      if (!(s=eStructure.validate(ePackage,eParent)).isSuccess()) {
+        throw new IllegalArgumentException(s.getMessage(),s.getCause());
+      }
+      eValidSet.add(eStructure.eUID);
+    }
+  }
+}

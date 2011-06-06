@@ -1,0 +1,21 @@
+{
+  try {
+    if (eIDFactory == null)     eIDFactory=new EFeatureIDFactoryImpl();
+    if (eHints == null)     eHints=new EFeatureHints();
+    EFeatureContextInfo eContextInfo=eContextInfoMap.get(eContextID);
+    if (eContextInfo != null) {
+      throw new IllegalArgumentException("EFeatureContext " + eContextID + "' already exists");
+    }
+    EFeatureContext eContext=new EFeatureContextImpl(this,eContextID,eIDFactory);
+    eContextMap.put(eContextID,eContext);
+    eContextInfo=EFeatureContextInfo.create(this,eContextID,null);
+    eContextInfoMap.put(eContextID,eContextInfo);
+    return eContext;
+  }
+ catch (  IllegalArgumentException e) {
+    eContextMap.remove(eContextID);
+    eContextInfoMap.remove(eContextID);
+    LOGGER.throwing(getClass().getName(),"create(EFeatureContext)",e);
+    throw e;
+  }
+}

@@ -1,0 +1,27 @@
+{
+  try {
+    EObjectCondition eCondition=newCondition(EFeaturePackage.eINSTANCE.getEFeature_ID(),Integer.toString(Integer.MAX_VALUE));
+    WHERE where=new WHERE(eCondition);
+    dTime();
+    for (    Object[] type : eTypeData) {
+      String eType=type[0].toString();
+      EFeatureInfo eInfo=(EFeatureInfo)type[2];
+      int count=0;
+      EFeatureFilter eFilter=new EFeatureFilter(eInfo,where);
+      EFeatureQuery eQuery=new EFeatureQuery(eResource.getAllContents(),eFilter);
+      EFeatureIterator it=eQuery.iterator();
+      while (it.hasNext()) {
+        EObject eObject=it.next();
+        String eID=EcoreUtil.getID(eObject);
+        trace("eID: " + eID);
+        count++;
+      }
+      assertEquals("Feature count mismatch",0,count);
+      trace("Count[" + eType + "]: "+ count,TIME_DELTA);
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    fail(e);
+  }
+}

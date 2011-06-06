@@ -1,0 +1,30 @@
+{
+  if (isDisposed) {
+    return failure(this,eNsURI,"Is disposed");
+  }
+  invalidate(false);
+  if (!isCached(eContextID)) {
+    return failure(this,eNsURI,"EFeatureContext with ID: " + eContextID + " not found");
+  }
+  EFeatureContext eContext=eContext(false);
+  if (!eContext.containsDomain(eDomainID)) {
+    return failure(this,eNsURI,"Editing domain with ID: " + eContextID + " not found");
+  }
+  EPackage ePackage=eContext.eGetPackage(eNsURI);
+  if (!this.eNsURI.equals(ePackage.getNsURI())) {
+    return failure(this,eNsURI,"DataStore mismatch: namespace (" + ePackage + ")");
+  }
+  EFeatureStatus s;
+  for (  String eName : eGetFolderNames(null)) {
+    EFeatureFolderInfo eInfo=eFolderInfoMap.get(eName);
+    if (eInfo != null) {
+      if (!(s=eInfo.validate(ePackage)).isSuccess()) {
+        return s;
+      }
+    }
+ else {
+      return failure(this,eNsURI,"DataStore mismatch: Folder " + eName + " not found");
+    }
+  }
+  return structureIsValid(eNsURI());
+}
