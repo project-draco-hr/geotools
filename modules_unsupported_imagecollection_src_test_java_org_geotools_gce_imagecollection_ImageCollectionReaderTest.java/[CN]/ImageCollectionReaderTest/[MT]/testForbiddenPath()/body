@@ -1,0 +1,21 @@
+{
+  final File file=TestData.file(this,"sample");
+  final String absolutePath=FilenameUtils.separatorsToUnix(file.getAbsolutePath());
+  final String string="PATH='" + absolutePath + "/folder1/../../forbiddenFolder/classifiedFile.tif'";
+  Filter filter=CQL.toFilter(string);
+  final ImageCollectionReader reader=new ImageCollectionReader(file);
+  final ParameterValue<Filter> ff=ImageCollectionFormat.FILTER.createValue();
+  ff.setValue(filter);
+  GeneralParameterValue[] params=new GeneralParameterValue[]{ff};
+  if (reader != null) {
+    GridCoverage2D coverage=null;
+    boolean exception=true;
+    try {
+      coverage=(GridCoverage2D)reader.read(params);
+      exception=false;
+    }
+ catch (    DataSourceException exc) {
+      assertTrue(exception);
+    }
+  }
+}
