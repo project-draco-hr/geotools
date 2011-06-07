@@ -21,33 +21,35 @@
       final AbstractGridCoverage2DReader reader=(AbstractGridCoverage2DReader)gridPropertyName.evaluate(gridWrapper);
       coverage=readCoverage(reader,params,readGG);
       if (coverage != null) {
-        GeneralEnvelope cropEnvelope=new GeneralEnvelope(mapExtent);
-        if (coverage.getEnvelope2D().intersects(cropEnvelope.toRectangle2D())) {
-          final ParameterValueGroup param=CROP.getParameters();
-          param.parameter("Source").setValue(coverage);
-          param.parameter("Envelope").setValue(cropEnvelope);
-          coverage=(GridCoverage2D)PROCESSOR.doOperation(param);
-        }
+        if (readGG != null) {
+          GeneralEnvelope cropEnvelope=new GeneralEnvelope(readGG.getEnvelope());
+          if (coverage.getEnvelope2D().intersects(cropEnvelope.toRectangle2D())) {
+            final ParameterValueGroup param=CROP.getParameters();
+            param.parameter("Source").setValue(coverage);
+            param.parameter("Envelope").setValue(cropEnvelope);
+            coverage=(GridCoverage2D)PROCESSOR.doOperation(param);
+          }
  else {
-          coverage=null;
-        }
-        if (coverage != null) {
-          MathTransform2D coverageTx=coverage.getGridGeometry().getGridToCRS2D();
-          if (coverageTx instanceof AffineTransform) {
-            AffineTransform coverageAt=(AffineTransform)coverageTx;
-            AffineTransform renderingAt=(AffineTransform)gridGeometry.getGridToCRS2D();
-            final double ratioX=coverageAt.getScaleX() / renderingAt.getScaleX();
-            final double ratioY=coverageAt.getScaleY() / renderingAt.getScaleY();
-            if (ratioX < 0.7 && ratioY < 0.7) {
-              final ParameterValueGroup param=SCALE.getParameters();
-              param.parameter("Source").setValue(coverage);
-              param.parameter("xScale").setValue(ratioX);
-              param.parameter("yScale").setValue(ratioY);
-              final Interpolation interpolation=(Interpolation)java2dHints.get(JAI.KEY_INTERPOLATION);
-              if (interpolation != null) {
-                param.parameter("Interpolation").setValue(interpolation);
+            coverage=null;
+          }
+          if (coverage != null) {
+            MathTransform2D coverageTx=readGG.getGridToCRS2D();
+            if (coverageTx instanceof AffineTransform) {
+              AffineTransform coverageAt=(AffineTransform)coverageTx;
+              AffineTransform renderingAt=(AffineTransform)gridGeometry.getGridToCRS2D();
+              final double ratioX=coverageAt.getScaleX() / renderingAt.getScaleX();
+              final double ratioY=coverageAt.getScaleY() / renderingAt.getScaleY();
+              if (ratioX < 0.7 && ratioY < 0.7) {
+                final ParameterValueGroup param=SCALE.getParameters();
+                param.parameter("Source").setValue(coverage);
+                param.parameter("xScale").setValue(ratioX);
+                param.parameter("yScale").setValue(ratioY);
+                final Interpolation interpolation=(Interpolation)java2dHints.get(JAI.KEY_INTERPOLATION);
+                if (interpolation != null) {
+                  param.parameter("Interpolation").setValue(interpolation);
+                }
+                coverage=(GridCoverage2D)PROCESSOR.doOperation(param);
               }
-              coverage=(GridCoverage2D)PROCESSOR.doOperation(param);
             }
           }
         }
