@@ -1,0 +1,31 @@
+{
+  if (original == null)   original=filter;
+  if (!fcs.supports(filter)) {
+    postStack.push(filter);
+    return null;
+  }
+  Expression leftValue=filter.getExpression1();
+  Expression rightValue=filter.getExpression2();
+  int i=postStack.size();
+  if (leftValue == null || rightValue == null) {
+    postStack.push(filter);
+    return null;
+  }
+  leftValue.accept(this,null);
+  if (i < postStack.size()) {
+    postStack.pop();
+    postStack.push(filter);
+    return null;
+  }
+  rightValue.accept(this,null);
+  if (i < postStack.size()) {
+    preStack.pop();
+    postStack.pop();
+    postStack.push(filter);
+    return null;
+  }
+  preStack.pop();
+  preStack.pop();
+  preStack.push(filter);
+  return null;
+}
