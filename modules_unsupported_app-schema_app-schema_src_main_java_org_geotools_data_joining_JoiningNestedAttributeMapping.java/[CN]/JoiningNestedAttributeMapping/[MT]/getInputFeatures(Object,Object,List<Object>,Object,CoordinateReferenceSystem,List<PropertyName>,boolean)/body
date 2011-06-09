@@ -20,20 +20,16 @@
   }
   ArrayList<Feature> matchingFeatures=new ArrayList<Feature>();
   if (featureIterator != null) {
-    if (featureIterator.hasNext() && featureIterator.peekNextValue(nestedSourceExpression).equals(foreignKeyValue)) {
-      List<Object> foreignIdValues=featureIterator.getForeignIdValues();
+    while (featureIterator.hasNext() && featureIterator.peekNextValue(nestedSourceExpression).equals(foreignKeyValue) && featureIterator.checkForeignIdValues(idValues)) {
       matchingFeatures.addAll(featureIterator.skip());
-      while (featureIterator.hasNext() && featureIterator.peekNextValue(nestedSourceExpression).equals(foreignKeyValue) && featureIterator.checkForeignIdValues(foreignIdValues)) {
-        matchingFeatures.addAll(featureIterator.skip());
-      }
     }
   }
   for (  Name name : instance.featureIterators.keySet()) {
     DataAccessMappingFeatureIterator fIt=instance.featureIterators.get(name);
     if (fIt != featureIterator) {
-      skipFeatures(fIt,instance.nestedSourceExpressions.get(name),foreignKeyValue);
+      skipFeatures(fIt,instance.nestedSourceExpressions.get(name),foreignKeyValue,idValues);
     }
   }
-  instance.skipped.add(foreignKeyValue);
+  instance.skipped.add(new Instance.Skip(foreignKeyValue,idValues));
   return matchingFeatures;
 }
