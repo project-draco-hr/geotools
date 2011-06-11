@@ -10,10 +10,17 @@
     }
   }
   final String name=element.pullString("name");
-  final Element orientation=element.pullVoidElement("orientation");
+  final Element orientation=element.pullOptionalVoidElement();
+  final AxisDirection direction;
+  if (orientation != null) {
+    direction=directions.get(orientation.keyword.trim().toUpperCase());
+  }
+ else {
+    String directionName=element.pullString("orientation");
+    direction=DirectionAlongMeridian.parse(directionName).getDirection();
+  }
   final Map<String,?> properties=parseAuthority(element,name);
   element.close();
-  final AxisDirection direction=directions.get(orientation.keyword.trim().toUpperCase());
   if (direction == null) {
     throw element.parseFailed(null,Errors.format(ErrorKeys.UNKNOW_TYPE_$1,orientation));
   }

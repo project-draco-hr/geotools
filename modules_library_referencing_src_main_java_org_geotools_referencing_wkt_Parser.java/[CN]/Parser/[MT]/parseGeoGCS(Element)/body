@@ -7,16 +7,27 @@
   GeodeticDatum datum=parseDatum(element,meridian);
   CoordinateSystemAxis axis0=parseAxis(element,angularUnit,false);
   CoordinateSystemAxis axis1;
+  CoordinateSystemAxis axis2=null;
   try {
     if (axis0 != null) {
       axis1=parseAxis(element,angularUnit,true);
+      if (axis1 != null) {
+        axis2=parseAxis(element,SI.METER,false);
+      }
     }
  else {
       axis0=createAxis(null,"Lon",AxisDirection.EAST,angularUnit);
       axis1=createAxis(null,"Lat",AxisDirection.NORTH,angularUnit);
     }
     element.close();
-    return crsFactory.createGeographicCRS(properties,datum,csFactory.createEllipsoidalCS(properties,axis0,axis1));
+    EllipsoidalCS ellipsoidalCS;
+    if (axis2 != null) {
+      ellipsoidalCS=csFactory.createEllipsoidalCS(properties,axis0,axis1,axis2);
+    }
+ else {
+      ellipsoidalCS=csFactory.createEllipsoidalCS(properties,axis0,axis1);
+    }
+    return crsFactory.createGeographicCRS(properties,datum,ellipsoidalCS);
   }
  catch (  FactoryException exception) {
     throw element.parseFailed(exception,null);
