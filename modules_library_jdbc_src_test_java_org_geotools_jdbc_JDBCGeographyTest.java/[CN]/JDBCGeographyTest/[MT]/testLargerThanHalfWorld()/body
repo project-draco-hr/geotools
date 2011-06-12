@@ -1,0 +1,16 @@
+{
+  if (!isGeographySupportAvailable()) {
+    return;
+  }
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  BBOX bbox=ff.bbox("",-140,-50,140,50,"EPSG:4326");
+  Query q=new Query(tname("geopoint"));
+  q.setFilter(bbox);
+  FeatureReader r=dataStore.getFeatureReader(q,Transaction.AUTO_COMMIT);
+  assertTrue(r.hasNext());
+  while (r.hasNext()) {
+    SimpleFeature f=(SimpleFeature)r.next();
+    assertTrue(f.getAttribute(aname("geo")) instanceof Point);
+  }
+  r.close();
+}
