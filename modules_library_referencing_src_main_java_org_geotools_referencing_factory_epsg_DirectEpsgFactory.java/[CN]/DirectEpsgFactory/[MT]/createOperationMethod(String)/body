@@ -17,7 +17,16 @@
       final int sourceDimensions=encoded >>> 16;
       final int targetDimensions=encoded & 0xFFFF;
       final ParameterDescriptor[] descriptors=createParameterDescriptors(epsg);
-      final Map<String,Object> properties=createProperties(name,epsg,remarks);
+      GenericName[] aliases=null;
+      try {
+        ParameterValueGroup pvg=factories.getMathTransformFactory().getDefaultParameters(name);
+        if (pvg != null && pvg.getDescriptor() != null && pvg.getDescriptor().getAlias() != null) {
+          aliases=(GenericName[])pvg.getDescriptor().getAlias().toArray(new GenericName[pvg.getDescriptor().getAlias().size()]);
+        }
+      }
+ catch (      NoSuchIdentifierException e) {
+      }
+      Map<String,Object> properties=addAliases(createProperties(name,epsg,remarks),aliases);
       if (formula != null) {
         properties.put(OperationMethod.FORMULA_KEY,formula);
       }

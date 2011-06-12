@@ -1,0 +1,29 @@
+{
+  ensureNonNull("properties",properties);
+  Object value=properties.get(IdentifiedObject.NAME_KEY);
+  ensureNonNull("name",value);
+  final String name;
+  if (value instanceof Identifier) {
+    name=((Identifier)value).getCode();
+  }
+ else {
+    name=value.toString();
+  }
+  if (aliases != null && aliases.length > 0) {
+    int count=aliases.length;
+    value=properties.get(IdentifiedObject.ALIAS_KEY);
+    if (value != null) {
+      final Map<String,GenericName> merged=new LinkedHashMap<String,GenericName>();
+      putAll(NameFactory.toArray(value),merged);
+      count-=putAll(aliases,merged);
+      final Collection<GenericName> c=merged.values();
+      aliases=c.toArray(new GenericName[c.size()]);
+    }
+    if (count > 0) {
+      final Map<String,Object> copy=new HashMap<String,Object>(properties);
+      copy.put(IdentifiedObject.ALIAS_KEY,aliases);
+      properties=copy;
+    }
+  }
+  return properties;
+}
