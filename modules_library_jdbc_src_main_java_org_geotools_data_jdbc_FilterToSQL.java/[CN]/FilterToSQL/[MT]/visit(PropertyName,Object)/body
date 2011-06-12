@@ -1,5 +1,9 @@
 {
   LOGGER.finer("exporting PropertyName");
+  Class target=null;
+  if (extraData instanceof Class) {
+    target=(Class)extraData;
+  }
   try {
     AttributeDescriptor attribute=null;
     try {
@@ -9,11 +13,21 @@
       String msg="Error occured mapping " + expression + " to feature type";
       LOGGER.log(Level.WARNING,msg,e);
     }
+    String encodedField;
     if (attribute != null) {
-      out.write(fieldEncoder.encode(escapeName(attribute.getLocalName())));
+      encodedField=fieldEncoder.encode(escapeName(attribute.getLocalName()));
+      if (target != null && target.isAssignableFrom(attribute.getType().getBinding())) {
+        target=null;
+      }
     }
  else {
-      out.write(fieldEncoder.encode(escapeName(expression.getPropertyName())));
+      encodedField=fieldEncoder.encode(escapeName(expression.getPropertyName()));
+    }
+    if (target != null) {
+      out.write(cast(encodedField,target));
+    }
+ else {
+      out.write(encodedField);
     }
   }
  catch (  java.io.IOException ioe) {
