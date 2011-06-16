@@ -1,17 +1,27 @@
 {
-  if (imageMetadata == null)   throw new NullPointerException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"imageMetadata"));
-  rootNode=(IIOMetadataNode)imageMetadata.getAsTree(imageMetadata.getNativeMetadataFormatName());
+  if (imageMetadata == null) {
+    throw new NullPointerException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"imageMetadata"));
+  }
+  iioMetadata=imageMetadata;
+  Node rootNode=getRootNode();
   if (rootNode == null) {
-    throw new IllegalArgumentException("Unable to retrieve metadata");
+    throw new NullPointerException("Unable to retrieve metadata");
   }
-  tiffTagsEntries=(IIOMetadataNode)rootNode.getFirstChild().getChildNodes();
-  if (tiffTagsEntries == null) {
-    throw new IllegalArgumentException("Unable to retrieve metadata");
-  }
-  numTiffTasEntries=tiffTagsEntries.getLength();
-  geoKeyDir=getTiffField(GeoTIFFTagSet.TAG_GEO_KEY_DIRECTORY);
+  pixelScale=calculateModelPixelScales(rootNode);
+  tiePoints=calculateTiePoints(rootNode);
+  noData=calculateNoData(rootNode);
+  modelTransformation=calculateModelTransformation(rootNode);
+  IIOMetadataNode geoKeyDir=getTiffField(rootNode,GeoTIFFTagSet.TAG_GEO_KEY_DIRECTORY);
+  geoKeys=new HashMap<Integer,GeoKeyEntry>();
   if (geoKeyDir != null) {
-    geoKeyDirEntries=geoKeyDir.getFirstChild().getChildNodes();
+    NodeList geoKeyDirEntries=geoKeyDir.getFirstChild().getChildNodes();
+    for (int i=4; i < geoKeyDirEntries.getLength(); i+=4) {
+      int keyID=getIntValueAttribute(geoKeyDirEntries.item(i));
+      GeoKeyEntry key=new GeoKeyEntry(keyID,getIntValueAttribute(geoKeyDirEntries.item(i + 1)),getIntValueAttribute(geoKeyDirEntries.item(i + 2)),getIntValueAttribute(geoKeyDirEntries.item(i + 3)));
+      if (!geoKeys.containsKey(keyID)) {
+        geoKeys.put(keyID,key);
+      }
+    }
     geoKeyDirVersion=getTiffShort(geoKeyDir,GeoTiffGCSCodes.GEO_KEY_DIRECTORY_VERSION_INDEX);
     geoKeyRevision=getTiffShort(geoKeyDir,GeoTiffGCSCodes.GEO_KEY_REVISION_INDEX);
     if (geoKeyRevision != 1) {
@@ -19,8 +29,5 @@
     }
     geoKeyMinorRevision=getTiffShort(geoKeyDir,GeoTiffGCSCodes.GEO_KEY_MINOR_REVISION_INDEX);
     geoKeyDirTagsNum=getTiffShort(geoKeyDir,GeoTiffGCSCodes.GEO_KEY_NUM_KEYS_INDEX);
-    geoKeyDirEntriesNum=geoKeyDirEntries.getLength();
   }
-  geoKeyDoubleParams=getTiffField(GeoTIFFTagSet.TAG_GEO_DOUBLE_PARAMS);
-  geoKeyAsciiParams=getTiffField(GeoTIFFTagSet.TAG_GEO_ASCII_PARAMS);
 }
