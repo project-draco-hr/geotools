@@ -1,0 +1,32 @@
+{
+  final File file=TestData.file(GeoTiffReaderTest.class,"ovr.tif");
+  assertNotNull(file);
+  assertEquals(true,file.exists());
+  GeoTiffReaderTester reader=new GeoTiffReaderTester(file);
+  final int nOvrs=reader.getNumOverviews();
+  LOGGER.info("Number of external overviews: " + nOvrs);
+  assertEquals(4,nOvrs);
+  double[][] overviewResolutions=reader.getOverviewResolutions();
+  assertEquals(overviewResolutions.length,4);
+  final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  final GeneralEnvelope envelope=reader.getOriginalEnvelope();
+  final Dimension dim=new Dimension();
+  dim.setSize(reader.getOriginalGridRange().getSpan(0) / 4.0,reader.getOriginalGridRange().getSpan(1) / 4.0);
+  final Rectangle rasterArea=((GridEnvelope2D)reader.getOriginalGridRange());
+  rasterArea.setSize(dim);
+  final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+  gg.setValue(new GridGeometry2D(range,envelope));
+  GridCoverage2D coverage=reader.read(new GeneralParameterValue[]{gg});
+  RenderedImage image=coverage.getRenderedImage();
+  assertEquals(image.getWidth(),32);
+  assertEquals(image.getHeight(),32);
+  final double delta=0.00001;
+  assertEquals(overviewResolutions[0][0],10,delta);
+  assertEquals(overviewResolutions[0][1],10,delta);
+  assertEquals(overviewResolutions[1][0],20,delta);
+  assertEquals(overviewResolutions[1][1],20,delta);
+  assertEquals(overviewResolutions[2][0],40,delta);
+  assertEquals(overviewResolutions[2][1],40,delta);
+  assertEquals(overviewResolutions[3][0],80,delta);
+  assertEquals(overviewResolutions[3][1],80,delta);
+}

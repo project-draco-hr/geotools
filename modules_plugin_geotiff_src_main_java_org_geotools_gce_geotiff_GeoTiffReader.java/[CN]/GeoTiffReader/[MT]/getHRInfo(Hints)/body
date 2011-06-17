@@ -1,5 +1,7 @@
 {
   ImageReader reader=null;
+  ImageReader ovrReader=null;
+  ImageInputStream ovrStream=null;
   try {
     reader=readerSPI.createReaderInstance();
     inStream.mark();
@@ -42,11 +44,26 @@
     highestRes=new double[2];
     highestRes[0]=XAffineTransform.getScaleX0(tempTransform);
     highestRes[1]=XAffineTransform.getScaleY0(tempTransform);
+    if (ovrInStreamSPI != null) {
+      ovrReader=readerSPI.createReaderInstance();
+      ovrStream=ovrInStreamSPI.createInputStreamInstance(ovrSource,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+      ovrReader.setInput(ovrStream);
+      extOvrImgChoice=numOverviews + 1;
+      numOverviews=numOverviews + ovrReader.getNumImages(true);
+      if (numOverviews < extOvrImgChoice)       extOvrImgChoice=-1;
+    }
     if (numOverviews >= 1) {
       overViewResolutions=new double[numOverviews][2];
-      for (int i=0; i < numOverviews; i++) {
-        overViewResolutions[i][0]=(highestRes[0] * this.originalGridRange.getSpan(0)) / reader.getWidth(i + 1);
-        overViewResolutions[i][1]=(highestRes[1] * this.originalGridRange.getSpan(1)) / reader.getHeight(i + 1);
+      int firstExternalOverview=extOvrImgChoice == -1 ? numOverviews : extOvrImgChoice - 1;
+      double spanRes0=highestRes[0] * this.originalGridRange.getSpan(0);
+      double spanRes1=highestRes[1] * this.originalGridRange.getSpan(1);
+      for (int i=0; i < firstExternalOverview; i++) {
+        overViewResolutions[i][0]=spanRes0 / reader.getWidth(i + 1);
+        overViewResolutions[i][1]=spanRes1 / reader.getHeight(i + 1);
+      }
+      for (int i=firstExternalOverview; i < numOverviews; i++) {
+        overViewResolutions[i][0]=spanRes0 / ovrReader.getWidth(i - firstExternalOverview);
+        overViewResolutions[i][1]=spanRes1 / ovrReader.getHeight(i - firstExternalOverview);
       }
     }
  else     overViewResolutions=null;
@@ -57,6 +74,16 @@
  finally {
     if (reader != null)     try {
       reader.dispose();
+    }
+ catch (    Throwable t) {
+    }
+    if (ovrReader != null)     try {
+      ovrReader.dispose();
+    }
+ catch (    Throwable t) {
+    }
+    if (ovrStream != null)     try {
+      ovrStream.close();
     }
  catch (    Throwable t) {
     }
