@@ -33,9 +33,8 @@
     mapRequest.addLayer(layer);
   }
   mapRequest.setDimensions(width,height);
-  mapRequest.setFormat(URLEncoder.encode(format,"ASCII"));
+  mapRequest.setFormat(format);
   mapRequest.setSRS(requestSrs);
-  mapRequest.setBBox(gridEnvelope);
   if (backgroundColor == null) {
     mapRequest.setTransparent(true);
   }
@@ -51,6 +50,11 @@
  catch (  Exception e) {
     throw new IOException("Could not decode request SRS " + requestSrs);
   }
+  ReferencedEnvelope requestEnvelope=gridEnvelope;
+  if (requestCRS instanceof GeographicCRS && flipGeographic) {
+    requestEnvelope=flipEnvelope(requestEnvelope);
+  }
+  mapRequest.setBBox(requestEnvelope);
   this.mapRequest=mapRequest;
   this.requestedEnvelope=gridEnvelope;
   this.width=width;
