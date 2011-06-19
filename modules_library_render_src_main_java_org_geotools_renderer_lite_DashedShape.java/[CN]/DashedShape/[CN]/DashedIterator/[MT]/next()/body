@@ -4,17 +4,31 @@
       prevCoords[0]=currCoords[0];
       prevCoords[1]=currCoords[1];
       lastType=delegate.currentSegment(currCoords);
-      dx=currCoords[0] - prevCoords[0];
-      dy=currCoords[1] - prevCoords[1];
-      segmentLength=(float)sqrt(pow(dx,2) + pow(dy,2));
-      segmentOffset=0;
-      delegate.next();
+      if (lastType == PathIterator.SEG_MOVETO) {
+        segmentOffset=0;
+        dashOffset=dashPhase;
+        dashIndex=baseDashIndex;
+        dashedSegment[0]=currCoords[0];
+        dashedSegment[1]=currCoords[1];
+        dashedType=PathIterator.SEG_MOVETO;
+        dx=0;
+        dy=0;
+        delegate.next();
+        done=delegate.isDone();
+      }
+ else {
+        dx=currCoords[0] - prevCoords[0];
+        dy=currCoords[1] - prevCoords[1];
+        segmentLength=(float)sqrt(pow(dx,2) + pow(dy,2));
+        segmentOffset=0;
+        delegate.next();
+      }
     }
  else {
       done=true;
     }
   }
-  if (!done) {
+  if (!done && lastType != PathIterator.SEG_MOVETO) {
     float dashResidual=dashOffsets[dashIndex] - dashOffset;
     float segmentResidual=segmentLength - segmentOffset;
     float residual=min(dashResidual,segmentResidual);
