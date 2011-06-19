@@ -1,0 +1,33 @@
+{
+  try {
+    EObjectCondition eCondition=newIsEqual(EFeaturePackage.eINSTANCE.getEFeature_ID(),"F1");
+    eCondition=eCondition.OR(newIsEqual(EFeaturePackage.eINSTANCE.getEFeature_ID(),"F22"));
+    eCondition=eCondition.OR(newIsEqual(EFeaturePackage.eINSTANCE.getEFeature_ID(),"F73"));
+    eCondition=eCondition.OR(newIsEqual(EFeaturePackage.eINSTANCE.getEFeature_ID(),"F100"));
+    eCondition=eCondition.OR(newIsEqual(EFeaturePackage.eINSTANCE.getEFeature_ID(),"F101",eFeatureCompatibleDataInfo));
+    WHERE where=new WHERE(eCondition);
+    dTime();
+    for (    Object[] type : eTypeData) {
+      String eType=type[0].toString();
+      EFeatureInfo eInfo=(EFeatureInfo)type[2];
+      int count=0;
+      TreeIterator<EObject> eObjects=eResource.getAllContents();
+      EFeatureFilter eFilter=new EFeatureFilter(eInfo,where);
+      EFeatureQuery eQuery=new EFeatureQuery(eObjects,eFilter);
+      EFeatureIterator it=eQuery.iterator();
+      while (it.hasNext()) {
+        EObject eObject=it.next();
+        count++;
+        if (count == 5) {
+          assertTrue("Object " + eObject + " is not an "+ "instance of EFeatureCompatibleData",eObject instanceof EFeatureCompatibleData);
+        }
+      }
+      assertEquals("Feature count mismatch",5,count);
+      trace("Count[" + eType + "]: "+ count,TIME_DELTA);
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    fail(e);
+  }
+}

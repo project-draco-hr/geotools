@@ -1,0 +1,26 @@
+{
+  EFeaturePackage ePackage=EFeaturePackage.eINSTANCE;
+  EClass eFeatureClass=ePackage.getEFeature();
+  if (eFeatureMap == null) {
+    eFeatureMap=new HashMap<EAttribute,Map<EClass,EAttribute>>();
+    for (    EAttribute it : eFeatureClass.getEAllAttributes()) {
+      Map<EClass,EAttribute> eClassMap=new HashMap<EClass,EAttribute>();
+      eClassMap.put(eFeatureClass,it);
+      eFeatureMap.put(it,eClassMap);
+    }
+  }
+  final Map<EAttribute,Map<EClass,EAttribute>> eAttributeMap=new HashMap<EAttribute,Map<EClass,EAttribute>>(eFeatureMap);
+  for (  EFeatureInfo it : eFeatureInfos) {
+    EClass eClass=it.eClass();
+    eAttributeMap.get(ePackage.getEFeature_ID()).put(eClass,it.eIDAttribute());
+    EAttribute eAttribute=it.eSRIDAttribute();
+    if (eAttribute != null) {
+      eAttributeMap.get(ePackage.getEFeature_SRID()).put(eClass,eAttribute);
+    }
+    eAttribute=it.eDefaultGeometry();
+    if (eAttribute != null) {
+      eAttributeMap.get(ePackage.getEFeature_Default()).put(eClass,it.eDefaultGeometry());
+    }
+  }
+  return eAttributeMap;
+}

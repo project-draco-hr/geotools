@@ -1,14 +1,20 @@
 {
   Literal value=null;
-  PropertyName name=null;
+  String name=null;
   Condition eCondition=null;
   Expression left=filter.getExpression1();
   Expression right=filter.getExpression2();
+  if (left instanceof Function || right instanceof Function) {
+    throw new IllegalArgumentException("Functions are not supported");
+  }
   if (left instanceof PropertyName && right instanceof PropertyName) {
     throw new IllegalArgumentException("Implicit inner joint predicates not supported");
   }
   if (left instanceof PropertyName) {
-    name=(PropertyName)left;
+    name=((PropertyName)left).getPropertyName();
+  }
+ else   if (left instanceof PropertyExistsFunction) {
+    name=((PropertyExistsFunction)left).getParameters().get(0).toString();
   }
  else   if (left instanceof Literal) {
     value=(Literal)left;
@@ -17,17 +23,20 @@
     throw new IllegalArgumentException("Left argument must be a Literal");
   }
   if (right instanceof PropertyName) {
-    name=(PropertyName)right;
+    name=((PropertyName)right).getPropertyName();
   }
- else   if (left instanceof Literal) {
+ else   if (right instanceof PropertyExistsFunction) {
+    name=((PropertyExistsFunction)right).getParameters().get(0).toString();
+  }
+ else   if (right instanceof Literal) {
     value=(Literal)right;
   }
  else {
     throw new IllegalArgumentException("Right argument must be a Literal");
   }
-  EAttribute eAttribute=eFeatureInfo.getEAttribute(name.getPropertyName());
+  EAttribute eAttribute=eFeatureInfo.eGetAttribute(name);
   if (eAttribute == null) {
-    throw new IllegalArgumentException("EAttribute " + name.getPropertyName() + " not found");
+    throw new IllegalArgumentException("EAttribute " + name + " not found");
   }
   String comparator=(String)extraData;
   try {

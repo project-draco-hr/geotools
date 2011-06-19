@@ -3,19 +3,20 @@
   if (!(eIDFactory instanceof EFeatureVoidIDFactory)) {
     if (msg.getEventType() == Notification.ADD) {
       Object value=msg.getNewValue();
-      if (value instanceof EFeature) {
-        EFeature eFeature=(EFeature)value;
-        eAdapt(eFeature,true);
-        String eID=eFeature.getID();
-        String eNewID;
-        if (!(eID == null || eID.length() == 0)) {
-          eNewID=eIDFactory.useID(eFeature,eID);
-        }
+      if (value instanceof EObject) {
+        if (value instanceof EFeature) {
+          EFeature eFeature=(EFeature)value;
+          eAdapt(eFeature,true);
+          String eID=eFeature.getID();
+          if (!(eID == null || eID.length() == 0)) {
+            eIDFactory.useID(eFeature,eID);
+          }
  else {
-          eNewID=eIDFactory.createID(eFeature);
+            eIDFactory.createID(eFeature);
+          }
         }
-        if (!eNewID.equals(eID)) {
-          eFeature.setID(eNewID);
+ else         if (eIDFactory.creates((EObject)value)) {
+          eStructure().eAdapt((EObject)value);
         }
       }
  else       if (value instanceof Resource) {
@@ -24,12 +25,21 @@
     }
  else     if (msg.getEventType() == Notification.REMOVE) {
       Object value=msg.getOldValue();
-      if (value instanceof EFeature) {
+      if (value instanceof EObject) {
+        EObject eObject=(EObject)value;
+        if (eIDFactory.contains(eObject)) {
+          try {
+            eIDFactory.disposeID(eObject);
+          }
+ catch (          IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING,e.getMessage(),e);
+            throw e;
+          }
+        }
       }
  else       if (value instanceof Resource) {
         ((Resource)value).eAdapters().remove(this);
       }
     }
   }
- else   System.out.println();
 }
