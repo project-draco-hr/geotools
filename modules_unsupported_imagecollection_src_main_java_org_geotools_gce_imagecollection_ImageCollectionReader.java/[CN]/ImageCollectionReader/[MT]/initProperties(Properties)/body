@@ -57,5 +57,51 @@
       }
     }
   }
+  if (props.containsKey(Utils.ImageCollectionProperties.EPSG_CODE)) {
+    final String epsgCode=(String)props.get(Utils.ImageCollectionProperties.EPSG_CODE);
+    if (epsgCode != null && epsgCode.trim().length() > 0) {
+      try {
+        defaultValues.epsgCode=Integer.parseInt(epsgCode);
+        if (defaultValues.epsgCode != Utils.IMAGE_EPSG) {
+          defaultValues.isGeoSpatial=true;
+          CoordinateReferenceSystem crs=CRS.decode("EPSG:" + epsgCode);
+          boolean envelopeIsSet=false;
+          String env=null;
+          if (props.containsKey(Utils.ImageCollectionProperties.ENVELOPE)) {
+            env=(String)props.get(Utils.ImageCollectionProperties.ENVELOPE);
+            final String coords[]=env.trim().split(" ");
+            if (coords.length == 2) {
+              final String coordsMin[]=coords[0].trim().split(",");
+              final String coordsMax[]=coords[1].trim().split(",");
+              if (coordsMin.length == 2 && coordsMax.length == 2) {
+                GeneralEnvelope envelope=new GeneralEnvelope(new double[]{Double.parseDouble(coordsMin[0].trim()),Double.parseDouble(coordsMin[1].trim())},new double[]{Double.parseDouble(coordsMax[0].trim()),Double.parseDouble(coordsMax[1].trim())});
+                envelope.setCoordinateReferenceSystem(crs);
+                defaultValues.envelope=envelope;
+                envelopeIsSet=true;
+              }
+            }
+          }
+          if ((!envelopeIsSet) && LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.log(Level.WARNING,"Unable to parse the specified envelope. minx,miny,maxx,maxy coordinates are needed: " + env);
+          }
+        }
+      }
+ catch (      NumberFormatException nfe) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,"Unable to parse the specified EPSG code: " + epsgCode,nfe);
+        }
+      }
+catch (      NoSuchAuthorityCodeException e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,"Unable to parse the specified EPSG code: " + epsgCode,e);
+        }
+      }
+catch (      FactoryException e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,"Unable to parse the specified EPSG code: " + epsgCode,e);
+        }
+      }
+    }
+  }
   return coverage;
 }

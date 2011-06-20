@@ -1,11 +1,26 @@
 {
   final boolean useDisplayCRS=false;
-  this.coverageEnvelope=new GeneralEnvelope(new Rectangle2D.Double(0,useDisplayCRS ? 0 : -property.height,property.width,property.height));
-  this.coverageRasterArea=new GridEnvelope2D(0,0,property.width,property.height);
-  this.coverageCRS=useDisplayCRS ? Utils.DISPLAY_CRS : Utils.GENERIC2D_CRS;
-  this.coverageEnvelope.setCoordinateReferenceSystem(this.coverageCRS);
-  this.coverageGridToWorld2D=ProjectiveTransform.create(useDisplayCRS ? Utils.IDENTITY : Utils.IDENTITY_FLIP);
-  this.coverageFullResolution=new double[]{1.0,1.0};
+  if (!property.isGeoSpatial()) {
+    this.coverageCRS=useDisplayCRS ? Utils.DISPLAY_CRS : Utils.GENERIC2D_CRS;
+    this.coverageEnvelope=new GeneralEnvelope(new Rectangle2D.Double(0,useDisplayCRS ? 0 : -property.getHeight(),property.getWidth(),property.getHeight()));
+    this.coverageRasterArea=new GridEnvelope2D(0,0,property.getWidth(),property.getHeight());
+    this.coverageEnvelope.setCoordinateReferenceSystem(this.coverageCRS);
+    this.coverageGridToWorld2D=ProjectiveTransform.create(useDisplayCRS ? Utils.IDENTITY : Utils.IDENTITY_FLIP);
+    this.coverageFullResolution=new double[]{1.0,1.0};
+    overviewsController=new OverviewsController(new RasterLayout(0,0,property.getWidth(),property.getHeight()),null);
+  }
+ else {
+    this.coverageEnvelope=property.getEnvelope();
+    this.coverageRasterArea=new GridEnvelope2D(0,0,property.getWidth(),property.getHeight());
+    this.coverageCRS=this.coverageEnvelope.getCoordinateReferenceSystem();
+    GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper((GridEnvelope)coverageRasterArea,(Envelope)this.coverageEnvelope);
+    geMapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+    this.coverageGridToWorld2D=geMapper.createTransform();
+    overviewsController=new OverviewsController(new RasterLayout(0,0,property.getWidth(),property.getHeight()),this.coverageGridToWorld2D);
+    final OverviewLevel highestLevel=overviewsController.resolutionsLevels.get(0);
+    coverageFullResolution=new double[2];
+    coverageFullResolution[0]=highestLevel.resolutionX;
+    coverageFullResolution[1]=highestLevel.resolutionY;
+  }
   coverageBBox=new ReferencedEnvelope(coverageEnvelope);
-  overviewsController=new OverviewsController(new RasterLayout(0,0,property.width,property.height));
 }
