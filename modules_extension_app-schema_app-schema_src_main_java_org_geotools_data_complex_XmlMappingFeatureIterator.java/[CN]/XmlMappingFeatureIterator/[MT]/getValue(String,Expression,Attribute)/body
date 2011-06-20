@@ -1,26 +1,22 @@
 {
   final String EMPTY_STRING="";
-  String expressionValue=node.toString();
-  boolean isUnsetNode=Expression.NIL.equals(node) || expressionValue.equals("''");
-  if (isUnsetNode || expressionValue.startsWith("'") || node instanceof LiteralExpressionImpl) {
+  String expressionString=node.toString();
+  boolean isUnsetNode=Expression.NIL.equals(node) || expressionString.equals("''");
+  if (isUnsetNode || expressionString.startsWith("'") || node instanceof LiteralExpressionImpl) {
     String editedValue=EMPTY_STRING;
-    List<String> ls=new ArrayList<String>(1);
     if (!isUnsetNode) {
-      editedValue=expressionValue.replace("'","");
+      editedValue=expressionString.replace("'","");
     }
-    ls.add(editedValue);
-    return ls;
-  }
- else   if (node instanceof FunctionExpressionImpl) {
-    List<String> ls=new ArrayList<String>(1);
-    Object value=node.evaluate(target);
-    if (value != null) {
-      ls.add(Converters.convert(value,String.class));
-    }
-    return ls;
+    return editedValue;
   }
  else {
-    expressionValue=xpathPrefix + XPATH_SEPARATOR + expressionValue;
+    if (node instanceof Function) {
+      XmlXpathFilterData data=new XmlXpathFilterData(namespaces,xmlResponse.getDoc(),-1,xpathPrefix);
+      return node.evaluate(data);
+    }
+ else     if (xpathPrefix.length() > 0) {
+      expressionString=xpathPrefix + XPATH_SEPARATOR + expressionString;
+    }
   }
-  return getValue(expressionValue);
+  return getValue(expressionString);
 }

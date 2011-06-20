@@ -1,4 +1,21 @@
 {
-  String value=(String)idExpression.evaluate(sourceInstance,String.class);
-  return value;
+  try {
+    if (idExpression instanceof Function) {
+      XmlXpathFilterData data=new XmlXpathFilterData(namespaces,xmlResponse.getDoc(),-1,XmlMappingFeatureIterator.createIndexedItemXpathString((XmlFeatureTypeMapping)mapping,xmlResponse,indexCounter));
+      Object value=idExpression.evaluate(data);
+      return (value == null ? "" : value.toString());
+    }
+ else {
+      return XmlXpathUtilites.getSingleXPathValue(mapping.getNamespaces(),createIndexedItemXpathString((XmlFeatureTypeMapping)mapping,xmlResponse,indexCounter) + XPATH_SEPARATOR + idXpath,xmlResponse.getDoc());
+    }
+  }
+ catch (  RuntimeException e) {
+    if (e.getCause() instanceof JXPathException) {
+      LOGGER.info("Feature id is not mapped for: " + mapping.getTargetFeature().getName());
+    }
+ else {
+      throw e;
+    }
+  }
+  return null;
 }

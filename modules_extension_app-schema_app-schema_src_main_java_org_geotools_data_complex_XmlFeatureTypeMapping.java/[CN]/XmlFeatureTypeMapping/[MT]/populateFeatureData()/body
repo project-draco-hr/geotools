@@ -3,23 +3,22 @@
   if (attOrderedTypeList == null) {
     initialiseAttributeLists(attMap);
   }
-  PathAttributeList elements=new PathAttributeList();
   String xpath=rootAttribute.getInstanceXpath() == null ? itemXpath : itemXpath + XPATH_SEPARATOR + rootAttribute.getInstanceXpath();
   elements.put(rootAttribute.getLabel(),xpath,null);
-  if (!rootAttribute.getIdentifierExpression().equals(Expression.NIL)) {
+  Expression idExpression=rootAttribute.getIdentifierExpression();
+  if (!idExpression.equals(Expression.NIL)) {
     String id;
-    if (rootAttribute.getInstanceXpath() != null) {
-      id=rootAttribute.getInstanceXpath() + XPATH_SEPARATOR + rootAttribute.getIdentifierExpression();
+    if (!(idExpression instanceof Function) && rootAttribute.getInstanceXpath() != null) {
+      id=rootAttribute.getInstanceXpath() + XPATH_SEPARATOR + idExpression;
     }
  else {
-      id=rootAttribute.getIdentifierExpression().toString();
+      id=idExpression.toString();
     }
     mapping.put("@gml:id",id);
   }
   Iterator<AttributeMapping> it=attOrderedTypeList.iterator();
   addComplexAttributes(elements,it);
   addSetterAttributes(elements);
-  this.elements=elements;
   index++;
   removeAllRelativePaths();
 }
