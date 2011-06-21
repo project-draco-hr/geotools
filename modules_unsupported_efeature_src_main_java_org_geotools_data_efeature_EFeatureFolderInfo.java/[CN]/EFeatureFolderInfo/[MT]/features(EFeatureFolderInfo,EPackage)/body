@@ -1,9 +1,15 @@
 {
   EList<EClassifier> eList=ePackage.getEClassifiers();
   Map<String,EFeatureInfo> eFeatureMap=new HashMap<String,EFeatureInfo>(eList.size());
+  EFeatureInfoCache eCache=eFolderInfo.eContext(false).eStructure().eFeatureInfoCache();
   for (  EClassifier it : eList) {
     if (EFeatureUtils.isCompatible(it)) {
-      EFeatureInfo eFeatureInfo=EFeatureInfo.create(eFolderInfo,(EClass)it);
+      EClass eClass=(EClass)it;
+      EFeatureInfo eFeatureInfo=eCache.get(eClass);
+      if (eFeatureInfo == null) {
+        eFeatureInfo=EFeatureInfo.create(eFolderInfo,(EClass)it);
+      }
+      eFeatureInfo=eCache.get(eClass);
       eFeatureMap.put(eFeatureInfo.eName(),eFeatureInfo);
     }
   }

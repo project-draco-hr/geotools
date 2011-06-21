@@ -1,17 +1,18 @@
 {
-synchronized (eContextInfo.eDomainMap) {
-    eMap=new HashMap<String,EFeatureDomainInfo>(eContextInfo.eDomainMap);
+synchronized (eContextInfo.ePackageMap) {
+    eMap=eContextInfo.ePackageMap;
+    EFeatureContextFactory eFactory=eContextInfo.eFactory(false);
     EFeatureContext eContext=eContextInfo.eContext(false);
-    List<String> eDomainIDs=eContext.eDomainIDs();
-    HashMap<String,EFeatureDomainInfo> eNewMap=new HashMap<String,EFeatureDomainInfo>(eDomainIDs.size());
-    for (    String eDomainID : eDomainIDs) {
-      EFeatureDomainInfo eDomainInfo=eMap.get(eDomainID);
-      if (eDomainInfo == null) {
-        eDomainInfo=EFeatureDomainInfo.create(eContextInfo,eDomainID);
+    List<String> eNsURIs=eContext.eNsURIs();
+    Map<String,EFeaturePackageInfo> eNewMap=new HashMap<String,EFeaturePackageInfo>(eNsURIs.size());
+    for (    String eNsURI : eNsURIs) {
+      EFeaturePackageInfo ePackageInfo=eMap.get(eNsURI);
+      if (ePackageInfo == null) {
+        ePackageInfo=EFeaturePackageInfo.create(eFactory,eContextInfo,eNsURI);
+        eNewMap.put(eNsURI,ePackageInfo);
       }
-      eNewMap.put(eDomainID,eDomainInfo);
     }
-    eMap.keySet().retainAll(eDomainIDs);
+    eMap.keySet().retainAll(eNsURIs);
     eMap.putAll(eNewMap);
     return Collections.unmodifiableMap(eMap);
   }
