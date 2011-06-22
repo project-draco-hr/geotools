@@ -1,0 +1,29 @@
+{
+  try {
+    EAttribute eAttribute=EFeatureTestsPackage.eINSTANCE.getEFeatureData_Geometry();
+    EObjectCondition eCondition=newIsEqual(eAttribute,GEOMETRIES[0]);
+    for (int i=1; i < GEOMETRIES.length; i++) {
+      eCondition=eCondition.OR(newIsEqual(eAttribute,GEOMETRIES[i]));
+    }
+    WHERE where=new WHERE(eCondition);
+    dTime();
+    int count=0;
+    TreeIterator<EObject> eObjects=eResource.getAllContents();
+    EFeatureFilter eFilter=new EFeatureFilter(eFeatureDataInfo,where);
+    EFeatureQuery eQuery=new EFeatureQuery(eObjects,eFilter);
+    EFeatureIterator it=eQuery.iterator();
+    while (it.hasNext()) {
+      EObject eObject=it.next();
+      assertTrue("EObject " + eObject + " is not an "+ "instance of EFeatureData",eObject instanceof EFeatureData);
+      EFeatureData<?,?> eFeatureData=(EFeatureData<?,?>)eObject;
+      Object a=eFeatureData.getAttribute();
+      Object g=eFeatureData.getGeometry();
+      assertEquals("Unexpected EFeatureData geometry value found",GEOMETRIES[(Integer)a].toString(),g.toString());
+      count++;
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    fail(e);
+  }
+}

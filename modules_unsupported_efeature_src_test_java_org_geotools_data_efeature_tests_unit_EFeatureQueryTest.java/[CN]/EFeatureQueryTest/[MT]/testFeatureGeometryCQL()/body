@@ -1,0 +1,24 @@
+{
+  try {
+    Filter filter=CQL.toFilter("WITHIN(geometry," + BBOX + ")");
+    dTime();
+    int count=0;
+    TreeIterator<EObject> eObjects=eResource.getAllContents();
+    EFeatureQuery eQuery=EFeatureUtils.toEFeatureQuery(eFeatureDataInfo,eObjects,filter);
+    EFeatureIterator it=eQuery.iterator();
+    while (it.hasNext()) {
+      EObject eObject=it.next();
+      assertTrue("EObject " + eObject + " is not an "+ "instance of EFeatureData",eObject instanceof EFeatureData);
+      EFeatureData<?,?> eFeatureData=(EFeatureData<?,?>)eObject;
+      Object a=eFeatureData.getAttribute();
+      Object g=eFeatureData.getGeometry();
+      assertEquals("Unexpected EFeatureData geometry value found",GEOMETRIES[(Integer)a].toString(),g.toString());
+      count++;
+    }
+    assertEquals("Unexpected number of EFeatureData instances found",GEOMETRIES.length,count);
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    fail(e);
+  }
+}
