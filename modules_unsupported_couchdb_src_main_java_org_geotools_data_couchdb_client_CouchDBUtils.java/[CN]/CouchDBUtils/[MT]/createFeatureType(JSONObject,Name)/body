@@ -1,0 +1,16 @@
+{
+  JSONObject props=(JSONObject)obj.get("properties");
+  JSONObject geom=(JSONObject)obj.get("geometry");
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.setName(name);
+  for (  Object k : props.keySet()) {
+    builder.add(k.toString(),String.class);
+  }
+  String geomType=geom.get("type").toString();
+  Class clazz=Geometries.getForName(geomType).getBinding();
+  if (clazz == null) {
+    throw new IOException("Unable to parse geometry type from " + geomType);
+  }
+  builder.add("geometry",clazz,(CoordinateReferenceSystem)null);
+  return builder.buildFeatureType();
+}
