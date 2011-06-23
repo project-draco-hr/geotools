@@ -13,20 +13,21 @@
         prefix+=XPATH_SEPARATOR + instancePath;
       }
     }
-    Expression fullXpath=CommonFactoryFinder.getFilterFactory(null).literal(prefix + XPATH_SEPARATOR + queryXpath);
+    Expression fullXpath=ff.property(prefix + XPATH_SEPARATOR + queryXpath);
     return fullXpath;
   }
  else {
     List<Expression> params=func.getParameters();
     for (int i=0; i < params.size(); i++) {
-      Expression param=params.get(0);
+      Expression param=params.get(i);
       if (param instanceof Function) {
-        Expression exp=setAsXpathParam((Function)param,mapping);
-        if (exp instanceof LiteralExpressionImpl) {
-          params.add(i,exp);
+        Expression expr=getAsXpathExpression((Function)param,mapping);
+        if (expr != null) {
+          func.getParameters().remove(i);
+          func.getParameters().add(expr);
         }
       }
     }
-    return func;
+    return null;
   }
 }
