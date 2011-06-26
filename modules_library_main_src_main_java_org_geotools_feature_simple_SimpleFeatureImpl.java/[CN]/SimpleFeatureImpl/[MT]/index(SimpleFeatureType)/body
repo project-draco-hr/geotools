@@ -1,0 +1,18 @@
+{
+  if (featureType instanceof SimpleFeatureTypeImpl) {
+    return ((SimpleFeatureTypeImpl)featureType).index;
+  }
+ else {
+synchronized (featureType) {
+      Object cache=featureType.getUserData().get("indexLookup");
+      if (cache instanceof Map) {
+        return (Map<String,Integer>)cache;
+      }
+ else {
+        Map<String,Integer> generatedIndex=SimpleFeatureTypeImpl.buildIndex(featureType);
+        featureType.getUserData().put("indexLookup",generatedIndex);
+        return generatedIndex;
+      }
+    }
+  }
+}
