@@ -8,23 +8,6 @@
     if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine("Unable to create a granuleDescriptor " + this.toString() + " due to jai scale bug");
     return null;
   }
-  boolean hasScaleX=!(Math.abs(finalRaster2Model.getScaleX() - 1) < 1E-2 / (finalImage.getWidth() + 1 - finalImage.getMinX()));
-  boolean hasScaleY=!(Math.abs(finalRaster2Model.getScaleY() - 1) < 1E-2 / (finalImage.getHeight() + 1 - finalImage.getMinY()));
-  boolean hasShearX=!(finalRaster2Model.getShearX() == 0.0);
-  boolean hasShearY=!(finalRaster2Model.getShearY() == 0.0);
-  boolean hasTranslateX=!(Math.abs(finalRaster2Model.getTranslateX()) < 1E-2);
-  boolean hasTranslateY=!(Math.abs(finalRaster2Model.getTranslateY()) < 1E-2);
-  boolean isTranslateXInt=!(Math.abs(finalRaster2Model.getTranslateX() - (int)finalRaster2Model.getTranslateX()) < 1E-2);
-  boolean isTranslateYInt=!(Math.abs(finalRaster2Model.getTranslateY() - (int)finalRaster2Model.getTranslateY()) < 1E-2);
-  boolean isIdentity=finalRaster2Model.isIdentity() && !hasScaleX && !hasScaleY&& !hasTranslateX&& !hasTranslateY;
-  boolean isScale=hasScaleX && hasScaleY && !hasShearX&& !hasShearY;
-  if (isIdentity) {
-    return finalImage;
-  }
-  ImageLayout layout_=RIFUtil.getImageLayoutHint(hints);
-  if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& isTranslateXInt&& isTranslateYInt&& layout_ == null) {
-    return new TranslateIntOpImage(finalImage,hints,(int)finalRaster2Model.getTranslateX(),(int)finalRaster2Model.getTranslateY());
-  }
   final ImageLayout layout=new ImageLayout(finalImage);
   layout.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(tileSizeY).setTileWidth(tileSizeX);
   final RenderingHints localHints=this.hints.clone();
@@ -33,12 +16,10 @@
   localHints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,BorderExtender.createInstance(BorderExtender.BORDER_COPY)));
   RenderedImage im=null;
   try {
-    if (isScale) {
-      im=ScaleDescriptor.create(finalImage,(float)finalRaster2Model.getScaleX(),(float)finalRaster2Model.getScaleY(),(float)finalRaster2Model.getTranslateX(),(float)finalRaster2Model.getTranslateY(),interpolation,localHints);
-    }
- else {
-      im=AffineDescriptor.create(finalImage,finalRaster2Model,interpolation,null,localHints);
-    }
+    ImageWorker iw=new ImageWorker(finalImage);
+    iw.setRenderingHints(localHints);
+    iw.affine(finalRaster2Model,interpolation,null);
+    im=iw.getRenderedImage();
   }
   finally {
     if (DEBUG)     writeRenderedImage(im,"postAffine");

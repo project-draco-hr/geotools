@@ -148,23 +148,10 @@
       if (addBorderExtender) {
         localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
       }
-      boolean hasScaleX=!(Math.abs(finalRaster2Model.getScaleX() - 1) < 1E-2 / (raster.getWidth() + 1 - raster.getMinX()));
-      boolean hasScaleY=!(Math.abs(finalRaster2Model.getScaleY() - 1) < 1E-2 / (raster.getHeight() + 1 - raster.getMinY()));
-      boolean hasShearX=!(finalRaster2Model.getShearX() == 0.0);
-      boolean hasShearY=!(finalRaster2Model.getShearY() == 0.0);
-      boolean hasTranslateX=!(Math.abs(finalRaster2Model.getTranslateX()) < 0.01F);
-      boolean hasTranslateY=!(Math.abs(finalRaster2Model.getTranslateY()) < 0.01F);
-      boolean isTranslateXInt=!(Math.abs(finalRaster2Model.getTranslateX() - (int)finalRaster2Model.getTranslateX()) < 0.01F);
-      boolean isTranslateYInt=!(Math.abs(finalRaster2Model.getTranslateY() - (int)finalRaster2Model.getTranslateY()) < 0.01F);
-      boolean isIdentity=finalRaster2Model.isIdentity() && !hasScaleX && !hasScaleY&& !hasTranslateX&& !hasTranslateY;
-      if (isIdentity) {
-        return new GranuleLoadingResult(raster,granuleLoadingShape,granuleUrl,doFiltering);
-      }
-      ImageLayout layout=RIFUtil.getImageLayoutHint(localHints);
-      if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& isTranslateXInt&& isTranslateYInt&& layout == null) {
-        return new GranuleLoadingResult(new TranslateIntOpImage(raster,localHints,(int)finalRaster2Model.getShearX(),(int)finalRaster2Model.getShearY()),granuleLoadingShape,granuleUrl,doFiltering);
-      }
-      return new GranuleLoadingResult(AffineDescriptor.create(raster,finalRaster2Model,interpolation,request.getBackgroundValues(),localHints),granuleLoadingShape,granuleUrl,doFiltering);
+      ImageWorker iw=new ImageWorker(raster);
+      iw.setRenderingHints(localHints);
+      iw.affine(finalRaster2Model,interpolation,request.getBackgroundValues());
+      return new GranuleLoadingResult(iw.getRenderedImage(),granuleLoadingShape,granuleUrl,doFiltering);
     }
   }
  catch (  IllegalStateException e) {

@@ -1,0 +1,76 @@
+{
+  int size=Math.max(image.getWidth(),image.getHeight());
+  boolean hasScaleX=Math.abs(tx.getScaleX() - 1) * size > RS_EPS;
+  boolean hasScaleY=Math.abs(tx.getScaleY() - 1) * size > RS_EPS;
+  boolean hasShearX=Math.abs(tx.getShearX()) * size > RS_EPS;
+  boolean hasShearY=Math.abs(tx.getShearY()) * size > RS_EPS;
+  boolean hasTranslateX=Math.abs(tx.getTranslateX()) > RS_EPS;
+  boolean hasTranslateY=Math.abs(tx.getTranslateY()) > RS_EPS;
+  if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& !hasTranslateX&& !hasTranslateY) {
+    return this;
+  }
+  ParameterListDescriptor pld=new AffineDescriptor().getParameterListDescriptor(RenderedRegistryMode.MODE_NAME);
+  if (interpolation == null) {
+    interpolation=(Interpolation)pld.getParamDefaultValue("interpolation");
+  }
+  if (bgValues == null) {
+    bgValues=(double[])pld.getParamDefaultValue("backgroundValues");
+  }
+  RenderedImage source=image;
+  if (image instanceof RenderedOp) {
+    RenderedOp op=(RenderedOp)image;
+    if ("Affine".equals(op.getOperationName())) {
+      ParameterBlock paramBlock=op.getParameterBlock();
+      RenderedImage sSource=paramBlock.getRenderedSource(0);
+      AffineTransform sTx=(AffineTransform)paramBlock.getObjectParameter(0);
+      Interpolation sInterp=(Interpolation)paramBlock.getObjectParameter(1);
+      double[] sBgValues=(double[])paramBlock.getObjectParameter(2);
+      if ((sInterp == interpolation && Arrays.equals(sBgValues,bgValues))) {
+        AffineTransform concat=new AffineTransform(tx);
+        concat.concatenate(sTx);
+        tx=concat;
+        source=sSource;
+      }
+    }
+ else     if ("Scale".equals(op.getOperationName())) {
+      ParameterBlock paramBlock=op.getParameterBlock();
+      RenderedImage sSource=paramBlock.getRenderedSource(0);
+      float xScale=paramBlock.getFloatParameter(0);
+      float yScale=paramBlock.getFloatParameter(1);
+      float xTrans=paramBlock.getFloatParameter(2);
+      float yTrans=paramBlock.getFloatParameter(3);
+      Interpolation sInterp=(Interpolation)paramBlock.getObjectParameter(4);
+      if (sInterp == interpolation) {
+        AffineTransform concat=new AffineTransform(tx);
+        concat.concatenate(new AffineTransform(xScale,0,0,yScale,xTrans,yTrans));
+        tx=concat;
+        source=sSource;
+      }
+    }
+  }
+  hasScaleX=Math.abs(tx.getScaleX() - 1) * size > RS_EPS;
+  hasScaleY=Math.abs(tx.getScaleY() - 1) * size > RS_EPS;
+  hasShearX=Math.abs(tx.getShearX()) * size > RS_EPS;
+  hasShearY=Math.abs(tx.getShearY()) * size > RS_EPS;
+  hasTranslateX=Math.abs(tx.getTranslateX()) > RS_EPS;
+  hasTranslateY=Math.abs(tx.getTranslateY()) > RS_EPS;
+  boolean intTranslateX=Math.abs((tx.getTranslateX() - Math.round(tx.getTranslateX()))) < RS_EPS;
+  boolean intTranslateY=Math.abs((tx.getTranslateY() - Math.round(tx.getTranslateY()))) < RS_EPS;
+  if (!hasScaleX && !hasScaleY && !hasShearX&& !hasShearY&& !hasTranslateX&& !hasTranslateY) {
+    return this;
+  }
+  if (!hasShearX && !hasShearY) {
+    if (!hasScaleX && !hasScaleY && intTranslateX&& intTranslateY) {
+      Hints localHints=new Hints(commonHints);
+      localHints.remove(JAI.KEY_IMAGE_LAYOUT);
+      image=ScaleDescriptor.create(source,1.0f,1.0f,(float)Math.round(tx.getTranslateX()),(float)Math.round(tx.getTranslateY()),interpolation,localHints);
+    }
+ else {
+      image=ScaleDescriptor.create(source,(float)tx.getScaleX(),(float)tx.getScaleY(),(float)tx.getTranslateX(),(float)tx.getTranslateY(),interpolation,commonHints);
+    }
+  }
+ else {
+    image=AffineDescriptor.create(source,tx,interpolation,bgValues,commonHints);
+  }
+  return this;
+}
