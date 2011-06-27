@@ -1,0 +1,25 @@
+{
+  if (image.getMinX() == x && image.getMinY() == y && image.getWidth() == width && image.getHeight() == height) {
+    return this;
+  }
+  RenderedImage source=image;
+  if (image instanceof RenderedOp) {
+    RenderedOp op=(RenderedOp)image;
+    if ("Crop".equals(op.getOperationName()) || "GTCrop".equals(op.getOperationName())) {
+      ParameterBlock paramBlock=op.getParameterBlock();
+      source=paramBlock.getRenderedSource(0);
+      float sx=(float)paramBlock.getFloatParameter(0);
+      float sy=(float)paramBlock.getFloatParameter(1);
+      float sWidth=(float)paramBlock.getFloatParameter(2);
+      float sHeight=(float)paramBlock.getFloatParameter(3);
+      if (sx > 0) {
+        x=sx + x;
+      }
+      if (sy > 0) {
+        y=sy + y;
+      }
+    }
+  }
+  image=GTCropDescriptor.create(source,x,y,width,height,commonHints);
+  return this;
+}
