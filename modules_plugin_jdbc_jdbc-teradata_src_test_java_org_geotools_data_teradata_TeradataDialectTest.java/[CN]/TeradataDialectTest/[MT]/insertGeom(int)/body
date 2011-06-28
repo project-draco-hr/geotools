@@ -1,0 +1,26 @@
+{
+  StringBuilder geom=new StringBuilder("LINESTRING(");
+  int coords=0;
+  while (geom.length() < size) {
+    if (coords > 0) {
+      geom.append(',');
+    }
+    double coord=-90 + (coords % 90);
+    geom.append(' ');
+    geom.append(coord);
+    geom.append(' ');
+    geom.append(coord);
+    coords++;
+  }
+  geom.append(")");
+  try {
+    PreparedStatement ps=dataStore.getDataSource().getConnection().prepareStatement("INSERT INTO \"ft3\" VALUES(?,new ST_Geometry(?),0,0.0,'zero')");
+    ps.setInt(1,cnt++);
+    ps.setCharacterStream(2,new StringReader(geom.toString()),geom.length());
+    ps.execute();
+  }
+ catch (  Throwable t) {
+    t.printStackTrace();
+  }
+  return coords;
+}

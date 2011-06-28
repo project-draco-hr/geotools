@@ -1,12 +1,12 @@
 {
-  if (tdVersion > 12) {
+  if (tdVersion > 12 && lobWorkaroundEnabled) {
     for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
       if (att instanceof GeometryDescriptor) {
-        sql.append(", CASE WHEN CHARACTERS(");
+        sql.append(", CASE WHEN CHARACTERS(cast(");
         encodeColumnName(att.getLocalName(),sql);
-        sql.append(") > 32000 THEN NULL ELSE CAST (");
+        sql.append(" as clob)) > 30000 THEN NULL ELSE CAST (");
         encodeColumnName(att.getLocalName(),sql);
-        sql.append(".ST_AsBinary() AS VARBYTE(32000)) END");
+        sql.append(" as VARCHAR(30000)) END");
         encodeColumnAlias(att.getLocalName() + "_inline",sql);
       }
     }

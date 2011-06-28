@@ -1,0 +1,14 @@
+{
+  super.setUpData();
+  enableLogging(Level.FINE);
+  runSafe("DELETE FROM SYSSPATIAL.GEOMETRY_COLUMNS WHERE F_TABLE_NAME = 'ft3'");
+  runSafe("DROP TRIGGER \"ft3_geometry_mi\"");
+  runSafe("DROP TRIGGER \"ft3_geometry_mu\"");
+  runSafe("DROP TRIGGER \"ft3_geometry_md\"");
+  runSafe("DROP TABLE \"ft3_geometry_idx\"");
+  runSafe("DROP TABLE \"ft3\"");
+  run("CREATE TABLE \"ft3\"(" + "\"id\" PRIMARY KEY not null integer, " + "\"geometry\" ST_GEOMETRY, "+ "\"intProperty\" int,"+ "\"doubleProperty\" double precision, "+ "\"stringProperty\" varchar(200) casespecific)");
+  run("INSERT INTO SYSSPATIAL.GEOMETRY_COLUMNS VALUES('" + fixture.getProperty("database") + "', '"+ fixture.getProperty("schema")+ "', 'ft3', 'geometry', 2, "+ srid4326+ ", 'LINESTRING',-180,-90,180,90)");
+  run("CREATE MULTISET TABLE \"ft3_geometry_idx\"" + " (id INTEGER NOT NULL, cellid INTEGER NOT NULL)");
+  TeradataDialect.installTriggers(getDataSource().getConnection(),"ft3","geometry","ft3_geometry_idx");
+}
