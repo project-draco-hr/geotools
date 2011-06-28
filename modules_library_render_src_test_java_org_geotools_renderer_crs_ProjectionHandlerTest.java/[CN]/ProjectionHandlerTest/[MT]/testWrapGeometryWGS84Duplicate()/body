@@ -1,0 +1,13 @@
+{
+  ReferencedEnvelope world=new ReferencedEnvelope(-200,200,-90,90,WGS84);
+  Geometry g=new WKTReader().read("POLYGON((-178 -90, -178 90, 178 90, 178 -90, -178 -90))");
+  Geometry original=new WKTReader().read("POLYGON((-178 -90, -178 90, 178 90, 178 -90, -178 -90))");
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(world,true);
+  assertTrue(handler.requiresProcessing(WGS84,g));
+  Geometry preProcessed=handler.preProcess(WGS84,g);
+  assertEquals(original,preProcessed);
+  Geometry postProcessed=handler.postProcess(g);
+  Envelope ppEnvelope=postProcessed.getEnvelopeInternal();
+  Envelope expected=new Envelope(-538,538,-90,90);
+  assertEquals(expected,ppEnvelope);
+}
