@@ -1,12 +1,16 @@
 {
-  if (LOGGER.isLoggable(java.util.logging.Level.FINE))   LOGGER.fine("Loading raster data for rasterGranuleLoader " + this.toString());
+  if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+    LOGGER.fine("Loading raster data for rasterGranuleLoader " + this.toString());
+  }
   final ReferencedEnvelope bbox=new ReferencedEnvelope(granuleBBOX);
   final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
   ImageInputStream inStream=null;
   ImageReader reader=null;
   try {
-    inStream=Utils.getInputStream(granuleFile);
-    if (inStream == null)     return null;
+    inStream=ImageIOExt.createImageInputStream(granuleFile);
+    if (inStream == null) {
+      return null;
+    }
     reader=Utils.getReader(inStream);
     if (reader == null) {
       if (LOGGER.isLoggable(java.util.logging.Level.WARNING))       LOGGER.warning("Unable to get reader for rasterGranuleLoader " + this.toString() + " with request "+ request.toString());
@@ -18,18 +22,26 @@
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
     XRectangle2D.intersect(sourceArea,selectedlevel.rasterDimensions,sourceArea);
     if (sourceArea.isEmpty()) {
-      if (LOGGER.isLoggable(java.util.logging.Level.WARNING))       LOGGER.warning("Got empty area for rasterGranuleLoader " + this.toString() + " with request "+ request.toString());
+      if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+        LOGGER.warning("Got empty area for rasterGranuleLoader " + this.toString() + " with request "+ request.toString());
+      }
       return null;
     }
- else     if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine((new StringBuffer("Loading level ").append(imageIndex).append(" with source region ").append(sourceArea).toString()));
+ else     if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+      LOGGER.fine("Loading level " + imageIndex + " with source region "+ sourceArea);
+    }
     readParameters.setSourceRegion(sourceArea);
     RenderedImage raster=request.getReadType().read(readParameters,imageIndex,granuleFile,selectedlevel.rasterDimensions,tileDimension);
-    if (raster == null)     return null;
+    if (raster == null) {
+      return null;
+    }
     try {
       raster.getWidth();
     }
  catch (    Throwable e) {
-      if (LOGGER.isLoggable(java.util.logging.Level.FINE))       LOGGER.log(java.util.logging.Level.FINE,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+        LOGGER.log(java.util.logging.Level.FINE,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+      }
       return null;
     }
     sourceArea.setRect(readParameters.getSourceRegion());
@@ -40,19 +52,29 @@
     final AffineTransform backToBaseLevelScaleTransform=selectedlevel.levelToBaseTransform;
     final AffineTransform tempRaster2Model=new AffineTransform(baseGridToWorld);
     tempRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
-    if (!XAffineTransform.isIdentity(backToBaseLevelScaleTransform,10E-6))     tempRaster2Model.concatenate(backToBaseLevelScaleTransform);
-    if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,10E-6))     tempRaster2Model.concatenate(afterDecimationTranslateTranform);
-    if (!XAffineTransform.isIdentity(decimationScaleTranform,10E-6))     tempRaster2Model.concatenate(decimationScaleTranform);
+    if (!XAffineTransform.isIdentity(backToBaseLevelScaleTransform,Utils.EPSILON)) {
+      tempRaster2Model.concatenate(backToBaseLevelScaleTransform);
+    }
+    if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,Utils.EPSILON)) {
+      tempRaster2Model.concatenate(afterDecimationTranslateTranform);
+    }
+    if (!XAffineTransform.isIdentity(decimationScaleTranform,Utils.EPSILON)) {
+      tempRaster2Model.concatenate(decimationScaleTranform);
+    }
     final AffineTransform translationTransform=tempRaster2Model;
     translationTransform.preConcatenate((AffineTransform)mosaicWorldToGrid);
     final InterpolationNearest nearest=new InterpolationNearest();
     Rectangle2D finalLayout=ImageUtilities.layoutHelper(raster,(float)translationTransform.getScaleX(),(float)translationTransform.getScaleY(),(float)translationTransform.getTranslateX(),(float)translationTransform.getTranslateY(),nearest);
     if (finalLayout.isEmpty()) {
-      if (LOGGER.isLoggable(java.util.logging.Level.FINE))       LOGGER.fine("Unable to create a rasterGranuleLoader " + this.toString() + " due to jai scale bug");
+      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+        LOGGER.fine("Unable to create a rasterGranuleLoader " + this.toString() + " due to jai scale bug");
+      }
       return null;
     }
     final RenderingHints localHints=new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE);
-    if (XAffineTransform.isIdentity(translationTransform,10E-6))     return raster;
+    if (XAffineTransform.isIdentity(translationTransform,Utils.EPSILON)) {
+      return raster;
+    }
  else {
       final Dimension tileDimensions=request.getTileDimensions();
       if (tileDimensions != null && request.getReadType().equals(ReadType.DIRECT_READ)) {
@@ -64,23 +86,37 @@
     }
   }
  catch (  IllegalStateException e) {
-    if (LOGGER.isLoggable(java.util.logging.Level.WARNING))     LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    }
     return null;
   }
 catch (  org.opengis.referencing.operation.NoninvertibleTransformException e) {
-    if (LOGGER.isLoggable(java.util.logging.Level.WARNING))     LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    }
     return null;
   }
 catch (  TransformException e) {
-    if (LOGGER.isLoggable(java.util.logging.Level.WARNING))     LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    }
     return null;
   }
  finally {
-    try {
-      if (inStream != null)       inStream.close();
+    if (inStream != null) {
+      try {
+        inStream.close();
+      }
+ catch (      Throwable t) {
+      }
     }
-  finally {
-      if (reader != null)       reader.dispose();
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
     }
   }
 }

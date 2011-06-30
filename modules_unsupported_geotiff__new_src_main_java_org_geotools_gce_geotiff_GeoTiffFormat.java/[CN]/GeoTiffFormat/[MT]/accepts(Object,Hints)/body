@@ -10,30 +10,48 @@
       final URL url=(URL)o;
       o=DataUtilities.urlToFile(url);
     }
- else     if (o instanceof ImageInputStream)     closeMe=false;
-    inputStream=(ImageInputStream)((o instanceof ImageInputStream) ? o : ImageIO.createImageInputStream(o));
+ else     if (o instanceof ImageInputStream) {
+      closeMe=false;
+    }
+    inputStream=(ImageInputStream)((o instanceof ImageInputStream) ? o : ImageIOExt.createImageInputStream(o));
     if (inputStream == null) {
-      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Unable to get an ImageInputStream");
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to get an ImageInputStream");
+      }
       return false;
     }
-    if (!spi.canDecodeInput(inputStream))     return false;
+    if (!spi.canDecodeInput(inputStream)) {
+      return false;
+    }
     reader=spi.createReaderInstance();
     inputStream.mark();
     reader.setInput(inputStream);
     final IIOMetadata metadata=reader.getImageMetadata(0);
-    if (metadata == null)     return false;
+    if (metadata == null) {
+      return false;
+    }
     final GeoTiffIIOMetadataDecoder metadataAdapter=new GeoTiffIIOMetadataDecoder(metadata);
-    if (!metadataAdapter.hasGeoKey() && LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Unable to find geokey directory for this tif file");
-    if (metadataAdapter.hasModelTrasformation() || (metadataAdapter.hasPixelScales() && metadataAdapter.hasTiePoints()))     return true;
+    if (!metadataAdapter.hasGeoKey() && LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Unable to find geokey directory for this tif file");
+    }
+    if (metadataAdapter.hasModelTrasformation() || (metadataAdapter.hasPixelScales() && metadataAdapter.hasTiePoints())) {
+      return true;
+    }
     MathTransform raster2Model=Utils.parseWorldFile(o);
-    if (raster2Model != null)     return true;
+    if (raster2Model != null) {
+      return true;
+    }
  else {
-      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Unable to find georeferencing for this tif file");
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to find georeferencing for this tif file");
+      }
       return false;
     }
   }
  catch (  Throwable e) {
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
     return false;
   }
  finally {
