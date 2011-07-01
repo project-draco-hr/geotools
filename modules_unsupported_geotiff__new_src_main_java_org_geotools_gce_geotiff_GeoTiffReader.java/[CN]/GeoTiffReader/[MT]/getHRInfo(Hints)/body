@@ -1,85 +1,135 @@
 {
   final ImageReader reader=Utils.TIFFREADERFACTORY.createReaderInstance();
-  reader.setInput(inStream);
-  final IIOMetadata iioMetadata=reader.getImageMetadata(0);
-  CoordinateReferenceSystem foundCrs=null;
-  boolean useWorldFile=false;
+  ImageReader ovrReader=null;
+  ImageInputStream ovrStream=null;
   try {
-    metadata=new GeoTiffIIOMetadataDecoder(iioMetadata);
-    gtcs=new GeoTiffMetadata2CRSAdapter(hints);
-    if (gtcs != null) {
-      foundCrs=gtcs.createCoordinateSystem(metadata);
-    }
+    reader.setInput(inStream);
+    final IIOMetadata iioMetadata=reader.getImageMetadata(0);
+    CoordinateReferenceSystem foundCrs=null;
+    boolean useWorldFile=false;
+    GeoTiffIIOMetadataDecoder metadata=null;
+    try {
+      metadata=new GeoTiffIIOMetadataDecoder(iioMetadata);
+      gtcs=new GeoTiffMetadata2CRSAdapter(hints);
+      if (gtcs != null) {
+        foundCrs=gtcs.createCoordinateSystem(metadata);
+      }
  else {
+        useWorldFile=true;
+      }
+      if (metadata.hasNoData()) {
+        noData=metadata.getNoData();
+      }
+    }
+ catch (    IllegalArgumentException iae) {
       useWorldFile=true;
     }
-    if (metadata.hasNoData()) {
-      noData=metadata.getNoData();
+catch (    UnsupportedOperationException uoe) {
+      useWorldFile=true;
+    }
+    final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+    if (tempCRS != null) {
+      this.crs=(CoordinateReferenceSystem)tempCRS;
+      LOGGER.log(Level.WARNING,"Using forced coordinate reference system " + crs.toWKT());
+    }
+ else {
+      if (useWorldFile) {
+        foundCrs=Utils.getCRS(source);
+      }
+      crs=foundCrs;
+    }
+    if (crs == null) {
+      throw new DataSourceException("Coordinate Reference System is not available");
+    }
+    numOverviews=reader.getNumImages(true) - 1;
+    final int hrWidth=reader.getWidth(0);
+    final int hrHeight=reader.getHeight(0);
+    final int hrTileW=reader.getTileWidth(0);
+    final int hrTileH=reader.getTileHeight(0);
+    hrLayout=new RasterLayout(0,0,hrWidth,hrHeight,0,0,hrTileW,hrTileH);
+    final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
+    originalGridRange=new GridEnvelope2D(actualDim);
+    if (!useWorldFile && gtcs != null) {
+      this.raster2Model=GeoTiffMetadata2CRSAdapter.getRasterToModel(metadata);
+    }
+ else {
+      this.raster2Model=Utils.parseWorldFile(source);
+    }
+    if (this.raster2Model == null) {
+      throw new DataSourceException("Raster to Model Transformation is not available");
+    }
+    final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
+    tempTransform.translate(-0.5,-0.5);
+    originalEnvelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(actualDim));
+    originalEnvelope.setCoordinateReferenceSystem(crs);
+    highestRes=new double[2];
+    highestRes[0]=XAffineTransform.getScaleX0(tempTransform);
+    highestRes[1]=XAffineTransform.getScaleY0(tempTransform);
+    if (ovrInStreamSPI != null) {
+      ovrReader=Utils.TIFFREADERFACTORY.createReaderInstance();
+      ovrStream=ovrInStreamSPI.createInputStreamInstance(ovrSource,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+      ovrReader.setInput(ovrStream);
+      extOvrImgChoice=numOverviews + 1;
+      numOverviews=numOverviews + ovrReader.getNumImages(true);
+      if (numOverviews < extOvrImgChoice)       extOvrImgChoice=-1;
+    }
+    if (numOverviews >= 1) {
+      overViewResolutions=new double[numOverviews][2];
+      overViewLayouts=new RasterLayout[numOverviews];
+      int firstExternalOverview=extOvrImgChoice == -1 ? numOverviews : extOvrImgChoice - 1;
+      double spanRes0=highestRes[0] * this.originalGridRange.getSpan(0);
+      double spanRes1=highestRes[1] * this.originalGridRange.getSpan(1);
+      for (int i=0; i < firstExternalOverview; i++) {
+        final int w=reader.getWidth(i + 1);
+        final int h=reader.getHeight(i + 1);
+        final int tw=reader.getTileWidth(i + 1);
+        final int th=reader.getTileHeight(i + 1);
+        overViewResolutions[i][0]=spanRes0 / w;
+        overViewResolutions[i][1]=spanRes1 / h;
+        overViewLayouts[i]=new RasterLayout(0,0,w,h,0,0,tw,th);
+      }
+      for (int i=firstExternalOverview; i < numOverviews; i++) {
+        final int w=ovrReader.getWidth(i - firstExternalOverview);
+        final int h=ovrReader.getHeight(i - firstExternalOverview);
+        final int tw=ovrReader.getTileWidth(i - firstExternalOverview);
+        final int th=ovrReader.getTileHeight(i - firstExternalOverview);
+        overViewResolutions[i][0]=spanRes0 / w;
+        overViewResolutions[i][1]=spanRes1 / h;
+        overViewLayouts[i]=new RasterLayout(0,0,w,h,0,0,tw,th);
+      }
+    }
+ else {
+      overViewResolutions=null;
+    }
+    final ImageReadParam readParam=reader.getDefaultReadParam();
+    readParam.setSourceRegion(new Rectangle(0,0,4,4));
+    final BufferedImage sampleImage=reader.read(0,readParam);
+    baseImageType=new ImageTypeSpecifier(sampleImage);
+    reader.dispose();
+  }
+ catch (  Throwable e) {
+    throw new DataSourceException(e);
+  }
+ finally {
+    if (reader != null)     try {
+      reader.dispose();
+    }
+ catch (    Throwable t) {
+    }
+    if (ovrReader != null)     try {
+      ovrReader.dispose();
+    }
+ catch (    Throwable t) {
+    }
+    if (ovrStream != null)     try {
+      ovrStream.close();
+    }
+ catch (    Throwable t) {
+    }
+    if (inStream != null)     try {
+      inStream.reset();
+    }
+ catch (    Throwable t) {
     }
   }
- catch (  IllegalArgumentException iae) {
-    useWorldFile=true;
-  }
-catch (  UnsupportedOperationException uoe) {
-    useWorldFile=true;
-  }
-  final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
-  if (tempCRS != null) {
-    this.crs=(CoordinateReferenceSystem)tempCRS;
-    LOGGER.log(Level.WARNING,"Using forced coordinate reference system " + crs.toWKT());
-  }
- else {
-    if (useWorldFile) {
-      foundCrs=Utils.getCRS(source);
-    }
-    crs=foundCrs;
-  }
-  if (crs == null) {
-    throw new DataSourceException("Coordinate Reference System is not available");
-  }
-  numOverviews=reader.getNumImages(true) - 1;
-  final int hrWidth=reader.getWidth(0);
-  final int hrHeight=reader.getHeight(0);
-  final int hrTileW=reader.getTileWidth(0);
-  final int hrTileH=reader.getTileHeight(0);
-  hrLayout=new RasterLayout(0,0,hrWidth,hrHeight,0,0,hrTileW,hrTileH);
-  final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
-  originalGridRange=new GridEnvelope2D(actualDim);
-  if (!useWorldFile && gtcs != null) {
-    this.raster2Model=GeoTiffMetadata2CRSAdapter.getRasterToModel(metadata);
-  }
- else {
-    this.raster2Model=Utils.parseWorldFile(source);
-  }
-  if (this.raster2Model == null) {
-    throw new DataSourceException("Raster to Model Transformation is not available");
-  }
-  final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
-  tempTransform.translate(-0.5,-0.5);
-  originalEnvelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(actualDim));
-  originalEnvelope.setCoordinateReferenceSystem(crs);
-  highestRes=new double[2];
-  highestRes[0]=XAffineTransform.getScaleX0(tempTransform);
-  highestRes[1]=XAffineTransform.getScaleY0(tempTransform);
-  if (numOverviews >= 1) {
-    overViewResolutions=new double[numOverviews][2];
-    overViewLayouts=new RasterLayout[numOverviews];
-    for (int i=0; i < numOverviews; i++) {
-      final int width=reader.getWidth(i + 1);
-      final int height=reader.getHeight(i + 1);
-      final int tileW=reader.getTileWidth(i + 1);
-      final int tileH=reader.getTileHeight(i + 1);
-      overViewLayouts[i]=new RasterLayout(0,0,width,height,0,0,tileW,tileH);
-      overViewResolutions[i][0]=(highestRes[0] * hrWidth) / width;
-      overViewResolutions[i][1]=(highestRes[1] * hrHeight) / height;
-    }
-  }
- else {
-    overViewResolutions=null;
-  }
-  final ImageReadParam readParam=reader.getDefaultReadParam();
-  readParam.setSourceRegion(new Rectangle(0,0,4,4));
-  final BufferedImage sampleImage=reader.read(0,readParam);
-  baseImageType=new ImageTypeSpecifier(sampleImage);
-  reader.dispose();
 }

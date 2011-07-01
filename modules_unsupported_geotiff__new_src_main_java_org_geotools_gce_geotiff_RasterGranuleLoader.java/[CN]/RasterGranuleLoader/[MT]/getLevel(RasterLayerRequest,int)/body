@@ -6,8 +6,17 @@ synchronized (granuleLevels) {
  else {
       ImageInputStream inStream=null;
       ImageReader reader=null;
+      File file=granuleFile;
+      int imageChoice=index;
       try {
-        inStream=ImageIOExt.createImageInputStream(granuleFile);
+        if (request.rasterManager.parent.extOvrImgChoice >= 0 && index >= request.rasterManager.parent.extOvrImgChoice) {
+          file=request.rasterManager.parent.ovrSource;
+          inStream=request.rasterManager.parent.ovrInStreamSPI.createInputStreamInstance(file,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+          imageChoice=index - request.rasterManager.parent.extOvrImgChoice;
+        }
+ else {
+          inStream=ImageIOExt.createImageInputStream(file);
+        }
         if (inStream == null) {
           throw new IllegalArgumentException();
         }
@@ -15,7 +24,7 @@ synchronized (granuleLevels) {
         if (reader == null) {
           throw new IllegalArgumentException();
         }
-        final Rectangle levelDimension=ImageUtilities.getDimension(index,inStream,reader);
+        final Rectangle levelDimension=ImageUtilities.getDimension(imageChoice,inStream,reader);
         final Level baseLevel=granuleLevels.get(0);
         final double scaleX=baseLevel.width / (1.0 * levelDimension.width);
         final double scaleY=baseLevel.height / (1.0 * levelDimension.height);
