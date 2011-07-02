@@ -1,5 +1,5 @@
 {
-  final FeatureTypeStyle[] featureStylers=currLayer.getStyle().getFeatureTypeStyles();
+  final Style style=currLayer.getStyle();
   final FeatureSource featureSource=currLayer.getFeatureSource();
   final CoordinateReferenceSystem sourceCrs;
   final NumberRange scaleRange=NumberRange.create(scaleDenominator,scaleDenominator);
@@ -10,10 +10,10 @@
     final GeometryDescriptor geometryAttribute=schema.getGeometryDescriptor();
     sourceCrs=geometryAttribute.getType().getCoordinateReferenceSystem();
     if (LOGGER.isLoggable(Level.FINE)) {
-      LOGGER.fine("Processing " + featureStylers.length + " stylers for "+ currLayer.getFeatureSource().getSchema().getName());
+      LOGGER.fine("Processing " + style.featureTypeStyles().size() + " stylers for "+ featureSource.getSchema().getName());
     }
-    lfts=createLiteFeatureTypeStyles(featureStylers,schema,graphics);
-    if (lfts.size() == 0)     return;
+    lfts=createLiteFeatureTypeStyles(style.featureTypeStyles(),schema,graphics);
+    if (lfts.isEmpty())     return;
     applyUnitRescale(lfts);
     List<List<LiteFeatureTypeStyle>> txClassified=new ArrayList<List<LiteFeatureTypeStyle>>();
     txClassified.add(new ArrayList<LiteFeatureTypeStyle>());
@@ -60,9 +60,9 @@
     CollectionSource source=currLayer.getSource();
     collection=queryLayer(currLayer,currLayer.getSource());
     sourceCrs=null;
-    lfts=createLiteFeatureTypeStyles(featureStylers,source.describe(),graphics);
+    lfts=createLiteFeatureTypeStyles(style.featureTypeStyles(),source.describe(),graphics);
     applyUnitRescale(lfts);
-    if (lfts.size() == 0)     return;
+    if (lfts.isEmpty())     return;
     if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
       drawOptimized(graphics,currLayer,at,destinationCrs,layerId,collection,null,scaleRange,lfts);
     }
