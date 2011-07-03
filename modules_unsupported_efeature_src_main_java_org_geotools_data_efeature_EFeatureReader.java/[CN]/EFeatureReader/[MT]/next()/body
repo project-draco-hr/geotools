@@ -1,18 +1,23 @@
 {
+  if (!hasNext()) {
+    throw new NoSuchElementException();
+  }
   try {
+    eStructure.eLock();
     Feature feature=null;
     EObject eObject=eReader.get();
-    eObject=adapt(eFeatureInfo,eObject);
-    feature=((EFeature)eObject).getData();
+    eObject=eAdapt(eStructure,eObject,hints);
+    feature=eData((EFeature)eObject,hints);
     if (feature instanceof ESimpleFeature) {
       return (ESimpleFeature)feature;
     }
  else {
-      LOGGER.log(Level.WARNING,"Non-standard Feature " + "implementation found. Unpredictable behavior may occur");
-      return new ESimpleFeatureDelegate(eObject,(SimpleFeature)feature);
+      LOGGER.log(Level.WARNING,"Non-standard Feature implementation " + "found. Unpredictable behavior may occur.");
+      return new ESimpleFeatureDelegate(eStructure,eObject,(SimpleFeature)feature);
     }
   }
   finally {
+    eStructure.eUnlock();
     eReader.next();
   }
 }

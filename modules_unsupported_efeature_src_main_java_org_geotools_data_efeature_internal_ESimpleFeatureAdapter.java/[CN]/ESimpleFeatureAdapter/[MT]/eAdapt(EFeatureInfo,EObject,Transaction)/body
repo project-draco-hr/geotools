@@ -1,0 +1,23 @@
+{
+  ESimpleFeature eData=null;
+  boolean eDeliver=eObject.eDeliver();
+  eObject.eSetDeliver(false);
+  EFeatureInternal eInternal=eInternal(eStructure,eObject);
+  eInternal.enter(transaction);
+  try {
+    if (!isIdentity) {
+      eStructure.setSRID(newSRID);
+    }
+    for (    Entry<EAttribute,Object> it : newValueMap.entrySet()) {
+      eObject.eSet(it.getKey(),it.getValue());
+    }
+    return (eData=eInternal.getData(transaction,true));
+  }
+  finally {
+    eInternal.leave();
+    eObject.eSetDeliver(eDeliver);
+    if (eData != null) {
+      eNotify(eObject,eData);
+    }
+  }
+}

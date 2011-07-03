@@ -1,0 +1,42 @@
+{
+  EFeatureStatus s;
+  if (!(s=eStructure.validate(eData)).isSuccess()) {
+    throw new IllegalArgumentException(s.getMessage());
+  }
+  ESimpleFeatureAdapter eAdapter=new ESimpleFeatureAdapter();
+  eAdapter.oldType=eStructure.getFeatureType();
+  eAdapter.newType=eData.getType();
+  eAdapter.oldCRS=eAdapter.oldType.getCoordinateReferenceSystem();
+  eAdapter.newCRS=eAdapter.newType.getCoordinateReferenceSystem();
+  try {
+    eAdapter.transform=CRS.findMathTransform(eAdapter.newCRS,eAdapter.oldCRS,true);
+  }
+ catch (  FactoryException e) {
+    throw new IllegalArgumentException("Tranform from " + "'" + eAdapter.newCRS + "' to '"+ eAdapter.oldCRS+ "' not possible");
+  }
+  eAdapter.isIdentity=(eAdapter.transform instanceof IdentityTransform);
+  if (!eAdapter.isIdentity) {
+    eAdapter.oldSRID=CRS.toSRS(eAdapter.oldCRS,true);
+    eAdapter.newSRID=CRS.toSRS(eAdapter.newCRS,true);
+  }
+  for (  Property it : eData.getProperties()) {
+    String eName=it.getName().getLocalPart();
+    EAttribute eAttribute=eStructure.eGetAttribute(eName);
+    if (eAttribute != null) {
+      Object value=it.getValue();
+      eAdapter.oldValues.add(value);
+      eAdapter.oldValueMap.put(eAttribute,value);
+      if (value instanceof Geometry) {
+        try {
+          value=JTS.transform((Geometry)value,eAdapter.transform);
+        }
+ catch (        Exception e) {
+          throw new IllegalArgumentException("Failed to " + "transform geometry: " + it);
+        }
+      }
+      eAdapter.newValues.add(value);
+      eAdapter.newValueMap.put(eAttribute,value);
+    }
+  }
+  return eAdapter;
+}
