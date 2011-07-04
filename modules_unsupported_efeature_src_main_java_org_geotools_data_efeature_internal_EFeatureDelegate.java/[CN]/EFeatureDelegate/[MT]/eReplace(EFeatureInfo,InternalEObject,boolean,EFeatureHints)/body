@@ -1,0 +1,28 @@
+{
+  if (!eTrusted) {
+    EFeatureStatus eStatus;
+    if ((eStatus=eStructure.validate(eImpl)).isFailure()) {
+      throw new IllegalArgumentException("EObject implementation is not valid. " + eStatus.getMessage(),eStatus.getCause());
+    }
+  }
+  eHints=(eHints == null ? new EFeatureHints(eStructure.eHints()) : eHints);
+  if (eImpl instanceof EFeatureImpl) {
+    this.eImpl=eImpl;
+    this.eInternal=((EFeatureImpl)eImpl).eInternal();
+    this.eInternal.eReplace(eStructure,this,eHints,true);
+  }
+ else   if (eImpl instanceof EFeatureDelegate) {
+    this.eImpl=((EFeatureDelegate)eImpl).eImpl();
+    this.eInternal=((EFeatureDelegate)eImpl).eInternal();
+    this.eInternal.eReplace(eStructure,this,eHints,true);
+  }
+ else {
+    this.eImpl=eImpl;
+    if (this.eInternal == null) {
+      this.eInternal=new EFeatureInternal(eStructure,this,eHints);
+    }
+ else {
+      this.eInternal.eReplace(eStructure,this,eHints,true);
+    }
+  }
+}
