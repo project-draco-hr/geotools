@@ -56,7 +56,21 @@
       PrimaryKey pkey=dataStore.getPrimaryKeyFinder().getPrimaryKey(dataStore,schemaName,tableName,cx);
       if (!(pkey instanceof NullPrimaryKey)) {
         String indexTableName=tableName + "_" + gd.getLocalName()+ "_idx";
-        StringBuffer sb=new StringBuffer("DROP TABLE ");
+        String hashIndex=indexTableName + "_idx";
+        StringBuffer sb=new StringBuffer("DROP HASH INDEX ");
+        encodeTableName(schemaName,hashIndex,sb);
+        sql=sb.toString();
+        LOGGER.fine(sql);
+        try {
+          ps=cx.prepareStatement(sql);
+          ps.execute();
+        }
+ catch (        SQLException e) {
+        }
+ finally {
+          dataStore.closeSafe(ps);
+        }
+        sb=new StringBuffer("DROP TABLE ");
         encodeTableName(schemaName,indexTableName,sb);
         sql=sb.toString();
         LOGGER.fine(sql);
@@ -75,19 +89,34 @@
         for (        PrimaryKeyColumn col : pkey.getColumns()) {
           encodeColumnName(col.getName(),sb);
           String typeName=lookupSqlTypeName(cx,schemaName,tableName,col.getName());
-          sb.append(" ").append(typeName).append(", ");
+          sb.append(" ").append(typeName).append(" NOT NULL, ");
         }
-        sb.append("cellid INTEGER) PRIMARY INDEX (cellid)");
+        if (!pkey.getColumns().isEmpty()) {
+          sb.append("cellid INTEGER NOT NULL)");
+          sb.append("PRIMARY INDEX (");
+          encodeColumnName(pkey.getColumns().get(0).getName(),sb);
+          sb.append(")");
+        }
         sql=sb.toString();
         LOGGER.fine(sql);
-        ps=cx.prepareStatement(sql);
         try {
+          ps=cx.prepareStatement(sql);
           ps.execute();
         }
   finally {
           dataStore.closeSafe(ps);
         }
-        installTriggers(cx,tableName,gd.getLocalName(),indexTableName);
+        sb=new StringBuffer("CREATE HASH INDEX " + hashIndex + " (cellid) ON "+ indexTableName+ " ORDER BY (cellid)");
+        sql=sb.toString();
+        LOGGER.fine(sql);
+        try {
+          ps=cx.prepareStatement(sql);
+          ps.execute();
+        }
+  finally {
+          dataStore.closeSafe(ps);
+        }
+        installTriggers(cx,tableName,gd.getLocalName(),indexTableName,pkey.getColumns());
       }
  else {
         LOGGER.warning("No primary key for " + schemaName + "."+ tableName+ ". Unable"+ " to create spatial index.");
