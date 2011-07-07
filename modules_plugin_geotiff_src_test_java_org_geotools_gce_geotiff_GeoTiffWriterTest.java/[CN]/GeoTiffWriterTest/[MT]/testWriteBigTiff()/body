@@ -1,0 +1,50 @@
+{
+  String files[]=new String[]{"geo.tiff","no_crs_no_envelope.tif"};
+  int i=0;
+  for (  String file : files) {
+    final File input=TestData.file(GeoTiffReaderTest.class,file);
+    final AbstractGridFormat format=new GeoTiffFormat();
+    assertTrue(format.accepts(input));
+    GeoTiffReader reader=new GeoTiffReader(input);
+    GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+    assertNotNull(coverage);
+    assertNotNull(coverage.getCoordinateReferenceSystem());
+    reader.dispose();
+    final File output=new File(TestData.file(GeoTiffReaderTest.class,"."),"bigtiff" + i + ".tif");
+    GeoTiffWriter writer=new GeoTiffWriter(output);
+    GeoTiffWriteParams params=new GeoTiffWriteParams();
+    params.setForceToBigTIFF(true);
+    ParameterValue<GeoToolsWriteParams> value=GeoTiffFormat.GEOTOOLS_WRITE_PARAMS.createValue();
+    value.setValue(params);
+    writer.write(coverage,new GeneralParameterValue[]{value});
+    writer.dispose();
+    coverage.dispose(true);
+    reader=new GeoTiffReader(output);
+    RenderedImage ri=reader.read(null).getRenderedImage();
+    assertEquals(ri.getWidth(),i == 0 ? 120 : 12);
+    assertEquals(ri.getHeight(),i == 0 ? 120 : 12);
+    reader.dispose();
+    FileInputStream fis=null;
+    try {
+      fis=new FileInputStream(output);
+      byte[] bytes=new byte[6];
+      fis.read(bytes);
+      if (bytes[0] == 77 && bytes[1] == 77) {
+        assertEquals(bytes[3],43);
+      }
+ else {
+        assertEquals(bytes[4],43);
+      }
+    }
+  finally {
+      if (fis != null) {
+        try {
+          fis.close();
+        }
+ catch (        Throwable t) {
+        }
+      }
+    }
+    i++;
+  }
+}
