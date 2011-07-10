@@ -1,18 +1,35 @@
 {
   List<Number> list=new ArrayList<Number>();
   if (isValid()) {
-    GridCoverage2D cov=covRef.get();
-    ReferencedEnvelope env=new ReferencedEnvelope(cov.getEnvelope2D());
-    DirectPosition2D trPos=getTransformed(pos);
-    if (env.contains(trPos)) {
-      Object objArray=cov.evaluate(trPos);
-      Number[] bandValues=asNumberArray(objArray);
-      if (bandValues != null) {
-        for (        Number value : bandValues) {
-          list.add(value);
+switch (sourceType) {
+case COVERAGE:
+{
+        GridCoverage2D source=(GridCoverage2D)sourceRef.get();
+        ReferencedEnvelope env=new ReferencedEnvelope(source.getEnvelope2D());
+        DirectPosition2D trPos=getTransformed(pos);
+        if (env.contains(trPos)) {
+          Object objArray=source.evaluate(trPos);
+          Number[] bandValues=asNumberArray(objArray);
+          if (bandValues != null) {
+            list.addAll(Arrays.asList(bandValues));
+          }
         }
+      }
+    break;
+case READER:
+{
+    AbstractGridCoverage2DReader reader=(AbstractGridCoverage2DReader)sourceRef.get();
+    GeneralEnvelope genEnv=reader.getOriginalEnvelope();
+    DirectPosition2D trPos=getTransformed(pos);
+    if (genEnv.contains(trPos)) {
+      Number[] bandValues=getGridReaderValues(trPos);
+      if (bandValues != null) {
+        list.addAll(Arrays.asList(bandValues));
       }
     }
   }
-  return list;
+break;
+}
+}
+return list;
 }

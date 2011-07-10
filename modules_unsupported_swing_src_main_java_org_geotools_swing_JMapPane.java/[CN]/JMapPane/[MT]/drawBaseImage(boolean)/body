@@ -1,18 +1,16 @@
 {
-  if (currentPaintArea == null) {
-    return;
-  }
-  if (acceptRepaintRequests) {
+  if (mapContent != null && !mapContent.getViewport().isEmpty() && acceptRepaintRequests) {
+    Rectangle r=getVisibleRect();
     if (baseImage == null || createNewImage) {
-      baseImage=new BufferedImage(currentPaintArea.width + 1,currentPaintArea.height + 1,BufferedImage.TYPE_INT_ARGB);
+      baseImage=new BufferedImage(r.width,r.height,BufferedImage.TYPE_INT_ARGB);
       if (baseImageGraphics != null) {
         baseImageGraphics.dispose();
       }
       baseImageGraphics=baseImage.createGraphics();
       clearLabelCache.set(true);
     }
-    if (renderer != null && context != null && context.getLayerCount() > 0) {
-      if (renderingExecutor.submit(currentDisplayArea,currentPaintArea,baseImageGraphics)) {
+    if (renderer != null && mapContent != null && !mapContent.layers().isEmpty()) {
+      if (renderingExecutor.submit(mapContent,baseImageGraphics)) {
         MapPaneEvent ev=new MapPaneEvent(this,MapPaneEvent.Type.RENDERING_STARTED);
         publishEvent(ev);
       }
