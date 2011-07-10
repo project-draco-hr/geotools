@@ -1,0 +1,37 @@
+{
+  String srs=filter.getSRS();
+  if (srs == null || "".equals(srs.trim()))   return super.visit(filter,extraData);
+  try {
+    double minx=filter.getMinX();
+    double miny=filter.getMinY();
+    double maxx=filter.getMaxX();
+    double maxy=filter.getMaxY();
+    CoordinateReferenceSystem crs;
+    try {
+      crs=CRS.decode(srs);
+    }
+ catch (    NoSuchAuthorityCodeException e) {
+      crs=CRS.parseWKT(srs);
+    }
+    String propertyName=filter.getPropertyName();
+    CoordinateReferenceSystem targetCrs=findPropertyCRS(ff.property(propertyName));
+    if (crs != null && targetCrs != null && !CRS.equalsIgnoreMetadata(crs,targetCrs)) {
+      ReferencedEnvelope envelope=new ReferencedEnvelope(minx,maxx,miny,maxy,crs);
+      envelope=envelope.transform(targetCrs,true);
+      minx=envelope.getMinX();
+      miny=envelope.getMinY();
+      maxx=envelope.getMaxX();
+      maxy=envelope.getMaxY();
+      if (targetCrs.getIdentifiers().isEmpty()) {
+        srs=targetCrs.toString();
+      }
+ else {
+        srs=targetCrs.getIdentifiers().iterator().next().toString();
+      }
+    }
+    return getFactory(extraData).bbox(propertyName,minx,miny,maxx,maxy,srs);
+  }
+ catch (  Exception e) {
+    throw new RuntimeException("Could not decode srs '" + srs + "'",e);
+  }
+}

@@ -1,4 +1,13 @@
 {
-  Filter unFilter=unFilter(filter);
-  return new ReprojectingFeatureCollection(delegate.subCollection(unFilter),target);
+  CoordinateReferenceSystem crs=getSchema().getCoordinateReferenceSystem();
+  CoordinateReferenceSystem crsDelegate=delegate.getSchema().getCoordinateReferenceSystem();
+  if (crs != null) {
+    DefaultCRSFilterVisitor defaulter=new DefaultCRSFilterVisitor(FF,crs);
+    filter=(Filter)filter.accept(defaulter,null);
+    if (crsDelegate != null && !CRS.equalsIgnoreMetadata(crs,crsDelegate)) {
+      ReprojectingFilterVisitor reprojector=new ReprojectingFilterVisitor(FF,delegate.getSchema());
+      filter=(Filter)filter.accept(reprojector,null);
+    }
+  }
+  return new ReprojectingFeatureCollection(delegate.subCollection(filter),target);
 }
