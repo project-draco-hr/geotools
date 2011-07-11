@@ -5,10 +5,12 @@
   FileDataStore dataStore=FileDataStoreFinder.getDataStore(shpFile);
   SimpleFeatureSource shapefileSource=dataStore.getFeatureSource();
   Style shpStyle=SLD.createPolygonStyle(Color.YELLOW,null,0.0f);
-  final MapContext map=new DefaultMapContext();
+  final MapContent map=new MapContent();
   map.setTitle("ImageLab");
-  map.addLayer(reader,rasterStyle);
-  map.addLayer(shapefileSource,shpStyle);
+  Layer rasterLayer=new GridReaderLayer(reader,rasterStyle);
+  map.addLayer(rasterLayer);
+  Layer shpLayer=new FeatureLayer(shapefileSource,shpStyle);
+  map.addLayer(shpLayer);
   frame=new JMapFrame(map);
   frame.setSize(800,600);
   frame.enableStatusBar(true);
@@ -21,7 +23,7 @@
     public void action(    ActionEvent e) throws Throwable {
       Style style=createGreyscaleStyle();
       if (style != null) {
-        map.getLayer(0).setStyle(style);
+        ((StyleLayer)map.layers().get(0)).setStyle(style);
         frame.repaint();
       }
     }
@@ -31,7 +33,7 @@
     public void action(    ActionEvent e) throws Throwable {
       Style style=createRGBStyle();
       if (style != null) {
-        map.getLayer(0).setStyle(style);
+        ((StyleLayer)map.layers().get(0)).setStyle(style);
         frame.repaint();
       }
     }
