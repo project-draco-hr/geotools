@@ -7,16 +7,7 @@
       query=new JoiningQuery(query);
     }
     FeatureSource mappedSource=mapping.getSource();
-    FilterCapabilities capabilities=null;
-    if (mappedSource instanceof JDBCFeatureSource) {
-      capabilities=((JDBCFeatureSource)mappedSource).getDataStore().getFilterCapabilities();
-    }
- else     if (mappedSource instanceof JDBCFeatureStore) {
-      capabilities=((JDBCFeatureStore)mappedSource).getDataStore().getFilterCapabilities();
-    }
- else {
-      throw new IllegalArgumentException("Joining queries are only supported on JDBC data stores");
-    }
+    FilterCapabilities capabilities=getFilterCapabilities(mappedSource);
     IMappingFeatureIterator iterator;
     if (unrolledFilter != null) {
       query.setFilter(Filter.INCLUDE);
@@ -49,7 +40,18 @@
       CheckIfNestedFilterVisitor visitor=new CheckIfNestedFilterVisitor();
       filter.accept(visitor,null);
       if (visitor.hasNestedAttributes) {
-        unrolledQuery.setFilter(Filter.INCLUDE);
+        FeatureSource mappedSource=mapping.getSource();
+        if (mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore) {
+          FilterCapabilities capabilities=getFilterCapabilities(mappedSource);
+          ComplexFilterSplitter splitter=new ComplexFilterSplitter(capabilities,mapping);
+          filter.accept(splitter,null);
+          query.setFilter(splitter.getFilterPre());
+          unrolledQuery.setFilter(splitter.getFilterPre());
+          filter=splitter.getFilterPost();
+        }
+ else {
+          unrolledQuery.setFilter(Filter.INCLUDE);
+        }
         return new FilteringMappingFeatureIterator(store,mapping,query,unrolledQuery,filter);
       }
  else       if (!filter.equals(Filter.INCLUDE) && !filter.equals(Filter.EXCLUDE) && !(filter instanceof FidFilterImpl)) {
