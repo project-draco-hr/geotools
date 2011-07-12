@@ -1,4 +1,14 @@
 {
+  boolean localTileCache=false;
+  TileCache baseTC=JAI.getDefaultInstance().getTileCache();
+  final TCTool tc=new TCTool((SunTileCache)baseTC);
+  if (baseTC == null) {
+    localTileCache=true;
+    final long tilecacheSize=super.getTileCacheSize();
+    baseTC=JAI.createTileCache();
+    baseTC.setMemoryCapacity(tilecacheSize);
+    baseTC.setMemoryThreshold(0.75f);
+  }
   if (sourcePath == null) {
     fireEvent("Provided sourcePath is null",0);
     return;
@@ -49,7 +59,6 @@
     ImageInputStream stream=null;
     ImageWriter writer=null;
     ImageOutputStream streamOut=null;
-    TileCache baseTC=null;
     RenderedOp currentImage=null;
     RenderedOp newImage=null;
     try {
@@ -127,15 +136,6 @@
         param.setCompressionType(compressionScheme);
         param.setCompressionQuality((float)this.compressionRatio);
       }
-      if (this.getTileCacheSize() <= 0) {
-        baseTC=JAI.getDefaultInstance().getTileCache();
-      }
- else {
-        final long tilecacheSize=super.getTileCacheSize();
-        baseTC=JAI.createTileCache();
-        baseTC.setMemoryCapacity(tilecacheSize);
-        baseTC.setMemoryThreshold(0.75f);
-      }
       final RenderingHints newHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
       newHints.add(new RenderingHints(JAI.KEY_TILE_CACHE,baseTC));
       ParameterBlock pbjRead=new ParameterBlock();
@@ -194,7 +194,7 @@ if (LOGGER.isLoggable(Level.FINE)) {
 LOGGER.fine(message.toString());
 }
 fireEvent(message.toString(),((fileBeingProcessed * 100.0) / numFiles));
-baseTC.flush();
+currentImage.dispose();
 currentImage=newImage;
 i++;
 }
@@ -208,16 +208,10 @@ fireEvent(message.toString(),(((fileBeingProcessed + 1) * 100.0) / numFiles));
 fireException(e);
 }
  finally {
-if (baseTC != null) try {
+if (localTileCache && baseTC != null) try {
 baseTC.flush();
 }
  catch (Exception e) {
-}
-try {
-if (streamOut != null) streamOut.flush();
-}
- catch (Throwable e) {
-if (LOGGER.isLoggable(Level.FINE)) LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
 }
 try {
 if (streamOut != null) streamOut.close();
