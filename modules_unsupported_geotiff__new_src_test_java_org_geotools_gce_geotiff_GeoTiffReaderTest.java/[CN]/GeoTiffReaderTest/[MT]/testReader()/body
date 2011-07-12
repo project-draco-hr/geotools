@@ -4,9 +4,9 @@
   final int numFiles=files.length;
   final AbstractGridFormat format=new GeoTiffFormat();
   for (int i=0; i < numFiles; i++) {
-    StringBuffer buffer=new StringBuffer();
+    StringBuilder buffer=new StringBuilder();
     final String path=files[i].getAbsolutePath().toLowerCase();
-    if (!path.endsWith("tif") && !path.endsWith("tiff"))     continue;
+    if (!path.endsWith("tif") && !path.endsWith("tiff") || path.contains("no_crs"))     continue;
     if (path.contains("ovr.tif"))     continue;
     buffer.append(files[i].getAbsolutePath()).append("\n");
     Object o;
@@ -22,7 +22,7 @@
           buffer.append("GG: ").append(coverage.getGridGeometry().toString()).append("\n");
         }
         if (TestData.isInteractiveTest())         coverage.show();
- else         coverage.getRenderedImage().getData();
+ else         PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getTiles();
       }
     }
  else     buffer.append("NOT ACCEPTED").append("\n");

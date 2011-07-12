@@ -1,0 +1,22 @@
+{
+  final File sampleFile=TestData.file(GeoTiffReaderTest.class,"geo.tiff");
+  final AbstractGridFormat format=new GeoTiffFormat();
+  assertTrue(format.accepts(sampleFile));
+  GeoTiffReader reader=(GeoTiffReader)format.getReader(sampleFile);
+  ParameterValue<Boolean> useJai=AbstractGridFormat.USE_JAI_IMAGEREAD.createValue();
+  useJai.setValue(false);
+  ParameterValue<OverviewPolicy> op=AbstractGridFormat.OVERVIEW_POLICY.createValue();
+  op.setValue(OverviewPolicy.NEAREST);
+  ParameterValue<DecimationPolicy> dp=AbstractGridFormat.DECIMATION_POLICY.createValue();
+  dp.setValue(DecimationPolicy.ALLOW);
+  ParameterValue<Color> color=AbstractGridFormat.INPUT_TRANSPARENT_COLOR.createValue();
+  color.setValue(new Color(0,0,0));
+  ParameterValue<double[]> bv=GeoTiffFormat.BACKGROUND_VALUES.createValue();
+  bv.setValue(new double[]{255,255,255});
+  ParameterValue<String> ts=AbstractGridFormat.SUGGESTED_TILE_SIZE.createValue();
+  ts.setValue("512,512");
+  GridCoverage2D coverage=reader.read(new GeneralParameterValue[]{useJai,dp,op,color,bv,ts});
+  assertNotNull(coverage);
+  reader.dispose();
+  coverage.dispose(true);
+}

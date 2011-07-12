@@ -1,0 +1,27 @@
+{
+  final String google="PROJCS[\"WGS84 / Google Mercator\", GEOGCS[\"WGS 84\", DATUM[\"World Geodetic System 1984\", SPHEROID[\"WGS 84\", 6378137.0, 298.257223563, AUTHORITY[\"EPSG\",\"7030\"]], AUTHORITY[\"EPSG\",\"6326\"]], PRIMEM[\"Greenwich\", 0.0, AUTHORITY[\"EPSG\",\"8901\"]], UNIT[\"degree\", 0.017453292519943295], AUTHORITY[\"EPSG\",\"4326\"]], PROJECTION[\"Mercator (1SP)\", AUTHORITY[\"EPSG\",\"9804\"]], PARAMETER[\"semi_major\", 6378137.0], PARAMETER[\"semi_minor\", 6378137.0], PARAMETER[\"latitude_of_origin\", 0.0], PARAMETER[\"central_meridian\", 0.0], PARAMETER[\"scale_factor\", 1.0], PARAMETER[\"false_easting\", 0.0], PARAMETER[\"false_northing\", 0.0], UNIT[\"m\", 1.0],  AUTHORITY[\"EPSG\",\"900913\"]]";
+  final CoordinateReferenceSystem googleCRS=CRS.parseWKT(google);
+  final File testFile=TestData.file(GeoTiffReaderTest.class,"latlon.tiff");
+  final AbstractGridFormat format=new GeoTiffFormat();
+  assertTrue(format.accepts(testFile));
+  GeoTiffReader reader=new GeoTiffReader(testFile);
+  GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+  assertNotNull(coverage);
+  assertNotNull(coverage.getCoordinateReferenceSystem());
+  assertEquals(CRS.lookupIdentifier(coverage.getCoordinateReferenceSystem(),true),"EPSG:4267");
+  reader.dispose();
+  coverage=(GridCoverage2D)Operations.DEFAULT.resample(coverage,googleCRS);
+  final File mercator=new File(TestData.file(GeoTiffReaderTest.class,"."),"wms_900913.tif");
+  GeoTiffWriter writer=new GeoTiffWriter(mercator);
+  writer.write(coverage,null);
+  writer.dispose();
+  reader=new GeoTiffReader(mercator);
+  GridCoverage2D coverageMercator=(GridCoverage2D)reader.read(null);
+  assertNotNull(coverageMercator);
+  assertNotNull(coverageMercator.getCoordinateReferenceSystem());
+  assertTrue(CRS.equalsIgnoreMetadata(coverage.getCoordinateReferenceSystem(),googleCRS));
+  assertTrue(coverage.getEnvelope2D().getFrame().equals(coverageMercator.getEnvelope2D().getFrame()));
+  reader.dispose();
+  coverage.dispose(true);
+  coverage.dispose(true);
+}

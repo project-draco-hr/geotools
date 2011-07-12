@@ -1,0 +1,23 @@
+{
+  final File noCrs=TestData.file(GeoTiffReaderTest.class,"no_crs.tif");
+  final AbstractGridFormat format=new GeoTiffFormat();
+  assertTrue(format.accepts(noCrs));
+  final CoordinateReferenceSystem crs=CRS.decode("EPSG:32632",true);
+  final Hints hint=new Hints();
+  hint.put(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,crs);
+  GeoTiffReader reader=new GeoTiffReader(noCrs,hint);
+  GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+  assertNotNull(coverage);
+  assertNotNull(coverage.getCoordinateReferenceSystem());
+  assertEquals(CRS.lookupIdentifier(coverage.getCoordinateReferenceSystem(),true),"EPSG:32632");
+  reader.dispose();
+  final File noCrsTFW=new File(TestData.file(GeoTiffReaderTest.class,"."),"no_crs_tfw.tif");
+  GeoTiffWriter writer=new GeoTiffWriter(noCrsTFW);
+  final ParameterValue<Boolean> tfw=GeoTiffFormat.WRITE_TFW.createValue();
+  tfw.setValue(true);
+  writer.write(coverage,new GeneralParameterValue[]{tfw});
+  writer.dispose();
+  coverage.dispose(true);
+  final File finalTFW=new File(noCrsTFW.getParent(),noCrsTFW.getName().replace("tif","tfw"));
+  assertTrue(finalTFW.canRead());
+}
