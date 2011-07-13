@@ -1,9 +1,32 @@
 {
-  if (parameters.size() % 2 != 1) {
-    throw new IllegalArgumentException("There must be an equal number of lookup data and return values");
-  }
   final Expression lookupExp=parameters.get(0);
   final List<Expression> pairList=parameters.subList(1,parameters.size());
+  if (staticTable) {
+    Object lookup=lookupExp.evaluate(object);
+    if (lookup != null) {
+      if (fastLookup == null) {
+synchronized (this) {
+          if (fastLookup == null) {
+            fastLookup=new HashMap();
+            lastKeyType=lookup.getClass();
+            lastContextType=context;
+            for (int i=0; i < pairList.size(); i+=2) {
+              Object key=pairList.get(i).evaluate(object,lastKeyType);
+              Object value=pairList.get(i + 1).evaluate(object,context);
+              fastLookup.put(key,value);
+            }
+          }
+        }
+      }
+      if (fastLookup != null && lookup.getClass() == lastKeyType && context == lastContextType) {
+        T result=(T)fastLookup.get(lookup);
+        if (result == null) {
+          System.out.println("humm");
+        }
+        return result;
+      }
+    }
+  }
   for (int i=0; i < pairList.size(); i+=2) {
     Expression keyExpr=pairList.get(i);
     Expression valueExpr=pairList.get(i + 1);
