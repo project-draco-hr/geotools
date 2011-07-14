@@ -1,5 +1,5 @@
 {
-  final CoordinateReferenceSystem requestCRS=CRS.getHorizontalCRS(requestedBBox.getCoordinateReferenceSystem());
+  requestCRS=CRS.getHorizontalCRS(requestedBBox.getCoordinateReferenceSystem());
   if (!CRS.equalsIgnoreMetadata(requestCRS,rasterManager.spatialDomainManager.coverageCRS2D))   try {
     destinationToSourceTransform=CRS.findMathTransform(requestCRS,rasterManager.spatialDomainManager.coverageCRS2D,true);
   }
@@ -8,7 +8,8 @@
   }
   if (destinationToSourceTransform != null && destinationToSourceTransform.isIdentity())   destinationToSourceTransform=null;
  else   if (destinationToSourceTransform instanceof AffineTransform) {
-    requestedGridToWorld.preConcatenate((AffineTransform)destinationToSourceTransform);
+    AffineTransform mutableTransform=(AffineTransform)requestedGridToWorld.clone();
+    mutableTransform.preConcatenate((AffineTransform)destinationToSourceTransform);
     try {
       final MathTransform tempTransform=PixelTranslation.translate(ProjectiveTransform.create(requestedGridToWorld),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER);
       requestedBBox=new ReferencedEnvelope(CRS.transform(tempTransform,new GeneralEnvelope(requestedRasterArea)));
