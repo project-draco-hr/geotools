@@ -1,0 +1,23 @@
+{
+  final OverviewsEmbedder oe=new OverviewsEmbedder();
+  oe.setDownsampleStep(2);
+  oe.setNumSteps(5);
+  oe.setScaleAlgorithm(OverviewsEmbedder.SubsampleAlgorithm.Average.toString());
+  oe.setTileCache(JAI.getDefaultInstance().getTileCache());
+  oe.setTileWidth(256);
+  oe.setTileHeight(256);
+  oe.setSourcePath(TestData.file(this,"DEM_.tiff").getAbsolutePath());
+  oe.addProcessingEventListener(new ProcessingEventListener(){
+    @Override public void getNotification(    ProcessingEvent event){
+      LOGGER.info(event.toString());
+    }
+    @Override public void exceptionOccurred(    ExceptionEvent event){
+      LOGGER.warning(event.toString());
+    }
+  }
+);
+  oe.run();
+  final ImageReader reader=new TIFFImageReaderSpi().createReaderInstance();
+  reader.setInput(ImageIO.createImageInputStream(org.geotools.test.TestData.file(this,"DEM_.tiff")));
+  assertTrue(reader.getNumImages(true) == 6);
+}
