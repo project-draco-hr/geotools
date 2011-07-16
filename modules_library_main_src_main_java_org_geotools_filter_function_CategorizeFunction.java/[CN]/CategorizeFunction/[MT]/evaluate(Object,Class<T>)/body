@@ -1,6 +1,41 @@
 {
   final Expression lookupExp=parameters.get(0);
-  final String belongsTo=queryThreshdoldBelongsTo(object);
+  Double value=lookupExp.evaluate(object,Double.class);
+  if (value == null) {
+    value=Converters.convert(object,Double.class);
+  }
+  if (value != null && staticTable) {
+    int expIdx=Arrays.binarySearch(thresholds,value);
+    int valIdx;
+    if (expIdx >= 0) {
+      if (PRECEDING.equals(belongsTo)) {
+        valIdx=expIdx;
+      }
+ else {
+        valIdx=expIdx + 1;
+      }
+    }
+ else {
+      valIdx=-expIdx - 1;
+    }
+    if (convertedValues == null) {
+synchronized (this) {
+        if (convertedValues == null) {
+          convertedValues=new Object[values.length];
+          for (int i=0; i < convertedValues.length; i++) {
+            convertedValues[i]=values[i].evaluate(object,context);
+          }
+          convertedValuesContext=context;
+        }
+      }
+    }
+    if (convertedValuesContext == context) {
+      return (T)convertedValues[valIdx];
+    }
+ else {
+      return values[valIdx].evaluate(object,context);
+    }
+  }
   Expression currentExp=parameters.get(1);
   final List<Expression> splits;
   if (parameters.size() == 2) {
@@ -16,41 +51,18 @@
   for (int i=0; i < splits.size(); i+=2) {
     Expression threshholdExp=splits.get(i);
     Expression rangedExp=splits.get(i + 1);
-    String lookupValue=lookupExp.evaluate(object,String.class);
-    if (lookupValue.equalsIgnoreCase(RASTER_DATA)) {
-      Double bandValue=new Double(object.toString());
-      Double threshholdValue=threshholdExp.evaluate(object,Double.class);
-      if (PRECEDING.equals(belongsTo)) {
-        if (bandValue > threshholdValue) {
-          currentExp=rangedExp;
-        }
- else {
-          break;
-        }
-      }
- else {
-        if (bandValue >= threshholdValue) {
-          currentExp=rangedExp;
-        }
- else {
-          break;
-        }
-      }
+    Filter isIncludedInThreshold;
+    if (PRECEDING.equals(belongsTo)) {
+      isIncludedInThreshold=ff.greater(lookupExp,threshholdExp);
     }
  else {
-      Filter isIncludedInThreshold;
-      if (PRECEDING.equals(belongsTo)) {
-        isIncludedInThreshold=ff.greater(lookupExp,threshholdExp);
-      }
+      isIncludedInThreshold=ff.greaterOrEqual(lookupExp,threshholdExp);
+    }
+    if (isIncludedInThreshold.evaluate(object)) {
+      currentExp=rangedExp;
+    }
  else {
-        isIncludedInThreshold=ff.greaterOrEqual(lookupExp,threshholdExp);
-      }
-      if (isIncludedInThreshold.evaluate(object)) {
-        currentExp=rangedExp;
-      }
- else {
-        break;
-      }
+      break;
     }
   }
   return currentExp.evaluate(object,context);

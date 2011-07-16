@@ -1,4 +1,51 @@
 {
   this.parameters=parameters;
   this.fallback=fallback;
+  if (parameters.size() % 2 != 0) {
+    Expression lastParameter=parameters.get(parameters.size() - 1);
+    String lastValue=lastParameter.evaluate(null,String.class);
+    if (PRECEDING.equalsIgnoreCase(lastValue)) {
+      belongsTo=PRECEDING;
+    }
+ else     if (SUCCEEDING.equalsIgnoreCase(lastValue)) {
+      belongsTo=SUCCEEDING;
+    }
+ else {
+      throw new IllegalArgumentException("The valid structure of a categorize function call is " + "\"lookup, value, [threshold, value]*, [succeeding|preceding]\", " + "yet there is a odd number of parameters and the last value is not succeeding nor preceeding");
+    }
+  }
+  FilterAttributeExtractor extractor=new FilterAttributeExtractor();
+  thresholds=new double[(parameters.size() - 1) / 2];
+  values=new Expression[thresholds.length + 1];
+  for (int i=1; i < parameters.size(); i++) {
+    Expression expression=parameters.get(i);
+    if (expression != null) {
+      extractor.clear();
+      expression.accept(extractor,null);
+      if (!extractor.isConstantExpression()) {
+        staticTable=false;
+        thresholds=null;
+        break;
+      }
+ else {
+        if (i % 2 == 0) {
+          Double threshold=expression.evaluate(null,Double.class);
+          if (threshold == null) {
+            staticTable=false;
+            thresholds=null;
+            break;
+          }
+ else {
+            thresholds[i / 2 - 1]=threshold;
+          }
+        }
+ else {
+          values[i / 2]=expression;
+        }
+      }
+    }
+  }
+  if (thresholds != null) {
+    Arrays.sort(thresholds);
+  }
 }
