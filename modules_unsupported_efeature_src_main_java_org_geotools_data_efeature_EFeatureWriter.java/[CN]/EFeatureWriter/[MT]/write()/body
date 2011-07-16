@@ -1,11 +1,17 @@
 {
-  if (eNext == null) {
+  if (eLive == null) {
     throw new IOException("No current feature to write");
   }
-  eNext.write(eReader.eTx);
-  EObject eObject=eNext.eObject();
-  if (eObject.eResource() == null) {
-    eReader.eDataStore().eResource().getContents().add(eObject);
+  if (!isModified()) {
+    throw new IOException("Feature is not modified");
+  }
+  eLive.write(eReader.eTx);
+  if (eNext == null) {
+    EObject eObject=eLive.eObject();
+    if (eObject.eResource() == null) {
+      eReader.eDataStore().eResource().getContents().add(eObject);
+    }
   }
   eNext=null;
+  eLive=null;
 }

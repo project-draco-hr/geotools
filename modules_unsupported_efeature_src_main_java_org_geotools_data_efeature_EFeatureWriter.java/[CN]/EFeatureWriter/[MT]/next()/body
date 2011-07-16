@@ -4,15 +4,23 @@
   }
   String fid=null;
   try {
-    if (hasNext()) {
+    boolean bHasNext=hasNext();
+    if (isUpdating() && bHasNext) {
       eNext=eReader.next();
-      return eNext;
+      eLive=new ESimpleFeatureImpl(eNext,eReader.eTx);
+      return eLive;
     }
- else {
+ else     if (isAppending()) {
       EFeature eFeature=eNewInstance();
       Object eValues[]=DataUtilities.defaultValues(getFeatureType());
       eSetValues(eFeature,Arrays.asList(eValues));
       return (ESimpleFeature)eFeature.getData(eReader.eTx);
+    }
+    if (bHasNext) {
+      throw new IOException("EFeatureWriter does allow updates");
+    }
+ else {
+      throw new IOException("EFeatureWriter does allow appending");
     }
   }
  catch (  IllegalAttributeException e) {

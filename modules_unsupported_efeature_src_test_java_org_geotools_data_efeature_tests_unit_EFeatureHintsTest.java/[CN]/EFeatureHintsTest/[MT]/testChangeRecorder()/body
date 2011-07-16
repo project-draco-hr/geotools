@@ -1,0 +1,30 @@
+{
+  try {
+    Map<String,Serializable> params=eParams.createParams(eResourceURI.toString(),null);
+    EFeatureDataStore eStore=eStoreFactory.createDataStore(params);
+    EAttribute eAttribute=EFeaturePackage.eINSTANCE.getEFeature_ID();
+    EObjectCondition eCondition=newIsEqual(eAttribute,"F1");
+    WHERE where=new WHERE(eCondition);
+    eAttribute=EFeatureTestsPackage.eINSTANCE.getEFeatureData_Attribute();
+    TreeIterator<EObject> eObjects=eResource.getAllContents();
+    EFeatureFilter eFilter=new EFeatureFilter(where);
+    EFeatureQuery eQuery=new EFeatureQuery(eObjects,eFilter);
+    EFeatureIterator it=eQuery.iterator();
+    EObject eFeature=it.next();
+    Object v=1200L;
+    System.out.println("V: " + v);
+    ChangeRecorder r=new ChangeRecorder(eFeature);
+    Object o1=eFeature.eGet(eAttribute);
+    System.out.println("2: " + o1);
+    Object o2=eFeature.eGet(eAttribute);
+    System.out.println("2: " + o2);
+    eFeature.eSet(eAttribute,v);
+    ChangeDescription c=r.endRecording();
+    c.applyAndReverse();
+    c.apply();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    fail(e);
+  }
+}

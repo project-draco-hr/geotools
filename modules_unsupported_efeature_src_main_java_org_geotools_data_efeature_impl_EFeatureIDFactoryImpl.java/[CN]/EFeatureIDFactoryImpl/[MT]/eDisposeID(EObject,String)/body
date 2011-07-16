@@ -1,0 +1,27 @@
+{
+  eID=eID.replace(ePrefix,"");
+  Long uID=Long.decode(eID);
+  URI eURI=null;
+  for (  Entry<URI,Map<Long,WeakHashSet<EObject>>> it : eIDMap.entrySet()) {
+    WeakHashSet<EObject> eSet=it.getValue().get(uID);
+    if (eSet != null && eSet.contains(eObject)) {
+      eURI=it.getKey();
+    }
+  }
+  if (eURI == null) {
+    throw new IllegalArgumentException("Object " + eObject.getClass().getSimpleName() + "["+ eID+ " ] not found");
+  }
+  WeakHashMap<EObject,Long> eCachedIDs=eInverseIDMap.get(eURI);
+  if (eCachedIDs == null) {
+    throw new IllegalArgumentException("No IDs created for " + "resource [" + eURI + " ]");
+  }
+  uID=eCachedIDs.get(eObject);
+  if (uID == null) {
+    throw new IllegalArgumentException("No ID created for " + eObject);
+  }
+  if (eID.equals(ePrefix + uID)) {
+    throw new IllegalArgumentException("Expected ID " + eID + ","+ "found "+ ePrefix+ uID);
+  }
+  eCachedIDs.remove(eObject);
+  return eID;
+}

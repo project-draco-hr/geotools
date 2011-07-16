@@ -1,0 +1,22 @@
+{
+  String eType=query.getTypeName();
+  String eFolder=EFeatureUtils.toFolderName(eType);
+  String eFeature=EFeatureUtils.toFeatureName(eType);
+  eFolderInfo=eDataStore.ePackageInfo.eGetFolderInfo(eFolder);
+  eFeatureInfo=eFolderInfo.eGetFeatureInfo(eFeature);
+  this.type=eFeatureInfo.getFeatureType();
+  String[] eNames=(query == null ? new String[0] : query.getPropertyNames());
+  if (eNames == null || eNames.length == 0) {
+    this.eAttributes.putAll(eFeatureInfo.eGetAttributeMap(true));
+  }
+ else {
+    this.eAttributes.putAll(eFeatureInfo.eGetAttributeMap(eNames,true));
+  }
+  TreeIterator<EObject> eObjects=eDataStore.eResource().getAllContents();
+  try {
+    eQuery=EFeatureUtils.toEFeatureQuery(eFeatureInfo,eObjects,query.getFilter());
+  }
+ catch (  EFeatureEncoderException ex) {
+    throw (IOException)new IOException("Failed to create EFeatureQuery").initCause(ex);
+  }
+}

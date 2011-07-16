@@ -1,0 +1,19 @@
+{
+  eDataStore.getLogger().fine("Calculating bounds manually");
+  CoordinateReferenceSystem flatCRS=CRS.getHorizontalCRS(eType.getCoordinateReferenceSystem());
+  ReferencedEnvelope bounds=new ReferencedEnvelope(flatCRS);
+  try {
+    if (eReader.hasNext()) {
+      SimpleFeature f=eReader.next();
+      bounds.init(f.getBounds());
+      while (eReader.hasNext()) {
+        f=eReader.next();
+        bounds.include(f.getBounds());
+      }
+    }
+  }
+  finally {
+    eReader.close();
+  }
+  return bounds;
+}

@@ -4,8 +4,12 @@
   String eNsURI=(String)EPACKAGE_NS_URI_PARAM.lookUp(params);
   String eURI=(String)ERESOURCE_URI_PARAM.lookUp(params);
   String eFolders=(String)EFOLDERS_QUERY_PARAM.lookUp(params);
+  boolean eWritable=toValue((Boolean)EFEATURE_WRITABLE_PARAM.lookUp(params),Boolean.class,true);
   if (!canProcess(params)) {
     throw new IOException("One or more parameters are " + "missing or invalid. See log for more information.");
   }
-  return new EFeatureDataStore(eContextID,eDomainID,eNsURI,eURI,eFolders);
+  EFeatureDataStore eDataStore=new EFeatureDataStore(eContextID,eDomainID,eNsURI,eURI,eFolders,eWritable);
+  eDataStore.setFilterFactory(CommonFactoryFinder.getFilterFactory(null));
+  eDataStore.setDataStoreFactory(this);
+  return eDataStore;
 }
