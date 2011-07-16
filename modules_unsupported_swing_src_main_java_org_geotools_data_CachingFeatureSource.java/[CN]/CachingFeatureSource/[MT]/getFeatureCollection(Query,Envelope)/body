@@ -1,19 +1,12 @@
 {
   try {
-    SimpleFeatureType alternate=cachedSchema;
+    SimpleFeatureType base=wrapped.getSchema();
+    SimpleFeatureType alternate=base;
     if (query.getPropertyNames() != Query.ALL_NAMES) {
-      alternate=SimpleFeatureTypeBuilder.retype(cachedSchema,query.getPropertyNames());
-      if (alternate.equals(cachedSchema))       alternate=cachedSchema;
+      alternate=SimpleFeatureTypeBuilder.retype(base,query.getPropertyNames());
+      if (alternate.equals(base))       alternate=base;
     }
-    Filter f;
-    if (query.getFilter() != null && query.getFilter().equals(Filter.EXCLUDE)) {
-      f=null;
-    }
- else {
-      f=query.getFilter();
-    }
-    List featureList=index.query(bounds);
-    return new CachingFeatureCollection(featureList,cachedSchema,alternate,f);
+    return new CachingFeatureCollection(bounds,base,alternate,query);
   }
  catch (  Exception e) {
     throw new DataSourceException("Error occurred extracting features from the spatial index",e);

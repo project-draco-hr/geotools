@@ -1,0 +1,17 @@
+{
+  Envelope filterEnvelope=getEnvelope(filter);
+  Envelope subEnvelope=queryBounds;
+  if (filterEnvelope != null) {
+    subEnvelope=subEnvelope.intersection(queryBounds);
+  }
+  if (subEnvelope.isNull()) {
+    return new EmptyFeatureCollection(targetSchema);
+  }
+  Query subQuery=new Query(query);
+  Filter baseFilter=query.getFilter();
+  if (baseFilter != null && !Filter.INCLUDE.equals(baseFilter)) {
+    Filter mixed=ff.and(baseFilter,filter);
+    subQuery.setFilter(mixed);
+  }
+  return new CachingFeatureCollection(subEnvelope,sourceSchema,targetSchema,subQuery);
+}
