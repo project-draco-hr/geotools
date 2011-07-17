@@ -2,21 +2,19 @@
   if (mapContent != null && !mapContent.getViewport().isEmpty() && acceptRepaintRequests) {
     Rectangle r=getVisibleRect();
     if (baseImage == null || createNewImage) {
-      baseImage=new BufferedImage(r.width,r.height,BufferedImage.TYPE_INT_ARGB);
+      baseImage=GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(r.width,r.height,Transparency.TRANSLUCENT);
       if (baseImageGraphics != null) {
         baseImageGraphics.dispose();
       }
       baseImageGraphics=baseImage.createGraphics();
       clearLabelCache.set(true);
     }
-    if (renderer != null && mapContent != null && !mapContent.layers().isEmpty()) {
-      if (renderingExecutor.submit(mapContent,baseImageGraphics)) {
-        MapPaneEvent ev=new MapPaneEvent(this,MapPaneEvent.Type.RENDERING_STARTED);
-        publishEvent(ev);
-      }
  else {
-        onRenderingRejected();
-      }
+      baseImageGraphics.setBackground(getBackground());
+      baseImageGraphics.clearRect(0,0,r.width,r.height);
+    }
+    if (renderer != null && mapContent != null && !mapContent.layers().isEmpty()) {
+      renderingExecutor.submit(mapContent,renderer,baseImageGraphics,this);
     }
   }
 }

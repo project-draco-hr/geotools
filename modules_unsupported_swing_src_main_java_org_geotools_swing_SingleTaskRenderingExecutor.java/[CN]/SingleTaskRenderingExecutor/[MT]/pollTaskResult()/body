@@ -1,0 +1,26 @@
+{
+  if (!taskFuture.isDone()) {
+    return;
+  }
+  RenderingTask.Status result=RenderingTask.Status.PENDING;
+  try {
+    result=taskFuture.get();
+  }
+ catch (  Exception ex) {
+    throw new IllegalStateException("When getting rendering result",ex);
+  }
+  watcher.cancel(true);
+  cancelLatch.countDown();
+  RenderingExecutorEvent event=new RenderingExecutorEvent(this,task.getId());
+switch (result) {
+case CANCELLED:
+    listener.onRenderingCancelled(event);
+  break;
+case COMPLETED:
+listener.onRenderingCompleted(event);
+break;
+case FAILED:
+listener.onRenderingFailed(event);
+break;
+}
+}
