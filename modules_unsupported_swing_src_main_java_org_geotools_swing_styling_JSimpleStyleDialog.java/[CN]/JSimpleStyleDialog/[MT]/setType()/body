@@ -1,32 +1,34 @@
 {
   GeometryDescriptor desc=schema.getGeometryDescriptor();
-  Class<?> clazz=desc.getType().getBinding();
+  Class<? extends Geometry> clazz=(Class<? extends Geometry>)desc.getType().getBinding();
+  geomType=Geometries.getForBinding(clazz);
   String labelText=schema.getTypeName();
-  if (Polygon.class.isAssignableFrom(clazz) || MultiPolygon.class.isAssignableFrom(clazz)) {
-    geomType=GeomType.POLYGON;
+switch (geomType) {
+case POLYGON:
+case MULTIPOLYGON:
     labelText=labelText + " (polygon)";
-  }
- else   if (LineString.class.isAssignableFrom(clazz) || MultiLineString.class.isAssignableFrom(clazz)) {
-    geomType=GeomType.LINE;
-    labelText=labelText + " (line)";
-  }
- else   if (Point.class.isAssignableFrom(clazz) || MultiPoint.class.isAssignableFrom(clazz)) {
-    geomType=GeomType.POINT;
-    labelText=labelText + " (point)";
-  }
- else {
-    throw new UnsupportedOperationException("No style method for " + clazz.getName());
-  }
-  typeLabel.setText(labelText);
-  for (  Component c : controls.keySet()) {
+  break;
+case LINESTRING:
+case MULTILINESTRING:
+labelText=labelText + " (line)";
+break;
+case POINT:
+case MULTIPOINT:
+labelText=labelText + " (point)";
+break;
+default :
+throw new UnsupportedOperationException("No style method for " + clazz.getName());
+}
+typeLabel.setText(labelText);
+for (Component c : controls.keySet()) {
 switch (controls.get(c)) {
 case LINE:
-      break;
+break;
 case FILL:
-    c.setEnabled(geomType != GeomType.LINE);
-  break;
+c.setEnabled(geomType != Geometries.LINESTRING && geomType != Geometries.MULTILINESTRING);
+break;
 case POINT:
-c.setEnabled(geomType == GeomType.POINT);
+c.setEnabled(geomType == Geometries.POINT || geomType == Geometries.MULTIPOINT);
 break;
 }
 }
