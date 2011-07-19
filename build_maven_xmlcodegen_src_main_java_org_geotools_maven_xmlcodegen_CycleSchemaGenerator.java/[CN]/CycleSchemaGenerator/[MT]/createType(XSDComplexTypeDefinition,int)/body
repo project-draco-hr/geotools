@@ -1,0 +1,83 @@
+{
+  if (types.containsKey(xsdType)) {
+    return (AttributeType)types.get(xsdType);
+  }
+  if (!xsdType.getTargetNamespace().equals(schema.getTargetNamespace())) {
+    return findType(xsdType);
+  }
+  System.err.println("Creating complex type " + name(xsdType));
+  ComplexType gtType=new AbstractLazyComplexTypeImpl(name(xsdType),false,xsdType.isAbstract(),null,null){
+    @Override public AttributeType buildSuper(){
+      XSDTypeDefinition baseType=xsdType.getBaseType();
+      if (baseType != null && baseType.getName() != null && !baseType.equals(xsdType)) {
+        return createType(baseType,DUMMY_DEPTH);
+      }
+ else {
+        return null;
+      }
+    }
+    @SuppressWarnings("unchecked") @Override public Collection<PropertyDescriptor> buildDescriptors(){
+      if (!followComplexTypes) {
+        return null;
+      }
+ else {
+        List<PropertyDescriptor> properties=new ArrayList<PropertyDescriptor>();
+        for (        XSDParticle particle : (List<XSDParticle>)Schemas.getChildElementParticles(xsdType,false)) {
+          XSDElementDeclaration element=(XSDElementDeclaration)particle.getContent();
+          if (element.isElementDeclarationReference()) {
+            element=element.getResolvedElementDeclaration();
+          }
+          XSDTypeDefinition childType=element.getTypeDefinition();
+          if (childType == null) {
+            childType=findGlobalElementXSDType(element);
+          }
+          AttributeType gtType=null;
+          if (childType != null) {
+            gtType=createType(childType,DUMMY_DEPTH);
+          }
+ else {
+            gtType=xsAnyType();
+          }
+          if (gtType == null) {
+            throw new RuntimeException();
+          }
+          int minOccurs=particle.getMinOccurs();
+          int maxOccurs=particle.getMaxOccurs();
+          if (maxOccurs == -1) {
+            maxOccurs=Integer.MAX_VALUE;
+          }
+          boolean isNillable=element.isNillable();
+          AttributeDescriptor ad=factory.createAttributeDescriptor(gtType,new NameImpl(element.getTargetNamespace(),element.getName()),minOccurs,maxOccurs,isNillable,null);
+          properties.add(ad);
+        }
+        for (        XSDAttributeDeclaration attribute : (List<XSDAttributeDeclaration>)Schemas.getAttributeDeclarations(xsdType,false)) {
+          if (attribute.isAttributeDeclarationReference()) {
+            attribute=attribute.getResolvedAttributeDeclaration();
+          }
+          XSDSimpleTypeDefinition type=attribute.getTypeDefinition();
+          if (type == null) {
+            for (            XSDAttributeDeclaration ad : schema.getAttributeDeclarations()) {
+              if (Utilities.equals(ad.getTargetNamespace(),attribute.getTargetNamespace()) && Utilities.equals(ad.getName(),attribute.getName())) {
+                type=ad.getTypeDefinition();
+                break;
+              }
+            }
+          }
+          if (type == null) {
+            throw new RuntimeException("Could not locate type definition for attribute " + name(attribute) + " of "+ getName());
+          }
+          if (type.getName() == null) {
+            continue;
+          }
+          AttributeType gtType=createType(type,DUMMY_DEPTH);
+          AttributeDescriptor ad=factory.createAttributeDescriptor(gtType,name(attribute),0,1,true,null);
+          properties.add(ad);
+        }
+        return properties;
+      }
+    }
+  }
+;
+  types.put(xsdType,gtType);
+  return gtType;
+}

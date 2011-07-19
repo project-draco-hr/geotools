@@ -1,2 +1,46 @@
 {
+  GraphGenerator gg=new BasicDirectedGraphGenerator();
+  for (Iterator itr=types.values().iterator(); itr.hasNext(); ) {
+    AttributeType type=(AttributeType)itr.next();
+    AttributeType superType=type.getSuper();
+    if (superType != null) {
+      gg.add(new Object[]{type,superType});
+    }
+    if (type instanceof ComplexType) {
+      ComplexType cType=(ComplexType)type;
+      Collection atts=cType.getDescriptors();
+      for (Iterator aitr=atts.iterator(); aitr.hasNext(); ) {
+        PropertyDescriptor ad=(PropertyDescriptor)aitr.next();
+        gg.add(new Object[]{type,ad.getType()});
+      }
+    }
+  }
+  Graph graph=gg.getGraph();
+  CycleDetector cycleDetector=new DirectedCycleDetector(graph);
+  if (cycleDetector.containsCycle()) {
+    logger.info("Cycle found");
+    return null;
+  }
+  DirectedDepthFirstTopologicalIterator iterator=new DirectedDepthFirstTopologicalIterator();
+  final ArrayList sorted=new ArrayList();
+  GraphWalker walker=new GraphWalker(){
+    public int visit(    Graphable element,    GraphTraversal traversal){
+      AttributeType type=(AttributeType)element.getObject();
+      if (type.getName().getNamespaceURI().equals(schema.getTargetNamespace())) {
+        sorted.add(element.getObject());
+      }
+      return GraphTraversal.CONTINUE;
+    }
+    public void finish(){
+    }
+  }
+;
+  GraphTraversal traversal=new BasicGraphTraversal(graph,walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  if (sorted.size() != types.size()) {
+    throw new RuntimeException("Internal error in schema dependency sort");
+  }
+  Collections.reverse(sorted);
+  return sorted;
 }

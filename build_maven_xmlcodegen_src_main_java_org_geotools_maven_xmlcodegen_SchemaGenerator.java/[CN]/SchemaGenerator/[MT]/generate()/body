@@ -1,7 +1,7 @@
 {
   List typeDefs=GeneratorUtils.types(schema,includes);
   if (simpleTypes) {
-    logger.info("Generting simple types");
+    logger.fine("Generating simple types");
     for (Iterator itr=typeDefs.iterator(); itr.hasNext(); ) {
       XSDTypeDefinition xsdType=(XSDTypeDefinition)itr.next();
       if (xsdType.getName() == null) {
@@ -11,13 +11,13 @@
         continue;
       }
       if (xsdType instanceof XSDSimpleTypeDefinition) {
-        logger.info(xsdType.getName());
+        logger.fine(xsdType.getName());
         createType((XSDSimpleTypeDefinition)xsdType,0);
       }
     }
   }
   if (complexTypes) {
-    logger.info("Generting complex types");
+    logger.fine("Generating complex types");
     for (Iterator itr=typeDefs.iterator(); itr.hasNext(); ) {
       XSDTypeDefinition xsdType=(XSDTypeDefinition)itr.next();
       if (xsdType.getName() == null) {
@@ -27,12 +27,13 @@
         continue;
       }
       if (xsdType instanceof XSDComplexTypeDefinition) {
-        logger.info(xsdType.getName());
+        logger.fine(xsdType.getName());
         try {
           createType((XSDComplexTypeDefinition)xsdType,0);
         }
  catch (        Exception e) {
           logger.warning("XERRORX generating " + xsdType);
+          e.printStackTrace();
         }
       }
     }
@@ -46,7 +47,7 @@
     gtSchema.put(gtType.getName(),gtType);
   }
   Object[] input=new Object[]{gtSchema,Schemas.getTargetPrefix(schema),this};
-  String result=execute("SchemaClassTemplate",input);
+  String result=execute(getSchemaClassTemplateName(),input);
   String className=Schemas.getTargetPrefix(schema).toUpperCase() + "Schema";
   write(result,className,sourceLocation);
 }

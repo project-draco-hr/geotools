@@ -121,7 +121,32 @@
   XSDSchema xsdSchema=null;
   try {
     getLog().info("Parsing schema: " + schemaLocation);
-    xsdSchema=Schemas.parse(schemaLocation.getAbsolutePath(),new XSDSchemaLocator[]{locator},new XSDSchemaLocationResolver[]{locationResolver});
+    if (relativeSchemaReference) {
+      xsdSchema=Schemas.parse(schemaLocation.getAbsolutePath(),Collections.EMPTY_LIST,Collections.singletonList(new XSDSchemaLocationResolver(){
+        public String resolveSchemaLocation(        XSDSchema xsdSchema,        String namespaceURI,        String schemaLocationURI){
+          try {
+            URI contextUri=new URI(xsdSchema.getSchemaLocation());
+            if (contextUri.isOpaque()) {
+              URL contextUrl=new URL(xsdSchema.getSchemaLocation());
+              return (new URL(contextUrl,schemaLocationURI)).toString();
+            }
+ else {
+              return contextUri.resolve(schemaLocationURI).toString();
+            }
+          }
+ catch (          URISyntaxException e) {
+            throw new RuntimeException(e);
+          }
+catch (          MalformedURLException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
+));
+    }
+ else {
+      xsdSchema=Schemas.parse(schemaLocation.getAbsolutePath(),new XSDSchemaLocator[]{locator},new XSDSchemaLocationResolver[]{locationResolver});
+    }
     if (xsdSchema == null) {
       throw new NullPointerException();
     }

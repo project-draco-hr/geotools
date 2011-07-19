@@ -1,0 +1,23 @@
+{
+  if (types.containsKey(xsdType)) {
+    return (AttributeType)types.get(xsdType);
+  }
+  if (!xsdType.getTargetNamespace().equals(schema.getTargetNamespace())) {
+    return (AttributeType)findType(xsdType);
+  }
+  System.err.println("Creating simple type " + name(xsdType));
+  AttributeType gtType=new AbstractLazyAttributeTypeImpl(name(xsdType),Object.class,false,false,null,null){
+    @Override public AttributeType buildSuper(){
+      XSDTypeDefinition baseType=xsdType.getBaseType();
+      if (baseType != null && baseType.getName() != null && !baseType.equals(xsdType)) {
+        return createType(baseType,Integer.MAX_VALUE);
+      }
+ else {
+        return null;
+      }
+    }
+  }
+;
+  types.put(xsdType,gtType);
+  return gtType;
+}
