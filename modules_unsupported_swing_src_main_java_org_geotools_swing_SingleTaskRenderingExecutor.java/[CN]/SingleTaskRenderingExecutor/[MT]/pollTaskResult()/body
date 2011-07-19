@@ -1,19 +1,24 @@
 {
-  if (!taskFuture.isDone()) {
+  if (taskFuture == null) {
+    return;
+  }
+ else   if (!taskFuture.isDone()) {
     notifyStarted(false);
     return;
   }
   notifyStarted(true);
-  RenderingTask.Status result=RenderingTask.Status.PENDING;
+  RenderingTask.Status result=null;
+  long taskId=task.getId();
   try {
     result=taskFuture.get();
   }
  catch (  Exception ex) {
     throw new IllegalStateException("When getting rendering result",ex);
   }
-  watcher.cancel(true);
   cancelLatch.countDown();
-  RenderingExecutorEvent event=new RenderingExecutorEvent(this,task.getId());
+  task=null;
+  taskFuture=null;
+  RenderingExecutorEvent event=new RenderingExecutorEvent(this,taskId);
 switch (result) {
 case CANCELLED:
     listener.onRenderingCancelled(event);
