@@ -1,11 +1,13 @@
 {
   createSubmitObjects();
-  long time=(long)(WAIT_TIMEOUT * 2 * rand.nextDouble());
+  long time=(long)(WAIT_TIMEOUT * 0.5 * rand.nextDouble());
   renderer.setPaintTime(time);
   renderer.setVerbose(false);
+  listener.setExpected(WaitingListener.EventType.STARTED);
   listener.setExpected(WaitingListener.EventType.CANCELLED);
   long id=executor.submit(mapContent,renderer,graphics,listener);
+  assertTrue(listener.await(WaitingListener.EventType.STARTED,WAIT_TIMEOUT));
   executor.cancel(id);
-  boolean gotEvent=listener.await(WaitingListener.EventType.CANCELLED,WAIT_TIMEOUT);
-  assertTrue(gotEvent);
+  boolean gotCancel=listener.await(WaitingListener.EventType.CANCELLED,WAIT_TIMEOUT);
+  assertTrue(gotCancel || listener.gotEvent(WaitingListener.EventType.COMPLETED));
 }
