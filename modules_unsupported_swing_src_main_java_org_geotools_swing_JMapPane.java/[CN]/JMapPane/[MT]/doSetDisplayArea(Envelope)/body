@@ -1,18 +1,19 @@
 {
-  if (mapContent == null) {
-    throw new IllegalStateException("No MapContent instance set");
-  }
-  if (equalsFullExtent(envelope)) {
-    mapContent.getViewport().setBounds(fullExtent);
+  if (mapContent != null) {
+    if (equalsFullExtent(envelope)) {
+      mapContent.getViewport().setBounds(fullExtent);
+    }
+ else {
+      CoordinateReferenceSystem crs=envelope.getCoordinateReferenceSystem();
+      if (crs == null) {
+        crs=mapContent.getCoordinateReferenceSystem();
+      }
+      ReferencedEnvelope refEnv=new ReferencedEnvelope(envelope.getMinimum(0),envelope.getMaximum(0),envelope.getMinimum(1),envelope.getMaximum(1),crs);
+      mapContent.getViewport().setBounds(refEnv);
+    }
   }
  else {
-    CoordinateReferenceSystem crs=envelope.getCoordinateReferenceSystem();
-    if (crs == null) {
-      crs=mapContent.getCoordinateReferenceSystem();
-    }
-    ReferencedEnvelope refEnv=new ReferencedEnvelope(envelope.getMinimum(0),envelope.getMaximum(0),envelope.getMinimum(1),envelope.getMaximum(1),crs);
-    mapContent.getViewport().setBounds(refEnv);
+    pendingDisplayArea=new ReferencedEnvelope(envelope);
   }
-  MapPaneEvent ev=new MapPaneEvent(this,MapPaneEvent.Type.DISPLAY_AREA_CHANGED);
-  publishEvent(ev);
+  publishEvent(new MapPaneEvent(this,MapPaneEvent.Type.DISPLAY_AREA_CHANGED,getDisplayArea()));
 }
