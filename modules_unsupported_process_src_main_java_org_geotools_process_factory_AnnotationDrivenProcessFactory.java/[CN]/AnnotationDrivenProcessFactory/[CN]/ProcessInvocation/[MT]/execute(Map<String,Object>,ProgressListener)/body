@@ -1,0 +1,80 @@
+{
+  Object[] args=buildProcessArguments(method,input,monitor,false);
+  Object value=null;
+  try {
+    value=method.invoke(targetObject,args);
+  }
+ catch (  IllegalAccessException e) {
+    if (monitor != null) {
+      monitor.exceptionOccurred(e);
+    }
+    throw new ProcessException(e);
+  }
+catch (  InvocationTargetException e) {
+    Throwable t=e.getTargetException();
+    if (monitor != null) {
+      monitor.exceptionOccurred(t);
+    }
+    if (t instanceof ProcessException) {
+      throw ((ProcessException)t);
+    }
+ else {
+      throw new ProcessException(t);
+    }
+  }
+  if (value instanceof Object[]) {
+    Object values[]=(Object[])value;
+    Map<String,Object> result=new LinkedHashMap<String,Object>();
+    int i=0;
+    for (    Annotation annotation : method.getAnnotations()) {
+      if (i >= values.length)       break;
+      Object obj=values[i];
+      if (annotation instanceof DescribeResult) {
+        DescribeResult info=(DescribeResult)annotation;
+        addResult(result,obj,info);
+      }
+      if (annotation instanceof DescribeResults) {
+        DescribeResults info=(DescribeResults)annotation;
+        for (        DescribeResult dr : info.value()) {
+          addResult(result,obj,dr);
+        }
+      }
+    }
+    return result;
+  }
+ else   if (value instanceof Map) {
+    Map<String,Object> result=new LinkedHashMap<String,Object>();
+    Map<String,Object> map=(Map<String,Object>)value;
+    for (    Annotation annotation : method.getAnnotations()) {
+      if (annotation instanceof DescribeResult) {
+        DescribeResult info=(DescribeResult)annotation;
+        Object resultValue=map.get(info.name());
+        if (resultValue != null) {
+          addResult(result,resultValue,info);
+        }
+      }
+      if (annotation instanceof DescribeResults) {
+        DescribeResults info=(DescribeResults)annotation;
+        for (        DescribeResult dr : info.value()) {
+          Object resultValue=map.get(dr.name());
+          if (resultValue != null) {
+            addResult(result,resultValue,dr);
+          }
+        }
+      }
+    }
+    return result;
+  }
+ else   if (!Void.class.equals(method.getReturnType())) {
+    Map<String,Object> result=new LinkedHashMap<String,Object>();
+    DescribeResult dr=method.getAnnotation(DescribeResult.class);
+    if (dr != null) {
+      result.put(dr.name(),value);
+    }
+ else {
+      result.put("result",value);
+    }
+    return result;
+  }
+  return null;
+}

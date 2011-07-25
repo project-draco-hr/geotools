@@ -1,0 +1,44 @@
+{
+  Class<?>[] paramTypes=method.getParameterTypes();
+  Annotation[][] annotations=method.getParameterAnnotations();
+  Object args[]=new Object[paramTypes.length];
+  for (int i=0; i < args.length; i++) {
+    if (ProgressListener.class.equals(paramTypes[i])) {
+      args[i]=monitor;
+    }
+ else {
+      if ((annotations[i] == null || annotations[i].length == 0) && skip) {
+        continue;
+      }
+      Class<? extends Object> target=targetObject == null ? null : targetObject.getClass();
+      Parameter p=paramInfo(target,i,paramTypes[i],annotations[i]);
+      Object value=input.get(p.key);
+      args[i]=Converters.convert(value,paramTypes[i]);
+      if (args[i] == null && value != null) {
+        throw new ProcessException("Could not convert " + value + " to target type "+ paramTypes[i].getName());
+      }
+      if (p.minOccurs > 0 && value == null) {
+        throw new ProcessException("Parameter " + p.key + " is missing but has min multiplicity > 0");
+      }
+ else       if (p.maxOccurs > 1) {
+        int size=-1;
+        if (args[i] == null) {
+          size=0;
+        }
+ else         if (paramTypes[i].isArray()) {
+          size=Array.getLength(args[i]);
+        }
+ else {
+          size=((Collection)args[i]).size();
+        }
+        if (size < p.minOccurs) {
+          throw new ProcessException("Parameter " + p.key + " has "+ size+ " elements but min occurrences is "+ p.minOccurs);
+        }
+        if (size > p.maxOccurs) {
+          throw new ProcessException("Parameter " + p.key + " has "+ size+ " elements but max occurrences is "+ p.maxOccurs);
+        }
+      }
+    }
+  }
+  return args;
+}

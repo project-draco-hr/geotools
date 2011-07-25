@@ -1,0 +1,62 @@
+{
+  DescribeParameter info=null;
+  for (  Annotation annotation : paramAnnotations) {
+    if (annotation instanceof DescribeParameter) {
+      info=(DescribeParameter)annotation;
+      break;
+    }
+  }
+  boolean collection=Collection.class.isAssignableFrom(type);
+  int min=1;
+  int max=1;
+  if (collection) {
+    if (info != null) {
+      type=info.collectionType();
+      if (type == null) {
+        type=Object.class;
+      }
+      min=info.min() > -1 ? info.min() : 0;
+      max=info.max() > -1 ? info.max() : Integer.MAX_VALUE;
+    }
+ else {
+      type=Object.class;
+      min=0;
+      max=Integer.MAX_VALUE;
+    }
+  }
+ else   if (type.isArray()) {
+    if (info != null) {
+      min=info.min() > -1 ? info.min() : 0;
+      max=info.max() > -1 ? info.max() : Integer.MAX_VALUE;
+    }
+ else {
+      min=0;
+      max=Integer.MAX_VALUE;
+    }
+    type=type.getComponentType();
+  }
+ else {
+    if (info != null) {
+      if (info.min() > 1) {
+        throw new IllegalArgumentException("The non collection parameter at index " + i + " cannot have a min multiplicity > 1");
+      }
+      min=info.min() > -1 ? info.min() : 1;
+      if (info.max() > 1) {
+        throw new IllegalArgumentException("The non collection parameter at index " + i + " cannot have a max multiplicity > 1");
+      }
+      max=info.max() > -1 ? info.max() : 1;
+    }
+  }
+  if (min > max) {
+    throw new IllegalArgumentException("Min occurrences > max occurrences for parameter at index " + i);
+  }
+  if (min == 0 && max == 1 && type.isPrimitive()) {
+    throw new IllegalArgumentException("Optional values cannot be primitives, " + "use the associated object wrapper instead: " + info.name() + " in process "+ process.getName());
+  }
+  if (info != null) {
+    return new Parameter(info.name(),type,new SimpleInternationalString(info.name()),new SimpleInternationalString(info.description()),min > 0,min,max,null,null);
+  }
+ else {
+    return new Parameter("arg" + i,type,new SimpleInternationalString("Argument " + i),new SimpleInternationalString("Input " + type.getName() + " value"),min > 0,min,max,null,null);
+  }
+}

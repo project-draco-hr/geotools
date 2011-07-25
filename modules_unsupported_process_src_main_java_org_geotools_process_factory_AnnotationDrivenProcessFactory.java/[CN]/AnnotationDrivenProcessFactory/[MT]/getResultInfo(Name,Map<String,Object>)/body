@@ -1,0 +1,23 @@
+{
+  Method method=method(name.getLocalPart());
+  Map<String,Parameter<?>> result=new LinkedHashMap<String,Parameter<?>>();
+  for (  Annotation annotation : method.getAnnotations()) {
+    if (annotation instanceof DescribeResult) {
+      DescribeResult info=(DescribeResult)annotation;
+      addResult(method,result,info);
+    }
+ else     if (annotation instanceof DescribeResults) {
+      DescribeResults info=(DescribeResults)annotation;
+      for (      DescribeResult dr : info.value()) {
+        addResult(method,result,dr);
+      }
+    }
+  }
+  if (result.isEmpty()) {
+    if (!Void.class.equals(method.getReturnType())) {
+      Parameter<?> VALUE=new Parameter("result",method.getReturnType(),"Process result","No description is available");
+      result.put(VALUE.key,VALUE);
+    }
+  }
+  return result;
+}
