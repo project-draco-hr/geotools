@@ -1,0 +1,22 @@
+{
+  SimpleFeatureSource featureSource=dataStore.getFeatureSource("ft3");
+  StringBuffer buf=new StringBuffer("select id, geometry");
+  dialect.encodePostSelect(featureSource.getSchema(),buf);
+  buf.append(" from ft3 order by id");
+  Connection connection=dataStore.getConnection(Transaction.AUTO_COMMIT);
+  Statement s=connection.createStatement();
+  ResultSet rs=s.executeQuery(buf.toString());
+  assertEquals("java.sql.Clob",rs.getMetaData().getColumnClassName(2));
+  assertEquals("java.lang.String",rs.getMetaData().getColumnClassName(3));
+  for (int i=0; i < expectInline.length; i++) {
+    rs.next();
+    String result=rs.getString(3);
+    if (expectInline[i]) {
+      assertNotNull(result);
+      new WKTReader().read(result);
+    }
+ else {
+      assertNull(result);
+    }
+  }
+}
