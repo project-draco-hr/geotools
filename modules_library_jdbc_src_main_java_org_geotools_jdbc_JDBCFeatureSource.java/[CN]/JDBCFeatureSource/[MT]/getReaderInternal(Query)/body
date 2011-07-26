@@ -29,10 +29,10 @@
   Connection cx=getDataStore().getConnection(getState());
   FeatureReader<SimpleFeatureType,SimpleFeature> reader;
   try {
-    if (getState().getTransaction() == Transaction.AUTO_COMMIT) {
-      cx.setAutoCommit(false);
-    }
     SQLDialect dialect=getDataStore().getSQLDialect();
+    if (getState().getTransaction() == Transaction.AUTO_COMMIT) {
+      cx.setAutoCommit(dialect.isAutoCommitQuery());
+    }
     if (dialect instanceof PreparedStatementSQLDialect) {
       PreparedStatement ps=getDataStore().selectSQLPS(querySchema,preQuery,cx);
       reader=new JDBCFeatureReader(ps,cx,this,querySchema,query.getHints());
