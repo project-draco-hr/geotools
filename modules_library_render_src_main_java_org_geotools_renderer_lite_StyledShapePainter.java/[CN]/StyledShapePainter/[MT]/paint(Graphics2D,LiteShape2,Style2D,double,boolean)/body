@@ -84,7 +84,18 @@
       if (ps2d.getFill() != null) {
         Paint paint=ps2d.getFill();
         if (paint instanceof TexturePaint) {
-          paint=(TexturePaint)paint;
+          TexturePaint tp=(TexturePaint)paint;
+          BufferedImage image=tp.getImage();
+          Rectangle2D cornerRect=tp.getAnchorRect();
+          Point2D anchorPoint=(Point2D)graphics.getRenderingHint(TEXTURE_ANCHOR_HINT_KEY);
+          Rectangle2D alignedRect=null;
+          if (anchorPoint != null) {
+            alignedRect=new Rectangle2D.Double(Math.round(anchorPoint.getX()),Math.round(anchorPoint.getY()),cornerRect.getWidth(),cornerRect.getHeight());
+          }
+ else {
+            alignedRect=new Rectangle2D.Double(0.0,0.0,cornerRect.getWidth(),cornerRect.getHeight());
+          }
+          paint=new TexturePaint(image,alignedRect);
         }
         graphics.setPaint(paint);
         graphics.setComposite(ps2d.getFillComposite());
