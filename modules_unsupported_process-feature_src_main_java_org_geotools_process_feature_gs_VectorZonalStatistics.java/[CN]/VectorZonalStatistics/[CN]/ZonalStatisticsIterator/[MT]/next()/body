@@ -1,0 +1,27 @@
+{
+  SimpleFeature zone=zones.next();
+  try {
+    Geometry zoneGeom=(Geometry)zone.getDefaultGeometry();
+    CoordinateReferenceSystem dataCrs=data.getSchema().getCoordinateReferenceSystem();
+    CoordinateReferenceSystem zonesCrs=builder.getFeatureType().getGeometryDescriptor().getCoordinateReferenceSystem();
+    if (!CRS.equalsIgnoreMetadata(zonesCrs,dataCrs)) {
+      zoneGeom=JTS.transform(zoneGeom,CRS.findMathTransform(zonesCrs,dataCrs,true));
+    }
+    Filter areaFilter=ff.within(ff.property(dataGeomName),ff.literal(zoneGeom));
+    SimpleFeatureCollection zoneCollection=data.subCollection(areaFilter);
+    Results stats=new AggregateProcess().execute(zoneCollection,dataAttribute,FUNCTIONS,true,null);
+    builder.addAll(zone.getAttributes());
+    if (stats != null) {
+      builder.add(stats.getCount());
+      builder.add(stats.getMin());
+      builder.add(stats.getMax());
+      builder.add(stats.getSum());
+      builder.add(stats.getAverage());
+      builder.add(stats.getStandardDeviation());
+    }
+    return builder.buildFeature(zone.getID());
+  }
+ catch (  Exception e) {
+    throw new ProcessException("Failed to compute statistics on feature " + zone,e);
+  }
+}

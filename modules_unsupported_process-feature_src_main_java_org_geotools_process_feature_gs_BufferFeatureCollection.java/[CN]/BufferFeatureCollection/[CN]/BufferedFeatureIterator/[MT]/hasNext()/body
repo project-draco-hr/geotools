@@ -1,0 +1,21 @@
+{
+  while (next == null && delegate.hasNext()) {
+    SimpleFeature f=delegate.next();
+    for (    Object value : f.getAttributes()) {
+      if (value instanceof Geometry) {
+        Double fDistance=distance;
+        if (this.attribute != null) {
+          fDistance=Converters.convert(f.getAttribute(this.attribute),Double.class);
+        }
+        if (fDistance != null && fDistance != 0.0) {
+          value=((Geometry)value).buffer(fDistance);
+        }
+      }
+      fb.add(value);
+    }
+    next=fb.buildFeature("" + count);
+    count++;
+    fb.reset();
+  }
+  return next != null;
+}

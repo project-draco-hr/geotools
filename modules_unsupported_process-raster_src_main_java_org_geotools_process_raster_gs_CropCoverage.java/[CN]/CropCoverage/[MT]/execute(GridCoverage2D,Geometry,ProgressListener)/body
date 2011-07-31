@@ -1,0 +1,22 @@
+{
+  CoordinateReferenceSystem crs;
+  if (cropShape.getUserData() instanceof CoordinateReferenceSystem) {
+    crs=(CoordinateReferenceSystem)cropShape.getUserData();
+  }
+ else {
+    crs=coverage.getCoordinateReferenceSystem();
+  }
+  GeneralEnvelope bounds=new GeneralEnvelope(new ReferencedEnvelope(cropShape.getEnvelopeInternal(),crs));
+  GeometryCollection roi;
+  if (!(cropShape instanceof GeometryCollection)) {
+    roi=cropShape.getFactory().createGeometryCollection(new Geometry[]{cropShape});
+  }
+ else {
+    roi=(GeometryCollection)cropShape;
+  }
+  final ParameterValueGroup param=CROP.getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("Envelope").setValue(bounds);
+  param.parameter("ROI").setValue(roi);
+  return (GridCoverage2D)PROCESSOR.doOperation(param);
+}

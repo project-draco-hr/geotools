@@ -1,0 +1,24 @@
+{
+  while (next == null && delegate.hasNext()) {
+    boolean clippedOut=false;
+    SimpleFeature f=delegate.next();
+    for (    AttributeDescriptor ad : f.getFeatureType().getAttributeDescriptors()) {
+      Object attribute=f.getAttribute(ad.getName());
+      if (ad instanceof GeometryDescriptor) {
+        Class target=ad.getType().getBinding();
+        attribute=clipGeometry((Geometry)attribute,target);
+        if (attribute == null && f.getFeatureType().getGeometryDescriptor() == ad) {
+          fb.reset();
+          clippedOut=true;
+          break;
+        }
+      }
+      fb.add(attribute);
+    }
+    if (!clippedOut) {
+      next=fb.buildFeature(f.getID());
+    }
+    fb.reset();
+  }
+  return next != null;
+}

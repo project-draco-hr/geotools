@@ -1,0 +1,81 @@
+{
+  int lpad, rpad, tpad, bpad;
+  if (interp != null) {
+    lpad=interp.getLeftPadding();
+    rpad=interp.getRightPadding();
+    tpad=interp.getTopPadding();
+    bpad=interp.getBottomPadding();
+  }
+ else {
+    lpad=rpad=tpad=bpad=0;
+  }
+  int minX, maxX, minY, maxY;
+  RandomIter iter;
+  if (extender != null) {
+    minX=src.getMinX();
+    maxX=src.getMaxX();
+    minY=src.getMinY();
+    maxY=src.getMaxY();
+    Rectangle bounds=new Rectangle(src.getMinX() - lpad,src.getMinY() - tpad,src.getWidth() + lpad + rpad,src.getHeight() + tpad + bpad);
+    iter=RandomIterFactory.create(src.getExtendedData(bounds,extender),bounds);
+  }
+ else {
+    minX=src.getMinX() + lpad;
+    maxX=src.getMaxX() - rpad;
+    minY=src.getMinY() + tpad;
+    maxY=src.getMaxY() - bpad;
+    iter=RandomIterFactory.create(src,src.getBounds());
+  }
+  int kwidth=interp.getWidth();
+  int kheight=interp.getHeight();
+  int dstWidth=dst.getWidth();
+  int dstHeight=dst.getHeight();
+  int dstBands=dst.getNumBands();
+  int lineStride=dst.getScanlineStride();
+  int pixelStride=dst.getPixelStride();
+  int[] bandOffsets=dst.getBandOffsets();
+  int[][] data=dst.getIntDataArrays();
+  int precH=1 << interp.getSubsampleBitsH();
+  int precV=1 << interp.getSubsampleBitsV();
+  float[] warpData=new float[2 * dstWidth];
+  int[][] samples=new int[kheight][kwidth];
+  int lineOffset=0;
+  int[] backgroundInt=new int[dstBands];
+  for (int i=0; i < dstBands; i++) {
+    backgroundInt[i]=(int)backgroundValues[i];
+  }
+  for (int h=0; h < dstHeight; h++) {
+    int pixelOffset=lineOffset;
+    lineOffset+=lineStride;
+    warpRect(dst.getX(),dst.getY() + h,dstWidth,1,warpData);
+    int count=0;
+    for (int w=0; w < dstWidth; w++) {
+      float sx=warpData[count++];
+      float sy=warpData[count++];
+      int xint=floor(sx);
+      int yint=floor(sy);
+      int xfrac=(int)((sx - xint) * precH);
+      int yfrac=(int)((sy - yint) * precV);
+      if (xint < minX || xint >= maxX || yint < minY || yint >= maxY) {
+        if (setBackground) {
+          for (int b=0; b < dstBands; b++) {
+            data[b][pixelOffset + bandOffsets[b]]=backgroundInt[b];
+          }
+        }
+      }
+ else {
+        xint-=lpad;
+        yint-=tpad;
+        for (int b=0; b < dstBands; b++) {
+          for (int j=0; j < kheight; j++) {
+            for (int i=0; i < kwidth; i++) {
+              samples[j][i]=iter.getSample(xint + i,yint + j,b);
+            }
+          }
+          data[b][pixelOffset + bandOffsets[b]]=interp.interpolate(samples,xfrac,yfrac);
+        }
+      }
+      pixelOffset+=pixelStride;
+    }
+  }
+}

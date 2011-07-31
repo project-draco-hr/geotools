@@ -1,0 +1,55 @@
+{
+  while ((next == null && delegate.hasNext()) || (next == null && added)) {
+    if (complete) {
+      first=delegate.next();
+      intersectedGeometries=null;
+    }
+    for (    Object attribute : first.getAttributes()) {
+      if (attribute instanceof Geometry && attribute.equals(first.getDefaultGeometry())) {
+        Geometry currentGeom=(Geometry)attribute;
+        if (intersectedGeometries == null && !added) {
+          intersectedGeometries=filteredCollection(currentGeom,subFeatureCollection);
+          iterator=intersectedGeometries.features();
+        }
+        try {
+          while (iterator.hasNext()) {
+            added=false;
+            SimpleFeature second=iterator.next();
+            if (currentGeom.getEnvelope().intersects(((Geometry)second.getDefaultGeometry()))) {
+              attribute=currentGeom.intersection((Geometry)second.getDefaultGeometry());
+              if (((Geometry)attribute).getNumGeometries() > 0) {
+                fb.add(attribute);
+                for (                Object firstAttribute : first.getAttributes()) {
+                  if (!(firstAttribute instanceof Geometry)) {
+                    fb.add(firstAttribute);
+                  }
+                }
+                for (                Object secondAttribute : second.getAttributes()) {
+                  if (!(secondAttribute instanceof Geometry)) {
+                    fb.add(secondAttribute);
+                  }
+                }
+                next=fb.buildFeature(iterationIndex.toString());
+                if (iterator.hasNext()) {
+                  complete=false;
+                  added=true;
+                  iterationIndex++;
+                  return next != null;
+                }
+                iterationIndex++;
+              }
+            }
+            complete=false;
+          }
+          complete=true;
+        }
+  finally {
+          if (!added) {
+            iterator.close();
+          }
+        }
+      }
+    }
+  }
+  return next != null;
+}

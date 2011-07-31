@@ -1,0 +1,24 @@
+{
+  Method invertQueryMethod=lookupInvertQuery(targetObject,method.getName());
+  if (invertQueryMethod == null) {
+    return targetQuery;
+  }
+  try {
+    Object[] args=buildProcessArguments(invertQueryMethod,input,null,true);
+    args[args.length - 2]=targetQuery;
+    args[args.length - 1]=gridGeometry;
+    return (Query)invertQueryMethod.invoke(targetObject,args);
+  }
+ catch (  IllegalAccessException e) {
+    throw new ProcessException(e);
+  }
+catch (  InvocationTargetException e) {
+    Throwable t=e.getTargetException();
+    if (t instanceof ProcessException) {
+      throw ((ProcessException)t);
+    }
+ else {
+      throw new ProcessException(t);
+    }
+  }
+}

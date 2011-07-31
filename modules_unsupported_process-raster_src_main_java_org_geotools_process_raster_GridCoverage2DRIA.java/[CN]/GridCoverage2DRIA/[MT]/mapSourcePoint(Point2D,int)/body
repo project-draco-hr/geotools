@@ -1,0 +1,23 @@
+{
+  if (srcPt == null) {
+    throw new IllegalArgumentException("Bad dest pt");
+  }
+ else   if (sourceIndex < 0 || sourceIndex >= getNumSources()) {
+    throw new IndexOutOfBoundsException("Bad src");
+  }
+  double coords[]=new double[]{srcPt.getX(),srcPt.getY()};
+  try {
+    mapSrcPoint(coords);
+  }
+ catch (  TransformException e) {
+    LOGGER.log(Level.WARNING,"Error transforming coords",e);
+    return null;
+  }
+  Point2D ret=((Point2D)srcPt.clone());
+  ret.setLocation(coords[0],coords[1]);
+  if (inside(ret,src.getRenderedImage()))   return ret;
+ else {
+    LOGGER.log(Level.WARNING,"{0} mapped to {1} lies outside {2},{3}+{4}x{5}",new Object[]{srcPt,ret,src.getRenderedImage().getMinX(),src.getRenderedImage().getMinX(),src.getRenderedImage().getWidth(),src.getRenderedImage().getHeight()});
+    return null;
+  }
+}

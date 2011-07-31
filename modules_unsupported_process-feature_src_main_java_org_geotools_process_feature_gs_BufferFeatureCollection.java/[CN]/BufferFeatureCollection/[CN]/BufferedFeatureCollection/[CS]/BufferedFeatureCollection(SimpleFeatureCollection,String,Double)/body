@@ -1,0 +1,24 @@
+{
+  super(delegate);
+  this.distance=distance;
+  this.attribute=attribute;
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  for (  AttributeDescriptor descriptor : delegate.getSchema().getAttributeDescriptors()) {
+    if (!(descriptor.getType() instanceof GeometryTypeImpl) || (!delegate.getSchema().getGeometryDescriptor().equals(descriptor))) {
+      tb.add(descriptor);
+    }
+ else {
+      AttributeTypeBuilder builder=new AttributeTypeBuilder();
+      builder.setBinding(MultiPolygon.class);
+      AttributeDescriptor attributeDescriptor=builder.buildDescriptor(descriptor.getLocalName(),builder.buildType());
+      tb.add(attributeDescriptor);
+      if (tb.getDefaultGeometry() == null) {
+        tb.setDefaultGeometry(descriptor.getLocalName());
+      }
+    }
+  }
+  tb.setDescription(delegate.getSchema().getDescription());
+  tb.setCRS(delegate.getSchema().getCoordinateReferenceSystem());
+  tb.setName(delegate.getSchema().getName());
+  this.schema=tb.buildFeatureType();
+}

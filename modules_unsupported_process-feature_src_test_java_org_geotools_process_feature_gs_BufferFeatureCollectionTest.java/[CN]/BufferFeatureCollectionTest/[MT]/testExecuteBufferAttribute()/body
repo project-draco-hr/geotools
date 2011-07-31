@@ -1,0 +1,41 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName("featureType");
+  tb.add("geometry",Geometry.class);
+  tb.add("integer",Integer.class);
+  tb.add("buffer",Double.class);
+  GeometryFactory gf=new GeometryFactory();
+  SimpleFeatureBuilder b=new SimpleFeatureBuilder(tb.buildFeatureType());
+  DefaultFeatureCollection features=new DefaultFeatureCollection(null,b.getFeatureType());
+  for (int numFeatures=0; numFeatures < 5; numFeatures++) {
+    Coordinate array[]=new Coordinate[4];
+    int j=0;
+    for (int i=0 + numFeatures; i < 3 + numFeatures; i++) {
+      array[j]=new Coordinate(i,i);
+      j++;
+    }
+    array[3]=new Coordinate(numFeatures,numFeatures);
+    LinearRing shell=new LinearRing(array,new PrecisionModel(),0);
+    b.add(gf.createPolygon(shell,null));
+    b.add(0);
+    b.add(500);
+    features.add(b.buildFeature(numFeatures + ""));
+  }
+  BufferFeatureCollection process=new BufferFeatureCollection();
+  SimpleFeatureCollection output=process.execute(features,null,"buffer");
+  assertEquals(5,output.size());
+  SimpleFeatureIterator iterator=output.features();
+  for (int numFeatures=0; numFeatures < 5; numFeatures++) {
+    Coordinate[] array=new Coordinate[4];
+    int j=0;
+    for (int i=0 + numFeatures; i < 3 + numFeatures; i++) {
+      array[j]=new Coordinate(i,i);
+      j++;
+    }
+    array[3]=new Coordinate(numFeatures,numFeatures);
+    LinearRing shell=new LinearRing(array,new PrecisionModel(),0);
+    Geometry expected=gf.createPolygon(shell,null).buffer(500);
+    SimpleFeature sf=iterator.next();
+    assertTrue(expected.equals((Geometry)sf.getDefaultGeometry()));
+  }
+}

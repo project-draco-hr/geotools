@@ -1,0 +1,27 @@
+{
+  org.geotools.process.Process union=factory.create(new NameImpl("JTS","union"));
+  Map<String,Object> inputs=new HashMap<String,Object>();
+  try {
+    union.execute(inputs,null);
+    fail("What!!! Should have failed big time!");
+  }
+ catch (  ProcessException e) {
+  }
+  Geometry geom1=new WKTReader().read("POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))");
+  Geometry geom2=new WKTReader().read("POLYGON((0 1, 0 2, 1 2, 1 1, 0 1))");
+  List<Geometry> geometries=new ArrayList<Geometry>();
+  geometries.add(geom1);
+  inputs.put("geom",geometries);
+  try {
+    union.execute(inputs,null);
+    fail("What!!! Should have failed big time!");
+  }
+ catch (  ProcessException e) {
+  }
+  geometries.add(geom2);
+  Map<String,Object> result=union.execute(inputs,null);
+  assertEquals(1,result.size());
+  Geometry united=(Geometry)result.get("result");
+  assertNotNull(united);
+  assertTrue(united.equals(geom1.union(geom2)));
+}

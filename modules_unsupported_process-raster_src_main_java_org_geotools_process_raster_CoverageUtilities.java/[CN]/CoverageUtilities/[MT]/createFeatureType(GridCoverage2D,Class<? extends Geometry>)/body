@@ -1,0 +1,43 @@
+{
+  Utilities.ensureNonNull("gc2d",gc2d);
+  final SimpleFeatureTypeBuilder ftBuilder=new SimpleFeatureTypeBuilder();
+  ftBuilder.setName(gc2d.getName().toString());
+  ftBuilder.setNamespaceURI("http://www.geotools.org/");
+  ftBuilder.setCRS(gc2d.getCoordinateReferenceSystem2D());
+  ftBuilder.setDefaultGeometry("the_geom");
+  ftBuilder.add("the_geom",geometryClass);
+  if (!geometryClass.equals(Point.class)) {
+    ftBuilder.add("value",Double.class);
+  }
+ else {
+    final GridSampleDimension[] sampleDimensions=gc2d.getSampleDimensions();
+    for (    GridSampleDimension sd : sampleDimensions) {
+      final SampleDimensionType sdType=sd.getSampleDimensionType();
+      final int dataBuffType=TypeMap.getDataBufferType(sdType);
+      @SuppressWarnings("rawtypes") final Class bandClass;
+switch (dataBuffType) {
+case DataBuffer.TYPE_BYTE:
+        bandClass=Byte.class;
+      break;
+case DataBuffer.TYPE_DOUBLE:
+    bandClass=Double.class;
+  break;
+case DataBuffer.TYPE_FLOAT:
+bandClass=Float.class;
+break;
+case DataBuffer.TYPE_INT:
+bandClass=Integer.class;
+break;
+case DataBuffer.TYPE_SHORT:
+case DataBuffer.TYPE_USHORT:
+bandClass=Short.class;
+break;
+case DataBuffer.TYPE_UNDEFINED:
+default :
+return null;
+}
+ftBuilder.add(sd.getDescription().toString(),bandClass);
+}
+}
+return ftBuilder.buildFeatureType();
+}

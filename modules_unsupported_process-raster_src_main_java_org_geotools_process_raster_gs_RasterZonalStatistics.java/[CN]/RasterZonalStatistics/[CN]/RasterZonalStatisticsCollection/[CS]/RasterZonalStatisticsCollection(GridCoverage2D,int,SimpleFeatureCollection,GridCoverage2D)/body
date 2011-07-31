@@ -1,0 +1,28 @@
+{
+  super(zones);
+  this.coverage=coverage;
+  this.band=band;
+  this.classification=classification;
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  for (  AttributeDescriptor att : zones.getSchema().getAttributeDescriptors()) {
+    tb.minOccurs(att.getMinOccurs());
+    tb.maxOccurs(att.getMaxOccurs());
+    tb.restrictions(att.getType().getRestrictions());
+    if (att instanceof GeometryDescriptor) {
+      GeometryDescriptor gatt=(GeometryDescriptor)att;
+      tb.crs(gatt.getCoordinateReferenceSystem());
+    }
+    tb.add("z_" + att.getLocalName(),att.getType().getBinding());
+  }
+  if (classification != null) {
+    tb.add("classification",Integer.class);
+  }
+  tb.add("count",Long.class);
+  tb.add("min",Double.class);
+  tb.add("max",Double.class);
+  tb.add("sum",Double.class);
+  tb.add("avg",Double.class);
+  tb.add("stddev",Double.class);
+  tb.setName(zones.getSchema().getName());
+  targetSchema=tb.buildFeatureType();
+}

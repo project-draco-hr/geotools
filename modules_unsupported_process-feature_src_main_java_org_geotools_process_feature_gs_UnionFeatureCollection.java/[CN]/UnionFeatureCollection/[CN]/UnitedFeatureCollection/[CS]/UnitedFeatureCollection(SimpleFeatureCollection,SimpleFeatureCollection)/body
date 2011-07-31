@@ -1,0 +1,31 @@
+{
+  super(delegate);
+  this.features=features;
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  for (  AttributeDescriptor descriptor : delegate.getSchema().getAttributeDescriptors()) {
+    if (sameNames(features.getSchema(),descriptor) && !sameTypes(features.getSchema(),descriptor)) {
+      AttributeTypeBuilder builder=new AttributeTypeBuilder();
+      builder.setName(descriptor.getLocalName());
+      builder.setNillable(descriptor.isNillable());
+      builder.setBinding(String.class);
+      builder.setMinOccurs(descriptor.getMinOccurs());
+      builder.setMaxOccurs(descriptor.getMaxOccurs());
+      builder.setDefaultValue(descriptor.getDefaultValue());
+      builder.setCRS(this.delegate.features().next().getFeatureType().getCoordinateReferenceSystem());
+      AttributeDescriptor attributeDescriptor=builder.buildDescriptor(descriptor.getName(),builder.buildType());
+      tb.add(attributeDescriptor);
+    }
+ else {
+      tb.add(descriptor);
+    }
+  }
+  for (  AttributeDescriptor descriptor : features.getSchema().getAttributeDescriptors()) {
+    if (!sameNames(delegate.getSchema(),descriptor) && !sameTypes(delegate.getSchema(),descriptor)) {
+      tb.add(descriptor);
+    }
+  }
+  tb.setCRS(delegate.getSchema().getCoordinateReferenceSystem());
+  tb.setNamespaceURI(delegate.getSchema().getName().getNamespaceURI());
+  tb.setName(delegate.getSchema().getName());
+  this.schema=tb.buildFeatureType();
+}

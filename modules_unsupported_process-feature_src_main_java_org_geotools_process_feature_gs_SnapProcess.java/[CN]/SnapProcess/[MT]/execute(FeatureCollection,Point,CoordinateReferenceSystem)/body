@@ -1,0 +1,68 @@
+{
+  try {
+    if (crs == null) {
+      GeometryDescriptor gd=featureCollection.getSchema().getGeometryDescriptor();
+      if (gd != null) {
+        crs=gd.getCoordinateReferenceSystem();
+      }
+    }
+    if (crs == null) {
+      throw new ProcessException("The CRS parameter was not provided and the feature collection does not have a default one either");
+    }
+    CoordinateReferenceSystem epsg4326;
+    try {
+      epsg4326=CRS.decode("EPSG:4326");
+    }
+ catch (    Exception e) {
+      throw new ProcessException("Unknown CRS code: EPSG:4326",e);
+    }
+    MathTransform crsTransform=CRS.findMathTransform(crs,epsg4326);
+    FeatureCollection results=FeatureCollections.newCollection();
+    FeatureType targetFeatureType=createTargetFeatureType(featureCollection.getSchema());
+    Unit fromUnit=SI.METER;
+    Unit toUnit=Unit.valueOf("mi");
+    UnitConverter unitConvert=fromUnit.getConverterTo(toUnit);
+    Feature nearestFeature=null;
+    double nearestDistance=9e9;
+    double nearestBearing=0;
+    Iterator featureIterator=null;
+    double[] nearestPoint=new double[2];
+    try {
+      featureIterator=featureCollection.iterator();
+      while (featureIterator.hasNext()) {
+        SimpleFeature f=(SimpleFeature)featureIterator.next();
+        if (f.getDefaultGeometryProperty().getValue() == null)         continue;
+        DistanceOp op=new DistanceOp(point,(Geometry)f.getDefaultGeometryProperty().getValue());
+        Coordinate[] co=op.closestPoints();
+        double[] co0=new double[]{co[0].x,co[0].y};
+        double[] co1=new double[]{co[1].x,co[1].y};
+        double[] geo0=new double[2];
+        double[] geo1=new double[2];
+        crsTransform.transform(co0,0,geo0,0,1);
+        crsTransform.transform(co1,0,geo1,0,1);
+        Measure m=DefaultGeographicCRS.WGS84.distance(geo0,geo1);
+        if (m.doubleValue() > nearestDistance)         continue;
+        nearestFeature=f;
+        nearestDistance=m.doubleValue();
+        nearestBearing=calcBearing(co);
+        nearestPoint[0]=geo1[0];
+        nearestPoint[1]=geo1[1];
+      }
+    }
+  finally {
+      if (featureIterator != null)       featureCollection.close(featureIterator);
+    }
+    if (nearestFeature != null) {
+      nearestDistance=unitConvert.convert(nearestDistance);
+      results.add(createTargetFeature(nearestFeature,(SimpleFeatureType)targetFeatureType,nearestPoint,nearestDistance,nearestBearing));
+    }
+    return results;
+  }
+ catch (  ProcessException e) {
+    throw e;
+  }
+catch (  Throwable e) {
+    LOGGER.warning("Error executing method: " + e);
+    throw new ProcessException("Error executing method: " + e,e);
+  }
+}

@@ -1,0 +1,59 @@
+{
+  final AffineTransform dataG2WCorrected=new AffineTransform((AffineTransform)((GridGeometry2D)dataCoverage.getGridGeometry()).getGridToCRS2D(PixelOrientation.UPPER_LEFT));
+  final MathTransform w2gTransform;
+  try {
+    w2gTransform=ProjectiveTransform.create(dataG2WCorrected.createInverse());
+  }
+ catch (  NoninvertibleTransformException e) {
+    throw new IllegalArgumentException(e.getLocalizedMessage());
+  }
+  GridCoverage2D cropped=null;
+  try {
+    ReferencedEnvelope coverageEnvelope=new ReferencedEnvelope(dataCoverage.getEnvelope2D());
+    ReferencedEnvelope geometryEnvelope=new ReferencedEnvelope(geometry.getEnvelopeInternal(),dataCoverage.getCoordinateReferenceSystem());
+    if (!coverageEnvelope.intersects((Envelope)geometryEnvelope)) {
+      return null;
+    }
+ else     if (!coverageEnvelope.contains((Envelope)geometryEnvelope)) {
+      geometry=JTS.toGeometry((Envelope)coverageEnvelope).intersection(geometry);
+      geometryEnvelope=new ReferencedEnvelope(geometry.getEnvelopeInternal(),dataCoverage.getCoordinateReferenceSystem());
+    }
+    GridSampleDimension sampleDimension=dataCoverage.getSampleDimension(0);
+    List<Category> categories=sampleDimension.getCategories();
+    List<Range<Double>> novalueRangeList=null;
+    if (categories != null) {
+      for (      Category category : categories) {
+        String catName=category.getName().toString();
+        if (catName.equalsIgnoreCase("no data")) {
+          NumberRange range=category.getRange();
+          double min=range.getMinimum();
+          double max=category.getRange().getMaximum();
+          if (!Double.isNaN(min) && !Double.isNaN(max)) {
+            Range<Double> novalueRange=new Range<Double>(min,true,max,true);
+            novalueRangeList=new ArrayList<Range<Double>>();
+            novalueRangeList.add(novalueRange);
+          }
+          break;
+        }
+      }
+    }
+    ParameterValueGroup param=CROPOPERATION.getParameters();
+    param.parameter("Source").setValue(dataCoverage);
+    param.parameter("Envelope").setValue(new GeneralEnvelope(geometryEnvelope));
+    cropped=(GridCoverage2D)PROCESSOR.doOperation(param);
+    Geometry rasterSpaceGeometry=JTS.transform(geometry,w2gTransform);
+    Geometry simplifiedGeometry=DouglasPeuckerSimplifier.simplify(rasterSpaceGeometry,1);
+    AffineTransformation at=new AffineTransformation();
+    at.setToTranslation(-0.5,-0.5);
+    simplifiedGeometry.apply(at);
+    ROI roi=new ROIGeometry(simplifiedGeometry,false);
+    Statistic[] reqStatsArr=new Statistic[]{Statistic.MAX,Statistic.MIN,Statistic.RANGE,Statistic.MEAN,Statistic.SDEV,Statistic.SUM};
+    final ZonalStatsOpImage zsOp=new ZonalStatsOpImage(cropped.getRenderedImage(),classificationRaster,null,null,reqStatsArr,new Integer[]{band},roi,null,null,null,false,novalueRangeList);
+    return (ZonalStats)zsOp.getProperty(ZonalStatsDescriptor.ZONAL_STATS_PROPERTY);
+  }
+  finally {
+    if (cropped != null) {
+      cropped.dispose(true);
+    }
+  }
+}

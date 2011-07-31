@@ -1,0 +1,52 @@
+{
+  if (coverage == null) {
+    throw new ProcessException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"coverage"));
+  }
+  if (classificationRanges == null) {
+    throw new ProcessException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"classificationRanges"));
+  }
+  double nd=DEFAULT_NODATA;
+  if (noData != null) {
+    nd=noData.doubleValue();
+  }
+  if (outputPixelValues != null && outputPixelValues.length > 0) {
+    final int ranges=classificationRanges.size();
+    if (ranges != outputPixelValues.length) {
+      throw new ProcessException(Errors.format(ErrorKeys.MISMATCHED_ARRAY_LENGTH,"outputPixelValues"));
+    }
+  }
+  RenderedImage sourceImage=coverage.getRenderedImage();
+  if (classificationBand != null) {
+    final int band=classificationBand;
+    final int numbands=sourceImage.getSampleModel().getNumBands();
+    if (band < 0 || numbands <= band) {
+      throw new ProcessException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"band",band));
+    }
+    if (band == 0 && numbands > 0 || band > 0)     sourceImage=BandSelectDescriptor.create(sourceImage,new int[]{band},null);
+  }
+  final RangeLookupTable lookupTable;
+  final int size=classificationRanges.size();
+switch (ColorUtilities.getTransferType(size)) {
+case DataBuffer.TYPE_BYTE:
+    lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,(byte)nd);
+  break;
+case DataBuffer.TYPE_USHORT:
+lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,(short)nd);
+break;
+case DataBuffer.TYPE_INT:
+lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,nd);
+break;
+default :
+throw new IllegalArgumentException(org.geotools.resources.i18n.Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"classification ranges size",size));
+}
+final RenderedOp indexedClassification=RangeLookupDescriptor.create(sourceImage,lookupTable,null);
+final GridSampleDimension outSampleDimension=new GridSampleDimension("classification",new Category[]{Category.NODATA},null).geophysics(true);
+final GridCoverageFactory factory=CoverageFactoryFinder.getGridCoverageFactory(null);
+final GridCoverage2D output=factory.create("reclassified",indexedClassification,coverage.getGridGeometry(),new GridSampleDimension[]{outSampleDimension},new GridCoverage[]{coverage},new HashMap<String,Double>(){
+{
+put("GC_NODATA",0d);
+}
+}
+);
+return output;
+}

@@ -1,0 +1,32 @@
+{
+  if (!hasNext())   throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  if (iterator.finishedPixels())   throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  if (iterator.finishedLines())   throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  final int id=index;
+  coord.x=0.5 + fc.rasterBounds.x + index % fc.rasterBounds.width;
+  coord.y=0.5 + fc.rasterBounds.y + index / fc.rasterBounds.width;
+  final Point point=RasterAsPointFeatureCollection.geometryFactory.createPoint(coord);
+  try {
+    fb.add(JTS.transform(point,fc.mt2D));
+  }
+ catch (  MismatchedDimensionException e) {
+    final NoSuchElementException nse=new NoSuchElementException();
+    nse.initCause(e);
+    throw nse;
+  }
+catch (  TransformException e) {
+    final NoSuchElementException nse=new NoSuchElementException();
+    nse.initCause(e);
+    throw nse;
+  }
+  iterator.getPixel(temp);
+  for (  double d : temp) {
+    fb.add(d);
+  }
+  if (iterator.nextPixelDone()) {
+    if (!iterator.nextLineDone())     iterator.startPixels();
+  }
+  final SimpleFeature returnValue=fb.buildFeature(String.valueOf(id));
+  index++;
+  return returnValue;
+}

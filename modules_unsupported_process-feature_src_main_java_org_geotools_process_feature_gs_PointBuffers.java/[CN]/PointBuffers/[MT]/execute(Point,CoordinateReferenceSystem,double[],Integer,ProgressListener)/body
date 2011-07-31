@@ -1,0 +1,33 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.add("geom",Polygon.class,crs);
+  tb.add("radius",Double.class);
+  tb.setName("buffers");
+  SimpleFeatureType schema=tb.buildFeatureType();
+  if (quadrantSegments == null) {
+    quadrantSegments=8;
+  }
+  BufferGenerator generator;
+  if (crs != null) {
+    CoordinateReferenceSystem hor=CRS.getHorizontalCRS(crs);
+    if (hor instanceof GeographicCRS) {
+      generator=new GeographicGenerator(center,quadrantSegments,crs);
+    }
+ else {
+      Unit unit=hor.getCoordinateSystem().getAxis(0).getUnit();
+      UnitConverter converter=SI.METER.getConverterTo(unit);
+      generator=new MetricGenerator(center,quadrantSegments,converter);
+    }
+  }
+ else {
+    generator=new MetricGenerator(center,quadrantSegments,UnitConverter.IDENTITY);
+  }
+  SimpleFeatureCollection result=new ListFeatureCollection(schema);
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(schema);
+  for (int i=0; i < distances.length; i++) {
+    fb.add(generator.getBuffer(distances[i]));
+    fb.add(distances[i]);
+    result.add(fb.buildFeature("buffers." + (i + 1)));
+  }
+  return result;
+}

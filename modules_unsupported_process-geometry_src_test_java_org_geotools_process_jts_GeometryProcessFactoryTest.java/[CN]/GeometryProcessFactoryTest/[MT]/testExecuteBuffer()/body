@@ -1,0 +1,25 @@
+{
+  org.geotools.process.Process buffer=factory.create(new NameImpl("JTS","Buffer"));
+  Map<String,Object> inputs=new HashMap<String,Object>();
+  try {
+    buffer.execute(inputs,null);
+    fail("What!!! Should have failed big time!");
+  }
+ catch (  ProcessException e) {
+  }
+  Geometry geom=new WKTReader().read("POINT(0 0)");
+  inputs.put("geom",geom);
+  inputs.put("distance",1d);
+  Map<String,Object> result=buffer.execute(inputs,null);
+  assertEquals(1,result.size());
+  Geometry buffered=(Geometry)result.get("result");
+  assertNotNull(buffered);
+  assertTrue(buffered.equals(geom.buffer(1d)));
+  inputs.put("quadrantSegments",12);
+  inputs.put("capStyle",GeometryFunctions.BufferCapStyle.Square);
+  result=buffer.execute(inputs,null);
+  assertEquals(1,result.size());
+  buffered=(Geometry)result.get("result");
+  assertNotNull(buffered);
+  assertTrue(buffered.equals(geom.buffer(1d,12,BufferParameters.CAP_SQUARE)));
+}

@@ -1,0 +1,23 @@
+{
+  super(CoverageUtilities.createFeatureType(gc2d,Point.class));
+  this.gc2d=gc2d;
+  final RenderedImage raster=gc2d.getRenderedImage();
+  size=raster.getWidth() * raster.getHeight();
+  mt2D=gc2d.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  rasterBounds=PlanarImage.wrapRenderedImage(raster).getBounds();
+  final XRectangle2D rasterBounds_=new XRectangle2D(raster.getMinX() + 0.5,raster.getMinY() + 0.5,raster.getWidth() - 1,raster.getHeight() - 1);
+  try {
+    bounds=new ReferencedEnvelope(CRS.transform(mt2D,rasterBounds_,null),gc2d.getCoordinateReferenceSystem2D());
+  }
+ catch (  MismatchedDimensionException e) {
+    final IOException ioe=new IOException();
+    ioe.initCause(e);
+    throw ioe;
+  }
+catch (  TransformException e) {
+    final IOException ioe=new IOException();
+    ioe.initCause(e);
+    throw ioe;
+  }
+  numBands=gc2d.getNumSampleDimensions();
+}

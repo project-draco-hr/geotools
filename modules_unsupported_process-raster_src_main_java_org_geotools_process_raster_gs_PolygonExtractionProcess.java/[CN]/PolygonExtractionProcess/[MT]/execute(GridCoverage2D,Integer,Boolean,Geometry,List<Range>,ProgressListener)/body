@@ -1,0 +1,41 @@
+{
+  if (coverage == null) {
+    throw new ProcessException("Invalid input, source grid coverage should be not null");
+  }
+  if (band == null) {
+    band=0;
+  }
+ else   if (band < 0 || band >= coverage.getNumSampleDimensions()) {
+    throw new ProcessException("Invalid input, invalid band number:" + band);
+  }
+  boolean hasClassificationRanges=classificationRanges != null && classificationRanges.size() > 0;
+  if (hasClassificationRanges) {
+    final RangeLookupProcess lookup=new RangeLookupProcess();
+    coverage=lookup.execute(coverage,band,classificationRanges,progressListener);
+  }
+  final AffineTransform mt2D=(AffineTransform)coverage.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  final RenderedImage raster=coverage.getRenderedImage();
+  ParameterBlockJAI pb=new ParameterBlockJAI("Vectorize");
+  pb.setSource("source0",raster);
+  if (roi != null) {
+    pb.setParameter("roi",CoverageUtilities.prepareROI(roi,mt2D));
+  }
+  pb.setParameter("band",band);
+  pb.setParameter("outsideValues",Arrays.asList(0));
+  final RenderedOp dest=JAI.create("Vectorize",pb);
+  @SuppressWarnings("unchecked") final Collection<Polygon> prop=(Collection<Polygon>)dest.getProperty(VectorizeDescriptor.VECTOR_PROPERTY_NAME);
+  final SimpleFeatureType featureType=CoverageUtilities.createFeatureType(coverage,Polygon.class);
+  final SimpleFeatureBuilder builder=new SimpleFeatureBuilder(featureType);
+  int i=0;
+  final ListFeatureCollection featureCollection=new ListFeatureCollection(featureType);
+  final AffineTransformation jtsTransformation=new AffineTransformation(mt2D.getScaleX(),mt2D.getShearX(),mt2D.getTranslateX(),mt2D.getShearY(),mt2D.getScaleY(),mt2D.getTranslateY());
+  for (  Polygon polygon : prop) {
+    Double value=(Double)polygon.getUserData();
+    polygon.setUserData(null);
+    polygon.apply(jtsTransformation);
+    builder.set("the_geom",polygon);
+    builder.set("value",value);
+    featureCollection.add(builder.buildFeature(String.valueOf(i++)));
+  }
+  return featureCollection;
+}

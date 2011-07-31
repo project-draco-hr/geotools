@@ -1,0 +1,79 @@
+{
+  if (gc2d == null) {
+    throw new ProcessException("Invalid input, source grid coverage should be not null");
+  }
+  if (band != null && (band < 0 || band >= gc2d.getNumSampleDimensions())) {
+    throw new ProcessException("Invalid input, invalid band number:" + band);
+  }
+  boolean hasValues=!(levels == null || levels.length == 0);
+  if (!hasValues && interval == null) {
+    throw new ProcessException("One between interval and values must be valid");
+  }
+  gc2d=gc2d.view(ViewType.GEOPHYSICS);
+  final AffineTransform mt2D=(AffineTransform)gc2d.getGridGeometry().getGridToCRS2D(PixelOrientation.CENTER);
+  List<Object> noDataList=new ArrayList<Object>();
+  for (  GridSampleDimension sd : gc2d.getSampleDimensions()) {
+    final double[] sdNoData=sd.getNoDataValues();
+    if (sdNoData != null) {
+      for (      double nodata : sdNoData) {
+        noDataList.add(nodata);
+      }
+    }
+    if (sd.getCategories() != null) {
+      for (      Category cat : sd.getCategories()) {
+        if (cat.getName().equals(NO_DATA)) {
+          final NumberRange<? extends Number> catRange=cat.getRange();
+          if (catRange.getMinimum() == catRange.getMaximum()) {
+            noDataList.add(catRange.getMinimum());
+          }
+ else {
+            Range<Double> noData=new Range<Double>(catRange.getMinimum(),catRange.isMinIncluded(),catRange.getMaximum(),catRange.isMaxIncluded());
+            noDataList.add(noData);
+          }
+        }
+      }
+    }
+  }
+  final RenderedImage raster=gc2d.getRenderedImage();
+  ParameterBlockJAI pb=new ParameterBlockJAI("Contour");
+  pb.setSource("source0",raster);
+  if (roi != null) {
+    pb.setParameter("roi",CoverageUtilities.prepareROI(roi,mt2D));
+  }
+  if (band != null) {
+    pb.setParameter("band",band);
+  }
+  if (interval != null) {
+    pb.setParameter("interval",interval);
+  }
+ else {
+    final ArrayList<Double> elements=new ArrayList<Double>(levels.length);
+    for (    double level : levels)     elements.add(level);
+    pb.setParameter("levels",elements);
+  }
+  if (simplify != null) {
+    pb.setParameter("simplify",simplify);
+  }
+  if (smooth != null) {
+    pb.setParameter("smooth",smooth);
+  }
+  if (noDataList != null) {
+    pb.setParameter("nodata",noDataList);
+  }
+  final RenderedOp dest=JAI.create("Contour",pb);
+  @SuppressWarnings("unchecked") final Collection<LineString> prop=(Collection<LineString>)dest.getProperty(ContourDescriptor.CONTOUR_PROPERTY_NAME);
+  final SimpleFeatureType schema=CoverageUtilities.createFeatureType(gc2d,LineString.class);
+  final SimpleFeatureBuilder builder=new SimpleFeatureBuilder(schema);
+  int i=0;
+  final ListFeatureCollection featureCollection=new ListFeatureCollection(schema);
+  final AffineTransformation jtsTransformation=new AffineTransformation(mt2D.getScaleX(),mt2D.getShearX(),mt2D.getTranslateX(),mt2D.getShearY(),mt2D.getScaleY(),mt2D.getTranslateY());
+  for (  LineString line : prop) {
+    Double value=(Double)line.getUserData();
+    line.setUserData(null);
+    line.apply(jtsTransformation);
+    builder.set("the_geom",line);
+    builder.set("value",value);
+    featureCollection.add(builder.buildFeature(String.valueOf(i++)));
+  }
+  return featureCollection;
+}
