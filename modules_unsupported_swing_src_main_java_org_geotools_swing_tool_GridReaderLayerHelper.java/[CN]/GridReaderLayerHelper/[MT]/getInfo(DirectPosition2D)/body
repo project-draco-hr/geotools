@@ -1,0 +1,40 @@
+{
+  InfoToolResult result=new InfoToolResult();
+  if (isValid()) {
+    AbstractGridCoverage2DReader reader=sourceRef.get();
+    DirectPosition2D trPos=InfoToolHelperUtils.getTransformed(pos,getContentToLayerTransform());
+    MathTransform tr=reader.getOriginalGridToWorld(PixelInCell.CELL_CORNER).inverse();
+    DirectPosition rasterMid=tr.transform(trPos,null);
+    Rectangle2D.Double rasterArea=new Rectangle2D.Double();
+    rasterArea.setFrameFromCenter(rasterMid.getOrdinate(0),rasterMid.getOrdinate(1),rasterMid.getOrdinate(0) + 10,rasterMid.getOrdinate(1) + 10);
+    final Rectangle integerRasterArea=rasterArea.getBounds();
+    Rectangle originalArea=null;
+    final GridEnvelope gridEnvelope=reader.getOriginalGridRange();
+    if (gridEnvelope instanceof GridEnvelope2D) {
+      originalArea=(GridEnvelope2D)gridEnvelope;
+    }
+ else {
+      new Rectangle();
+    }
+    XRectangle2D.intersect(integerRasterArea,originalArea,integerRasterArea);
+    if (integerRasterArea.isEmpty()) {
+      return null;
+    }
+    GeneralParameterValue parameter=new org.geotools.parameter.Parameter(AbstractGridFormat.READ_GRIDGEOMETRY2D,new GridGeometry2D(new GridEnvelope2D(integerRasterArea),reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),reader.getCrs()));
+    final GridCoverage2D coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{parameter});
+    if (coverage != null) {
+      try {
+        Object objArray=coverage.evaluate(trPos);
+        Number[] bandValues=InfoToolHelperUtils.asNumberArray(objArray);
+        if (bandValues != null) {
+          for (int i=0; i < bandValues.length; i++) {
+            result.setFeatureValue("Band " + i,bandValues[i]);
+          }
+        }
+      }
+ catch (      PointOutsideCoverageException e) {
+      }
+    }
+  }
+  return result;
+}

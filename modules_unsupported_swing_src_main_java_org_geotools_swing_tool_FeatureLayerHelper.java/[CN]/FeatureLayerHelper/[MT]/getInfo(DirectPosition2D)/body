@@ -1,0 +1,41 @@
+{
+  InfoToolResult result=new InfoToolResult();
+  if (isValid()) {
+    Layer layer=layerRef.get();
+    Filter filter=null;
+    if (geomType == Geometries.POLYGON || geomType == Geometries.MULTIPOLYGON) {
+      Geometry posGeom=createSearchPoint(pos);
+      filter=filterFactory.intersects(filterFactory.property(attrName),filterFactory.literal(posGeom));
+    }
+ else {
+      ReferencedEnvelope env=createSearchEnv(pos,radius);
+      filter=filterFactory.bbox(filterFactory.property(attrName),env);
+    }
+    Query query=new Query(null,filter);
+    query.setCoordinateSystemReproject(getMapContent().getCoordinateReferenceSystem());
+    FeatureSource featureSource=layer.getFeatureSource();
+    Collection<PropertyDescriptor> descriptors=featureSource.getSchema().getDescriptors();
+    FeatureCollection queryResult=featureSource.getFeatures(query);
+    FeatureIterator iter=queryResult.features();
+    try {
+      while (iter.hasNext()) {
+        Feature f=iter.next();
+        result.newFeature();
+        for (        PropertyDescriptor desc : descriptors) {
+          Name name=desc.getName();
+          Object value=f.getProperty(name).getValue();
+          if (value instanceof Geometry) {
+            result.setFeatureValue(name,value.getClass().getSimpleName());
+          }
+ else {
+            result.setFeatureValue(name,value);
+          }
+        }
+      }
+    }
+  finally {
+      iter.close();
+    }
+  }
+  return result;
+}

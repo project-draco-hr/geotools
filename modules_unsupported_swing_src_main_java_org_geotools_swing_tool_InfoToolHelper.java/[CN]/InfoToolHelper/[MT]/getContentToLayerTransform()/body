@@ -1,0 +1,28 @@
+{
+  if (transform == null && !transformFailed) {
+    MapContent content=getMapContent();
+    Layer layer=getLayer();
+    if (content != null && layer != null) {
+      CoordinateReferenceSystem contentCRS=content.getCoordinateReferenceSystem();
+      CoordinateReferenceSystem layerCRS=layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+      if (contentCRS != null && layerCRS != null) {
+        if (CRS.equalsIgnoreMetadata(contentCRS,layerCRS)) {
+          transform=new AffineTransform2D(new AffineTransform());
+        }
+ else {
+          try {
+            transform=CRS.findMathTransform(contentCRS,layerCRS,true);
+          }
+ catch (          Exception ex) {
+            LOGGER.warning("Can't transform map content CRS to layer CRS");
+            transformFailed=true;
+          }
+        }
+      }
+    }
+ else {
+      transform=new AffineTransform2D(new AffineTransform());
+    }
+  }
+  return transform;
+}

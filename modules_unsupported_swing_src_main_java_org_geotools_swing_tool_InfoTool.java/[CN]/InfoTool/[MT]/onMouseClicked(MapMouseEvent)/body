@@ -14,71 +14,22 @@
       }
       helper=helperTable.get(layer);
       if (helper == null) {
-        if (layer instanceof RasterLayer) {
-          try {
-            Class<?> clazz=Class.forName("org.geotools.swing.tool.GridLayerHelper");
-            Constructor<?> ctor=clazz.getConstructor(MapContent.class,Layer.class);
-            helper=(InfoToolHelper)ctor.newInstance(content,layer);
-            helperTable.put(layer,helper);
-          }
- catch (          Exception ex) {
-            throw new IllegalStateException("Failed to create InfoToolHelper for grid layer",ex);
-          }
+        helper=InfoToolHelperLookup.getHelper(layer);
+        if (helper == null) {
+          LOGGER.log(Level.WARNING,"InfoTool cannot query {0}",layer.getClass().getName());
+          return;
         }
- else {
-          try {
-            Class<?> clazz=Class.forName("org.geotools.swing.tool.VectorLayerHelper");
-            Constructor<?> ctor=clazz.getConstructor(MapContent.class,Layer.class);
-            helper=(InfoToolHelper)ctor.newInstance(content,layer);
-            helperTable.put(layer,helper);
-          }
- catch (          Exception ex) {
-            throw new IllegalStateException("Failed to create InfoToolHelper for vector layer",ex);
-          }
-        }
+        helper.setMapContent(content);
+        helper.setLayer(layer);
       }
-      Object info=null;
-      if (helper instanceof VectorLayerHelper) {
-        ReferencedEnvelope mapEnv=getMapPane().getDisplayArea();
-        double searchWidth=DEFAULT_DISTANCE_FRACTION * (mapEnv.getWidth() + mapEnv.getHeight()) / 2;
-        try {
-          info=helper.getInfo(pos,Double.valueOf(searchWidth));
-        }
- catch (        Exception ex) {
-          throw new IllegalStateException(ex);
-        }
-        if (info != null) {
-          FeatureIterator<? extends Feature> iter=null;
-          FeatureCollection selectedFeatures=(FeatureCollection)info;
-          try {
-            iter=selectedFeatures.features();
-            while (iter.hasNext()) {
-              report(layerName,iter.next());
-            }
-          }
- catch (          Exception ex) {
-            throw new IllegalStateException(ex);
-          }
- finally {
-            if (iter != null) {
-              iter.close();
-            }
-          }
-        }
+      try {
+        InfoToolResult result=helper.getInfo(pos);
+        reporter.append(layerName + "\n");
+        reporter.append(result.toString());
+        reporter.append("\n");
       }
- else {
-        try {
-          info=helper.getInfo(pos);
-        }
- catch (        Exception ex) {
-          throw new IllegalStateException(ex);
-        }
-        if (info != null) {
-          List<Number> bandValues=(List<Number>)info;
-          if (!bandValues.isEmpty()) {
-            report(layerName,bandValues);
-          }
-        }
+ catch (      Exception ex) {
+        LOGGER.log(Level.WARNING,"Unable to query layer {0}",layerName);
       }
     }
   }

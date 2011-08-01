@@ -1,0 +1,19 @@
+{
+  InfoToolResult result=null;
+  if (isValid()) {
+    GridCoverage2D source=((GridCoverageLayer)layerRef.get()).getCoverage();
+    ReferencedEnvelope env=new ReferencedEnvelope(source.getEnvelope2D());
+    DirectPosition2D trPos=InfoToolHelperUtils.getTransformed(pos,getContentToLayerTransform());
+    if (env.contains(trPos)) {
+      result=new InfoToolResult();
+      Object objArray=source.evaluate(trPos);
+      Number[] bandValues=InfoToolHelperUtils.asNumberArray(objArray);
+      if (bandValues != null) {
+        for (int i=0; i < bandValues.length; i++) {
+          result.setFeatureValue("Band " + i,bandValues[i]);
+        }
+      }
+    }
+  }
+  return result;
+}
