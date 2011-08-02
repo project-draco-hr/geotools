@@ -1,0 +1,18 @@
+{
+  final AbstractGridCoverage2DReader reader=sourceRef.get();
+  try {
+    MathTransform worldToGridTransform=reader.getOriginalGridToWorld(PixelInCell.CELL_CORNER).inverse();
+    DirectPosition midPos=worldToGridTransform.transform(pos,null);
+    int x=(int)midPos.getOrdinate(0);
+    int y=(int)midPos.getOrdinate(1);
+    int halfWidth=CACHED_RASTER_WIDTH / 2;
+    final Rectangle queryRect=new Rectangle(x - halfWidth,y - halfWidth,CACHED_RASTER_WIDTH,CACHED_RASTER_WIDTH);
+    GridEnvelope gridEnv=reader.getOriginalGridRange();
+    Rectangle rect=new Rectangle(gridEnv.getLow(0),gridEnv.getLow(1),gridEnv.getSpan(0),gridEnv.getSpan(1));
+    XRectangle2D.intersect(queryRect,rect,queryRect);
+    return queryRect;
+  }
+ catch (  Exception ex) {
+    throw new RuntimeException(ex);
+  }
+}
