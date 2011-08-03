@@ -3,18 +3,18 @@
   try {
     if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
       final GeneralEnvelope temp=CRS.transform(destinationToSourceTransform,requestedBBox);
-      temp.setCoordinateReferenceSystem(rasterManager.domainManager.coverageCRS2D);
+      temp.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageCRS2D);
       cropBBox=new ReferencedEnvelope(temp);
     }
  else {
-      cropBBox=new ReferencedEnvelope(requestedBBox.getMinX(),requestedBBox.getMaxX(),requestedBBox.getMinY(),requestedBBox.getMaxY(),rasterManager.domainManager.coverageCRS2D);
+      cropBBox=new ReferencedEnvelope(requestedBBox.getMinX(),requestedBBox.getMaxX(),requestedBBox.getMinY(),requestedBBox.getMaxY(),rasterManager.spatialDomainManager.coverageCRS2D);
     }
-    if (!cropBBox.intersects((BoundingBox)rasterManager.domainManager.coverageBBox)) {
+    if (!cropBBox.intersects((BoundingBox)rasterManager.spatialDomainManager.coverageBBox)) {
       cropBBox=null;
       empty=true;
       return;
     }
-    cropBBox=new ReferencedEnvelope(((ReferencedEnvelope)cropBBox).intersection(rasterManager.domainManager.coverageBBox),rasterManager.domainManager.coverageCRS2D);
+    cropBBox=new ReferencedEnvelope(((ReferencedEnvelope)cropBBox).intersection(rasterManager.spatialDomainManager.coverageBBox),rasterManager.spatialDomainManager.coverageCRS2D);
     return;
   }
  catch (  TransformException te) {
@@ -23,19 +23,19 @@
   try {
     if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
       requestedBBOXInCoverageGeographicCRS=CRS.transform(requestCRSToCoverageGeographicCRS2D,requestedBBox);
-      requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(rasterManager.domainManager.coverageGeographicCRS2D);
+      requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageGeographicCRS2D);
     }
     if (requestedBBOXInCoverageGeographicCRS == null)     requestedBBOXInCoverageGeographicCRS=new GeneralEnvelope(requestCRS);
-    if (!requestedBBOXInCoverageGeographicCRS.intersects(rasterManager.domainManager.coverageGeographicBBox,true)) {
+    if (!requestedBBOXInCoverageGeographicCRS.intersects(rasterManager.spatialDomainManager.coverageGeographicBBox,true)) {
       cropBBox=null;
       empty=true;
       return;
     }
-    requestedBBOXInCoverageGeographicCRS.intersect(rasterManager.domainManager.coverageGeographicBBox);
-    requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(rasterManager.domainManager.coverageGeographicCRS2D);
-    final MathTransform transform=CRS.findMathTransform(requestedBBOXInCoverageGeographicCRS.getCoordinateReferenceSystem(),rasterManager.domainManager.coverageCRS2D,true);
+    requestedBBOXInCoverageGeographicCRS.intersect(rasterManager.spatialDomainManager.coverageGeographicBBox);
+    requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageGeographicCRS2D);
+    final MathTransform transform=CRS.findMathTransform(requestedBBOXInCoverageGeographicCRS.getCoordinateReferenceSystem(),rasterManager.spatialDomainManager.coverageCRS2D,true);
     approximateRequestedBBoInNativeCRS=CRS.transform(transform,requestedBBOXInCoverageGeographicCRS);
-    approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(rasterManager.domainManager.coverageCRS2D);
+    approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(rasterManager.spatialDomainManager.coverageCRS2D);
     cropBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
   }
  catch (  TransformException te) {
