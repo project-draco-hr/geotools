@@ -1,9 +1,22 @@
 {
   fill.reset(symbolizer.getFill());
   halo.reset(symbolizer.getHalo());
-  label.reset(symbolizer.getLabel());
+  label=symbolizer.getLabel();
   geometry=symbolizer.getGeometryPropertyName();
-  labelPlacement=(LabelPlacement)symbolizer.getLabelPlacement();
+  LabelPlacement otherPlacement=symbolizer.getLabelPlacement();
+  if (symbolizer.getLabelPlacement() instanceof PointPlacement) {
+    PointPlacementBuilder builder=new PointPlacementBuilder(this);
+    builder.reset((PointPlacement)otherPlacement);
+    placement=builder;
+  }
+ else   if (symbolizer.getLabelPlacement() instanceof LabelPlacement) {
+    LinePlacementBuilder builder=new LinePlacementBuilder(this);
+    builder.reset((LinePlacement)otherPlacement);
+    placement=builder;
+  }
+ else {
+    throw new IllegalArgumentException("Unrecognized label placement: " + otherPlacement);
+  }
   unset=false;
   return this;
 }

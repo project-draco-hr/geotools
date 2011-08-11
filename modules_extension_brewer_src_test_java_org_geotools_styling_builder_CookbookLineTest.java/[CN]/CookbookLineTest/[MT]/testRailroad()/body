@@ -1,0 +1,22 @@
+{
+  FeatureTypeStyleBuilder fts=new FeatureTypeStyleBuilder();
+  fts.rule().line().stroke().colorHex("#333333").width(3);
+  fts.rule().line().stroke().graphicStroke().size(12).mark().name("shape://vertline").stroke().colorHex("#333333").width(1);
+  Style style=fts.buildStyle();
+  StyleCollector collector=new StyleCollector();
+  style.accept(collector);
+  assertEquals(1,collector.featureTypeStyles.size());
+  assertEquals(2,collector.rules.size());
+  assertEquals(2,collector.symbolizers.size());
+  LineSymbolizer ls=(LineSymbolizer)collector.symbolizers.get(0);
+  assertEquals(3,(int)ls.getStroke().getWidth().evaluate(null,Integer.class));
+  assertEquals("#333333",(String)ls.getStroke().getColor().evaluate(null,String.class));
+  ls=(LineSymbolizer)collector.symbolizers.get(1);
+  Graphic graphic=ls.getStroke().getGraphicStroke();
+  List<GraphicalSymbol> symbols=graphic.graphicalSymbols();
+  assertEquals(1,symbols.size());
+  Mark mark=(Mark)symbols.get(0);
+  assertEquals("shape://vertline",mark.getWellKnownName().evaluate(null));
+  assertEquals("#333333",mark.getStroke().getColor().evaluate(null,String.class));
+  assertEquals(1,(int)mark.getStroke().getWidth().evaluate(null,Integer.class));
+}

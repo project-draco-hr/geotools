@@ -1,0 +1,21 @@
+{
+  FeatureTypeStyleBuilder fts=new FeatureTypeStyleBuilder();
+  fts.rule().name("SmallPop").title("Less Than 200,000").filter("pop < 200000").polygon().fill().colorHex("#66FF66");
+  fts.rule().name("MediumPop").title("200,000 to 500,000").filter("pop between 200000 and 500000").polygon().fill().colorHex("#33CC33");
+  fts.rule().name("LargePop").title("More than 500,000").filter("pop > 500000").polygon().fill().colorHex("#009900");
+  Style style=fts.buildStyle();
+  StyleCollector collector=new StyleCollector();
+  style.accept(collector);
+  assertEquals(1,collector.featureTypeStyles.size());
+  assertEquals(3,collector.rules.size());
+  assertEquals(3,collector.symbolizers.size());
+  assertEquals(ff.less(ff.property("pop"),ff.literal("200000")),collector.rules.get(0).getFilter());
+  assertEquals(ff.between(ff.property("pop"),ff.literal("200000"),ff.literal("500000")),collector.rules.get(1).getFilter());
+  assertEquals(ff.greater(ff.property("pop"),ff.literal("500000")),collector.rules.get(2).getFilter());
+  PolygonSymbolizer ps=(PolygonSymbolizer)collector.symbolizers.get(0);
+  assertEquals("#66FF66",ps.getFill().getColor().evaluate(null,String.class));
+  ps=(PolygonSymbolizer)collector.symbolizers.get(1);
+  assertEquals("#33CC33",ps.getFill().getColor().evaluate(null,String.class));
+  ps=(PolygonSymbolizer)collector.symbolizers.get(2);
+  assertEquals("#009900",ps.getFill().getColor().evaluate(null,String.class));
+}

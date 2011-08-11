@@ -1,0 +1,35 @@
+{
+  RuleBuilder rb=new RuleBuilder();
+  PolygonSymbolizerBuilder pb=rb.polygon();
+  pb.fill().colorHex("#40FF40");
+  pb.stroke().colorHex("#FFFFFF").width(2);
+  TextSymbolizerBuilder tb=rb.text().label("name");
+  tb.pointPlacement().anchor().x(0.5).y(0.5);
+  tb.newFont().familyName("Arial").size(11).styleName("normal").weightName("bold");
+  tb.fill().color(Color.BLACK);
+  tb.halo().radius(3).fill().color(Color.WHITE);
+  tb.option("autoWrap",60).option("maxDisplacement",150);
+  Style style=rb.buildStyle();
+  StyleCollector collector=new StyleCollector();
+  style.accept(collector);
+  PolygonSymbolizer ps=(PolygonSymbolizer)collector.symbolizers.get(0);
+  assertEquals("#40FF40",ps.getFill().getColor().evaluate(null,String.class));
+  assertEquals(Color.WHITE,ps.getStroke().getColor().evaluate(null,Color.class));
+  assertEquals(2,(int)ps.getStroke().getWidth().evaluate(null,Integer.class));
+  TextSymbolizer2 ts=(TextSymbolizer2)collector.symbolizers.get(1);
+  assertEquals(ff.property("name"),ts.getLabel());
+  assertEquals(Color.BLACK,ts.getFill().getColor().evaluate(null,Color.class));
+  Font font=ts.getFont();
+  assertEquals("Arial",font.getFamily().get(0).evaluate(null,String.class));
+  assertEquals(11,(int)font.getSize().evaluate(null,Integer.class));
+  assertEquals(Font.Style.NORMAL,font.getStyle().evaluate(null,String.class));
+  assertEquals(Font.Weight.BOLD,font.getWeight().evaluate(null,String.class));
+  PointPlacement pp=(PointPlacement)ts.getLabelPlacement();
+  assertEquals(0.5,pp.getAnchorPoint().getAnchorPointX().evaluate(null,Double.class),0);
+  assertEquals(0.5,pp.getAnchorPoint().getAnchorPointY().evaluate(null,Double.class),0);
+  assertEquals(3,(int)ts.getHalo().getRadius().evaluate(null,Integer.class));
+  assertEquals(Color.WHITE,ts.getHalo().getFill().getColor().evaluate(null,Color.class));
+  assertEquals(2,ts.getOptions().size());
+  assertEquals("60",ts.getOptions().get("autoWrap"));
+  assertEquals("150",ts.getOptions().get("maxDisplacement"));
+}

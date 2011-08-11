@@ -1,0 +1,26 @@
+{
+  RuleBuilder rb=new RuleBuilder();
+  rb.point().graphic().size(6).mark().name("circle").fill().color(Color.RED);
+  TextSymbolizerBuilder tb=rb.text().label("name");
+  tb.fill().color(Color.BLACK);
+  tb.newFont().familyName("Arial").size(12).styleName(Font.Style.NORMAL).weightName(Font.Weight.BOLD);
+  tb.pointPlacement().displacement().x(0).y(5);
+  tb.pointPlacement().anchor().x(0.5);
+  Style style=rb.buildStyle();
+  StyleCollector collector=new StyleCollector();
+  style.accept(collector);
+  basicPointWithLabelAssertions(collector);
+  TextSymbolizer ps=(TextSymbolizer)collector.symbolizers.get(1);
+  assertEquals(ff.property("name"),ps.getLabel());
+  assertEquals(Color.BLACK,ps.getFill().getColor().evaluate(null,Color.class));
+  Font font=ps.getFont();
+  assertEquals("Arial",font.getFamily().get(0).evaluate(null,String.class));
+  assertEquals(12,(int)font.getSize().evaluate(null,Integer.class));
+  assertEquals(Font.Style.NORMAL,font.getStyle().evaluate(null,String.class));
+  assertEquals(Font.Weight.BOLD,font.getWeight().evaluate(null,String.class));
+  PointPlacement pp=(PointPlacement)ps.getLabelPlacement();
+  assertEquals(0.5,pp.getAnchorPoint().getAnchorPointX().evaluate(null,Double.class),0);
+  assertEquals(0,pp.getAnchorPoint().getAnchorPointY().evaluate(null,Double.class),0);
+  assertEquals(0,(int)pp.getDisplacement().getDisplacementX().evaluate(null,Integer.class));
+  assertEquals(5,(int)pp.getDisplacement().getDisplacementY().evaluate(null,Integer.class));
+}

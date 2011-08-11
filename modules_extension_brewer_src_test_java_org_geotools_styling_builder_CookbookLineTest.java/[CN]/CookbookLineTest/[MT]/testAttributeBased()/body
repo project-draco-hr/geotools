@@ -1,0 +1,24 @@
+{
+  FeatureTypeStyleBuilder fts=new FeatureTypeStyleBuilder();
+  fts.rule().filter("type = 'local-road'").line().stroke().colorHex("#009933").width(2);
+  fts.rule().filter("type = 'secondary'").line().stroke().colorHex("#0055CC").width(3);
+  fts.rule().filter("type = 'highway'").line().stroke().colorHex("#FF0000").width(6);
+  Style style=fts.buildStyle();
+  StyleCollector collector=new StyleCollector();
+  style.accept(collector);
+  assertEquals(1,collector.featureTypeStyles.size());
+  assertEquals(3,collector.rules.size());
+  assertEquals(3,collector.symbolizers.size());
+  assertEquals(ff.equals(ff.property("type"),ff.literal("local-road")),collector.rules.get(0).getFilter());
+  assertEquals(ff.equals(ff.property("type"),ff.literal("secondary")),collector.rules.get(1).getFilter());
+  assertEquals(ff.equals(ff.property("type"),ff.literal("highway")),collector.rules.get(2).getFilter());
+  LineSymbolizer ls=(LineSymbolizer)collector.symbolizers.get(0);
+  assertEquals(2,(int)ls.getStroke().getWidth().evaluate(null,Integer.class));
+  assertEquals("#009933",ls.getStroke().getColor().evaluate(null,String.class));
+  ls=(LineSymbolizer)collector.symbolizers.get(1);
+  assertEquals(3,(int)ls.getStroke().getWidth().evaluate(null,Integer.class));
+  assertEquals("#0055CC",ls.getStroke().getColor().evaluate(null,String.class));
+  ls=(LineSymbolizer)collector.symbolizers.get(2);
+  assertEquals(6,(int)ls.getStroke().getWidth().evaluate(null,Integer.class));
+  assertEquals("#FF0000",ls.getStroke().getColor().evaluate(null,String.class));
+}

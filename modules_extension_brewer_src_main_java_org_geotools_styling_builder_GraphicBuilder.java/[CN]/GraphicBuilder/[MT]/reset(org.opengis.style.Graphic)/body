@@ -1,5 +1,5 @@
 {
-  if (graphic == null) {
+  if (graphic == null || graphic.graphicalSymbols().size() == 0) {
     return unset();
   }
   unset=false;
@@ -7,12 +7,27 @@
   for (  GraphicalSymbol graphicalSymbol : graphic.graphicalSymbols()) {
     if (graphicalSymbol instanceof Symbol) {
       Symbol symbol=(Symbol)graphicalSymbol;
-      symbols.add(new SymbolBuilder<GraphicBuilder<P>>(this).reset(symbol));
+      Builder<? extends Symbol> builder;
+      if (symbol instanceof Mark) {
+        builder=new MarkBuilder(this).reset((Mark)symbol);
+      }
+ else       if (symbol instanceof ExternalGraphic) {
+        builder=new ExternalGraphicBuilder(this).reset((ExternalGraphic)symbol);
+      }
+ else {
+        throw new IllegalArgumentException("Unrecognized symbol type: " + symbol.getClass());
+      }
+      if (builder != null) {
+        symbols.add(builder);
+      }
+ else {
+        throw new RuntimeException("Failed to clone a builder for symbol: " + symbol);
+      }
     }
   }
-  opacity.reset(graphic.getOpacity());
-  size.reset(graphic.getSize());
-  rotation.reset(graphic.getRotation());
+  opacity=graphic.getOpacity();
+  size=graphic.getSize();
+  rotation=graphic.getRotation();
   displacement.reset(graphic.getDisplacement());
   anchor.reset(graphic.getAnchorPoint());
   return this;
