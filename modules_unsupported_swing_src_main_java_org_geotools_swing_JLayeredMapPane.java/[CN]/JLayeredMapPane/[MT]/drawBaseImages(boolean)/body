@@ -1,0 +1,17 @@
+{
+  if (mapContent != null && !mapContent.getViewport().isEmpty() && acceptRepaintRequests) {
+    Rectangle r=getVisibleRect();
+    if (!checkBaseImages() || createNew) {
+      createNewBaseImages();
+      clearLabelCache.set(true);
+    }
+    if (mapContent != null && !mapContent.layers().isEmpty()) {
+      List<RenderingOperands> ops=new ArrayList<RenderingOperands>();
+      for (      Layer layer : mapContent.layers()) {
+        Graphics2D g2D=baseImages.get(layer).createGraphics();
+        ops.add(new RenderingOperands(layer,g2D,new StreamingRenderer()));
+      }
+      renderingExecutor.submit(mapContent,ops,this);
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  long rtnValue=RenderingExecutor.TASK_REJECTED;
+  if (taskExecutor.isShutdown()) {
+    throw new IllegalStateException("Calling submit after the executor has been shutdown");
+  }
+  if (mapContent == null) {
+    throw new IllegalArgumentException("mapContent must not be null");
+  }
+  if (mapContent.getViewport().isEmpty()) {
+    throw new IllegalArgumentException("The viewport must not be empty");
+  }
+  if (operands == null || operands.isEmpty()) {
+    throw new IllegalArgumentException("operands list must not be null or empty");
+  }
+  if (listener == null) {
+    throw new IllegalArgumentException("listener must not be null");
+  }
+  if (tasksLatch.getCount() == 0) {
+    tasksLatch=new CountDownLatch(operands.size());
+    long id=NEXT_ID.getAndIncrement();
+    RenderingExecutorEvent event=new RenderingExecutorEvent(this,id);
+    listener.onRenderingStarted(event);
+    for (    RenderingOperands op : operands) {
+      MapContent mc=new MapContent();
+      mc.setViewport(mapContent.getViewport());
+      mc.addLayer(op.getLayer());
+      RenderingTask task=new RenderingTask(mapContent,op.getGraphics(),op.getRenderer());
+      Future<Boolean> future=taskExecutor.submit(task);
+      currentTasks.add(new TaskInfo(id,future,listener));
+    }
+    rtnValue=id;
+  }
+  return rtnValue;
+}

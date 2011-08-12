@@ -1,0 +1,29 @@
+{
+  long rtnValue=RenderingExecutor.TASK_REJECTED;
+  if (taskExecutor.isShutdown()) {
+    throw new IllegalStateException("Calling submit after the executor has been shutdown");
+  }
+  if (mapContent == null) {
+    throw new IllegalArgumentException("mapContent must not be null");
+  }
+  if (graphics == null) {
+    throw new IllegalArgumentException("graphics must not be null");
+  }
+  if (mapContent.getViewport().isEmpty()) {
+    throw new IllegalArgumentException("The viewport must not be empty");
+  }
+  if (listener == null) {
+    throw new IllegalArgumentException("listener must not be null");
+  }
+  if (tasksLatch.getCount() == 0) {
+    tasksLatch=new CountDownLatch(1);
+    long id=NEXT_ID.getAndIncrement();
+    RenderingExecutorEvent event=new RenderingExecutorEvent(this,id);
+    listener.onRenderingStarted(event);
+    RenderingTask task=new RenderingTask(mapContent,graphics,renderer);
+    Future<Boolean> future=taskExecutor.submit(task);
+    currentTasks.add(new TaskInfo(id,future,listener));
+    rtnValue=id;
+  }
+  return rtnValue;
+}

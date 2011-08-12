@@ -1,0 +1,47 @@
+{
+  imageOrigin=new Point(0,0);
+  setBackground(DEFAULT_BACKGROUND_COLOR);
+  baseImages=new ConcurrentHashMap<Layer,BufferedImage>();
+  acceptRepaintRequests=true;
+  baseImageMoved=new AtomicBoolean();
+  clearLabelCache=new AtomicBoolean();
+  resizingPaintDelay=DEFAULT_RESIZING_PAINT_DELAY;
+  doSetRenderer(renderer);
+  doSetMapContent(content);
+  doSetRenderingExecutor(executor);
+  toolManager=new MapToolManager(this);
+  dragBox=new DragBox();
+  this.addMouseListener(dragBox);
+  this.addMouseMotionListener(dragBox);
+  this.addMouseListener(toolManager);
+  this.addMouseMotionListener(toolManager);
+  this.addMouseWheelListener(toolManager);
+  this.addMouseListener(new MouseInputAdapter(){
+    @Override public void mouseEntered(    MouseEvent e){
+      super.mouseEntered(e);
+      CursorTool tool=toolManager.getCursorTool();
+      if (tool != null) {
+        JLayeredMapPane.this.setCursor(tool.getCursor());
+      }
+    }
+  }
+);
+  addHierarchyListener(new HierarchyListener(){
+    @Override public void hierarchyChanged(    HierarchyEvent he){
+      if ((he.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+        if (isShowing()) {
+          onShownOrResized();
+        }
+      }
+    }
+  }
+);
+  addHierarchyBoundsListener(new HierarchyBoundsAdapter(){
+    @Override public void ancestorResized(    HierarchyEvent he){
+      if (isShowing()) {
+        onShownOrResized();
+      }
+    }
+  }
+);
+}

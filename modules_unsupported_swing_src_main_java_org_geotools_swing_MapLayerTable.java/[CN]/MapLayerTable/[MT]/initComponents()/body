@@ -1,0 +1,100 @@
+{
+  listModel=new DnDListModel<Layer>();
+  list=new DnDList<Layer>(listModel){
+    private static final long serialVersionUID=1289744440656016412L;
+    @Override public String getToolTipText(    MouseEvent e){
+      int item=list.locationToIndex(e.getPoint());
+      if (item >= 0) {
+        Rectangle r=list.getCellBounds(item,item);
+        if (r.contains(e.getPoint())) {
+          Point p=new Point(e.getPoint().x,e.getPoint().y - r.y);
+          if (MapLayerTableCellRenderer.hitSelectionLabel(p)) {
+            return stringRes.getString("select_layer");
+          }
+ else           if (MapLayerTableCellRenderer.hitVisibilityLabel(p)) {
+            return stringRes.getString("show_layer");
+          }
+ else           if (MapLayerTableCellRenderer.hitStyleLabel(p)) {
+            return stringRes.getString("style_layer");
+          }
+ else           if (MapLayerTableCellRenderer.hitRemoveLabel(p)) {
+            return stringRes.getString("remove_layer");
+          }
+ else           if (MapLayerTableCellRenderer.hitNameLabel(p)) {
+            return stringRes.getString("rename_layer");
+          }
+        }
+      }
+      return null;
+    }
+  }
+;
+  listModel.addListDataListener(new ListDataListener(){
+    @Override public void intervalAdded(    ListDataEvent e){
+    }
+    @Override public void intervalRemoved(    ListDataEvent e){
+    }
+    @Override public void contentsChanged(    ListDataEvent e){
+      onReorderLayers(e);
+    }
+  }
+);
+  list.setCellRenderer(new MapLayerTableCellRenderer());
+  list.setFixedCellHeight(MapLayerTableCellRenderer.getCellHeight());
+  list.addMouseListener(new MouseAdapter(){
+    @Override public void mouseClicked(    MouseEvent e){
+      long clickTime=System.currentTimeMillis();
+      boolean doubleClick=clickTime - lastClickTime < DOUBLE_CLICK_TIME;
+      lastClickTime=clickTime;
+      onLayerItemClicked(e,doubleClick);
+    }
+  }
+);
+  scrollPane=new JScrollPane(list,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+  scrollPane.setBorder(BorderFactory.createTitledBorder(stringRes.getString("layers_list_title")));
+  JPanel btnPanel=new JPanel();
+  Icon showIcon=MapLayerTableCellRenderer.LayerControlItem.VISIBLE.getIcon();
+  JButton btn=null;
+  btn=new JButton(showIcon);
+  btn.setToolTipText(stringRes.getString("show_all_layers"));
+  btn.addActionListener(new ActionListener(){
+    @Override public void actionPerformed(    ActionEvent e){
+      onShowAllLayers();
+    }
+  }
+);
+  btnPanel.add(btn);
+  Icon hideIcon=MapLayerTableCellRenderer.LayerControlItem.VISIBLE.getOffIcon();
+  btn=new JButton(hideIcon);
+  btn.setToolTipText(stringRes.getString("hide_all_layers"));
+  btn.addActionListener(new ActionListener(){
+    @Override public void actionPerformed(    ActionEvent e){
+      onHideAllLayers();
+    }
+  }
+);
+  btnPanel.add(btn);
+  Icon onIcon=MapLayerTableCellRenderer.LayerControlItem.SELECTED.getIcon();
+  btn=new JButton(onIcon);
+  btn.setToolTipText(stringRes.getString("select_all_layers"));
+  btn.addActionListener(new ActionListener(){
+    @Override public void actionPerformed(    ActionEvent e){
+      onSelectAllLayers();
+    }
+  }
+);
+  btnPanel.add(btn);
+  Icon offIcon=MapLayerTableCellRenderer.LayerControlItem.SELECTED.getOffIcon();
+  btn=new JButton(offIcon);
+  btn.setToolTipText(stringRes.getString("unselect_all_layers"));
+  btn.addActionListener(new ActionListener(){
+    @Override public void actionPerformed(    ActionEvent e){
+      onUnselectAllLayers();
+    }
+  }
+);
+  btnPanel.add(btn);
+  setLayout(new BorderLayout());
+  add(scrollPane,BorderLayout.CENTER);
+  add(btnPanel,BorderLayout.SOUTH);
+}

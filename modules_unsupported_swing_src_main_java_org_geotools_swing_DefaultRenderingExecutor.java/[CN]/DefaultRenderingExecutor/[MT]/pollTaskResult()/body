@@ -1,0 +1,29 @@
+{
+  for (  TaskInfo info : currentTasks) {
+    if (!info.polledDone && info.future.isDone()) {
+      info.polledDone=true;
+      Boolean result=null;
+      try {
+        result=info.future.get();
+      }
+ catch (      CancellationException ex) {
+        result=false;
+      }
+catch (      Exception ex) {
+        throw new IllegalStateException("When getting rendering result",ex);
+      }
+      RenderingExecutorEvent event=new RenderingExecutorEvent(this,info.id);
+      if (!result) {
+        info.listener.onRenderingFailed(event);
+      }
+ else {
+        tasksLatch.countDown();
+        if (tasksLatch.getCount() == 0) {
+          info.listener.onRenderingCompleted(event);
+          currentTasks.clear();
+          break;
+        }
+      }
+    }
+  }
+}
