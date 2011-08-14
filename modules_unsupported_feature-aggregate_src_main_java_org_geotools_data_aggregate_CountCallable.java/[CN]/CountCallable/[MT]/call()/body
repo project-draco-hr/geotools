@@ -1,0 +1,19 @@
+{
+  try {
+    DataStore ds=store.getStore(storeName,store.isTolerant());
+    SimpleFeatureSource source=ds.getFeatureSource(typeName);
+    Query q=new Query(query);
+    q.setTypeName(typeName);
+    return (long)source.getCount(q);
+  }
+ catch (  Exception e) {
+    String message="Failed to count on " + storeName + "/"+ typeName;
+    if (store.isTolerant()) {
+      AggregatingDataStore.LOGGER.log(Level.WARNING,message,e);
+      return 0l;
+    }
+ else {
+      throw new IOException(message,e);
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  try {
+    DataStore ds=store.getStore(storeName,store.isTolerant());
+    SimpleFeatureSource source=ds.getFeatureSource(typeName);
+    Query q=new Query(query);
+    q.setTypeName(typeName);
+    ReferencedEnvelope env=(ReferencedEnvelope)source.getBounds(q);
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,"Retrieved bounds {0} form store {1}",new Object[]{env,storeName});
+    }
+    return env;
+  }
+ catch (  Exception e) {
+    String message="Failed to get the bounds on " + storeName + "/"+ typeName;
+    if (store.isTolerant()) {
+      AggregatingDataStore.LOGGER.log(Level.WARNING,message,e);
+      return null;
+    }
+ else {
+      throw new IOException(message,e);
+    }
+  }
+}

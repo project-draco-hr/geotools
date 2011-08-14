@@ -1,0 +1,19 @@
+{
+  Repository repository=lookup(REPOSITORY_PARAM,params,Repository.class);
+  List<String> stores=lookup(STORES_PARAM,params,List.class);
+  boolean tolerant=lookup(TOLERATE_CONNECTION_FAILURE,params,Boolean.class);
+  String namespace=lookup(NAMESPACE,params,String.class);
+  ExecutorService executor;
+  int parallelism=lookup(PARALLELISM,params,Integer.class);
+  if (parallelism <= 0) {
+    executor=Executors.newCachedThreadPool();
+  }
+ else {
+    executor=Executors.newFixedThreadPool(parallelism);
+  }
+  AggregatingDataStore store=new AggregatingDataStore(repository,executor);
+  store.setNamespaceURI(namespace);
+  store.setTolerant(tolerant);
+  store.autoConfigureStores(stores);
+  return store;
+}

@@ -1,0 +1,22 @@
+{
+  try {
+    DataStore ps=getStore().getStore(config.getPrimaryStore(),false);
+    SimpleFeatureType target=DataUtilities.createView(ps,query).getSchema();
+    FeatureQueue queue=new FeatureQueue(config.getStoreMap().size());
+    AggregatingDataStore store=getStore();
+    for (    Map.Entry<Name,String> entry : config.getStoreMap().entrySet()) {
+      FeatureCallable fc=new FeatureCallable(store,query,entry.getKey(),entry.getValue(),queue,target);
+      queue.addSource(fc);
+      store.submit(fc);
+    }
+    if (query.getSortBy() != null && query.getSortBy() != null) {
+      throw new UnsupportedOperationException("We can't sort at the moment");
+    }
+ else {
+      return new QueueReader(queue,target);
+    }
+  }
+ catch (  SchemaException e) {
+    throw new IOException("Failed to compute target feature type",e);
+  }
+}

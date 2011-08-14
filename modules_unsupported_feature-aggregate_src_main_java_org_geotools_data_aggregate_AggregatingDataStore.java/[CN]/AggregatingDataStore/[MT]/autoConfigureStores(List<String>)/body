@@ -1,0 +1,31 @@
+{
+  if (storeNames == null || storeNames.size() == 0) {
+    return;
+  }
+  Map<String,Set<String>> allNames=new LinkedHashMap<String,Set<String>>();
+  for (  String storeName : storeNames) {
+    DataStore store=getStore(storeName,tolerant);
+    if (store != null) {
+      Set<String> typeNames=new LinkedHashSet<String>(Arrays.asList(store.getTypeNames()));
+      allNames.put(storeName,typeNames);
+    }
+ else {
+      allNames.put(storeName,(Set<String>)Collections.EMPTY_SET);
+    }
+  }
+  for (int i=0; i < storeNames.size(); i++) {
+    String storeName=storeNames.get(i);
+    Set<String> baseNames=allNames.get(storeName);
+    for (    String baseName : baseNames) {
+      AggregateTypeConfiguration config=new AggregateTypeConfiguration(baseName);
+      config.addStore(buildName(storeName),baseName);
+      for (int j=i + 1; j < storeNames.size(); j++) {
+        String otherStore=storeNames.get(j);
+        if (allNames.get(otherStore).remove(baseName)) {
+          config.addStore(buildName(otherStore),baseName);
+        }
+      }
+      addType(config);
+    }
+  }
+}

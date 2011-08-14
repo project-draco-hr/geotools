@@ -1,0 +1,26 @@
+{
+  AggregatingDataStore store=getStore();
+  List<Future<ReferencedEnvelope>> allBounds=new ArrayList<Future<ReferencedEnvelope>>();
+  for (  Map.Entry<Name,String> entry : config.getStoreMap().entrySet()) {
+    Future<ReferencedEnvelope> f=store.submit(new BoundsCallable(store,query,entry.getKey(),entry.getValue()));
+    allBounds.add(f);
+  }
+  ReferencedEnvelope result=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+  for (  Future<ReferencedEnvelope> future : allBounds) {
+    try {
+      ReferencedEnvelope bound=future.get();
+      if (bound != null) {
+        result.expandToInclude(bound);
+      }
+    }
+ catch (    Exception e) {
+      throw new IOException("Failed to get the envelope from a delegate store",e);
+    }
+  }
+  if (result.isNull()) {
+    return null;
+  }
+ else {
+    return result;
+  }
+}

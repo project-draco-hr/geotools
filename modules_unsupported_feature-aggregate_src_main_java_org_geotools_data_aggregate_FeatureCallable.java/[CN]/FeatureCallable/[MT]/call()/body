@@ -1,0 +1,64 @@
+{
+  SimpleFeatureIterator fi=null;
+  int storeId=-1;
+  try {
+    DataStore ds=store.getStore(storeName,store.isTolerant());
+    AggregateTypeConfiguration config=store.getTypeConfigurations().get(builder.getFeatureType().getTypeName());
+    storeId=config.getStoreIndex(storeName);
+    SimpleFeatureSource source=ds.getFeatureSource(typeName);
+    Query q=new Query(query);
+    q.setTypeName(typeName);
+    Filter originalFilter=q.getFilter();
+    if (originalFilter != null && Filter.INCLUDE.equals(originalFilter)) {
+      FilterAttributeExtractor extractor=new FilterAttributeExtractor();
+      originalFilter.accept(extractor,null);
+      Set<String> filterNames=extractor.getAttributeNameSet();
+      Set<String> sourceNames=getSourceAttributes(source);
+      if (!sourceNames.containsAll(filterNames)) {
+        MissingPropertiesEraser eraser=new MissingPropertiesEraser(sourceNames);
+        Filter erased=(Filter)originalFilter.accept(eraser,null);
+        q.setFilter(erased);
+      }
+    }
+    fi=source.getFeatures(q).features();
+    while (fi.hasNext() && !stopped) {
+      SimpleFeature feature=fi.next();
+      for (      AttributeDescriptor ad : builder.getFeatureType().getAttributeDescriptors()) {
+        String attribute=ad.getLocalName();
+        Object attValue=feature.getAttribute(attribute);
+        if (attValue != null) {
+          builder.set(attribute,attValue);
+        }
+      }
+      String id=feature.getID();
+      if (id.startsWith(typeName)) {
+        id=id.substring(typeName.length() + 1);
+      }
+      id=builder.getFeatureType().getTypeName() + "." + storeId+ "."+ id;
+      SimpleFeature sf=builder.buildFeature(id);
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,"Adding a new feature {0} from store {1}",new Object[]{sf,storeId});
+      }
+      queue.put(sf);
+    }
+  }
+ catch (  Exception e) {
+    String message="Failed to retrieve features on " + storeName + "/"+ typeName;
+    if (store.isTolerant()) {
+      AggregatingDataStore.LOGGER.log(Level.WARNING,message,e);
+      return null;
+    }
+ else {
+      queue.setException(e);
+    }
+  }
+ finally {
+    LOGGER.log(Level.FINE,"Adding the end marker for store {0}",storeId);
+    queue.sourceComplete(this);
+    queue.put(FeatureQueue.END_MARKER);
+    if (fi != null) {
+      fi.close();
+    }
+  }
+  return null;
+}

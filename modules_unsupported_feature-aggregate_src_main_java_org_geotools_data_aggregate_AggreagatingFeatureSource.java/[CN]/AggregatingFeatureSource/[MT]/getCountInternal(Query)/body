@@ -1,0 +1,18 @@
+{
+  AggregatingDataStore store=getStore();
+  List<Future<Long>> counts=new ArrayList<Future<Long>>();
+  for (  Map.Entry<Name,String> entry : config.getStoreMap().entrySet()) {
+    Future<Long> f=store.submit(new CountCallable(store,query,entry.getKey(),entry.getValue()));
+    counts.add(f);
+  }
+  long total=0;
+  for (  Future<Long> future : counts) {
+    try {
+      total+=future.get();
+    }
+ catch (    Exception e) {
+      throw new IOException("Failed to count on a delegate store",e);
+    }
+  }
+  return (int)total;
+}
