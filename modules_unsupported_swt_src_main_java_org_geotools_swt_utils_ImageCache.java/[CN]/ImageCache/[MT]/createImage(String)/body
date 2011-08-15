@@ -1,11 +1,19 @@
 {
   Image image=null;
   try {
-    URL resourceUrl=getClass().getResource(key);
-    File resourceFile=new File(resourceUrl.toURI());
-    image=new Image(Display.getCurrent(),resourceFile.getAbsolutePath());
+    File tempDir=new File(System.getProperty("java.io.tmpdir"));
+    File temporaryFile=new File(tempDir,key);
+    temporaryFile.getParentFile().mkdirs();
+    InputStream in=getClass().getResourceAsStream(key);
+    FileOutputStream out=new FileOutputStream(temporaryFile);
+    byte[] buffer=new byte[1024];
+    int len;
+    while ((len=in.read(buffer)) != -1) {
+      out.write(buffer,0,len);
+    }
+    image=new Image(Display.getCurrent(),temporaryFile.getAbsolutePath());
   }
- catch (  URISyntaxException e) {
+ catch (  IOException e) {
     e.printStackTrace();
   }
   return image;
