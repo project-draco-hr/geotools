@@ -1,0 +1,35 @@
+{
+  super(parent,style);
+  addListener(SWT.Paint,this);
+  addListener(SWT.MouseDown,this);
+  addListener(SWT.MouseUp,this);
+  imageOrigin=new Point(0,0);
+  acceptRepaintRequests=true;
+  redrawBaseImage=true;
+  baseImageMoved=false;
+  clearLabelCache=false;
+  setRenderer(renderer);
+  setMapContent(content);
+  toolManager=new MapToolManager(this);
+  this.addMouseListener(toolManager);
+  this.addMouseMoveListener(toolManager);
+  this.addMouseWheelListener(toolManager);
+  this.addMouseMoveListener(new MouseMoveListener(){
+    public void mouseMove(    MouseEvent event){
+      if (mouseDown) {
+        endX=event.x;
+        endY=event.y;
+        isDragging=true;
+        redraw();
+      }
+    }
+  }
+);
+  addControlListener(new ControlAdapter(){
+    public void controlResized(    ControlEvent e){
+      curPaintArea=getVisibleRect();
+      doSetDisplayArea(SwtMapPane.this.content.getViewport().getBounds());
+    }
+  }
+);
+}
