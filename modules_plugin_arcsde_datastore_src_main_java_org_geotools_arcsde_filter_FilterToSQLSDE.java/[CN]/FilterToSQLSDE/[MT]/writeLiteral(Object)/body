@@ -1,0 +1,22 @@
+{
+  if (literal instanceof Date || literal instanceof Calendar) {
+    final String dateLiteral=conn.issue(new Command<String>(){
+      @Override public String execute(      ISession session,      SeConnection connection) throws SeException, IOException {
+        if (literal instanceof Date) {
+          Calendar cal=Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+          cal.setTimeInMillis(((Date)literal).getTime());
+          return new SeDate(cal).toWhereStr(connection);
+        }
+ else         if (literal instanceof Calendar) {
+          return new SeDate((Calendar)literal).toWhereStr(connection);
+        }
+        throw new IllegalStateException("can't reach here");
+      }
+    }
+);
+    out.write(dateLiteral);
+  }
+ else {
+    super.writeLiteral(literal);
+  }
+}
