@@ -1,19 +1,25 @@
 {
-  if (mapContent != null) {
-    if (mapContent.getViewport().getScreenArea().equals(getVisibleRect())) {
-      return;
+  drawingLock.lock();
+  try {
+    if (mapContent != null) {
+      if (mapContent.getViewport().getScreenArea().equals(getVisibleRect())) {
+        return;
+      }
+      mapContent.getViewport().setScreenArea(getVisibleRect());
+      if (pendingDisplayArea != null) {
+        doSetDisplayArea(pendingDisplayArea);
+        pendingDisplayArea=null;
+      }
+ else       if (mapContent.getViewport().getBounds().isEmpty()) {
+        setFullExtent();
+        doSetDisplayArea(fullExtent);
+      }
+      publishEvent(new MapPaneEvent(this,MapPaneEvent.Type.DISPLAY_AREA_CHANGED,getDisplayArea()));
+      acceptRepaintRequests.set(true);
+      drawLayers(true);
     }
-    mapContent.getViewport().setScreenArea(getVisibleRect());
-    if (pendingDisplayArea != null) {
-      doSetDisplayArea(pendingDisplayArea);
-      pendingDisplayArea=null;
-    }
- else     if (mapContent.getViewport().getBounds().isEmpty()) {
-      setFullExtent();
-      doSetDisplayArea(fullExtent);
-    }
-    publishEvent(new MapPaneEvent(this,MapPaneEvent.Type.DISPLAY_AREA_CHANGED,getDisplayArea()));
-    acceptRepaintRequests.set(true);
-    drawLayers(true);
+  }
+  finally {
+    drawingLock.unlock();
   }
 }

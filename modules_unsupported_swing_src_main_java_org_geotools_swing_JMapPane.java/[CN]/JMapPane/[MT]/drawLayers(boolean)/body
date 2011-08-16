@@ -1,20 +1,26 @@
 {
-  if (mapContent != null && !mapContent.getViewport().isEmpty() && acceptRepaintRequests.get()) {
-    Rectangle r=getVisibleRect();
-    if (baseImage == null || createNewImage) {
-      baseImage=GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(r.width,r.height,Transparency.TRANSLUCENT);
-      if (baseImageGraphics != null) {
-        baseImageGraphics.dispose();
+  drawingLock.lock();
+  try {
+    if (mapContent != null && !mapContent.getViewport().isEmpty() && acceptRepaintRequests.get()) {
+      Rectangle r=getVisibleRect();
+      if (baseImage == null || createNewImage) {
+        baseImage=GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(r.width,r.height,Transparency.TRANSLUCENT);
+        if (baseImageGraphics != null) {
+          baseImageGraphics.dispose();
+        }
+        baseImageGraphics=baseImage.createGraphics();
+        clearLabelCache.set(true);
       }
-      baseImageGraphics=baseImage.createGraphics();
-      clearLabelCache.set(true);
-    }
  else {
-      baseImageGraphics.setBackground(getBackground());
-      baseImageGraphics.clearRect(0,0,r.width,r.height);
+        baseImageGraphics.setBackground(getBackground());
+        baseImageGraphics.clearRect(0,0,r.width,r.height);
+      }
+      if (mapContent != null && !mapContent.layers().isEmpty()) {
+        getRenderingExecutor().submit(mapContent,getRenderer(),baseImageGraphics,this);
+      }
     }
-    if (mapContent != null && !mapContent.layers().isEmpty()) {
-      getRenderingExecutor().submit(mapContent,getRenderer(),baseImageGraphics,this);
-    }
+  }
+  finally {
+    drawingLock.unlock();
   }
 }
