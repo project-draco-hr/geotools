@@ -1,0 +1,31 @@
+{
+  if (mapContent != newMapContent) {
+    if (mapContent != null) {
+      mapContent.removeMapLayerListListener(this);
+      for (      Layer layer : mapContent.layers()) {
+        if (layer instanceof ComponentListener) {
+          removeComponentListener((ComponentListener)layer);
+        }
+      }
+    }
+    mapContent=newMapContent;
+    mapContent.getViewport().setMatchingAspectRatio(true);
+    if (mapContent != null) {
+      mapContent.addMapLayerListListener(this);
+      mapContent.addMapBoundsListener(this);
+      if (!mapContent.layers().isEmpty()) {
+        for (        Layer layer : mapContent.layers()) {
+          layer.setSelected(true);
+          if (layer instanceof ComponentListener) {
+            addComponentListener((ComponentListener)layer);
+          }
+        }
+        setFullExtent();
+        doSetDisplayArea(fullExtent);
+      }
+    }
+    MapPaneEvent event=new MapPaneEvent(this,MapPaneEvent.Type.NEW_MAPCONTENT,mapContent);
+    publishEvent(event);
+    drawLayers(false);
+  }
+}

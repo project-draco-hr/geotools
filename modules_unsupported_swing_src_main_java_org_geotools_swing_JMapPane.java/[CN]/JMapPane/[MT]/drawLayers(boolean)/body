@@ -1,0 +1,20 @@
+{
+  if (mapContent != null && !mapContent.getViewport().isEmpty() && acceptRepaintRequests.get()) {
+    Rectangle r=getVisibleRect();
+    if (baseImage == null || createNewImage) {
+      baseImage=GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(r.width,r.height,Transparency.TRANSLUCENT);
+      if (baseImageGraphics != null) {
+        baseImageGraphics.dispose();
+      }
+      baseImageGraphics=baseImage.createGraphics();
+      clearLabelCache.set(true);
+    }
+ else {
+      baseImageGraphics.setBackground(getBackground());
+      baseImageGraphics.clearRect(0,0,r.width,r.height);
+    }
+    if (renderer != null && mapContent != null && !mapContent.layers().isEmpty()) {
+      renderingExecutor.submit(mapContent,renderer,baseImageGraphics,this);
+    }
+  }
+}
