@@ -1,10 +1,19 @@
 {
   super.paintComponent(g);
-  Graphics2D g2=(Graphics2D)g;
-  for (  Layer layer : mapContent.layers()) {
-    LayerOperands op=operandLookup.get(layer);
-    if (op != null) {
-      g2.drawImage(op.image,imageOrigin.x,imageOrigin.y,null);
+  if (drawingLock.tryLock()) {
+    try {
+      if (mapContent != null) {
+        Graphics2D g2=(Graphics2D)g;
+        for (        Layer layer : mapContent.layers()) {
+          LayerOperands op=operandLookup.get(layer);
+          if (op != null) {
+            g2.drawImage(op.image,imageOrigin.x,imageOrigin.y,null);
+          }
+        }
+      }
+    }
+  finally {
+      drawingLock.unlock();
     }
   }
 }
