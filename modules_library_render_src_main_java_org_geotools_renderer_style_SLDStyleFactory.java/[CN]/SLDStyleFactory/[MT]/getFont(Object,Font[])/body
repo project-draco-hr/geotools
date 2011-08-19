@@ -1,25 +1,19 @@
 {
   if (fonts != null) {
     for (int k=0; k < fonts.length; k++) {
-      String requestedFont=evalToString(fonts[k].getFontFamily(),feature,null);
+      Font curr=fonts[k];
+      String requestedFont=evalToString(curr.getFontFamily(),feature,null);
       java.awt.Font javaFont=FontCache.getDefaultInstance().getFont(requestedFont);
       if (javaFont != null) {
-        String reqStyle=evalToString(fonts[k].getFontStyle(),feature,null);
-        int styleCode;
-        if (fontStyleLookup.containsKey(reqStyle)) {
-          styleCode=((Integer)fontStyleLookup.get(reqStyle)).intValue();
-        }
- else {
-          styleCode=java.awt.Font.PLAIN;
-        }
-        String reqWeight=evalToString(fonts[k].getFontWeight(),feature,null);
-        if ("Bold".equalsIgnoreCase(reqWeight)) {
-          styleCode=styleCode | java.awt.Font.BOLD;
-        }
-        int size=evalToInt(fonts[k].getFontSize(),feature,10);
-        return javaFont.deriveFont(styleCode,size);
+        return styleFont(feature,curr,javaFont);
       }
     }
   }
-  return new java.awt.Font("Serif",java.awt.Font.PLAIN,12);
+  java.awt.Font result=new java.awt.Font("Serif",java.awt.Font.PLAIN,12);
+  if ((fonts != null) && (fonts.length > 0)) {
+    return styleFont(feature,fonts[0],result);
+  }
+ else {
+    return result;
+  }
 }
