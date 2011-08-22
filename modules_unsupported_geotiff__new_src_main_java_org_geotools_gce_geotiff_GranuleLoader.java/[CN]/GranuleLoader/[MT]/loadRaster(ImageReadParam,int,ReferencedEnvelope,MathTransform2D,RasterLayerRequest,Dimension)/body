@@ -1,0 +1,128 @@
+{
+  if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+    LOGGER.fine("Loading raster data for rasterGranuleLoader " + this.toString());
+  }
+  ImageInputStream inStream=null;
+  int imageChoice=imageIndex;
+  File file=granuleFile;
+  final ReferencedEnvelope bbox=new ReferencedEnvelope(granuleBBOX);
+  final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
+  ImageReader reader=null;
+  try {
+    if (request.rasterManager.parent.extOvrImgChoice >= 0 && imageIndex >= request.rasterManager.parent.extOvrImgChoice) {
+      file=request.rasterManager.parent.ovrSource;
+      inStream=request.rasterManager.parent.ovrInStreamSPI.createInputStreamInstance(file,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+      imageChoice=imageIndex - request.rasterManager.parent.extOvrImgChoice;
+    }
+ else {
+      inStream=ImageIOExt.createImageInputStream(file);
+    }
+    if (inStream == null) {
+      return null;
+    }
+    reader=Utils.TIFFREADERFACTORY.createReaderInstance();
+    reader.setInput(inStream);
+    final Level selectedlevel=getLevel(request,imageIndex);
+    final MathTransform2D cropGridToWorldCorner=(MathTransform2D)ProjectiveTransform.create(selectedlevel.gridToWorldTransform);
+    final MathTransform2D cropWorldToGrid=cropGridToWorldCorner.inverse();
+    final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
+    XRectangle2D.intersect(sourceArea,selectedlevel.rasterDimensions,sourceArea);
+    if (sourceArea.isEmpty()) {
+      if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+        LOGGER.warning("Got empty area for rasterGranuleLoader " + this.toString() + " with request "+ request.toString());
+      }
+      return null;
+    }
+ else     if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+      LOGGER.fine("Loading level " + imageIndex + " with source region "+ sourceArea);
+    }
+    readParameters.setSourceRegion(sourceArea);
+    RenderedImage raster=request.getReadType().read(readParameters,imageChoice,file,selectedlevel.rasterDimensions,tileDimension);
+    if (raster == null) {
+      return null;
+    }
+    try {
+      raster.getWidth();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+        LOGGER.log(java.util.logging.Level.FINE,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+      }
+      return null;
+    }
+    sourceArea.setRect(readParameters.getSourceRegion());
+    double decimationScaleX=((1.0 * sourceArea.width) / raster.getWidth());
+    double decimationScaleY=((1.0 * sourceArea.height) / raster.getHeight());
+    final AffineTransform decimationScaleTranform=XAffineTransform.getScaleInstance(decimationScaleX,decimationScaleY);
+    final AffineTransform afterDecimationTranslateTranform=XAffineTransform.getTranslateInstance(sourceArea.x,sourceArea.y);
+    final AffineTransform backToBaseLevelScaleTransform=selectedlevel.levelToBaseTransform;
+    final AffineTransform tempRaster2Model=new AffineTransform(baseGridToWorld);
+    tempRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+    if (!XAffineTransform.isIdentity(backToBaseLevelScaleTransform,Utils.EPSILON)) {
+      tempRaster2Model.concatenate(backToBaseLevelScaleTransform);
+    }
+    if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,Utils.EPSILON)) {
+      tempRaster2Model.concatenate(afterDecimationTranslateTranform);
+    }
+    if (!XAffineTransform.isIdentity(decimationScaleTranform,Utils.EPSILON)) {
+      tempRaster2Model.concatenate(decimationScaleTranform);
+    }
+    final AffineTransform translationTransform=tempRaster2Model;
+    translationTransform.preConcatenate((AffineTransform)mosaicWorldToGrid);
+    final InterpolationNearest nearest=new InterpolationNearest();
+    Rectangle2D finalLayout=ImageUtilities.layoutHelper(raster,(float)translationTransform.getScaleX(),(float)translationTransform.getScaleY(),(float)translationTransform.getTranslateX(),(float)translationTransform.getTranslateY(),nearest);
+    if (finalLayout.isEmpty()) {
+      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+        LOGGER.fine("Unable to create a rasterGranuleLoader " + this.toString() + " due to jai scale bug");
+      }
+      return null;
+    }
+    final RenderingHints localHints=new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE);
+    if (XAffineTransform.isIdentity(translationTransform,Utils.EPSILON)) {
+      return raster;
+    }
+ else {
+      final Dimension tileDimensions=request.getTileDimensions();
+      if (tileDimensions != null && request.getReadType().equals(ReadType.DIRECT_READ)) {
+        final ImageLayout layout=new ImageLayout();
+        layout.setTileHeight(tileDimensions.width).setTileWidth(tileDimensions.height);
+        localHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
+      }
+      return AffineDescriptor.create(raster,translationTransform,nearest,null,localHints);
+    }
+  }
+ catch (  IllegalStateException e) {
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    }
+    return null;
+  }
+catch (  org.opengis.referencing.operation.NoninvertibleTransformException e) {
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    }
+    return null;
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,"Unable to load raster for rasterGranuleLoader " + this.toString() + " with request "+ request.toString(),e);
+    }
+    return null;
+  }
+ finally {
+    if (inStream != null) {
+      try {
+        inStream.close();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
