@@ -3,16 +3,14 @@
   Collection<PropertyDescriptor> descriptors=realType.getDescriptors();
   attributes=new ArrayList<PropertyDescriptor>(descriptors);
   List<String> simpleProperties=new ArrayList<String>();
-  final List<String> ignoreList=Arrays.asList(new String[]{GML.location.getLocalPart(),GML.metaDataProperty.getLocalPart(),GML.description.getLocalPart(),GML.name.getLocalPart(),GML.boundedBy.getLocalPart()});
-  for (Iterator<PropertyDescriptor> it=attributes.iterator(); it.hasNext(); ) {
-    PropertyDescriptor property=it.next();
-    if (!(property instanceof AttributeDescriptor)) {
-      continue;
+  final Set<String> ignoreList=new HashSet<String>(Arrays.asList(new String[]{GML.location.getLocalPart(),GML.metaDataProperty.getLocalPart(),GML.description.getLocalPart(),GML.name.getLocalPart(),GML.boundedBy.getLocalPart()}));
+  if (attributes.size() > ignoreList.size()) {
+    Set<String> firstAtts=new HashSet<String>();
+    for (int i=0; i < ignoreList.size(); i++) {
+      firstAtts.add(attributes.get(i).getName().getLocalPart());
     }
-    AttributeDescriptor descriptor=(AttributeDescriptor)property;
-    Name name=descriptor.getName();
-    if (ignoreList.contains(name.getLocalPart())) {
-      it.remove();
+    if (ignoreList.equals(firstAtts)) {
+      attributes=attributes.subList(ignoreList.size(),attributes.size());
     }
   }
   for (  PropertyDescriptor descriptor : attributes) {
