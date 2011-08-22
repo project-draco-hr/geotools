@@ -1,6 +1,6 @@
 {
   if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
-    LOGGER.fine("Loading raster data for rasterGranuleLoader " + this.toString());
+    LOGGER.fine("Loading raster data for GranuleDescriptor " + this.toString());
   }
   ImageInputStream inStream=null;
   int imageChoice=imageIndex;
@@ -22,7 +22,7 @@
     }
     reader=Utils.TIFFREADERFACTORY.createReaderInstance();
     reader.setInput(inStream);
-    final Level selectedlevel=getLevel(request,imageIndex);
+    final Level selectedlevel=getLevel(reader,request,imageIndex);
     final MathTransform2D cropGridToWorldCorner=(MathTransform2D)ProjectiveTransform.create(selectedlevel.gridToWorldTransform);
     final MathTransform2D cropWorldToGrid=cropGridToWorldCorner.inverse();
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
@@ -55,20 +55,13 @@
     double decimationScaleY=((1.0 * sourceArea.height) / raster.getHeight());
     final AffineTransform decimationScaleTranform=XAffineTransform.getScaleInstance(decimationScaleX,decimationScaleY);
     final AffineTransform afterDecimationTranslateTranform=XAffineTransform.getTranslateInstance(sourceArea.x,sourceArea.y);
-    final AffineTransform backToBaseLevelScaleTransform=selectedlevel.levelToBaseTransform;
-    final AffineTransform tempRaster2Model=new AffineTransform(baseGridToWorld);
-    tempRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
-    if (!XAffineTransform.isIdentity(backToBaseLevelScaleTransform,Utils.AFFINE_IDENTITY_EPS)) {
-      tempRaster2Model.concatenate(backToBaseLevelScaleTransform);
-    }
+    final AffineTransform finalTransform=AffineTransform.getRotateInstance(0);
     if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,Utils.AFFINE_IDENTITY_EPS)) {
-      tempRaster2Model.concatenate(afterDecimationTranslateTranform);
+      finalTransform.concatenate(afterDecimationTranslateTranform);
     }
     if (!XAffineTransform.isIdentity(decimationScaleTranform,Utils.AFFINE_IDENTITY_EPS)) {
-      tempRaster2Model.concatenate(decimationScaleTranform);
+      finalTransform.concatenate(decimationScaleTranform);
     }
-    final AffineTransform finalTransform=tempRaster2Model;
-    finalTransform.preConcatenate((AffineTransform)mosaicWorldToGrid);
     final InterpolationNearest interpolation=new InterpolationNearest();
     Rectangle2D finalLayout=ImageUtilities.layoutHelper(raster,(float)finalTransform.getScaleX(),(float)finalTransform.getScaleY(),(float)finalTransform.getTranslateX(),(float)finalTransform.getTranslateY(),interpolation);
     if (finalLayout.isEmpty()) {
