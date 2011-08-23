@@ -1,0 +1,29 @@
+{
+  if (geometries.isEmpty()) {
+    return new GeometryCollection(null,factory == null ? new GeometryFactory() : factory);
+  }
+  GeometryFactory gf=factory;
+  if (gf == null) {
+    gf=geometries.get(0).getFactory();
+  }
+  if (gf == null) {
+    gf=new GeometryFactory();
+  }
+  Class collectionClass=guessCollectionType();
+  if (collectionClass == MultiPoint.class) {
+    Point[] array=(Point[])geometries.toArray(new Point[geometries.size()]);
+    return gf.createMultiPoint(array);
+  }
+ else   if (collectionClass == MultiPolygon.class) {
+    Polygon[] array=(Polygon[])geometries.toArray(new Polygon[geometries.size()]);
+    return gf.createMultiPolygon(array);
+  }
+ else   if (collectionClass == MultiLineString.class) {
+    LineString[] array=(LineString[])geometries.toArray(new LineString[geometries.size()]);
+    return gf.createMultiLineString(array);
+  }
+ else {
+    Geometry[] array=(Geometry[])geometries.toArray(new Geometry[geometries.size()]);
+    return gf.createGeometryCollection(array);
+  }
+}
