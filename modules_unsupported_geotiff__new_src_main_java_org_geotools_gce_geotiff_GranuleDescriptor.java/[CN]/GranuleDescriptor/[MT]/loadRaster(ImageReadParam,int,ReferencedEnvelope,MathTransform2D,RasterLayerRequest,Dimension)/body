@@ -3,16 +3,16 @@
     LOGGER.fine("Loading raster data for GranuleDescriptor " + this.toString());
   }
   ImageInputStream inStream=null;
-  int imageChoice=imageIndex;
+  int imageChoice=overviewIndex;
   File file=granuleFile;
   final ReferencedEnvelope bbox=new ReferencedEnvelope(granuleBBOX);
   final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
   ImageReader reader=null;
   try {
-    if (request.rasterManager.parent.extOvrImgChoice >= 0 && imageIndex >= request.rasterManager.parent.extOvrImgChoice) {
+    if (request.rasterManager.parent.extOvrImgChoice >= 0 && overviewIndex >= request.rasterManager.parent.extOvrImgChoice) {
       file=request.rasterManager.parent.ovrSource;
       inStream=request.rasterManager.parent.ovrInStreamSPI.createInputStreamInstance(file,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
-      imageChoice=imageIndex - request.rasterManager.parent.extOvrImgChoice;
+      imageChoice=overviewIndex - request.rasterManager.parent.extOvrImgChoice;
     }
  else {
       inStream=ImageIOExt.createImageInputStream(file);
@@ -22,7 +22,7 @@
     }
     reader=Utils.TIFFREADERFACTORY.createReaderInstance();
     reader.setInput(inStream);
-    final Level selectedlevel=getLevel(reader,request,imageIndex);
+    final Level selectedlevel=getLevel(reader,request,imageChoice,overviewIndex);
     final MathTransform2D cropGridToWorldCorner=(MathTransform2D)ProjectiveTransform.create(selectedlevel.gridToWorldTransform);
     final MathTransform2D cropWorldToGrid=cropGridToWorldCorner.inverse();
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
@@ -34,7 +34,7 @@
       return null;
     }
  else     if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
-      LOGGER.fine("Loading level " + imageIndex + " with source region "+ sourceArea);
+      LOGGER.fine("Loading level " + overviewIndex + " with source region "+ sourceArea);
     }
     readParameters.setSourceRegion(sourceArea);
     RenderedImage raster=request.getReadType().read(readParameters,imageChoice,file,selectedlevel.rasterDimensions,tileDimension);
