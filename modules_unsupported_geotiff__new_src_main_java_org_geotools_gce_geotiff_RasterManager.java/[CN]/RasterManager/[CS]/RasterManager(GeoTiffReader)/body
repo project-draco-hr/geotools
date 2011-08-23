@@ -10,13 +10,13 @@
   defaultCM=baseImageType.getColorModel();
   defaultSM=baseImageType.getSampleModel();
   defaultImageLayout=new ImageLayout().setColorModel(defaultCM).setSampleModel(defaultSM);
-  coverageEnvelope=reader.getOriginalEnvelope();
-  coverageGridrange=reader.getOriginalGridRange();
-  coverageCRS=reader.getCrs();
-  raster2Model=reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER);
   overviewsController=new OverviewsController(reader.getHighestRes(),reader.getNumberOfOverviews(),reader.getOverviewsResolution());
   try {
-    spatialDomainManager=new SpatialDomainManager();
+    double[] coverageFullResolution=new double[2];
+    final OverviewLevel highestLevel=RasterManager.this.overviewsController.resolutionsLevels.get(0);
+    coverageFullResolution[0]=highestLevel.resolutionX;
+    coverageFullResolution[1]=highestLevel.resolutionY;
+    spatialDomainManager=new SpatialDomainManager(reader.getCrs(),reader.getOriginalEnvelope(),coverageFullResolution,(MathTransform2D)reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),(Rectangle)reader.getOriginalGridRange());
   }
  catch (  TransformException e) {
     throw new DataSourceException(e);
