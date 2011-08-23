@@ -22,7 +22,7 @@
     }
     reader=Utils.TIFFREADERFACTORY.createReaderInstance();
     reader.setInput(inStream);
-    final Level selectedlevel=getLevel(reader,request,imageChoice,overviewIndex);
+    final GranuleOverviewLevelDescriptor selectedlevel=getLevel(reader,request,imageChoice,overviewIndex);
     final MathTransform2D cropGridToWorldCorner=(MathTransform2D)ProjectiveTransform.create(selectedlevel.gridToWorldTransform);
     final MathTransform2D cropWorldToGrid=cropGridToWorldCorner.inverse();
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
@@ -55,35 +55,13 @@
     double decimationScaleY=((1.0 * sourceArea.height) / raster.getHeight());
     final AffineTransform decimationScaleTranform=XAffineTransform.getScaleInstance(decimationScaleX,decimationScaleY);
     final AffineTransform afterDecimationTranslateTranform=XAffineTransform.getTranslateInstance(sourceArea.x,sourceArea.y);
-    final AffineTransform finalTransform=AffineTransform.getRotateInstance(0);
-    if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,Utils.AFFINE_IDENTITY_EPS)) {
-      finalTransform.concatenate(afterDecimationTranslateTranform);
-    }
-    if (!XAffineTransform.isIdentity(decimationScaleTranform,Utils.AFFINE_IDENTITY_EPS)) {
-      finalTransform.concatenate(decimationScaleTranform);
-    }
-    final InterpolationNearest interpolation=new InterpolationNearest();
-    Rectangle2D finalLayout=ImageUtilities.layoutHelper(raster,(float)finalTransform.getScaleX(),(float)finalTransform.getScaleY(),(float)finalTransform.getTranslateX(),(float)finalTransform.getTranslateY(),interpolation);
-    if (finalLayout.isEmpty()) {
-      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
-        LOGGER.fine("Unable to create a rasterGranuleLoader " + this.toString() + " due to jai scale bug");
-      }
-      return null;
-    }
-    final RenderingHints localHints=new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,interpolation instanceof InterpolationNearest ? Boolean.FALSE : Boolean.TRUE);
-    if (XAffineTransform.isIdentity(finalTransform,Utils.AFFINE_IDENTITY_EPS)) {
-      return raster;
-    }
- else {
-      final Dimension tileDimensions=request.getTileDimensions();
-      if (tileDimensions != null && request.getReadType().equals(ReadType.DIRECT_READ)) {
-        final ImageLayout layout=new ImageLayout();
-        layout.setTileHeight(tileDimensions.width).setTileWidth(tileDimensions.height);
-        localHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
-      }
-      localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
-      return AffineDescriptor.create(raster,finalTransform,interpolation,request.getBackgroundValues(),localHints);
-    }
+    final AffineTransform backToBaseLevelScaleTransform=selectedlevel.getBaseToLevelTransform();
+    final AffineTransform finalRaster2Model=new AffineTransform(baseGridToWorld);
+    finalRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+    if (!XAffineTransform.isIdentity(backToBaseLevelScaleTransform,Utils.AFFINE_IDENTITY_EPS))     finalRaster2Model.concatenate(backToBaseLevelScaleTransform);
+    if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,Utils.AFFINE_IDENTITY_EPS))     finalRaster2Model.concatenate(afterDecimationTranslateTranform);
+    if (!XAffineTransform.isIdentity(decimationScaleTranform,Utils.AFFINE_IDENTITY_EPS))     finalRaster2Model.concatenate(decimationScaleTranform);
+    return new GranuleLoadingResult(raster,finalRaster2Model);
   }
  catch (  IllegalStateException e) {
     if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
