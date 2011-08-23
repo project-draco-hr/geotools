@@ -3,27 +3,20 @@
     LOGGER.fine("Loading raster data for GranuleDescriptor " + this.toString());
   }
   ImageInputStream inStream=null;
-  int imageChoice=overviewIndex;
-  File file=granuleFile;
   final ReferencedEnvelope bbox=new ReferencedEnvelope(granuleBBOX);
   final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
   ImageReader reader=null;
   try {
-    if (request.rasterManager.parent.extOvrImgChoice >= 0 && overviewIndex >= request.rasterManager.parent.extOvrImgChoice) {
-      file=request.rasterManager.parent.ovrSource;
-      inStream=request.rasterManager.parent.ovrInStreamSPI.createInputStreamInstance(file,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
-      imageChoice=overviewIndex - request.rasterManager.parent.extOvrImgChoice;
-    }
- else {
-      inStream=ImageIOExt.createImageInputStream(file);
-    }
+    final GranuleLevelDescriptor selectedlevel=granuleLevels.get(Integer.valueOf(overviewIndex));
+    final File input=selectedlevel.source;
+    inStream=selectedlevel.streamSPI.createInputStreamInstance(input,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+    int imageChoice=selectedlevel.imageIndex;
     if (inStream == null) {
       return null;
     }
     reader=Utils.TIFFREADERFACTORY.createReaderInstance();
     reader.setInput(inStream);
-    final GranuleOverviewLevelDescriptor selectedlevel=getLevel(reader,request,imageChoice,overviewIndex);
-    final MathTransform2D cropGridToWorldCorner=(MathTransform2D)ProjectiveTransform.create(selectedlevel.gridToWorldTransform);
+    final MathTransform2D cropGridToWorldCorner=(MathTransform2D)ProjectiveTransform.create(selectedlevel.gridToWorldTransformCorner);
     final MathTransform2D cropWorldToGrid=cropGridToWorldCorner.inverse();
     final Rectangle sourceArea=CRS.transform(cropWorldToGrid,new GeneralEnvelope(intersection)).toRectangle2D().getBounds();
     XRectangle2D.intersect(sourceArea,selectedlevel.rasterDimensions,sourceArea);
@@ -37,7 +30,7 @@
       LOGGER.fine("Loading level " + overviewIndex + " with source region "+ sourceArea);
     }
     readParameters.setSourceRegion(sourceArea);
-    RenderedImage raster=request.getReadType().read(readParameters,imageChoice,file,selectedlevel.rasterDimensions,tileDimension);
+    RenderedImage raster=request.getReadType().read(readParameters,imageChoice,input,selectedlevel.rasterDimensions,tileDimension);
     if (raster == null) {
       return null;
     }
