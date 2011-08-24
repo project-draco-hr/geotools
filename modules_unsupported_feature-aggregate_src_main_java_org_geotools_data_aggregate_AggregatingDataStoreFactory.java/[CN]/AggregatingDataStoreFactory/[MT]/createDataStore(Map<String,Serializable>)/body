@@ -1,6 +1,6 @@
 {
   Repository repository=lookup(REPOSITORY_PARAM,params,Repository.class);
-  List<String> stores=lookup(STORES_PARAM,params,List.class);
+  String[] stores=lookup(STORES_PARAM,params,String[].class);
   boolean tolerant=lookup(TOLERATE_CONNECTION_FAILURE,params,Boolean.class);
   String namespace=lookup(NAMESPACE,params,String.class);
   ExecutorService executor;
@@ -14,6 +14,8 @@
   AggregatingDataStore store=new AggregatingDataStore(repository,executor);
   store.setNamespaceURI(namespace);
   store.setTolerant(tolerant);
-  store.autoConfigureStores(stores);
+  if (stores != null) {
+    store.autoConfigureStores(Arrays.asList(stores));
+  }
   return store;
 }
