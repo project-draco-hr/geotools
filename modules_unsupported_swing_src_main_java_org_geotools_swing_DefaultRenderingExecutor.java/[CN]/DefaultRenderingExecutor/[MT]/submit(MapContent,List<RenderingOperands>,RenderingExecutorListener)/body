@@ -23,12 +23,18 @@
     MapViewport vp=new MapViewport(mapContent.getViewport());
     vp.setEditable(false);
     for (    RenderingOperands op : operands) {
-      MapContent mc=new SingleLayerMapContent(op.getLayer());
+      Layer layer=op.getLayer();
+      MapContent mc=new SingleLayerMapContent(layer);
       mc.setViewport(vp);
-      op.getRenderer().setMapContent(mc);
-      RenderingTask task=new RenderingTask(mapContent,op.getGraphics(),op.getRenderer());
-      Future<Boolean> future=taskExecutor.submit(task);
-      currentTasks.add(new TaskInfo(id,task,mc,future,listener));
+      if (layer instanceof DirectLayer) {
+        RenderingTask task=new DirectRenderingTask(mapContent,op.getGraphics());
+      }
+ else {
+        op.getRenderer().setMapContent(mc);
+        DefaultRenderingTask task=new DefaultRenderingTask(mapContent,op.getGraphics(),op.getRenderer());
+        Future<Boolean> future=taskExecutor.submit(task);
+        currentTasks.add(new TaskInfo(id,task,mc,future,listener));
+      }
     }
     rtnValue=id;
   }
