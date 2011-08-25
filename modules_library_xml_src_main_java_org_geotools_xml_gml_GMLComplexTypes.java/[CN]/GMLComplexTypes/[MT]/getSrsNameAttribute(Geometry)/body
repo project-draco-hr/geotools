@@ -1,0 +1,24 @@
+{
+  AttributesImpl ai=new AttributesImpl();
+  if (g.getUserData() != null) {
+    if (g.getUserData() instanceof String) {
+      ai.addAttribute("","srsName","","anyURI",(String)g.getUserData());
+    }
+ else     if (g.getUserData() instanceof CoordinateReferenceSystem) {
+      CoordinateReferenceSystem crs=(CoordinateReferenceSystem)g.getUserData();
+      try {
+        Integer code=CRS.lookupEpsgCode(crs,false);
+        if (code != null) {
+          ai.addAttribute("","srsName","","anyURI","EPSG:" + code);
+        }
+      }
+ catch (      Exception ex) {
+        logger.log(Level.WARNING,"Could not encode the srsName for geometry, no EPSG code found",ex);
+      }
+    }
+  }
+ else {
+    ai=null;
+  }
+  return ai;
+}
