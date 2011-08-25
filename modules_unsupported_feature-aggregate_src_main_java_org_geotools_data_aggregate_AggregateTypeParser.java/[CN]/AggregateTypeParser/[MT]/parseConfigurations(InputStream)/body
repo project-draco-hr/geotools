@@ -1,0 +1,28 @@
+{
+  try {
+    Document doc=null;
+    DocumentBuilderFactory factory=DocumentBuilderFactory.newInstance();
+    factory.setIgnoringComments(true);
+    factory.setNamespaceAware(true);
+    factory.setIgnoringElementContentWhitespace(true);
+    try {
+      DocumentBuilder db=factory.newDocumentBuilder();
+      doc=db.parse(is);
+      VALIDATOR.validate(new DOMSource(doc));
+    }
+ catch (    Exception e) {
+      throw new IOException(e.getMessage());
+    }
+    Element root=doc.getDocumentElement();
+    String version=root.getAttribute("version");
+    if (version != null && !"1.0".equals(version)) {
+      throw new IOException("Unrecognized version " + version + ", the only valid value now is 1.0");
+    }
+    return parseConfigurations(root);
+  }
+  finally {
+    if (is != null) {
+      is.close();
+    }
+  }
+}
