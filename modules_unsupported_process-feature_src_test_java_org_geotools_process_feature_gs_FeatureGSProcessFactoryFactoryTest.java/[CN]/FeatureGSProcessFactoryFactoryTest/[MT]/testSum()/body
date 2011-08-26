@@ -1,0 +1,12 @@
+{
+  String typeName=bugs.getTypeNames()[0];
+  SimpleFeatureSource source=bugs.getFeatureSource(typeName);
+  Map<String,Object> input=new KVP("features",source.getFeatures(),"aggregationAttribute","cat","function",EnumSet.of(AggregationFunction.Sum),"singlePass",true);
+  NameImpl name=new NameImpl("gs","Aggregate");
+  Process process=Processors.createProcess(name);
+  assertNotNull("aggregateProcess not found",process);
+  NullProgressListener monitor=new NullProgressListener();
+  Map<String,Object> output=process.execute(input,monitor);
+  Results result=(Results)output.get("result");
+  assertTrue(result.sum > 0);
+}
