@@ -1,8 +1,41 @@
 {
+  FeatureReader fr=null;
   try {
-    return featureSource.getCount(query);
+    int size=featureSource.getCount(query);
+    if (size >= 0) {
+      return size;
+    }
+ else {
+      AttributeDescriptor chosen=null;
+      for (      AttributeDescriptor ad : getSchema().getAttributeDescriptors()) {
+        if (chosen == null || size(ad) < size(chosen)) {
+          chosen=ad;
+        }
+      }
+      Query q=new Query(query);
+      if (chosen != null) {
+        q.setPropertyNames(Collections.singletonList(chosen.getLocalName()));
+      }
+      fr=featureSource.getReader(q);
+      int count=0;
+      while (fr.hasNext()) {
+        fr.next();
+        count++;
+      }
+      return count;
+    }
   }
  catch (  IOException e) {
     throw new RuntimeException(e);
+  }
+ finally {
+    if (fr != null) {
+      try {
+        fr.close();
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 }
