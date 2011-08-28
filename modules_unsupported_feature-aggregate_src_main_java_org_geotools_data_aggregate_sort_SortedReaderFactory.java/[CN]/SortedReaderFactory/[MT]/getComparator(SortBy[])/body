@@ -1,0 +1,25 @@
+{
+  if (sortBy == SortBy.UNSORTED || sortBy == null) {
+    return null;
+  }
+  List<Comparator<SimpleFeature>> comparators=new ArrayList<Comparator<SimpleFeature>>();
+  for (  SortBy sb : sortBy) {
+    if (sb == SortBy.NATURAL_ORDER) {
+      comparators.add(new FidComparator(true));
+    }
+ else     if (sb == SortBy.REVERSE_ORDER) {
+      comparators.add(new FidComparator(false));
+    }
+ else {
+      String name=sb.getPropertyName().getPropertyName();
+      boolean ascending=sb.getSortOrder() == SortOrder.ASCENDING;
+      comparators.add(new PropertyComparator(name,ascending));
+    }
+  }
+  if (comparators.size() == 1) {
+    return comparators.get(0);
+  }
+ else {
+    return new CompositeComparator(comparators);
+  }
+}
