@@ -13,12 +13,11 @@
       queue.addSource(fc);
       store.submit(fc);
     }
+    SimpleFeatureReader reader=new QueueReader(queue,target);
     if (query.getSortBy() != null && query.getSortBy().length > 0) {
-      throw new UnsupportedOperationException("We can't sort at the moment");
+      reader=SortedReaderFactory.getSortedReader(reader,query.getSortBy(),1000,20);
     }
- else {
-      return new QueueReader(queue,target);
-    }
+    return reader;
   }
  catch (  SchemaException e) {
     throw new IOException("Failed to compute target feature type",e);
