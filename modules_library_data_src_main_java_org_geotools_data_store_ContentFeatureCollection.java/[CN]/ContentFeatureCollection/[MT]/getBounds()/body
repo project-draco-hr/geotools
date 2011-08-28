@@ -1,8 +1,51 @@
 {
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=null;
   try {
-    return featureSource.getBounds(query);
+    ReferencedEnvelope result=featureSource.getBounds(query);
+    if (result != null) {
+      return result;
+    }
+    Query q=new Query(query);
+    List<String> geometries=new ArrayList<String>();
+    for (    AttributeDescriptor ad : getSchema().getAttributeDescriptors()) {
+      if (ad instanceof GeometryDescriptor) {
+        geometries.add(ad.getLocalName());
+      }
+    }
+    if (geometries.size() == 0) {
+      return new ReferencedEnvelope();
+    }
+ else {
+      q.setPropertyNames(geometries);
+    }
+    reader=featureSource.getReader(q);
+    while (reader.hasNext()) {
+      SimpleFeature f=reader.next();
+      ReferencedEnvelope featureBounds=ReferencedEnvelope.reference(f.getBounds());
+      if (result == null) {
+        result=featureBounds;
+      }
+ else       if (featureBounds != null) {
+        result.expandToInclude(featureBounds);
+      }
+    }
+    if (result != null) {
+      return result;
+    }
+ else {
+      return new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+    }
   }
  catch (  IOException e) {
     throw new RuntimeException(e);
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.close();
+      }
+ catch (      IOException ex) {
+      }
+    }
   }
 }
