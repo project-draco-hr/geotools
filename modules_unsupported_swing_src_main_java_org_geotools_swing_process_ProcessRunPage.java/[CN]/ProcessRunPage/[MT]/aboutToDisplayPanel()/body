@@ -1,0 +1,30 @@
+{
+  JPanel page=getPanel();
+  page.removeAll();
+  page.setLayout(new GridLayout(0,2));
+  Process process=this.factory.create(name);
+  final ProgressListener progress=new ProgressWindow(this.getJWizard());
+  Map<String,Object> resultMap=process.execute(paramMap,progress);
+  JLabel title=new JLabel(factory.getTitle().toString());
+  page.add(title);
+  JLabel description=new JLabel("Your process results are below:");
+  page.add(description);
+  for (  Entry<String,Object> entry : resultMap.entrySet()) {
+    Parameter<?> parameter=new Parameter(entry.getKey(),entry.getValue().getClass(),Text.text("Result"),Text.text("Result of process"));
+    JLabel label=new JLabel(entry.getKey());
+    page.add(label);
+    ParamField widget;
+    if (Double.class.isAssignableFrom(parameter.type)) {
+      widget=new JDoubleField(parameter);
+    }
+ else     if (Geometry.class.isAssignableFrom(parameter.type)) {
+      widget=new JGeometryField(parameter);
+    }
+ else {
+      widget=new JField(parameter);
+    }
+    JComponent field=widget.doLayout();
+    widget.setValue(entry.getValue());
+    page.add(field);
+  }
+}

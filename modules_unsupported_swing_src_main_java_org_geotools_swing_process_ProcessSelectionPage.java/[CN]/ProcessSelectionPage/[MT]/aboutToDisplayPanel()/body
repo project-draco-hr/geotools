@@ -1,4 +1,5 @@
 {
+  JPanel page=getPanel();
   page.removeAll();
   GridBagLayout gridBag=new GridBagLayout();
   page.setLayout(gridBag);
@@ -34,16 +35,17 @@
   c.gridy=2;
   gridBag.setConstraints(label2,c);
   page.add(label2);
-  String[] data=new String[processFactories.size()];
-  createFactoryTitleArray(data);
-  processList=new JList(data);
+  TreeModel data=createFactoryTitleArray(processFactories);
+  processList=new JTree(data);
   processList.setFont(new Font("Arial",Font.PLAIN,12));
-  processList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-  processList.addListSelectionListener(new ListSelectionListener(){
-    public void valueChanged(    ListSelectionEvent event){
-      if (!event.getValueIsAdjusting()) {
-        Object selection=processList.getSelectedValue();
-        updateProcessDesc(selection);
+  processList.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+  processList.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener(){
+    @Override public void valueChanged(    TreeSelectionEvent e){
+      TreePath path=e.getNewLeadSelectionPath();
+      if (path.getLastPathComponent() instanceof Name) {
+        Name name=(Name)path.getLastPathComponent();
+        ProcessFactory factory=(ProcessFactory)path.getParentPath().getLastPathComponent();
+        updateProcessDesc(factory,name);
       }
     }
   }
@@ -54,7 +56,7 @@
   page.add(processList);
   descLabel=new JTextField(defaultDesc,35);
   descLabel.setEditable(false);
-  Border border=new LineBorder(this.getPage().getBackground(),0);
+  Border border=new LineBorder(this.getPanel().getBackground(),0);
   descLabel.setBorder(border);
   descLabel.setFont(new Font("Arial",Font.PLAIN,11));
   c.gridx=1;
