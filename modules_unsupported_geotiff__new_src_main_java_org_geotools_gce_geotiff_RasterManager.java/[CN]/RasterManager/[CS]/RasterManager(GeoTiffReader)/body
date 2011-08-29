@@ -1,25 +1,8 @@
 {
   Utilities.ensureNonNull("GeoTiffReader",reader);
-  this.parent=reader;
-  coverageIdentifier=reader.getName();
-  hints=reader.getHints();
-  coverageFactory=reader.getGridCoverageFactory();
-  extractOverviewPolicy();
-  baseImageType=reader.baseImageType;
-  defaultImageLayout=new ImageLayout().setColorModel(baseImageType.getColorModel()).setSampleModel(baseImageType.getSampleModel());
-  overviewsController=new OverviewsController(reader.getHighestRes(),reader.getNumberOfOverviews(),reader.getOverviewsResolution());
-  try {
-    double[] coverageFullResolution=new double[2];
-    final OverviewLevel highestLevel=RasterManager.this.overviewsController.resolutionsLevels.get(0);
-    coverageFullResolution[0]=highestLevel.resolutionX;
-    coverageFullResolution[1]=highestLevel.resolutionY;
-    spatialDomainManager=new SpatialDomainManager(reader.getCrs(),reader.getOriginalEnvelope(),coverageFullResolution,(MathTransform2D)reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),(Rectangle)reader.getOriginalGridRange());
-  }
- catch (  TransformException e) {
-    throw new DataSourceException(e);
-  }
-catch (  FactoryException e) {
-    throw new DataSourceException(e);
-  }
-  granuleDescriptor=new GranuleDescriptor(this);
+  double[][] resolutions=new double[reader.getNumberOfOverviews() + 1][2];
+  double[][] overviewResolutions=reader.getOverviewsResolution();
+  resolutions[0]=reader.getHighestRes();
+  for (int i=1; i < resolutions.length; i++)   resolutions[i]=overviewResolutions[i - 1];
+  initialize(reader.getName(),reader.getHints(),reader.getCrs(),reader.getOriginalEnvelope(),(MathTransform2D)reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),(Rectangle)reader.getOriginalGridRange(),resolutions,reader.baseImageType,reader);
 }
