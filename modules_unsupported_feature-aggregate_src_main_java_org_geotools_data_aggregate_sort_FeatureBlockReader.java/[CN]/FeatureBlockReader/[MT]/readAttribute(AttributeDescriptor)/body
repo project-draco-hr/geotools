@@ -1,0 +1,70 @@
+{
+  boolean isNull=raf.readBoolean();
+  if (isNull) {
+    return null;
+  }
+ else {
+    Class<?> binding=ad.getType().getBinding();
+    if (binding == Boolean.class) {
+      return raf.readBoolean();
+    }
+ else     if (binding == Byte.class || binding == byte.class) {
+      return raf.readByte();
+    }
+ else     if (binding == Short.class || binding == short.class) {
+      return raf.readShort();
+    }
+ else     if (binding == Integer.class || binding == int.class) {
+      return raf.readByte();
+    }
+ else     if (binding == Long.class || binding == long.class) {
+      return raf.readLong();
+    }
+ else     if (binding == Float.class || binding == float.class) {
+      return raf.readFloat();
+    }
+ else     if (binding == Double.class || binding == double.class) {
+      return raf.readDouble();
+    }
+ else     if (binding == String.class) {
+      return raf.readUTF();
+    }
+ else     if (binding == java.sql.Date.class) {
+      return new java.sql.Date(raf.readLong());
+    }
+ else     if (binding == java.sql.Time.class) {
+      return new java.sql.Time(raf.readLong());
+    }
+ else     if (binding == java.sql.Timestamp.class) {
+      return new java.sql.Timestamp(raf.readLong());
+    }
+ else     if (binding == java.util.Date.class) {
+      return new java.util.Date(raf.readLong());
+    }
+ else     if (Geometry.class.isAssignableFrom(binding)) {
+      WKBReader reader=new WKBReader();
+      int length=raf.readInt();
+      byte[] buffer=new byte[length];
+      raf.read(buffer);
+      try {
+        return reader.read(buffer);
+      }
+ catch (      ParseException e) {
+        throw new IOException("Failed to parse the geometry WKB",e);
+      }
+    }
+ else {
+      int length=raf.readInt();
+      byte[] buffer=new byte[length];
+      raf.read(buffer);
+      ByteArrayInputStream bis=new ByteArrayInputStream(buffer);
+      ObjectInputStream ois=new ObjectInputStream(bis);
+      try {
+        return ois.readObject();
+      }
+ catch (      ClassNotFoundException e) {
+        throw new IOException("Could not read back object",e);
+      }
+    }
+  }
+}

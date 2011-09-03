@@ -1,0 +1,51 @@
+{
+  Comparator<SimpleFeature> comparator=getComparator(sortBy);
+  if (comparator == null) {
+    return reader;
+  }
+  SimpleFeatureType schema=reader.getFeatureType();
+  if (!canSort(schema,sortBy)) {
+    throw new IllegalArgumentException("The specified reader cannot be sorted, either the " + "sorting properties are not comparable or the attributes are not serializable");
+  }
+  int count=0;
+  File file=null;
+  RandomAccessFile raf=null;
+  List<SimpleFeature> features=new ArrayList<SimpleFeature>();
+  List<FeatureBlockReader> readers=new ArrayList<FeatureBlockReader>();
+  boolean cleanFile=true;
+  try {
+    while (reader.hasNext()) {
+      SimpleFeature f=reader.next();
+      features.add(f);
+      count++;
+      if (count > maxFeatures) {
+        Collections.sort(features,comparator);
+        if (raf == null) {
+          file=File.createTempFile("sorted",".features");
+          file.delete();
+          raf=new RandomAccessFile(file,"rw");
+        }
+        FeatureBlockReader fbr=storeToFile(raf,features,schema);
+        readers.add(fbr);
+        count=0;
+        features.clear();
+      }
+    }
+    if (raf == null) {
+      Collections.sort(features,comparator);
+      SimpleFeatureIterator fi=new ListFeatureCollection(schema,features).features();
+      return new DelegateSimpleFeatureReader(schema,fi);
+    }
+ else {
+      cleanFile=false;
+      return new MergeSortReader(schema,raf,file,readers,comparator);
+    }
+  }
+  finally {
+    if (cleanFile && raf != null) {
+      raf.close();
+      file.delete();
+    }
+    reader.close();
+  }
+}
