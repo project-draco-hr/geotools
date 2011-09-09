@@ -1,0 +1,26 @@
+{
+  final Conversion conversion=projectedCRS.getConversionFromBase();
+  final int code=getEPSGCode(conversion);
+  if (GeoTiffIIOMetadataEncoder.isTiffUShort(code)) {
+    metadata.addGeoShortParam(GeoTiffPCSCodes.ProjectionGeoKey,code);
+    return;
+  }
+  final String conversionName=conversion.getName().getCode();
+  metadata.addGeoShortParam(GeoTiffPCSCodes.ProjectionGeoKey,32767);
+  metadata.addGeoAscii(GeoTiffPCSCodes.PCSCitationGeoKey,conversionName);
+  final OperationMethod method=conversion.getMethod();
+  String name=method.getName().getCode();
+  name=name.trim();
+  name=name.replace(' ','_');
+  final MathTransform mt=conversion.getMathTransform();
+  final MapProjection projTransf;
+  if (!(mt instanceof ConcatenatedTransform))   projTransf=(MapProjection)mt;
+ else {
+    final ConcatenatedTransform tr=(ConcatenatedTransform)mt;
+    final MathTransform m1=tr.transform1, m2=tr.transform2;
+    if (m1 instanceof MapProjection)     projTransf=(MapProjection)m1;
+ else     projTransf=(MapProjection)m2;
+  }
+  parseCoordinateProjectionTransform(projTransf,name,metadata);
+  parseLinearUnit(projectedCRS,metadata);
+}

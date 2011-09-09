@@ -1,0 +1,19 @@
+{
+  final IIOMetadataNode node=getTiffField(rootNode,GeoTIFFTagSet.TAG_MODEL_TRANSFORMATION);
+  if (node == null) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Unable to find the model transfomation tag");
+    return null;
+  }
+  final double[] modelTransformation=getTiffDoubles(node);
+  if (modelTransformation == null) {
+    return null;
+  }
+  AffineTransform transform=null;
+  if (modelTransformation.length == 9) {
+    transform=new AffineTransform(modelTransformation[0],modelTransformation[4],modelTransformation[1],modelTransformation[5],modelTransformation[6],modelTransformation[7]);
+  }
+ else   if (modelTransformation.length == 16) {
+    transform=new AffineTransform(modelTransformation[0],modelTransformation[4],modelTransformation[1],modelTransformation[5],modelTransformation[3],modelTransformation[7]);
+  }
+  return transform;
+}

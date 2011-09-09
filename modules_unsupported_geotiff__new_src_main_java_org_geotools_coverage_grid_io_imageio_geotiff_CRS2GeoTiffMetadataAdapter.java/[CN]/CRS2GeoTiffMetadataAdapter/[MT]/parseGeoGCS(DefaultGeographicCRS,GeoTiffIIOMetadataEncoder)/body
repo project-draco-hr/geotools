@@ -1,0 +1,14 @@
+{
+  final int code=getEPSGCode(geographicCRS);
+  if (GeoTiffIIOMetadataEncoder.isTiffUShort(code)) {
+    metadata.addGeoShortParam(GeoTiffGCSCodes.GeographicTypeGeoKey,code);
+    return;
+  }
+  metadata.addGeoShortParam(GeoTiffGCSCodes.GeographicTypeGeoKey,32767);
+  metadata.addGeoAscii(GeoTiffGCSCodes.GeogCitationGeoKey,geographicCRS.getName().getCode());
+  final DefaultGeodeticDatum datum=(DefaultGeodeticDatum)geographicCRS.getDatum();
+  parseDatum(datum,metadata);
+  final Unit angularUnit=((EllipsoidalCS)geographicCRS.getCoordinateSystem()).getAxis(0).getUnit();
+  parseUnit(angularUnit,0,metadata);
+  parsePrimem((DefaultPrimeMeridian)datum.getPrimeMeridian(),metadata);
+}

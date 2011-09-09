@@ -1,0 +1,18 @@
+{
+  final GeoKeyEntry rec=getGeoKeyRecord(keyID);
+  if (rec == null) {
+    return null;
+  }
+  if (rec.getTiffTagLocation() == 0) {
+    return String.valueOf(rec.getValueOffset());
+  }
+  final IIOMetadataNode field=GeoTiffUtilities.getTiffField(rootNode,rec.getTiffTagLocation());
+  if (field == null) {
+    return null;
+  }
+  final Node sequence=field.getFirstChild();
+  if (sequence == null) {
+    return null;
+  }
+  return sequence.getNodeName().equals(GeoTiffConstants.GEOTIFF_ASCIIS_TAG) ? GeoTiffUtilities.getTiffAscii((IIOMetadataNode)sequence,rec.getValueOffset(),rec.getCount()) : GeoTiffUtilities.getValueAttribute(sequence.getChildNodes().item(rec.getValueOffset()));
+}

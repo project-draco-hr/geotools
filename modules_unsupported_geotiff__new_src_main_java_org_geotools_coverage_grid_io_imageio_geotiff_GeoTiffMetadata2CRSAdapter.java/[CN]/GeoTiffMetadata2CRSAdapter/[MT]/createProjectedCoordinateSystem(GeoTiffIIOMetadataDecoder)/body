@@ -1,0 +1,27 @@
+{
+  String tempCode=metadata.getGeoKey(GeoTiffPCSCodes.ProjectedCSTypeGeoKey);
+  if (tempCode == null)   tempCode="unnamed".intern();
+  final StringBuffer projCode=new StringBuffer(tempCode.trim().intern());
+  Unit linearUnit;
+  try {
+    linearUnit=createUnit(GeoTiffPCSCodes.ProjLinearUnitsGeoKey,GeoTiffPCSCodes.ProjLinearUnitSizeGeoKey,SI.METER,SI.METER,metadata);
+  }
+ catch (  GeoTiffException e) {
+    linearUnit=null;
+  }
+  if (tempCode.equalsIgnoreCase("unnamed") || tempCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
+    return createUserDefinedPCS(metadata,linearUnit);
+  }
+  try {
+    if (!tempCode.startsWith("EPSG") && !tempCode.startsWith("epsg")) {
+      projCode.insert(0,"EPSG:");
+    }
+    final ProjectedCRS pcrs=(ProjectedCRS)CRS.decode(projCode.toString(),true);
+    if (linearUnit == null || linearUnit.equals(pcrs.getCoordinateSystem().getAxis(0).getUnit()))     return pcrs;
+    return new DefaultProjectedCRS(java.util.Collections.singletonMap("name",DefaultEllipsoidalCS.getName(pcrs,new CitationImpl("EPSG"))),pcrs.getConversionFromBase().getMethod(),(GeographicCRS)pcrs.getBaseCRS(),pcrs.getConversionFromBase().getMathTransform(),createProjectedCS(linearUnit));
+  }
+ catch (  FactoryException fe) {
+    final IOException ex=new GeoTiffException(metadata,fe.getLocalizedMessage(),fe);
+    throw ex;
+  }
+}

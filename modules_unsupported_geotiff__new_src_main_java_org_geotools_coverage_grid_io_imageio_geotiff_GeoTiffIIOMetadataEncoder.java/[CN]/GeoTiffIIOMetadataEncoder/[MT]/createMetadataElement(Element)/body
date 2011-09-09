@@ -1,0 +1,25 @@
+{
+  if (ifd != null && tiffTagsMetadata != null && !tiffTagsMetadata.isEmpty()) {
+    Iterator<String> keys=tiffTagsMetadata.keySet().iterator();
+    while (keys.hasNext()) {
+      String key=keys.next();
+      String setIdPair[]=key.split(":");
+      String set=TagSet.BASELINE.toString();
+      if (setIdPair.length > 1) {
+        set=setIdPair[0].toUpperCase();
+      }
+      String keyName=setIdPair[setIdPair.length - 1];
+      if (GeoTiffConstants.isNumeric(keyName)) {
+        final String value=tiffTagsMetadata.get(key);
+        final TIFFTag tag=getAsciiTag(set,Integer.valueOf(keyName));
+        if (tag != null) {
+          Element field=createFieldElement(tag);
+          Element data=new Element(GeoTiffConstants.GEOTIFF_ASCIIS_TAG);
+          field.addContent(data);
+          data.addContent(createAsciiElement(value));
+          ifd.addContent(field);
+        }
+      }
+    }
+  }
+}

@@ -4,9 +4,17 @@
   ImageInputStream ovrStream=null;
   try {
     reader.setInput(inStream);
+    numOverviews=reader.getNumImages(true) - 1;
+    final int hrWidth=reader.getWidth(0);
+    final int hrHeight=reader.getHeight(0);
+    final int hrTileW=reader.getTileWidth(0);
+    final int hrTileH=reader.getTileHeight(0);
+    hrLayout=new RasterLayout(0,0,hrWidth,hrHeight,0,0,hrTileW,hrTileH);
+    final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
+    originalGridRange=new GridEnvelope2D(actualDim);
     final IIOMetadata iioMetadata=reader.getImageMetadata(0);
-    GeoTiffIIOMetadataDecoder metadata=null;
-    metadata=new GeoTiffIIOMetadataDecoder(iioMetadata);
+    GeoTiffIIOMetadataDecoder metadata=new GeoTiffIIOMetadataDecoder(iioMetadata);
+    if (metadata.hasNoData())     noData=metadata.getNoData();
     GeoTiffMetadata2CRSAdapter gtcs=new GeoTiffMetadata2CRSAdapter(hints);
     final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
     if (tempCRS != null) {
@@ -18,18 +26,11 @@
       if (crs == null)       crs=Utils.getCRS(source);
     }
     if (crs == null) {
-      if (LOGGER.isLoggable(Level.WARNING))       LOGGER.warning("Coordinate Reference System is not available");
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.warning("Coordinate Reference System is not available");
+      }
       crs=AbstractGridFormat.getDefaultCRS();
     }
-    if (metadata.hasNoData())     noData=metadata.getNoData();
-    numOverviews=reader.getNumImages(true) - 1;
-    final int hrWidth=reader.getWidth(0);
-    final int hrHeight=reader.getHeight(0);
-    final int hrTileW=reader.getTileWidth(0);
-    final int hrTileH=reader.getTileHeight(0);
-    hrLayout=new RasterLayout(0,0,hrWidth,hrHeight,0,0,hrTileW,hrTileH);
-    final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
-    originalGridRange=new GridEnvelope2D(actualDim);
     if (gtcs != null && metadata != null && (metadata.hasModelTrasformation() || (metadata.hasPixelScales() && metadata.hasTiePoints()))) {
       this.raster2Model=GeoTiffMetadata2CRSAdapter.getRasterToModel(metadata);
     }

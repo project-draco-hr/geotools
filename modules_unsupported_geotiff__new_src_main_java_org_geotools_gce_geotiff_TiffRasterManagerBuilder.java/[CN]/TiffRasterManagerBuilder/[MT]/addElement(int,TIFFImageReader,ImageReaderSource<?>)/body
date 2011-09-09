@@ -1,0 +1,75 @@
+{
+  final TIFFImageMetadata metadata=(TIFFImageMetadata)reader.getImageMetadata(index);
+  final TIFFIFD IFD=metadata.getRootIFD();
+  boolean fullResolution=true;
+  boolean multipage=false;
+  final int newSubfileType;
+  TIFFField tifField=null;
+  if ((tifField=IFD.getTIFFField(254)) != null)   newSubfileType=tifField.getAsInt(0);
+ else   newSubfileType=0;
+  fullResolution=(newSubfileType & 0x1) != 1 ? true : false;
+  multipage=((newSubfileType >> 1) & 0x2) != 1 ? true : false;
+  final int pageNumber;
+  if ((tifField=IFD.getTIFFField(254)) != null)   pageNumber=tifField.getAsInt(0);
+ else   pageNumber=-1;
+  final int hrWidth=reader.getWidth(index);
+  final int hrHeight=reader.getHeight(index);
+  final int hrTileW=reader.getTileWidth(index);
+  final int hrTileH=reader.getTileHeight(index);
+  final RasterLayout rasterLayout=new RasterLayout(0,0,hrWidth,hrHeight,reader.getTileGridXOffset(index),reader.getTileGridXOffset(index),hrTileW,hrTileH);
+  final ImageReadParam readParam=reader.getDefaultReadParam();
+  readParam.setSourceRegion(new Rectangle(0,0,2,2));
+  final BufferedImage sampleImage=reader.read(index,readParam);
+  final ImageTypeSpecifier imageType=new ImageTypeSpecifier(sampleImage);
+  double noDataValue;
+  CoordinateReferenceSystem crs=null;
+  AffineTransform raster2Model=null;
+  ReferencedEnvelope bbox=null;
+  if (fullResolution) {
+    final GeoTiffIIOMetadataDecoder decoder=new GeoTiffIIOMetadataDecoder(metadata);
+    if (decoder.hasNoData())     noDataValue=decoder.getNoData();
+    GeoTiffMetadata2CRSAdapter gtcs=null;
+    final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
+    if (tempCRS != null) {
+      crs=(CoordinateReferenceSystem)tempCRS;
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,"Using forced coordinate reference system");
+    }
+ else {
+      gtcs=new GeoTiffMetadata2CRSAdapter(hints);
+      if (decoder.hasGeoKey() && gtcs != null)       try {
+        crs=gtcs.createCoordinateSystem(decoder);
+      }
+ catch (      FactoryException e) {
+        throw new IOException(e);
+      }
+      if (crs == null)       crs=Utils.getCRS(source.getSource());
+    }
+    if (crs == null) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.warning("Coordinate Reference System is not available");
+      }
+      crs=AbstractGridFormat.getDefaultCRS();
+    }
+    if (gtcs != null && metadata != null && (decoder.hasModelTrasformation() || (decoder.hasPixelScales() && decoder.hasTiePoints()))) {
+      raster2Model=(AffineTransform)GeoTiffMetadata2CRSAdapter.getRasterToModel(decoder);
+    }
+ else {
+      raster2Model=(AffineTransform)Utils.parseWorldFile(source);
+    }
+    if (raster2Model == null) {
+      raster2Model=AffineTransform.getScaleInstance(0,0);
+    }
+    final AffineTransform tempTransform=new AffineTransform(raster2Model);
+    tempTransform.translate(-0.5,-0.5);
+    try {
+      GeneralEnvelope bbox_=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(rasterLayout.getBounds()));
+      bbox_.setCoordinateReferenceSystem(crs);
+      bbox=new ReferencedEnvelope(bbox_);
+    }
+ catch (    TransformException e) {
+      new IOException(e);
+    }
+  }
+ else {
+  }
+}

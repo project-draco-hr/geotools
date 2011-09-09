@@ -1,0 +1,22 @@
+{
+  final RasterManagerBuilder rasterManagerBuilder=getRasterManagerBuilder();
+  if (rasterManagerBuilder == null) {
+    throw new IOException("Unable to obtain a RasterManagerBuilder");
+  }
+  startWalk();
+  if (rasterManagerBuilder.needsStreamMetadata()) {
+    rasterManagerBuilder.parseStreamMetadata(getStreamMetadata());
+  }
+  final int numSteps=getNumElemements();
+  for (int i=0; i < numSteps; i++) {
+    prepareElement(i);
+    try {
+      rasterManagerBuilder.addElement(i,acquireReader(i),getSource(i));
+    }
+  finally {
+      releaseReader(i);
+    }
+  }
+  endWalk();
+  this.elements=rasterManagerBuilder.create();
+}

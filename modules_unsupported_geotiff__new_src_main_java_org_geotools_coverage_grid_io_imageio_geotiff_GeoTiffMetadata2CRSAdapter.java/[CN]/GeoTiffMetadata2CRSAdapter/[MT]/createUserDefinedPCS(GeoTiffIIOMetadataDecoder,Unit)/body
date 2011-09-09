@@ -1,0 +1,35 @@
+{
+  String projectedCrsName=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+  if (projectedCrsName == null)   projectedCrsName="unnamed".intern();
+ else   projectedCrsName=cleanName(projectedCrsName);
+  final String projCode=metadata.getGeoKey(GeoTiffPCSCodes.ProjectionGeoKey);
+  boolean projUserDefined=false;
+  if (projCode == null || projCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String))   projUserDefined=true;
+  Conversion projection=null;
+  final ParameterValueGroup parameters;
+  if (projUserDefined) {
+    String projectionName=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+    if (projectionName == null)     projectionName="unnamed";
+    parameters=createUserDefinedProjectionParameter(projectionName,metadata);
+    if (parameters == null)     throw new GeoTiffException(metadata,"GeoTiffMetadata2CRSAdapter::createUserDefinedPCS:Projection is not supported.",null);
+  }
+ else {
+    parameters=null;
+    projection=(Conversion)this.allAuthoritiesFactory.createCoordinateOperation(new StringBuffer("EPSG:").append(projCode).toString());
+  }
+  final GeographicCRS gcs=createGeographicCoordinateSystem(metadata);
+  if (projUserDefined) {
+    final GeodeticDatum tempDatum=((GeodeticDatum)gcs.getDatum());
+    final DefaultEllipsoid tempEll=(DefaultEllipsoid)tempDatum.getEllipsoid();
+    double inverseFlattening=tempEll.getInverseFlattening();
+    double semiMajorAxis=tempEll.getSemiMajorAxis();
+    parameters.parameter("semi_minor").setValue(semiMajorAxis * (1 - (1 / inverseFlattening)));
+    parameters.parameter("semi_major").setValue(semiMajorAxis);
+  }
+  if (projUserDefined) {
+    if (linearUnit != null && linearUnit.equals(SI.METER))     return this.factories.createProjectedCRS(Collections.singletonMap("name",projectedCrsName),gcs,null,parameters,DefaultCartesianCS.PROJECTED);
+    return factories.createProjectedCRS(Collections.singletonMap("name",projectedCrsName),gcs,null,parameters,DefaultCartesianCS.PROJECTED.usingUnit(linearUnit));
+  }
+  if (linearUnit != null && !linearUnit.equals(SI.METER))   return factories.createProjectedCRS(Collections.singletonMap("name",projectedCrsName),gcs,projection,DefaultCartesianCS.PROJECTED.usingUnit(linearUnit));
+  return factories.createProjectedCRS(Collections.singletonMap("name",projectedCrsName),gcs,projection,DefaultCartesianCS.PROJECTED);
+}

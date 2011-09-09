@@ -1,0 +1,144 @@
+{
+  ParameterValueGroup parameters=null;
+  try {
+    int code=0;
+    if (coordTransCode != null)     code=Integer.parseInt(coordTransCode);
+    if (name == null)     name="unnamed";
+    if (name.equalsIgnoreCase("transverse_mercator") || code == GeoTiffCoordinateTransformationsCodes.CT_TransverseMercator) {
+      parameters=mtFactory.getDefaultParameters("transverse_mercator");
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("scale_factor").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjScaleAtNatOriginGeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("Equidistant_Cylindrical") || name.equalsIgnoreCase("Plate_Carree") || name.equalsIgnoreCase("Equidistant_Cylindrical")|| code == GeoTiffCoordinateTransformationsCodes.CT_Equirectangular) {
+      parameters=mtFactory.getDefaultParameters("Equidistant_Cylindrical");
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("mercator_1SP") || name.equalsIgnoreCase("Mercator_2SP") || code == GeoTiffCoordinateTransformationsCodes.CT_Mercator) {
+      final double standard_parallel_1=this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel1GeoKey,metadata);
+      boolean isMercator2SP=false;
+      if (!Double.isNaN(standard_parallel_1)) {
+        parameters=mtFactory.getDefaultParameters("Mercator_2SP");
+        isMercator2SP=true;
+      }
+ else       parameters=mtFactory.getDefaultParameters("Mercator_1SP");
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      if (isMercator2SP)       parameters.parameter("standard_parallel_1").setValue(standard_parallel_1);
+ else       parameters.parameter("scale_factor").setValue(getScaleFactor(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("lambert_conformal_conic_1SP") || code == GeoTiffCoordinateTransformationsCodes.CT_LambertConfConic_Helmert) {
+      parameters=mtFactory.getDefaultParameters("lambert_conformal_conic_1SP");
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("scale_factor").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjScaleAtNatOriginGeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("lambert_conformal_conic_2SP") || name.equalsIgnoreCase("lambert_conformal_conic_2SP_Belgium") || code == GeoTiffCoordinateTransformationsCodes.CT_LambertConfConic_2SP) {
+      parameters=mtFactory.getDefaultParameters("lambert_conformal_conic_2SP");
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("standard_parallel_1").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel1GeoKey,metadata));
+      parameters.parameter("standard_parallel_2").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel2GeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("Krovak")) {
+      parameters=mtFactory.getDefaultParameters("Krovak");
+      parameters.parameter("longitude_of_center").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_center").setValue(getOriginLat(metadata));
+      parameters.parameter("azimuth").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel1GeoKey,metadata));
+      parameters.parameter("pseudo_standard_parallel_1").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel2GeoKey,metadata));
+      parameters.parameter("scale_factor").setValue(getFalseEasting(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("stereographic") || code == GeoTiffCoordinateTransformationsCodes.CT_Stereographic) {
+      parameters=mtFactory.getDefaultParameters("stereographic");
+      parameters.parameter("central_meridian").setValue(this.getOriginLong(metadata));
+      parameters.parameter("latitude_of_origin").setValue(this.getOriginLat(metadata));
+      parameters.parameter("scale_factor").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjScaleAtNatOriginGeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("polar_stereographic") || code == GeoTiffCoordinateTransformationsCodes.CT_PolarStereographic) {
+      parameters=mtFactory.getDefaultParameters("polar_stereographic");
+      parameters.parameter("latitude_of_origin").setValue(this.getOriginLat(metadata));
+      parameters.parameter("scale_factor").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjScaleAtNatOriginGeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("oblique_stereographic") || code == GeoTiffCoordinateTransformationsCodes.CT_ObliqueStereographic) {
+      parameters=mtFactory.getDefaultParameters("Oblique_Stereographic");
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("scale_factor").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjScaleAtNatOriginGeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("oblique_mercator") || name.equalsIgnoreCase("hotine_oblique_mercator") || code == GeoTiffCoordinateTransformationsCodes.CT_ObliqueMercator) {
+      parameters=mtFactory.getDefaultParameters("oblique_mercator");
+      parameters.parameter("scale_factor").setValue(getScaleFactor(metadata));
+      parameters.parameter("azimuth").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjAzimuthAngleGeoKey,metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      parameters.parameter("longitude_of_center").setValue(getOriginLong(metadata));
+      parameters.parameter("latitude_of_center").setValue(getOriginLat(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("albers_Conic_Equal_Area") || code == GeoTiffCoordinateTransformationsCodes.CT_AlbersEqualArea) {
+      parameters=mtFactory.getDefaultParameters("Albers_Conic_Equal_Area");
+      parameters.parameter("standard_parallel_1").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel1GeoKey,metadata));
+      parameters.parameter("standard_parallel_2").setValue(this.getGeoKeyAsDouble(GeoTiffPCSCodes.ProjStdParallel2GeoKey,metadata));
+      parameters.parameter("latitude_of_center").setValue(getOriginLat(metadata));
+      parameters.parameter("longitude_of_center").setValue(getOriginLong(metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("Orthographic") || code == GeoTiffCoordinateTransformationsCodes.CT_Orthographic) {
+      parameters=mtFactory.getDefaultParameters("orthographic");
+      parameters.parameter("latitude_of_origin").setValue(getOriginLat(metadata));
+      parameters.parameter("longitude_of_origin").setValue(getOriginLong(metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("Lambert_Azimuthal_Equal_Area") || code == GeoTiffCoordinateTransformationsCodes.CT_LambertAzimEqualArea) {
+      parameters=mtFactory.getDefaultParameters("Lambert_Azimuthal_Equal_Area");
+      parameters.parameter("latitude_of_center").setValue(getOriginLat(metadata));
+      parameters.parameter("longitude_of_center").setValue(getOriginLong(metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+    if (name.equalsIgnoreCase("New_Zealand_Map_Grid") || code == GeoTiffCoordinateTransformationsCodes.CT_NewZealandMapGrid) {
+      parameters=mtFactory.getDefaultParameters("New_Zealand_Map_Grid");
+      parameters.parameter("latitude_of_origin").setValue(this.getOriginLat(metadata));
+      parameters.parameter("central_meridian").setValue(getOriginLong(metadata));
+      parameters.parameter("false_easting").setValue(getFalseEasting(metadata));
+      parameters.parameter("false_northing").setValue(getFalseNorthing(metadata));
+      return parameters;
+    }
+  }
+ catch (  NoSuchIdentifierException e) {
+    throw new GeoTiffException(metadata,e.getLocalizedMessage(),e);
+  }
+  return parameters;
+}
