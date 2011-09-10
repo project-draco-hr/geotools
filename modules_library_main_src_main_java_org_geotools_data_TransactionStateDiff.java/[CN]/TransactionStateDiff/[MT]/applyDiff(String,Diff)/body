@@ -11,6 +11,7 @@
   }
   SimpleFeature feature;
   SimpleFeature update;
+  Throwable cause=null;
   try {
     while (writer.hasNext()) {
       feature=(SimpleFeature)writer.next();
@@ -66,9 +67,31 @@ synchronized (diff) {
       }
     }
   }
-  finally {
-    writer.close();
-    store.listenerManager.fireChanged(typeName,transaction,true);
-    diff.clear();
+ catch (  IOException e) {
+    cause=e;
+    throw e;
+  }
+catch (  RuntimeException e) {
+    cause=e;
+    throw e;
+  }
+ finally {
+    try {
+      writer.close();
+      store.listenerManager.fireChanged(typeName,transaction,true);
+      diff.clear();
+    }
+ catch (    IOException e) {
+      if (cause != null) {
+        e.initCause(cause);
+      }
+      throw e;
+    }
+catch (    RuntimeException e) {
+      if (cause != null) {
+        e.initCause(cause);
+      }
+      throw e;
+    }
   }
 }
