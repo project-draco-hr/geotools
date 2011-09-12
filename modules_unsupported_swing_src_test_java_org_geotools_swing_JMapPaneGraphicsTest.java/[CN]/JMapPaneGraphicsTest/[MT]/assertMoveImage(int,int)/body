@@ -1,0 +1,31 @@
+{
+  MapContent mapContent=createMapContent(createMatchedBounds());
+  mapPane.addMapPaneListener(listener);
+  mapPane.setMapContent(mapContent);
+  ReferencedEnvelope startEnv=mapContent.getViewport().getBounds();
+  window.robot.waitForIdle();
+  listener.setExpected(MapPaneEvent.Type.DISPLAY_AREA_CHANGED);
+  mapPane.moveImage(dx,dy);
+  assertTrue(listener.await(MapPaneEvent.Type.DISPLAY_AREA_CHANGED,WAIT_TIMEOUT));
+  ReferencedEnvelope newEnv=mapPane.getDisplayArea();
+  assertEquals(startEnv.getWidth(),newEnv.getWidth(),TOL);
+  assertEquals(startEnv.getHeight(),newEnv.getHeight(),TOL);
+  if (dx == 0) {
+    assertEquals(startEnv.getMinX(),newEnv.getMinX(),TOL);
+  }
+ else   if (dx < 0) {
+    assertTrue(startEnv.getMinX() < newEnv.getMinX());
+  }
+ else {
+    assertTrue(startEnv.getMinX() > newEnv.getMinX());
+  }
+  if (dy == 0) {
+    assertEquals(startEnv.getMinY(),newEnv.getMinY(),TOL);
+  }
+ else   if (dy < 0) {
+    assertTrue(startEnv.getMinY() > newEnv.getMinY());
+  }
+ else {
+    assertTrue(startEnv.getMinY() < newEnv.getMinY());
+  }
+}
