@@ -1,30 +1,36 @@
 {
-  if (checkEditable("setCoordinateReferenceSystem")) {
-    if (crs == null) {
-      bounds=new ReferencedEnvelope(bounds,DEFAULT_CRS);
-      userCRS=false;
-    }
- else     if (!userCRS) {
-      bounds=new ReferencedEnvelope(bounds,crs);
-      userCRS=true;
-    }
- else     if (!CRS.equalsIgnoreMetadata(crs,bounds.getCoordinateReferenceSystem())) {
-      if (bounds.isEmpty()) {
-        bounds=new ReferencedEnvelope(crs);
+  lock.writeLock().lock();
+  try {
+    if (checkEditable("setCoordinateReferenceSystem")) {
+      if (crs == null) {
+        bounds=new ReferencedEnvelope(bounds,DEFAULT_CRS);
+        userCRS=false;
+      }
+ else       if (!userCRS) {
+        bounds=new ReferencedEnvelope(bounds,crs);
         userCRS=true;
       }
- else {
-        try {
-          ReferencedEnvelope old=bounds;
-          bounds=bounds.transform(crs,true);
+ else       if (!CRS.equalsIgnoreMetadata(crs,bounds.getCoordinateReferenceSystem())) {
+        if (bounds.isEmpty()) {
+          bounds=new ReferencedEnvelope(crs);
           userCRS=true;
-          setTransforms(true);
-          fireMapBoundsListenerMapBoundsChanged(MapBoundsEvent.Type.CRS,old,bounds);
         }
- catch (        Exception e) {
-          LOGGER.log(Level.FINE,"Difficulty transforming to {0}",crs);
+ else {
+          try {
+            ReferencedEnvelope old=bounds;
+            bounds=bounds.transform(crs,true);
+            userCRS=true;
+            setTransforms(true);
+            fireMapBoundsListenerMapBoundsChanged(MapBoundsEvent.Type.CRS,old,bounds);
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.FINE,"Difficulty transforming to {0}",crs);
+          }
         }
       }
     }
+  }
+  finally {
+    lock.writeLock().unlock();
   }
 }
