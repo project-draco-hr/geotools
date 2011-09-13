@@ -1,21 +1,27 @@
 {
-  language=language == null ? "" : language.trim();
-  country=country == null ? "" : country.trim();
-  Locale lnew;
-  if (language.trim().isEmpty() && country.trim().isEmpty()) {
-    lnew=DEFAULT_LOCALE;
-  }
+  localeLock.lock();
+  try {
+    language=language == null ? "" : language.trim();
+    country=country == null ? "" : country.trim();
+    Locale lnew;
+    if (language.trim().isEmpty() && country.trim().isEmpty()) {
+      lnew=DEFAULT_LOCALE;
+    }
  else {
-    lnew=new Locale(language,country);
+      lnew=new Locale(language,country);
+    }
+    if (!lnew.equals(currentLocale)) {
+      if (!supportedLocales.contains(lnew)) {
+        LOGGER.log(Level.WARNING,"{0} is not currently supported by the gt-swing module",lnew);
+        return;
+      }
+      currentLocale=lnew;
+      if (bundles != null) {
+        bundles.clear();
+      }
+    }
   }
-  if (!lnew.equals(currentLocale)) {
-    if (!supportedLocales.contains(lnew)) {
-      LOGGER.log(Level.WARNING,"{0} is not currently supported by the gt-swing module",lnew);
-      return;
-    }
-    currentLocale=lnew;
-    if (bundles != null) {
-      bundles.clear();
-    }
+  finally {
+    localeLock.unlock();
   }
 }
