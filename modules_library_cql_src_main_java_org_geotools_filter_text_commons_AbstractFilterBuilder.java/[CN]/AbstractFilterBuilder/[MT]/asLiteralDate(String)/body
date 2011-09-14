@@ -1,7 +1,23 @@
 {
   try {
-    DateFormat formatter=new SimpleDateFormat(DATE_FORMAT);
-    Date dateTime=formatter.parse(strDate);
+    final String date=extractDate(cqlDateTime);
+    final String time=extractTime(cqlDateTime);
+    final String timeZone=extractTimeZone(cqlDateTime);
+    StringBuilder format=new StringBuilder("yyyy-MM-dd");
+    if (!"".equals(time)) {
+      format.append("'T'HH:mm:ss");
+    }
+    if (!"".equals(timeZone)) {
+      if ("Z".equals(timeZone)) {
+        format.append("'Z'");
+      }
+ else {
+        format.append("Z");
+      }
+    }
+    String dateTimeFormat=format.toString();
+    DateFormat formatter=new SimpleDateFormat(dateTimeFormat);
+    Date dateTime=formatter.parse(date + "T" + time+ timeZone);
     Literal literalDate=filterFactory.literal(dateTime);
     return literalDate;
   }
