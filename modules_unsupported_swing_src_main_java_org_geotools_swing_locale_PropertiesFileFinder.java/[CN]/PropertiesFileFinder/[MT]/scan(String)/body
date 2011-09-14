@@ -1,0 +1,28 @@
+{
+  List<SingleFileInfo> infoList=new ArrayList<SingleFileInfo>();
+  String path=getSelfPath();
+  if (isJarPath(path)) {
+    JarInputStream jarFile=getAsJarFile(path);
+    JarEntry entry;
+    while ((entry=jarFile.getNextJarEntry()) != null) {
+      String name=entry.getName();
+      if (name.startsWith(resourceDir) && name.endsWith("properties")) {
+        infoList.add(parseEntry(resourceDir.length(),name));
+      }
+    }
+    jarFile.close();
+  }
+ else {
+    File localDir=getAsLocalDir(path);
+    File[] children=localDir.listFiles();
+    for (    File child : children) {
+      if (child != null && child.isFile()) {
+        String name=child.getName();
+        if (name.endsWith(".properties")) {
+          infoList.add(parseEntry(0,name));
+        }
+      }
+    }
+  }
+  return createReturnList(infoList);
+}
