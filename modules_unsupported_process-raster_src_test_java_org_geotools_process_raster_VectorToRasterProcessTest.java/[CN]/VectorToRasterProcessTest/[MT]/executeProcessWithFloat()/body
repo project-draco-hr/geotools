@@ -1,0 +1,31 @@
+{
+  System.out.println("   execute process using float values");
+  Process p=Processors.createProcess(new NameImpl("gt","VectorToRaster"));
+  assertNotNull(p);
+  SimpleFeatureCollection features=createFloatLines();
+  ReferencedEnvelope bounds=features.getBounds();
+  Dimension gridDim=new Dimension((int)bounds.getWidth(),(int)bounds.getHeight());
+  ProgressListener monitor=null;
+  Map<String,Object> map=new HashMap<String,Object>();
+  map.put(AbstractFeatureCollectionProcessFactory.FEATURES.key,features);
+  map.put(VectorToRasterFactory.ATTRIBUTE.key,"value");
+  map.put(VectorToRasterFactory.RASTER_WIDTH.key,gridDim.width);
+  map.put(VectorToRasterFactory.RASTER_HEIGHT.key,gridDim.height);
+  map.put(VectorToRasterFactory.BOUNDS.key,bounds);
+  Map<String,Object> result=p.execute(map,monitor);
+  GridCoverage2D cov=(GridCoverage2D)result.get(VectorToRasterFactory.RESULT.key);
+  SimpleFeatureIterator iter=features.features();
+  float[] covValue=new float[1];
+  GridCoordinates2D gridP=new GridCoordinates2D();
+  while (iter.hasNext()) {
+    SimpleFeature feature=iter.next();
+    Coordinate[] coords=((Geometry)feature.getDefaultGeometry()).getCoordinates();
+    for (    Coordinate coord : coords) {
+      gridP.x=coord.x == gridDim.width ? (int)coord.x - 1 : (int)coord.x;
+      gridP.y=coord.y == gridDim.height ? (int)coord.y - 1 : (int)coord.y;
+      cov.evaluate(gridP,covValue);
+      Float value=(Float)feature.getAttribute("value");
+      assertEquals(value.floatValue(),covValue[0],.01);
+    }
+  }
+}
