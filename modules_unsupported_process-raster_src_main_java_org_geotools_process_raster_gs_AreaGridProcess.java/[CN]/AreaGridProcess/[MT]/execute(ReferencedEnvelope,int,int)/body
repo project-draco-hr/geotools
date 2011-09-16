@@ -1,0 +1,46 @@
+{
+  if (height <= 0 || width <= 0) {
+    throw new ProcessException("height and width parameters must be greater than 0");
+  }
+  if (bounds.getCoordinateReferenceSystem() == null) {
+    throw new ProcessException("Envelope CRS must not be null");
+  }
+  GeometryFactory geomFactory=new GeometryFactory();
+  try {
+    CoordinateReferenceSystem sourceCRS=org.geotools.referencing.crs.DefaultGeographicCRS.WGS84;
+    CoordinateReferenceSystem targetCRS=CRS.parseWKT(targetCRSWKT);
+    MathTransform transform=CRS.findMathTransform(sourceCRS,targetCRS);
+    double pX=bounds.getMinX();
+    double pY=bounds.getMinY();
+    double stepX=(bounds.getMaxX() - bounds.getMinX()) / width;
+    double stepY=(bounds.getMaxY() - bounds.getMinY()) / height;
+    float[][] matrix=new float[width][height];
+    Coordinate[] tempCoordinates=new Coordinate[5];
+    for (int i=0; i < height; i++) {
+      for (int j=0; j < width; j++) {
+        double nX=pX + stepX;
+        double nY=pY + stepY;
+        tempCoordinates[0]=new Coordinate(pX,pY);
+        tempCoordinates[1]=new Coordinate(nX,pY);
+        tempCoordinates[2]=new Coordinate(nX,nY);
+        tempCoordinates[3]=new Coordinate(pX,nY);
+        tempCoordinates[4]=tempCoordinates[0];
+        LinearRing linearRing=geomFactory.createLinearRing(tempCoordinates);
+        Polygon polygon=geomFactory.createPolygon(linearRing,null);
+        Geometry targetGeometry=JTS.transform(polygon,transform);
+        matrix[j][i]=(float)targetGeometry.getArea();
+        pX=pX + stepX;
+      }
+      pY=pY + stepY;
+    }
+    GridCoverageFactory coverageFactory=new GridCoverageFactory();
+    GridCoverage2D grid=coverageFactory.create("AreaGridCoverage",matrix,bounds);
+    return grid;
+  }
+ catch (  org.opengis.referencing.FactoryException ef) {
+    throw new ProcessException("Unable to create the target CRS",ef);
+  }
+catch (  org.opengis.referencing.operation.TransformException et) {
+    throw new ProcessException("Unable to tranform the coordinate system",et);
+  }
+}
