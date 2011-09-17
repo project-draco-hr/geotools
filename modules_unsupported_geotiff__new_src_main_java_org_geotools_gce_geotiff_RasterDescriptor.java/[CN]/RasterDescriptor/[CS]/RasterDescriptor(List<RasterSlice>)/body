@@ -1,0 +1,14 @@
+{
+  final RasterSlice fullRes=slices.get(0);
+  this.rasterBBOX=new ReferencedEnvelope(new ReferencedEnvelope(fullRes.envelope));
+  this.baseGridToWorld=new AffineTransform((AffineTransform)fullRes.gridToWorld.clone());
+  this.levels.add(new RasterLevelDescriptor(fullRes.source,1.0,1.0,fullRes.rasterDimensions));
+  final int baseLevelWidth=fullRes.rasterDimensions.getWidth(), baseLevelHeight=fullRes.rasterDimensions.getHeight();
+  final int size=slices.size();
+  for (int i=1; i < size; i++) {
+    final RasterSlice slice=slices.get(i);
+    final double scaleX=baseLevelWidth / (1.0 * slice.rasterDimensions.getWidth());
+    final double scaleY=baseLevelHeight / (1.0 * slice.rasterDimensions.getHeight());
+    this.levels.add(new RasterLevelDescriptor(slice.source,scaleX,scaleY,slice.rasterDimensions));
+  }
+}
