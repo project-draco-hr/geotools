@@ -7,31 +7,46 @@
   }
   GeometryFactory geomFactory=new GeometryFactory();
   try {
+    Polygon polygon=null;
     CoordinateReferenceSystem sourceCRS=org.geotools.referencing.crs.DefaultGeographicCRS.WGS84;
     CoordinateReferenceSystem targetCRS=CRS.parseWKT(targetCRSWKT);
     MathTransform transform=CRS.findMathTransform(sourceCRS,targetCRS);
     double pX=bounds.getMinX();
-    double pY=bounds.getMinY();
+    double pY=bounds.getMaxY();
     double stepX=(bounds.getMaxX() - bounds.getMinX()) / width;
     double stepY=(bounds.getMaxY() - bounds.getMinY()) / height;
-    float[][] matrix=new float[width][height];
+    float[][] matrix=new float[height][width];
     Coordinate[] tempCoordinates=new Coordinate[5];
     for (int i=0; i < height; i++) {
+      pX=bounds.getMinX();
       for (int j=0; j < width; j++) {
         double nX=pX + stepX;
-        double nY=pY + stepY;
-        tempCoordinates[0]=new Coordinate(pX,pY);
-        tempCoordinates[1]=new Coordinate(nX,pY);
-        tempCoordinates[2]=new Coordinate(nX,nY);
-        tempCoordinates[3]=new Coordinate(pX,nY);
-        tempCoordinates[4]=tempCoordinates[0];
-        LinearRing linearRing=geomFactory.createLinearRing(tempCoordinates);
-        Polygon polygon=geomFactory.createPolygon(linearRing,null);
+        double nY=pY - stepY;
+        if (polygon == null) {
+          tempCoordinates[0]=new Coordinate(pX,pY);
+          tempCoordinates[1]=new Coordinate(nX,pY);
+          tempCoordinates[2]=new Coordinate(nX,nY);
+          tempCoordinates[3]=new Coordinate(pX,nY);
+          tempCoordinates[4]=tempCoordinates[0];
+          LinearRing linearRing=geomFactory.createLinearRing(tempCoordinates);
+          polygon=geomFactory.createPolygon(linearRing,null);
+        }
+ else {
+          tempCoordinates[0].x=pX;
+          tempCoordinates[0].y=pY;
+          tempCoordinates[1].x=nX;
+          tempCoordinates[1].y=pY;
+          tempCoordinates[2].x=nX;
+          tempCoordinates[2].y=nY;
+          tempCoordinates[3].x=pX;
+          tempCoordinates[3].y=nY;
+          polygon.geometryChanged();
+        }
         Geometry targetGeometry=JTS.transform(polygon,transform);
-        matrix[j][i]=(float)targetGeometry.getArea();
+        matrix[i][j]=(float)targetGeometry.getArea();
         pX=pX + stepX;
       }
-      pY=pY + stepY;
+      pY=pY - stepY;
     }
     GridCoverageFactory coverageFactory=new GridCoverageFactory();
     GridCoverage2D grid=coverageFactory.create("AreaGridCoverage",matrix,bounds);
