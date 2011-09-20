@@ -14,5 +14,26 @@
   for (  String dir : dirs_)   dirs.add(dir);
   configuration.setIndexingDirectories(dirs);
   final CatalogBuilder builder=new CatalogBuilder(configuration);
-  builder.run();
+  final Queue<Throwable> exceptions=new LinkedList<Throwable>();
+  try {
+    final CatalogBuilder.ProcessingEventListener listener=new CatalogBuilder.ProcessingEventListener(){
+      @Override public void exceptionOccurred(      ExceptionEvent event){
+        final Throwable t=event.getException();
+        exceptions.add(t);
+        if (LOGGER.isLoggable(Level.SEVERE))         LOGGER.log(Level.SEVERE,t.getLocalizedMessage(),t);
+      }
+      @Override public void getNotification(      ProcessingEvent event){
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine(event.getMessage());
+      }
+    }
+;
+    builder.addProcessingEventListener(listener);
+    builder.run();
+  }
+ catch (  Throwable e) {
+    LOGGER.log(Level.SEVERE,"Unable to build mosaic",e);
+  }
+ finally {
+    builder.dispose();
+  }
 }
