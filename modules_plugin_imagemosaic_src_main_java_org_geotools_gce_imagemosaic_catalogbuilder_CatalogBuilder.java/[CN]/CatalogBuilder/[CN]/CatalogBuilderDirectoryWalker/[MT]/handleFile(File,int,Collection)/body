@@ -16,19 +16,27 @@
   ImageReader imageioReader=null;
   AbstractGridCoverage2DReader coverageReader=null;
   try {
-    inStream=ImageIO.createImageInputStream(fileBeingProcessed);
+    if (cachedStreamSPI != null) {
+      inStream=cachedStreamSPI.createInputStreamInstance(fileBeingProcessed);
+    }
+    if (inStream == null) {
+      cachedStreamSPI=ImageIOExt.getImageInputStreamSPI(fileBeingProcessed);
+      if (cachedStreamSPI != null) {
+        inStream=cachedStreamSPI.createInputStreamInstance(fileBeingProcessed);
+      }
+    }
     if (inStream == null) {
       fireEvent(Level.INFO,fileBeingProcessed + " has been skipped since we could not get a stream for it",((fileIndex * 100.0) / numFiles));
       return;
     }
     inStream.mark();
-    cachedSPITest: {
-      if (cachedSPI == null) {
+    cachedReaderSPITest: {
+      if (cachedReaderSPI == null) {
         final Iterator<ImageReader> it=ImageIO.getImageReaders(inStream);
         if (it.hasNext()) {
           imageioReader=it.next();
           if (imageioReader != null) {
-            cachedSPI=imageioReader.getOriginatingProvider();
+            cachedReaderSPI=imageioReader.getOriginatingProvider();
             imageioReader.setInput(inStream);
           }
         }
@@ -37,11 +45,11 @@
         }
       }
  else {
-        if (!cachedSPI.canDecodeInput(inStream)) {
-          cachedSPI=null;
-          break cachedSPITest;
+        if (!cachedReaderSPI.canDecodeInput(inStream)) {
+          cachedReaderSPI=null;
+          break cachedReaderSPITest;
         }
-        imageioReader=cachedSPI.createReaderInstance();
+        imageioReader=cachedReaderSPI.createReaderInstance();
         imageioReader.setInput(inStream);
       }
     }
