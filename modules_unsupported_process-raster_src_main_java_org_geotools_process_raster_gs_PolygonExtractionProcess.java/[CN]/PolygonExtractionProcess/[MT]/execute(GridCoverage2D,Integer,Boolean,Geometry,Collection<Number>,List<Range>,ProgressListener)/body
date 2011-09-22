@@ -13,6 +13,13 @@
     final RangeLookupProcess lookup=new RangeLookupProcess();
     coverage=lookup.execute(coverage,band,classificationRanges,progressListener);
   }
+  List<Number> outsideValues=new ArrayList<Number>();
+  if (noDataValues != null && !hasClassificationRanges) {
+    outsideValues.addAll(noDataValues);
+  }
+ else {
+    outsideValues.add(0);
+  }
   final AffineTransform mt2D=(AffineTransform)coverage.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT);
   final RenderedImage raster=coverage.getRenderedImage();
   ParameterBlockJAI pb=new ParameterBlockJAI("Vectorize");
@@ -21,7 +28,10 @@
     pb.setParameter("roi",CoverageUtilities.prepareROI(roi,mt2D));
   }
   pb.setParameter("band",band);
-  pb.setParameter("outsideValues",Arrays.asList(0));
+  pb.setParameter("outsideValues",outsideValues);
+  if (insideEdges != null) {
+    pb.setParameter("insideEdges",insideEdges);
+  }
   final RenderedOp dest=JAI.create("Vectorize",pb);
   @SuppressWarnings("unchecked") final Collection<Polygon> prop=(Collection<Polygon>)dest.getProperty(VectorizeDescriptor.VECTOR_PROPERTY_NAME);
   final SimpleFeatureType featureType=CoverageUtilities.createFeatureType(coverage,Polygon.class);
