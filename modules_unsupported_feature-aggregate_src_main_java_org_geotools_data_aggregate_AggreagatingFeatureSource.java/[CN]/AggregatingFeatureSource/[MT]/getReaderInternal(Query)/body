@@ -1,15 +1,15 @@
 {
   try {
     Query psQuery=new Query(query);
-    Name psName=config.getPrimaryStore();
-    psQuery.setTypeName(config.getStoreMap().get(psName));
+    Name psName=config.getPrimarySourceType().getStoreName();
+    psQuery.setTypeName(config.getPrimarySourceType().getTypeName());
     DataStore ps=getStore().getStore(psName,false);
     SimpleFeatureType target=DataUtilities.createView(ps,psQuery).getSchema();
     target=retypeNameSchema(target);
-    FeatureQueue queue=new FeatureQueue(config.getStoreMap().size());
+    FeatureQueue queue=new FeatureQueue(config.getSourceTypes().size());
     AggregatingDataStore store=getStore();
-    for (    Map.Entry<Name,String> entry : config.getStoreMap().entrySet()) {
-      FeatureCallable fc=new FeatureCallable(store,query,entry.getKey(),entry.getValue(),queue,target);
+    for (    SourceType st : config.getSourceTypes()) {
+      FeatureCallable fc=new FeatureCallable(store,query,st.getStoreName(),st.getTypeName(),queue,target);
       queue.addSource(fc);
       store.submit(fc);
     }
