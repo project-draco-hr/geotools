@@ -23,12 +23,14 @@
       for (      Category cat : sd.getCategories()) {
         if (cat.getName().equals(NO_DATA)) {
           final NumberRange<? extends Number> catRange=cat.getRange();
-          if (catRange.getMinimum() == catRange.getMaximum()) {
-            noDataList.add(catRange.getMinimum());
-          }
+          if (!Double.isNaN(catRange.getMinimum())) {
+            if (catRange.getMinimum() == catRange.getMaximum()) {
+              noDataList.add(catRange.getMinimum());
+            }
  else {
-            Range<Double> noData=new Range<Double>(catRange.getMinimum(),catRange.isMinIncluded(),catRange.getMaximum(),catRange.isMaxIncluded());
-            noDataList.add(noData);
+              Range<Double> noData=new Range<Double>(catRange.getMinimum(),catRange.isMinIncluded(),catRange.getMaximum(),catRange.isMaxIncluded());
+              noDataList.add(noData);
+            }
           }
         }
       }
@@ -57,7 +59,7 @@
   if (smooth != null) {
     pb.setParameter("smooth",smooth);
   }
-  if (noDataList != null) {
+  if (!noDataList.isEmpty()) {
     pb.setParameter("nodata",noDataList);
   }
   final RenderedOp dest=JAI.create("Contour",pb);

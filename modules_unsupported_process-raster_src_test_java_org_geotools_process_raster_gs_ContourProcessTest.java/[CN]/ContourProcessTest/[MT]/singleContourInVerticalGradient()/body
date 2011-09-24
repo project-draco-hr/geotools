@@ -1,0 +1,32 @@
+{
+  final int COVERAGE_COLS=10;
+  final int COVERAGE_ROWS=2;
+  final double CELL_SIZE=100;
+  final ReferencedEnvelope WORLD=new ReferencedEnvelope(1000,1000 + COVERAGE_COLS * CELL_SIZE,5000,5000 + COVERAGE_ROWS * CELL_SIZE,null);
+  final float DATA_MIN=100;
+  final float DATA_MAX=200;
+  GridCoverage2D cov=createVerticalGradient(COVERAGE_ROWS,COVERAGE_COLS,WORLD,DATA_MIN,DATA_MAX);
+  final double levelValue=(DATA_MIN + DATA_MAX) / 2;
+  SimpleFeatureCollection fc=process.execute(cov,0,new double[]{levelValue},null,null,null,null,null);
+  assertEquals(1,fc.size());
+  SimpleFeatureIterator iter=fc.features();
+  SimpleFeature feature=null;
+  try {
+    feature=iter.next();
+  }
+  finally {
+    iter.close();
+  }
+  Double value=(Double)feature.getAttribute("value");
+  assertEquals(levelValue,value,TOL);
+  LineString contour=(LineString)feature.getDefaultGeometry();
+  Coordinate[] coords=contour.getCoordinates();
+  assertEquals(2,coords.length);
+  double minX=Math.min(coords[0].x,coords[1].x);
+  assertEquals(WORLD.getMinX(),minX,CELL_SIZE / 2 + TOL);
+  double maxX=Math.max(coords[0].x,coords[1].x);
+  assertEquals(WORLD.getMaxX(),maxX,CELL_SIZE / 2 + TOL);
+  double expectedY=(WORLD.getMinY() + WORLD.getMaxY()) / 2;
+  assertEquals(expectedY,coords[0].y,TOL);
+  assertEquals(expectedY,coords[1].y,TOL);
+}
