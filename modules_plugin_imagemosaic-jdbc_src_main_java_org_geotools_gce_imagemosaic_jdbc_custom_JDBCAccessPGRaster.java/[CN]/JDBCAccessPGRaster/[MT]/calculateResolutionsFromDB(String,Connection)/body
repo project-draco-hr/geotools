@@ -1,0 +1,57 @@
+{
+  PreparedStatement stmt=null;
+  stmt=con.prepareStatement(getConfig().getSqlUpdateResStatement());
+  List<ImageLevelInfo> toBeRemoved=new ArrayList<ImageLevelInfo>();
+  statementMap=new HashMap<ImageLevelInfo,String>();
+  for (  ImageLevelInfo li : getLevelInfos()) {
+    if (li.getCoverageName().equals(coverageName) == false) {
+      continue;
+    }
+    if (li.calculateResolutionNeeded() == false) {
+      continue;
+    }
+    Date start=new Date();
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("Calculate resolutions for " + li.toString());
+    String select="select " + "st_scalex(" + getConfig().getBlobAttributeNameInTileTable() + "),"+ "st_scaley("+ getConfig().getBlobAttributeNameInTileTable()+ "),"+ "st_srid("+ getConfig().getBlobAttributeNameInTileTable()+ ") "+ " from "+ li.getTileTableName()+ " LIMIT 1";
+    double resolutions[]=null;
+    PreparedStatement ps=con.prepareStatement(select);
+    ResultSet rs=ps.executeQuery();
+    if (rs.next()) {
+      resolutions=new double[]{rs.getDouble(1),rs.getDouble(2)};
+      li.setSrsId(rs.getInt(3));
+    }
+    rs.close();
+    ps.close();
+    if (resolutions == null) {
+      if (LOGGER.isLoggable(Level.WARNING))       LOGGER.log(Level.WARNING,"No image found, removing " + li.toString());
+      toBeRemoved.add(li);
+      continue;
+    }
+    if (resolutions[0] < 0)     resolutions[0]*=-1;
+    if (resolutions[1] < 0)     resolutions[1]*=-1;
+    li.setResX(resolutions[0]);
+    li.setResY(resolutions[1]);
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("ResX: " + li.getResX() + " ResY: "+ li.getResY());
+    select="select (ST_BandMetaData(" + getConfig().getBlobAttributeNameInTileTable() + ")).isoutdb "+ " from "+ li.getTileTableName()+ " LIMIT 1";
+    ps=con.prepareStatement(select);
+    rs=ps.executeQuery();
+    if (rs.next()) {
+      Boolean isOut=(Boolean)rs.getObject("isoutdb");
+      String gridStatement=isOut ? "SELECT st_asbinary(st_envelope (" + getConfig().getBlobAttributeNameInTileTable() + ")),"+ getConfig().getBlobAttributeNameInTileTable()+ " from "+ li.getTileTableName()+ " where st_intersects("+ getConfig().getBlobAttributeNameInTileTable()+ " ,ST_GeomFromWKB(?,?))" : "SELECT st_asbinary(st_envelope (" + getConfig().getBlobAttributeNameInTileTable() + ")),st_aspng("+ getConfig().getBlobAttributeNameInTileTable()+ ") "+ " from "+ li.getTileTableName()+ " where st_intersects("+ getConfig().getBlobAttributeNameInTileTable()+ " ,ST_GeomFromWKB(?,?))";
+      statementMap.put(li,gridStatement);
+    }
+    rs.close();
+    ps.close();
+    stmt.setDouble(1,li.getResX().doubleValue());
+    stmt.setDouble(2,li.getResY().doubleValue());
+    stmt.setString(3,li.getCoverageName());
+    stmt.setString(4,li.getTileTableName());
+    stmt.execute();
+    long msecs=(new Date()).getTime() - start.getTime();
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("Calculate resolutions for " + li.toString() + " finished in "+ msecs+ " ms ");
+  }
+  getLevelInfos().removeAll(toBeRemoved);
+  if (stmt != null) {
+    stmt.close();
+  }
+}

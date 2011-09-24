@@ -1,0 +1,52 @@
+{
+  PreparedStatement s=null;
+  ResultSet res=null;
+  try {
+    String stmt=getConfig().getSqlSelectCoverageStatement();
+    s=con.prepareStatement(stmt);
+    s.setString(1,coverageName);
+    res=s.executeQuery();
+    while (res.next()) {
+      ImageLevelInfo imageLevelInfo=new ImageLevelInfo();
+      imageLevelInfo.setCoverageName(coverageName);
+      imageLevelInfo.setTileTableName((res.getString(getConfig().getTileTableNameAtribute())));
+      imageLevelInfo.setExtentMaxX(new Double(res.getDouble(getConfig().getMaxXAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMaxX(null);
+      }
+      imageLevelInfo.setExtentMaxY(new Double(res.getDouble(getConfig().getMaxYAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMaxY(null);
+      }
+      imageLevelInfo.setExtentMinX(new Double(res.getDouble(getConfig().getMinXAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMinX(null);
+      }
+      imageLevelInfo.setExtentMinY(new Double(res.getDouble(getConfig().getMinYAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setExtentMinY(null);
+      }
+      imageLevelInfo.setResX(new Double(res.getDouble(getConfig().getResXAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setResX(null);
+      }
+      imageLevelInfo.setResY(new Double(res.getDouble(getConfig().getResYAttribute())));
+      if (res.wasNull()) {
+        imageLevelInfo.setResY(null);
+      }
+      getLevelInfos().add(imageLevelInfo);
+      imageLevelInfo.setCrs(getCRS());
+    }
+  }
+ catch (  SQLException e) {
+    throw (e);
+  }
+ finally {
+    if (res != null) {
+      res.close();
+    }
+    if (s != null) {
+      s.close();
+    }
+  }
+}

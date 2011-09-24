@@ -1,0 +1,49 @@
+{
+  try {
+    String createMasterStatement="create table MOSAIC (NAME varchar(254) not null," + "TileTable varchar(254)not null," + "minX FLOAT8,minY FLOAT8, maxX FLOAT8, maxY FLOAT8,resX FLOAT8, resY FLOAT8,"+ "primary key (NAME,TileTable))";
+    con.prepareStatement(createMasterStatement).execute();
+    PreparedStatement ps=con.prepareStatement("insert into MOSAIC(NAME,TileTable) values (?,?)");
+    ps.setString(1,"oek");
+    ps.setString(2,"rtable1");
+    ps.execute();
+    ps.setString(1,"oek");
+    ps.setString(2,"rtable2");
+    ps.execute();
+    ps.setString(1,"oek");
+    ps.setString(2,"rtable3");
+    ps.execute();
+    con.prepareStatement("CREATE TABLE \"public\".\"rtable1\" (rid serial PRIMARY KEY, \"filename\" text)").execute();
+    con.prepareStatement("SELECT AddRasterColumn('public','rtable1','rast',4326, ARRAY['8BUI','8BUI','8BUI','8BUI'], " + outdb + ", false, null, 0.007547169811321, -0.005102040816327, null, null, null)").execute();
+    con.prepareStatement("CREATE TABLE \"public\".\"rtable2\" (rid serial PRIMARY KEY, \"filename\" text)").execute();
+    con.prepareStatement("SELECT AddRasterColumn('public','rtable2','rast',4326, ARRAY['8BUI','8BUI','8BUI','8BUI'], " + outdb + ", false, null, 0.015094339622642, -0.010204081632653, null, null, null)").execute();
+    con.prepareStatement("CREATE TABLE \"public\".\"rtable3\" (rid serial PRIMARY KEY, \"filename\" text)").execute();
+    con.prepareStatement("SELECT AddRasterColumn('public','rtable3','rast',4326, ARRAY['8BUI','8BUI','8BUI','8BUI'], " + outdb + ", false, null, 0.030188679245283, -0.020408163265306, null, null, null)").execute();
+    for (    String scriptName : scriptNames) {
+      InputStream scriptIn=new URL("file:target/resources/" + scriptName).openStream();
+      final char[] buffer=new char[0x10000];
+      StringBuilder out=new StringBuilder();
+      Reader in=new InputStreamReader(scriptIn,"UTF-8");
+      int read;
+      do {
+        read=in.read(buffer,0,buffer.length);
+        if (read > 0) {
+          out.append(buffer,0,read);
+        }
+      }
+ while (read >= 0);
+      StringTokenizer tok=new StringTokenizer(out.toString(),";");
+      while (tok.hasMoreTokens()) {
+        String statement=tok.nextToken();
+        con.prepareStatement(statement).execute();
+      }
+    }
+    con.prepareStatement("CREATE INDEX \"rtable1_rast_gist_idx\" ON \"public\".\"rtable1\" USING GIST (st_convexhull(rast))").execute();
+    con.prepareStatement("CREATE INDEX \"rtable2_rast_gist_idx\" ON \"public\".\"rtable2\" USING GIST (st_convexhull(rast))").execute();
+    con.prepareStatement("CREATE INDEX \"rtable3_rast_gist_idx\" ON \"public\".\"rtable3\" USING GIST (st_convexhull(rast))").execute();
+    con.commit();
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    Assert.fail(e.getMessage());
+  }
+}
