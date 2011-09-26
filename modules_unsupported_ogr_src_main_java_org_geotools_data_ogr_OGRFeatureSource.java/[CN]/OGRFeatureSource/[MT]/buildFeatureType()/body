@@ -1,0 +1,36 @@
+{
+  Pointer dataSource=null;
+  Pointer layer=null;
+  Pointer definition=null;
+  try {
+    SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+    String typeName=getEntry().getTypeName();
+    tb.setName(typeName);
+    tb.setNamespaceURI(getDataStore().getNamespaceURI());
+    dataSource=getDataStore().openOGRDataSource(false);
+    layer=openOGRLayer(dataSource,typeName);
+    definition=OGR_L_GetLayerDefn(layer);
+    Class<? extends Geometry> geometryBinding=getGeometryBinding(definition);
+    if (geometryBinding != null) {
+      CoordinateReferenceSystem crs=getCRS(layer);
+      tb.add("the_geom",geometryBinding,crs);
+    }
+    final int count=OGR_FD_GetFieldCount(definition);
+    for (int i=0; i < count; i++) {
+      Pointer field=OGR_FD_GetFieldDefn(definition,i);
+      String name=OGR_Fld_GetNameRef(field).getCString();
+      Class binding=getBinding(field);
+      int width=OGR_Fld_GetWidth(field);
+      if (width > 0) {
+        tb.length(width);
+      }
+      tb.add(name,binding);
+    }
+    return tb.buildFeatureType();
+  }
+  finally {
+    OGRUtils.releaseDefinition(definition);
+    OGRUtils.releaseLayer(layer);
+    OGRUtils.releaseDataSource(dataSource);
+  }
+}

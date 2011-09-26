@@ -1,0 +1,25 @@
+{
+  Pointer dataSource=null;
+  Pointer layer=null;
+  try {
+    dataSource=openOGRDataSource(false);
+    List<Name> result=new ArrayList<Name>();
+    int count=OGR_DS_GetLayerCount(dataSource);
+    for (int i=0; i < count; i++) {
+      layer=OGR_DS_GetLayer(dataSource,i);
+      Pointer<Byte> name=OGR_L_GetName(layer);
+      if (name != null) {
+        result.add(new NameImpl(getNamespaceURI(),name.getCString()));
+      }
+      OGRUtils.releaseLayer(layer);
+    }
+    return result;
+  }
+ catch (  IOException e) {
+    return Collections.emptyList();
+  }
+ finally {
+    OGRUtils.releaseDataSource(dataSource);
+    OGRUtils.releaseLayer(layer);
+  }
+}
