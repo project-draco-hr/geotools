@@ -1,0 +1,51 @@
+{
+  DataSource ds=getOGRDataSource(FALSE);
+  Layer layer=getOGRLayer(ds,typeName);
+  if (layer == null) {
+    ds.delete();
+    throw new IOException("No such type : " + typeName);
+  }
+  FeatureDefn featureDef=null;
+  try {
+    featureDef=layer.GetLayerDefn();
+    SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+    AttributeTypeBuilder abuilder=new AttributeTypeBuilder();
+    builder.setName(typeName);
+    builder.setNamespaceURI(namespace);
+    CoordinateReferenceSystem crs=getCRS(layer);
+    Class geomClass=getGeometryClass(featureDef.GetGeomType());
+    abuilder.setName(Classes.getShortName(geomClass));
+    abuilder.setNillable(true);
+    abuilder.setCRS(crs);
+    abuilder.setBinding(geomClass);
+    GeometryType geometryType=abuilder.buildGeometryType();
+    builder.add(abuilder.buildDescriptor(BasicFeatureTypes.GEOMETRY_ATTRIBUTE_NAME,geometryType));
+    if ((geomClass == Point.class) || (geomClass == MultiPoint.class)) {
+      builder.setSuperType(BasicFeatureTypes.POINT);
+    }
+ else     if ((geomClass == Polygon.class) || (geomClass == MultiPolygon.class)) {
+      builder.setSuperType(BasicFeatureTypes.POLYGON);
+    }
+ else     if ((geomClass == LineString.class) || (geomClass == MultiLineString.class)) {
+      builder.setSuperType(BasicFeatureTypes.LINE);
+    }
+    for (int i=1; i < featureDef.GetFieldCount() + 1; i++) {
+      FieldDefn fd=featureDef.GetFieldDefn(i - 1);
+      builder.length(fd.GetWidth());
+      builder.add(fd.GetNameRef(),getFieldClass(fd));
+      fd.delete();
+    }
+    return builder.buildFeatureType();
+  }
+ catch (  FactoryException e) {
+    throw new DataSourceException("Could not determine geometry SRS",e);
+  }
+catch (  FactoryRegistryException e) {
+    throw new DataSourceException("Could not create feature type",e);
+  }
+ finally {
+    if (featureDef != null)     featureDef.delete();
+    if (layer != null)     layer.delete();
+    if (ds != null)     ds.delete();
+  }
+}

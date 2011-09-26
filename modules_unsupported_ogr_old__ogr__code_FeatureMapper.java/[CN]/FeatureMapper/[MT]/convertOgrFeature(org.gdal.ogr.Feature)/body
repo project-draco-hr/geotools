@@ -1,0 +1,20 @@
+{
+  Object[] attributes=new Object[schema.getAttributeCount()];
+  for (int i=0; i < attributes.length; i++) {
+    AttributeDescriptor at=schema.getDescriptor(i);
+    if (at instanceof GeometryDescriptor) {
+      org.gdal.ogr.Geometry ogrGeometry=ogrFeature.GetGeometryRef();
+      try {
+        builder.add(fixGeometryType(geomMapper.parseOgrGeometry(ogrGeometry),at));
+      }
+  finally {
+        ogrGeometry.delete();
+      }
+    }
+ else {
+      builder.add(getOgrField(at,ogrFeature));
+    }
+  }
+  String fid=convertOGRFID(schema,ogrFeature);
+  return builder.buildFeature(fid);
+}

@@ -1,0 +1,48 @@
+{
+  DataSource ds=null;
+  Layer l=null;
+  try {
+    Vector optVector=options != null ? new Vector(Arrays.asList(options)) : null;
+    try {
+      ds=getOGRDataSource(TRUE);
+    }
+ catch (    IOException e) {
+      if (ogrDriverName != null) {
+        Driver d=ogr.GetDriverByName(ogrDriverName);
+        ds=d.CreateDataSource(ogrSourceName,optVector);
+        d.delete();
+        if (ds == null)         throw new IOException("Could not create OGR data source with driver " + ogrDriverName + " and options "+ optVector);
+      }
+ else {
+        throw new DataSourceException("Driver not provided, and could not " + "open data source neither");
+      }
+    }
+    GeometryDescriptor geomType=schema.getGeometryDescriptor();
+    int ogrGeomType=getOGRGeometryType(geomType);
+    SpatialReference sr=null;
+    if (geomType.getCoordinateReferenceSystem() != null) {
+      String wkt=geomType.getCoordinateReferenceSystem().toString();
+      sr=new SpatialReference(null);
+      if (sr.ImportFromWkt(wkt) != 0) {
+        sr=null;
+        LOGGER.warning("OGR could not parse the geometry WKT," + " detailed error is: " + gdal.GetLastErrorMsg() + "\n"+ "WKT was: "+ wkt);
+      }
+    }
+    l=ds.CreateLayer(schema.getTypeName(),sr,ogrGeomType,optVector);
+    if (l == null) {
+      throw new DataSourceException("Could not create the OGR layer: " + gdal.GetLastErrorMsg());
+    }
+    for (int i=0; i < schema.getAttributeCount(); i++) {
+      AttributeDescriptor ad=schema.getDescriptor(i);
+      if (ad == schema.getGeometryDescriptor())       continue;
+      FieldDefn definition=getOGRFieldDefinition(ad);
+      l.CreateField(definition,approximateFields ? TRUE : FALSE);
+    }
+  }
+  finally {
+    if (l != null) {
+      l.delete();
+    }
+    if (ds != null)     ds.delete();
+  }
+}
