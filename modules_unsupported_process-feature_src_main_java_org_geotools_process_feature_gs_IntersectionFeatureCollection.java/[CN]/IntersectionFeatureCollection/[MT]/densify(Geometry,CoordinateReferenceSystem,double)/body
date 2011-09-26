@@ -1,0 +1,40 @@
+{
+  if (maxAreaError <= 0) {
+    throw new IllegalArgumentException("maxAreaError must be greater than 0");
+  }
+  if (!(geom instanceof Polygon) && !(geom instanceof MultiPolygon)) {
+    throw new IllegalArgumentException("Geom must be poligonal");
+  }
+  if (crs == null) {
+    throw new IllegalArgumentException("CRS cannot be set to null");
+  }
+  double previousArea=0.0;
+  CoordinateReferenceSystem targetCRS=CRS.parseWKT(ECKERT_IV_WKT);
+  MathTransform firstTransform=CRS.findMathTransform(crs,targetCRS);
+  GeometryFactory geomFactory=new GeometryFactory();
+  int ngeom=geom.getNumGeometries();
+  Geometry densifiedGeometry=geom;
+  double areaError=1.0d;
+  do {
+    double max=0;
+    for (int j=0; j < ngeom; j++) {
+      Geometry geometry=densifiedGeometry.getGeometryN(j);
+      Coordinate[] coordinates=geometry.getCoordinates();
+      int n=coordinates.length;
+      for (int i=0; i < (n - 1); i++) {
+        Coordinate[] coords=new Coordinate[2];
+        coords[0]=coordinates[i];
+        coords[1]=coordinates[i + 1];
+        LineString lineString=geomFactory.createLineString(coords);
+        if (lineString.getLength() > max)         max=lineString.getLength();
+      }
+    }
+    densifiedGeometry=Densifier.densify(densifiedGeometry,max / 2);
+    Geometry targetGeometry=JTS.transform(densifiedGeometry,firstTransform);
+    double nextArea=targetGeometry.getArea();
+    areaError=Math.abs(previousArea - nextArea) / nextArea;
+    previousArea=nextArea;
+  }
+ while (areaError > maxAreaError);
+  return densifiedGeometry;
+}

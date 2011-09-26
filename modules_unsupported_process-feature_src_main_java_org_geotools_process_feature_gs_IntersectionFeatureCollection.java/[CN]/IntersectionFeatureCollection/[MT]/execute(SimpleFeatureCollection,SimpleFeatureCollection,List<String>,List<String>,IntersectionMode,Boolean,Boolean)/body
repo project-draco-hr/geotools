@@ -1,0 +1,20 @@
+{
+  if (percentagesEnabled == null) {
+    percentagesEnabled=false;
+  }
+  if (areasEnabled == null) {
+    areasEnabled=false;
+  }
+  if (intersectionMode == null) {
+    intersectionMode=IntersectionMode.INTERSECTION;
+  }
+  Class firstGeomType=firstFeatures.getSchema().getGeometryDescriptor().getType().getBinding();
+  Class secondGeomType=secondFeatures.getSchema().getGeometryDescriptor().getType().getBinding();
+  if ((percentagesEnabled || areasEnabled) && (!isGeometryTypeIn(firstGeomType,MultiPolygon.class,Polygon.class) || !isGeometryTypeIn(secondGeomType,MultiPolygon.class,Polygon.class))) {
+    throw new IllegalArgumentException("In case of opMode or areaMode are true, the features in the first and second collection must be polygonal");
+  }
+  if (!isGeometryTypeIn(firstGeomType,MultiPolygon.class,Polygon.class,MultiLineString.class,LineString.class)) {
+    throw new IllegalArgumentException("First feature collection must be polygonal or linear");
+  }
+  return new IntersectedFeatureCollection(firstFeatures,firstAttributes,secondFeatures,sndAttributes,intersectionMode,percentagesEnabled,areasEnabled);
+}

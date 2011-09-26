@@ -1,0 +1,22 @@
+{
+  for (  AttributeDescriptor descriptor : schema.getAttributeDescriptors()) {
+    boolean isInRetainList=true;
+    if (retainedAttributes != null) {
+      isInRetainList=retainedAttributes.contains(descriptor.getLocalName());
+    }
+    if (!isInRetainList || schema.getGeometryDescriptor() == descriptor) {
+      continue;
+    }
+    AttributeTypeBuilder builder=new AttributeTypeBuilder();
+    builder.setName(schema.getName().getLocalPart() + "_" + descriptor.getName());
+    builder.setNillable(descriptor.isNillable());
+    builder.setBinding(descriptor.getType().getBinding());
+    builder.setMinOccurs(descriptor.getMinOccurs());
+    builder.setMaxOccurs(descriptor.getMaxOccurs());
+    builder.setDefaultValue(descriptor.getDefaultValue());
+    builder.setCRS(schema.getCoordinateReferenceSystem());
+    AttributeDescriptor intersectionDescriptor=builder.buildDescriptor(schema.getName().getLocalPart() + "_" + descriptor.getName(),descriptor.getType());
+    tb.add(intersectionDescriptor);
+    tb.addBinding(descriptor.getType());
+  }
+}
