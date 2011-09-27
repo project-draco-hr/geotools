@@ -2,10 +2,11 @@
   final OverviewsEmbedder oe=new OverviewsEmbedder();
   oe.setDownsampleStep(2);
   oe.setNumSteps(5);
-  oe.setScaleAlgorithm(OverviewsEmbedder.SubsampleAlgorithm.Bicubic.toString());
+  oe.setScaleAlgorithm(OverviewsEmbedder.SubsampleAlgorithm.Nearest.toString());
   oe.setTileCache(JAI.getDefaultInstance().getTileCache());
   oe.setTileWidth(256);
   oe.setTileHeight(256);
+  oe.setExternalOverviews(true);
   oe.setSourcePath(TestData.file(this,"DEM_.tiff").getAbsolutePath());
   oe.addProcessingEventListener(new ProcessingEventListener(){
     @Override public void getNotification(    ProcessingEvent event){
@@ -19,6 +20,13 @@
   oe.run();
   final ImageReader reader=new TIFFImageReaderSpi().createReaderInstance();
   reader.setInput(ImageIO.createImageInputStream(org.geotools.test.TestData.file(this,"DEM_.tiff")));
-  assertTrue(reader.getNumImages(true) == 6);
+  assertTrue(reader.getNumImages(true) == 1);
+  reader.reset();
+  assertTrue(org.geotools.test.TestData.file(this,"DEM_.tif.ovr").exists());
+  reader.setInput(ImageIO.createImageInputStream(org.geotools.test.TestData.file(this,"DEM_.tif.ovr")));
+  assertTrue(reader.getNumImages(true) == 5);
+  assertTrue(reader.isImageTiled(0));
+  assertEquals(256,reader.getTileHeight(0));
+  assertEquals(256,reader.getTileWidth(0));
   reader.dispose();
 }
