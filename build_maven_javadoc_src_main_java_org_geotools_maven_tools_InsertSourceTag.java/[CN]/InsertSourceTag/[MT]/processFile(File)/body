@@ -72,9 +72,19 @@
       if (matcher.find()) {
         classFound=true;
         if (javadocStartLine < 0) {
-          System.out.println("   *** No class javadocs - skipping file ***");
-          System.out.println();
-          return false;
+          if (optionAddHeader) {
+            buffer.add(lineNo," */");
+            buffer.add(lineNo," * ");
+            buffer.add(lineNo,"/**");
+            javadocStartLine=lineNo;
+            javadocEndLine=lineNo + 2;
+            unknownPrecedingContent=false;
+          }
+ else {
+            System.out.println("   *** No class javadocs - skipping file ***");
+            System.out.println();
+            return false;
+          }
         }
         if (unknownPrecedingContent) {
           System.out.println("   *** Javadocs do not directly precede class" + " - skipping file ***");
@@ -96,7 +106,9 @@
                   if (!optionReplace) {
                     String http=matcher.group();
                     int start=http.indexOf("$URL");
-                    if (start < 0)                     start=http.indexOf("http");
+                    if (start < 0) {
+                      start=http.indexOf("http");
+                    }
                     http=http.substring(start,http.length());
                     sourceTagText=commentText + http;
                   }
