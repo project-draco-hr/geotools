@@ -1,7 +1,9 @@
 {
   GeneralEnvelope requestedEnvelope=null;
   Rectangle dim=null;
+  Color inputTransparentColor=null;
   OverviewPolicy overviewPolicy=null;
+  int[] suggestedTileSize=null;
   if (params != null) {
     if (params != null) {
       for (int i=0; i < params.length; i++) {
@@ -17,6 +19,27 @@
           overviewPolicy=(OverviewPolicy)param.getValue();
           continue;
         }
+        if (name.equals(AbstractGridFormat.INPUT_TRANSPARENT_COLOR.getName())) {
+          inputTransparentColor=(Color)param.getValue();
+          continue;
+        }
+        if (name.equals(AbstractGridFormat.SUGGESTED_TILE_SIZE.getName())) {
+          String suggestedTileSize_=(String)param.getValue();
+          if (suggestedTileSize_ != null && suggestedTileSize_.length() > 0) {
+            suggestedTileSize_=suggestedTileSize_.trim();
+            int commaPosition=suggestedTileSize_.indexOf(",");
+            if (commaPosition < 0) {
+              int tileDim=Integer.parseInt(suggestedTileSize_);
+              suggestedTileSize=new int[]{tileDim,tileDim};
+            }
+ else {
+              int tileW=Integer.parseInt(suggestedTileSize_.substring(0,commaPosition));
+              int tileH=Integer.parseInt(suggestedTileSize_.substring(commaPosition + 1));
+              suggestedTileSize=new int[]{tileW,tileH};
+            }
+          }
+          continue;
+        }
       }
     }
   }
@@ -28,7 +51,16 @@
  catch (  TransformException e) {
     new DataSourceException(e);
   }
-  final Hints newHints=(Hints)hints.clone();
+  Hints newHints=null;
+  if (suggestedTileSize != null) {
+    newHints=(Hints)hints.clone();
+    final ImageLayout layout=new ImageLayout();
+    layout.setTileGridXOffset(0);
+    layout.setTileGridYOffset(0);
+    layout.setTileHeight(suggestedTileSize[1]);
+    layout.setTileWidth(suggestedTileSize[0]);
+    newHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
+  }
   final ParameterBlock pbjRead=new ParameterBlock();
   if (extOvrImgChoice >= 0 && imageChoice >= extOvrImgChoice) {
     pbjRead.add(ovrInStreamSPI.createInputStreamInstance(ovrSource,ImageIO.getUseCache(),ImageIO.getCacheDirectory()));
@@ -44,8 +76,11 @@
   pbjRead.add(null);
   pbjRead.add(null);
   pbjRead.add(readP);
-  pbjRead.add(readerSPI.createReaderInstance());
-  final RenderedOp coverageRaster=JAI.create("ImageRead",pbjRead,(RenderingHints)newHints);
+  pbjRead.add(READER_SPI.createReaderInstance());
+  RenderedOp coverageRaster=JAI.create("ImageRead",pbjRead,newHints != null ? (RenderingHints)newHints : null);
+  if (inputTransparentColor != null) {
+    coverageRaster=new ImageWorker(coverageRaster).setRenderingHints(newHints).makeColorTransparent(inputTransparentColor).getRenderedOperation();
+  }
   final int ssWidth=coverageRaster.getWidth();
   final int ssHeight=coverageRaster.getHeight();
   if (LOGGER.isLoggable(Level.FINE)) {
