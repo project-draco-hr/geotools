@@ -1,9 +1,19 @@
 {
-  Layer layer=event.getElement();
-  if (layer instanceof ComponentListener) {
-    addComponentListener((ComponentListener)layer);
+  paramsLock.writeLock().lock();
+  try {
+    Layer layer=event.getElement();
+    if (layer instanceof ComponentListener) {
+      addComponentListener((ComponentListener)layer);
+    }
+    setFullExtent();
+    MapViewport viewport=mapContent.getViewport();
+    if (viewport.getBounds().isEmpty()) {
+      viewport.setBounds(fullExtent);
+    }
   }
-  setFullExtent();
+  finally {
+    paramsLock.writeLock().unlock();
+  }
   drawLayers(false);
   repaint();
 }

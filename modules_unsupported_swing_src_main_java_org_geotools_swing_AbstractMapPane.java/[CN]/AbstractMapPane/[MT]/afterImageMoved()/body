@@ -1,11 +1,17 @@
 {
-  int dx=imageOrigin.x;
-  int dy=imageOrigin.y;
-  DirectPosition2D newPos=new DirectPosition2D(dx,dy);
-  mapContent.getViewport().getScreenToWorld().transform(newPos,newPos);
-  ReferencedEnvelope env=new ReferencedEnvelope(mapContent.getViewport().getBounds());
-  env.translate(env.getMinimum(0) - newPos.x,env.getMaximum(1) - newPos.y);
-  doSetDisplayArea(env);
-  imageOrigin.setLocation(0,0);
-  baseImageMoved.set(false);
+  paramsLock.writeLock().lock();
+  try {
+    int dx=imageOrigin.x;
+    int dy=imageOrigin.y;
+    DirectPosition2D newPos=new DirectPosition2D(dx,dy);
+    mapContent.getViewport().getScreenToWorld().transform(newPos,newPos);
+    ReferencedEnvelope env=new ReferencedEnvelope(mapContent.getViewport().getBounds());
+    env.translate(env.getMinimum(0) - newPos.x,env.getMaximum(1) - newPos.y);
+    doSetDisplayArea(env);
+    imageOrigin.setLocation(0,0);
+    baseImageMoved.set(false);
+  }
+  finally {
+    paramsLock.writeLock().unlock();
+  }
 }

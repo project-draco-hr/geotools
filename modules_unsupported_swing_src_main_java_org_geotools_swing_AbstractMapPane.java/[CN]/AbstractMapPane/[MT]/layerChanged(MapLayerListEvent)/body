@@ -1,11 +1,17 @@
 {
-  int reason=event.getMapLayerEvent().getReason();
-  if (reason == MapLayerEvent.DATA_CHANGED) {
-    setFullExtent();
+  paramsLock.writeLock().lock();
+  try {
+    int reason=event.getMapLayerEvent().getReason();
+    if (reason == MapLayerEvent.DATA_CHANGED) {
+      setFullExtent();
+    }
+    if (reason != MapLayerEvent.SELECTION_CHANGED) {
+      clearLabelCache.set(true);
+      drawLayers(false);
+    }
   }
-  if (reason != MapLayerEvent.SELECTION_CHANGED) {
-    clearLabelCache.set(true);
-    drawLayers(false);
+  finally {
+    paramsLock.writeLock().unlock();
   }
   repaint();
 }
