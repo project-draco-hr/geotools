@@ -1,0 +1,26 @@
+{
+  super(response);
+  Configuration config=new WPSConfiguration();
+  Parser parser=new Parser(config);
+  Object object;
+  excepResponse=null;
+  capabilities=null;
+  try {
+    object=parser.parse(response.getResponseStream());
+  }
+ catch (  SAXException e) {
+    throw (ServiceException)new ServiceException("Error while parsing XML.").initCause(e);
+  }
+catch (  ParserConfigurationException e) {
+    throw (ServiceException)new ServiceException("Error while parsing XML.").initCause(e);
+  }
+ finally {
+    response.dispose();
+  }
+  if (object instanceof WPSCapabilitiesType) {
+    capabilities=(WPSCapabilitiesType)object;
+  }
+ else   if (object instanceof ExceptionReportType) {
+    excepResponse=(ExceptionReportType)object;
+  }
+}

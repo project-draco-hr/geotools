@@ -1,0 +1,30 @@
+{
+  if (serverURL == null) {
+    throw new NullPointerException("serverURL");
+  }
+  if (httpClient == null) {
+    throw new NullPointerException("httpClient");
+  }
+  this.serverURL=serverURL;
+  this.httpClient=httpClient;
+  setupSpecifications();
+  if (capabilities == null) {
+    this.capabilities=negotiateVersion();
+    if (this.capabilities == null) {
+      throw new ServiceException("Unable to retrieve or parse Capabilities document.");
+    }
+  }
+ else {
+    this.capabilities=capabilities;
+  }
+  for (int i=0; i < specs.length; i++) {
+    if (specs[i].getVersion().equals(this.capabilities.getVersion())) {
+      specification=specs[i];
+      break;
+    }
+  }
+  if (specification == null) {
+    specification=specs[specs.length - 1];
+    LOGGER.warning("Unable to choose a specification based on cached capabilities. " + "Arbitrarily choosing spec '" + specification.getVersion() + "'.");
+  }
+}
