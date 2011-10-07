@@ -1,0 +1,36 @@
+{
+  File tmpFile=null;
+  final URL describeUrl;
+{
+    if (http.isAuthenticating()) {
+      WFSResponse wfsResponse=describeFeatureTypeGET(prefixedTypeName,null);
+      tmpFile=File.createTempFile("describeft",".xsd");
+      OutputStream output=new FileOutputStream(tmpFile);
+      InputStream response=wfsResponse.getInputStream();
+      try {
+        IOUtils.copy(response,output);
+      }
+  finally {
+        output.flush();
+        output.close();
+        response.close();
+      }
+      describeUrl=tmpFile.toURI().toURL();
+    }
+ else {
+      describeUrl=getDescribeFeatureTypeURLGet(prefixedTypeName);
+    }
+  }
+  final Configuration wfsConfiguration=strategy.getWfsConfiguration();
+  final QName featureDescriptorName=getFeatureTypeName(prefixedTypeName);
+  SimpleFeatureType featureType;
+  try {
+    featureType=EmfAppSchemaParser.parseSimpleFeatureType(wfsConfiguration,featureDescriptorName,describeUrl,crs);
+  }
+  finally {
+    if (tmpFile != null) {
+      tmpFile.delete();
+    }
+  }
+  return featureType;
+}
