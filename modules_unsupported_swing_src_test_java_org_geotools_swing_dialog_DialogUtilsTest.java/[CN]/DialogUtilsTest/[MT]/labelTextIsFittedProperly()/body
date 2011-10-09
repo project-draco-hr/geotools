@@ -1,0 +1,47 @@
+{
+  final StringBuilder sb=new StringBuilder();
+  sb.append("<html>");
+  sb.append("<span style=\"color: #FF0000;\">.</span>");
+  sb.append("This is a very very very very very very very very very very ");
+  sb.append("very very very very very very very very very very very very ");
+  sb.append("very very very very very very very very very very very very ");
+  sb.append("long message");
+  sb.append("<span style=\"color: #0000FF;\">.</span>");
+  sb.append("</html>");
+  final int labelWidth=300;
+  final Dimension dim=DialogUtils.getHtmlLabelTextExtent(sb.toString(),labelWidth,true);
+  JFrame frame=GuiActionRunner.execute(new GuiQuery<JFrame>(){
+    @Override protected JFrame executeInEDT() throws Throwable {
+      JFrame frame=new JFrame();
+      JLabel label=new JLabel(sb.toString());
+      label.setName("TheLabel");
+      label.setPreferredSize(dim);
+      frame.add(label);
+      frame.pack();
+      return frame;
+    }
+  }
+);
+  FrameFixture fixture=new FrameFixture(frame);
+  Insets insets=frame.getInsets();
+  fixture.show();
+  JLabelFixture lf=fixture.label("TheLabel");
+  Point pos=lf.component().getLocationOnScreen();
+  Dimension size=lf.component().getSize();
+  Robot robot=new Robot();
+  BufferedImage img=robot.createScreenCapture(new Rectangle(pos,dim));
+  fixture.close();
+  if (displayLabelImage) {
+    CountDownLatch latch=TestUtils.showImage(img,"Label screen shot");
+    latch.await();
+  }
+  int[] lower=new int[]{200,0,0};
+  int[] upper=new int[]{255,80,80};
+  Rectangle bounds=new Rectangle(img.getMinX(),img.getMinY(),20,20);
+  assertTrue(findColorInRange(img,bounds,lower,upper));
+  lower=new int[]{0,0,200};
+  upper=new int[]{80,80,255};
+  bounds=new Rectangle(img.getMinX(),img.getMinY() + img.getHeight() - 20,img.getWidth(),20);
+  assertTrue(findColorInRange(img,bounds,lower,upper));
+  fixture.cleanUp();
+}
