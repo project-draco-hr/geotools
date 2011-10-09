@@ -1,0 +1,76 @@
+{
+  final Class type=ad.getType().getBinding();
+  final Pointer def;
+  Pointer<Byte> namePtr=pointerToCString(ad.getLocalName());
+  if (Boolean.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTString);
+    OGR_Fld_SetWidth(def,5);
+  }
+ else   if (Byte.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTInteger);
+    OGR_Fld_SetWidth(def,3);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (Short.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTInteger);
+    OGR_Fld_SetWidth(def,5);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (Integer.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTInteger);
+    OGR_Fld_SetWidth(def,9);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (Long.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTInteger);
+    OGR_Fld_SetWidth(def,19);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (BigInteger.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTInteger);
+    OGR_Fld_SetWidth(def,32);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (BigDecimal.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTReal);
+    OGR_Fld_SetWidth(def,32);
+    OGR_Fld_SetPrecision(def,15);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (Float.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTReal);
+    OGR_Fld_SetWidth(def,12);
+    OGR_Fld_SetPrecision(def,7);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (Double.class.equals(type) || Number.class.isAssignableFrom(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTInteger);
+    OGR_Fld_SetWidth(def,22);
+    OGR_Fld_SetPrecision(def,16);
+    OGR_Fld_SetJustify(def,OGRJustification.OJRight);
+  }
+ else   if (String.class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTString);
+    int length=FeatureTypes.getFieldLength(ad);
+    if (length <= 0) {
+      length=255;
+    }
+    OGR_Fld_SetWidth(def,length);
+  }
+ else   if (byte[].class.equals(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTBinary);
+  }
+ else   if (java.sql.Date.class.isAssignableFrom(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTDate);
+  }
+ else   if (java.sql.Time.class.isAssignableFrom(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTTime);
+  }
+ else   if (java.util.Date.class.isAssignableFrom(type)) {
+    def=OGR_Fld_Create(namePtr,OGRFieldType.OFTDateTime);
+  }
+ else {
+    throw new IOException("Cannot map " + type + " to an OGR type");
+  }
+  return def;
+}
