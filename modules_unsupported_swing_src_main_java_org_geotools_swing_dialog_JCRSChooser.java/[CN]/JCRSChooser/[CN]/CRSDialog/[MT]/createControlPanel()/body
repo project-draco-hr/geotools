@@ -1,0 +1,42 @@
+{
+  JPanel panel=new JPanel(new MigLayout("","[left]"));
+  model=new CRSListModel(authority);
+  panel.add(new JLabel("Enter sub-string to filter list"),"growx, wrap");
+  final JTextField filterFld=new JTextField();
+  filterFld.setPreferredSize(new Dimension(CONTROL_WIDTH,20));
+  filterFld.getDocument().addDocumentListener(new DocumentListener(){
+    @Override public void insertUpdate(    DocumentEvent e){
+      model.setFilter(filterFld.getText());
+    }
+    @Override public void removeUpdate(    DocumentEvent e){
+      model.setFilter(filterFld.getText());
+    }
+    @Override public void changedUpdate(    DocumentEvent e){
+      model.setFilter(filterFld.getText());
+    }
+  }
+);
+  panel.add(filterFld,"wrap");
+  listBox=new JList(model);
+  listBox.addMouseListener(new MouseAdapter(){
+    @Override public void mouseClicked(    MouseEvent e){
+      if (e.getClickCount() == 2) {
+        selectCRS(listBox.getSelectedIndex());
+      }
+    }
+  }
+);
+  JScrollPane listPane=new JScrollPane(listBox);
+  listPane.setPreferredSize(new Dimension(CONTROL_WIDTH,300));
+  listBox.setBorder(BorderFactory.createEtchedBorder());
+  listBox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+  int initialIndex=model.findCode(initialCode);
+  if (initialIndex >= 0) {
+    listBox.setSelectedIndex(initialIndex);
+    Point p=listBox.indexToLocation(initialIndex);
+    JViewport port=listPane.getViewport();
+    port.setViewPosition(p);
+  }
+  panel.add(listPane,"gaptop 10, wrap");
+  return panel;
+}
