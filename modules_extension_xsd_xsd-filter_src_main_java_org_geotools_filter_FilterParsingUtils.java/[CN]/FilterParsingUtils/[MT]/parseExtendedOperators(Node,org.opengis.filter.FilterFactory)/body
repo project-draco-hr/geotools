@@ -1,0 +1,29 @@
+{
+  List<Filter> extOps=new ArrayList();
+  if (node.hasChild(Expression.class)) {
+    Node n=node.getChild(Expression.class);
+    Name opName=new NameImpl(n.getComponent().getNamespace(),n.getComponent().getName());
+    Filter extOp=lookupExtendedOperator(opName,Arrays.asList((Expression)n.getValue()),factory);
+    if (extOp != null) {
+      extOps.add(extOp);
+    }
+  }
+ else   if (node.hasChild(Map.class)) {
+    List<Node> children=node.getChildren(Map.class);
+    for (    Node n : children) {
+      Name opName=new NameImpl(n.getComponent().getNamespace(),n.getComponent().getName());
+      Map map=(Map)n.getValue();
+      List<Expression> expressions=new ArrayList();
+      for (      Object o : map.values()) {
+        if (o instanceof Expression) {
+          expressions.add((Expression)o);
+        }
+      }
+      Filter extOp=lookupExtendedOperator(opName,expressions,factory);
+      if (extOp != null) {
+        extOps.add(extOp);
+      }
+    }
+  }
+  return extOps;
+}

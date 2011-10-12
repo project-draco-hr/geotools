@@ -1,0 +1,15 @@
+{
+  String xml="<wfs:Transaction " + "   version='2.0.0' " + "   service='WFS' "+ "   xmlns='http://www.someserver.com/myns' "+ "   xmlns:fes='http://www.opengis.net/fes/2.0' "+ "   xmlns:wfs='http://www.opengis.net/wfs/2.0' "+ "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' "+ "   xsi:schemaLocation='http://www.opengis.net/wfs/2.0 "+ "                       http://schemas.opengis.net/wfs/2.0/wfs.xsd'> "+ "   <wfs:Update typeName='BuiltUpA_1M'> "+ "      <wfs:Property> "+ "         <wfs:ValueReference>population</wfs:ValueReference> "+ "         <wfs:Value>4070000</wfs:Value> "+ "      </wfs:Property> "+ "      <fes:Filter> "+ "         <fes:ResourceId rid='BuiltUpA_1M.10131'/> "+ " "+ "      </fes:Filter> "+ "   </wfs:Update> "+ "</wfs:Transaction> ";
+  buildDocument(xml);
+  TransactionType t=(TransactionType)parse();
+  assertNotNull(t);
+  assertEquals(1,t.getAbstractTransactionAction().size());
+  UpdateType u=(UpdateType)t.getAbstractTransactionAction().get(0);
+  assertEquals(1,u.getProperty().size());
+  PropertyType p=u.getProperty().get(0);
+  assertEquals("population",p.getValueReference().getValue().getLocalPart());
+  assertEquals("4070000",p.getValue());
+  Id id=(Id)u.getFilter();
+  assertNotNull(id);
+  assertTrue(id.getIDs().contains("BuiltUpA_1M.10131"));
+}

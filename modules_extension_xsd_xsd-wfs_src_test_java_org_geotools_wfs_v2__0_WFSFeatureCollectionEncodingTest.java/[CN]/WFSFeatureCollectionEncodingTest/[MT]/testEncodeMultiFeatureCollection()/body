@@ -1,0 +1,23 @@
+{
+  FeatureCollectionType fc=WfsFactory.eINSTANCE.createFeatureCollectionType();
+  fc.getFeature().add(store.getFeatureSource("feature").getFeatures());
+  fc.getFeature().add(store.getFeatureSource("other").getFeatures());
+  Encoder e=encoder();
+  e.getNamespaces().declarePrefix("geotools","http://geotools.org");
+  e.setIndenting(true);
+  Document d=e.encodeAsDOM(fc,WFS.FeatureCollection);
+  List<Element> members=getChildElementsByTagName(d.getDocumentElement(),"wfs:member");
+  assertEquals(2,members.size());
+  assertEquals(1,getChildElementsByTagName(members.get(0),"wfs:FeatureCollection").size());
+  Element featureCollection=getChildElementsByTagName(members.get(0),"wfs:FeatureCollection").get(0);
+  assertEquals(2,getChildElementsByTagName(featureCollection,"wfs:member").size());
+  assertEquals(2,featureCollection.getElementsByTagName("gml:Point").getLength());
+  assertEquals(2,featureCollection.getElementsByTagName("gml:pos").getLength());
+  assertEquals(0,featureCollection.getElementsByTagName("gml:coord").getLength());
+  assertEquals(1,getChildElementsByTagName(members.get(1),"wfs:FeatureCollection").size());
+  featureCollection=getChildElementsByTagName(members.get(1),"wfs:FeatureCollection").get(0);
+  assertEquals(2,getChildElementsByTagName(featureCollection,"wfs:member").size());
+  assertEquals(2,featureCollection.getElementsByTagName("gml:Point").getLength());
+  assertEquals(2,featureCollection.getElementsByTagName("gml:pos").getLength());
+  assertEquals(0,featureCollection.getElementsByTagName("gml:coord").getLength());
+}

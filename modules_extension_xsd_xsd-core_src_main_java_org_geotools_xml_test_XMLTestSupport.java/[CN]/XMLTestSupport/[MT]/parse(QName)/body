@@ -14,7 +14,29 @@
     String uri=(String)mapping.getValue();
     root.setAttribute("xmlns:" + prefix,uri);
   }
-  root.setAttribute("xsi:schemaLocation",config.getNamespaceURI() + " " + config.getSchemaFileURL());
+  if (root.hasAttribute("xsi:schemaLocation")) {
+    XSD xsd=config.getXSD();
+    List<XSD> deps=xsd.getAllDependencies();
+    deps.add(xsd);
+    String[] locations=root.getAttribute("xsi:schemaLocation").split(" +");
+    for (int i=0; i < locations.length; i+=2) {
+      String uri=locations[i];
+      for (      XSD dep : deps) {
+        if (dep.getNamespaceURI().equals(uri)) {
+          locations[i + 1]=dep.getSchemaLocation();
+        }
+      }
+    }
+    StringBuffer joined=new StringBuffer();
+    for (    String s : locations) {
+      joined.append(s).append(" ");
+    }
+    joined.setLength(joined.length() - 1);
+    root.setAttribute("xsi:schemaLocation",joined.toString());
+  }
+ else {
+    root.setAttribute("xsi:schemaLocation",config.getNamespaceURI() + " " + config.getSchemaFileURL());
+  }
   DOMParser parser=new DOMParser(config,document);
   return parser.parse();
 }

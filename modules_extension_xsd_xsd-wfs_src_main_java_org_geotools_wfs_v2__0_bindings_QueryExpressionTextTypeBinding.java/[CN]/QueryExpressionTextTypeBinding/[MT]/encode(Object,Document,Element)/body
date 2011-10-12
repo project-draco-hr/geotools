@@ -1,0 +1,19 @@
+{
+  Element e=super.encode(object,document,value);
+  QueryExpressionTextType qe=(QueryExpressionTextType)object;
+  if (!qe.isIsPrivate()) {
+    DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+    DocumentBuilder db=dbf.newDocumentBuilder();
+    Document d=db.parse(new ByteArrayInputStream(qe.getValue().getBytes()));
+    for (Enumeration en=namespaceContext.getPrefixes(); en.hasMoreElements(); ) {
+      String prefix=(String)en.nextElement();
+      if (prefix == null) {
+        continue;
+      }
+      String uri=namespaceContext.getURI(prefix);
+      d.getDocumentElement().setAttribute("xmlns:" + prefix,uri);
+    }
+    e.appendChild(document.importNode(d.getDocumentElement(),true));
+  }
+  return e;
+}

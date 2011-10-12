@@ -1,0 +1,55 @@
+{
+  List<FeatureCollection> features=features(fc);
+  FeatureCollection first=features.get(0);
+  if ("boundedBy".equals(name.getLocalPart())) {
+    if (features.size() == 1) {
+      return first.getBounds();
+    }
+ else {
+      ReferencedEnvelope bounds=new ReferencedEnvelope(first.getBounds());
+      for (int i=1; i < features.size(); i++) {
+        bounds.expandToInclude(features.get(i).getBounds());
+      }
+      return bounds;
+    }
+  }
+  if ("featureMember".equals(name.getLocalPart()) || "member".equals(name.getLocalPart())) {
+    if (features.size() == 1) {
+      return first;
+    }
+    if ("featureMember".equals(name.getLocalPart())) {
+      return new CompositeFeatureCollection(features);
+    }
+    int numberMatched=-1;
+    if (EMFUtils.has(fc,"numberMatched")) {
+      Number n=(Number)EMFUtils.get(fc,"numberMatched");
+      numberMatched=n != null ? n.intValue() : -1;
+    }
+ else     if (EMFUtils.has(fc,"numberOfFeatures")) {
+      Number n=(Number)EMFUtils.get(fc,"numberOfFeatures");
+      numberMatched=n != null ? n.intValue() : -1;
+    }
+    List<FeatureCollectionType> members=new ArrayList(features.size());
+    for (Iterator<FeatureCollection> it=features.iterator(); it.hasNext(); ) {
+      FeatureCollection featureCollection=it.next();
+      FeatureCollectionType member=Wfs20Factory.eINSTANCE.createFeatureCollectionType();
+      member.setTimeStamp((Calendar)EMFUtils.get(fc,"timeStamp"));
+      member.getMember().add(featureCollection);
+      members.add(member);
+      if (numberMatched == -1) {
+        continue;
+      }
+      int size=featureCollection.size();
+      member.setNumberReturned(BigInteger.valueOf(size));
+      if (it.hasNext()) {
+        numberMatched-=size;
+        member.setNumberMatched(BigInteger.valueOf(size));
+      }
+ else {
+        member.setNumberMatched(BigInteger.valueOf(numberMatched));
+      }
+    }
+    return members;
+  }
+  return null;
+}

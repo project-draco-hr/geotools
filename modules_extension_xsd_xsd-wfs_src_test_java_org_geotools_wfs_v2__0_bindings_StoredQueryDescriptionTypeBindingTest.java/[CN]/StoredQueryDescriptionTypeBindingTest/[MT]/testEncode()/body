@@ -1,0 +1,20 @@
+{
+  Wfs20Factory f=Wfs20Factory.eINSTANCE;
+  StoredQueryDescriptionType sqd=f.createStoredQueryDescriptionType();
+  sqd.setId("foo");
+  ParameterExpressionType p=f.createParameterExpressionType();
+  p.setName("AreaOfInterest");
+  p.setType(GML.Polygon);
+  sqd.getParameter().add(p);
+  String xml="<wfs:Query typeNames='myns:Parks'>" + "  <fes:Filter>" + "   <fes:Within>\n"+ "     <fes:ValueReference>geometry</fes:ValueReference>"+ "     ${AreaOfInterest}"+ "   </fes:Within>"+ "  </fes:Filter>"+ "</wfs:Query> ";
+  QueryExpressionTextType qet=f.createQueryExpressionTextType();
+  sqd.getQueryExpressionText().add(qet);
+  qet.setLanguage("urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression");
+  qet.setReturnFeatureTypes(Arrays.asList(new QName("http://www.someserver.com/myns","Parks")));
+  qet.setValue(xml);
+  Document dom=encode(sqd,WFS.StoredQueryDescription,WFS.StoredQueryDescriptionType);
+  print(dom);
+  assertEquals("wfs:StoredQueryDescription",dom.getDocumentElement().getNodeName());
+  assertEquals(1,dom.getElementsByTagName("wfs:QueryExpressionText").getLength());
+  assertTrue(dom.getElementsByTagName("wfs:QueryExpressionText").item(0).getFirstChild().getNodeName().equals("wfs:Query"));
+}

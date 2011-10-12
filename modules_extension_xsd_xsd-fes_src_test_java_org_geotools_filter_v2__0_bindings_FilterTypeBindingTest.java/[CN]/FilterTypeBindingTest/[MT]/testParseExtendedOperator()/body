@@ -1,0 +1,15 @@
+{
+  final FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  String xml="<fes:Filter " + "xmlns:fes='http://www.opengis.net/fes/2.0' xmlns:myops='http://www.someserver.com/myops/1.0'> " + "  <myops:strMatches> "+ "   <fes:ValueReference>bar</fes:ValueReference> "+ "   <fes:Literal>baz</fes:Literal> "+ "  </myops:strMatches> "+ "</fes:Filter>";
+  buildDocument(xml);
+  PropertyIsEqualTo f=(PropertyIsEqualTo)parse();
+  assertTrue(f.getExpression1() instanceof Function);
+  assertTrue(f.getExpression2() instanceof Literal);
+  xml="<fes:Filter " + "xmlns:fes='http://www.opengis.net/fes/2.0' xmlns:myops='http://www.someserver.com/myops/1.0'> " + " <fes:And> "+ "  <myops:strMatches> "+ "   <fes:ValueReference>bar</fes:ValueReference> "+ "   <fes:Literal>baz</fes:Literal> "+ "  </myops:strMatches> "+ "  <fes:PropertyIsBetween> "+ "<fes:ValueReference>Person/age</fes:ValueReference> "+ "   <fes:LowerBoundary> "+ "    <fes:Literal>18</fes:Literal> "+ "   </fes:LowerBoundary> "+ "   <fes:UpperBoundary> "+ "    <fes:Literal>200</fes:Literal> "+ "   </fes:UpperBoundary> "+ "  </fes:PropertyIsBetween> "+ " </fes:And> "+ "</fes:Filter>";
+  buildDocument(xml);
+  And a=(And)parse();
+  List<Filter> ch=a.getChildren();
+  assertEquals(2,ch.size());
+  assertTrue(ch.get(0) instanceof PropertyIsEqualTo || ch.get(0) instanceof PropertyIsBetween);
+  assertTrue(ch.get(1) instanceof PropertyIsEqualTo || ch.get(1) instanceof PropertyIsBetween);
+}

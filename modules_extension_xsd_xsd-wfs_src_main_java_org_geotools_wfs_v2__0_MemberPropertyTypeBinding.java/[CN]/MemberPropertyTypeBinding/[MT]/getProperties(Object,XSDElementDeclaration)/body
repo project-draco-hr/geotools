@@ -1,5 +1,20 @@
 {
   ArrayList list=new ArrayList();
-  list.add(new Object[]{GML.AbstractFeature,super.getProperty(object,org.geotools.gml3.GML._Feature)});
+  Object member=super.getProperty(object,org.geotools.gml3.GML._Feature);
+  if (member != null) {
+    if (isJoinedFeature(member)) {
+      list.add(new Object[]{WFS.Tuple,splitJoinedFeature(member)});
+    }
+ else {
+      list.add(new Object[]{GML.AbstractFeature,object});
+    }
+  }
+ else   if (object instanceof FeatureCollectionType) {
+    list.add(new Object[]{WFS.FeatureCollection,object});
+  }
+ else   if (object instanceof Attribute) {
+    Attribute att=(Attribute)object;
+    list.add(new Object[]{particle(att),att.getValue()});
+  }
   return list;
 }

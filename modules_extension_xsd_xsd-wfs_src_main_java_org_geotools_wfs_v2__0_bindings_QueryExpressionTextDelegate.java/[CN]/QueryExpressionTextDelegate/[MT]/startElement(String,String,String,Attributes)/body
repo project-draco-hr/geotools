@@ -1,0 +1,26 @@
+{
+  if (QueryExpressionText.getLocalPart().equals(localName)) {
+    result=Wfs20Factory.eINSTANCE.createQueryExpressionTextType();
+    result.setLanguage(attributes.getValue("language"));
+    if (attributes.getValue("isPrivate") != null) {
+      String isPrivate=attributes.getValue("isPrivate");
+      result.setIsPrivate("true".equalsIgnoreCase(isPrivate) || "1".equals(isPrivate));
+    }
+    result.setReturnFeatureTypes(new ArrayList<QName>());
+    for (    String returnType : attributes.getValue("returnFeatureTypes").split(" +")) {
+      QName typeName=null;
+      String[] split=returnType.split(":");
+      if (split.length == 1) {
+        typeName=new QName(split[0]);
+      }
+ else {
+        String prefix=split[0];
+        typeName=new QName(namespaceContext.getURI(prefix),split[1],prefix);
+      }
+      result.getReturnFeatureTypes().add(typeName);
+    }
+  }
+ else {
+    super.startElement(uri,localName,qName,attributes);
+  }
+}

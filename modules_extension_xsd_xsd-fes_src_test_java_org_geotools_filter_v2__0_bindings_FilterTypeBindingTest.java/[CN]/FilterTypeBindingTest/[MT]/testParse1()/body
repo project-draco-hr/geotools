@@ -1,0 +1,14 @@
+{
+  String xml="<fes:Filter " + "   xmlns:fes='http://www.opengis.net/fes/2.0' " + "   xmlns:gml='http://www.opengis.net/gml/3.2' "+ "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' "+ "   xsi:schemaLocation='http://www.opengis.net/fes/2.0 "+ "   http://schemas.opengis.net/filter/2.0/filterAll.xsd "+ "   http://www.opengis.net/gml/3.2 "+ "   http://schemas.opengis.net/gml/3.2.1/gml.xsd'> "+ "   <fes:And> "+ "      <fes:Within> "+ "         <fes:ValueReference>WKB_GEOM</fes:ValueReference> "+ "         <gml:Polygon gml:id='P1' srsName='urn:ogc:def:crs:EPSG::4326'> "+ "            <gml:exterior> "+ "               <gml:LinearRing> "+ "                  <gml:posList>10 10 20 20 30 30 40 40 10 10</gml:posList> "+ "               </gml:LinearRing> "+ "            </gml:exterior> "+ "         </gml:Polygon> "+ "      </fes:Within> "+ "      <fes:PropertyIsBetween> "+ "         <fes:ValueReference>DEPTH</fes:ValueReference> "+ "         <fes:LowerBoundary> "+ "            <fes:Literal>400</fes:Literal> "+ "         </fes:LowerBoundary> "+ "         <fes:UpperBoundary> "+ "            <fes:Literal>800</fes:Literal> "+ "         </fes:UpperBoundary> "+ "      </fes:PropertyIsBetween> "+ "   </fes:And> "+ "</fes:Filter>";
+  buildDocument(xml);
+  And f=(And)parse();
+  assertNotNull(f);
+  assertEquals(2,f.getChildren().size());
+  Within f1=(Within)f.getChildren().get(0);
+  assertEquals("WKB_GEOM",((PropertyName)f1.getExpression1()).getPropertyName());
+  assertTrue(f1.getExpression2().evaluate(null) instanceof Polygon);
+  PropertyIsBetween f2=(PropertyIsBetween)f.getChildren().get(1);
+  assertEquals("DEPTH",((PropertyName)f2.getExpression()).getPropertyName());
+  assertEquals(400,f2.getLowerBoundary().evaluate(null,Integer.class).intValue());
+  assertEquals(800,f2.getUpperBoundary().evaluate(null,Integer.class).intValue());
+}

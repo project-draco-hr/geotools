@@ -2,7 +2,8 @@
   if (logger.isLoggable(Level.FINEST)) {
     logger.finest("startElement(" + uri + ","+ localName+ ","+ qName);
   }
-  if (schemas == null) {
+  boolean root=schemas == null;
+  if (root) {
     String[] locations=null;
     for (int i=0; i < attributes.getLength(); i++) {
       String name=attributes.getQName(i);
@@ -147,7 +148,8 @@
   if ((uri == null) || uri.equals("")) {
     uri=namespaces.getURI("");
   }
-  QName qualifiedName=new QName(uri,localName);
+  String prefix=namespaces.getPrefix(uri);
+  QName qualifiedName=prefix != null ? new QName(uri,localName,prefix) : new QName(uri,localName);
   Handler parent=(Handler)handlers.peek();
   ElementHandler handler=(ElementHandler)parent.createChildHandler(qualifiedName);
   if (handler == null) {
@@ -163,11 +165,13 @@
       handler=handlerFactory.createElementHandler(qualifiedName,parent,this);
     }
   }
-  if (handler == null) {
-    List delegates=Schemas.getComponentInstancesOfType(context,ParserDelegate.class);
-    for (Iterator d=delegates.iterator(); d.hasNext(); ) {
-      ParserDelegate delegate=(ParserDelegate)d.next();
-      if (delegate.canHandle(qualifiedName)) {
+  if (handler == null || forceParserDelegate) {
+    List adapters=Schemas.getComponentAdaptersOfType(context,ParserDelegate.class);
+    for (Iterator a=adapters.iterator(); a.hasNext(); ) {
+      ComponentAdapter adapter=(ComponentAdapter)a.next();
+      ParserDelegate delegate=(ParserDelegate)adapter.getComponentInstance(context);
+      boolean canHandle=delegate instanceof ParserDelegate2 ? ((ParserDelegate2)delegate).canHandle(qualifiedName,attributes,handler,parent) : delegate.canHandle(qualifiedName);
+      if (canHandle) {
         handler=new DelegatingHandler(delegate,qualifiedName,parent);
         ((DelegatingHandler)handler).startDocument();
       }
@@ -206,9 +210,17 @@
       XSDElementDeclaration decl=XSDFactory.eINSTANCE.createXSDElementDeclaration();
       decl.setName(qualifiedName.getLocalPart());
       decl.setTargetNamespace(qualifiedName.getNamespaceURI());
-      QName typeDefinition=(QName)context.getComponentInstance("http://geotools.org/typeDefinition");
+      QName typeDefinition=null;
+      if (root && rootElementType != null) {
+        typeDefinition=rootElementType;
+      }
+      if (typeDefinition == null) {
+        typeDefinition=(QName)context.getComponentInstance("http://geotools.org/typeDefinition");
+        if (typeDefinition != null) {
+          context.unregisterComponent("http://geotools.org/typeDefinition");
+        }
+      }
       if (typeDefinition != null) {
-        context.unregisterComponent("http://geotools.org/typeDefinition");
         XSDTypeDefinition type=index.getTypeDefinition(typeDefinition);
         if (type == null) {
           throw new NullPointerException();
