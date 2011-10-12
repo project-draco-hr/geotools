@@ -1,0 +1,31 @@
+{
+  updateLock.writeLock().lock();
+  try {
+    if (active.get()) {
+      final TextDialog dialog=dialogRef.get();
+      if (dialog != null) {
+        SwingUtilities.invokeAndWait(new Runnable(){
+          @Override public void run(){
+            dialog.closeDialog();
+          }
+        }
+);
+      }
+    }
+ else {
+      LOGGER.info("This connection has expired");
+    }
+  }
+ catch (  InterruptedException ex) {
+    LOGGER.severe("Thread interrupted while attmpting to close text reporter");
+  }
+catch (  InvocationTargetException ex) {
+    LOGGER.log(Level.SEVERE,"Error while trying to close text reporter",ex);
+  }
+ finally {
+    if (active.get()) {
+      setDialogClosed();
+    }
+    updateLock.writeLock().unlock();
+  }
+}
