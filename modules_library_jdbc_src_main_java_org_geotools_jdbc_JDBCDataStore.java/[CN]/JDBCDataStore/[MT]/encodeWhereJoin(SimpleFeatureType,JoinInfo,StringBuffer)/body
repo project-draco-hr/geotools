@@ -1,0 +1,23 @@
+{
+  List<FilterToSQL> toSQL=new ArrayList();
+  boolean whereEncoded=false;
+  Filter filter=join.getFilter();
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    sql.append(" WHERE ");
+    whereEncoded=true;
+    toSQL.add(filter(featureType,filter,sql));
+  }
+  for (  JoinPart part : join.getParts()) {
+    filter=part.getPreFilter();
+    if (filter == null || Filter.INCLUDE.equals(filter))     continue;
+    if (!whereEncoded) {
+      sql.append(" WHERE ");
+      whereEncoded=true;
+    }
+ else {
+      sql.append(" AND ");
+    }
+    toSQL.add(filter(part.getQueryFeatureType(),filter,sql));
+  }
+  return toSQL;
+}

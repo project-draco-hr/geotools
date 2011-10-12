@@ -1,0 +1,83 @@
+{
+  Class typeContext=null;
+  AttributeDescriptor attType=(AttributeDescriptor)property.evaluate(featureType);
+  if (attType != null) {
+    typeContext=attType.getType().getBinding();
+  }
+  Period period=null;
+  if (temporal.evaluate(null) instanceof Period) {
+    period=(Period)temporal.evaluate(null);
+  }
+  if ((filter instanceof Begins || filter instanceof BegunBy || filter instanceof Ends|| filter instanceof EndedBy|| filter instanceof During|| filter instanceof TContains) && period == null) {
+    if (period == null) {
+      throw new IllegalArgumentException("Filter requires a time period");
+    }
+  }
+  if (filter instanceof TEquals && period != null) {
+    throw new IllegalArgumentException("TEquals filter does not accept time period");
+  }
+  if ((filter instanceof Begins || filter instanceof Ends || filter instanceof During) && swapped) {
+    throw new IllegalArgumentException("Time period must be second argument of Filter");
+  }
+  if ((filter instanceof BegunBy || filter instanceof EndedBy || filter instanceof TContains) && !swapped) {
+    throw new IllegalArgumentException("Time period must be first argument of Filter");
+  }
+  try {
+    if (filter instanceof After || filter instanceof Before) {
+      String op=filter instanceof After ? " > " : " < ";
+      String inv=filter instanceof After ? " < " : " > ";
+      if (period != null) {
+        out.write("(");
+        property.accept(this,extraData);
+        out.write(swapped ? inv : op);
+        visitBegin(period,extraData);
+        out.write(" AND ");
+        property.accept(this,extraData);
+        out.write(swapped ? inv : op);
+        visitEnd(period,extraData);
+        out.write(")");
+      }
+ else {
+        if (swapped) {
+          temporal.accept(this,typeContext);
+        }
+ else {
+          property.accept(this,extraData);
+        }
+        out.write(op);
+        if (swapped) {
+          property.accept(this,extraData);
+        }
+ else {
+          temporal.accept(this,typeContext);
+        }
+      }
+    }
+ else     if (filter instanceof Begins || filter instanceof Ends || filter instanceof BegunBy|| filter instanceof EndedBy) {
+      property.accept(this,extraData);
+      out.write(" = ");
+      if (filter instanceof Begins || filter instanceof BegunBy) {
+        visitBegin(period,extraData);
+      }
+ else {
+        visitEnd(period,extraData);
+      }
+    }
+ else     if (filter instanceof During || filter instanceof TContains) {
+      property.accept(this,extraData);
+      out.write(" BETWEEN ");
+      visitBegin(period,extraData);
+      out.write(" AND ");
+      visitEnd(period,extraData);
+    }
+ else     if (filter instanceof TEquals) {
+      property.accept(this,extraData);
+      out.write(" = ");
+      temporal.accept(this,typeContext);
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Error encoding temporal filter",e);
+  }
+  return extraData;
+}

@@ -1,0 +1,44 @@
+{
+  JoinInfo info=new JoinInfo();
+  info.setPrimaryAlias("a");
+  for (int i=0; i < query.getJoins().size(); i++) {
+    Join j=query.getJoins().get(i);
+    JoinPart part=new JoinPart(j);
+    info.getParts().add(part);
+    JDBCFeatureSource joinFeatureSource=dataStore.getAbsoluteFeatureSource(j.getTypeName());
+    part.setFeatureSource(joinFeatureSource);
+    String alias=String.valueOf((char)('b' + i));
+    part.setAlias(alias);
+    Filter joinFilter=j.getJoinFilter();
+    if (query.getAlias() != null) {
+      joinFilter=(Filter)joinFilter.accept(new JoinPrefixRewriter(query.getAlias(),"a"),null);
+    }
+    if (j.getAlias() != null) {
+      joinFilter=(Filter)joinFilter.accept(new JoinPrefixRewriter(j.getAlias(),alias),null);
+    }
+    joinFilter=(Filter)joinFilter.accept(new JoinQualifier(featureType,"a",joinFeatureSource.getSchema(),alias),null);
+    part.setJoinFilter(joinFilter);
+    Filter[] prePostFilters=joinFeatureSource.splitFilter(j.getFilter());
+    SimpleFeatureType[] types=joinFeatureSource.buildQueryAndReturnFeatureTypes(joinFeatureSource.getSchema(),j.getPropertyNames(),prePostFilters[1]);
+    types[0]=SimpleFeatureTypeBuilder.copy(types[0]);
+    for (    AttributeDescriptor att : types[0].getAttributeDescriptors()) {
+      if (featureType.getDescriptor(att.getName()) != null) {
+        att.getUserData().put(JDBCDataStore.JDBC_COLUMN_ALIAS,alias + "_" + att.getLocalName());
+      }
+    }
+    part.setQueryFeatureType(types[0]);
+    part.setReturnFeatureType(types[1]);
+    if (prePostFilters[0] != null && prePostFilters[0] != Filter.INCLUDE) {
+      prePostFilters[0]=(Filter)prePostFilters[0].accept(new JoinQualifier(joinFeatureSource.getSchema(),alias),null);
+    }
+    part.setPreFilter(prePostFilters[0]);
+    part.setPostFilter(prePostFilters[1]);
+    part.setAttributeName(part.getJoin().getAlias() != null ? part.getJoin().getAlias() : part.getQueryFeatureType().getTypeName());
+  }
+  Filter filter=query.getFilter();
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    filter=(Filter)filter.accept(new JoinQualifier(featureType,"a"),null);
+  }
+  info.setFilter(filter);
+  return info;
+}

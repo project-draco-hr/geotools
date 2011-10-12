@@ -1,0 +1,20 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  selectColumns(featureType,join.getPrimaryAlias(),query,sql);
+  for (  JoinPart part : join.getParts()) {
+    selectColumns(part.getQueryFeatureType(),part.getAlias(),query,sql);
+  }
+  sql.setLength(sql.length() - 1);
+  dialect.encodePostSelect(featureType,sql);
+  sql.append(" FROM ");
+  encodeTableJoin(featureType,join,query,sql);
+  List<FilterToSQL> toSQLs=encodeWhereJoin(featureType,join,sql);
+  sort(featureType,query.getSortBy(),join.getPrimaryAlias(),sql);
+  applyLimitOffset(sql,query);
+  LOGGER.fine(sql.toString());
+  PreparedStatement ps=cx.prepareStatement(sql.toString(),ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
+  ps.setFetchSize(fetchSize);
+  setPreparedFilterValues(ps,toSQLs,cx);
+  return ps;
+}

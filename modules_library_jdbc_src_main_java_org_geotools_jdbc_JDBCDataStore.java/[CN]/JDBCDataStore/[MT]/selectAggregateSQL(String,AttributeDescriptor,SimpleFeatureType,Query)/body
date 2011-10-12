@@ -1,33 +1,5 @@
 {
   StringBuffer sql=new StringBuffer();
-  boolean limitOffset=checkLimitOffset(query);
-  if (limitOffset) {
-    sql.append("SELECT * FROM ");
-  }
- else {
-    sql.append("SELECT ");
-    encodeFunction(function,att,query,sql);
-    sql.append(" FROM ");
-  }
-  encodeTableName(featureType.getTypeName(),sql,query.getHints());
-  Filter filter=query.getFilter();
-  if (filter != null && !Filter.INCLUDE.equals(filter)) {
-    try {
-      FilterToSQL toSQL=createFilterToSQL(featureType);
-      sql.append(" ").append(toSQL.encodeToString(filter));
-    }
- catch (    FilterToSQLException e) {
-      throw new RuntimeException(e);
-    }
-  }
-  if (limitOffset) {
-    applyLimitOffset(sql,query);
-    StringBuffer sql2=new StringBuffer("SELECT ");
-    encodeFunction(function,att,query,sql2);
-    sql2.append(" AS gt_result_");
-    sql2.append(" FROM (");
-    sql.insert(0,sql2.toString());
-    sql.append(") gt_limited_");
-  }
+  doSelectAggregateSQL(function,att,featureType,query,sql);
   return sql.toString();
 }

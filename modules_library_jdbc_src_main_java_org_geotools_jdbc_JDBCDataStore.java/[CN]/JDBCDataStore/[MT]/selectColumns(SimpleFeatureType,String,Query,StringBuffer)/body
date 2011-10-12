@@ -1,0 +1,39 @@
+{
+  PrimaryKey key=null;
+  try {
+    key=getPrimaryKey(featureType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  Set<String> pkColumnNames=getColumnNames(key);
+  for (  PrimaryKeyColumn col : key.getColumns()) {
+    dialect.encodeColumnName(prefix,col.getName(),sql);
+    if (prefix != null) {
+      dialect.encodeColumnAlias(prefix + "_" + col.getName(),sql);
+    }
+    sql.append(",");
+  }
+  for (  AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+    String columnName=att.getLocalName();
+    if (pkColumnNames.contains(columnName))     continue;
+    String alias=null;
+    if (att.getUserData().containsKey(JDBC_COLUMN_ALIAS)) {
+      alias=(String)att.getUserData().get(JDBC_COLUMN_ALIAS);
+    }
+    if (att instanceof GeometryDescriptor) {
+      int i=sql.length();
+      encodeGeometryColumn((GeometryDescriptor)att,prefix,sql,query.getHints());
+      if (alias == null) {
+        alias=columnName;
+      }
+    }
+ else {
+      dialect.encodeColumnName(prefix,columnName,sql);
+    }
+    if (alias != null) {
+      dialect.encodeColumnAlias(alias,sql);
+    }
+    sql.append(",");
+  }
+}

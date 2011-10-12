@@ -1,10 +1,16 @@
 {
   this.featureSource=featureSource;
   this.query=query;
+  this.featureType=featureSource.getSchema();
   if (query.getPropertyNames() != Query.ALL_NAMES) {
-    this.featureType=SimpleFeatureTypeBuilder.retype(featureSource.getSchema(),query.getPropertyNames());
+    this.featureType=SimpleFeatureTypeBuilder.retype(this.featureType,query.getPropertyNames());
   }
- else {
-    this.featureType=featureSource.getSchema();
+  if (!query.getJoins().isEmpty()) {
+    SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+    tb.init(this.featureType);
+    for (    Join join : query.getJoins()) {
+      tb.add(join.attributeName(),SimpleFeature.class);
+    }
+    this.featureType=tb.buildFeatureType();
   }
 }

@@ -3,7 +3,12 @@
   Filter[] split=splitFilter(query.getFilter());
   Filter preFilter=split[0];
   Filter postFilter=split[1];
-  if ((postFilter != null) && (postFilter != Filter.INCLUDE)) {
+  boolean manual=(postFilter != null) && (postFilter != Filter.INCLUDE);
+  if (!manual && !query.getJoins().isEmpty()) {
+    JoinInfo join=JoinInfo.create(query,this);
+    manual=join.hasPostFilters();
+  }
+  if (manual) {
     try {
       getDataStore().getLogger().fine("Calculating size manually");
       int count=0;

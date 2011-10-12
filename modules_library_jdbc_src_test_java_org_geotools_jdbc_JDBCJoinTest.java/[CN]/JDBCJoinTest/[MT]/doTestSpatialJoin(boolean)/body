@@ -1,0 +1,46 @@
+{
+  dataStore.setExposePrimaryKeyColumns(exposePrimaryKeys);
+  FilterFactory2 ff=(FilterFactory2)dataStore.getFilterFactory();
+  Query q=new Query(tname("ft1"));
+  q.setPropertyNames(Arrays.asList(aname("geometry"),aname("intProperty")));
+  q.setSortBy(new SortBy[]{ff.sort(aname("intProperty"),SortOrder.ASCENDING)});
+  q.getJoins().add(new Join(tname("ftjoin"),ff.contains(ff.property(aname("geom")),ff.property(aname("geometry")))));
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("ft1")).getFeatures(q);
+  assertEquals(6,features.size());
+  SimpleFeatureIterator it=features.features();
+  SimpleFeature f;
+  try {
+    Set<String> s=new HashSet<String>(Arrays.asList("zero","one","two"));
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals(0,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    s.remove(((SimpleFeature)f.getAttribute(tname("ftjoin"))).getAttribute(aname("name")));
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals(0,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    s.remove(((SimpleFeature)f.getAttribute(tname("ftjoin"))).getAttribute(aname("name")));
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals(0,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    s.remove(((SimpleFeature)f.getAttribute(tname("ftjoin"))).getAttribute(aname("name")));
+    assertEquals(0,s.size());
+    s=new HashSet<String>(Arrays.asList("one","two"));
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals(1,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    s.remove(((SimpleFeature)f.getAttribute(tname("ftjoin"))).getAttribute(aname("name")));
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals(1,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    s.remove(((SimpleFeature)f.getAttribute(tname("ftjoin"))).getAttribute(aname("name")));
+    assertEquals(0,s.size());
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals(2,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    assertEquals("two",((SimpleFeature)f.getAttribute(tname("ftjoin"))).getAttribute(aname("name")));
+    assertFalse(it.hasNext());
+  }
+  finally {
+    it.close();
+  }
+}

@@ -1,0 +1,25 @@
+{
+  SimpleFeatureType[] types=null;
+  if (propertyNames == Query.ALL_NAMES) {
+    return new SimpleFeatureType[]{featureType,featureType};
+  }
+ else {
+    SimpleFeatureType returnedSchema=SimpleFeatureTypeBuilder.retype(featureType,propertyNames);
+    SimpleFeatureType querySchema=returnedSchema;
+    if (filter != null && !filter.equals(Filter.INCLUDE)) {
+      FilterAttributeExtractor extractor=new FilterAttributeExtractor(featureType);
+      filter.accept(extractor,null);
+      String[] extraAttributes=extractor.getAttributeNames();
+      if (extraAttributes != null && extraAttributes.length > 0) {
+        List<String> allAttributes=new ArrayList<String>(Arrays.asList(propertyNames));
+        for (        String extraAttribute : extraAttributes) {
+          if (!allAttributes.contains(extraAttribute))           allAttributes.add(extraAttribute);
+        }
+        String[] allAttributeArray=(String[])allAttributes.toArray(new String[allAttributes.size()]);
+        querySchema=SimpleFeatureTypeBuilder.retype(getSchema(),allAttributeArray);
+      }
+    }
+    types=new SimpleFeatureType[]{querySchema,returnedSchema};
+  }
+  return types;
+}

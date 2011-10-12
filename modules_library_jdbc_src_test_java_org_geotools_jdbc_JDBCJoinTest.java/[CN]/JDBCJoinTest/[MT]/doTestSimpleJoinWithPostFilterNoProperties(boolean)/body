@@ -1,0 +1,19 @@
+{
+  dataStore.setExposePrimaryKeyColumns(exposePrimaryKeys);
+  FilterFactory ff=dataStore.getFilterFactory();
+  Filter j=ff.equal(ff.property(aname("stringProperty")),ff.property(aname("name")),true);
+  Query q=new Query(tname("ft1"));
+  Join join=new Join(tname("ftjoin"),j);
+  join.setProperties(Query.NO_PROPERTIES);
+  q.getJoins().add(join);
+  q.setFilter(ff.equal(ff.function("__equals",ff.property(aname("stringProperty")),ff.literal("one")),ff.literal(true),true));
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("ft1")).getFeatures(q);
+  assertEquals(1,features.size());
+  q=new Query(tname("ft1"));
+  join=new Join(tname("ftjoin"),j);
+  join.setProperties(Query.NO_PROPERTIES);
+  join.filter(ff.equal(ff.function("__equals",ff.property(aname("name")),ff.literal("one")),ff.literal(true),true));
+  q.getJoins().add(join);
+  features=dataStore.getFeatureSource(tname("ft1")).getFeatures(q);
+  assertEquals(1,features.size());
+}

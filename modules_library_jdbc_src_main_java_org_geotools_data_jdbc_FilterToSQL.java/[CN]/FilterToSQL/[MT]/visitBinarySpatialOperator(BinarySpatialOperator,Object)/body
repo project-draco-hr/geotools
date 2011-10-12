@@ -1,28 +1,28 @@
 {
   if (filter == null)   throw new NullPointerException("Filter to be encoded cannot be null");
   if (!(filter instanceof BinaryComparisonOperator))   throw new IllegalArgumentException("This filter is not a binary comparison, " + "can't do SDO relate against it: " + filter.getClass());
-  PropertyName property;
-  Literal geometry;
   BinaryComparisonOperator op=(BinaryComparisonOperator)filter;
-  if (op.getExpression1() instanceof PropertyName && op.getExpression2() instanceof Literal) {
-    property=(PropertyName)op.getExpression1();
-    geometry=(Literal)op.getExpression2();
+  Expression e1=op.getExpression1();
+  Expression e2=op.getExpression2();
+  if (e1 instanceof Literal && e2 instanceof PropertyName) {
+    e1=(PropertyName)op.getExpression2();
+    e2=(Literal)op.getExpression1();
   }
- else   if (op.getExpression2() instanceof PropertyName && op.getExpression1() instanceof Literal) {
-    property=(PropertyName)op.getExpression2();
-    geometry=(Literal)op.getExpression1();
-  }
- else {
-    throw new IllegalArgumentException("Can only encode spatial filters that do " + "compare a property name and a geometry");
-  }
-  currentGeometry=null;
-  currentSRID=null;
-  if (featureType != null) {
-    AttributeDescriptor descriptor=(AttributeDescriptor)property.evaluate(featureType);
-    if (descriptor instanceof GeometryDescriptor) {
-      currentGeometry=(GeometryDescriptor)descriptor;
-      currentSRID=(Integer)descriptor.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID);
+  if (e1 instanceof PropertyName) {
+    currentGeometry=null;
+    currentSRID=null;
+    if (featureType != null) {
+      AttributeDescriptor descriptor=(AttributeDescriptor)e1.evaluate(featureType);
+      if (descriptor instanceof GeometryDescriptor) {
+        currentGeometry=(GeometryDescriptor)descriptor;
+        currentSRID=(Integer)descriptor.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID);
+      }
     }
   }
-  return visitBinarySpatialOperator(filter,property,geometry,filter.getExpression1() instanceof Literal,extraData);
+  if (e1 instanceof PropertyName && e2 instanceof Literal) {
+    return visitBinarySpatialOperator(filter,(PropertyName)e1,(Literal)e2,filter.getExpression1() instanceof Literal,extraData);
+  }
+ else {
+    return visitBinarySpatialOperator(filter,e1,e2,extraData);
+  }
 }

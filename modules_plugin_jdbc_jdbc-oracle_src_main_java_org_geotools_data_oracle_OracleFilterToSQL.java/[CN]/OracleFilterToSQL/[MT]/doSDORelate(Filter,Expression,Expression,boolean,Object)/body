@@ -1,0 +1,18 @@
+{
+  String mask=null;
+  for (  Class filterClass : SDO_RELATE_MASK_MAP.keySet()) {
+    if (filterClass.isAssignableFrom(filter.getClass()))     mask=SDO_RELATE_MASK_MAP.get(filterClass);
+  }
+  if (mask == null)   throw new IllegalArgumentException("Cannot encode filter " + filter.getClass() + " into a SDO_RELATE");
+  if (swapped)   mask=INVERSE_OPERATOR_MAP.get(mask);
+  out.write("SDO_RELATE(");
+  e1.accept(this,extraData);
+  out.write(", ");
+  e2.accept(this,extraData);
+  if (filter instanceof Disjoint) {
+    out.write(", 'mask=ANYINTERACT querytype=WINDOW') <> 'TRUE' ");
+  }
+ else {
+    out.write(", 'mask=" + mask + " querytype=WINDOW') = 'TRUE' ");
+  }
+}

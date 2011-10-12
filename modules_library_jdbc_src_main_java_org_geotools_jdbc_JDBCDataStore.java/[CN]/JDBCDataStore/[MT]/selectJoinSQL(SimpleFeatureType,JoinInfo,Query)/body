@@ -1,0 +1,16 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  selectColumns(featureType,join.getPrimaryAlias(),query,sql);
+  for (  JoinPart part : join.getParts()) {
+    selectColumns(part.getQueryFeatureType(),part.getAlias(),query,sql);
+  }
+  sql.setLength(sql.length() - 1);
+  dialect.encodePostSelect(featureType,sql);
+  sql.append(" FROM ");
+  encodeTableJoin(featureType,join,query,sql);
+  encodeWhereJoin(featureType,join,sql);
+  sort(featureType,query.getSortBy(),join.getPrimaryAlias(),sql);
+  applyLimitOffset(sql,query);
+  return sql.toString();
+}

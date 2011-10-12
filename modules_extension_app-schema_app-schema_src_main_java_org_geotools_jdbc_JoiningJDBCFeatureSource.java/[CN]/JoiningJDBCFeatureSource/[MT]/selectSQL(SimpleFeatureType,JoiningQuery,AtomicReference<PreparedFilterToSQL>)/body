@@ -5,11 +5,11 @@
   String lastTypeName=featureType.getTypeName();
   String curTypeName=lastTypeName;
   String[] aliases=null;
-  if (query.getJoins() != null) {
+  if (query.getQueryJoins() != null) {
     SortBy[] lastSortBy=query.getSortBy();
-    aliases=new String[query.getJoins().size()];
-    for (int i=0; i < query.getJoins().size(); i++) {
-      JoiningQuery.Join join=query.getJoins().get(i);
+    aliases=new String[query.getQueryJoins().size()];
+    for (int i=0; i < query.getQueryJoins().size(); i++) {
+      JoiningQuery.QueryJoin join=query.getQueryJoins().get(i);
       if (lastSortBy != null && lastSortBy.length > 0) {
         tableNames.add(curTypeName);
         String temp_alias=createAlias(lastTypeName,tableNames);
@@ -87,10 +87,10 @@
     }
     sql.append(",");
   }
-  if (query.getJoins() != null && query.getJoins().size() > 0) {
-    for (int i=0; i < query.getJoins().size(); i++) {
-      for (int j=0; j < query.getJoins().get(i).getSortBy().length; j++) {
-        encodeColumnName(query.getJoins().get(i).getSortBy()[j].getPropertyName().getPropertyName(),query.getJoins().get(i).getJoiningTypeName(),sql,query.getHints());
+  if (query.getQueryJoins() != null && query.getQueryJoins().size() > 0) {
+    for (int i=0; i < query.getQueryJoins().size(); i++) {
+      for (int j=0; j < query.getQueryJoins().get(i).getSortBy().length; j++) {
+        encodeColumnName(query.getQueryJoins().get(i).getSortBy()[j].getPropertyName().getPropertyName(),query.getQueryJoins().get(i).getJoiningTypeName(),sql,query.getHints());
         sql.append(" ").append(FOREIGN_ID + "_" + i+ "_"+ j).append(",");
       }
     }
@@ -102,8 +102,8 @@
   Filter filter=query.getFilter();
   if (filter != null && !Filter.INCLUDE.equals(filter)) {
     try {
-      SortBy[] lastSortBy=query.getJoins() == null || query.getJoins().size() == 0 ? query.getSortBy() : query.getJoins().get(query.getJoins().size() - 1).getSortBy();
-      String lastTableName=query.getJoins() == null || query.getJoins().size() == 0 ? query.getTypeName() : query.getJoins().get(query.getJoins().size() - 1).getJoiningTypeName();
+      SortBy[] lastSortBy=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getSortBy() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getSortBy();
+      String lastTableName=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getJoiningTypeName();
       toSQL=createFilterToSQL(getDataStore().getSchema(lastTableName));
       if (lastSortBy != null) {
         sql.append(" INNER JOIN ( SELECT DISTINCT ");
