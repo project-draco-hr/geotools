@@ -1,0 +1,79 @@
+{
+  final DefaultProgressListener adaptee=new DefaultProgressListener();
+  final ProgressListener myListener=new ProgressListener(){
+    @Override public void warningOccurred(    String source,    String location,    String warning){
+      adaptee.warningOccurred(source,location,warning);
+    }
+    @Override public void started(){
+      adaptee.started();
+      LOGGER.info("started");
+    }
+    @Override public void setTask(    InternationalString task){
+      adaptee.setTask(task);
+    }
+    @Override public void setDescription(    String description){
+      adaptee.setDescription(description);
+    }
+    @Override public void setCanceled(    boolean cancel){
+      adaptee.setCanceled(cancel);
+      LOGGER.info("canceled");
+    }
+    @Override public void progress(    float percent){
+synchronized (this) {
+        try {
+          this.wait(3000);
+        }
+ catch (        InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      assertTrue(percent >= 0);
+      assertTrue(percent <= 100);
+      adaptee.progress(percent);
+      LOGGER.info("progress:" + percent);
+    }
+    @Override public boolean isCanceled(){
+      return adaptee.isCanceled();
+    }
+    @Override public InternationalString getTask(){
+      return adaptee.getTask();
+    }
+    @Override public float getProgress(){
+      return adaptee.getProgress();
+    }
+    @Override public String getDescription(){
+      return adaptee.getDescription();
+    }
+    @Override public void exceptionOccurred(    Throwable exception){
+      adaptee.exceptionOccurred(exception);
+    }
+    @Override public void dispose(){
+      adaptee.dispose();
+    }
+    @Override public void complete(){
+      adaptee.complete();
+      LOGGER.info("completed");
+    }
+  }
+;
+  final GridCoverageReaderProgressAdapter readerAdapter=new GridCoverageReaderProgressAdapter(myListener);
+  final InputStream input=TestData.openStream(GridCoverage2D.class,"CHL01195.png");
+  ImageReader reader=ImageIO.getImageReadersByFormatName("png").next();
+  reader.setInput(ImageIOExt.createImageInputStream(input));
+  reader.addIIOReadProgressListener(readerAdapter);
+  reader.addIIOReadUpdateListener(readerAdapter);
+  TimerTask task=new TimerTask(){
+    @Override public void run(){
+      readerAdapter.monitor.setCanceled(true);
+    }
+  }
+;
+  new Timer().schedule(task,1500);
+  BufferedImage image=reader.read(0);
+  reader.dispose();
+  image.flush();
+  image=null;
+  assertTrue(adaptee.isCompleted());
+  assertTrue(adaptee.isStarted());
+  assertTrue(adaptee.isCanceled());
+}

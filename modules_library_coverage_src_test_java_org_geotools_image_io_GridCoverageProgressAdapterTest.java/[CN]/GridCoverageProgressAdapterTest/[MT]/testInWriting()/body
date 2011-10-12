@@ -1,0 +1,59 @@
+{
+  final DefaultProgressListener adaptee=new DefaultProgressListener();
+  final ProgressListener myListener=new ProgressListener(){
+    @Override public void warningOccurred(    String source,    String location,    String warning){
+      adaptee.warningOccurred(source,location,warning);
+    }
+    @Override public void started(){
+      adaptee.started();
+    }
+    @Override public void setTask(    InternationalString task){
+      adaptee.setTask(task);
+    }
+    @Override public void setDescription(    String description){
+      adaptee.setDescription(description);
+    }
+    @Override public void setCanceled(    boolean cancel){
+      adaptee.setCanceled(cancel);
+    }
+    @Override public void progress(    float percent){
+      assertTrue(percent >= 0);
+      assertTrue(percent <= 100);
+      adaptee.progress(percent);
+    }
+    @Override public boolean isCanceled(){
+      return adaptee.isCanceled();
+    }
+    @Override public InternationalString getTask(){
+      return adaptee.getTask();
+    }
+    @Override public float getProgress(){
+      return adaptee.getProgress();
+    }
+    @Override public String getDescription(){
+      return adaptee.getDescription();
+    }
+    @Override public void exceptionOccurred(    Throwable exception){
+      adaptee.exceptionOccurred(exception);
+    }
+    @Override public void dispose(){
+      adaptee.dispose();
+    }
+    @Override public void complete(){
+      adaptee.complete();
+    }
+  }
+;
+  final GridCoverageWriterProgressAdapter writerAdapter=new GridCoverageWriterProgressAdapter(myListener);
+  final InputStream input=TestData.openStream(GridCoverage2D.class,"CHL01195.png");
+  final BufferedImage image=ImageIO.read(input);
+  ImageWriter writer=ImageIO.getImageWritersByFormatName("tiff").next();
+  writer.setOutput(ImageIOExt.createImageOutputStream(image,TestData.temp(ImageWorkerTest.class,"CHL01195.tif")));
+  writer.addIIOWriteProgressListener(writerAdapter);
+  writer.addIIOWriteWarningListener(writerAdapter);
+  writer.write(image);
+  writer.dispose();
+  assertTrue(adaptee.isCompleted());
+  assertTrue(adaptee.isStarted());
+  assertFalse(adaptee.isCanceled());
+}
