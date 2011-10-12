@@ -1,0 +1,21 @@
+{
+  updateLock.writeLock().lock();
+  try {
+    final TextDialog dialog=dialogRef.get();
+    if (dialog == null) {
+      LOGGER.severe("Appending text to an expired JTextReporter connection");
+    }
+ else {
+      if (SwingUtilities.isEventDispatchThread()) {
+        dialog.append(text,indent);
+      }
+ else {
+        doAppendOnEDT(dialog,text,indent);
+      }
+      fireEvent(EventType.TEXT_UPDATED);
+    }
+  }
+  finally {
+    updateLock.writeLock().unlock();
+  }
+}

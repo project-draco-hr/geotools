@@ -1,0 +1,24 @@
+{
+  final Connection[] conn=new Connection[1];
+  if (SwingUtilities.isEventDispatchThread()) {
+    conn[0]=doShowDialog(title,initialText,flags,textAreaRows,textAreaCols);
+  }
+ else {
+    final CountDownLatch latch=new CountDownLatch(1);
+    SwingUtilities.invokeLater(new Runnable(){
+      @Override public void run(){
+        conn[0]=doShowDialog(title,initialText,flags,textAreaRows,textAreaCols);
+        latch.countDown();
+      }
+    }
+);
+    try {
+      latch.await(DIALOG_CREATION_TIMEOUT,TimeUnit.MILLISECONDS);
+    }
+ catch (    InterruptedException ex) {
+      LOGGER.severe("Thread interrupted while setting up text reporter");
+      return null;
+    }
+  }
+  return conn[0];
+}
