@@ -1,0 +1,18 @@
+{
+  Function f=findFunctionInternal(name,parameters,fallback);
+  if (f == null) {
+    if (name.getLocalPart().endsWith("Function")) {
+      String local=name.getLocalPart();
+      local=local.substring(0,local.length() - "Function".length());
+      name=new NameImpl(name.getNamespaceURI(),name.getSeparator(),local);
+      f=findFunctionInternal(name,parameters,fallback);
+    }
+  }
+  if (f == null && fallback != null) {
+    return new FallbackFunction(name,parameters,fallback);
+  }
+  if (f != null) {
+    return f;
+  }
+  throw new RuntimeException("Unable to find function " + name);
+}
