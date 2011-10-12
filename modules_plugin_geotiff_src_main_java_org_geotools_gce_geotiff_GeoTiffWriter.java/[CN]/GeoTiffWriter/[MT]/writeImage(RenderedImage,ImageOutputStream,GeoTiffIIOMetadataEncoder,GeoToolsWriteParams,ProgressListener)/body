@@ -11,6 +11,11 @@
   final IIOMetadata metadata=createGeoTiffIIOMetadata(writer,ImageTypeSpecifier.createFromRenderedImage(image),geoTIFFMetadata,params);
   try {
     writer.setOutput(outputStream);
+    if (listener != null) {
+      final GridCoverageWriterProgressAdapter progressAdapter=new GridCoverageWriterProgressAdapter(listener);
+      writer.addIIOWriteProgressListener(progressAdapter);
+      writer.addIIOWriteWarningListener(progressAdapter);
+    }
     writer.write(writer.getDefaultStreamMetadata(params),new IIOImage(image,null,metadata),params);
   }
   finally {

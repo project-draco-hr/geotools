@@ -1,0 +1,57 @@
+{
+  final File input=new File("c:\\work\\test.tiff");
+  final AbstractGridFormat format=new GeoTiffFormat();
+  assertTrue(format.accepts(input));
+  GeoTiffReader reader=new GeoTiffReader(input);
+  GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+  assertNotNull(coverage);
+  assertNotNull(coverage.getCoordinateReferenceSystem());
+  reader.dispose();
+  final File output=new File(TestData.file(GeoTiffReaderTest.class,"."),"outMetadata.tif");
+  GeoTiffWriter writer=new GeoTiffWriter(output);
+  ParameterValue<ProgressListener> listener=GeoTiffFormat.PROGRESS_LISTENER.createValue();
+  listener.setValue(new ProgressListener(){
+    private boolean canceled;
+    @Override public InternationalString getTask(){
+      return null;
+    }
+    @Override public String getDescription(){
+      return null;
+    }
+    @Override public void setTask(    InternationalString task){
+    }
+    @Override public void setDescription(    String description){
+    }
+    @Override public void started(){
+      LOGGER.info("started");
+    }
+    @Override public void progress(    float percent){
+      LOGGER.info("progress:" + percent);
+      assertTrue(percent >= 0);
+      assertTrue(percent <= 100);
+      if (percent > 50)       setCanceled(true);
+    }
+    @Override public float getProgress(){
+      return 0;
+    }
+    @Override public void complete(){
+      LOGGER.info("complete");
+    }
+    @Override public void dispose(){
+    }
+    @Override public boolean isCanceled(){
+      return canceled;
+    }
+    @Override public void setCanceled(    boolean cancel){
+      canceled=cancel;
+    }
+    @Override public void warningOccurred(    String source,    String location,    String warning){
+    }
+    @Override public void exceptionOccurred(    Throwable exception){
+    }
+  }
+);
+  writer.write(coverage,new GeneralParameterValue[]{listener});
+  writer.dispose();
+  coverage.dispose(true);
+}

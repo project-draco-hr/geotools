@@ -1,6 +1,7 @@
 {
   GeoToolsWriteParams gtParams=null;
   boolean writeTfw=GeoTiffFormat.WRITE_TFW.getDefaultValue();
+  ProgressListener listener=null;
   if (params != null) {
     if (params != null) {
       Parameter param;
@@ -10,9 +11,15 @@
         final ReferenceIdentifier name=param.getDescriptor().getName();
         if (name.equals(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName())) {
           gtParams=(GeoToolsWriteParams)param.getValue();
+          continue;
         }
         if (name.equals(GeoTiffFormat.WRITE_TFW.getName())) {
           writeTfw=(Boolean)param.getValue();
+          continue;
+        }
+        if (name.equals(GeoTiffFormat.PROGRESS_LISTENER.getName())) {
+          listener=(ProgressListener)param.getValue();
+          continue;
         }
       }
     }
@@ -33,7 +40,7 @@
       metadata.setTiffTagsMetadata(metadataKeyValue);
     }
     setGeoReference(crs,metadata,tr,range);
-    writeImage(((GridCoverage2D)gc).geophysics(true).getRenderedImage(),this.outStream,metadata,gtParams);
+    writeImage(((GridCoverage2D)gc).geophysics(true).getRenderedImage(),this.outStream,metadata,gtParams,listener);
     if (writeTfw && (destination instanceof File)) {
       final File destFile=(File)this.destination;
       final File tfw=new File(destFile.getParentFile(),destFile.getName().replace("tif","tfw"));
