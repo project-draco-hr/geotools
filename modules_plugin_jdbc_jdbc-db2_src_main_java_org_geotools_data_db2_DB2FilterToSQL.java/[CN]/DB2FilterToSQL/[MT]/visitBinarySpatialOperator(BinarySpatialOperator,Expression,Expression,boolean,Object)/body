@@ -1,0 +1,45 @@
+{
+  try {
+    LOGGER.finer("Generating GeometryFilter WHERE clause for " + filter);
+    if (filter instanceof Equals) {
+      out.write("db2gse.ST_Equals");
+    }
+ else     if (filter instanceof Disjoint) {
+      out.write("db2gse.ST_Disjoint");
+    }
+ else     if (filter instanceof Intersects || filter instanceof BBOX) {
+      out.write("db2gse.ST_Intersects");
+    }
+ else     if (filter instanceof Crosses) {
+      out.write("db2gse.ST_Crosses");
+    }
+ else     if (filter instanceof Within) {
+      if (swapped)       out.write("db2gse.ST_Contains");
+ else       out.write("db2gse.ST_Within");
+    }
+ else     if (filter instanceof Contains) {
+      if (swapped)       out.write("db2gse.ST_Within");
+ else       out.write("db2gse.ST_Contains");
+    }
+ else     if (filter instanceof Overlaps) {
+      out.write("db2gse.ST_Overlaps");
+    }
+ else     if (filter instanceof Touches) {
+      out.write("db2gse.ST_Touches");
+    }
+ else {
+      throw new RuntimeException("Unsupported filter type " + filter.getClass());
+    }
+    out.write("(");
+    e1.accept(this,extraData);
+    out.write(", ");
+    e2.accept(this,extraData);
+    out.write(") = 1 ");
+    addSelectivity();
+    LOGGER.fine(this.out.toString());
+    return extraData;
+  }
+ catch (  IOException ex) {
+    throw new RuntimeException(ex);
+  }
+}

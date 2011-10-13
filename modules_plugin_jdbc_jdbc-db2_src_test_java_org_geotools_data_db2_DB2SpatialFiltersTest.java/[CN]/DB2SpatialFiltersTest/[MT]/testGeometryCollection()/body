@@ -1,0 +1,18 @@
+{
+  PrecisionModel precisionModel=new PrecisionModel();
+  int SRID=4326;
+  GeometryFactory gf=new GeometryFactory(precisionModel,SRID);
+  Coordinate[] points={new Coordinate(30,40),new Coordinate(50,60)};
+  LineString[] geometries=new LineString[2];
+  geometries[0]=gf.createLineString(points);
+  Coordinate[] points2={new Coordinate(40,30),new Coordinate(70,40)};
+  geometries[1]=gf.createLineString(points2);
+  MultiLineString ml=gf.createMultiLineString(geometries);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  PropertyName p=ff.property(aname("geom"));
+  Literal collect=ff.literal(ml);
+  DWithin dwithinGeomCo=((FilterFactory2)ff).dwithin(p,collect,5,"meter");
+  Query dq=new Query(tname("road"),dwithinGeomCo);
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("road")).getFeatures(dq);
+  assertEquals(0,features.size());
+}

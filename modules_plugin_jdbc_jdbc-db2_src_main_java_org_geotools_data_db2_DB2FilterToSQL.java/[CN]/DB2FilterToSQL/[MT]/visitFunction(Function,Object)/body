@@ -1,0 +1,127 @@
+{
+  if (function instanceof FilterFunction_strConcat) {
+    Expression s1=getParameter(function,0,true);
+    Expression s2=getParameter(function,1,true);
+    out.write("(");
+    s1.accept(this,String.class);
+    out.write(" || ");
+    s2.accept(this,String.class);
+    out.write(")");
+  }
+ else   if (function instanceof FilterFunction_strEndsWith) {
+    Expression str=getParameter(function,0,true);
+    Expression end=getParameter(function,1,true);
+    out.write(" case when ");
+    out.write("( right (");
+    str.accept(this,String.class);
+    out.write(",length( ");
+    if (end instanceof Literal)     out.write(" cast (");
+    end.accept(this,String.class);
+    if (end instanceof Literal)     out.write(" as  VARCHAR(32672))");
+    out.write("))=");
+    end.accept(this,String.class);
+    out.write(")");
+    out.write("then 1 else 0 end ");
+  }
+ else   if (function instanceof FilterFunction_strStartsWith) {
+    Expression str=getParameter(function,0,true);
+    Expression start=getParameter(function,1,true);
+    out.write(" case when ");
+    out.write("( left (");
+    str.accept(this,String.class);
+    out.write(",length( ");
+    if (start instanceof Literal)     out.write(" cast (");
+    start.accept(this,String.class);
+    if (start instanceof Literal)     out.write(" as  VARCHAR(32672))");
+    out.write("))=");
+    start.accept(this,String.class);
+    out.write(")");
+    out.write("then 1 else 0 end ");
+  }
+ else   if (function instanceof FilterFunction_strEqualsIgnoreCase) {
+    Expression first=getParameter(function,0,true);
+    Expression second=getParameter(function,1,true);
+    out.write(" case when ");
+    out.write("(lower(");
+    first.accept(this,String.class);
+    out.write(") = lower(");
+    second.accept(this,String.class);
+    out.write("))");
+    out.write("then 1 else 0 end ");
+  }
+ else   if (function instanceof FilterFunction_strIndexOf) {
+    Expression first=getParameter(function,0,true);
+    Expression second=getParameter(function,1,true);
+    out.write("(locate(");
+    second.accept(this,String.class);
+    out.write(", ");
+    first.accept(this,String.class);
+    out.write(") - 1)");
+  }
+ else   if (function instanceof FilterFunction_strSubstring) {
+    Expression string=getParameter(function,0,true);
+    Expression start=getParameter(function,1,true);
+    Expression end=getParameter(function,2,true);
+    out.write("substr(");
+    string.accept(this,String.class);
+    out.write(", ");
+    start.accept(this,Integer.class);
+    out.write(" + 1, (");
+    end.accept(this,Integer.class);
+    out.write(" - ");
+    start.accept(this,Integer.class);
+    out.write("))");
+  }
+ else   if (function instanceof FilterFunction_strSubstringStart) {
+    Expression string=getParameter(function,0,true);
+    Expression start=getParameter(function,1,true);
+    out.write("substr(");
+    string.accept(this,String.class);
+    out.write(", ");
+    start.accept(this,Integer.class);
+    out.write(" + 1)");
+  }
+ else   if (function instanceof FilterFunction_strTrim) {
+    Expression string=getParameter(function,0,true);
+    out.write("trim(both ' ' from ");
+    string.accept(this,String.class);
+    out.write(")");
+  }
+ else   if (function instanceof FilterFunction_strLength) {
+    Expression string=getParameter(function,0,true);
+    out.write("length(");
+    string.accept(this,String.class);
+    out.write(")");
+  }
+ else   if (function instanceof FilterFunction_strToLowerCase) {
+    Expression string=getParameter(function,0,true);
+    out.write("lower(");
+    string.accept(this,String.class);
+    out.write(")");
+  }
+ else   if (function instanceof FilterFunction_strToUpperCase) {
+    Expression string=getParameter(function,0,true);
+    out.write("upper(");
+    string.accept(this,String.class);
+    out.write(")");
+  }
+ else   if (function instanceof FilterFunction_abs || function instanceof FilterFunction_abs_2 || function instanceof FilterFunction_abs_3|| function instanceof FilterFunction_abs_4) {
+    Expression string=getParameter(function,0,true);
+    out.write("CAST (");
+    out.write("abs(");
+    string.accept(this,String.class);
+    out.write(")");
+    out.write(" AS ");
+    String db2Type=null;
+    if (function instanceof FilterFunction_abs)     db2Type="SMALLINT";
+    if (function instanceof FilterFunction_abs_2)     db2Type="INT";
+    if (function instanceof FilterFunction_abs_3)     db2Type="FLOAT";
+    if (function instanceof FilterFunction_abs_4)     db2Type="DOUBLE";
+    out.write(db2Type);
+    out.write(")");
+  }
+ else {
+    return false;
+  }
+  return true;
+}
