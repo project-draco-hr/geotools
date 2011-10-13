@@ -1,10 +1,23 @@
 {
-  JFileImageChooser chooser=new JFileImageChooser(workingDir);
-  chooser.setFilter(supportedReaders);
-  chooser.setDialogTitle("Open image file");
-  File file=null;
-  if (chooser.showOpenDialog(parent) == JFileImageChooser.APPROVE_OPTION) {
-    file=chooser.getSelectedFile();
+  final File[] file=new File[1];
+  if (SwingUtilities.isEventDispatchThread()) {
+    file[0]=doShow(parent,workingDir,OPEN_DIALOG);
   }
-  return file;
+ else {
+    try {
+      SwingUtilities.invokeAndWait(new Runnable(){
+        @Override public void run(){
+          file[0]=doShow(parent,workingDir,OPEN_DIALOG);
+        }
+      }
+);
+    }
+ catch (    InterruptedException ex) {
+      LOGGER.log(Level.SEVERE,"Thread interrupted while prompting for file",ex);
+    }
+catch (    InvocationTargetException ex) {
+      LOGGER.log(Level.SEVERE,"Unexpected problem while prompting for file",ex);
+    }
+  }
+  return file[0];
 }
