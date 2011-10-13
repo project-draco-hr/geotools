@@ -8,9 +8,9 @@
  else   if (event.type == SWT.MouseUp) {
     endX=event.x;
     endY=event.y;
-    if (baseImageMoved) {
+    boolean mouseWasMoved=startX != endX || startY != endY;
+    if (toolCanMove && mouseWasMoved) {
       afterImageMove();
-      baseImageMoved=false;
     }
     mouseDown=false;
     isDragging=false;
@@ -18,7 +18,7 @@
  else   if (event.type == SWT.Paint) {
     if (acceptRepaintRequests) {
       gc=event.gc;
-      if (baseImageMoved) {
+      if (toolCanMove && isDragging) {
         if (gc != null && !gc.isDisposed() && swtImage != null) {
           Image tmpImage=new Image(getDisplay(),curPaintArea.width,curPaintArea.height);
           GC tmpGc=new GC(tmpImage);
@@ -30,22 +30,22 @@
         }
         return;
       }
-      if (isDragging) {
-        if (dragEnabled) {
-          if (swtImage != null) {
-            drawFinalImage(swtImage);
-          }
-          gc.setXORMode(true);
-          org.eclipse.swt.graphics.Color fC=gc.getForeground();
-          gc.setLineWidth(2);
-          gc.setForeground(yellow);
-          gc.drawRectangle(startX,startY,endX - startX,endY - startY);
-          gc.setForeground(fC);
-          gc.setXORMode(false);
-          return;
+      if (toolCanDraw && isDragging) {
+        if (swtImage != null) {
+          drawFinalImage(swtImage);
         }
+        gc.setXORMode(true);
+        org.eclipse.swt.graphics.Color fC=gc.getForeground();
+        gc.setLineWidth(2);
+        gc.setForeground(yellow);
+        gc.drawRectangle(startX,startY,endX - startX,endY - startY);
+        gc.setForeground(fC);
+        gc.setXORMode(false);
+        return;
       }
-      System.out.println("PAINT");
+      if (!toolCanDraw && !toolCanMove && isDragging) {
+        return;
+      }
       if (curPaintArea == null || content == null || renderer == null) {
         return;
       }
@@ -71,7 +71,7 @@
           swtImage.dispose();
           swtImage=null;
         }
-        System.out.println("create img");
+        System.out.println("READRAWBASEIMAGE");
         swtImage=new Image(getDisplay(),awtToSwt(baseImage,curPaintArea.width + 1,curPaintArea.height + 1));
       }
       if (swtImage != null) {
@@ -81,7 +81,7 @@
       publishEvent(ev);
       clearLabelCache=true;
       onRenderingCompleted();
-      redrawBaseImage=true;
+      redrawBaseImage=false;
     }
   }
 }
