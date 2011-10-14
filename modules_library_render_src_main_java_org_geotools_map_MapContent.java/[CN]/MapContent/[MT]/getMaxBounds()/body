@@ -1,49 +1,55 @@
 {
-  CoordinateReferenceSystem mapCrs=null;
-  if (viewport != null && viewport.isExplicitCoordinateReferenceSystem()) {
-    mapCrs=viewport.getCoordinateReferenceSystem();
-  }
-  ReferencedEnvelope maxBounds=null;
-  for (  Layer layer : layers()) {
-    if (layer == null) {
-      continue;
+  monitor.readLock().lock();
+  try {
+    CoordinateReferenceSystem mapCrs=null;
+    if (viewport != null && viewport.isExplicitCoordinateReferenceSystem()) {
+      mapCrs=viewport.getCoordinateReferenceSystem();
     }
-    try {
-      ReferencedEnvelope layerBounds=layer.getBounds();
-      if (layerBounds == null || layerBounds.isEmpty() || layerBounds.isNull()) {
+    ReferencedEnvelope maxBounds=null;
+    for (    Layer layer : layerList) {
+      if (layer == null) {
         continue;
       }
-      if (mapCrs == null) {
-        maxBounds=new ReferencedEnvelope(layerBounds);
-        mapCrs=layerBounds.getCoordinateReferenceSystem();
-        continue;
-      }
-      ReferencedEnvelope normalized;
-      if (CRS.equalsIgnoreMetadata(mapCrs,layerBounds.getCoordinateReferenceSystem())) {
-        normalized=layerBounds;
-      }
- else {
-        try {
-          normalized=layerBounds.transform(mapCrs,true);
-        }
- catch (        Exception e) {
-          LOGGER.log(Level.FINE,"Unable to transform: {0}",e);
+      try {
+        ReferencedEnvelope layerBounds=layer.getBounds();
+        if (layerBounds == null || layerBounds.isEmpty() || layerBounds.isNull()) {
           continue;
         }
-      }
-      if (maxBounds == null) {
-        maxBounds=normalized;
-      }
+        if (mapCrs == null) {
+          maxBounds=new ReferencedEnvelope(layerBounds);
+          mapCrs=layerBounds.getCoordinateReferenceSystem();
+          continue;
+        }
+        ReferencedEnvelope normalized;
+        if (CRS.equalsIgnoreMetadata(mapCrs,layerBounds.getCoordinateReferenceSystem())) {
+          normalized=layerBounds;
+        }
  else {
-        maxBounds.expandToInclude(normalized);
+          try {
+            normalized=layerBounds.transform(mapCrs,true);
+          }
+ catch (          Exception e) {
+            LOGGER.log(Level.FINE,"Unable to transform: {0}",e);
+            continue;
+          }
+        }
+        if (maxBounds == null) {
+          maxBounds=normalized;
+        }
+ else {
+          maxBounds.expandToInclude(normalized);
+        }
+      }
+ catch (      Throwable eek) {
+        LOGGER.log(Level.WARNING,"Unable to determine bounds of " + layer,eek);
       }
     }
- catch (    Throwable eek) {
-      LOGGER.warning("Unable to determine bounds of " + layer + ":"+ eek);
+    if (maxBounds == null) {
+      maxBounds=new ReferencedEnvelope(mapCrs);
     }
+    return maxBounds;
   }
-  if (maxBounds == null) {
-    maxBounds=new ReferencedEnvelope(mapCrs);
+  finally {
+    monitor.readLock().unlock();
   }
-  return maxBounds;
 }

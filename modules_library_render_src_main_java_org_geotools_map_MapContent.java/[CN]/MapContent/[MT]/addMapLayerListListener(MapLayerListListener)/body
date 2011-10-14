@@ -1,9 +1,15 @@
 {
-  if (mapListeners == null) {
-    mapListeners=new CopyOnWriteArrayList<MapLayerListListener>();
+  monitor.writeLock().lock();
+  try {
+    if (mapListeners == null) {
+      mapListeners=new CopyOnWriteArrayList<MapLayerListListener>();
+    }
+    boolean added=mapListeners.addIfAbsent(listener);
+    if (added && mapListeners.size() == 1) {
+      listenToMapLayers(true);
+    }
   }
-  boolean added=mapListeners.addIfAbsent(listener);
-  if (added && mapListeners.size() == 1) {
-    listenToMapLayers(true);
+  finally {
+    monitor.writeLock().unlock();
   }
 }

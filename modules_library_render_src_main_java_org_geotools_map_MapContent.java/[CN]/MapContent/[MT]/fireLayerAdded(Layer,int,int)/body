@@ -1,16 +1,22 @@
 {
-  if (mapListeners == null) {
-    return;
-  }
-  MapLayerListEvent event=new MapLayerListEvent(this,element,fromIndex,toIndex);
-  for (  MapLayerListListener mapLayerListListener : mapListeners) {
-    try {
-      mapLayerListListener.layerAdded(event);
+  monitor.readLock().lock();
+  try {
+    if (mapListeners == null) {
+      return;
     }
- catch (    Throwable t) {
-      if (LOGGER.isLoggable(Level.FINER)) {
-        LOGGER.logp(Level.FINE,mapLayerListListener.getClass().getName(),"layerAdded",t.getLocalizedMessage(),t);
+    MapLayerListEvent event=new MapLayerListEvent(this,element,fromIndex,toIndex);
+    for (    MapLayerListListener mapLayerListListener : mapListeners) {
+      try {
+        mapLayerListListener.layerAdded(event);
+      }
+ catch (      Throwable t) {
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.logp(Level.FINE,mapLayerListListener.getClass().getName(),"layerAdded",t.getLocalizedMessage(),t);
+        }
       }
     }
+  }
+  finally {
+    monitor.readLock().unlock();
   }
 }

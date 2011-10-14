@@ -1,27 +1,33 @@
 {
-  if (userData == null) {
-    userData=new HashMap<String,Object>(){
-      private static final long serialVersionUID=8011733882551971475L;
-      public Object put(      String key,      Object value){
-        Object old=super.put(key,value);
-        fireProperty(key,old,value);
-        return old;
+  monitor.writeLock().lock();
+  try {
+    if (userData == null) {
+      userData=new HashMap<String,Object>(){
+        private static final long serialVersionUID=8011733882551971475L;
+        @Override public Object put(        String key,        Object value){
+          Object old=super.put(key,value);
+          fireProperty(key,old,value);
+          return old;
+        }
+        @Override public Object remove(        Object key){
+          Object old=super.remove(key);
+          fireProperty((String)key,old,null);
+          return old;
+        }
+        @Override public void putAll(        java.util.Map<? extends String,? extends Object> m){
+          super.putAll(m);
+          fireProperty("userData",null,null);
+        }
+        @Override public void clear(){
+          super.clear();
+          fireProperty("userData",null,null);
+        }
       }
-      public Object remove(      Object key){
-        Object old=super.remove(key);
-        fireProperty((String)key,old,null);
-        return old;
-      }
-      @Override public void putAll(      java.util.Map<? extends String,? extends Object> m){
-        super.putAll(m);
-        fireProperty("userData",null,null);
-      }
-      @Override public void clear(){
-        super.clear();
-        fireProperty("userData",null,null);
-      }
-    }
 ;
+    }
+    return this.userData;
   }
-  return this.userData;
+  finally {
+    monitor.writeLock().unlock();
+  }
 }
