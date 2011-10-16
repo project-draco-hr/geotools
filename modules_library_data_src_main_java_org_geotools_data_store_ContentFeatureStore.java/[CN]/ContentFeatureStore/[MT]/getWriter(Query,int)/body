@@ -7,6 +7,9 @@
       writer=new FilteringFeatureWriter(writer,query.getFilter());
     }
   }
-  LockingManager lockingManager=getDataStore().getLockingManager();
-  return ((InProcessLockingManager)lockingManager).checkedWriter(writer,transaction);
+  if (!canLock()) {
+    LockingManager lockingManager=getDataStore().getLockingManager();
+    return ((InProcessLockingManager)lockingManager).checkedWriter(writer,transaction);
+  }
+  return writer;
 }

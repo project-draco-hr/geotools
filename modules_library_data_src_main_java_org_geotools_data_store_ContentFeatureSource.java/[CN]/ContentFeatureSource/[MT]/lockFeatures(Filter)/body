@@ -7,7 +7,12 @@
     while (reader.hasNext()) {
       SimpleFeature feature=reader.next();
       try {
-        getDataStore().getLockingManager().lockFeatureID(typeName,feature.getID(),transaction,lock);
+        if (canLock()) {
+          doLockInternal(typeName,feature);
+        }
+ else {
+          getDataStore().getLockingManager().lockFeatureID(typeName,feature.getID(),transaction,lock);
+        }
         logger.fine("Locked feature: " + feature.getID());
         locked++;
       }
