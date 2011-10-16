@@ -1,0 +1,38 @@
+{
+  double t, c0, c1, c2, c3, al, r2, r, m, d, ay, x2, y2, lambda, phi;
+  x2=x * x;
+  if ((ay=abs(y)) < TOL) {
+    phi=0.;
+    t=x2 * x2 + TPISQ * (x2 + HPISQ);
+    lambda=abs(x) <= TOL ? 0. : .5 * (x2 - PISQ + sqrt(t)) / x;
+    if (ptDst != null) {
+      ptDst.setLocation(lambda,phi);
+      return ptDst;
+    }
+    return new Point2D.Double(lambda,phi);
+  }
+  y2=y * y;
+  r=x2 + y2;
+  r2=r * r;
+  c1=-PI * ay * (r + PISQ);
+  c3=r2 + (PI * 2) * (ay * r + PI * (y2 + PI * (ay + (PI / 2))));
+  c2=c1 + PISQ * (r - 3. * y2);
+  c0=PI * ay;
+  c2/=c3;
+  al=c1 / c3 - THIRD * c2 * c2;
+  m=2. * sqrt(-THIRD * al);
+  d=C2_27 * c2 * c2* c2 + (c0 * c0 - THIRD * c2 * c1) / c3;
+  if (((t=abs(d=3. * d / (al * m))) - TOL) <= 1.) {
+    d=t > 1. ? (d > 0. ? 0. : PI) : acos(d);
+    phi=PI * (m * cos(d * THIRD + PI4_3) - THIRD * c2);
+    if (y < 0.)     phi=-phi;
+    t=r2 + TPISQ * (x2 - y2 + HPISQ);
+    lambda=abs(x) <= TOL ? 0. : .5 * (r - PISQ + (t <= 0. ? 0. : sqrt(t))) / x;
+  }
+ else   throw new ProjectionException();
+  if (ptDst != null) {
+    ptDst.setLocation(lambda,phi);
+    return ptDst;
+  }
+  return new Point2D.Double(lambda,phi);
+}

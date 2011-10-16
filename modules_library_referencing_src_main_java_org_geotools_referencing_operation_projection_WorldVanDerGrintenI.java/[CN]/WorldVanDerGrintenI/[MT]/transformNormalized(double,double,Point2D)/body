@@ -1,0 +1,37 @@
+{
+  double al, al2, g, g2, p2, x, y;
+  p2=abs(phi / (PI / 2));
+  if (p2 - TOL > 1.)   throw new ProjectionException();
+  if (p2 > 1.)   p2=1.;
+  if (abs(phi) <= TOL) {
+    x=lambda;
+    y=0.;
+  }
+ else   if (abs(lambda) <= TOL || abs(p2 - 1.) < TOL) {
+    x=0.;
+    y=PI * tan(.5 * asin(p2));
+  }
+ else {
+    al=.5 * abs(PI / lambda - lambda / PI);
+    al2=al * al;
+    g=sqrt(1. - p2 * p2);
+    g=g / (p2 + g - 1.);
+    g2=g * g;
+    p2=g * (2. / p2 - 1.);
+    p2=p2 * p2;
+    x=g - p2;
+    g=p2 + al2;
+    x=PI * (al * x + sqrt(al2 * x * x - g * (g2 - p2))) / g;
+    if (lambda < 0.)     x=-x;
+    y=abs(x / PI);
+    y=1. - y * (y + 2. * al);
+    if (y < -TOL)     throw new ProjectionException();
+    if (y < 0.)     y=0.;
+ else     y=sqrt(y) * (phi < 0. ? -PI : PI);
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(x,y);
+    return ptDst;
+  }
+  return new Point2D.Double(x,y);
+}
