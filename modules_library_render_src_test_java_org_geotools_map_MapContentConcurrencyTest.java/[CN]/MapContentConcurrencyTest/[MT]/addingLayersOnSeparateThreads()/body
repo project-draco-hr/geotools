@@ -1,0 +1,13 @@
+{
+  final CountDownLatch startLatch=new CountDownLatch(1);
+  Layer layer1=new MockLayer(WORLD);
+  Layer layer2=new MockLayer(WORLD);
+  executor.submit(new AddLayerTask(layer1,startLatch));
+  executor.submit(new AddLayerTask(layer1,startLatch));
+  executor.submit(new AddLayerTask(layer2,startLatch));
+  executor.submit(new AddLayerTask(layer2,startLatch));
+  listener.setExpected(WaitingMapListener.Type.ADDED,2);
+  startLatch.countDown();
+  listener.await(WaitingMapListener.Type.ADDED,LISTENER_TIMEOUT);
+  assertEquals(2,mapContent.layers().size());
+}
