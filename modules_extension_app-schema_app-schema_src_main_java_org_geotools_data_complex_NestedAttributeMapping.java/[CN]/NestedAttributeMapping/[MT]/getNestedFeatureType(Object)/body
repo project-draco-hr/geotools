@@ -1,16 +1,19 @@
 {
   Object fTypeValue;
-  if (nestedFeatureType instanceof AttributeExpressionImpl) {
-    fTypeValue=((AttributeExpressionImpl)nestedFeatureType).getPropertyName();
+  if (isConditional) {
+    if (feature == null) {
+      throw new IllegalArgumentException("Feature parameter is required!");
+    }
+    fTypeValue=nestedFeatureType.evaluate(feature);
+    if (fTypeValue == null) {
+      return null;
+    }
+    if (fTypeValue instanceof Hints) {
+      return ((Hints)fTypeValue).get(ComplexFeatureConstants.STRING_KEY);
+    }
   }
  else {
-    fTypeValue=nestedFeatureType.evaluate(feature);
+    fTypeValue=nestedFeatureType.toString();
   }
-  if (fTypeValue == null) {
-    return null;
-  }
-  if (!(fTypeValue instanceof Hints)) {
-    return Types.degloseName(fTypeValue.toString(),namespaces);
-  }
-  return fTypeValue;
+  return Types.degloseName(String.valueOf(fTypeValue),namespaces);
 }

@@ -1,0 +1,21 @@
+{
+  Iterator<AttributeMapping> mappings=mapping.getAttributeMappings().iterator();
+  AttributeMapping rootMapping=null;
+  while (mappings.hasNext()) {
+    AttributeMapping att=mappings.next();
+    StepList xpath=att.getTargetXPath();
+    if (Types.equals(elementName,xpath)) {
+      if (rootMapping != null) {
+        throw new RuntimeException("Duplicate AttributeMapping for: '" + elementName + "' is found in FeatureTypeMapping '"+ elementName+ "'!");
+      }
+      rootMapping=att;
+    }
+ else     if (!Types.equals(ComplexFeatureConstants.FEATURE_CHAINING_LINK_NAME,xpath)) {
+      String msg="AttributeMapping for: '" + xpath + "' found in FeatureTypeMapping '"+ elementName+ "' ! This will be ignored as it doesn't belong to the type.";
+      LOGGER.warning(msg);
+    }
+  }
+  if (rootMapping == null) {
+    throw new RuntimeException("AttributeMapping for: '" + elementName + "' is missing in FeatureTypeMapping '"+ elementName+ "'!");
+  }
+}

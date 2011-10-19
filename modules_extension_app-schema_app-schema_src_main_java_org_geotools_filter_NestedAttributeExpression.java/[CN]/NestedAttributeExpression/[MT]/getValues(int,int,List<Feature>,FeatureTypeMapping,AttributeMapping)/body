@@ -6,130 +6,69 @@
   while (startIndex <= endIndex) {
     List<AttributeMapping> attMappings=new ArrayList<AttributeMapping>();
     StepList steps=null;
-    Step lastStep=null;
     if (isLastStep(endIndex)) {
       return values;
     }
     while (attMappings.isEmpty() && endIndex < fullSteps.size()) {
       endIndex++;
       steps=fullSteps.subList(startIndex,endIndex);
-      lastStep=steps.get(steps.size() - 1);
-      if (isLastStep(endIndex) && lastStep.isXmlAttribute()) {
-        if (steps.size() == 1) {
-          if (prevMapping == null) {
-            return values;
-          }
-          attMappings.add(prevMapping);
-        }
- else {
-          XPath.StepList parentPath=steps.clone();
-          parentPath.remove(parentPath.size() - 1);
-          if (prevMapping != null && prevMapping.getTargetXPath().equals(parentPath)) {
-            attMappings.add(prevMapping);
-          }
- else {
-            attMappings=fMapping.getAttributeMappingsIgnoreIndex(parentPath);
-          }
-        }
-      }
- else {
-        attMappings=fMapping.getAttributeMappingsIgnoreIndex(steps);
-      }
+      attMappings=fMapping.getAttributeMappingsIgnoreIndex(steps);
       if (steps.size() == 1) {
-        if (Types.equals(fMapping.getTargetFeature().getName(),steps.get(0).getName())) {
+        if (Types.equals(fMapping.getTargetFeature().getName(),steps.get(0).getName()) && !(Types.isSimpleContentType(fMapping.getTargetFeature().getType()))) {
           startIndex++;
           endIndex=startIndex;
+          steps=fullSteps.subList(startIndex,endIndex);
+          attMappings=fMapping.getAttributeMappingsIgnoreIndex(steps);
           continue;
+        }
+ else         if (attMappings.isEmpty() && steps.get(0).isId()) {
+          setIdValues(null,roots,values);
+          return values;
         }
       }
     }
     if (attMappings.isEmpty()) {
       continue;
     }
-    if (lastStep.isXmlAttribute()) {
-      for (      AttributeMapping mapping : attMappings) {
-        Expression exp=getClientPropertyExpression(lastStep,mapping,this.attPath);
-        if (exp != null) {
-          for (          Feature root : roots) {
-            Object value=getValue(exp,root);
+    for (    AttributeMapping mapping : attMappings) {
+      if (mapping instanceof NestedAttributeMapping) {
+        if (isClientProperty(endIndex)) {
+          boolean isNestedXlinkHref=isXlinkHref(mapping);
+          boolean valueFound=false;
+          if (!isNestedXlinkHref) {
+            valueFound=getClientProperties(mapping,values,roots);
+          }
+          if (!valueFound) {
+            getNestedClientProperties((NestedAttributeMapping)mapping,roots,values,isNestedXlinkHref);
+          }
+        }
+ else {
+          boolean isSimpleContent=Types.isSimpleContent(steps,fMapping.getTargetFeature().getType());
+          getNestedValues((NestedAttributeMapping)mapping,roots,values,isSimpleContent ? startIndex : startIndex + 1);
+        }
+      }
+ else {
+        if (endIndex == fullSteps.size()) {
+          Expression exp=mapping.getSourceExpression();
+          for (          Feature f : roots) {
+            Object value=getValue(exp,f);
             if (value != null) {
               values.add(value);
             }
           }
         }
-      }
-    }
+ else         if (isClientProperty(endIndex)) {
+          if (getLastStep().isId()) {
+            setIdValues(mapping,roots,values);
+          }
  else {
-      int nextIndex=startIndex + 1;
-      for (      AttributeMapping mapping : attMappings) {
-        if (mapping instanceof NestedAttributeMapping) {
-          NestedAttributeMapping nestedMapping=((NestedAttributeMapping)mapping);
-          for (          Feature root : roots) {
-            try {
-              fMapping=nestedMapping.getFeatureTypeMapping(root);
-            }
- catch (            IOException e) {
-              fMapping=null;
-            }
-            if (fMapping != null && nestedMapping.isSameSource()) {
-              List<Feature> nestedRoots=new ArrayList<Feature>(1);
-              nestedRoots.add(root);
-              List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedRoots,fMapping,mapping);
-              if (nestedValues != null) {
-                values.addAll(nestedValues);
-              }
-              continue;
-            }
-            try {
-              List<Feature> nestedFeatures=getNestedFeatures(root,nestedMapping,fMapping);
-              if (nestedFeatures == null || nestedFeatures.isEmpty()) {
-                continue;
-              }
-              if (lastStep.isIndexed()) {
-                int index=lastStep.getIndex() - 1;
-                Feature f=nestedFeatures.get(index);
-                nestedFeatures.clear();
-                nestedFeatures.add(f);
-              }
-              if (fMapping != null) {
-                List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedFeatures,fMapping,mapping);
-                if (nestedValues != null) {
-                  values.addAll(nestedValues);
-                }
-              }
- else               if (!nestedFeatures.isEmpty()) {
-                throw new UnsupportedOperationException("FeatureTypeMapping not found for " + attPath + ". This shouldn't happen if it's set in AppSchemaDataAccess mapping file!");
-              }
- else {
-                List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedFeatures,fMapping,mapping);
-                if (nestedValues != null) {
-                  values.addAll(nestedValues);
-                }
-              }
-            }
- catch (            IOException e) {
-              throw new RuntimeException("Failed evaluating filter expression: '" + attPath + "'. Caused by: "+ e.getMessage());
-            }
-catch (            IllegalArgumentException e) {
-              continue;
-            }
+            getClientProperties(mapping,values,roots);
           }
         }
  else {
-          if (endIndex == fullSteps.size()) {
-            Expression exp=mapping.getSourceExpression();
-            for (            Feature f : roots) {
-              Object value=getValue(exp,f);
-              if (value != null) {
-                values.add(value);
-              }
-            }
-          }
- else {
-            List<Object> nestedValues=getValues(startIndex,endIndex,roots,fMapping,mapping);
-            if (nestedValues != null) {
-              values.addAll(nestedValues);
-            }
+          List<Object> nestedValues=getValues(startIndex,endIndex,roots,fMapping,mapping);
+          if (nestedValues != null) {
+            values.addAll(nestedValues);
           }
         }
       }

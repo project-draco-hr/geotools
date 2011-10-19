@@ -15,8 +15,8 @@
         setPolymorphicValues((Name)mappingName,target,id,nestedMapping,source,xpath,clientPropsMappings);
         return null;
       }
- else       if (mappingName instanceof Hints) {
-        setPolymorphicReference((Hints)mappingName,clientPropsMappings,target,xpath,targetNodeType);
+ else       if (mappingName instanceof String) {
+        setPolymorphicReference((String)mappingName,clientPropsMappings,target,xpath,targetNodeType);
         return null;
       }
     }
@@ -30,7 +30,7 @@
   boolean isHRefLink=isByReference(clientPropsMappings,isNestedFeature);
   if (isNestedFeature) {
     if (values instanceof Collection) {
-      ArrayList<Feature> nestedFeatures=new ArrayList<Feature>(((Collection)values).size());
+      ArrayList<Attribute> nestedFeatures=new ArrayList<Attribute>(((Collection)values).size());
       for (      Object val : (Collection)values) {
         if (val instanceof Attribute) {
           val=((Attribute)val).getValue();
@@ -67,14 +67,12 @@
     }
   }
   if (values instanceof Collection) {
-    Map<Object,Object> userData;
-    Map<Name,Expression> valueProperties=new HashMap<Name,Expression>();
     for (    Object singleVal : (Collection)values) {
       ArrayList valueList=new ArrayList();
       if (singleVal instanceof Attribute) {
-        valueProperties=getClientProperties((Attribute)singleVal);
+        Map<Name,Expression> valueProperties=getClientProperties((Attribute)singleVal);
         if (!valueProperties.isEmpty()) {
-          valueProperties.putAll(clientPropsMappings);
+          clientPropsMappings.putAll(valueProperties);
         }
       }
       if (!isNestedFeature) {
@@ -92,7 +90,7 @@
         valueList.add(singleVal);
       }
       Attribute instance=xpathAttributeBuilder.set(target,xpath,valueList,id,targetNodeType,false,sourceExpression);
-      setClientProperties(instance,source,valueProperties);
+      setClientProperties(instance,source,clientPropsMappings);
     }
   }
  else {

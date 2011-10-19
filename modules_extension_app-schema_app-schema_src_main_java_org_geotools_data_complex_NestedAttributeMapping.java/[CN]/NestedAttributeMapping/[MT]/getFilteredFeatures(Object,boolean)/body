@@ -1,0 +1,53 @@
+{
+  if (nestedSourceExpression == null) {
+    return Collections.EMPTY_LIST;
+  }
+  ArrayList<Feature> matchingFeatures=new ArrayList<Feature>();
+  Filter filter=filterFac.equals(this.nestedSourceExpression,filterFac.literal(foreignKeyValue));
+  FeatureCollection<FeatureType,Feature> fCollection=source.getFeatures(filter);
+  FeatureIterator<Feature> it=fCollection.features();
+  Filter matchingIdFilter=null;
+  if (nestedIdExpression.equals(Expression.NIL)) {
+    HashSet<FeatureId> featureIds=new HashSet<FeatureId>();
+    while (it.hasNext()) {
+      Feature f=it.next();
+      matchingFeatures.add(f);
+      if (isMultiple && f.getIdentifier() != null) {
+        featureIds.add(f.getIdentifier());
+      }
+    }
+    if (!featureIds.isEmpty()) {
+      matchingIdFilter=filterFac.id(featureIds);
+    }
+  }
+ else {
+    HashSet<String> featureIds=new HashSet<String>();
+    while (it.hasNext()) {
+      Feature f=it.next();
+      matchingFeatures.add(f);
+      if (isMultiple) {
+        featureIds.add(Converters.convert(nestedIdExpression.evaluate(f),String.class));
+      }
+    }
+    if (!featureIds.isEmpty()) {
+      List<Filter> idFilters=new ArrayList<Filter>(featureIds.size());
+      for (      String id : featureIds) {
+        idFilters.add(filterFac.equals(nestedIdExpression,filterFac.literal(id)));
+      }
+      matchingIdFilter=filterFac.or(idFilters);
+    }
+  }
+  it.close();
+  if (matchingIdFilter != null) {
+    fCollection=source.getFeatures(matchingIdFilter);
+    if (fCollection.size() > matchingFeatures.size()) {
+      it=fCollection.features();
+      matchingFeatures.clear();
+      while (it.hasNext()) {
+        matchingFeatures.add(it.next());
+      }
+      it.close();
+    }
+  }
+  return matchingFeatures;
+}

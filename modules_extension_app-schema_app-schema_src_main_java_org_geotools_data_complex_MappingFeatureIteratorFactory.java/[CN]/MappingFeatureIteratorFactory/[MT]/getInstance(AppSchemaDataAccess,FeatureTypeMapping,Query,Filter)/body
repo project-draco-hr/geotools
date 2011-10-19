@@ -13,7 +13,12 @@
       query.setFilter(Filter.INCLUDE);
       Query unrolledQuery=store.unrollQuery(query,mapping);
       unrolledQuery.setFilter(unrolledFilter);
-      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,false,unrolledQuery);
+      if (isSimpleType(mapping)) {
+        iterator=new MappingAttributeIterator(store,mapping,query,false,unrolledQuery);
+      }
+ else {
+        iterator=new DataAccessMappingFeatureIterator(store,mapping,query,false,unrolledQuery);
+      }
     }
  else {
       Filter filter=query.getFilter();
@@ -55,7 +60,12 @@
         return new FilteringMappingFeatureIterator(store,mapping,query,unrolledQuery,filter);
       }
  else       if (!filter.equals(Filter.INCLUDE) && !filter.equals(Filter.EXCLUDE) && !(filter instanceof FidFilterImpl)) {
-        return new DataAccessMappingFeatureIterator(store,mapping,query,true,unrolledQuery);
+        if (isSimpleType(mapping)) {
+          return new MappingAttributeIterator(store,mapping,query,true,unrolledQuery);
+        }
+ else {
+          return new DataAccessMappingFeatureIterator(store,mapping,query,true,unrolledQuery);
+        }
       }
     }
     return new DataAccessMappingFeatureIterator(store,mapping,query,false);

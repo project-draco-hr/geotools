@@ -2,7 +2,8 @@
   if (isSameSource()) {
     throw new UnsupportedOperationException("Link field is missing from feature chaining mapping!");
   }
-  if (source == null || !(nestedFeatureType instanceof AttributeExpressionImpl)) {
+  boolean isMultiple=false;
+  if (source == null || isConditional) {
     Object featureTypeName=getNestedFeatureType(feature);
     if (featureTypeName == null || !(featureTypeName instanceof Name)) {
       return Collections.EMPTY_LIST;
@@ -22,7 +23,9 @@
     if (mappings.size() < 1) {
       throw new IllegalArgumentException("Mapping is missing for: '" + this.nestedTargetXPath + "'!");
     }
-    nestedSourceExpression=mappings.get(0).getSourceExpression();
+    AttributeMapping mapping=mappings.get(0);
+    nestedSourceExpression=mapping.getSourceExpression();
+    isMultiple=mapping.isMultiValued();
   }
-  return getFilteredFeatures(foreignKeyValue);
+  return getFilteredFeatures(foreignKeyValue,isMultiple);
 }

@@ -1,0 +1,41 @@
+{
+  FeatureTypeMapping nextFMapping=null;
+  for (  Feature f : features) {
+    try {
+      nextFMapping=mapping.getFeatureTypeMapping(f);
+    }
+ catch (    IOException e) {
+      nextFMapping=null;
+    }
+    if (nextFMapping != null && mapping.isSameSource()) {
+      List<Feature> nestedRoots=new ArrayList<Feature>(1);
+      nestedRoots.add(f);
+      List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedRoots,nextFMapping,mapping);
+      if (nestedValues != null) {
+        values.addAll(nestedValues);
+      }
+      continue;
+    }
+    try {
+      List<Feature> nestedFeatures=getNestedFeatures(f,mapping,nextFMapping);
+      if (nestedFeatures == null || nestedFeatures.isEmpty()) {
+        continue;
+      }
+      if (nextFMapping != null) {
+        List<Object> nestedValues=getValues(nextIndex,nextIndex,nestedFeatures,nextFMapping,mapping);
+        if (nestedValues != null) {
+          values.addAll(nestedValues);
+        }
+      }
+ else       if (!nestedFeatures.isEmpty()) {
+        throw new UnsupportedOperationException("FeatureTypeMapping not found for " + attPath + ". This shouldn't happen if it's set in AppSchemaDataAccess mapping file!");
+      }
+    }
+ catch (    IOException e) {
+      throw new RuntimeException("Failed evaluating filter expression: '" + attPath + "'. Caused by: "+ e.getMessage());
+    }
+catch (    IllegalArgumentException e) {
+      continue;
+    }
+  }
+}

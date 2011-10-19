@@ -5,13 +5,17 @@
   final StepList steps=new StepList(xpath);
   Attribute parent=att;
   Name rootName=null;
-  if (parent.getDescriptor() != null) {
-    rootName=parent.getDescriptor().getName();
+  AttributeDescriptor parentDescriptor=parent.getDescriptor();
+  if (parentDescriptor != null) {
+    rootName=parentDescriptor.getName();
     Step rootStep=(Step)steps.get(0);
     QName stepName=rootStep.getName();
-    if (stepName.getLocalPart().equals(rootName.getLocalPart())) {
-      if (XMLConstants.NULL_NS_URI.equals(stepName.getNamespaceURI()) || stepName.getNamespaceURI().equals(rootName.getNamespaceURI())) {
+    if (Types.equals(rootName,stepName)) {
+      if (steps.size() > 1) {
         steps.remove(0);
+      }
+ else {
+        return setSimpleContentValue(parent,value);
       }
     }
   }
@@ -97,9 +101,7 @@
           return null;
         }
       }
-      int index=currStep.isIndexed ? currStep.getIndex() : -1;
-      Attribute attribute=setValue(currStepDescriptor,id,value,index,parent,targetNodeType,isXlinkRef);
-      return attribute;
+      return setLeafAttribute(currStepDescriptor,currStep,id,value,parent,targetNodeType,isXlinkRef);
     }
  else {
       int index=currStep.isIndexed ? currStep.getIndex() : -1;

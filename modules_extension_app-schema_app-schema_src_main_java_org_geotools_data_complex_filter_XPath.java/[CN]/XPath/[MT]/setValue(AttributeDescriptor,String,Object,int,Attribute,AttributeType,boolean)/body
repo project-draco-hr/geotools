@@ -1,5 +1,16 @@
 {
-  Object convertedValue=convertValue(descriptor,value);
+  Object convertedValue;
+  Map<Object,Object> simpleContentProperties=null;
+  if (isFeatureChainedSimpleContent(descriptor,value)) {
+    Collection<Property> simpleContentList=extractSimpleContent(value);
+    convertedValue=simpleContentList;
+    if (!simpleContentList.isEmpty()) {
+      simpleContentProperties=simpleContentList.iterator().next().getUserData();
+    }
+  }
+ else {
+    convertedValue=convertValue(descriptor,value);
+  }
   Attribute leafAttribute=null;
   final Name attributeName=descriptor.getName();
   if (!isXlinkRef) {
@@ -17,13 +28,13 @@
                   mappedIndex=valueIndex;
                 }
                 if (index == Integer.parseInt(String.valueOf(mappedIndex))) {
-                  return stepValue;
+                  leafAttribute=stepValue;
                 }
                 valueIndex++;
               }
             }
  else {
-              return values.get(values.size() - 1);
+              leafAttribute=values.get(values.size() - 1);
             }
           }
  else {
@@ -35,7 +46,7 @@
                 }
               }
               if (sameIndex && stepValue.getValue().equals(convertedValue)) {
-                return stepValue;
+                leafAttribute=stepValue;
               }
             }
           }
@@ -80,6 +91,9 @@
   }
   if (!isEmpty(convertedValue)) {
     leafAttribute.setValue(convertedValue);
+  }
+  if (simpleContentProperties != null) {
+    mergeClientProperties(leafAttribute,simpleContentProperties);
   }
   return leafAttribute;
 }
