@@ -1,0 +1,21 @@
+{
+  mapContent=new MockMapContent();
+  mapContent.addLayer(TestDataUtils.getPointLayer());
+  JFrame frame=GuiActionRunner.execute(new GuiQuery<JFrame>(){
+    @Override protected JFrame executeInEDT() throws Throwable {
+      JFrame frame=new JFrame("Cursor tool test");
+      mapPane=new JMapPane(mapContent);
+      mapPane.setPreferredSize(new Dimension(ZoomInToolTest.SCREEN.width,ZoomInToolTest.SCREEN.height));
+      frame.add(mapPane);
+      return frame;
+    }
+  }
+);
+  listener=new WaitingMapPaneListener();
+  mapPane.addMapPaneListener(listener);
+  windowFixture=new FrameFixture(frame);
+  mapPaneFixture=new JPanelFixture(windowFixture.robot,mapPane);
+  listener.setExpected(MapPaneEvent.Type.RENDERING_STOPPED);
+  ((FrameFixture)windowFixture).show();
+  assertTrue(listener.await(MapPaneEvent.Type.RENDERING_STOPPED,ZoomInToolTest.RENDERING_TIMEOUT));
+}
