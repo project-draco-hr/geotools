@@ -1,0 +1,46 @@
+{
+  Layer layer=mapContent.layers().get(0);
+  SimpleFeatureSource fs=(SimpleFeatureSource)layer.getFeatureSource();
+  final int featureIndex=rand.nextInt(fs.getFeatures().size());
+  SimpleFeatureIterator iter=fs.getFeatures().features();
+  SimpleFeature feature=null;
+  try {
+    int i=0;
+    while (i <= featureIndex) {
+      feature=iter.next();
+      i++;
+    }
+  }
+  finally {
+    iter.close();
+  }
+  DirectPosition2D queryPos=TestDataUtils.getPosInFeature(feature);
+  Point2D p2d=mapPane.getWorldToScreenTransform().transform(queryPos,null);
+  Point windowOrigin=mapPaneFixture.component().getLocationOnScreen();
+  Point screenQueryPos=new Point(windowOrigin.x + (int)p2d.getX(),windowOrigin.y + (int)p2d.getY());
+  mapPane.setCursorTool(tool);
+  latch=new CountDownLatch(1);
+  mapPaneFixture.robot.click(screenQueryPos,MouseButton.LEFT_BUTTON,1);
+  assertTrue(latch.await(EVENT_TIMEOUT,TimeUnit.MILLISECONDS));
+  assertNotNull(reporterText);
+  assertTrue(reporterText.length() > 0);
+  String[] lines=reporterText.split("(\r|\n)+");
+  String name=layer.getTitle();
+  if (name == null || name.length() == 0) {
+    name=fs.getSchema().getTypeName();
+  }
+  assertTrue(lines[1].contains(name));
+  assertTrue(lines[2].contains(feature.getID()));
+  int lineNo=3;
+  for (  Property p : feature.getProperties()) {
+    assertTrue(lines[lineNo].contains(p.getName().getLocalPart()));
+    Object value=p.getValue();
+    if (value instanceof Geometry) {
+      assertTrue(lines[lineNo].contains("Point"));
+    }
+ else {
+      assertTrue(lines[lineNo].contains(value.toString()));
+    }
+    lineNo++;
+  }
+}
