@@ -1,0 +1,37 @@
+{
+  updateLock.readLock().lock();
+  final String[] rtnText=new String[1];
+  try {
+    final TextDialog dialog=dialogRef.get();
+    if (dialog == null) {
+      LOGGER.severe("Retrieving text from an expired JTextReporter connection");
+    }
+ else {
+      if (SwingUtilities.isEventDispatchThread()) {
+        rtnText[0]=dialog.getText();
+      }
+ else {
+        try {
+          SwingUtilities.invokeAndWait(new Runnable(){
+            @Override public void run(){
+              rtnText[0]=dialog.getText();
+            }
+          }
+);
+        }
+ catch (        InterruptedException ex) {
+          LOGGER.severe("Thread interrupted while getting text from text reporter");
+          rtnText[0]="";
+        }
+catch (        InvocationTargetException ex) {
+          LOGGER.log(Level.SEVERE,"Error while trying to get text from text reporter",ex);
+          rtnText[0]="";
+        }
+      }
+    }
+  }
+  finally {
+    updateLock.readLock().unlock();
+    return rtnText[0];
+  }
+}
