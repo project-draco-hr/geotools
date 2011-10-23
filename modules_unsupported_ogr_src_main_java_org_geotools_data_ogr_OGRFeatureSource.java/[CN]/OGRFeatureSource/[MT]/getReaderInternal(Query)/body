@@ -9,8 +9,6 @@
   try {
     String typeName=getEntry().getTypeName();
     dataSource=getDataStore().openOGRDataSource(false);
-    layer=getDataStore().openOGRLayer(dataSource,typeName);
-    setLayerFilters(layer,filterTx);
     Filter postFilter=null;
     if (!filterTx.isFilterFullySupported()) {
       postFilter=filterTx.getPostFilter();
@@ -36,6 +34,16 @@
           querySchema=SimpleFeatureTypeBuilder.retype(sourceSchema,queryProperties);
         }
       }
+    }
+    String sql=getLayerSql(querySchema == sourceSchema ? null : querySchema,filterTx.getAttributeFilter(),query.getSortBy());
+    Pointer spatialFilterPtr=null;
+    Geometry spatialFilter=filterTx.getSpatialFilter();
+    if (spatialFilter != null) {
+      spatialFilterPtr=new GeometryMapper.WKB(new GeometryFactory()).parseGTGeometry(spatialFilter);
+    }
+    layer=OGR_DS_ExecuteSQL(dataSource,pointerToCString(sql),spatialFilterPtr,null);
+    if (layer == null) {
+      throw new IOException("Failed to query the source layer with SQL" + sql);
     }
     GeometryFactory gf=getGeometryFactory(query);
     FeatureReader<SimpleFeatureType,SimpleFeature> reader=new OGRFeatureReader(dataSource,layer,querySchema,sourceSchema,gf);

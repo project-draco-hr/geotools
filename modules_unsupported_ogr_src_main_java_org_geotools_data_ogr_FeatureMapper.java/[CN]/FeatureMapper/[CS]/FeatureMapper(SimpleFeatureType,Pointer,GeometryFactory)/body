@@ -1,0 +1,17 @@
+{
+  this.schema=targetSchema;
+  this.builder=new SimpleFeatureBuilder(schema);
+  this.geomMapper=new GeometryMapper.WKB(geomFactory);
+  this.geomFactory=geomFactory;
+  attributeIndexes=new HashMap<String,Integer>();
+  Pointer layerDefinition=OGR_L_GetLayerDefn(layer);
+  int size=OGR_FD_GetFieldCount(layerDefinition);
+  for (int i=0; i < size; i++) {
+    Pointer field=OGR_FD_GetFieldDefn(layerDefinition,i);
+    Pointer<Byte> namePtr=OGR_Fld_GetNameRef(field);
+    String name=namePtr.getCString();
+    if (targetSchema.getDescriptor(name) != null) {
+      attributeIndexes.put(name,i);
+    }
+  }
+}
