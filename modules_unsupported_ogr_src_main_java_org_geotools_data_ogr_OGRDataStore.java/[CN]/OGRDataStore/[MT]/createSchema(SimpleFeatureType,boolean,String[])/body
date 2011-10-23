@@ -6,27 +6,11 @@
     if (options != null && options.length > 0) {
       optionsPointer=pointerToCStrings(options);
     }
-    try {
-      dataSource=openOGRDataSource(true);
-    }
- catch (    IOException e) {
-      if (ogrDriver != null) {
-        Pointer driver=OGRGetDriverByName(pointerToCString(ogrDriver));
-        dataSource=OGR_Dr_CreateDataSource(driver,pointerToCString(ogrSourceName),optionsPointer);
-        driver.release();
-        if (dataSource == null)         throw new IOException("Could not create OGR data source with driver " + ogrDriver + " and options "+ options);
-      }
- else {
-        throw new DataSourceException("Driver not provided, and could not " + "open data source neither");
-      }
-    }
+    dataSource=openOrCreateDataSource(options,dataSource,optionsPointer);
     FeatureTypeMapper mapper=new FeatureTypeMapper();
-    GeometryDescriptor geomType=schema.getGeometryDescriptor();
-    ValuedEnum<OGRwkbGeometryType> ogrGeomType=mapper.getOGRGeometryType(geomType);
-    Pointer spatialReference=mapper.getSpatialReference(geomType.getCoordinateReferenceSystem());
-    layer=OGR_DS_CreateLayer(dataSource,pointerToCString(schema.getTypeName()),spatialReference,ogrGeomType,optionsPointer);
-    if (layer == null) {
-      throw new DataSourceException("Could not create the OGR layer: " + OGRUtils.getCString(CPLGetLastErrorMsg()));
+    layer=createNewLayer(schema,dataSource,optionsPointer,mapper);
+    if (OGR_L_TestCapability(layer,pointerToCString(OLCCreateField)) == 0) {
+      throw new DataSourceException("OGR reports it's not possible to create fields on this layer");
     }
     for (int i=0; i < schema.getAttributeCount(); i++) {
       AttributeDescriptor ad=schema.getDescriptor(i);
@@ -34,6 +18,7 @@
       Pointer fieldDefinition=mapper.getOGRFieldDefinition(ad);
       OGR_L_CreateField(layer,fieldDefinition,approximateFields ? 1 : 0);
     }
+    OGR_L_SyncToDisk(layer);
   }
   finally {
     OGRUtils.releaseLayer(layer);
