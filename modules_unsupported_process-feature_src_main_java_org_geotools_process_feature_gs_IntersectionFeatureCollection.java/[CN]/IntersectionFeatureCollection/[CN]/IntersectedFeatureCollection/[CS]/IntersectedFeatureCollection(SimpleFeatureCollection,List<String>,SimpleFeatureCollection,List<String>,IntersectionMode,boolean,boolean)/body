@@ -6,4 +6,34 @@
   this.intersectionMode=intersectionMode;
   this.percentagesEnabled=percentagesEnabled;
   this.areasEnabled=areasEnabled;
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  SimpleFeatureType firstFeatureCollectionSchema=delegate.getSchema();
+  SimpleFeatureType secondFeatureCollectionSchema=features.getSchema();
+  if (intersectionMode == IntersectionMode.FIRST) {
+    geomType=firstFeatureCollectionSchema.getGeometryDescriptor();
+  }
+  if (intersectionMode == IntersectionMode.SECOND) {
+    geomType=secondFeatureCollectionSchema.getGeometryDescriptor();
+  }
+  if (intersectionMode == IntersectionMode.INTERSECTION) {
+    geomType=getIntersectionType(delegate,features);
+  }
+  tb.add(geomType);
+  collectAttributes(firstFeatureCollectionSchema,firstAttributes,tb);
+  collectAttributes(secondFeatureCollectionSchema,sndAttributes,tb);
+  if (percentagesEnabled) {
+    tb.add("percentageA",Double.class);
+    tb.add("percentageB",Double.class);
+  }
+  if (areasEnabled) {
+    tb.add("areaA",Double.class);
+    tb.add("areaB",Double.class);
+  }
+  tb.add("INTERSECTION_ID",Integer.class);
+  tb.setDescription(firstFeatureCollectionSchema.getDescription());
+  tb.setCRS(firstFeatureCollectionSchema.getCoordinateReferenceSystem());
+  tb.setAbstract(firstFeatureCollectionSchema.isAbstract());
+  tb.setSuperType((SimpleFeatureType)firstFeatureCollectionSchema.getSuper());
+  tb.setName(firstFeatureCollectionSchema.getName());
+  this.fb=new SimpleFeatureBuilder(tb.buildFeatureType());
 }
