@@ -1,0 +1,35 @@
+{
+  SimpleFeatureTypeBuilder typeBuilder=new SimpleFeatureTypeBuilder();
+  typeBuilder.setName("points");
+  typeBuilder.add("wkt",String.class);
+  typeBuilder.add("label",String.class);
+  SimpleFeatureType TYPE=typeBuilder.buildFeatureType();
+  ListFeatureCollection features=new ListFeatureCollection(TYPE);
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(TYPE);
+  for (int i=0; i < 10; i++) {
+    fb.add("POINT(" + i + " "+ i+ ")");
+    fb.add("this is " + i);
+    features.add(fb.buildFeature(null));
+  }
+  Style style=SLD.createPointStyle("circle",Color.BLUE,Color.BLUE,1f,10f);
+  PointSymbolizer ps=(PointSymbolizer)style.featureTypeStyles().get(0).rules().get(0).symbolizers().get(0);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  ps.setGeometry(ff.function("convert",ff.property("wkt"),ff.literal(Point.class)));
+  MapContent map=new MapContent();
+  Layer layer=new FeatureLayer(features,style);
+  map.addLayer(layer);
+  BufferedImage bi=new BufferedImage(100,100,BufferedImage.TYPE_3BYTE_BGR);
+  StreamingRenderer renderer=new StreamingRenderer();
+  Graphics2D graphics=bi.createGraphics();
+  renderer.setMapContent(map);
+  renderer.paint(graphics,new Rectangle(100,100),new ReferencedEnvelope(0,10,0,10,null));
+  graphics.dispose();
+  ImageIO.write(bi,"png",new File("/tmp/sample.png"));
+  int[] pixel=new int[3];
+  for (int i=0; i < 100; i+=10) {
+    bi.getData().getPixel(i,99 - i,pixel);
+    assertEquals(0,pixel[0]);
+    assertEquals(0,pixel[1]);
+    assertEquals(255,pixel[2]);
+  }
+}
