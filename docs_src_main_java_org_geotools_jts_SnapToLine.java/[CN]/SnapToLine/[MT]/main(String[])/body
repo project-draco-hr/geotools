@@ -1,0 +1,62 @@
+{
+  File file=JFileDataStoreChooser.showOpenFile("shp",null);
+  if (file == null) {
+    return;
+  }
+  FileDataStore store=FileDataStoreFinder.getDataStore(file);
+  FeatureSource source=store.getFeatureSource();
+  final SpatialIndex index=new STRtree();
+  FeatureCollection features=source.getFeatures();
+  System.out.println("Slurping in features ...");
+  features.accepts(new FeatureVisitor(){
+    @Override public void visit(    Feature feature){
+      SimpleFeature simpleFeature=(SimpleFeature)feature;
+      Geometry geom=(MultiLineString)simpleFeature.getDefaultGeometry();
+      if (geom != null) {
+        Envelope env=geom.getEnvelopeInternal();
+        if (!env.isNull()) {
+          index.insert(env,new LocationIndexedLine(geom));
+        }
+      }
+    }
+  }
+,new NullProgressListener());
+  final int NUM_POINTS=10000;
+  ReferencedEnvelope bounds=features.getBounds();
+  Coordinate[] points=new Coordinate[NUM_POINTS];
+  Random rand=new Random(file.hashCode());
+  for (int i=0; i < NUM_POINTS; i++) {
+    points[i]=new Coordinate(bounds.getMinX() + rand.nextDouble() * bounds.getWidth(),bounds.getMinY() + rand.nextDouble() * bounds.getHeight());
+  }
+  final double MAX_SEARCH_DISTANCE=bounds.getSpan(0) / 100.0;
+  final long DURATION=5000;
+  int pointsProcessed=0;
+  int pointsSnapped=0;
+  long elapsedTime=0;
+  long startTime=System.currentTimeMillis();
+  while (pointsProcessed < NUM_POINTS && (elapsedTime=System.currentTimeMillis() - startTime) < DURATION) {
+    Coordinate pt=points[pointsProcessed++];
+    Envelope search=new Envelope(pt);
+    search.expandBy(MAX_SEARCH_DISTANCE);
+    List<LocationIndexedLine> lines=index.query(search);
+    double minDist=MAX_SEARCH_DISTANCE + 1.0e-6;
+    Coordinate minDistPoint=null;
+    for (    LocationIndexedLine line : lines) {
+      LinearLocation here=line.project(pt);
+      Coordinate point=line.extractPoint(here);
+      double dist=point.distance(pt);
+      if (dist < minDist) {
+        minDist=dist;
+        minDistPoint=point;
+      }
+    }
+    if (minDistPoint == null) {
+      System.out.println(pt + "- X");
+    }
+ else {
+      System.out.println(pt + " - snapped by moving " + minDist);
+      pointsSnapped++;
+    }
+  }
+  System.out.printf("Processed %d points (%.2f points per second). \n" + "Snapped %d points.\n\n",pointsProcessed,1000.0 * pointsProcessed / elapsedTime,pointsSnapped);
+}
