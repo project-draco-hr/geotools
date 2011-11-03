@@ -5,6 +5,12 @@
   }
   FileDataStore store=FileDataStoreFinder.getDataStore(file);
   FeatureSource source=store.getFeatureSource();
+  Class<?> geomBinding=source.getSchema().getGeometryDescriptor().getType().getBinding();
+  boolean isLine=geomBinding != null && (LineString.class.isAssignableFrom(geomBinding) || MultiLineString.class.isAssignableFrom(geomBinding));
+  if (!isLine) {
+    System.out.println("This example needs a shapefile with line features");
+    return;
+  }
   final SpatialIndex index=new STRtree();
   FeatureCollection features=source.getFeatures();
   System.out.println("Slurping in features ...");
@@ -54,7 +60,7 @@
       System.out.println(pt + "- X");
     }
  else {
-      System.out.println(pt + " - snapped by moving " + minDist);
+      System.out.printf("%s - snapped by moving %.4f\n",pt.toString(),minDist);
       pointsSnapped++;
     }
   }
