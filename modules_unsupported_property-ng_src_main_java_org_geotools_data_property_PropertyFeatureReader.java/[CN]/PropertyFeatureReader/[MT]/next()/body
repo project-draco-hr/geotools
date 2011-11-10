@@ -1,0 +1,26 @@
+{
+  if (hasNext()) {
+    line=next;
+    next=null;
+    int split=line.indexOf('=');
+    fid=line.substring(0,split);
+    text=line.substring(split + 1).split("\\|",-1);
+    if (type.getAttributeCount() != text.length)     throw new DataSourceException("Format error: expected " + type.getAttributeCount() + " attributes, but found "+ text.length+ ". ["+ line+ "]");
+  }
+ else {
+    throw new NoSuchElementException();
+  }
+  Object[] values=new Object[type.getAttributeCount()];
+  for (int i=0; i < type.getAttributeCount(); i++) {
+    try {
+      values[i]=read(i);
+    }
+ catch (    RuntimeException e) {
+      values[i]=null;
+    }
+catch (    IOException e) {
+      throw e;
+    }
+  }
+  return SimpleFeatureBuilder.build(type,values,fid);
+}

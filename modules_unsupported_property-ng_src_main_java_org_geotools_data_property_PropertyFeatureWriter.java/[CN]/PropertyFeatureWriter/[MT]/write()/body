@@ -1,0 +1,24 @@
+{
+  if (live == null) {
+    throw new IOException("No current feature to write");
+  }
+  if (live.equals(origional)) {
+    writeImplementation(origional);
+  }
+ else {
+    writeImplementation(live);
+    String typeName=live.getFeatureType().getTypeName();
+    Transaction autoCommit=Transaction.AUTO_COMMIT;
+    if (origional != null) {
+      ReferencedEnvelope bounds=new ReferencedEnvelope();
+      bounds.include(live.getBounds());
+      bounds.include(origional.getBounds());
+      state.fireFeatureUpdated(featureSource,live,bounds);
+    }
+ else {
+      state.fireFeatureAdded(featureSource,live);
+    }
+  }
+  origional=null;
+  live=null;
+}
