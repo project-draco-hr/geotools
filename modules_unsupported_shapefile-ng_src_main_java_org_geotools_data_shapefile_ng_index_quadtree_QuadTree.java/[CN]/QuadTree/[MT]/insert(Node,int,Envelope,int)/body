@@ -1,0 +1,43 @@
+{
+  if (maxDepth > 1 && node.getNumSubNodes() > 0) {
+    Node subNode=null;
+    for (int i=0; i < node.getNumSubNodes(); i++) {
+      subNode=node.getSubNode(i);
+      if (subNode.getBounds().contains(bounds)) {
+        this.insert(subNode,recno,bounds,maxDepth - 1);
+        return;
+      }
+    }
+  }
+  if (maxDepth > 1 && node.getNumSubNodes() < 4) {
+    Envelope half1, half2, quad1, quad2, quad3, quad4;
+    Envelope[] tmp=this.splitBounds(node.getBounds());
+    half1=tmp[0];
+    half2=tmp[1];
+    tmp=this.splitBounds(half1);
+    quad1=tmp[0];
+    quad2=tmp[1];
+    tmp=this.splitBounds(half2);
+    quad3=tmp[0];
+    quad4=tmp[1];
+    Node subnode=null;
+    if (quad1.contains(bounds)) {
+      subnode=new Node(quad1);
+    }
+ else     if (quad2.contains(bounds)) {
+      subnode=new Node(quad2);
+    }
+ else     if (quad3.contains(bounds)) {
+      subnode=new Node(quad3);
+    }
+ else     if (quad4.contains(bounds)) {
+      subnode=new Node(quad4);
+    }
+    if (subnode != null) {
+      node.addSubNode(subnode);
+      this.insert(subnode,recno,bounds,maxDepth - 1);
+      return;
+    }
+  }
+  node.addShapeId(recno);
+}

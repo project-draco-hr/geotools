@@ -1,0 +1,26 @@
+{
+  URL url=TestData.url(STATE_POP);
+  ShapefileDataStore s=new ShapefileDataStore(url);
+  Query query=new DefaultQuery(s.getSchema().getTypeName(),Filter.INCLUDE,new String[]{"the_geom"});
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=s.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertEquals(1,reader.getFeatureType().getAttributeCount());
+  assertEquals("the_geom",reader.getFeatureType().getDescriptor(0).getLocalName());
+  GeometryFactory gc=new GeometryFactory();
+  LinearRing ring=gc.createLinearRing(new Coordinate[]{new Coordinate(0,0),new Coordinate(10,0),new Coordinate(10,10),new Coordinate(0,10),new Coordinate(0,0)});
+  Polygon polygon=gc.createPolygon(ring,null);
+  ReferencedEnvelope bounds=new ReferencedEnvelope(polygon.getEnvelopeInternal(),null);
+  Filter gf=ff.bbox(ff.property("the_geom"),bounds);
+  query=new DefaultQuery(s.getSchema().getTypeName(),gf,new String[]{"the_geom"});
+  reader.close();
+  reader=s.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertEquals(1,reader.getFeatureType().getAttributeCount());
+  assertEquals("the_geom",reader.getFeatureType().getDescriptor(0).getLocalName());
+  reader.close();
+  Filter cf=ff.equals(ff.property("STATE_NAME"),ff.literal("Illinois"));
+  query=new DefaultQuery(s.getSchema().getTypeName(),cf,new String[]{"the_geom"});
+  reader=s.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertEquals(1,reader.getFeatureType().getAttributeCount());
+  assertEquals("the_geom",reader.getFeatureType().getDescriptor(0).getLocalName());
+  reader.close();
+  s.dispose();
+}

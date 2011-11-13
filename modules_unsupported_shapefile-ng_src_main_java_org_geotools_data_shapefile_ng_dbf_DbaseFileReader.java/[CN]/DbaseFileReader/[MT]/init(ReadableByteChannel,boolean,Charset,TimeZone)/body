@@ -1,0 +1,43 @@
+{
+  this.channel=dbfChannel;
+  this.stringCharset=charset == null ? Charset.defaultCharset() : charset;
+  TimeZone calTimeZone=timeZone == null ? TimeZone.getDefault() : timeZone;
+  this.calendar=Calendar.getInstance(calTimeZone,Locale.US);
+  this.useMemoryMappedBuffer=useMemoryMappedBuffer;
+  this.randomAccessEnabled=(channel instanceof FileChannel);
+  streamLogger.open();
+  header=new DbaseFileHeader();
+  if (channel instanceof FileChannel && this.useMemoryMappedBuffer) {
+    final FileChannel fc=(FileChannel)channel;
+    if ((fc.size() - fc.position()) < (long)Integer.MAX_VALUE) {
+      buffer=fc.map(FileChannel.MapMode.READ_ONLY,0,fc.size());
+    }
+ else {
+      buffer=fc.map(FileChannel.MapMode.READ_ONLY,0,Integer.MAX_VALUE);
+    }
+    buffer.position((int)fc.position());
+    header.readHeader(buffer);
+    this.currentOffset=0;
+  }
+ else {
+    this.useMemoryMappedBuffer=false;
+    header.readHeader(channel,charset);
+    buffer=NIOUtilities.allocate(header.getRecordLength());
+    fill(buffer,channel);
+    buffer.flip();
+    this.currentOffset=header.getHeaderLength();
+  }
+  buffer.order(ByteOrder.LITTLE_ENDIAN);
+  fieldTypes=new char[header.getNumFields()];
+  fieldLengths=new int[header.getNumFields()];
+  fieldOffsets=new int[header.getNumFields()];
+  for (int i=0, ii=header.getNumFields(); i < ii; i++) {
+    fieldTypes[i]=header.getFieldType(i);
+    fieldLengths[i]=header.getFieldLength(i);
+    if (i > 0)     fieldOffsets[i]=fieldOffsets[i - 1] + header.getFieldLength(i - 1);
+  }
+  bytes=new byte[header.getRecordLength() - 1];
+  final String cname=stringCharset.name();
+  oneBytePerChar="ISO-8859-1".equals(cname) || "US-ASCII".equals(cname);
+  row=new Row();
+}

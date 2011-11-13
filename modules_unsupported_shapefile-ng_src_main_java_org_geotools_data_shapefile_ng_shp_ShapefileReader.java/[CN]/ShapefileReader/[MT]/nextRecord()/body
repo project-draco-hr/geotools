@@ -1,0 +1,49 @@
+{
+  buffer.position(getNextOffset());
+  if (currentShape != UNKNOWN)   currentShape++;
+  buffer.order(ByteOrder.BIG_ENDIAN);
+  int recordNumber=buffer.getInt();
+  int recordLength=buffer.getInt() * 2;
+  if (!buffer.isReadOnly() && !useMemoryMappedBuffer) {
+    if (buffer.capacity() < recordLength + 8) {
+      this.currentOffset+=buffer.position();
+      ByteBuffer old=buffer;
+      buffer=ensureCapacity(buffer,recordLength + 8,useMemoryMappedBuffer);
+      buffer.put(old);
+      NIOUtilities.clean(old,useMemoryMappedBuffer);
+      fill(buffer,channel);
+      buffer.position(0);
+    }
+ else     if (buffer.remaining() < recordLength + 8) {
+      this.currentOffset+=buffer.position();
+      buffer.compact();
+      fill(buffer,channel);
+      buffer.position(0);
+    }
+  }
+  buffer.order(ByteOrder.LITTLE_ENDIAN);
+  ShapeType recordType=ShapeType.forID(buffer.getInt());
+  if (recordType != ShapeType.NULL && recordType != fileShapeType) {
+    throw new IllegalStateException("ShapeType changed illegally from " + fileShapeType + " to "+ recordType);
+  }
+  buffer.mark();
+  if (recordType.isMultiPoint()) {
+    record.minX=buffer.getDouble();
+    record.minY=buffer.getDouble();
+    record.maxX=buffer.getDouble();
+    record.maxY=buffer.getDouble();
+  }
+ else   if (recordType != ShapeType.NULL) {
+    record.minX=record.maxX=buffer.getDouble();
+    record.minY=record.maxY=buffer.getDouble();
+  }
+  buffer.reset();
+  record.offset=record.end;
+  record.length=recordLength;
+  record.type=recordType;
+  record.number=recordNumber;
+  record.end=this.toFileOffset(buffer.position()) + recordLength - 4;
+  record.start=buffer.position();
+  record.shape=null;
+  return record;
+}

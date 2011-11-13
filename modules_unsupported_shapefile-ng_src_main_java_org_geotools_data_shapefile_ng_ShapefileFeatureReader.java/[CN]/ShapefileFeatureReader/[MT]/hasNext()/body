@@ -1,0 +1,45 @@
+{
+  while (nextFeature == null && filesHaveMore()) {
+    Record record=shp.nextRecord();
+    Envelope envelope=record.envelope();
+    boolean skip=false;
+    Geometry geometry;
+    if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
+      geometry=null;
+      skip=true;
+    }
+ else     if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
+      try {
+        if (screenMap != null && screenMap.checkAndSet(envelope)) {
+          geometry=null;
+          skip=true;
+        }
+ else {
+          geometry=(Geometry)record.getSimplifiedShape(screenMap);
+        }
+      }
+ catch (      Exception e) {
+        geometry=(Geometry)record.getSimplifiedShape();
+      }
+    }
+ else {
+      geometry=(Geometry)record.shape();
+    }
+    if (!skip) {
+      Row row;
+      if (dbf != null) {
+        row=dbf.readRow();
+      }
+ else {
+        row=null;
+      }
+      nextFeature=buildFeature(record.number,geometry,row);
+    }
+ else {
+      if (dbf != null) {
+        dbf.skip();
+      }
+    }
+  }
+  return nextFeature != null;
+}

@@ -1,0 +1,24 @@
+{
+  List<AttributeDescriptor> types=readAttributes();
+  SimpleFeatureType parent=null;
+  GeometryDescriptor geomDescriptor=(GeometryDescriptor)types.get(0);
+  Class<?> geomBinding=geomDescriptor.getType().getBinding();
+  if ((geomBinding == Point.class) || (geomBinding == MultiPoint.class)) {
+    parent=BasicFeatureTypes.POINT;
+  }
+ else   if ((geomBinding == Polygon.class) || (geomBinding == MultiPolygon.class)) {
+    parent=BasicFeatureTypes.POLYGON;
+  }
+ else   if ((geomBinding == LineString.class) || (geomBinding == MultiLineString.class)) {
+    parent=BasicFeatureTypes.LINE;
+  }
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.setDefaultGeometry(geomDescriptor.getLocalName());
+  builder.addAll(types);
+  builder.setName(entry.getName());
+  builder.setAbstract(false);
+  if (parent != null) {
+    builder.setSuperType(parent);
+  }
+  return builder.buildFeatureType();
+}

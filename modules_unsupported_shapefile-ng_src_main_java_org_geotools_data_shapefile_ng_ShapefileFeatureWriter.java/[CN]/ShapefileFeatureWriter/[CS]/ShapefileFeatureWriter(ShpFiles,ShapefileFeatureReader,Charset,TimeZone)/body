@@ -1,0 +1,30 @@
+{
+  this.shpFiles=shpFiles;
+  this.dbfCharset=charset;
+  this.dbfTimeZone=timezone;
+  this.featureReader=featureReader;
+  storageFiles.put(SHP,shpFiles.getStorageFile(SHP));
+  storageFiles.put(SHX,shpFiles.getStorageFile(SHX));
+  storageFiles.put(DBF,shpFiles.getStorageFile(DBF));
+  this.featureType=featureReader.getFeatureType();
+  emptyAtts=new Object[featureType.getAttributeCount()];
+  writeFlags=new byte[featureType.getAttributeCount()];
+  int cnt=0;
+  for (int i=0, ii=featureType.getAttributeCount(); i < ii; i++) {
+    if (!(featureType.getDescriptor(i) instanceof GeometryDescriptor)) {
+      cnt++;
+      writeFlags[i]=(byte)1;
+    }
+  }
+  transferCache=new Object[cnt];
+  FileChannel shpChannel=storageFiles.get(SHP).getWriteChannel();
+  FileChannel shxChannel=storageFiles.get(SHX).getWriteChannel();
+  shpWriter=new ShapefileWriter(shpChannel,shxChannel);
+  dbfHeader=ShapefileDataStore.createDbaseHeader(featureType);
+  dbfChannel=storageFiles.get(DBF).getWriteChannel();
+  dbfWriter=new DbaseFileWriter(dbfHeader,dbfChannel,dbfCharset,dbfTimeZone);
+  featureReader.disableShxUsage();
+  shapeType=featureReader.getShapeType();
+  handler=shapeType.getShapeHandler(new GeometryFactory());
+  shpWriter.writeHeaders(bounds,shapeType,records,shapefileLength);
+}

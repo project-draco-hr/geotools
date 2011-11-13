@@ -1,0 +1,39 @@
+{
+  ArrayList holesForShells=new ArrayList(shells.size());
+  for (int i=0; i < shells.size(); i++) {
+    holesForShells.add(new ArrayList());
+  }
+  for (int i=0; i < holes.size(); i++) {
+    LinearRing testRing=(LinearRing)holes.get(i);
+    LinearRing minShell=null;
+    Envelope minEnv=null;
+    Envelope testEnv=testRing.getEnvelopeInternal();
+    Coordinate testPt=testRing.getCoordinateN(0);
+    LinearRing tryRing;
+    for (int j=0; j < shells.size(); j++) {
+      tryRing=(LinearRing)shells.get(j);
+      Envelope tryEnv=tryRing.getEnvelopeInternal();
+      if (minShell != null) {
+        minEnv=minShell.getEnvelopeInternal();
+      }
+      boolean isContained=false;
+      Coordinate[] coordList=tryRing.getCoordinates();
+      if (tryEnv.contains(testEnv) && (CGAlgorithms.isPointInRing(testPt,coordList) || (pointInList(testPt,coordList)))) {
+        isContained=true;
+      }
+      if (isContained) {
+        if ((minShell == null) || minEnv.contains(tryEnv)) {
+          minShell=tryRing;
+        }
+      }
+    }
+    if (minShell == null) {
+      shells.add(testRing);
+      holesForShells.add(new ArrayList());
+    }
+ else {
+      ((ArrayList)holesForShells.get(shells.indexOf(minShell))).add(testRing);
+    }
+  }
+  return holesForShells;
+}

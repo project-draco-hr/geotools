@@ -1,0 +1,37 @@
+{
+  this.schema=schema;
+  this.shp=shp;
+  this.dbf=dbf;
+  this.builder=new SimpleFeatureBuilder(schema);
+  if (dbf != null) {
+    List<AttributeDescriptor> atts=schema.getAttributeDescriptors();
+    dbfindexes=new int[atts.size()];
+    DbaseFileHeader head=dbf.getHeader();
+    for (int i=0; i < atts.size(); i++) {
+      AttributeDescriptor att=atts.get(i);
+      if (att instanceof GeometryDescriptor) {
+        dbfindexes[i]=-1;
+      }
+ else {
+        String attName=att.getLocalName();
+        int count=0;
+        Map<Object,Object> userData=att.getUserData();
+        if (userData.get(ShapefileDataStore.ORIGINAL_FIELD_NAME) != null) {
+          attName=(String)userData.get(ShapefileDataStore.ORIGINAL_FIELD_NAME);
+          count=(Integer)userData.get(ShapefileDataStore.ORIGINAL_FIELD_DUPLICITY_COUNT);
+        }
+        boolean found=false;
+        for (int j=0; j < head.getNumFields(); j++) {
+          if (head.getFieldName(j).equals(attName) && count-- <= 0) {
+            dbfindexes[i]=j;
+            found=true;
+            break;
+          }
+        }
+        if (!found) {
+          throw new IOException("Could not find attribute " + attName + " (mul count: "+ count);
+        }
+      }
+    }
+  }
+}

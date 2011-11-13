@@ -1,0 +1,43 @@
+{
+  DbaseFileHeader header=new DbaseFileHeader();
+  for (int i=0, ii=featureType.getAttributeCount(); i < ii; i++) {
+    AttributeDescriptor type=featureType.getDescriptor(i);
+    Class<?> colType=type.getType().getBinding();
+    String colName=type.getLocalName();
+    int fieldLen=FeatureTypes.getFieldLength(type);
+    if (fieldLen == FeatureTypes.ANY_LENGTH)     fieldLen=255;
+    if ((colType == Integer.class) || (colType == Short.class) || (colType == Byte.class)) {
+      header.addColumn(colName,'N',Math.min(fieldLen,9),0);
+    }
+ else     if (colType == Long.class) {
+      header.addColumn(colName,'N',Math.min(fieldLen,19),0);
+    }
+ else     if (colType == BigInteger.class) {
+      header.addColumn(colName,'N',Math.min(fieldLen,33),0);
+    }
+ else     if (Number.class.isAssignableFrom(colType)) {
+      int l=Math.min(fieldLen,33);
+      int d=Math.max(l - 2,0);
+      header.addColumn(colName,'N',l,d);
+    }
+ else     if (java.util.Date.class.isAssignableFrom(colType) && Boolean.getBoolean("org.geotools.shapefile.datetime")) {
+      header.addColumn(colName,'@',fieldLen,0);
+    }
+ else     if (java.util.Date.class.isAssignableFrom(colType) || Calendar.class.isAssignableFrom(colType)) {
+      header.addColumn(colName,'D',fieldLen,0);
+    }
+ else     if (colType == Boolean.class) {
+      header.addColumn(colName,'L',1,0);
+    }
+ else     if (CharSequence.class.isAssignableFrom(colType)) {
+      header.addColumn(colName,'C',Math.min(254,fieldLen),0);
+    }
+ else     if (Geometry.class.isAssignableFrom(colType)) {
+      continue;
+    }
+ else {
+      throw new IOException("Unable to write : " + colType.getName());
+    }
+  }
+  return header;
+}

@@ -1,0 +1,30 @@
+{
+  MultiPolygon multi;
+  if (geometry instanceof MultiPolygon) {
+    multi=(MultiPolygon)geometry;
+  }
+ else {
+    multi=geometryFactory.createMultiPolygon(new Polygon[]{(Polygon)geometry});
+  }
+  int nrings=0;
+  for (int t=0; t < multi.getNumGeometries(); t++) {
+    Polygon p;
+    p=(Polygon)multi.getGeometryN(t);
+    nrings=nrings + 1 + p.getNumInteriorRing();
+  }
+  int npoints=multi.getNumPoints();
+  int length;
+  if (shapeType == ShapeType.POLYGONZ) {
+    length=44 + (4 * nrings) + (16 * npoints)+ (8 * npoints)+ 16+ (8 * npoints)+ 16;
+  }
+ else   if (shapeType == ShapeType.POLYGONM) {
+    length=44 + (4 * nrings) + (16 * npoints)+ (8 * npoints)+ 16;
+  }
+ else   if (shapeType == ShapeType.POLYGON) {
+    length=44 + (4 * nrings) + (16 * npoints);
+  }
+ else {
+    throw new IllegalStateException("Expected ShapeType of Polygon, got " + shapeType);
+  }
+  return length;
+}

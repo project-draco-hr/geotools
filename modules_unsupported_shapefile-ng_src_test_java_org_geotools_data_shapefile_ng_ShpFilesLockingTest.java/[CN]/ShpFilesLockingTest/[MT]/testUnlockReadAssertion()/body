@@ -1,0 +1,27 @@
+{
+  ShpFiles shpFiles=new ShpFiles("http://somefile.com/shp.shp");
+  URL url=shpFiles.acquireRead(DBF,this);
+  assertEquals("http://somefile.com/shp.dbf",url.toExternalForm());
+  assertEquals(1,shpFiles.numberOfLocks());
+  FileWriter testWriter=new FileWriter(){
+    public String id(){
+      return "Other";
+    }
+  }
+;
+  Result<URL,State> result1=shpFiles.tryAcquireRead(SHX,testWriter);
+  assertEquals("http://somefile.com/shp.shx",result1.value.toExternalForm());
+  assertEquals(2,shpFiles.numberOfLocks());
+  try {
+    shpFiles.unlockRead(result1.value,this);
+    throw new RuntimeException("Unlock should fail because it is in the wrong reader");
+  }
+ catch (  IllegalArgumentException e) {
+  }
+catch (  RuntimeException e) {
+    fail(e.getMessage());
+  }
+  shpFiles.unlockRead(result1.value,testWriter);
+  shpFiles.unlockRead(url,this);
+  shpFiles.dispose();
+}

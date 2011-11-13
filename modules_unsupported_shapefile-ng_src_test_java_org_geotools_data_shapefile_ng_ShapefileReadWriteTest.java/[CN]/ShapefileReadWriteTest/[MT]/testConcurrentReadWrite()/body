@@ -1,0 +1,64 @@
+{
+  System.gc();
+  System.runFinalization();
+  final File file=getTempFile();
+  Runnable reader=new Runnable(){
+    public void run(){
+      int cutoff=0;
+      FileInputStream fr=null;
+      try {
+        fr=new FileInputStream(file);
+        try {
+          fr.read();
+        }
+ catch (        IOException e1) {
+          exception=e1;
+          return;
+        }
+        readStarted=true;
+        while (cutoff < 10) {
+synchronized (this) {
+            try {
+              try {
+                fr.read();
+              }
+ catch (              IOException e) {
+                exception=e;
+                return;
+              }
+              wait(500);
+              cutoff++;
+            }
+ catch (            InterruptedException e) {
+              cutoff=10;
+            }
+          }
+        }
+      }
+ catch (      FileNotFoundException e) {
+        assertTrue(false);
+      }
+ finally {
+        if (fr != null) {
+          try {
+            fr.close();
+          }
+ catch (          IOException e) {
+            exception=e;
+            return;
+          }
+        }
+      }
+    }
+  }
+;
+  Thread readThread=new Thread(reader);
+  readThread.start();
+  while (!readStarted) {
+    if (exception != null) {
+      throw exception;
+    }
+    Thread.sleep(100);
+  }
+  test(files[0]);
+}

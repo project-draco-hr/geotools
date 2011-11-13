@@ -1,0 +1,22 @@
+{
+  try {
+    final File rawFile=DataUtilities.urlToFile(url);
+    if (rawFile == null) {
+      return;
+    }
+    File file=rawFile.getCanonicalFile();
+    List<MappingKey> keys=new ArrayList<MappingKey>(buffers.keySet());
+    for (    MappingKey key : keys) {
+      if (key.file.equals(file)) {
+        MappedByteBuffer buffer=buffers.remove(key);
+        NIOUtilities.clean(buffer,true);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.log(Level.FINE,"Removed mapping for " + file.getAbsolutePath());
+        }
+      }
+    }
+  }
+ catch (  Throwable t) {
+    LOGGER.log(Level.WARNING,"An error occurred while trying to clean the memory map cache",t);
+  }
+}

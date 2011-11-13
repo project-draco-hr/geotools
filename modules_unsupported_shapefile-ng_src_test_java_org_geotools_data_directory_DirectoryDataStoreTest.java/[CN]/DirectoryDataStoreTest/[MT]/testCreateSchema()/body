@@ -1,0 +1,19 @@
+{
+  File dir=File.createTempFile("foo","shp",new File("target"));
+  dir.delete();
+  dir.mkdir();
+  DataStore ds=new DirectoryDataStore(dir,getFileStoreFactory());
+  assertEquals(0,ds.getTypeNames().length);
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName("foo");
+  tb.add("geom",Polygon.class);
+  tb.add("bar",Integer.class);
+  ds.createSchema(tb.buildFeatureType());
+  SimpleFeatureType ft=ds.getSchema("foo");
+  assertNotNull(ft);
+  ds.dispose();
+  for (  File f : dir.listFiles()) {
+    f.delete();
+  }
+  dir.delete();
+}
