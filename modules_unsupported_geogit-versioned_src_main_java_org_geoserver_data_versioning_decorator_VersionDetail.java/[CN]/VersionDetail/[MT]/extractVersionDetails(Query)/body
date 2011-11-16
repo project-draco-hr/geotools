@@ -1,0 +1,55 @@
+{
+  String versionString=query.getVersion();
+  if (versionString == null) {
+    return null;
+  }
+ else   if (versionString.startsWith(DATE_PREFIX)) {
+    DateFormat fmt=new SimpleDateFormat(DATE_FORMAT);
+    try {
+      Date date=fmt.parse(versionString.substring(DATE_PREFIX.length()));
+      return new VersionDetail(date);
+    }
+ catch (    ParseException ex) {
+      return null;
+    }
+  }
+ else   if (versionString.startsWith(RANGE_PREFIX)) {
+    int sepIndex=versionString.indexOf(RANGE_SEPARATOR);
+    if (sepIndex == -1) {
+      return null;
+    }
+    DateFormat fmt=new SimpleDateFormat(DATE_FORMAT);
+    try {
+      Date start=fmt.parse(versionString.substring(RANGE_PREFIX.length(),sepIndex));
+      Date end=fmt.parse(versionString.substring(sepIndex + RANGE_SEPARATOR.length()));
+      return new VersionDetail(start,end);
+    }
+ catch (    ParseException ex) {
+      return null;
+    }
+  }
+ else   if (Version.Action.FIRST.name().equals(versionString)) {
+    return new VersionDetail(Version.Action.FIRST);
+  }
+ else   if (Version.Action.LAST.name().equals(versionString)) {
+    return new VersionDetail(Version.Action.LAST);
+  }
+ else   if (Version.Action.ALL.name().equals(versionString)) {
+    return new VersionDetail(Version.Action.ALL);
+  }
+ else   if (Version.Action.NEXT.name().equals(versionString)) {
+    return new VersionDetail(Version.Action.NEXT);
+  }
+ else   if (Version.Action.PREVIOUS.name().equals(versionString)) {
+    return new VersionDetail(Version.Action.PREVIOUS);
+  }
+ else {
+    try {
+      int index=Integer.parseInt(versionString);
+      return new VersionDetail(index);
+    }
+ catch (    NumberFormatException ex) {
+      return null;
+    }
+  }
+}

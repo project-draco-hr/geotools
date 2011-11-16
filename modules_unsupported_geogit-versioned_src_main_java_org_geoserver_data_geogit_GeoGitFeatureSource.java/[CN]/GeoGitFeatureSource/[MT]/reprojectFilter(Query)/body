@@ -1,0 +1,25 @@
+{
+  final Filter originalFilter=query.getFilter() != null ? query.getFilter() : Filter.INCLUDE;
+  if (Filter.INCLUDE.equals(originalFilter)) {
+    return query;
+  }
+  final SimpleFeatureType nativeFeatureType=getSchema();
+  final GeometryDescriptor geom=nativeFeatureType.getGeometryDescriptor();
+  if (geom == null) {
+    return query;
+  }
+  final FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  try {
+    CoordinateReferenceSystem nativeCRS=geom.getCoordinateReferenceSystem();
+    DefaultCRSFilterVisitor defaultCRSVisitor=new DefaultCRSFilterVisitor(ff,nativeCRS);
+    final Filter defaultedFilter=(Filter)originalFilter.accept(defaultCRSVisitor,null);
+    ReprojectingFilterVisitor reprojectingVisitor=new ReprojectingFilterVisitor(ff,nativeFeatureType);
+    final Filter reprojectedFilter=(Filter)defaultedFilter.accept(reprojectingVisitor,null);
+    Query reprojectedQuery=new Query(query);
+    reprojectedQuery.setFilter(reprojectedFilter);
+    return reprojectedQuery;
+  }
+ catch (  Exception e) {
+    throw new DataSourceException("Had troubles handling filter reprojection...",e);
+  }
+}

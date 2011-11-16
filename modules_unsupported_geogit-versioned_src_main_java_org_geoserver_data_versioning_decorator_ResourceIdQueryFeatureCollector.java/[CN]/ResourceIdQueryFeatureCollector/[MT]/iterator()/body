@@ -1,0 +1,18 @@
+{
+  Iterator<Ref> featureRefs=Iterators.emptyIterator();
+  GeoGIT ggit=new GeoGIT(repository);
+  VersionQuery versionQuery=new VersionQuery(ggit,featureType.getName());
+  try {
+    for (    ResourceId rid : resourceIds) {
+      Iterator<Ref> ridIterator;
+      ridIterator=versionQuery.get(rid);
+      featureRefs=Iterators.concat(featureRefs,ridIterator);
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+  featureRefs=versionQuery.filterByQueryVersion(featureRefs,query);
+  Iterator<Feature> features=Iterators.transform(featureRefs,new RefToFeature(repository,featureType));
+  return features;
+}

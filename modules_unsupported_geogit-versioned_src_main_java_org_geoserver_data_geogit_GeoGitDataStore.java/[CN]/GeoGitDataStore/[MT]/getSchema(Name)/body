@@ -1,0 +1,21 @@
+{
+  Preconditions.checkNotNull(name);
+  final RefDatabase refDatabase=repo.getRefDatabase();
+  final ObjectDatabase objectDatabase=repo.getObjectDatabase();
+  final Ref typesTreeRef=refDatabase.getRef(TYPE_NAMES_REF_TREE);
+  Preconditions.checkState(typesTreeRef != null);
+  final RevTree namespacesRootTree=objectDatabase.getTree(typesTreeRef.getObjectId());
+  Preconditions.checkState(namespacesRootTree != null);
+  final String[] path={name.getNamespaceURI() == null ? NULL_NAMESPACE : name.getNamespaceURI(),name.getLocalPart()};
+  final Ref typeRef=objectDatabase.getTreeChild(namespacesRootTree,path);
+  if (typeRef == null) {
+    throw new SchemaNotFoundException(name.toString());
+  }
+  Preconditions.checkState(TYPE.BLOB.equals(typeRef.getType()));
+  final ObjectId objectId=typeRef.getObjectId();
+  WrappedSerialisingFactory serialisingFactory;
+  serialisingFactory=WrappedSerialisingFactory.getInstance();
+  final ObjectReader<SimpleFeatureType> reader=serialisingFactory.createSimpleFeatureTypeReader(name);
+  final SimpleFeatureType featureType=objectDatabase.get(objectId,reader);
+  return featureType;
+}

@@ -1,0 +1,28 @@
+{
+  long timestamp=System.currentTimeMillis();
+  Transaction transaction=getTransaction();
+  if (transaction != null) {
+    Object providedTimestamp=transaction.getProperty(GEOGIT_COMMIT_TIMESTAMP);
+    if (providedTimestamp instanceof Date) {
+      timestamp=((Date)providedTimestamp).getTime();
+    }
+ else     if (providedTimestamp instanceof Number) {
+      timestamp=((Number)providedTimestamp).longValue();
+    }
+ else     if (providedTimestamp != null) {
+      String str=String.valueOf(providedTimestamp);
+      try {
+        timestamp=DateUtil.parseDateTime(str);
+      }
+ catch (      Exception e) {
+        try {
+          timestamp=Long.parseLong(str);
+        }
+ catch (        Exception e2) {
+          LOGGER.warning("Can't parse commit timestamp out of Transaction's " + GEOGIT_COMMIT_TIMESTAMP + " hint: '"+ str+ "'. Using System's current time");
+        }
+      }
+    }
+  }
+  return timestamp;
+}

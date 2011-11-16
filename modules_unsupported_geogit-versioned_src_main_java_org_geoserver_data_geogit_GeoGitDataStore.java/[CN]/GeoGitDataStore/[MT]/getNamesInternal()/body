@@ -1,0 +1,21 @@
+{
+  final RefDatabase refDatabase=repo.getRefDatabase();
+  final ObjectDatabase objectDatabase=repo.getObjectDatabase();
+  final Ref typesTreeRef=refDatabase.getRef(TYPE_NAMES_REF_TREE);
+  Preconditions.checkState(typesTreeRef != null);
+  RevTree namespacesTree=objectDatabase.getTree(typesTreeRef.getObjectId());
+  Preconditions.checkState(null != namespacesTree,"Referenced types tree does not exist: " + typesTreeRef);
+  List<Name> names=new ArrayList<Name>();
+  for (Iterator<Ref> namespaces=namespacesTree.iterator(null); namespaces.hasNext(); ) {
+    final Ref namespaceRef=namespaces.next();
+    Preconditions.checkState(TYPE.TREE.equals(namespaceRef.getType()));
+    final String nsUri=namespaceRef.getName();
+    final RevTree typesTree=objectDatabase.getTree(namespaceRef.getObjectId());
+    for (Iterator<Ref> simpleNames=typesTree.iterator(null); simpleNames.hasNext(); ) {
+      final Ref typeNameRef=simpleNames.next();
+      final String simpleTypeName=typeNameRef.getName();
+      names.add(new NameImpl(nsUri,simpleTypeName));
+    }
+  }
+  return names;
+}

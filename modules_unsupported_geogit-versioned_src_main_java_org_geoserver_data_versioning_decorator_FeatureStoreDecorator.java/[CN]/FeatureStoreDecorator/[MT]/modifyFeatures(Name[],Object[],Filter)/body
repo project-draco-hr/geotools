@@ -1,0 +1,40 @@
+{
+  final FeatureStore<T,F> unversioned=getUnversionedStore();
+  final boolean versioned=isVersioned();
+  Id affectedFeaturesFitler=null;
+  Filter unversionedFilter=filter;
+  if (versioned) {
+    checkTransaction();
+    checkEditFilterMatchesCurrentVersion(filter);
+    unversionedFilter=VersionFilters.getUnversioningFilter(filter);
+    if (unversionedFilter instanceof Id) {
+      affectedFeaturesFitler=(Id)unversionedFilter;
+    }
+ else {
+      FeatureCollection<T,F> affectedFeatures;
+      affectedFeatures=unversioned.getFeatures(unversionedFilter);
+      FeatureIterator<F> iterator=affectedFeatures.features();
+      Set<Identifier> affectedIds=new HashSet<Identifier>();
+      try {
+        while (iterator.hasNext()) {
+          affectedIds.add(iterator.next().getIdentifier());
+        }
+      }
+  finally {
+        iterator.close();
+      }
+      final FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+      affectedFeaturesFitler=ff.id(affectedIds);
+    }
+  }
+  unversioned.modifyFeatures(attributeNames,attributeValues,unversionedFilter);
+  if (versioned && affectedFeaturesFitler != null && affectedFeaturesFitler.getIdentifiers().size() > 0) {
+    try {
+      FeatureCollection newValues=unversioned.getFeatures(affectedFeaturesFitler);
+      getVersioningState().stageUpdate(getSchema().getName(),newValues);
+    }
+ catch (    Exception e) {
+      Throwables.propagate(e);
+    }
+  }
+}

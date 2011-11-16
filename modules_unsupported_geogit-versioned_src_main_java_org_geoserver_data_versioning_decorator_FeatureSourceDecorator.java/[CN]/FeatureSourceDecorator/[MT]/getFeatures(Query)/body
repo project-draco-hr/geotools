@@ -1,0 +1,15 @@
+{
+  Id versioningFilter;
+  if (!isVersioned()) {
+    return unversioned.getFeatures(query);
+  }
+  versioningFilter=getVersioningFilter(query.getFilter());
+  if (versioningFilter == null && query.getVersion() == null) {
+    FeatureCollection<T,F> delegate=unversioned.getFeatures(query);
+    final RevTree currentTypeTree=getCurrentVersion();
+    return createFeatureCollection(delegate,currentTypeTree);
+  }
+  Filter unversionedFilter=getUnversioningFilter(query.getFilter());
+  FeatureCollection coll=getFeatures(versioningFilter,query);
+  return coll.subCollection(unversionedFilter);
+}

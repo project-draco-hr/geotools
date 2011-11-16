@@ -1,0 +1,24 @@
+{
+  SimpleFeatureIterator feats=null;
+  try {
+    SimpleFeatureSource source=versioned.getFeatureSource(testName);
+    assertNotNull(source);
+    FilterFactory2 ff=new FilterFactoryImpl();
+    Filter filter=ff.bbox("ln",-1.5,-1.5,1.5,1.5,"srid=4326");
+    Query query=new Query(testName,filter);
+    SimpleFeatureCollection collection=source.getFeatures(query);
+    assertNotNull(collection);
+    assertEquals(expectedFeatures.size(),collection.size());
+    feats=collection.features();
+    assertNotNull(feats);
+    while (feats.hasNext()) {
+      SimpleFeature feat=feats.next();
+      assertNotNull(feat);
+      LOGGER.info(feat.toString());
+      assertTrue(containsFeature(feat,expectedFeatures));
+    }
+  }
+  finally {
+    if (feats != null)     feats.close();
+  }
+}

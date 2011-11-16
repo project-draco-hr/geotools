@@ -1,0 +1,29 @@
+{
+  if (filter == null || Filter.INCLUDE.equals(filter) || Filter.EXCLUDE.equals(filter)) {
+    return filter;
+  }
+  DuplicatingFilterVisitor visitor=new DuplicatingFilterVisitor(){
+    @Override public Object visit(    final Id filter,    final Object data){
+      Set<Identifier> featureIds=new HashSet<Identifier>();
+      for (      Identifier id : filter.getIdentifiers()) {
+        if (id instanceof FeatureId && !(id instanceof ResourceId)) {
+          String rid=((FeatureId)id).getID();
+          int idx=rid.indexOf(ResourceId.VERSION_SEPARATOR);
+          if (idx > 0) {
+            String fid=rid.substring(0,idx);
+            featureIds.add(getFactory(data).featureId(fid));
+          }
+ else {
+            featureIds.add(id);
+          }
+        }
+ else {
+          featureIds.add(id);
+        }
+      }
+      return getFactory(data).id(featureIds);
+    }
+  }
+;
+  return (Filter)filter.accept(visitor,null);
+}

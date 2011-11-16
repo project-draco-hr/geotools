@@ -1,0 +1,15 @@
+{
+  final FeatureStore<T,F> unversioned=getUnversionedStore();
+  if (isVersioned()) {
+    checkTransaction();
+    FeatureCollection<T,F> removed=unversioned.getFeatures(filter);
+    try {
+      Name typeName=getSchema().getName();
+      getVersioningState().stageDelete(typeName,filter,removed);
+    }
+ catch (    Exception e) {
+      Throwables.propagate(e);
+    }
+  }
+  unversioned.removeFeatures(filter);
+}

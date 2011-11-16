@@ -1,0 +1,27 @@
+{
+  final RefDatabase refDatabase=repo.getRefDatabase();
+  final ObjectDatabase objectDatabase=repo.getObjectDatabase();
+  Ref typesTreeRef=refDatabase.getRef(TYPE_NAMES_REF_TREE);
+  if (null == typesTreeRef) {
+    LOGGER.info("Initializing type name references. Types tree does not exist");
+    final RevTree typesTree=objectDatabase.newTree();
+    ObjectId typesTreeId;
+    try {
+      WrappedSerialisingFactory serialisingFactory;
+      serialisingFactory=WrappedSerialisingFactory.getInstance();
+      ObjectWriter<RevTree> treeWriter=serialisingFactory.createRevTreeWriter(typesTree);
+      typesTreeId=objectDatabase.put(treeWriter);
+    }
+ catch (    Exception e) {
+      throw new IOException(e);
+    }
+    typesTreeRef=new Ref(TYPE_NAMES_REF_TREE,typesTreeId,TYPE.TREE);
+    refDatabase.put(typesTreeRef);
+    LOGGER.info("Type names tree reference initialized");
+  }
+ else {
+    LOGGER.info("Loading type name references");
+    List<Name> names=getNamesInternal();
+    LOGGER.fine("Managed types: " + names);
+  }
+}

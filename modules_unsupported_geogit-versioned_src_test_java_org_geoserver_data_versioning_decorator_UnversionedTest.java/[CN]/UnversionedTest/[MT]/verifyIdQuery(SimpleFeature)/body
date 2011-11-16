@@ -1,0 +1,23 @@
+{
+  SimpleFeatureIterator feats=null;
+  try {
+    SimpleFeatureSource source=versioned.getFeatureSource(testName);
+    assertNotNull(source);
+    FilterFactory2 ff=new FilterFactoryImpl();
+    Filter filter=ff.id(ff.featureId(idT1));
+    Query query=new Query(testName,filter);
+    query.setVersion(Version.Action.LAST);
+    SimpleFeatureCollection collection=source.getFeatures(query);
+    assertNotNull(collection);
+    feats=collection.features();
+    assertNotNull(feats);
+    assertTrue(feats.hasNext());
+    SimpleFeature feat=feats.next();
+    assertNotNull(feat);
+    assertTrue(feat.equals(expectedFeature));
+    assertFalse(feats.hasNext());
+  }
+  finally {
+    if (feats != null)     feats.close();
+  }
+}

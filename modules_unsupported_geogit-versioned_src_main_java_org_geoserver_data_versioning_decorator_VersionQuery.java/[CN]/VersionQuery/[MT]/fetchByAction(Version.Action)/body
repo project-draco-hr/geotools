@@ -1,0 +1,35 @@
+{
+  List<Ref> featureRefs=new ArrayList<Ref>();
+  if (Version.Action.ALL.equals(action)) {
+    LogOp logOp=ggit.log().addPath(typeNamePath());
+    try {
+      Iterator<RevCommit> featureCommits=logOp.call();
+      while (featureCommits.hasNext()) {
+        featureRefs.addAll(getRefsByCommit(featureCommits.next()));
+      }
+    }
+ catch (    Exception ex) {
+      return Collections.emptyList();
+    }
+  }
+ else   if (Version.Action.NEXT.equals(action) || Version.Action.PREVIOUS.equals(action)) {
+    return featureRefs;
+  }
+ else   if (Version.Action.FIRST.equals(action)) {
+    featureRefs=fetchByIndex(1);
+  }
+ else   if (Version.Action.LAST.equals(action)) {
+    LogOp logOp=ggit.log().addPath(typeNamePath()).setLimit(1);
+    try {
+      Iterator<RevCommit> featureCommits=logOp.call();
+      if (featureCommits.hasNext()) {
+        RevCommit commit=featureCommits.next();
+        return getRefsByCommit(commit);
+      }
+    }
+ catch (    Exception ex) {
+      return Collections.emptyList();
+    }
+  }
+  return featureRefs;
+}

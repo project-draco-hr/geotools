@@ -1,0 +1,26 @@
+{
+  Expression right=boundedFilter.getExpression2();
+  if (right instanceof Literal) {
+    Object literal=right.evaluate(null);
+    if (literal instanceof BoundingBox) {
+      this.filter=(BoundingBox)literal;
+    }
+ else     if (literal instanceof Geometry) {
+      Geometry geom=(Geometry)literal;
+      CoordinateReferenceSystem crs=null;
+      if (geom.getUserData() instanceof CoordinateReferenceSystem) {
+        crs=(CoordinateReferenceSystem)geom.getUserData();
+      }
+ else       if (type.getGeometryDescriptor() != null) {
+        crs=type.getGeometryDescriptor().getCoordinateReferenceSystem();
+      }
+ else {
+        throw new IllegalStateException("Can't determine CRS of filter geometry");
+      }
+      this.filter=new ReferencedEnvelope(geom.getEnvelopeInternal(),crs);
+    }
+ else {
+      throw new IllegalArgumentException("Right operand of BBOX filter can't be resolved to a BoundingBox: " + right);
+    }
+  }
+}

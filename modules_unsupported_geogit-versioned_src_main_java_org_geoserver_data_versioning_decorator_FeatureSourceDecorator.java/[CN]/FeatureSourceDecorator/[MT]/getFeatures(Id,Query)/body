@@ -1,0 +1,32 @@
+{
+  final FeatureType featureType=getSchema();
+  Iterable<Feature> versionQuery;
+  if (versioningFilter == null || versioningFilter.getIdentifiers().size() == 0) {
+    versionQuery=new QueryFeatureCollector(repository,featureType,extraQuery);
+  }
+ else {
+    final Set<Identifier> identifiers=versioningFilter.getIdentifiers();
+    final Set<ResourceId> resourceIds=new HashSet<ResourceId>();
+    for (    Identifier id : identifiers) {
+      if (id instanceof ResourceId) {
+        resourceIds.add((ResourceId)id);
+      }
+    }
+    if (resourceIds.size() == 0) {
+      throw new IllegalArgumentException("At least one " + ResourceId.class.getName() + " should be provided: "+ identifiers);
+    }
+    if (extraQuery.getVersion() != null) {
+      versionQuery=new ResourceIdQueryFeatureCollector(repository,featureType,resourceIds,extraQuery);
+    }
+ else {
+      versionQuery=new ResourceIdFeatureCollector(repository,featureType,resourceIds);
+    }
+  }
+  DefaultVersionedFeatureCollection features=new DefaultVersionedFeatureCollection(null,(SimpleFeatureType)featureType);
+  for (  Feature f : versionQuery) {
+    boolean contained=features.contains(f);
+    LOGGER.info("Feature " + (contained ? "is" : "is not") + " found in the collection: "+ f);
+    features.add((SimpleFeature)f);
+  }
+  return features;
+}

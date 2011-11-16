@@ -1,0 +1,24 @@
+{
+  LOGGER.info("Committing changeset " + id);
+  try {
+    GeoToolsCommitStateResolver.CURRENT_TRANSACTION.set(transaction);
+    RevCommit commit=null;
+    try {
+      CommitOp commitOp=geoGit.commit();
+      commit=commitOp.call();
+      LOGGER.info("New commit: " + commit);
+    }
+ catch (    NothingToCommitException emptyCommit) {
+      LOGGER.warning("GeoGit threw NothingToCommitException, this may be due to the transaction having not changed the repository contents");
+    }
+catch (    IOException e) {
+      throw e;
+    }
+catch (    Exception e) {
+      throw new IOException(e);
+    }
+  }
+  finally {
+    GeoToolsCommitStateResolver.CURRENT_TRANSACTION.remove();
+  }
+}

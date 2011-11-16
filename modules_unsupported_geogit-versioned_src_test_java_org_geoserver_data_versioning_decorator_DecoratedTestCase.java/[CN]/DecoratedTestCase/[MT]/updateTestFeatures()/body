@@ -1,0 +1,31 @@
+{
+  Transaction trans=null;
+  assertNull(test1b);
+  try {
+    SimpleFeatureStore store=(SimpleFeatureStore)versioned.getFeatureSource(testName);
+    trans=new DefaultTransaction("DecoratedTestCase.updateTestFeatures()");
+    store.setTransaction(trans);
+    FilterFactory2 ff=new FilterFactoryImpl();
+    Filter filter=ff.id(ff.featureId(idT1));
+    store.modifyFeatures("st",newString1,filter);
+    filter=ff.id(ff.featureId(idT2),ff.featureId(idT3));
+    store.modifyFeatures(new String[]{"st","it"},new Object[]{newString2,newInt},filter);
+    trans.commit();
+    SimpleFeatureBuilder fb=new SimpleFeatureBuilder(testType);
+    test1b=fb.copy(test1);
+    test1b.setAttribute("st",newString1);
+    test2b=fb.copy(test2);
+    test2b.setAttribute("st",newString2);
+    test2b.setAttribute("it",newInt);
+    test3b=fb.copy(test3);
+    test3b.setAttribute("st",newString2);
+    test3b.setAttribute("it",newInt);
+  }
+ catch (  Exception ex) {
+    if (trans != null)     trans.rollback();
+    throw ex;
+  }
+ finally {
+    if (trans != null)     trans.close();
+  }
+}

@@ -1,0 +1,26 @@
+{
+  LogOp logOp=ggit.log().addPath(typeNamePath());
+  try {
+    Iterator<RevCommit> featureCommits=logOp.call();
+    RevCommit[] commitTrail=new RevCommit[index];
+    int ind=0;
+    int count=0;
+    RevCommit latest=null;
+    RevCommit target=null;
+    while (featureCommits.hasNext()) {
+      RevCommit commit=featureCommits.next();
+      if (latest == null) {
+        latest=commit;
+      }
+      commitTrail[ind]=commit;
+      ind=(ind + 1) % index;
+      count++;
+    }
+    if (count < index)     target=latest;
+ else     target=commitTrail[(ind + 1) % index];
+    return getRefsByCommit(target);
+  }
+ catch (  Exception ex) {
+    return Collections.emptyList();
+  }
+}

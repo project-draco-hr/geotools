@@ -1,0 +1,17 @@
+{
+  String featureId=featureRef.getName();
+  ObjectId contentId=featureRef.getObjectId();
+  StagingDatabase database=repo.getIndex().getDatabase();
+  Feature feature;
+  try {
+    ObjectReader<Feature> featureReader=serialisingFactory.createFeatureReader(type,featureId);
+    feature=database.get(contentId,featureReader);
+    if (!feature.getType().equals(type)) {
+      throw new IOException("Invalid feature type returned.");
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  return VersionedFeatureWrapper.wrap(feature,featureRef.getObjectId().toString());
+}

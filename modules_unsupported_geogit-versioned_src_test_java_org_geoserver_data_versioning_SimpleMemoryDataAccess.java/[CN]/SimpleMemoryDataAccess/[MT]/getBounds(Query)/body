@@ -1,0 +1,25 @@
+{
+  String localName=query.getTypeName();
+  URI namespace=query.getNamespace();
+  String nsUri=namespace == null ? null : namespace.toString();
+  Map<String,SimpleFeature> contents=features(nsUri,localName);
+  Iterator<SimpleFeature> iterator=contents.values().iterator();
+  CoordinateReferenceSystem coordinateSystem=query.getCoordinateSystem();
+  ReferencedEnvelope envelope=null;
+  Filter filter=query.getFilter();
+  int count=0;
+  while (iterator.hasNext() && (count < query.getMaxFeatures())) {
+    count++;
+    Feature feature=iterator.next();
+    if (filter.evaluate(feature)) {
+      count++;
+      BoundingBox env=feature.getBounds();
+      if (null == envelope) {
+        envelope=new ReferencedEnvelope(coordinateSystem);
+      }
+      envelope.expandToInclude(env.getMinimum(0),env.getMinimum(1));
+      envelope.expandToInclude(env.getMaximum(0),env.getMaximum(1));
+    }
+  }
+  return envelope;
+}
