@@ -1,0 +1,23 @@
+{
+  SimpleFeatureIterator feats=null;
+  try {
+    List<SimpleFeature> decoratedFeatures=new ArrayList<SimpleFeature>();
+    SimpleFeatureSource source=unversioned.getFeatureSource(testName);
+    assertNotNull(source);
+    Query query=new Query(testName);
+    SimpleFeatureCollection collection=source.getFeatures(query);
+    assertNotNull(collection);
+    feats=collection.features();
+    assertNotNull(feats);
+    while (feats.hasNext()) {
+      SimpleFeature feat=feats.next();
+      assertNotNull(feat);
+      decoratedFeatures.add(feat);
+    }
+    List<SimpleFeature> versionedFeatures=getLatestFeatures(testType);
+    compareFeatureLists(decoratedFeatures,versionedFeatures);
+  }
+  finally {
+    if (feats != null)     feats.close();
+  }
+}
