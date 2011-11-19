@@ -1,0 +1,13 @@
+{
+  StyleBuilder sb=new StyleBuilder();
+  LineSymbolizer ls=sb.createLineSymbolizer();
+  ls.setPerpendicularOffset(ff.literal(0.77));
+  Document doc=buildTestDocument(transformer.transform(ls));
+  assertXpathEvaluatesTo("1","count(/sld:LineSymbolizer/sld:PerpendicularOffset)",doc);
+  String xml=transformer.transform(sb.createStyle(ls));
+  SLDParser sldParser=new SLDParser(sf);
+  sldParser.setInput(new StringReader(xml));
+  Style importedStyle=(Style)sldParser.readXML()[0];
+  LineSymbolizer copy=(LineSymbolizer)importedStyle.featureTypeStyles().get(0).rules().get(0).symbolizers().get(0);
+  assertEquals("Perpendicular offset of LineSymbolizer has not been correctly ex- and reimported",ls.getPerpendicularOffset(),copy.getPerpendicularOffset());
+}
