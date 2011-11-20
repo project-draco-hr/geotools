@@ -1,0 +1,17 @@
+{
+  File shpFile=copyShapefiles(STATE_POP);
+  ShpFileType fix=ShpFileType.FIX;
+  File fixFile=sibling(shpFile,fix.extension);
+  fixFile.delete();
+  ShapefileDataStore ds=new ShapefileDataStore(shpFile.toURI().toURL());
+  ds.indexManager.createFidIndex();
+  assertFalse(ds.indexManager.isIndexStale(fix));
+  long fixMod=fixFile.lastModified();
+  shpFile.setLastModified(fixMod + 1000);
+  assertTrue(ds.indexManager.isIndexStale(fix));
+  fixFile.setLastModified(shpFile.lastModified());
+  assertFalse(ds.indexManager.isIndexStale(fix));
+  assertTrue(fixFile.delete());
+  assertTrue(ds.indexManager.isIndexStale(fix));
+  ds.dispose();
+}

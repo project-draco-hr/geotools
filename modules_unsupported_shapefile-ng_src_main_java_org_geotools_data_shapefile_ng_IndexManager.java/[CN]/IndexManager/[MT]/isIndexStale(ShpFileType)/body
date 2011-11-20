@@ -1,0 +1,27 @@
+{
+  if (!shpFiles.isLocal())   throw new IllegalStateException("This method only applies if the files are local and the file can be created");
+  URL indexURL=shpFiles.acquireRead(indexType,writer);
+  URL shpURL=shpFiles.acquireRead(SHP,writer);
+  try {
+    if (indexURL == null) {
+      return true;
+    }
+    if (!shpFiles.exists(SHX) || !shpFiles.exists(SHP)) {
+      return false;
+    }
+    File indexFile=DataUtilities.urlToFile(indexURL);
+    File shpFile=DataUtilities.urlToFile(shpURL);
+    long indexLastModified=indexFile.lastModified();
+    long shpLastModified=shpFile.lastModified();
+    boolean shpChangedMoreRecently=indexLastModified < shpLastModified;
+    return !indexFile.exists() || shpChangedMoreRecently;
+  }
+  finally {
+    if (shpURL != null) {
+      shpFiles.unlockRead(shpURL,writer);
+    }
+    if (indexURL != null) {
+      shpFiles.unlockRead(indexURL,writer);
+    }
+  }
+}

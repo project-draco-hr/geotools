@@ -1,0 +1,39 @@
+{
+  File shpFile=copyShapefiles(STATE_POP);
+  URL url=shpFile.toURI().toURL();
+  String name=shpFile.getName();
+  File file=new File(shpFile.getParent(),name.substring(0,name.lastIndexOf('.')) + ".qix");
+  if (file.exists()) {
+    file.delete();
+  }
+  file.deleteOnExit();
+  ShapefileDataStore ds=new ShapefileDataStore(url);
+  SimpleFeatureCollection features=ds.getFeatureSource().getFeatures();
+  SimpleFeatureIterator indexIter=features.features();
+  GeometryFactory factory=new GeometryFactory();
+  double area=Double.MAX_VALUE;
+  SimpleFeature smallestFeature=null;
+  while (indexIter.hasNext()) {
+    SimpleFeature newFeature=indexIter.next();
+    BoundingBox bounds=newFeature.getBounds();
+    Geometry geometry=factory.toGeometry(new ReferencedEnvelope(bounds));
+    double newArea=geometry.getArea();
+    if (smallestFeature == null || newArea < area) {
+      smallestFeature=newFeature;
+      area=newArea;
+    }
+  }
+  indexIter.close();
+  ShapefileDataStore ds2=new ShapefileDataStore(url);
+  ds2.setIndexed(false);
+  Envelope newBounds=ds.getFeatureSource().getBounds(Query.ALL);
+  double dx=newBounds.getWidth() / 4;
+  double dy=newBounds.getHeight() / 4;
+  newBounds=new Envelope(newBounds.getMinX() + dx,newBounds.getMaxX() - dx,newBounds.getMinY() + dy,newBounds.getMaxY() - dy);
+  CoordinateReferenceSystem crs=features.getSchema().getCoordinateReferenceSystem();
+  performQueryComparison(ds,ds2,new ReferencedEnvelope(newBounds,crs));
+  performQueryComparison(ds,ds2,new ReferencedEnvelope(smallestFeature.getBounds()));
+  assertTrue(file.exists());
+  ds.dispose();
+  ds2.dispose();
+}

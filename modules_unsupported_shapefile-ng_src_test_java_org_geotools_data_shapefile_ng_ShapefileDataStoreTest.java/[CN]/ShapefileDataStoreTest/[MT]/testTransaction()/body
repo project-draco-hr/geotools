@@ -1,0 +1,22 @@
+{
+  ShapefileDataStore sds=createDataStore();
+  int idx=sds.getFeatureSource().getCount(Query.ALL);
+  SimpleFeatureStore store=(SimpleFeatureStore)sds.getFeatureSource(sds.getTypeNames()[0]);
+  Transaction transaction=new DefaultTransaction();
+  store.setTransaction(transaction);
+  SimpleFeature[] newFeatures1=new SimpleFeature[1];
+  SimpleFeature[] newFeatures2=new SimpleFeature[2];
+  GeometryFactory fac=new GeometryFactory();
+  newFeatures1[0]=DataUtilities.template(sds.getSchema());
+  newFeatures1[0].setDefaultGeometry(fac.createPoint(new Coordinate(0,0)));
+  newFeatures2[0]=DataUtilities.template(sds.getSchema());
+  newFeatures2[0].setDefaultGeometry(fac.createPoint(new Coordinate(0,0)));
+  newFeatures2[1]=DataUtilities.template(sds.getSchema());
+  newFeatures2[1].setDefaultGeometry(fac.createPoint(new Coordinate(0,0)));
+  store.addFeatures(DataUtilities.collection(newFeatures1));
+  store.addFeatures(DataUtilities.collection(newFeatures2));
+  transaction.commit();
+  transaction.close();
+  assertEquals(idx + 3,sds.getCount(Query.ALL));
+  sds.dispose();
+}

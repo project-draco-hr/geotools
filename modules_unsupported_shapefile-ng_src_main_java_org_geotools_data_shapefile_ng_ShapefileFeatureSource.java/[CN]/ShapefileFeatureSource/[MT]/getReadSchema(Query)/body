@@ -1,0 +1,16 @@
+{
+  if (q.getPropertyNames() == null) {
+    return getSchema();
+  }
+ else {
+    LinkedHashSet<String> attributes=new LinkedHashSet<String>();
+    attributes.addAll(Arrays.asList(q.getPropertyNames()));
+    Filter filter=q.getFilter();
+    if (filter != null && !Filter.INCLUDE.equals(filter)) {
+      FilterAttributeExtractor fat=new FilterAttributeExtractor();
+      filter.accept(fat,null);
+      attributes.addAll(fat.getAttributeNameSet());
+    }
+    return SimpleFeatureTypeBuilder.retype(getSchema(),new ArrayList<String>(attributes));
+  }
+}

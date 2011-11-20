@@ -3,27 +3,28 @@
     Record record=shp.nextRecord();
     Envelope envelope=record.envelope();
     boolean skip=false;
-    Geometry geometry;
-    if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
-      geometry=null;
-      skip=true;
-    }
- else     if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
-      try {
-        if (screenMap != null && screenMap.checkAndSet(envelope)) {
-          geometry=null;
-          skip=true;
-        }
+    Geometry geometry=null;
+    if (schema.getGeometryDescriptor() != null) {
+      if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
+        skip=true;
+      }
+ else       if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
+        try {
+          if (screenMap != null && screenMap.checkAndSet(envelope)) {
+            geometry=null;
+            skip=true;
+          }
  else {
-          geometry=(Geometry)record.getSimplifiedShape(screenMap);
+            geometry=(Geometry)record.getSimplifiedShape(screenMap);
+          }
+        }
+ catch (        Exception e) {
+          geometry=(Geometry)record.getSimplifiedShape();
         }
       }
- catch (      Exception e) {
-        geometry=(Geometry)record.getSimplifiedShape();
-      }
-    }
  else {
-      geometry=(Geometry)record.shape();
+        geometry=(Geometry)record.shape();
+      }
     }
     if (!skip) {
       Row row;

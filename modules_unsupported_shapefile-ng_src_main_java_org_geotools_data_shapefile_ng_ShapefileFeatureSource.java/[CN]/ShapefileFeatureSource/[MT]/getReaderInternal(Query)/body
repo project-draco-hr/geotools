@@ -1,19 +1,52 @@
 {
-  SimpleFeatureType resultSchema=getResultType(q);
-  List<AttributeDescriptor> attributes=resultSchema.getAttributeDescriptors();
+  SimpleFeatureType resultSchema=getResultSchema(q);
+  SimpleFeatureType readSchema=getReadSchema(q);
   GeometryFactory geometryFactory=getGeometryFactory(q);
-  ShapefileReader shapeReader=openShapeReader(geometryFactory);
-  ShapefileFeatureReader result;
-  if (attributes.size() < 1 || (attributes.size() == 1 && resultSchema.getGeometryDescriptor() != null)) {
+  Envelope bbox=new ReferencedEnvelope();
+  if (q.getFilter() != null) {
+    bbox=(Envelope)q.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,bbox);
+  }
+  Filter filter=q != null ? q.getFilter() : null;
+  IndexManager indexManager=getDataStore().indexManager;
+  CloseableIterator<Data> goodRecs=null;
+  if (getDataStore().isFidIndexed() && filter instanceof Id && indexManager.hasFidIndex()) {
+    Id fidFilter=(Id)filter;
+    List<Data> records=indexManager.queryFidIndex(fidFilter);
+    if (records != null) {
+      goodRecs=new CloseableIteratorWrapper<Data>(records.iterator());
+    }
+  }
+ else   if (getDataStore().isIndexed() && !bbox.isNull() && !Double.isInfinite(bbox.getWidth())&& !Double.isInfinite(bbox.getHeight())) {
+    try {
+      goodRecs=indexManager.querySpatialIndex(bbox);
+    }
+ catch (    TreeException e) {
+      throw new IOException("Error querying index: " + e.getMessage());
+    }
+  }
+  if (goodRecs != null && !goodRecs.hasNext()) {
+    LOGGER.log(Level.FINE,"Empty results for " + resultSchema.getName().getLocalPart() + ", skipping read");
+    goodRecs.close();
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(resultSchema);
+  }
+  ShapefileSetManager shpManager=getDataStore().shpManager;
+  ShapefileReader shapeReader=shpManager.openShapeReader(geometryFactory,goodRecs != null);
+  DbaseFileReader dbfReader=null;
+  List<AttributeDescriptor> attributes=readSchema.getAttributeDescriptors();
+  if (attributes.size() < 1 || (attributes.size() == 1 && readSchema.getGeometryDescriptor() != null)) {
     LOGGER.fine("The DBF file won't be opened since no attributes will be read from it");
-    result=new ShapefileFeatureReader(resultSchema,shapeReader,null);
   }
  else {
-    result=new ShapefileFeatureReader(resultSchema,shapeReader,openDbfReader());
+    dbfReader=shpManager.openDbfReader(goodRecs != null);
+  }
+  ShapefileFeatureReader result;
+  if (goodRecs != null) {
+    result=new IndexedShapefileFeatureReader(readSchema,shapeReader,dbfReader,goodRecs);
+  }
+ else {
+    result=new ShapefileFeatureReader(readSchema,shapeReader,dbfReader);
   }
   if (q != null) {
-    Envelope bbox=new ReferencedEnvelope();
-    bbox=(Envelope)q.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,bbox);
     if (bbox != null && !bbox.isNull()) {
       result.setTargetBBox(bbox);
     }
@@ -29,5 +62,17 @@
       }
     }
   }
-  return result;
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(result,filter);
+  }
+ else {
+    reader=result;
+  }
+  if (!FeatureTypes.equals(readSchema,resultSchema)) {
+    return new ReTypeFeatureReader(reader,resultSchema);
+  }
+ else {
+    return reader;
+  }
 }

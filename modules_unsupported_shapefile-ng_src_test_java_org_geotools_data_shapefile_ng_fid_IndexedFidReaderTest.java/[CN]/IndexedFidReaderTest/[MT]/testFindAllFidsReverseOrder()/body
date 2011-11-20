@@ -1,0 +1,24 @@
+{
+  int expectedCount=0;
+  Set<String> expectedFids=new TreeSet<String>(Collections.reverseOrder());
+{
+    ShapefileDataStore ds=new ShapefileDataStore(backshp.toURI().toURL());
+    SimpleFeatureSource featureSource=ds.getFeatureSource();
+    SimpleFeatureIterator features=featureSource.getFeatures().features();
+    while (features.hasNext()) {
+      SimpleFeature next=features.next();
+      expectedCount++;
+      expectedFids.add(next.getID());
+    }
+    ds.dispose();
+  }
+  assertTrue(expectedCount > 0);
+  assertEquals(expectedCount,reader.getCount());
+  assertFalse("findFid for archsites.5 returned -1",-1 == reader.findFid("archsites.5"));
+  assertFalse("findFid for archsites.25 returned -1",-1 == reader.findFid("archsites.25"));
+  for (  String fid : expectedFids) {
+    long offset=reader.findFid(fid);
+    assertNotNull(offset);
+    assertFalse("findFid for " + fid + " returned -1",-1 == offset);
+  }
+}

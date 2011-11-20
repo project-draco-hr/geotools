@@ -1,0 +1,45 @@
+{
+  TreeSet<Identifier> idsSet=new TreeSet<Identifier>(new IdentifierComparator(store.getTypeName().getLocalPart()));
+  idsSet.addAll(fidFilter.getIdentifiers());
+  IndexedFidReader reader=new IndexedFidReader(shpFiles);
+  List<Data> records=new ArrayList(idsSet.size());
+  try {
+    IndexFile shx=store.shpManager.openIndexFile();
+    try {
+      DataDefinition def=new DataDefinition("US-ASCII");
+      def.addField(Integer.class);
+      def.addField(Long.class);
+      for (      Identifier identifier : idsSet) {
+        String fid=identifier.toString();
+        long recno=reader.findFid(fid);
+        if (recno == -1) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest("fid " + fid + " not found in index, continuing with next queried fid...");
+          }
+          continue;
+        }
+        try {
+          Data data=new Data(def);
+          data.addValue(new Integer((int)recno + 1));
+          data.addValue(new Long(shx.getOffsetInBytes((int)recno)));
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest("fid " + fid + " found for record #"+ data.getValue(0)+ " at index file offset "+ data.getValue(1));
+          }
+          records.add(data);
+        }
+ catch (        Exception e) {
+          IOException exception=new IOException();
+          exception.initCause(e);
+          throw exception;
+        }
+      }
+    }
+  finally {
+      shx.close();
+    }
+  }
+  finally {
+    reader.close();
+  }
+  return records;
+}

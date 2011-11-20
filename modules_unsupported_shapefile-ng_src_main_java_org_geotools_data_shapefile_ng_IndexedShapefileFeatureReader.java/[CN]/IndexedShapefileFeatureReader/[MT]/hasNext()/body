@@ -1,0 +1,41 @@
+{
+  while (nextFeature == null && this.goodRecs.hasNext()) {
+    next=(Data)goodRecs.next();
+    Long l=(Long)next.getValue(1);
+    shp.goTo((int)l.longValue());
+    Record record=shp.nextRecord();
+    Envelope envelope=record.envelope();
+    Geometry geometry=null;
+    if (schema.getGeometryDescriptor() != null) {
+      if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
+        continue;
+      }
+ else       if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
+        try {
+          if (screenMap != null && screenMap.checkAndSet(envelope)) {
+            continue;
+          }
+ else {
+            geometry=(Geometry)record.getSimplifiedShape(screenMap);
+          }
+        }
+ catch (        Exception e) {
+          geometry=(Geometry)record.getSimplifiedShape();
+        }
+      }
+ else {
+        geometry=(Geometry)record.shape();
+      }
+    }
+    Row row;
+    if (dbf != null) {
+      ((IndexedDbaseFileReader)dbf).goTo(record.number);
+      row=dbf.readRow();
+    }
+ else {
+      row=null;
+    }
+    nextFeature=buildFeature(record.number,geometry,row);
+  }
+  return nextFeature != null;
+}

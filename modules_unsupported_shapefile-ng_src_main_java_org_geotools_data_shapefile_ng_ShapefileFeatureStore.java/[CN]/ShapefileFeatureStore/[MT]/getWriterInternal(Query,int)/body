@@ -2,12 +2,16 @@
   if (flags == 0) {
     throw new IllegalArgumentException("no write flags set");
   }
-  ShapefileFeatureReader reader=(ShapefileFeatureReader)delegate.getReaderInternal(query);
-  ShapefileFeatureWriter writer=new ShapefileFeatureWriter(delegate.shpFiles,reader,getDataStore().getCharset(),getDataStore().getTimeZone());
+  ShapefileFeatureReader reader=(ShapefileFeatureReader)delegate.getReaderInternal(Query.ALL);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=new ShapefileFeatureWriter(delegate.shpFiles,reader,getDataStore().getCharset(),getDataStore().getTimeZone());
   if ((flags | WRITER_ADD) == WRITER_ADD) {
     while (writer.hasNext()) {
       writer.next();
     }
+  }
+  Filter filter=query.getFilter();
+  if (filter != null && !Filter.INCLUDE.equals(filter)) {
+    writer=new FilteringFeatureWriter(writer,filter);
   }
   return writer;
 }

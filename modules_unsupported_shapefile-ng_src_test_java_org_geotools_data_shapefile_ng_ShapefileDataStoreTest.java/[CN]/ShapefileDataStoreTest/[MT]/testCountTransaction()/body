@@ -1,0 +1,21 @@
+{
+  final ShapefileDataStore ds=createDataStore();
+  SimpleFeatureStore store;
+  store=(SimpleFeatureStore)ds.getFeatureSource();
+  Transaction t=new DefaultTransaction();
+  store.setTransaction(t);
+  int initialCount=store.getCount(Query.ALL);
+  SimpleFeatureIterator features=store.getFeatures().features();
+  String fid=features.next().getID();
+  features.close();
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+  String typeName=store.getSchema().getTypeName();
+  Id id=ff.id(Collections.singleton(ff.featureId(fid)));
+  assertEquals(-1,store.getCount(new DefaultQuery(typeName,id)));
+  assertEquals(1,count(ds,typeName,id,t));
+  store.removeFeatures(id);
+  assertEquals(-1,store.getCount(new DefaultQuery(store.getSchema().getTypeName(),id)));
+  assertEquals(initialCount - 1,count(ds,typeName,Filter.INCLUDE,t));
+  assertEquals(0,count(ds,typeName,id,t));
+  ds.dispose();
+}

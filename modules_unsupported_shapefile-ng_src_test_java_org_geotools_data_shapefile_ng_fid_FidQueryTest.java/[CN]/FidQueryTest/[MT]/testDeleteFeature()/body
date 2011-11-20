@@ -1,0 +1,25 @@
+{
+  SimpleFeatureIterator features=featureStore.getFeatures().features();
+  SimpleFeature feature;
+  try {
+    feature=features.next();
+  }
+  finally {
+    if (features != null) {
+      features.close();
+    }
+  }
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  Id fidFilter=ff.id(Collections.singleton(ff.featureId(feature.getID())));
+  featureStore.removeFeatures(fidFilter);
+  fids.remove(feature.getID());
+  assertEquals(fids.size(),featureStore.getCount(Query.ALL));
+  features=featureStore.getFeatures(fidFilter).features();
+  try {
+    assertFalse(features.hasNext());
+  }
+  finally {
+    if (features != null)     features.close();
+  }
+  this.assertFidsMatch();
+}

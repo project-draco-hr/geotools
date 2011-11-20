@@ -1,0 +1,22 @@
+{
+  if (!shpFiles.isLocal()) {
+    return null;
+  }
+  URL treeURL=shpFiles.acquireRead(QIX,writer);
+  try {
+    File treeFile=DataUtilities.urlToFile(treeURL);
+    if (!treeFile.exists() || (treeFile.length() == 0)) {
+      return null;
+    }
+    try {
+      FileSystemIndexStore idxStore=new FileSystemIndexStore(treeFile);
+      return idxStore.load(store.shpManager.openIndexFile(),store.isMemoryMapped());
+    }
+ catch (    IOException e) {
+      throw new StoreException(e);
+    }
+  }
+  finally {
+    shpFiles.unlockRead(treeURL,writer);
+  }
+}

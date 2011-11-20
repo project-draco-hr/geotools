@@ -1,0 +1,33 @@
+{
+  final ShapefileDataStore ds=createDataStore();
+  SimpleFeatureStore store;
+  store=(SimpleFeatureStore)ds.getFeatureSource();
+  final String validFid1, validFid2, invalidFid1, invalidFid2;
+{
+    SimpleFeatureIterator features=store.getFeatures().features();
+    validFid1=features.next().getID();
+    validFid2=features.next().getID();
+    invalidFid1="_" + features.next().getID();
+    invalidFid2=features.next().getID() + "abc";
+    features.close();
+  }
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  Set<Identifier> ids=new HashSet<Identifier>();
+  ids.add(ff.featureId(validFid1));
+  ids.add(ff.featureId(validFid2));
+  ids.add(ff.featureId(invalidFid1));
+  ids.add(ff.featureId(invalidFid2));
+  Filter fidFilter=ff.id(ids);
+  final SimpleFeatureType schema=store.getSchema();
+  final String typeName=schema.getTypeName();
+  final AttributeDescriptor attribute=schema.getDescriptor("f");
+  assertEquals(2,count(ds,typeName,fidFilter));
+  store.modifyFeatures(attribute,"modified",fidFilter);
+  Filter modifiedFilter=ff.equals(ff.property("f"),ff.literal("modified"));
+  assertEquals(2,count(ds,typeName,modifiedFilter));
+  final int initialCount=store.getCount(Query.ALL);
+  store.removeFeatures(fidFilter);
+  final int afterCount=store.getCount(Query.ALL);
+  assertEquals(initialCount - 2,afterCount);
+  ds.dispose();
+}
