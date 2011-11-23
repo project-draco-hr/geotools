@@ -1,0 +1,34 @@
+{
+  SimpleFeatureType type=store.getSchema("road");
+  Query roadQuery=new DefaultQuery("road");
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=store.getFeatureReader(roadQuery,Transaction.AUTO_COMMIT);
+  int count=0;
+  try {
+    while (reader.hasNext()) {
+      reader.next();
+      count++;
+    }
+  }
+  finally {
+    reader.close();
+  }
+  assertEquals(5,count);
+  Filter selectFid1;
+  selectFid1=ff.id(Collections.singleton(ff.featureId("fid1")));
+  reader=store.getFeatureReader(new DefaultQuery("road",selectFid1),Transaction.AUTO_COMMIT);
+  assertEquals(1,count(reader));
+  Transaction transaction=new DefaultTransaction();
+  reader=store.getFeatureReader(roadQuery,transaction);
+  assertEquals(5,count(reader));
+  reader=store.getFeatureReader(roadQuery,transaction);
+  List list=new ArrayList();
+  try {
+    while (reader.hasNext()) {
+      list.add(reader.next().getID());
+    }
+  }
+  finally {
+    reader.close();
+  }
+  assertEquals("[fid1, fid2, fid3, fid4, fid5]",list.toString());
+}
