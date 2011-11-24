@@ -1,0 +1,25 @@
+{
+  Hessian2Input hin=new Hessian2Input(rawData);
+  try {
+    hin.startMessage();
+    String typeNamespace=hin.readString();
+    String typeName=hin.readString();
+    int attributeCount=hin.readInt();
+    SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+    for (int i=0; i < attributeCount; i++) {
+      try {
+        builder.add(readDescriptor(hin));
+      }
+ catch (      FactoryException ex) {
+        Throwables.propagate(ex);
+      }
+    }
+    hin.completeMessage();
+    builder.setName(new NameImpl("".equals(typeNamespace) ? null : typeNamespace,typeName));
+    SimpleFeatureType type=builder.buildFeatureType();
+    return type;
+  }
+  finally {
+    hin.close();
+  }
+}

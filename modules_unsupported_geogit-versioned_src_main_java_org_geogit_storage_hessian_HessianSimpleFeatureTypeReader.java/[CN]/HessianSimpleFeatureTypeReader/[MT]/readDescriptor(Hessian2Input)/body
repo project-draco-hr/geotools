@@ -1,0 +1,54 @@
+{
+  int typeValue=hin.readInt();
+  GtEntityType type=GtEntityType.fromValue(typeValue);
+  Class binding=type.getBinding();
+  boolean nillable=hin.readBoolean();
+  String pNamespace=hin.readString();
+  String pName=hin.readString();
+  int maxOccurs=hin.readInt();
+  int minOccurs=hin.readInt();
+  String tNamespace=hin.readString();
+  String tName=hin.readString();
+  String geomTypeName=null;
+  String crsText=null;
+  boolean crsCode=false;
+  if (GtEntityType.GEOMETRY.equals(type)) {
+    Object bObj=hin.readObject();
+    if (bObj instanceof Class) {
+      binding=(Class)bObj;
+    }
+    crsCode=hin.readBoolean();
+    crsText=hin.readString();
+  }
+  boolean isIdentifiable=false;
+  boolean isAbstract=false;
+  List<Filter> restrictions=null;
+  AttributeType superType=null;
+  InternationalString description=null;
+  Object defaultValue=null;
+  Name propertyName=new NameImpl("".equals(pNamespace) ? null : pNamespace,pName);
+  Name typeName=new NameImpl("".equals(tNamespace) ? null : tNamespace,tName);
+  AttributeType attributeType;
+  AttributeDescriptor attributeDescriptor;
+  if (GtEntityType.GEOMETRY.equals(type)) {
+    CoordinateReferenceSystem crs;
+    if (crsCode) {
+      if ("urn:ogc:def:crs:EPSG::0".equals(crsText)) {
+        crs=null;
+      }
+ else {
+        crs=CRS.decode(crsText);
+      }
+    }
+ else {
+      crs=CRS.parseWKT(crsText);
+    }
+    attributeType=typeFactory.createGeometryType(typeName,binding,crs,isIdentifiable,isAbstract,restrictions,superType,description);
+    attributeDescriptor=typeFactory.createGeometryDescriptor((GeometryType)attributeType,propertyName,minOccurs,maxOccurs,nillable,defaultValue);
+  }
+ else {
+    attributeType=typeFactory.createAttributeType(typeName,binding,isIdentifiable,isAbstract,restrictions,superType,description);
+    attributeDescriptor=typeFactory.createAttributeDescriptor(attributeType,propertyName,minOccurs,maxOccurs,nillable,defaultValue);
+  }
+  return attributeDescriptor;
+}
