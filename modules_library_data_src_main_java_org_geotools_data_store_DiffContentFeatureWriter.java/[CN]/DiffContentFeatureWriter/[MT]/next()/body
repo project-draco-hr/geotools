@@ -1,0 +1,26 @@
+{
+  SimpleFeatureType type=getFeatureType();
+  if (hasNext()) {
+    try {
+      live=next;
+      next=null;
+      current=SimpleFeatureBuilder.copy(live);
+      return current;
+    }
+ catch (    IllegalAttributeException e) {
+      throw (IOException)new IOException("Could not modify content").initCause(e);
+    }
+  }
+ else {
+    try {
+      live=null;
+      next=null;
+      current=SimpleFeatureBuilder.build(type,new Object[type.getAttributeCount()],"new" + diff.nextFID);
+      diff.nextFID++;
+      return current;
+    }
+ catch (    IllegalAttributeException e) {
+      throw new IOException("Could not create new content");
+    }
+  }
+}

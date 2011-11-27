@@ -1,0 +1,26 @@
+{
+  if ((live != null)) {
+    diff.modify(live.getID(),current);
+    ReferencedEnvelope bounds=ReferencedEnvelope.reference(current.getBounds());
+    state.fireFeatureUpdated(store,live,bounds);
+    live=null;
+    current=null;
+  }
+ else   if ((live == null) && (current != null)) {
+    String fid=current.getID();
+    if (Boolean.TRUE.equals(current.getUserData().get(Hints.USE_PROVIDED_FID))) {
+      if (current.getUserData().containsKey(Hints.PROVIDED_FID)) {
+        fid=(String)current.getUserData().get(Hints.PROVIDED_FID);
+        Map<Object,Object> userData=current.getUserData();
+        current=SimpleFeatureBuilder.build(current.getFeatureType(),current.getAttributes(),fid);
+        current.getUserData().putAll(userData);
+      }
+    }
+    diff.add(fid,current);
+    state.fireFeatureAdded(store,current);
+    current=null;
+  }
+ else {
+    throw new IOException("No feature available to write");
+  }
+}

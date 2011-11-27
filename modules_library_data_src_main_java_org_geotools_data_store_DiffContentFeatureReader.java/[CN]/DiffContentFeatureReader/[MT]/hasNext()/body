@@ -1,0 +1,36 @@
+{
+  if (next != null) {
+    return true;
+  }
+  F peek;
+  if (filter == Filter.EXCLUDE)   return false;
+  while ((reader != null) && reader.hasNext()) {
+    try {
+      peek=reader.next();
+    }
+ catch (    NoSuchElementException e) {
+      throw new DataSourceException("Could not aquire the next Feature",e);
+    }
+catch (    IllegalAttributeException e) {
+      throw new DataSourceException("Could not aquire the next Feature",e);
+    }
+    String fid=peek.getIdentifier().getID();
+    encounteredFids.add(fid);
+    if (diff.modified2.containsKey(fid)) {
+      F changed=(F)diff.modified2.get(fid);
+      if (changed == TransactionStateDiff.NULL || !filter.evaluate(changed)) {
+        continue;
+      }
+ else {
+        next=changed;
+        return true;
+      }
+    }
+ else {
+      next=peek;
+      return true;
+    }
+  }
+  queryDiff();
+  return next != null;
+}
