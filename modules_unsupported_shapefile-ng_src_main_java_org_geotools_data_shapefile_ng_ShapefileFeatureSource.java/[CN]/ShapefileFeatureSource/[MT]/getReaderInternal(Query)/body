@@ -9,7 +9,7 @@
   Filter filter=q != null ? q.getFilter() : null;
   IndexManager indexManager=getDataStore().indexManager;
   CloseableIterator<Data> goodRecs=null;
-  if (getDataStore().isFidIndexed() && filter instanceof Id && indexManager.hasFidIndex()) {
+  if (getDataStore().isFidIndexed() && filter instanceof Id && indexManager.hasFidIndex(false)) {
     Id fidFilter=(Id)filter;
     List<Data> records=indexManager.queryFidIndex(fidFilter);
     if (records != null) {
@@ -29,6 +29,10 @@
     goodRecs.close();
     return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(resultSchema);
   }
+  IndexedFidReader fidReader=null;
+  if (getDataStore().isFidIndexed() && filter instanceof Id && indexManager.hasFidIndex(false)) {
+    fidReader=new IndexedFidReader(shpFiles);
+  }
   ShapefileSetManager shpManager=getDataStore().shpManager;
   ShapefileReader shapeReader=shpManager.openShapeReader(geometryFactory,goodRecs != null);
   DbaseFileReader dbfReader=null;
@@ -41,10 +45,10 @@
   }
   ShapefileFeatureReader result;
   if (goodRecs != null) {
-    result=new IndexedShapefileFeatureReader(readSchema,shapeReader,dbfReader,goodRecs);
+    result=new IndexedShapefileFeatureReader(readSchema,shapeReader,dbfReader,fidReader,goodRecs);
   }
  else {
-    result=new ShapefileFeatureReader(readSchema,shapeReader,dbfReader);
+    result=new ShapefileFeatureReader(readSchema,shapeReader,dbfReader,fidReader);
   }
   if (q != null) {
     if (bbox != null && !bbox.isNull()) {

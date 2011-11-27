@@ -3,7 +3,14 @@
     throw new IllegalArgumentException("no write flags set");
   }
   ShapefileFeatureReader reader=(ShapefileFeatureReader)delegate.getReaderInternal(Query.ALL);
-  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=new ShapefileFeatureWriter(delegate.shpFiles,reader,getDataStore().getCharset(),getDataStore().getTimeZone());
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  ShapefileDataStore ds=getDataStore();
+  if (ds.indexManager.hasFidIndex(false) || ds.isFidIndexed() && ds.indexManager.hasFidIndex(true)) {
+    writer=new IndexedShapefileFeatureWriter(ds.indexManager,reader,ds.getCharset(),ds.getTimeZone());
+  }
+ else {
+    writer=new ShapefileFeatureWriter(delegate.shpFiles,reader,ds.getCharset(),ds.getTimeZone());
+  }
   if ((flags | WRITER_ADD) == WRITER_ADD) {
     while (writer.hasNext()) {
       writer.next();
