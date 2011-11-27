@@ -11,6 +11,10 @@
     throw new IOException("Feature source does not support joins");
   }
   FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReaderInternal(query);
+  if (!canTransact() && transaction != null && transaction != Transaction.AUTO_COMMIT) {
+    DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
+    reader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(reader,state.getDiff());
+  }
   if (!canFilter()) {
     if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE) {
       reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,query.getFilter());

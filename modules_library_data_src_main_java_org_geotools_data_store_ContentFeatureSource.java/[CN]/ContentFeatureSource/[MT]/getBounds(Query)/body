@@ -1,6 +1,44 @@
 {
   query=joinQuery(query);
   query=resolvePropertyNames(query);
-  ReferencedEnvelope bounds=getBoundsInternal(query);
+  ReferencedEnvelope bounds;
+  if (!canTransact() && transaction != null && transaction != Transaction.AUTO_COMMIT) {
+    DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
+    Diff diff=state.getDiff();
+    Iterator it=diff.getModified().values().iterator();
+    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+    Set<FeatureId> modifiedFids=new HashSet<FeatureId>();
+    while (it.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)it.next();
+      modifiedFids.add(ff.featureId(feature.getID()));
+    }
+    Id idFilter=ff.id(modifiedFids);
+    Query q=new Query(query);
+    q.setFilter(ff.and(idFilter,query.getFilter()));
+    bounds=getBoundsInternal(q);
+    if (bounds != null) {
+      it=diff.getAdded().values().iterator();
+      while (it.hasNext()) {
+        SimpleFeature feature=(SimpleFeature)it.next();
+        BoundingBox fb=feature.getBounds();
+        if (fb != null) {
+          bounds.expandToInclude(ReferencedEnvelope.reference(fb));
+        }
+      }
+      it=diff.getModified().values().iterator();
+      while (it.hasNext()) {
+        SimpleFeature feature=(SimpleFeature)it.next();
+        if (feature != TransactionStateDiff.NULL) {
+          BoundingBox fb=feature.getBounds();
+          if (fb != null) {
+            bounds.expandToInclude(ReferencedEnvelope.reference(fb));
+          }
+        }
+      }
+    }
+  }
+ else {
+    bounds=getBoundsInternal(query);
+  }
   return bounds;
 }

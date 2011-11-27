@@ -2,5 +2,47 @@
   query=joinQuery(query);
   query=resolvePropertyNames(query);
   int count=getCountInternal(query);
+  if (count >= 0 && !canTransact() && transaction != null && transaction != Transaction.AUTO_COMMIT) {
+    DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
+    Diff diff=state.getDiff();
+synchronized (diff) {
+      Iterator it=diff.getAdded().values().iterator();
+      Filter filter=query.getFilter();
+      while (it.hasNext()) {
+        Object feature=it.next();
+        if (filter.evaluate(feature)) {
+          count++;
+        }
+      }
+      it=diff.getModified().values().iterator();
+      FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+      Set<FeatureId> modifiedFids=new HashSet<FeatureId>();
+      int modifiedPostCount=0;
+      while (it.hasNext()) {
+        SimpleFeature feature=(SimpleFeature)it.next();
+        if (feature == TransactionStateDiff.NULL) {
+          count--;
+        }
+ else {
+          modifiedFids.add(ff.featureId(feature.getID()));
+          if (filter.evaluate(feature)) {
+            modifiedPostCount++;
+          }
+        }
+      }
+      if (modifiedFids.size() > 0) {
+        Id idFilter=ff.id(modifiedFids);
+        Query q=new Query(query);
+        q.setFilter(ff.and(idFilter,query.getFilter()));
+        int modifiedPreCount=getCountInternal(q);
+        if (modifiedPreCount == -1) {
+          return -1;
+        }
+ else {
+          count=count + modifiedPostCount - modifiedPreCount;
+        }
+      }
+    }
+  }
   return count;
 }
