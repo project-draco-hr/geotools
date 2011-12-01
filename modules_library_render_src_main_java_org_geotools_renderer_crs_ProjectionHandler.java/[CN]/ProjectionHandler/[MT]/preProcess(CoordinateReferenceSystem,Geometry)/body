@@ -11,7 +11,19 @@
   ReferencedEnvelope envIntWgs84=new ReferencedEnvelope(validArea.intersection(geWGS84),WGS84);
   if (envIntWgs84.isEmpty())   return null;
   ReferencedEnvelope envInt=envIntWgs84.transform(geomCRS,true);
-  Geometry result=geometry.intersection(JTS.toGeometry((Envelope)envInt));
+  Polygon envelopeGeometry=JTS.toGeometry((Envelope)envInt);
+  Geometry result;
+  try {
+    result=geometry.intersection(envelopeGeometry);
+  }
+ catch (  Exception e1) {
+    try {
+      result=EnhancedPrecisionOp.intersection(geometry,envelopeGeometry);
+    }
+ catch (    Exception e2) {
+      result=geometry;
+    }
+  }
   if (result instanceof GeometryCollection && ((GeometryCollection)result).isEmpty())   return null;
  else   return result;
 }
