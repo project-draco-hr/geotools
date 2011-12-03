@@ -1,0 +1,24 @@
+{
+  StyleBuilder sb=new StyleBuilder();
+  Stroke stroke=sb.createStroke();
+  stroke.setColor(null);
+  stroke.setGraphicStroke(sb.createGraphic(null,sb.createMark("square",null,sb.createStroke(1)),null));
+  Fill fill=sb.createFill();
+  fill.setColor(null);
+  fill.setGraphicFill(sb.createGraphic(null,sb.createMark("square",null,sb.createStroke(2)),null));
+  PolygonSymbolizer ps=sb.createPolygonSymbolizer(stroke,fill);
+  ps.setUnitOfMeasure(SI.METER);
+  UomRescaleStyleVisitor visitor=new UomRescaleStyleVisitor(10);
+  ps.accept(visitor);
+  PolygonSymbolizer rps=(PolygonSymbolizer)visitor.getCopy();
+  Mark rm=(Mark)rps.getStroke().getGraphicStroke().graphicalSymbols().get(0);
+  assertEquals(10.0,rm.getStroke().getWidth().evaluate(null));
+  rm=(Mark)rps.getFill().getGraphicFill().graphicalSymbols().get(0);
+  assertEquals(20.0,rm.getStroke().getWidth().evaluate(null));
+  LineSymbolizer ls=sb.createLineSymbolizer(stroke);
+  ls.setUnitOfMeasure(SI.METER);
+  ls.accept(visitor);
+  LineSymbolizer lps=(LineSymbolizer)visitor.getCopy();
+  rm=(Mark)lps.getStroke().getGraphicStroke().graphicalSymbols().get(0);
+  assertEquals(10.0,rm.getStroke().getWidth().evaluate(null));
+}
