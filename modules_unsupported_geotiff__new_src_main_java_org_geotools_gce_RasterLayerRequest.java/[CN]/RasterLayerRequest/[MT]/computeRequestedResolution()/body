@@ -3,24 +3,16 @@
     if (requestedGridToWorld instanceof LinearTransform) {
       if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
         requestedResolution=null;
-        final Rectangle sourceRasterArea=new GeneralGridEnvelope(CRS.transform(PixelTranslation.translate(rasterManager.getRaster2Model(),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER).inverse(),cropBBox),PixelInCell.CELL_CORNER,false).toRectangle();
-        XRectangle2D.intersect(sourceRasterArea,rasterManager.spatialDomainManager.coverageRasterArea,sourceRasterArea);
-        if (sourceRasterArea.isEmpty())         throw new DataSourceException("aaa");
-        final GeneralEnvelope envelope=CRS.transform(destinationToSourceTransform.inverse(),cropBBox);
-        final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(sourceRasterArea),envelope);
+        final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(destinationRasterArea),cropBBox);
         final AffineTransform tempTransform=geMapper.createAffineTransform();
-        final double scaleX=XAffineTransform.getScaleX0((AffineTransform)requestedGridToWorld) / XAffineTransform.getScaleX0(tempTransform);
-        final double scaleY=XAffineTransform.getScaleY0((AffineTransform)requestedGridToWorld) / XAffineTransform.getScaleY0(tempTransform);
         requestedRasterScaleFactors=new double[2];
-        requestedRasterScaleFactors[0]=scaleX * 1.0;
-        requestedRasterScaleFactors[1]=scaleY * 1.0;
-        final GridToEnvelopeMapper geMapper1=new GridToEnvelopeMapper(new GridEnvelope2D(destinationRasterArea),cropBBox);
-        requestedGridToWorld=geMapper1.createAffineTransform();
+        requestedResolution=new double[]{XAffineTransform.getScaleX0(tempTransform),XAffineTransform.getScaleY0(tempTransform)};
       }
  else {
         requestedResolution=new double[]{XAffineTransform.getScaleX0(requestedGridToWorld),XAffineTransform.getScaleY0(requestedGridToWorld)};
       }
     }
+ else     throw new UnsupportedOperationException(Errors.format(ErrorKeys.UNSUPPORTED_OPERATION_$1,requestedGridToWorld.toString()));
     return;
   }
  catch (  Throwable e) {
