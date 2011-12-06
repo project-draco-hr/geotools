@@ -27,26 +27,38 @@
     if (request.getMaxFeatures() != Query.DEFAULT_MAX) {
       url+=("&MAXFEATURES=" + request.getMaxFeatures());
     }
-    if (request.getFilter() != null) {
-      if (Filters.getFilterType(request.getFilter()) == FilterType.GEOMETRY_BBOX) {
-        String bb=printBBoxGet(((GeometryFilter)request.getFilter()),request.getTypeName());
-        if (bb != null)         url+=("&BBOX=" + URLEncoder.encode(bb,protocolHandler.getEncoding()));
+    Filter filter=request.getFilter();
+    String typeName=request.getTypeName();
+    if (filter != null) {
+      if (filter instanceof BBOX) {
+        String bb=printBBoxGet((BBOX)filter,typeName);
+        if (bb != null) {
+          url+=("&BBOX=" + URLEncoder.encode(bb,protocolHandler.getEncoding()));
+        }
       }
- else {
-        if (Filters.getFilterType(request.getFilter()) == FilterType.FID) {
-          FidFilter ff=(FidFilter)request.getFilter();
-          if ((ff.getFids() != null) && (ff.getFids().length > 0)) {
-            url+=("&FEATUREID=" + ff.getFids()[0]);
-            for (int i=1; i < ff.getFids().length; i++) {
-              url+=("," + ff.getFids()[i]);
+ else       if (filter instanceof Id) {
+        Id ff=(Id)filter;
+        Set<Object> fids=ff.getIDs();
+        if (fids != null && !fids.isEmpty()) {
+          StringBuilder build=new StringBuilder();
+          build.append("&FEATUREID=");
+          boolean first=true;
+          for (          Object fid : fids) {
+            if (first) {
+              first=false;
             }
-          }
-        }
  else {
-          if (request.getFilter() != Filter.INCLUDE && request.getFilter() != Filter.EXCLUDE) {
-            url+="&FILTER=" + URLEncoder.encode(printFilter(request.getFilter()),protocolHandler.getEncoding());
+              build.append(",");
+            }
+            build.append(fid);
           }
+          url+=build.toString();
         }
+      }
+ else       if (filter != Filter.INCLUDE && filter != Filter.EXCLUDE) {
+        String print=printFilter(filter);
+        String encode=URLEncoder.encode(print,protocolHandler.getEncoding());
+        url+="&FILTER=" + encode;
       }
     }
   }
