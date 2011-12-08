@@ -1,0 +1,30 @@
+{
+  if (NATIVE_NAME == null) {
+synchronized (GdalInit.class) {
+      if (NATIVE_NAME == null) {
+        NATIVE_NAME=System.getProperty("GDAL_LIBRARY_NAME");
+        if (NATIVE_NAME != null) {
+          if (!checkNativeName(NATIVE_NAME)) {
+            throw new RuntimeException("Failed to bind to user specified gdal library named: " + NATIVE_NAME);
+          }
+        }
+ else {
+          if (!checkNativeName("gdal") && !(checkNativeName("gdal_fw"))) {
+            int x=1;
+            for (int y=10; y >= 0; y--) {
+              if (checkNativeName("gdal" + x + "."+ y)) {
+                return;
+              }
+              for (int z=5; z >= 0; z--) {
+                if (checkNativeName("gdal" + x + "."+ y+ "."+ z)) {
+                  return;
+                }
+              }
+            }
+            throw new RuntimeException("Failed to automatically guess the gdal library name, please set the GDAL_LIBRARY_NAME system variable");
+          }
+        }
+      }
+    }
+  }
+}

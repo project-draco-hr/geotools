@@ -1,0 +1,21 @@
+{
+  Pointer dataSource=null;
+  Pointer layer=null;
+  boolean cleanup=true;
+  try {
+    String typeName=getEntry().getTypeName();
+    dataSource=getDataStore().openOGRDataSource(true);
+    layer=getDataStore().openOGRLayer(dataSource,typeName);
+    FeatureReader<SimpleFeatureType,SimpleFeature> reader=delegate.getReaderInternal(dataSource,layer,query);
+    GeometryFactory gf=delegate.getGeometryFactory(query);
+    OGRDirectFeatureWriter result=new OGRDirectFeatureWriter(dataSource,layer,reader,getSchema(),gf);
+    cleanup=false;
+    return result;
+  }
+  finally {
+    if (cleanup) {
+      OGRUtils.releaseLayer(layer);
+      OGRUtils.releaseDataSource(dataSource);
+    }
+  }
+}

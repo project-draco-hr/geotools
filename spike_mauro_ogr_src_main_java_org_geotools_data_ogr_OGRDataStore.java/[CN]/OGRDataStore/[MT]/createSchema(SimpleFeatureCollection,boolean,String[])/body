@@ -1,0 +1,69 @@
+{
+  Pointer dataSource=null;
+  Pointer layer=null;
+  SimpleFeatureType schema=data.getSchema();
+  SimpleFeatureIterator features;
+  try {
+    Pointer<Pointer<Byte>> optionsPointer=null;
+    if (options != null && options.length > 0) {
+      optionsPointer=pointerToCStrings(options);
+    }
+    dataSource=openOrCreateDataSource(options,dataSource,optionsPointer);
+    FeatureTypeMapper mapper=new FeatureTypeMapper();
+    layer=createNewLayer(schema,dataSource,optionsPointer,mapper);
+    if (OGR_L_TestCapability(layer,pointerToCString(OLCCreateField)) == 0) {
+      throw new DataSourceException("OGR reports it's not possible to create fields on this layer");
+    }
+    Map<String,String> nameMap=new HashMap<String,String>();
+    for (int i=0, j=0; i < schema.getAttributeCount(); i++) {
+      AttributeDescriptor ad=schema.getDescriptor(i);
+      if (ad == schema.getGeometryDescriptor()) {
+        continue;
+      }
+      Pointer fieldDefinition=mapper.getOGRFieldDefinition(ad);
+      OGR_L_CreateField(layer,fieldDefinition,approximateFields ? 1 : 0);
+      String newName=getCString(OGR_Fld_GetNameRef(fieldDefinition));
+      nameMap.put(newName,ad.getLocalName());
+      j++;
+    }
+    Pointer layerDefinition=OGR_L_GetLayerDefn(layer);
+    Map<Integer,Integer> indexMap=new HashMap<Integer,Integer>();
+    int count=OGR_FD_GetFieldCount(layerDefinition);
+    for (int i=0; i < count; i++) {
+      Pointer fd=OGR_FD_GetFieldDefn(layerDefinition,i);
+      String newName=getCString(OGR_Fld_GetNameRef(fd));
+      if (newName != null) {
+        String oldName=nameMap.get(newName);
+        for (int j=0; j < schema.getAttributeCount(); j++) {
+          if (schema.getDescriptor(j).getLocalName().equals(oldName)) {
+            indexMap.put(j,i);
+          }
+        }
+      }
+    }
+    GeometryMapper geomMapper=new GeometryMapper.WKB(new GeometryFactory());
+    features=data.features();
+    while (features.hasNext()) {
+      SimpleFeature feature=features.next();
+      Pointer ogrFeature=OGR_F_Create(layerDefinition);
+      for (int i=0; i < schema.getAttributeCount(); i++) {
+        Object value=feature.getAttribute(i);
+        if (value instanceof Geometry) {
+          Pointer geometry=geomMapper.parseGTGeometry((Geometry)value);
+          OGR_F_SetGeometryDirectly(ogrFeature,geometry);
+        }
+ else {
+          int ogrIndex=indexMap.get(i);
+          FeatureMapper.setFieldValue(layerDefinition,ogrFeature,ogrIndex,value);
+        }
+      }
+      checkError(OGR_L_CreateFeature(layer,ogrFeature));
+      OGR_F_Destroy(ogrFeature);
+    }
+    OGR_L_SyncToDisk(layer);
+  }
+  finally {
+    OGRUtils.releaseLayer(layer);
+    OGRUtils.releaseDataSource(dataSource);
+  }
+}

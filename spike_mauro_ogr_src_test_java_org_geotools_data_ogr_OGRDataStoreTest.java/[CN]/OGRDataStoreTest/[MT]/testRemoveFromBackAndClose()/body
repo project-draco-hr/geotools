@@ -1,0 +1,23 @@
+{
+  OGRDataStore sds=createDataStore();
+  String typeName=sds.getTypeNames()[0];
+  int idx=loadFeatures(sds,typeName).size();
+  assertEquals(idx,countFeatures(loadFeatures(sds,typeName)));
+  while (idx > 0) {
+    FeatureWriter writer=null;
+    try {
+      writer=sds.getFeatureWriter(sds.getTypeNames()[0],Filter.INCLUDE,Transaction.AUTO_COMMIT);
+      while (writer.hasNext()) {
+        writer.next();
+      }
+      writer.remove();
+    }
+  finally {
+      if (writer != null) {
+        writer.close();
+        writer=null;
+      }
+    }
+    assertEquals(--idx,countFeatures(loadFeatures(sds,typeName)));
+  }
+}

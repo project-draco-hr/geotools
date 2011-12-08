@@ -1,0 +1,18 @@
+{
+  String[] fileNames=shapeFileNames("test");
+  cleanFiles(fileNames);
+  String absolutePath=new File(fileNames[0]).getAbsolutePath();
+  OGRDataStore ds=new OGRDataStore(absolutePath,"ESRI shapefile",null);
+  SimpleFeatureType schema=DataUtilities.createType("test","geom:MultiPolygon,count:int,level1:double,level2:float,chars:string");
+  ds.createSchema(schema);
+  assertEquals(1,ds.getTypeNames().length);
+  assertEquals("test",ds.getTypeNames()[0]);
+  SimpleFeatureType ogrSchema=ds.getSchema(ds.getTypeNames()[0]);
+  assertEquals(schema.getGeometryDescriptor().getType().getBinding(),ogrSchema.getGeometryDescriptor().getType().getBinding());
+  for (int i=0; i < schema.getAttributeCount(); i++) {
+    AttributeDescriptor at=schema.getDescriptor(i);
+    if (at == schema.getGeometryDescriptor())     continue;
+    assertEquals(at.getName(),ogrSchema.getDescriptor(i).getName());
+    assertEquals("Wrong type for attribute " + at.getName(),at.getType().getBinding(),ogrSchema.getDescriptor(i).getType().getBinding());
+  }
+}
