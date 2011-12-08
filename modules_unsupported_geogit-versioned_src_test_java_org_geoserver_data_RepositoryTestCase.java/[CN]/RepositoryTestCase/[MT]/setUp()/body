@@ -1,0 +1,25 @@
+{
+  if (setup) {
+    throw new IllegalStateException("Are you calling super.setUp()!?");
+  }
+  setup=true;
+  Logging.ALL.forceMonolineConsoleOutput();
+  envHome=new File(new File("target"),"mockblobstore");
+  final File repositoryHome=new File(envHome,"repository");
+  final File indexHome=new File(envHome,"index");
+  FileUtils.deleteDirectory(envHome);
+  repositoryHome.mkdirs();
+  indexHome.mkdirs();
+  EntityStoreConfig config=new EntityStoreConfig();
+  config.setCacheMemoryPercentAllowed(25);
+  EnvironmentBuilder esb=new EnvironmentBuilder(config);
+  Properties bdbEnvProperties=null;
+  Environment environment;
+  environment=esb.buildEnvironment(repositoryHome,bdbEnvProperties);
+  Environment stagingEnvironment;
+  stagingEnvironment=esb.buildEnvironment(indexHome,bdbEnvProperties);
+  repositoryDatabase=new JERepositoryDatabase(environment,stagingEnvironment);
+  repo=new Repository(repositoryDatabase,envHome);
+  repo.create();
+  setUpInternal();
+}
