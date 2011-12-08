@@ -1,0 +1,32 @@
+{
+  BasicDBObject output=asDBObject(extraData);
+  double minX=180;
+  double minY=90;
+  double maxX=-180;
+  double maxY=-90;
+  Expression exp2=filter.getExpression2();
+  if (exp2 instanceof Literal) {
+    Geometry bbox=(Geometry)((Literal)exp2).getValue();
+    Coordinate[] coords=bbox.getEnvelope().getCoordinates();
+    minX=coords[0].x;
+    minY=coords[0].y;
+    maxX=coords[2].x;
+    maxY=coords[2].y;
+  }
+  if (minX < -180)   minX=-180;
+  if (maxX > 180)   maxX=180;
+  if (minY < -90)   minY=-90;
+  if (maxY > 90)   maxY=90;
+  StringBuilder sb=new StringBuilder();
+  sb.append("gtmpGeoQuery([");
+  sb.append(minX);
+  sb.append(",");
+  sb.append(minY);
+  sb.append(",");
+  sb.append(maxX);
+  sb.append(",");
+  sb.append(maxY);
+  sb.append("])");
+  output.put("$where",sb.toString());
+  return output;
+}

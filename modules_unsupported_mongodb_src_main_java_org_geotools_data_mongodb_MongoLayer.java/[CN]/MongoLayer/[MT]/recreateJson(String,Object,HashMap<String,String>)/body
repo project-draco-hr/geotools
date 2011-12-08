@@ -1,0 +1,49 @@
+{
+  HashMap<String,String> propMap=new HashMap<String,String>();
+  for (  String key : fieldMap.keySet()) {
+    if (key.startsWith(baseName + ".")) {
+      String propKey=key.substring(baseName.length() + 1);
+      propMap.put(propKey,fieldMap.get(key));
+    }
+  }
+  BSONObject json=null;
+  if (base instanceof BasicDBObject) {
+    json=new BasicDBObject();
+  }
+ else   if (base instanceof BasicBSONList) {
+    json=new BasicBSONList();
+  }
+ else {
+    log.warning("Error, can only process BasicDBObject (JSON) or BasicBSONList (Array), base is a " + base.getClass());
+    return new BasicBSONObject();
+  }
+  for (  String propKey : propMap.keySet()) {
+    if (!propKey.contains(".")) {
+      if (propMap.get(propKey) != null) {
+        if (propMap.get(propKey).equals("com.mongodb.BasicDBObject")) {
+          BasicDBObject subJSON=new BasicDBObject();
+          json.put(propKey,recreateJson(propKey,subJSON,propMap));
+        }
+ else         if (propMap.get(propKey).equals("com.mongodb.BasicDBList")) {
+          BasicBSONList subArray=new BasicBSONList();
+          json.put(propKey,recreateJson(propKey,subArray,propMap));
+        }
+ else {
+          try {
+            json.put(propKey,Class.forName(propMap.get(propKey)).newInstance());
+          }
+ catch (          InstantiationException ie) {
+            try {
+              json.put(propKey,(Class.forName(propMap.get(propKey)).getConstructor(String.class)).newInstance("0"));
+            }
+ catch (            Exception e) {
+            }
+          }
+catch (          Exception e) {
+          }
+        }
+      }
+    }
+  }
+  return json;
+}
