@@ -5,6 +5,17 @@
   if (query.getPropertyNames() != Query.ALL_NAMES) {
     this.featureType=SimpleFeatureTypeBuilder.retype(this.featureType,query.getPropertyNames());
   }
+  try {
+    if (query.getCoordinateSystemReproject() != null) {
+      this.featureType=FeatureTypes.transform(this.featureType,query.getCoordinateSystemReproject());
+    }
+ else     if (query.getCoordinateSystem() != null) {
+      this.featureType=FeatureTypes.transform(this.featureType,query.getCoordinateSystem());
+    }
+  }
+ catch (  SchemaException e) {
+    LOGGER.log(Level.FINER,"Problem handling Query change of CoordinateReferenceSystem:" + e,e);
+  }
   if (!query.getJoins().isEmpty()) {
     SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
     tb.init(this.featureType);
