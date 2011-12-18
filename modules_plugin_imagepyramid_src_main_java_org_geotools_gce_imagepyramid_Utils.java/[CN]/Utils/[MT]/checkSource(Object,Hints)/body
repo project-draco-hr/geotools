@@ -30,33 +30,76 @@
     }
   }
  else {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.warning("we really don't know how to convert the thing:" + source != null ? source.toString() : "null");
+    }
     return null;
+  }
+  if (LOGGER.isLoggable(Level.INFO)) {
+    if (sourceFile != null) {
+      final String message=fileStatus(sourceFile);
+      LOGGER.info(message);
+    }
   }
   if (sourceFile == null || !sourceFile.exists())   return sourceURL;
   if (!sourceFile.isDirectory())   return sourceURL;
   File directory=sourceFile;
   sourceFile=new File(directory,directory.getName() + ".properties");
+  if (LOGGER.isLoggable(Level.INFO)) {
+    if (sourceFile != null) {
+      final String message=fileStatus(sourceFile);
+      LOGGER.info(message);
+    }
+  }
   if (sourceFile.exists())   return DataUtilities.fileToURL(sourceFile);
   File zeroLevelDirectory=new File(directory,"0");
   IOFileFilter directoryFilter=FileFilterUtils.directoryFileFilter();
   File[] numericDirectories=directory.listFiles(new NumericDirectoryFilter());
   File[] directories=directory.listFiles((FileFilter)directoryFilter);
-  if (directories.length == 0)   return null;
+  if (directories.length == 0) {
+    if (LOGGER.isLoggable(Level.INFO)) {
+      LOGGER.info("I was unable to determine a structure similar to the GDAL Retile one!!");
+    }
+    return null;
+  }
   if (!zeroLevelDirectory.exists() && numericDirectories.length == directories.length) {
     LOGGER.log(Level.INFO,"Detected gdal_retile file structure, " + "moving root files to the '0' subdirectory");
     if (zeroLevelDirectory.mkdir()) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Created '0' subidr, now moving files");
+      }
       FileFilter notDirFilter=FileFilterUtils.notFileFilter(directoryFilter);
       for (      File f : directory.listFiles(notDirFilter)) {
-        if (!f.renameTo(new File(zeroLevelDirectory,f.getName())))         LOGGER.log(Level.INFO,"Could not move " + f.getAbsolutePath() + " to "+ zeroLevelDirectory);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Moving file" + f.getAbsolutePath());
+        }
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.finest(fileStatus(f));
+        }
+        if (!f.renameTo(new File(zeroLevelDirectory,f.getName())))         LOGGER.log(Level.WARNING,"Could not move " + f.getAbsolutePath() + " to "+ zeroLevelDirectory);
       }
       directories=directory.listFiles((FileFilter)directoryFilter);
+    }
+ else {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("I was unable to create the 0 directory. check the file permission in the parent directory:" + sourceFile.getParent());
+      }
+      return null;
     }
   }
   List<MosaicInfo> mosaics=new ArrayList<MosaicInfo>();
   ImageMosaicFormat mosaicFactory=new ImageMosaicFormat();
   for (  File subdir : directories) {
     if (mosaicFactory.accepts(subdir,hints)) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Trying to build mosaic for the directory:" + subdir.getAbsolutePath());
+      }
       mosaics.add(new MosaicInfo(subdir,mosaicFactory.getReader(subdir,hints)));
+    }
+ else {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("Unable to build mosaic for the directory:" + subdir.getAbsolutePath());
+      }
     }
   }
   if (mosaics.size() == 0)   return null;
@@ -93,11 +136,7 @@
     return null;
   }
  finally {
-    if (os != null)     try {
-      os.close();
-    }
- catch (    IOException e) {
-    }
+    if (os != null)     IOUtils.closeQuietly(os);
   }
   if (envelope.getCoordinateReferenceSystem() != null) {
     File prjFile=new File(directory,directory.getName() + ".prj");

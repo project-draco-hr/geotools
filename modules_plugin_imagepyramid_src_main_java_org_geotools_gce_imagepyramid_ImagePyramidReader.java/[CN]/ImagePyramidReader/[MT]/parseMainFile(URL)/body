@@ -1,4 +1,7 @@
 {
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Parsing pyramid properties file at:" + sourceURL.toExternalForm());
+  }
   BufferedInputStream propertyStream=null;
   InputStream openStream=null;
   try {
@@ -19,8 +22,6 @@
     this.originalEnvelope.setCoordinateReferenceSystem(crs);
     numOverviews=Integer.parseInt(properties.getProperty("LevelsNum")) - 1;
     levelsDirs=properties.getProperty("LevelsDirs").split(" ");
-    final int readersCacheSize=(numOverviews + 1) / 3;
-    readers=new SoftValueHashMap<Integer,ImageMosaicReader>(readersCacheSize == 0 ? numOverviews + 1 : readersCacheSize);
     final String levels=properties.getProperty("Levels");
     pairs=levels.split(" ");
     overViewResolutions=numOverviews >= 1 ? new double[numOverviews][2] : null;
@@ -38,6 +39,9 @@
     final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(originalGridRange,originalEnvelope);
     geMapper.setPixelAnchor(PixelInCell.CELL_CORNER);
     raster2Model=geMapper.createTransform();
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Parsed pyramid properties file at:" + sourceURL.toExternalForm());
+    }
   }
   finally {
     if (propertyStream != null)     IOUtils.closeQuietly(propertyStream);
