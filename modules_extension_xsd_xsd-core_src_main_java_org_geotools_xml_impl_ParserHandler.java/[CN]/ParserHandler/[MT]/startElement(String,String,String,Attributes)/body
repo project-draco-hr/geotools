@@ -17,8 +17,8 @@
       logger.finer("No schemaLocation found, using '" + config.getNamespaceURI() + " "+ config.getSchemaFileURL());
       locations=new String[]{config.getNamespaceURI(),config.getSchemaFileURL()};
     }
-    XSDSchemaLocator[] locators=findSchemaLocators();
-    XSDSchemaLocationResolver[] resolvers=findSchemaLocationResolvers();
+    List<XSDSchemaLocator> locators=Arrays.asList(findSchemaLocators());
+    List<XSDSchemaLocationResolver> resolvers=Arrays.asList(findSchemaLocationResolvers());
     if ((locations != null) && (locations.length > 0)) {
       schemas=new XSDSchema[locations.length / 2];
       for (int i=0; i < locations.length; i+=2) {
@@ -31,8 +31,8 @@
           logger.warning("Schema location not specified as namespace/location pair. " + "Ignoring " + namespace);
           continue;
         }
-        for (int j=0; j < resolvers.length; j++) {
-          String override=resolvers[j].resolveSchemaLocation(null,namespace,location);
+        for (int j=0; j < resolvers.size(); j++) {
+          String override=resolvers.get(j).resolveSchemaLocation(null,namespace,location);
           if (override != null) {
             override=override.replaceAll(" ","%20");
             logger.finer("Found override for " + namespace + ": "+ location+ " ==> "+ override);
@@ -40,8 +40,8 @@
             break;
           }
         }
-        for (int j=0; j < locators.length; j++) {
-          XSDSchema schema=locators[j].locateSchema(null,namespace,location,null);
+        for (int j=0; j < locators.size(); j++) {
+          XSDSchema schema=locators.get(j).locateSchema(null,namespace,location,null);
           if (schema != null) {
             schemas[i / 2]=schema;
             break;
@@ -57,7 +57,7 @@
             }
           }
           try {
-            schemas[i / 2]=Schemas.parse(location,locators,resolvers);
+            schemas[i / 2]=Schemas.parse(location,locators,resolvers,uriHandlers);
           }
  catch (          Exception e) {
             String msg="Error parsing: " + location;
@@ -70,8 +70,8 @@
       }
     }
  else {
-      for (int i=0; i < locators.length; i++) {
-        XSDSchema schema=locators[i].locateSchema(null,uri,null,null);
+      for (int i=0; i < locators.size(); i++) {
+        XSDSchema schema=locators.get(i).locateSchema(null,uri,null,null);
         if (schema != null) {
           schemas=new XSDSchema[]{schema};
           break;
