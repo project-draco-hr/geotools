@@ -1,0 +1,32 @@
+{
+  super(httpResponse);
+  InputStream inputStream=null;
+  try {
+    inputStream=httpResponse.getResponseStream();
+    Configuration config=new WPSConfiguration();
+    Parser parser=new Parser(config);
+    Object object;
+    exeResponse=null;
+    excepResponse=null;
+    try {
+      object=parser.parse(inputStream);
+    }
+ catch (    SAXException e) {
+      throw (IOException)new IOException().initCause(e);
+    }
+catch (    ParserConfigurationException e) {
+      throw (IOException)new IOException().initCause(e);
+    }
+    if (object instanceof ExecuteResponseType) {
+      exeResponse=(ExecuteResponseType)object;
+    }
+ else     if (object instanceof ExceptionReportType) {
+      excepResponse=(ExceptionReportType)object;
+    }
+  }
+  finally {
+    if (inputStream != null) {
+      inputStream.close();
+    }
+  }
+}

@@ -1,5 +1,10 @@
 {
-  if (fixture == null)   return;
+  if (fixture == null) {
+    return;
+  }
+  if (DISABLE) {
+    return;
+  }
   WPSCapabilitiesType capabilities=wps.getCapabilities();
   ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
   EList processes=processOfferings.getProcess();
@@ -17,6 +22,16 @@
   }
   DescribeProcessRequest descRequest=wps.createDescribeProcessRequest();
   descRequest.setIdentifier(processIden);
+  ExecuteProcessRequest execRequest=wps.createExecuteProcessRequest();
+  execRequest.setIdentifier(processIden);
+  execRequest.addInput("buffer",Arrays.asList(wps.createLiteralInputValue("350")));
+  execRequest.addInput("geom1",Arrays.asList(wps.createBoundingBoxInputValue("EPSG:4326",2,Arrays.asList(-180.0,-90.0),Arrays.asList(-180.0,-90.0))));
+  ResponseDocumentType respDoc=wps.createResponseDocumentType(false,true,true,"result");
+  OutputDefinitionType rawOutput=wps.createOutputDefinitionType("test");
+  ResponseFormType responseForm=wps.createResponseForm(respDoc,rawOutput);
+  responseForm.setResponseDocument(respDoc);
+  execRequest.setResponseForm(responseForm);
+  execRequest.performPostOutput(System.out);
   DescribeProcessResponse descResponse=wps.issueRequest(descRequest);
   ProcessDescriptionsType processDesc=descResponse.getProcessDesc();
   ProcessDescriptionType pdt=(ProcessDescriptionType)processDesc.getProcessDescription().get(0);

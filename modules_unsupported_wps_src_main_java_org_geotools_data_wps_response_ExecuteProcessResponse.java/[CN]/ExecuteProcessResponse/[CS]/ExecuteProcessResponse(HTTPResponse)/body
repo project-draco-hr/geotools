@@ -1,13 +1,15 @@
 {
-  super(response);
+  super(httpResponse);
+  InputStream inputStream=null;
   try {
+    inputStream=httpResponse.getResponseStream();
     Configuration config=new WPSConfiguration();
     Parser parser=new Parser(config);
     Object object;
     excepResponse=null;
     exeResponse=null;
     try {
-      object=parser.parse(response.getResponseStream());
+      object=parser.parse(inputStream);
     }
  catch (    SAXException e) {
       throw (IOException)new IOException().initCause(e);
@@ -23,6 +25,8 @@ catch (    ParserConfigurationException e) {
     }
   }
   finally {
-    response.dispose();
+    if (inputStream != null) {
+      inputStream.close();
+    }
   }
 }

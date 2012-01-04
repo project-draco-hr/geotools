@@ -14,33 +14,31 @@ catch (  IOException e) {
   }
   ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
   exeRequest.setIdentifier(wpsfactory.getIdentifier());
-  if (pdt.getDataInputs() != null) {
-    EList inputs=pdt.getDataInputs().getInput();
-    Iterator iterator=inputs.iterator();
-    while (iterator.hasNext()) {
-      InputDescriptionType idt=(InputDescriptionType)iterator.next();
-      String identifier=idt.getIdentifier().getValue();
-      Object inputValue=input.get(identifier);
-      if (inputValue != null) {
-        List<DataType> list=new ArrayList<DataType>();
-        if (inputValue instanceof Map) {
-          for (          Object inVal : ((Map)inputValue).values()) {
-            DataType createdInput=WPSUtils.createInputDataType(inVal,idt);
-            list.add(createdInput);
-          }
-        }
- else         if (inputValue instanceof Collection) {
-          for (          Object inVal : (Collection)inputValue) {
-            DataType createdInput=WPSUtils.createInputDataType(inVal,idt);
-            list.add(createdInput);
-          }
-        }
- else {
-          DataType createdInput=WPSUtils.createInputDataType(inputValue,idt);
+  EList inputs=pdt.getDataInputs().getInput();
+  Iterator iterator=inputs.iterator();
+  while (iterator.hasNext()) {
+    InputDescriptionType idt=(InputDescriptionType)iterator.next();
+    String identifier=idt.getIdentifier().getValue();
+    Object inputValue=input.get(identifier);
+    if (inputValue != null) {
+      List<DataType> list=new ArrayList<DataType>();
+      if (inputValue instanceof Map) {
+        for (        Object inVal : ((Map)inputValue).values()) {
+          DataType createdInput=WPSUtils.createInputDataType(inVal,idt);
           list.add(createdInput);
         }
-        exeRequest.addInput(identifier,list);
       }
+ else       if (inputValue instanceof Collection) {
+        for (        Object inVal : (Collection)inputValue) {
+          DataType createdInput=WPSUtils.createInputDataType(inVal,idt);
+          list.add(createdInput);
+        }
+      }
+ else {
+        DataType createdInput=WPSUtils.createInputDataType(inputValue,idt);
+        list.add(createdInput);
+      }
+      exeRequest.addInput(identifier,list);
     }
   }
   ExecuteProcessResponse response;
