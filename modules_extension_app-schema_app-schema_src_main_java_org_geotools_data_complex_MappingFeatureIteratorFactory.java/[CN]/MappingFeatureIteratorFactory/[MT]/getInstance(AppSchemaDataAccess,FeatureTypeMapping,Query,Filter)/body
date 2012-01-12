@@ -2,72 +2,63 @@
   if (mapping instanceof XmlFeatureTypeMapping) {
     return new XmlMappingFeatureIterator(store,mapping,query);
   }
-  if (AppSchemaDataAccessConfigurator.isJoining()) {
+  boolean isJoining=AppSchemaDataAccessConfigurator.isJoining();
+  if (isJoining) {
     if (!(query instanceof JoiningQuery)) {
       query=new JoiningQuery(query);
     }
-    FeatureSource mappedSource=mapping.getSource();
-    FilterCapabilities capabilities=getFilterCapabilities(mappedSource);
-    IMappingFeatureIterator iterator;
-    if (unrolledFilter != null) {
-      query.setFilter(Filter.INCLUDE);
-      Query unrolledQuery=store.unrollQuery(query,mapping);
-      unrolledQuery.setFilter(unrolledFilter);
-      if (isSimpleType(mapping)) {
-        iterator=new MappingAttributeIterator(store,mapping,query,false,unrolledQuery);
-      }
- else {
-        iterator=new DataAccessMappingFeatureIterator(store,mapping,query,false,unrolledQuery);
-      }
+  }
+  IMappingFeatureIterator iterator;
+  if (unrolledFilter != null) {
+    query.setFilter(Filter.INCLUDE);
+    Query unrolledQuery=store.unrollQuery(query,mapping);
+    unrolledQuery.setFilter(unrolledFilter);
+    if (isSimpleType(mapping)) {
+      iterator=new MappingAttributeIterator(store,mapping,query,unrolledQuery);
     }
  else {
-      Filter filter=query.getFilter();
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,unrolledQuery);
+    }
+  }
+ else {
+    FeatureSource mappedSource=mapping.getSource();
+    if (isJoining || mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore) {
+      FilterCapabilities capabilities=getFilterCapabilities(mappedSource);
       ComplexFilterSplitter splitter=new ComplexFilterSplitter(capabilities,mapping);
+      Filter filter=query.getFilter();
       filter.accept(splitter,null);
-      query.setFilter(splitter.getFilterPre());
+      Filter preFilter=splitter.getFilterPre();
+      query.setFilter(preFilter);
       filter=splitter.getFilterPost();
       int maxFeatures=Query.DEFAULT_MAX;
       if (filter != null && filter != Filter.INCLUDE) {
         maxFeatures=query.getMaxFeatures();
         query.setMaxFeatures(Query.DEFAULT_MAX);
       }
-      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,false);
+      boolean isFiltered=!isJoining && preFilter != null && preFilter != Filter.INCLUDE;
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered);
       if (filter != null && filter != Filter.INCLUDE) {
         iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
       }
     }
-    return iterator;
-  }
+ else     if (mappedSource instanceof MappingFeatureSource) {
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query);
+    }
  else {
-    if (query.getFilter() != null) {
       Query unrolledQuery=store.unrollQuery(query,mapping);
       Filter filter=unrolledQuery.getFilter();
-      CheckIfNestedFilterVisitor visitor=new CheckIfNestedFilterVisitor();
-      filter.accept(visitor,null);
-      if (visitor.hasNestedAttributes) {
-        FeatureSource mappedSource=mapping.getSource();
-        if (mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore) {
-          FilterCapabilities capabilities=getFilterCapabilities(mappedSource);
-          ComplexFilterSplitter splitter=new ComplexFilterSplitter(capabilities,mapping);
-          filter.accept(splitter,null);
-          query.setFilter(splitter.getFilterPre());
-          unrolledQuery.setFilter(splitter.getFilterPre());
-          filter=splitter.getFilterPost();
+      if (!filter.equals(Filter.INCLUDE) && !filter.equals(Filter.EXCLUDE) && !(filter instanceof FidFilterImpl)) {
+        unrolledQuery.setFilter(Filter.INCLUDE);
+        CoordinateReferenceSystem crs=query.getCoordinateSystemReproject();
+        if (crs != null) {
+          unrolledQuery.setCoordinateSystemReproject(null);
         }
- else {
-          unrolledQuery.setFilter(Filter.INCLUDE);
-        }
-        return new FilteringMappingFeatureIterator(store,mapping,query,unrolledQuery,filter);
+        iterator=new FilteringMappingFeatureIterator(store,mapping,query,unrolledQuery,filter);
       }
- else       if (!filter.equals(Filter.INCLUDE) && !filter.equals(Filter.EXCLUDE) && !(filter instanceof FidFilterImpl)) {
-        if (isSimpleType(mapping)) {
-          return new MappingAttributeIterator(store,mapping,query,true,unrolledQuery);
-        }
  else {
-          return new DataAccessMappingFeatureIterator(store,mapping,query,true,unrolledQuery);
-        }
+        iterator=new DataAccessMappingFeatureIterator(store,mapping,query);
       }
     }
-    return new DataAccessMappingFeatureIterator(store,mapping,query,false);
   }
+  return iterator;
 }

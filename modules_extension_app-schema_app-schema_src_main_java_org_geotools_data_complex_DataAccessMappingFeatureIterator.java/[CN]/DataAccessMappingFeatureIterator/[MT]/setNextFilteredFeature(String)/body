@@ -1,0 +1,32 @@
+{
+  FeatureCollection<? extends FeatureType,? extends Feature> matchingFeatures;
+  Query query=new Query();
+  if (reprojection != null) {
+    if (sourceFeatures.getSchema().getGeometryDescriptor() != null && !this.isReprojectionCrsEqual(this.mappedSource.getSchema().getCoordinateReferenceSystem(),this.reprojection)) {
+      query.setCoordinateSystemReproject(reprojection);
+    }
+  }
+  if (mapping.getFeatureIdExpression().equals(Expression.NIL)) {
+    Set<FeatureId> ids=new HashSet<FeatureId>();
+    FeatureId featureId=namespaceAwareFilterFactory.featureId(fId);
+    ids.add(featureId);
+    query.setFilter(namespaceAwareFilterFactory.id(ids));
+    matchingFeatures=this.mappedSource.getFeatures(query);
+  }
+ else {
+    query.setFilter(namespaceAwareFilterFactory.equals(mapping.getFeatureIdExpression(),namespaceAwareFilterFactory.literal(fId)));
+    matchingFeatures=this.mappedSource.getFeatures(query);
+  }
+  FeatureIterator<? extends Feature> iterator=matchingFeatures.features();
+  List<Feature> features=new ArrayList<Feature>();
+  while (iterator.hasNext()) {
+    features.add(iterator.next());
+  }
+  if (features.isEmpty()) {
+    features.add(curSrcFeature);
+  }
+  filteredFeatures.add(fId);
+  iterator.close();
+  curSrcFeature=null;
+  return features;
+}

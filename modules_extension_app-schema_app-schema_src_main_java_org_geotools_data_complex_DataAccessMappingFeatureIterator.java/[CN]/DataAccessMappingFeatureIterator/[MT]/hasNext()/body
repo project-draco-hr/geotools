@@ -1,31 +1,25 @@
 {
-  if (isHasNextCalled()) {
-    return !isNextSourceFeatureNull();
-  }
-  setHasNextCalled(true);
-  boolean exists=false;
-  if (featureCounter < maxFeatures) {
-    if (isNextFeatureSet()) {
-      flagNextFeature(false);
-      return curSrcFeature != null;
-    }
-    if (getSourceFeatureIterator() != null && getSourceFeatureIterator().hasNext()) {
-      this.curSrcFeature=getSourceFeatureIterator().next();
-      exists=true;
-    }
-    if (exists && filteredFeatures != null) {
-      while (exists && filteredFeatures.contains(extractIdForFeature(this.curSrcFeature))) {
-        if (getSourceFeatureIterator() != null && getSourceFeatureIterator().hasNext()) {
-          this.curSrcFeature=getSourceFeatureIterator().next();
-          exists=true;
-        }
+  boolean exists=!isNextSourceFeatureNull();
+  if (!isHasNextCalled()) {
+    if (featureCounter < maxFeatures) {
+      if (!exists && getSourceFeatureIterator() != null && getSourceFeatureIterator().hasNext()) {
+        this.curSrcFeature=getSourceFeatureIterator().next();
+        exists=true;
+      }
+      if (exists && filteredFeatures != null) {
+        while (exists && filteredFeatures.contains(extractIdForFeature(this.curSrcFeature))) {
+          if (getSourceFeatureIterator() != null && getSourceFeatureIterator().hasNext()) {
+            this.curSrcFeature=getSourceFeatureIterator().next();
+            exists=true;
+          }
  else {
-          exists=false;
+            exists=false;
+          }
         }
       }
-      if (!exists) {
-        curSrcFeature=null;
-      }
+    }
+ else {
+      exists=false;
     }
   }
   if (!exists) {
@@ -33,6 +27,6 @@
     close();
     curSrcFeature=null;
   }
-  flagNextFeature(false);
+  setHasNextCalled(true);
   return exists;
 }

@@ -5,18 +5,23 @@
   Expression propertyExpression;
   for (Iterator it=attributeMappings.iterator(); it.hasNext(); ) {
     attMapping=(AttributeMapping)it.next();
-    clientProperties=attMapping.getClientProperties();
-    if (clientPropertyName.equals(GML.id)) {
-      clientPropertyExpressions.add(attMapping.getIdentifierExpression());
+    if (attMapping instanceof JoiningNestedAttributeMapping) {
+      clientPropertyExpressions.add(null);
     }
- else     if (clientProperties.containsKey(clientPropertyName)) {
-      propertyExpression=(Expression)clientProperties.get(clientPropertyName);
-      clientPropertyExpressions.add(propertyExpression);
-    }
- else     if (attMapping.isNestedAttribute() && Types.isSimpleContent(parentPath,getTargetFeature().getType())) {
-      StepList fullXpath=parentPath.clone();
-      fullXpath.add(new Step(Types.toQName(clientPropertyName,namespaces),1,true,false));
-      clientPropertyExpressions.add(new NestedAttributeExpression(fullXpath,this));
+ else {
+      clientProperties=attMapping.getClientProperties();
+      if (clientPropertyName.equals(GML.id)) {
+        clientPropertyExpressions.add(attMapping.getIdentifierExpression());
+      }
+ else       if (clientProperties.containsKey(clientPropertyName)) {
+        propertyExpression=(Expression)clientProperties.get(clientPropertyName);
+        clientPropertyExpressions.add(propertyExpression);
+      }
+ else       if (attMapping.isNestedAttribute() && Types.isSimpleContent(parentPath,getTargetFeature().getType())) {
+        StepList fullXpath=parentPath.clone();
+        fullXpath.add(new Step(Types.toQName(clientPropertyName,namespaces),1,true,false));
+        clientPropertyExpressions.add(new NestedAttributeExpression(fullXpath,this));
+      }
     }
   }
   return clientPropertyExpressions;

@@ -2,11 +2,11 @@
   JoiningQuery query=new JoiningQuery();
   query.setCoordinateSystemReproject(reprojection);
   FeatureTypeMapping fMapping=AppSchemaDataAccessRegistry.getMappingByName(featureTypeName);
-  List<AttributeMapping> mappings=fMapping.getAttributeMappingsIgnoreIndex(this.nestedTargetXPath);
-  if (mappings.size() < 1) {
+  AttributeMapping mapping=fMapping.getAttributeMapping(this.nestedTargetXPath);
+  if (mapping == null) {
     throw new IllegalArgumentException("Mapping is missing for: '" + this.nestedTargetXPath + "'!");
   }
-  Expression nestedSourceExpression=mappings.get(0).getSourceExpression();
+  Expression nestedSourceExpression=mapping.getSourceExpression();
   List<JoiningQuery.QueryJoin> joins=new ArrayList<JoiningQuery.QueryJoin>();
   if (instance.baseTableQuery instanceof JoiningQuery) {
     if (((JoiningQuery)instance.baseTableQuery).getQueryJoins() != null) {
@@ -52,7 +52,7 @@
   instance.featureIterators.put(featureTypeName,daFeatureIterator);
   instance.nestedSourceExpressions.put(featureTypeName,nestedSourceExpression);
   for (  Instance.Skip toSkip : instance.skipped) {
-    while (daFeatureIterator.hasNext() && daFeatureIterator.checkForeignIdValues(toSkip.idValues) && daFeatureIterator.peekNextValue(nestedSourceExpression).toString().equals(toSkip.foreignKeyValue.toString())) {
+    while (daFeatureIterator.hasNext() && daFeatureIterator.checkForeignIdValues(toSkip.idValues)) {
       daFeatureIterator.skip();
     }
   }

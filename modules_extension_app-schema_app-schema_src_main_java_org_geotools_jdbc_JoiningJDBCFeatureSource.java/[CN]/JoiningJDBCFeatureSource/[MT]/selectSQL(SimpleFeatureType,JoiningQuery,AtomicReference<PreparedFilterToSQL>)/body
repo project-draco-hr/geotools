@@ -6,42 +6,22 @@
   String curTypeName=lastTypeName;
   String[] aliases=null;
   if (query.getQueryJoins() != null) {
-    SortBy[] lastSortBy=query.getSortBy();
     aliases=new String[query.getQueryJoins().size()];
     for (int i=0; i < query.getQueryJoins().size(); i++) {
       JoiningQuery.QueryJoin join=query.getQueryJoins().get(i);
-      if (lastSortBy != null && lastSortBy.length > 0) {
-        tableNames.add(curTypeName);
-        String temp_alias=createAlias(lastTypeName,tableNames);
-        fromclause.append(" INNER JOIN ");
-        getDataStore().encodeTableName(lastTypeName,fromclause,query.getHints());
-        fromclause.append(" ").append(temp_alias);
-        fromclause.append(" ON (");
-        for (int j=0; j < query.getSortBy().length; j++) {
-          if (lastTypeName != curTypeName) {
-            encodeColumnName2(lastSortBy[j].getPropertyName().getPropertyName(),curTypeName,fromclause,null);
-          }
- else {
-            encodeColumnName(lastSortBy[j].getPropertyName().getPropertyName(),curTypeName,fromclause,null);
-          }
-          fromclause.append(" = ");
-          encodeColumnName2(lastSortBy[j].getPropertyName().getPropertyName(),temp_alias,fromclause,null);
-          if (j < lastSortBy.length - 1)           fromclause.append(" AND ");
-        }
-        fromclause.append(" ) ");
-        curTypeName=temp_alias;
-      }
-      lastSortBy=join.getSortBy();
       fromclause.append(" INNER JOIN ");
       String alias=null;
       FilterToSQL toSQL1=createFilterToSQL(getDataStore().getSchema(lastTypeName));
       FilterToSQL toSQL2=createFilterToSQL(getDataStore().getSchema(join.getJoiningTypeName()));
-      tableNames.add(curTypeName);
+      String last_alias=createAlias(lastTypeName,tableNames);
+      tableNames.add(last_alias);
+      curTypeName=last_alias;
       if (tableNames.contains(join.getJoiningTypeName())) {
         alias=createAlias(join.getJoiningTypeName(),tableNames);
         aliases[i]=alias;
         getDataStore().encodeTableName(join.getJoiningTypeName(),fromclause,query.getHints());
-        fromclause.append(" " + alias);
+        fromclause.append(" ");
+        getDataStore().dialect.encodeTableName(alias,fromclause);
         fromclause.append(" ON ( ");
         toSQL2.setFieldEncoder(new JoiningFieldEncoder(alias));
         fromclause.append(toSQL2.encodeToString(join.getForeignKeyName()));
@@ -90,7 +70,12 @@
   if (query.getQueryJoins() != null && query.getQueryJoins().size() > 0) {
     for (int i=0; i < query.getQueryJoins().size(); i++) {
       for (int j=0; j < query.getQueryJoins().get(i).getSortBy().length; j++) {
-        encodeColumnName(query.getQueryJoins().get(i).getSortBy()[j].getPropertyName().getPropertyName(),query.getQueryJoins().get(i).getJoiningTypeName(),sql,query.getHints());
+        if (aliases[i] != null) {
+          getDataStore().dialect.encodeColumnName(aliases[i],query.getQueryJoins().get(i).getSortBy()[j].getPropertyName().getPropertyName(),sql);
+        }
+ else {
+          encodeColumnName(query.getQueryJoins().get(i).getSortBy()[j].getPropertyName().getPropertyName(),query.getQueryJoins().get(i).getJoiningTypeName(),sql,query.getHints());
+        }
         sql.append(" ").append(FOREIGN_ID + "_" + i+ "_"+ j).append(",");
       }
     }
@@ -108,7 +93,7 @@
       if (lastSortBy != null) {
         sql.append(" INNER JOIN ( SELECT DISTINCT ");
         for (int i=0; i < lastSortBy.length; i++) {
-          getDataStore().dialect.encodeColumnName(lastSortBy[i].getPropertyName().getPropertyName(),sql);
+          getDataStore().dialect.encodeColumnName(null,lastSortBy[i].getPropertyName().getPropertyName(),sql);
           if (i < lastSortBy.length - 1)           sql.append(",");
         }
         sql.append(" FROM ");
