@@ -1,0 +1,20 @@
+{
+  Connection cx=null;
+  Statement st=null;
+  ResultSet rs=null;
+  try {
+    cx=dataStore.getConnection(Transaction.AUTO_COMMIT);
+    st=cx.createStatement();
+    rs=st.executeQuery("SELECT is_read_committed_snapshot_on FROM sys.databases WHERE name= db_name()");
+    if (rs.next()) {
+      if (rs.getBoolean(1)) {
+        super.testExternalConnection();
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(rs);
+    dataStore.closeSafe(st);
+    dataStore.closeSafe(cx);
+  }
+}
