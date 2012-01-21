@@ -1,0 +1,23 @@
+{
+  SLDParser parser=new SLDParser(styleFactory,input(SLD_EXTERNAL_GRAPHIC));
+  parser.setOnLineResourceLocator(new ResourceLocator(){
+    public URL locateResource(    String uri){
+      Assert.assertEquals("test-data/blob.gif",uri);
+      return getClass().getResource(uri);
+    }
+  }
+);
+  Style[] styles=parser.readXML();
+  assertEquals(1,styles.length);
+  List<FeatureTypeStyle> fts=styles[0].featureTypeStyles();
+  assertEquals(1,fts.size());
+  List<Rule> rules=fts.get(0).rules();
+  assertEquals(1,rules.size());
+  List<Symbolizer> symbolizers=rules.get(0).symbolizers();
+  assertEquals(1,symbolizers.size());
+  PointSymbolizer ps=(PointSymbolizer)symbolizers.get(0);
+  List<GraphicalSymbol> graphicalSymbols=ps.getGraphic().graphicalSymbols();
+  assertEquals(1,graphicalSymbols.size());
+  ExternalGraphic graphic=(ExternalGraphic)graphicalSymbols.get(0);
+  assertEquals(getClass().getResource("test-data/blob.gif"),graphic.getLocation());
+}
