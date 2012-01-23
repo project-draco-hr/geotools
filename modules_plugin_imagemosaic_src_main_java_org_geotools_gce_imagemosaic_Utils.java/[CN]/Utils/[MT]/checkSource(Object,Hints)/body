@@ -66,6 +66,13 @@
         }
       }
       if (buildMosaic) {
+        final File mosaicDirectory=new File(locationPath);
+        if (!mosaicDirectory.exists() || mosaicDirectory.isFile() || !mosaicDirectory.canWrite()) {
+          if (LOGGER.isLoggable(Level.SEVERE)) {
+            LOGGER.log(Level.SEVERE,"Unable to create the mosaic, check the location:\n" + "location is:" + locationPath + "\n"+ "location exists:"+ mosaicDirectory.exists()+ "\n"+ "location is a directory:"+ mosaicDirectory.isDirectory()+ "\n"+ "location is writable:"+ mosaicDirectory.canWrite()+ "\n"+ "location is readable:"+ mosaicDirectory.canRead()+ "\n"+ "location is hidden:"+ mosaicDirectory.isHidden()+ "\n");
+          }
+          return null;
+        }
         createMosaic(locationPath,defaultIndexName,DEFAULT_WILCARD,DEFAULT_PATH_BEHAVIOR,hints);
         final File propertiesFile=new File(locationPath,defaultIndexName + ".properties");
         if (!Utils.checkFileReadable(propertiesFile)) {
@@ -79,8 +86,12 @@
         }
  else {
           dataStoreProperties=new File(locationPath,"datastore.properties");
-          if (!Utils.checkFileReadable(dataStoreProperties))           sourceURL=null;
- else           sourceURL=DataUtilities.fileToURL(dataStoreProperties);
+          if (!Utils.checkFileReadable(dataStoreProperties)) {
+            sourceURL=null;
+          }
+ else {
+            sourceURL=DataUtilities.fileToURL(dataStoreProperties);
+          }
         }
       }
  else       sourceURL=datastoreFound ? DataUtilities.fileToURL(dataStoreProperties) : DataUtilities.fileToURL(shapeFile);

@@ -1,5 +1,5 @@
 {
-  Utilities.ensureNonNull("q",q);
+  Utilities.ensureNonNull("query",q);
   final Lock lock=rwLock.readLock();
   try {
     lock.lock();
@@ -24,7 +24,17 @@
       public void visit(      Feature feature){
         if (feature instanceof SimpleFeature) {
           final SimpleFeature sf=(SimpleFeature)feature;
-          final GranuleDescriptor granule=new GranuleDescriptor(sf,suggestedSPI,pathType,locationAttribute,parentLocation,heterogeneous);
+          final GranuleDescriptor granule;
+synchronized (granuleDescriptorsCache) {
+            String granuleLocation=(String)sf.getAttribute(locationAttribute);
+            if (granuleDescriptorsCache.containsKey(granuleLocation)) {
+              granule=granuleDescriptorsCache.get(granuleLocation);
+            }
+ else {
+              granule=new GranuleDescriptor(sf,suggestedSPI,pathType,locationAttribute,parentLocation,heterogeneous);
+              granuleDescriptorsCache.put(granuleLocation,granule);
+            }
+          }
           visitor.visit(granule,null);
           if (listener.isCanceled() || listener.hasExceptions()) {
             if (listener.hasExceptions())             throw new RuntimeException(listener.getExceptions().peek());

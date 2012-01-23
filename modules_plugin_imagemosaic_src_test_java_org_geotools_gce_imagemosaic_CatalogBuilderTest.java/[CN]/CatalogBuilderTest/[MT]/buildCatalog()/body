@@ -37,11 +37,27 @@
     coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,useJai,tileSize});
     Assert.assertNotNull(coverage);
     PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getTiles();
-    ;
+    Properties props=new Properties();
+    InputStream in=null;
+    try {
+      in=TestData.openStream(this,"/overview/" + c1.getIndexName() + ".properties");
+      assertNotNull("unable to find mosaic properties file",in);
+      props.load(in);
+      assertTrue(props.containsKey("Caching"));
+      assertTrue(props.getProperty("Caching").equalsIgnoreCase("false"));
+    }
+  finally {
+      if (in != null) {
+        IOUtils.closeQuietly(in);
+      }
+    }
+    coverage.dispose(true);
+    reader.dispose();
     CatalogBuilderConfiguration c2=new CatalogBuilderConfiguration();
     c2.setIndexName("shpindex_absolute");
     c2.setLocationAttribute("location");
     c2.setAbsolute(true);
+    c2.setCaching(true);
     c2.setRootMosaicDirectory(TestData.file(this,"/overview").toString());
     c2.setIndexingDirectories(Arrays.asList(TestData.file(this,"/overview/0").toString()));
     assertNotNull(c2.toString());
@@ -50,6 +66,20 @@
     builder.run();
     final File absoluteMosaic=TestData.file(this,"/overview/" + c2.getIndexName() + ".shp");
     assertTrue(absoluteMosaic.exists());
+    props=new Properties();
+    in=null;
+    try {
+      in=TestData.openStream(this,"/overview/" + c2.getIndexName() + ".properties");
+      assertNotNull("unable to find mosaic properties file",in);
+      props.load(in);
+      assertTrue(props.containsKey("Caching"));
+      assertTrue(props.getProperty("Caching").equalsIgnoreCase("true"));
+    }
+  finally {
+      if (in != null) {
+        IOUtils.closeQuietly(in);
+      }
+    }
     assertTrue(new ImageMosaicFormat().accepts(absoluteMosaic));
     reader=(ImageMosaicReader)new ImageMosaicReader(absoluteMosaic);
     gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
@@ -63,5 +93,7 @@
     coverage=(GridCoverage2D)reader.read(new GeneralParameterValue[]{gg,useJai,tileSize});
     Assert.assertNotNull(coverage);
     PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getTiles();
+    coverage.dispose(true);
+    reader.dispose();
   }
 }
