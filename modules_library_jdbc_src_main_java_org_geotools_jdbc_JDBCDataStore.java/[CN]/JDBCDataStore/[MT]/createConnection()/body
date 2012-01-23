@@ -3,6 +3,10 @@
     LOGGER.fine("CREATE CONNECTION");
     Connection cx=getDataSource().getConnection();
     dialect.initializeConnection(cx);
+    if (connectionLifecycleListeners.size() > 0) {
+      List<ConnectionLifecycleListener> locals=new ArrayList<ConnectionLifecycleListener>(connectionLifecycleListeners);
+      cx=new LifecycleConnection(this,cx,locals);
+    }
     return cx;
   }
  catch (  SQLException e) {

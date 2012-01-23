@@ -1,0 +1,72 @@
+{
+  if (sql == null || "".equals(sql)) {
+    return null;
+  }
+  boolean inEnvVariable=false;
+  List<Expression> expressions=new ArrayList<Expression>();
+  StringBuilder sb=new StringBuilder();
+  for (int i=0; i < sql.length(); i++) {
+    final char curr=sql.charAt(i);
+    final boolean last=(i == sql.length() - 1);
+    final char next=last ? 0 : sql.charAt(i + 1);
+    if (curr == '\\') {
+      if (last)       throw new IllegalArgumentException("Unescaped \\ at position " + (i + 1));
+      if (next == '\\')       sb.append('\\');
+ else       if (next == '$')       sb.append('$');
+ else       if (next == '}')       sb.append('}');
+ else       throw new IllegalArgumentException("Unescaped \\ at position " + (i + 1));
+      i++;
+    }
+ else     if (curr == '$') {
+      if (last || next != '{')       throw new IllegalArgumentException("Unescaped $ at position " + (i + 1));
+      if (inEnvVariable)       throw new IllegalArgumentException("Already found a ${ sequence before the one at " + (i + 1));
+      if (sb.length() > 0) {
+        expressions.add(ff.literal(sb.toString()));
+        sb.setLength(0);
+      }
+      inEnvVariable=true;
+      i++;
+    }
+ else     if (curr == '}') {
+      if (!inEnvVariable)       throw new IllegalArgumentException("Already found a ${ sequence before the one at " + (i + 1));
+      if (sb.length() == 0)       throw new IllegalArgumentException("Invalid empty enviroment variable reference ${} at " + (i - 1));
+      String name=sb.toString();
+      String defaultValue=null;
+      int idx=name.indexOf(',');
+      if (idx >= 0) {
+        if (idx == 0) {
+          throw new IllegalArgumentException("There is no variable name before " + "the comma, the valid format is '${name,defaultValue}'");
+        }
+ else         if (idx < name.length() - 1) {
+          defaultValue=name.substring(idx + 1);
+          name=name.substring(0,idx);
+        }
+      }
+      Expression env;
+      if (defaultValue != null) {
+        env=ff.function("env",ff.literal(name),ff.literal(defaultValue));
+      }
+ else {
+        env=ff.function("env",ff.literal(name));
+      }
+      expressions.add(env);
+      sb.setLength(0);
+      inEnvVariable=false;
+    }
+ else {
+      sb.append(curr);
+    }
+  }
+  if (inEnvVariable) {
+    throw new IllegalArgumentException("Unclosed enviroment variable reference '" + sb + "'");
+  }
+ else   if (sb.length() > 0) {
+    expressions.add(ff.literal(sb.toString()));
+  }
+  if (expressions == null || expressions.size() == 0)   throw new IllegalArgumentException("The SQL command appears to be empty: " + sql);
+  Expression result=expressions.get(0);
+  for (int i=1; i < expressions.size(); i++) {
+    result=ff.function("strConcat",result,expressions.get(i));
+  }
+  return result;
+}
