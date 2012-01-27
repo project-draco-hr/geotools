@@ -1,34 +1,21 @@
 {
-  boolean accept=false;
-  try {
-    String sort=(String)SORT.lookUp(params);
-    if (sort == null || "none".equals(sort)) {
-    }
- else     if ("memory".equals(sort)) {
-      return false;
-    }
- else     if ("disk".equals(sort)) {
-      return false;
-    }
- else {
-      LOGGER.warning("Unexpected sort level request: '" + sort + "'");
-    }
-  }
- catch (  IOException e) {
+  if (!super.canProcess(params)) {
     return false;
   }
   if (params.containsKey(URLP.key)) {
     try {
       URL url=(URL)URLP.lookUp(params);
-      accept=canProcess(url);
-      if (!accept) {
+      if (!canProcess(url)) {
         Object fileType=FILE_TYPE.lookUp(params);
         File dir=DataUtilities.urlToFile(url);
-        accept=dir.isDirectory() && (fileType == null || "shapefile".equals(fileType));
+        boolean testFileTest=dir.isDirectory() && (fileType == null || "shapefile".equals(fileType));
+        if (!testFileTest) {
+          return false;
+        }
       }
     }
  catch (    IOException ioe) {
     }
   }
-  return accept;
+  return true;
 }
