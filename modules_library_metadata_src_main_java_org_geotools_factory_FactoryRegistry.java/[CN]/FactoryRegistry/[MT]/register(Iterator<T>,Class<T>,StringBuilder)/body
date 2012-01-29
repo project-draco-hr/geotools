@@ -27,16 +27,18 @@ catch (    Error error) {
       loadingFailure(category,error,true);
       continue;
     }
-    final Class<? extends T> factoryClass=factory.getClass().asSubclass(category);
-    final T replacement=getServiceProviderByClass(factoryClass);
-    if (replacement != null) {
-      factory=replacement;
-    }
-    if (registerServiceProvider(factory,category)) {
-      message.append(lineSeparator);
-      message.append("  ");
-      message.append(factoryClass.getName());
-      newServices=true;
+    if (category.isAssignableFrom(factory.getClass())) {
+      final Class<? extends T> factoryClass=factory.getClass().asSubclass(category);
+      final T replacement=getServiceProviderByClass(factoryClass);
+      if (replacement != null) {
+        factory=replacement;
+      }
+      if (registerServiceProvider(factory,category)) {
+        message.append(lineSeparator);
+        message.append("  ");
+        message.append(factoryClass.getName());
+        newServices=true;
+      }
     }
   }
   return newServices;

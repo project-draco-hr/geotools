@@ -1,0 +1,17 @@
+{
+  URL projectClasses=getClass().getResource("/");
+  URLClassLoader cl1=new URLClassLoader(new URL[]{projectClasses},null);
+  URLClassLoader cl2=new URLClassLoader(new URL[]{projectClasses},null);
+  GeoTools.addClassLoader(cl1);
+  GeoTools.addClassLoader(cl2);
+  for (int i=0; i < 2; i++) {
+    ClassLoader loader=(i == 0 ? cl1 : cl2);
+    Class dummy=loader.loadClass("org.geotools.factory.DummyInterface");
+    FactoryRegistry reg=new FactoryCreator(dummy);
+    reg.scanForPlugins();
+    Iterator it=reg.getServiceProviders(dummy,false);
+    assertTrue(it.hasNext());
+    Object next=it.next();
+    assertSame(loader,next.getClass().getClassLoader());
+  }
+}
