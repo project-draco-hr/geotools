@@ -2,10 +2,15 @@
   String targetXPath=expr.getPropertyName();
   NamespaceSupport namespaces=mappings.getNamespaces();
   AttributeDescriptor root=mappings.getTargetFeature();
+  List<NestedAttributeMapping> nestedMappings=mappings.getNestedMappings();
   StepList simplifiedSteps=XPath.steps(root,targetXPath,namespaces);
   List<Expression> matchingMappings=mappings.findMappingsFor(simplifiedSteps);
-  if (matchingMappings.isEmpty() && simplifiedSteps.size() > 1) {
-    matchingMappings.add(new NestedAttributeExpression(targetXPath,mappings));
+  if (!nestedMappings.isEmpty()) {
+    for (    NestedAttributeMapping nestedMapping : nestedMappings) {
+      if (simplifiedSteps.startsWith(nestedMapping.getTargetXPath())) {
+        matchingMappings.add(new NestedAttributeExpression(simplifiedSteps,nestedMapping));
+      }
+    }
   }
   if (matchingMappings.size() == 0) {
     throw new IllegalArgumentException("Can't find source expression for: " + targetXPath);

@@ -1,4 +1,5 @@
 {
+  Expression exp=null;
   if (lastStep.isXmlAttribute()) {
     Map<Name,Expression> clientProperties=mapping.getClientProperties();
     QName lastStepQName=lastStep.getName();
@@ -12,8 +13,16 @@
       lastStepName=Types.toTypeName(lastStepQName);
     }
     if (clientProperties.containsKey(lastStepName)) {
-      return (Expression)clientProperties.get(lastStepName);
+      exp=(Expression)clientProperties.get(lastStepName);
+    }
+ else     if (lastStep.isId()) {
+      if (mapping.getIdentifierExpression() == Expression.NIL) {
+        exp=CommonFactoryFinder.getFilterFactory(null).property("@id");
+      }
+ else {
+        exp=mapping.getIdentifierExpression();
+      }
     }
   }
-  return null;
+  return exp;
 }

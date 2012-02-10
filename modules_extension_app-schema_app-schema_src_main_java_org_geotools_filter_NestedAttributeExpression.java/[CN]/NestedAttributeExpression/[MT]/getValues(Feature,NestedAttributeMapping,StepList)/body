@@ -1,0 +1,91 @@
+{
+  List<Object> values=new ArrayList<Object>();
+  FeatureTypeMapping nextFMapping;
+  try {
+    nextFMapping=nestedMapping.getFeatureTypeMapping(feature);
+  }
+ catch (  IOException e) {
+    nextFMapping=null;
+  }
+  if (nextFMapping == null) {
+    if (nestedMapping.isConditional()) {
+      return values;
+    }
+    throw new UnsupportedOperationException("FeatureTypeMapping not found for " + attPath + ". Please revise PropertyName in your filter!");
+  }
+  List<Feature> nestedFeatures=new ArrayList<Feature>();
+  if (nestedMapping.isSameSource()) {
+    nestedFeatures=new ArrayList<Feature>();
+    nestedFeatures.add(feature);
+  }
+ else {
+    try {
+      nestedFeatures=getNestedFeatures(feature,nestedMapping,nextFMapping);
+    }
+ catch (    IOException e) {
+      throw new RuntimeException("Failed evaluating filter expression: '" + attPath + "'. Caused by: "+ e.getMessage());
+    }
+catch (    IllegalArgumentException e) {
+      return values;
+    }
+  }
+  boolean isClientProperty=isClientProperty(steps);
+  StepList newSteps=null;
+  if (isClientProperty) {
+    newSteps=steps.subList(0,steps.size() - 1);
+    if (newSteps.size() == 1) {
+      for (      Feature f : nestedFeatures) {
+        values.addAll(getClientProperties(nestedMapping,f));
+      }
+    }
+  }
+  Name nextElementName=nextFMapping.getTargetFeature().getName();
+  int startPos=-1;
+  if (Types.equals(nextElementName,steps.get(0).getName())) {
+    startPos=0;
+  }
+ else {
+    Step elementNameStep=steps.get(nestedMapping.getTargetXPath().size());
+    if (Types.equals(nextElementName,elementNameStep.getName())) {
+      startPos=nestedMapping.getTargetXPath().size();
+      if (steps.size() > startPos + 1 && !steps.get(startPos + 1).isXmlAttribute()) {
+        startPos++;
+      }
+    }
+  }
+  if (startPos > -1) {
+    newSteps=steps.subList(startPos,steps.size());
+    if (!newSteps.isEmpty()) {
+      List<NestedAttributeMapping> nestedMappings=nextFMapping.getNestedMappings();
+      if (!nestedMappings.isEmpty()) {
+        for (        NestedAttributeMapping mapping : nestedMappings) {
+          if (newSteps.startsWith(mapping.getTargetXPath())) {
+            for (            Feature f : nestedFeatures) {
+              values.addAll(getValues(f,mapping,newSteps));
+            }
+          }
+        }
+      }
+      if (isClientProperty) {
+        newSteps=newSteps.subList(0,newSteps.size() - 1);
+      }
+      boolean isXlinkHref=isClientProperty && isXlinkHref(steps);
+      List<AttributeMapping> attMappings=nextFMapping.getAttributeMappingsIgnoreIndex(newSteps);
+      for (      AttributeMapping attMapping : attMappings) {
+        if (isClientProperty) {
+          if (!(isXlinkHref && attMapping instanceof NestedAttributeMapping)) {
+            for (            Feature f : nestedFeatures) {
+              values.addAll(getClientProperties(attMapping,f));
+            }
+          }
+        }
+ else {
+          for (          Feature f : nestedFeatures) {
+            values.add(getValue(attMapping.getSourceExpression(),f));
+          }
+        }
+      }
+    }
+  }
+  return values;
+}
