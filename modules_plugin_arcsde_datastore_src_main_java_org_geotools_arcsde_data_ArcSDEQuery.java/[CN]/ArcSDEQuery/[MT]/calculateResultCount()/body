@@ -1,12 +1,11 @@
 {
   final SimpleFeatureType schema=this.schema;
-  final GeometryDescriptor geometryDescriptor=schema.getGeometryDescriptor();
   final String colName;
-  if (geometryDescriptor == null) {
+  if (fidReader.getFidColumn() == null) {
     colName=schema.getDescriptor(0).getLocalName();
   }
  else {
-    colName=geometryDescriptor.getLocalName();
+    colName=fidReader.getFidColumn();
   }
   final SeQueryInfo qInfo=filters.getQueryInfo(new String[]{colName});
   final SeFilter[] spatialFilters=filters.getSpatialFilters();
@@ -16,9 +15,25 @@
       try {
         versioningHandler.setUpStream(session,query);
         if (spatialFilters != null && spatialFilters.length > 0) {
-          query.setSpatialConstraints(SeQuery.SE_OPTIMIZE,true,spatialFilters);
+          final boolean calcMasks=true;
+          final short searchOrder=SeQuery.SE_OPTIMIZE;
+          query.setSpatialConstraints(searchOrder,calcMasks,spatialFilters);
+          final SeDBMSInfo dbmsInfo=connection.getDBMSInfo();
+          final boolean unsupported=versioningHandler != ArcSdeVersionHandler.NONVERSIONED_HANDLER && dbmsInfo.dbmsId == SeDBMSInfo.SE_DBMS_IS_ORACLE;
+          if (unsupported) {
+            LOGGER.fine("ArcSDE on Oracle can't calculate count statistics " + "on versioned layers with spatial filters");
+          }
+          query.prepareQueryInfo(qInfo);
+          query.execute();
+          int count=0;
+          while (query.fetch() != null) {
+            count++;
+          }
+          return count;
         }
-        SeTable.SeTableStats tableStats=query.calculateTableStatistics("*",SeTable.SeTableStats.SE_COUNT_STATS,qInfo,0);
+        final int defaultMaxDistinctValues=0;
+        final SeTable.SeTableStats tableStats;
+        tableStats=query.calculateTableStatistics(colName,SeTable.SeTableStats.SE_COUNT_STATS,qInfo,defaultMaxDistinctValues);
         int actualCount=tableStats.getCount();
         return new Integer(actualCount);
       }
