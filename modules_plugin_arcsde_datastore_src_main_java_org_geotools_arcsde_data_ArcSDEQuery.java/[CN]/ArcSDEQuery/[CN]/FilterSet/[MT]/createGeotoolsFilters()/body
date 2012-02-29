@@ -1,7 +1,9 @@
 {
   FilterToSQLSDE sqlEncoder=getSqlEncoder();
+  ArcSdeSimplifyingFilterVisitor visitor=new ArcSdeSimplifyingFilterVisitor(featureType);
+  Filter simplified=(Filter)sourceFilter.accept(visitor,null);
   PostPreProcessFilterSplittingVisitor unpacker=new PostPreProcessFilterSplittingVisitor(sqlEncoder.getCapabilities(),featureType,null);
-  sourceFilter.accept(unpacker,null);
+  simplified.accept(unpacker,null);
   SimplifyingFilterVisitor filterSimplifier=new SimplifyingFilterVisitor();
   final String typeName=this.featureType.getTypeName();
   FIDValidator validator=new SimplifyingFilterVisitor.TypeNameDotNumberFidValidator(typeName);
@@ -15,7 +17,6 @@
   this.geometryFilter=unpacker.getFilterPre();
   this.geometryFilter=(Filter)this.geometryFilter.accept(filterSimplifier,null);
   if (LOGGER.isLoggable(Level.FINE) && geometryFilter != null)   LOGGER.fine("Spatial-Filter portion of SDE Query: '" + geometryFilter + "'");
-  this.unsupportedFilter=unpacker.getFilterPost();
-  this.unsupportedFilter=(Filter)this.unsupportedFilter.accept(filterSimplifier,null);
+  this.unsupportedFilter=remainingFilter;
   if (LOGGER.isLoggable(Level.FINE) && unsupportedFilter != null)   LOGGER.fine("Unsupported (and therefore ignored) portion of SDE Query: '" + unsupportedFilter + "'");
 }

@@ -1,0 +1,26 @@
+{
+  PropertyName property=FF.property(propertyName);
+  Geometry[] geomArray=new Geometry[ops.size()];
+  for (int i=0; i < geomArray.length; i++) {
+    geomArray[i]=ops.get(i).geometry;
+  }
+  GeometryCollection collection=geomArray[0].getFactory().createGeometryCollection(geomArray);
+  Geometry united=collection.union();
+  Literal geometry=FF.literal(united);
+  Class operation=ops.get(0).operation;
+  if (BBOX.class.isAssignableFrom(operation) || Intersects.class.isAssignableFrom(operation)) {
+    return FF.intersects(property,geometry);
+  }
+ else   if (Crosses.class.isAssignableFrom(operation)) {
+    return FF.crosses(property,geometry);
+  }
+ else   if (Overlaps.class.isAssignableFrom(operation)) {
+    return FF.overlaps(property,geometry);
+  }
+ else   if (Touches.class.isAssignableFrom(operation)) {
+    return FF.touches(property,geometry);
+  }
+ else {
+    throw new IllegalArgumentException("Cannot merge operation " + operation.getName());
+  }
+}

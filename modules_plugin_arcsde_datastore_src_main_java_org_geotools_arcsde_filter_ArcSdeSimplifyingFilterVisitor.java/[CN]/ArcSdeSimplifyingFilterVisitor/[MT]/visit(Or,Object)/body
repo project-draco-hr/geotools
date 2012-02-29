@@ -1,0 +1,84 @@
+{
+  Filter simplified=(Filter)super.visit(filter,extraData);
+  if (simplified instanceof Or) {
+    Map<String,List<SpatialOperation>> spatialOps=new HashMap<String,List<SpatialOperation>>();
+    List<Filter> otherFilters=new ArrayList<Filter>();
+    List<Filter> children=((Or)simplified).getChildren();
+    for (    Filter child : children) {
+      if (child instanceof BinarySpatialOperator) {
+        BinarySpatialOperator bso=(BinarySpatialOperator)child;
+        String name=null;
+        SpatialOperation so=null;
+        if (bso.getExpression1() instanceof PropertyName && bso.getExpression2() instanceof Literal) {
+          name=((PropertyName)bso.getExpression1()).getPropertyName();
+          so=new SpatialOperation(bso);
+        }
+ else         if (bso.getExpression2() instanceof PropertyName && bso.getExpression1() instanceof Literal) {
+          name=((PropertyName)bso.getExpression2()).getPropertyName();
+          so=new SpatialOperation(bso);
+        }
+        if (name != null && so != null) {
+          if ("".equals(name) && schema.getGeometryDescriptor() != null) {
+            name=schema.getGeometryDescriptor().getLocalName();
+          }
+          List<SpatialOperation> list=spatialOps.get(name);
+          if (list == null) {
+            list=new ArrayList<ArcSdeSimplifyingFilterVisitor.SpatialOperation>();
+            spatialOps.put(name,list);
+          }
+          list.add(so);
+        }
+ else {
+          otherFilters.add(child);
+        }
+      }
+ else {
+        otherFilters.add(child);
+      }
+    }
+    List<Filter> mergedFilters=new ArrayList<Filter>();
+    for (    String property : spatialOps.keySet()) {
+      List<SpatialOperation> propertyFilters=spatialOps.get(property);
+      while (propertyFilters.size() > 0) {
+        SpatialOperation main=propertyFilters.get(0);
+        List<SpatialOperation> toMerge=new ArrayList<SpatialOperation>();
+        toMerge.add(main);
+        for (int j=1; j < propertyFilters.size(); ) {
+          SpatialOperation secondary=propertyFilters.get(j);
+          if (secondary.operation == main.operation || (secondary.operation == BBOX.class && main.operation == Intersects.class) || (secondary.operation == Intersects.class && main.operation == BBOX.class)) {
+            toMerge.add(secondary);
+            propertyFilters.remove(j);
+          }
+ else {
+            j++;
+          }
+        }
+        if (toMerge.size() == 1) {
+          otherFilters.add(main.op);
+        }
+ else {
+          try {
+            Filter merged=mergeOperations(property,toMerge);
+            mergedFilters.add(merged);
+          }
+ catch (          Exception e) {
+            for (            SpatialOperation so : toMerge) {
+              otherFilters.add(so.op);
+            }
+          }
+        }
+        propertyFilters.remove(0);
+      }
+    }
+    if (mergedFilters.size() == 1 && otherFilters.size() == 0) {
+      simplified=mergedFilters.get(0);
+    }
+ else     if (mergedFilters.size() > 0) {
+      List<Filter> full=new ArrayList<Filter>();
+      full.addAll(mergedFilters);
+      full.addAll(otherFilters);
+      simplified=FF.or(full);
+    }
+  }
+  return simplified;
+}
