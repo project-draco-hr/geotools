@@ -1,0 +1,56 @@
+{
+  SimpleFeature sample=null;
+  SimpleFeatureIterator iterator=delegate.features();
+  try {
+    if (iterator.hasNext()) {
+      sample=iterator.next();
+    }
+  }
+  finally {
+    iterator.close();
+  }
+  SimpleFeatureTypeBuilder build=new SimpleFeatureTypeBuilder();
+  SimpleFeatureType origional=delegate.getSchema();
+  for (  Definition def : definitionList) {
+    String name=def.name;
+    Expression expression=def.expression;
+    Object value=null;
+    if (sample != null) {
+      value=expression.evaluate(sample);
+    }
+    Class<?> binding=def.binding;
+    if (value == null) {
+      if (expression instanceof PropertyName) {
+        PropertyName propertyName=(PropertyName)expression;
+        String path=propertyName.getPropertyName();
+        AttributeDescriptor descriptor=origional.getDescriptor(name);
+        AttributeType attributeType=descriptor.getType();
+        binding=attributeType.getBinding();
+      }
+    }
+ else {
+      binding=value.getClass();
+    }
+    if (binding == null) {
+      throw new IllegalArgumentException("Unable to determine type for " + name);
+    }
+    if (Geometry.class.isAssignableFrom(binding)) {
+      CoordinateReferenceSystem crs;
+      AttributeType originalAttributeType=origional.getType(name);
+      if (originalAttributeType != null && originalAttributeType instanceof GeometryType) {
+        GeometryType geometryType=(GeometryType)originalAttributeType;
+        crs=geometryType.getCoordinateReferenceSystem();
+      }
+ else {
+        crs=origional.getCoordinateReferenceSystem();
+      }
+      build.crs(crs);
+      build.add(name,binding);
+    }
+ else {
+      build.add(name,binding);
+    }
+  }
+  build.setName(origional.getTypeName());
+  return build.buildFeatureType();
+}

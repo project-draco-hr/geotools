@@ -1,0 +1,28 @@
+{
+  List<Definition> list=new ArrayList<Definition>();
+  HashSet<String> check=new HashSet<String>();
+  definition=definition.replaceAll("\r","\n").replaceAll("[\n\r][\n\r]","\n");
+  for (  String line : definition.split("\n")) {
+    int mark=line.indexOf("=");
+    if (mark != -1) {
+      String name=line.substring(0,mark).trim();
+      String expressionDefinition=line.substring(mark + 1).trim();
+      if (check.contains(name)) {
+        throw new IllegalArgumentException("ReShape definition " + name + " already in use");
+      }
+      Expression expression;
+      try {
+        expression=ECQL.toExpression(expressionDefinition);
+      }
+ catch (      CQLException e) {
+        throw new IllegalArgumentException("Reshape unable to parse " + name + "="+ expressionDefinition+ " "+ e,e);
+      }
+      Definition def=new Definition();
+      def.name=name;
+      def.expression=expression;
+      list.add(def);
+      check.add(name);
+    }
+  }
+  return list;
+}
