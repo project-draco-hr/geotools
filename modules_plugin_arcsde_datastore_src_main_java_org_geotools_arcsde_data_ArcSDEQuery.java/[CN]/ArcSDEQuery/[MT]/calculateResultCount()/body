@@ -1,16 +1,21 @@
 {
   final SimpleFeatureType schema=this.schema;
   final String colName;
-  if (fidReader.getFidColumn() == null) {
-    colName=schema.getDescriptor(0).getLocalName();
-  }
+{
+    String fidAtt;
+    if (fidReader.getFidColumn() == null) {
+      fidAtt=schema.getDescriptor(0).getLocalName();
+    }
  else {
-    colName=fidReader.getFidColumn();
+      fidAtt=fidReader.getFidColumn();
+    }
+    colName=filters.getSqlEncoder().getColumnDefinition(fidAtt);
   }
   final SeQueryInfo qInfo=filters.getQueryInfo(new String[]{colName});
   final SeFilter[] spatialFilters=filters.getSpatialFilters();
   final Command<Integer> countCmd=new Command<Integer>(){
     @Override public Integer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
+      final SeQueryInfo queryInfo=qInfo;
       SeQuery query=new SeQuery(connection);
       try {
         versioningHandler.setUpStream(session,query);
@@ -23,7 +28,7 @@
           if (unsupported) {
             LOGGER.fine("ArcSDE on Oracle can't calculate count statistics " + "on versioned layers with spatial filters");
           }
-          query.prepareQueryInfo(qInfo);
+          query.prepareQueryInfo(queryInfo);
           query.execute();
           int count=0;
           while (query.fetch() != null) {
@@ -33,7 +38,7 @@
         }
         final int defaultMaxDistinctValues=0;
         final SeTable.SeTableStats tableStats;
-        tableStats=query.calculateTableStatistics(colName,SeTable.SeTableStats.SE_COUNT_STATS,qInfo,defaultMaxDistinctValues);
+        tableStats=query.calculateTableStatistics(colName,SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
         int actualCount=tableStats.getCount();
         return new Integer(actualCount);
       }

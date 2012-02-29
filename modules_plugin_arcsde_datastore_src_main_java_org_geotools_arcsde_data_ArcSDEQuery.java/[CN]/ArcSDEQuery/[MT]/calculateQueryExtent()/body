@@ -4,7 +4,12 @@
   try {
     extent=session.issue(new Command<SeExtent>(){
       @Override public SeExtent execute(      ISession session,      SeConnection connection) throws SeException, IOException {
-        final String[] spatialCol={schema.getGeometryDescriptor().getLocalName()};
+        final String[] spatialCol;
+{
+          String geomCol=schema.getGeometryDescriptor().getLocalName();
+          geomCol=filters.getSqlEncoder().getColumnDefinition(geomCol);
+          spatialCol=new String[]{geomCol};
+        }
         final SeSqlConstruct fullConstruct=filters.getQueryInfo(spatialCol).getConstruct();
         String whereClause=fullConstruct.getWhere();
         if (whereClause == null) {
