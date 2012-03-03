@@ -1,13 +1,14 @@
 {
   ensureNonNull("code",code);
   CoordinateOperation returnValue=null;
+  ResultSet result=null;
   try {
     final String primaryKey=toPrimaryKey(CoordinateOperation.class,code,"[Coordinate_Operation]","COORD_OP_CODE","COORD_OP_NAME");
     final PreparedStatement stmt;
     stmt=prepareStatement("CoordinateOperation","SELECT COORD_OP_CODE," + " COORD_OP_NAME," + " COORD_OP_TYPE,"+ " SOURCE_CRS_CODE,"+ " TARGET_CRS_CODE,"+ " COORD_OP_METHOD_CODE,"+ " COORD_TFM_VERSION,"+ " COORD_OP_ACCURACY,"+ " AREA_OF_USE_CODE,"+ " COORD_OP_SCOPE,"+ " REMARKS"+ " FROM [Coordinate_Operation]"+ " WHERE COORD_OP_CODE = ?");
     stmt.setInt(1,Integer.parseInt(primaryKey));
-    ResultSet result=stmt.executeQuery();
-    while (result.next()) {
+    result=stmt.executeQuery();
+    while (hasNext(result)) {
       final String epsg=getString(result,1,code);
       final String name=getString(result,2,code);
       final String type=getString(result,3,code).trim().toLowerCase();
@@ -67,7 +68,6 @@
           num=Integer.parseInt(methodCode);
         }
  catch (        NumberFormatException exception) {
-          result.close();
           throw new FactoryException(exception);
         }
         isBursaWolf=(num >= BURSA_WOLF_MIN_CODE && num <= BURSA_WOLF_MAX_CODE);
@@ -98,7 +98,6 @@
         operation=new DefiningConversion(properties,method,parameters);
       }
  else       if (isConcatenated) {
-        result.close();
         result=null;
         final PreparedStatement cstmt=prepareStatement("ConcatenatedOperation","SELECT SINGLE_OPERATION_CODE" + " FROM [Coordinate_Operation Path]" + " WHERE (CONCAT_OPERATION_CODE = ?)"+ " ORDER BY OP_PATH_STEP");
         cstmt.setString(1,epsg);
@@ -145,7 +144,6 @@
           }
         }
  catch (        ParameterNotFoundException exception) {
-          result.close();
           throw new FactoryException(Errors.format(ErrorKeys.GEOTOOLS_EXTENSION_REQUIRED_$1,method.getName().getCode(),exception));
         }
         final Class<? extends Operation> expected;
@@ -156,21 +154,25 @@
           expected=Conversion.class;
         }
  else {
-          result.close();
           throw new FactoryException(Errors.format(ErrorKeys.UNKNOW_TYPE_$1,type));
         }
         final MathTransform mt=factories.getMathTransformFactory().createBaseToDerived(sourceCRS,parameters,targetCRS.getCoordinateSystem());
         operation=DefaultOperation.create(properties,sourceCRS,targetCRS,mt,method,expected);
       }
       returnValue=ensureSingleton(operation,returnValue,code);
-      if (result == null) {
-        return returnValue;
-      }
     }
-    result.close();
   }
  catch (  SQLException exception) {
     throw databaseFailure(CoordinateOperation.class,code,exception);
+  }
+ finally {
+    if (result != null) {
+      try {
+        result.close();
+      }
+ catch (      Exception e) {
+      }
+    }
   }
   if (returnValue == null) {
     throw noSuchAuthorityCode(CoordinateOperation.class,code);
