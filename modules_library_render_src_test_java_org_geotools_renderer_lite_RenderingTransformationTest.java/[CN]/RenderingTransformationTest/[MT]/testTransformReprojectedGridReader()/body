@@ -1,0 +1,15 @@
+{
+  Style style=RendererBaseTest.loadStyle(this,"coverageCenter.sld");
+  GeoTiffReader reader=new GeoTiffReader(TestData.copy(this,"geotiff/world.tiff"));
+  MapContent mc=new MapContent();
+  mc.addLayer(new GridReaderLayer(reader,style));
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setMapContent(mc);
+  ReferencedEnvelope reWgs84=new ReferencedEnvelope(-70,70,-160,160,CRS.decode("EPSG:4326"));
+  ReferencedEnvelope re=reWgs84.transform(CRS.decode("EPSG:3857"),true);
+  BufferedImage image=RendererBaseTest.showRender("Lines with circle stroke",renderer,TIME,re);
+  assertEquals(Color.RED,getPixelColor(image,image.getWidth() / 2,image.getHeight() / 2));
+  assertEquals(Color.WHITE,getPixelColor(image,image.getWidth() / 4,image.getHeight() / 2));
+  assertEquals(Color.WHITE,getPixelColor(image,image.getWidth() / 2,image.getHeight() / 4));
+  assertEquals(Color.WHITE,getPixelColor(image,image.getWidth() / 4,image.getHeight() / 4));
+}
