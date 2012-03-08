@@ -24,14 +24,15 @@
       if (ts != null && ts instanceof TileScheduler)       localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,(TileScheduler)ts));
     }
   }
+  final ROI[] sourceRoi=visitor.sourceRoi;
   if (visitor.granulesNumber == 1 && Utils.OPTIMIZE_CROP) {
     final ROI roi=visitor.rois.get(0);
-    Rectangle bounds=toRectangle(roi.getAsShape());
+    Rectangle bounds=Utils.toRectangle(roi.getAsShape());
     if (bounds != null) {
-      final RenderedImage image=visitor.getSourcesAsArray()[0];
-      final Rectangle imageBounds=PlanarImage.wrapRenderedImage(image).getBounds();
+      RenderedImage image=visitor.getSourcesAsArray()[0];
+      Rectangle imageBounds=PlanarImage.wrapRenderedImage(image).getBounds();
       if (imageBounds.equals(bounds)) {
-        if (!imageBounds.equals(rasterBounds)) {
+        if (!rasterBounds.contains(imageBounds)) {
           XRectangle2D.intersect(imageBounds,rasterBounds,imageBounds);
           if (imageBounds.isEmpty()) {
             return null;
@@ -39,13 +40,16 @@
           ImageWorker iw=new ImageWorker(image);
           iw.setRenderingHints(localHints);
           iw.crop(imageBounds.x,imageBounds.y,imageBounds.width,imageBounds.height);
-          return iw.getRenderedImage();
+          image=iw.getRenderedImage();
+          imageBounds=PlanarImage.wrapRenderedImage(image).getBounds();
+        }
+        if (!imageBounds.contains(rasterBounds)) {
+          image=MosaicDescriptor.create(new RenderedImage[]{image},request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,(alphaIn || visitor.doInputTransparency) ? visitor.alphaChannels : null,sourceRoi,visitor.sourceThreshold,backgroundValues,localHints);
         }
         return image;
       }
     }
   }
-  final ROI[] sourceRoi=visitor.sourceRoi;
   final RenderedImage mosaic=MosaicDescriptor.create(visitor.getSourcesAsArray(),request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,(alphaIn || visitor.doInputTransparency) ? visitor.alphaChannels : null,sourceRoi,visitor.sourceThreshold,backgroundValues,localHints);
   if (setRoiProperty) {
     RenderedOp rop=(RenderedOp)mosaic;
