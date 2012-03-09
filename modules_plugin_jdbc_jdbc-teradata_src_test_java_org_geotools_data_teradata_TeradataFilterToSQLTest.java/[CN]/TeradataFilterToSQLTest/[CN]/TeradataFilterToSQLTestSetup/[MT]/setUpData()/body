@@ -1,0 +1,13 @@
+{
+  super.setUpData();
+  runSafe("DELETE FROM SYSSPATIAL.GEOMETRY_COLUMNS WHERE F_TABLE_NAME = 'cpi'");
+  runSafe("DROP HASH INDEX \"cpi_geometry_idx_idx\"");
+  runSafe("DROP TABLE \"cpi_geometry_idx\"");
+  runSafe("DROP TABLE \"cpi\"");
+  run("CREATE TABLE \"cpi\"(" + "\"id\" not null integer, " + "\"geometry\" ST_GEOMETRY, "+ "\"intProperty\" int,"+ "\"doubleProperty\" double precision, "+ "\"stringProperty\" varchar(200) casespecific) UNIQUE PRIMARY INDEX(intProperty,doubleProperty)");
+  run("INSERT INTO SYSSPATIAL.GEOMETRY_COLUMNS VALUES('" + fixture.getProperty("database") + "', '"+ fixture.getProperty("schema")+ "', 'cpi', 'geometry', 2, "+ srid4326+ ", 'LINESTRING',-180,-90,180,90)");
+  run("CREATE MULTISET TABLE \"cpi_geometry_idx\"" + " (intProperty INTEGER NOT NULL, doubleProperty double precision not null, cellid INTEGER NOT NULL)" + " UNIQUE PRIMARY INDEX (intProperty,doubleProperty)");
+  run("CREATE HASH INDEX cpi_geometry_idx_idx (cellid) ON cpi_geometry_idx ORDER BY (cellid);");
+  runSafe("DELETE FROM sysspatial.tessellation WHERE f_table_name = 'cpi'");
+  run("INSERT INTO sysspatial.tessellation VALUES (" + "'geotools'," + "'cpi',"+ "'geometry',"+ "-180,-90,180,90,"+ "1000,1000,3,.01,0"+ ")");
+}
