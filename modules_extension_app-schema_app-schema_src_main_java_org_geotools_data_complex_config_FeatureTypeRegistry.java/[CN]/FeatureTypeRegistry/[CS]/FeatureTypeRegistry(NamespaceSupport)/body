@@ -9,5 +9,19 @@
     createFoundationTypes();
   }
   typeRegistry.putAll(FOUNDATION_TYPES);
+  for (  AttributeType type : typeRegistry.values()) {
+    if (type instanceof ComplexType) {
+      XSDTypeDefinition typeDef=null;
+      try {
+        typeDef=getTypeDefinition(type.getName());
+        if (typeDef instanceof XSDComplexTypeDefinition) {
+          setSubstitutionGroup((ComplexType)type,(XSDComplexTypeDefinition)typeDef,null,null);
+        }
+      }
+ catch (      IllegalArgumentException e) {
+        LOGGER.log(Level.WARNING,"Unable to set substitution group, caused by: " + e.getMessage());
+      }
+    }
+  }
   descriptorRegistry.putAll(FOUNDATION_DESCRIPTORS);
 }

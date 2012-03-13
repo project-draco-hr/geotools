@@ -1,0 +1,42 @@
+{
+  List children=Schemas.getChildElementParticles(typeDef,true);
+  final Collection<PropertyDescriptor> schema=new ArrayList<PropertyDescriptor>(children.size());
+  XSDElementDeclaration childDecl;
+  Name typeName;
+  for (Iterator it=children.iterator(); it.hasNext(); ) {
+    childDecl=(XSDElementDeclaration)((XSDParticle)it.next()).getContent();
+    if (childDecl.isElementDeclarationReference()) {
+      childDecl=childDecl.getResolvedElementDeclaration();
+    }
+    typeName=Types.typeName(childDecl.getTargetNamespace(),childDecl.getName());
+    try {
+      PropertyDescriptor descriptor=complexType.getDescriptor(typeName);
+      if (descriptor != null) {
+        if (!descriptor.getUserData().containsValue("substitutionGroup")) {
+          List<AttributeDescriptor> substitutionGroup=new ArrayList<AttributeDescriptor>();
+          descriptor.getUserData().put("substitutionGroup",substitutionGroup);
+          Iterator subIt=childDecl.getSubstitutionGroup().iterator();
+          while (subIt.hasNext()) {
+            XSDElementDeclaration sub=(XSDElementDeclaration)subIt.next();
+            if (!sub.getName().equals(childDecl.getName())) {
+              Name elemName=Types.typeName(sub.getTargetNamespace(),sub.getName());
+              XSDTypeDefinition subType=sub.getTypeDefinition();
+              Name name=subType.getName() == null ? elemName : Types.typeName(subType.getTargetNamespace(),subType.getName());
+              AttributeType type=typeRegistry.get(name);
+              if (type != null) {
+                int minOccurs=Schemas.getMinOccurs(typeDef,childDecl);
+                int maxOccurs=Schemas.getMaxOccurs(typeDef,childDecl);
+                boolean nillable=childDecl.isNillable();
+                AttributeDescriptor subDescriptor=createAttributeDescriptor(type,crs,elemName,minOccurs,maxOccurs,nillable,null);
+                substitutionGroup.add(subDescriptor);
+              }
+            }
+          }
+        }
+      }
+    }
+ catch (    Exception e) {
+      LOGGER.log(Level.WARNING,"Could not create substitution descriptor: " + e.getMessage());
+    }
+  }
+}
