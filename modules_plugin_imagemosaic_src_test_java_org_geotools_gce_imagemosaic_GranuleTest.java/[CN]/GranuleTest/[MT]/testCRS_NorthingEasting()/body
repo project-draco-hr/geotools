@@ -1,0 +1,26 @@
+{
+  final File testMosaic=TestData.file(this,"/crs_nztm");
+  assertTrue(testMosaic.exists());
+  final Parser parser=new Parser();
+  final DefaultProjectedCRS crs_EN=(DefaultProjectedCRS)parser.parseObject(NZTM_WKT_EN);
+  final DefaultProjectedCRS crs_NE=(DefaultProjectedCRS)parser.parseObject(NZTM_WKT_NE);
+  final ImageMosaicReader reader=(ImageMosaicReader)new ImageMosaicFormat().getReader(testMosaic);
+  assertNotNull(reader);
+  final RasterManager manager=new RasterManager(reader);
+  final ReferencedEnvelope mosaicBounds=new ReferencedEnvelope(1587997.8835,1612003.2265,6162000.4515,6198002.1165,crs_EN);
+  manager.spatialDomainManager.coverageBBox=mosaicBounds;
+  manager.spatialDomainManager.coverageEnvelope=new GeneralEnvelope(mosaicBounds);
+  final ReferencedEnvelope requestBBoxNE=new ReferencedEnvelope(6154440.101350001,6204842.43235,1583436.86902,1617044.34782,crs_NE);
+  final ParameterValue<GridGeometry2D> requestedBBox=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  requestedBBox.setValue(new GridGeometry2D(PixelInCell.CELL_CENTER,reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),requestBBoxNE,null));
+  final RasterLayerRequest requestNE=new RasterLayerRequest(new GeneralParameterValue[]{requestedBBox},manager);
+  BoundingBox checkCropBBox=requestNE.getCropBBox();
+  assertNotNull(checkCropBBox);
+  assertEquals("ReferencedEnvelope[1587997.8835 : 1612003.2265, 6162000.4515 : 6198002.1165]",checkCropBBox.toString());
+  final ReferencedEnvelope requestBBoxEN=new ReferencedEnvelope(1583436.86902,1617044.34782,6154440.101350001,6204842.43235,crs_EN);
+  requestedBBox.setValue(new GridGeometry2D(PixelInCell.CELL_CENTER,reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),requestBBoxEN,null));
+  final RasterLayerRequest requestEN=new RasterLayerRequest(new GeneralParameterValue[]{requestedBBox},manager);
+  checkCropBBox=requestEN.getCropBBox();
+  assertNotNull(checkCropBBox);
+  assertEquals("ReferencedEnvelope[1587997.8835 : 1612003.2265, 6162000.4515 : 6198002.1165]",checkCropBBox.toString());
+}
