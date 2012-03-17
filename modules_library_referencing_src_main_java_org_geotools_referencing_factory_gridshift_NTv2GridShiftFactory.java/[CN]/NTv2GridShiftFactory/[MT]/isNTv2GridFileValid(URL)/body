@@ -1,0 +1,39 @@
+{
+  RandomAccessFile raf=null;
+  InputStream is=null;
+  try {
+    if (url.getProtocol().equals("file")) {
+      File file=new File(url.getFile());
+      if (!file.exists() || !file.canRead()) {
+        throw new IOException(Errors.format(ErrorKeys.FILE_DOES_NOT_EXIST_$1,file));
+      }
+      raf=new RandomAccessFile(file,"r");
+      new GridShiftFile().loadGridShiftFile(raf);
+    }
+ else {
+      InputStream in=url.openConnection().getInputStream();
+      new GridShiftFile().loadGridShiftFile(in,false);
+    }
+    return true;
+  }
+ catch (  IllegalArgumentException e) {
+    LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    return false;
+  }
+catch (  IOException e) {
+    LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+    return false;
+  }
+ finally {
+    try {
+      if (raf != null)       raf.close();
+    }
+ catch (    IOException e) {
+    }
+    try {
+      if (is != null)       is.close();
+    }
+ catch (    IOException e) {
+    }
+  }
+}
