@@ -1,0 +1,43 @@
+{
+  super(httpResponse);
+  InputStream inputStream=null;
+  try {
+    if (!raw) {
+      inputStream=httpResponse.getResponseStream();
+      parseDocumentResponse(inputStream);
+    }
+ else {
+      rawContentType=httpResponse.getContentType();
+      if (rawContentType.startsWith("text/xml")) {
+        inputStream=new BufferedInputStream(httpResponse.getResponseStream());
+        inputStream.mark(8192);
+        try {
+          XmlPullParser parser=new MXParser();
+          parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES,true);
+          parser.setInput(inputStream,"UTF-8");
+          parser.nextTag();
+          String name=parser.getName();
+          String namespace=parser.getNamespace();
+          inputStream.reset();
+          if ("ServiceException".equals(name) || "ExecuteResponse".equals(name)) {
+            parseDocumentResponse(inputStream);
+            return;
+          }
+        }
+ catch (        XmlPullParserException e) {
+          throw new IOException("Failed to parse the response",e);
+        }
+      }
+ else {
+        inputStream=httpResponse.getResponseStream();
+      }
+      rawResponseStream=inputStream;
+      inputStream=null;
+    }
+  }
+  finally {
+    if (inputStream != null) {
+      inputStream.close();
+    }
+  }
+}

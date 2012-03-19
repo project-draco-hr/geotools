@@ -1,0 +1,38 @@
+{
+  if (fixture == null) {
+    return;
+  }
+  if (DISABLE) {
+    return;
+  }
+  String processIdenLocal="gs:AreaGrid";
+  WPSCapabilitiesType capabilities=wps.getCapabilities();
+  ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
+  EList processes=processOfferings.getProcess();
+  boolean found=false;
+  Iterator iterator=processes.iterator();
+  while (iterator.hasNext()) {
+    ProcessBriefType process=(ProcessBriefType)iterator.next();
+    if (process.getIdentifier().getValue().equalsIgnoreCase(processIdenLocal)) {
+      found=true;
+      break;
+    }
+  }
+  if (!found) {
+    System.out.println("Skipping, gs:AreaGrid not found!");
+    return;
+  }
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(processIdenLocal);
+  exeRequest.addInput("envelope",Arrays.asList(wps.createBoundingBoxInputValue("EPSG:4326",2,Arrays.asList(-180d,-90d),Arrays.asList(180d,90d))));
+  OutputDefinitionType rawOutput=wps.createOutputDefinitionType("result");
+  rawOutput.setMimeType("application/arcgrid");
+  ResponseFormType responseForm=wps.createResponseForm(null,rawOutput);
+  exeRequest.setResponseForm(responseForm);
+  ExecuteProcessResponse response=wps.issueRequest(exeRequest);
+  assertNotNull(response);
+  ExecuteResponseType executeResponse=response.getExecuteResponse();
+  assertNotNull(executeResponse);
+  assertNotNull(executeResponse.getStatus().getProcessFailed());
+  assertNotNull(executeResponse.getStatus().getProcessFailed().getExceptionReport());
+}
