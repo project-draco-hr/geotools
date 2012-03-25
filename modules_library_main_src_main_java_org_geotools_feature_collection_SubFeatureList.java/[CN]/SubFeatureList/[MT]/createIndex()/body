@@ -1,6 +1,6 @@
 {
   List<FeatureId> fids=new ArrayList<FeatureId>();
-  Iterator<SimpleFeature> it=collection.iterator();
+  SimpleFeatureIterator it=collection.features();
   try {
     while (it.hasNext()) {
       SimpleFeature feature=it.next();
@@ -10,10 +10,11 @@
     }
     if (sort != null && !sort.isEmpty()) {
       final SortBy initialOrder=(SortBy)sort.get(sort.size() - 1);
+      final FeatureIdAccessor idAccessor=new FeatureIdAccessor(true);
       Collections.sort(fids,new Comparator<FeatureId>(){
         public int compare(        FeatureId key1,        FeatureId key2){
-          SimpleFeature feature1=getFeatureMember(key1.getID());
-          SimpleFeature feature2=getFeatureMember(key2.getID());
+          SimpleFeature feature1=idAccessor.getFeature(key1.getID());
+          SimpleFeature feature2=idAccessor.getFeature(key2.getID());
           int compare=compare(feature1,feature2,initialOrder);
           if (compare == 0 && sort.size() > 1) {
             for (int i=sort.size() - 1; compare == 0 && i >= 0; i--) {
@@ -26,17 +27,28 @@
           PropertyName name=order.getPropertyName();
           Comparable value1=(Comparable)name.evaluate(feature1);
           Comparable value2=(Comparable)name.evaluate(feature2);
+          if (value1 == value2) {
+            return 0;
+          }
           if (order.getSortOrder() == SortOrder.ASCENDING) {
+            if (value1 == null) {
+              return -1;
+            }
             return value1.compareTo(value2);
           }
- else           return value2.compareTo(value1);
+ else {
+            if (value2 == null) {
+              return -1;
+            }
+            return value2.compareTo(value1);
+          }
         }
       }
 );
     }
   }
   finally {
-    collection.close(it);
+    it.close();
   }
   return fids;
 }
