@@ -2,7 +2,27 @@
   if (!supportsOperation(WFSOperationType.GET_FEATURE,true)) {
     throw new UnsupportedOperationException("The server does not support GetFeature for HTTP method POST");
   }
-  URL url=getOperationURL(WFSOperationType.GET_FEATURE,true);
+  URL postURL=getOperationURL(WFSOperationType.GET_FEATURE,true);
+  if (request instanceof GetFeatureQueryAdapter) {
+    GetFeatureQueryAdapter adapter=(GetFeatureQueryAdapter)request;
+    if (adapter.getVendorParameter() != null) {
+      String url=postURL.toString();
+      if ((url == null) || !url.endsWith("?")) {
+        url+="?";
+      }
+      boolean first=true;
+      for (      Map.Entry<String,String> entry : adapter.getVendorParameter().entrySet()) {
+        if (first) {
+          first=false;
+        }
+ else {
+          url+="&";
+        }
+        url+=entry.getKey() + "=" + URLEncoder.encode(entry.getValue(),"UTF-8");
+      }
+      postURL=new URL(url);
+    }
+  }
   RequestComponents reqParts=strategy.createGetFeatureRequest(this,request);
   GetFeatureType serverRequest=reqParts.getServerRequest();
   Encoder encoder=new Encoder(strategy.getWfsConfiguration());
@@ -13,6 +33,6 @@
   if (!XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
     encoder.getNamespaces().declarePrefix(prefix,namespace);
   }
-  WFSResponse response=issuePostRequest(serverRequest,url,encoder);
+  WFSResponse response=issuePostRequest(serverRequest,postURL,encoder);
   return response;
 }

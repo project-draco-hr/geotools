@@ -1,0 +1,43 @@
+{
+  if (Boolean.FALSE.equals(serviceAvailable)) {
+    return;
+  }
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put(WFSDataStoreFactory.URL.key,SERVER_URL);
+  params.put(WFSDataStoreFactory.PROTOCOL.key,usePost);
+  params.put("USE_PULL_PARSER",Boolean.TRUE);
+  WFSDataStoreFactory dataStoreFactory=new WFSDataStoreFactory();
+  WFSDataStore wfs=dataStoreFactory.createDataStore(params);
+  final WFS_1_1_0_Protocol originalHandler=(WFS_1_1_0_Protocol)((WFS_1_1_0_DataStore)wfs).wfs;
+  originalHandler.http=new HttpProtocolWrapper(originalHandler.http){
+    @Override public HTTPResponse issueGet(    URL baseUrl,    Map<String,String> kvp) throws IOException {
+      assertEquals("true",kvp.get("strict"));
+      assertEquals("mysecret",kvp.get("authkey"));
+      assertEquals("low:2000000;high:5000000",kvp.get("viewparams"));
+      return super.issueGet(baseUrl,kvp);
+    }
+    @Override public HTTPResponse issuePost(    URL targetUrl,    POSTCallBack callback) throws IOException {
+      String[] keyValueArray=targetUrl.getQuery().split("&");
+      Map<String,String> kvp=new HashMap<String,String>();
+      for (      String keyValue : keyValueArray) {
+        String[] skv=keyValue.split("=");
+        kvp.put(skv[0],skv[1]);
+      }
+      assertEquals("true",kvp.get("strict"));
+      assertEquals("mysecret",kvp.get("authkey"));
+      assertEquals("low%3A2000000%3Bhigh%3A5000000",kvp.get("viewparams"));
+      return super.issuePost(targetUrl,callback);
+    }
+  }
+;
+  Map<String,String> vparams=new HashMap<String,String>();
+  vparams.put("authkey","mysecret");
+  vparams.put("viewparams","low:2000000;high:5000000");
+  vparams.put("strict","true");
+  Hints hints=new Hints(WFSDataStore.WFS_VENDOR_PARAMETERS,vparams);
+  Query q=new Query("topp:states");
+  q.setHints(hints);
+  FeatureReader fr=wfs.getFeatureReader(q,Transaction.AUTO_COMMIT);
+  assertTrue(fr.hasNext());
+  fr.close();
+}
