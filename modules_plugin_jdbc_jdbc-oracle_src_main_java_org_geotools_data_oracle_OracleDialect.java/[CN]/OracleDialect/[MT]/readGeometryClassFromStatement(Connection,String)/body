@@ -1,0 +1,23 @@
+{
+  Statement st=null;
+  ResultSet rs=null;
+  try {
+    st=cx.createStatement();
+    LOGGER.log(Level.FINE,"Geometry type check; {0} ",sql);
+    rs=st.executeQuery(sql);
+    if (rs.next()) {
+      String gType=rs.getString(1);
+      Class geometryClass=(Class)TT.GEOM_CLASSES.get(gType);
+      if (geometryClass == null) {
+        LOGGER.log(Level.WARNING,"Unrecognized geometry type " + gType + " falling back on generic 'GEOMETRY'");
+        geometryClass=Geometry.class;
+      }
+      return geometryClass;
+    }
+  }
+  finally {
+    dataStore.closeSafe(rs);
+    dataStore.closeSafe(st);
+  }
+  return null;
+}
