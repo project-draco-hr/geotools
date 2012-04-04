@@ -5,8 +5,7 @@
     Expression geometry=s.getGeometry();
     String geomName=null;
     if (geometry instanceof PropertyName) {
-      geomName=((PropertyName)geometry).getPropertyName();
-      return getAttributeCRS(geomName,schema);
+      return getAttributeCRS((PropertyName)geometry,schema);
     }
  else     if (geometry == null) {
       return getAttributeCRS(null,schema);
@@ -14,8 +13,8 @@
  else {
       StyleAttributeExtractor attExtractor=new StyleAttributeExtractor();
       geometry.accept(attExtractor,null);
-      for (      String name : attExtractor.getAttributeNameSet()) {
-        if (schema.getDescriptor(name) instanceof GeometryDescriptor) {
+      for (      PropertyName name : attExtractor.getAttributes()) {
+        if (name.evaluate(schema) instanceof GeometryDescriptor) {
           return getAttributeCRS(name,schema);
         }
       }
