@@ -1,0 +1,23 @@
+{
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  for (  AttributeDescriptor ad : delegate.getSchema().getAttributeDescriptors()) {
+    if (ad instanceof GeometryDescriptor) {
+      GeometryDescriptor gd=(GeometryDescriptor)ad;
+      Class<?> binding=ad.getType().getBinding();
+      if (Point.class.isAssignableFrom(binding)) {
+        tb.add(ad);
+      }
+ else {
+        tb.minOccurs(ad.getMinOccurs());
+        tb.maxOccurs(ad.getMaxOccurs());
+        tb.nillable(ad.isNillable());
+        tb.add(ad.getLocalName(),Point.class,gd.getCoordinateReferenceSystem());
+      }
+    }
+ else {
+      tb.add(ad);
+    }
+  }
+  tb.setName(delegate.getSchema().getName());
+  return tb.buildFeatureType();
+}
