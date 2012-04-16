@@ -1,0 +1,51 @@
+{
+  FeatureCollection results=FeatureCollections.newCollection();
+  try {
+    if (featureCollection == null || featureCollection.size() == 0) {
+      LOGGER.info("No features provided in request");
+      return results;
+    }
+    if (fromMeasureAttb == null || featureCollection.getSchema().getDescriptor(fromMeasureAttb) == null) {
+      throw new ProcessException("The from_measure_attb parameter was not provided or not defined in schema");
+    }
+    if (toMeasureAttb == null || featureCollection.getSchema().getDescriptor(toMeasureAttb) == null) {
+      throw new ProcessException("The to_measure_attb parameter was not provided");
+    }
+    if (measure == null) {
+      throw new ProcessException("The measure parameter was not provided");
+    }
+    SimpleFeatureType targetFeatureType=createTargetFeatureType(featureCollection.getSchema());
+    FeatureIterator<Feature> featureIterator=null;
+    try {
+      featureIterator=featureCollection.features();
+      Feature feature=featureIterator.next();
+      Double featureFromMeasure=(Double)feature.getProperty(fromMeasureAttb).getValue();
+      Double featureToMeasure=(Double)feature.getProperty(toMeasureAttb).getValue();
+      LengthIndexedLine lengthIndexedLine=new LengthIndexedLine((Geometry)feature.getDefaultGeometryProperty().getValue());
+      double featureLength=featureToMeasure - featureFromMeasure;
+      double startOffset=measure - featureFromMeasure;
+      double calcLength=((Geometry)feature.getDefaultGeometryProperty().getValue()).getLength();
+      if (calcLength == 0) {
+        LOGGER.info("Edge feature has zero length");
+        return results;
+      }
+      if (featureLength == 0) {
+        LOGGER.info("Requested feature has zero length");
+        return results;
+      }
+      Coordinate point=lengthIndexedLine.extractPoint(startOffset * calcLength / featureLength);
+      results.add(createTargetFeature(feature,targetFeatureType,point));
+    }
+  finally {
+      if (featureIterator != null)       featureIterator.close();
+    }
+    return results;
+  }
+ catch (  ProcessException e) {
+    throw e;
+  }
+catch (  Throwable e) {
+    LOGGER.warning("Error executing method: " + e);
+    throw new ProcessException("Error executing method: " + e,e);
+  }
+}

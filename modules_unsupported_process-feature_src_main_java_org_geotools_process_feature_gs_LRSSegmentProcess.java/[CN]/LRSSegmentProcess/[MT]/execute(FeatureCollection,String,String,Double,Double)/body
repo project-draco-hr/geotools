@@ -1,0 +1,94 @@
+{
+  FeatureCollection results=FeatureCollections.newCollection();
+  try {
+    if (featureCollection == null || featureCollection.size() == 0) {
+      LOGGER.info("No features provided in request");
+      return results;
+    }
+    if (fromMeasureAttb == null || featureCollection.getSchema().getDescriptor(fromMeasureAttb) == null) {
+      throw new ProcessException("The from_measure_attb parameter was not provided or not defined in schema");
+    }
+    if (toMeasureAttb == null || featureCollection.getSchema().getDescriptor(toMeasureAttb) == null) {
+      throw new ProcessException("The to_measure_attb parameter was not provided");
+    }
+    if (fromMeasure == null) {
+      throw new ProcessException("The from_measure parameter was not provided");
+    }
+    if (toMeasure == null) {
+      throw new ProcessException("The to_measure parameter was not provided");
+    }
+    if (fromMeasure.doubleValue() == toMeasure.doubleValue()) {
+      LOGGER.info("Zero length segment requested");
+      return results;
+    }
+    FeatureIterator<Feature> featureIterator=null;
+    Feature firstFeature=null;
+    try {
+      LineMerger lineMerger=new LineMerger();
+      if (toMeasure.doubleValue() > fromMeasure.doubleValue()) {
+        featureIterator=featureCollection.features();
+        while (featureIterator.hasNext()) {
+          Feature feature=featureIterator.next();
+          if (firstFeature == null)           firstFeature=feature;
+          Double featureFromMeasure=(Double)feature.getProperty(fromMeasureAttb).getValue();
+          Double featureToMeasure=(Double)feature.getProperty(toMeasureAttb).getValue();
+          if (fromMeasure < featureToMeasure && toMeasure > featureFromMeasure) {
+            try {
+              if (fromMeasure <= featureFromMeasure && toMeasure >= featureToMeasure) {
+                lineMerger.add((Geometry)feature.getDefaultGeometryProperty().getValue());
+              }
+ else               if (fromMeasure > featureFromMeasure && toMeasure < featureToMeasure) {
+                LengthIndexedLine lengthIndexedLine=new LengthIndexedLine((Geometry)feature.getDefaultGeometryProperty().getValue());
+                double featureLength=featureToMeasure - featureFromMeasure;
+                double startOffset=fromMeasure - featureFromMeasure;
+                double stopOffset=toMeasure - featureFromMeasure;
+                double calcLength=((Geometry)feature.getDefaultGeometryProperty().getValue()).getLength();
+                if (calcLength == 0 || featureLength == 0)                 continue;
+                Geometry extracted=lengthIndexedLine.extractLine(startOffset * calcLength / featureLength,stopOffset * calcLength / featureLength);
+                if (!extracted.isEmpty())                 lineMerger.add(extracted);
+              }
+ else               if (fromMeasure > featureFromMeasure) {
+                LengthIndexedLine lengthIndexedLine=new LengthIndexedLine((Geometry)feature.getDefaultGeometryProperty().getValue());
+                double featureLength=featureToMeasure - featureFromMeasure;
+                double startOffset=fromMeasure - featureFromMeasure;
+                double calcLength=((Geometry)feature.getDefaultGeometryProperty().getValue()).getLength();
+                if (calcLength == 0 || featureLength == 0)                 continue;
+                Geometry extracted=lengthIndexedLine.extractLine(startOffset * calcLength / featureLength,calcLength);
+                if (!extracted.isEmpty())                 lineMerger.add(extracted);
+              }
+ else {
+                LengthIndexedLine lengthIndexedLine=new LengthIndexedLine((Geometry)feature.getDefaultGeometryProperty().getValue());
+                double featureLength=featureToMeasure - featureFromMeasure;
+                double stopOffset=toMeasure - featureFromMeasure;
+                double calcLength=((Geometry)feature.getDefaultGeometryProperty().getValue()).getLength();
+                if (calcLength == 0 || featureLength == 0)                 continue;
+                Geometry extracted=lengthIndexedLine.extractLine(0,stopOffset * calcLength / featureLength);
+                if (extracted.isEmpty() || extracted.getLength() == 0.0) {
+                  LOGGER.info("Empty segment: featureFromMeasure=" + featureFromMeasure + " featureToMeasure:"+ featureToMeasure+ " toMeasure:"+ toMeasure+ " fromMeasure:"+ fromMeasure);
+                }
+ else {
+                  lineMerger.add(extracted);
+                }
+              }
+            }
+ catch (            Exception e) {
+              LOGGER.warning("Error merging line strings: " + e + " featureFromMeasure="+ featureFromMeasure+ " featureToMeasure:"+ featureToMeasure+ " toMeasure:"+ toMeasure+ " fromMeasure:"+ fromMeasure);
+            }
+          }
+        }
+        results.add(createTargetFeature(firstFeature,(SimpleFeatureType)firstFeature.getType(),new MultiLineString((LineString[])lineMerger.getMergedLineStrings().toArray(new LineString[0]),geometryFactory)));
+      }
+    }
+  finally {
+      if (featureIterator != null)       featureIterator.close();
+    }
+    return results;
+  }
+ catch (  ProcessException e) {
+    throw e;
+  }
+catch (  Throwable e) {
+    LOGGER.warning("Error executing method: " + e);
+    throw new ProcessException("Error executing method: " + e,e);
+  }
+}

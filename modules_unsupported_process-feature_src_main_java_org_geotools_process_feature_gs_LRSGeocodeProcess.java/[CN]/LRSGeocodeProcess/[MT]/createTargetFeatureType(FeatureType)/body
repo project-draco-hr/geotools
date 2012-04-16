@@ -1,0 +1,22 @@
+{
+  try {
+    SimpleFeatureTypeBuilder typeBuilder=new SimpleFeatureTypeBuilder();
+    typeBuilder.setName(sourceFeatureType.getName().getLocalPart());
+    typeBuilder.setNamespaceURI(sourceFeatureType.getName().getNamespaceURI());
+    AttributeDescriptor geomAttbType=sourceFeatureType.getGeometryDescriptor();
+    for (    PropertyDescriptor attbType : sourceFeatureType.getDescriptors()) {
+      if (attbType.equals(geomAttbType)) {
+        typeBuilder.add(geomAttbType.getLocalName(),Point.class);
+      }
+ else {
+        typeBuilder.add((AttributeDescriptor)attbType);
+      }
+    }
+    typeBuilder.setDefaultGeometry(sourceFeatureType.getGeometryDescriptor().getLocalName());
+    return typeBuilder.buildFeatureType();
+  }
+ catch (  Exception e) {
+    LOGGER.warning("Error creating type: " + e);
+    throw new ProcessException("Error creating type: " + e,e);
+  }
+}
