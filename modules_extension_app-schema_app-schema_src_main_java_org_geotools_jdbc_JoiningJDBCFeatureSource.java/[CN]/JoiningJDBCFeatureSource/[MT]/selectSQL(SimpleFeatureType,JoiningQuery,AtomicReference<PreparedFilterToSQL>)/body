@@ -50,10 +50,13 @@
  catch (  IOException e) {
     throw new RuntimeException(e);
   }
-  Set<String> pkColumnNames=getDataStore().getColumnNames(key);
+  Set<String> pkColumnNames=new HashSet<String>();
+  String colName;
   for (  PrimaryKeyColumn col : key.getColumns()) {
-    encodeColumnName(col.getName(),featureType.getTypeName(),sql,query.getHints());
+    colName=col.getName();
+    encodeColumnName(colName,featureType.getTypeName(),sql,query.getHints());
     sql.append(",");
+    pkColumnNames.add(colName);
   }
   for (  AttributeDescriptor att : featureType.getAttributeDescriptors()) {
     String columnName=att.getLocalName();
@@ -118,7 +121,7 @@
       throw new RuntimeException(e);
     }
   }
-  sort(query,sql,aliases);
+  sort(query,sql,aliases,pkColumnNames);
   getDataStore().applyLimitOffset(sql,query);
   if (toSQLref != null && toSQL instanceof PreparedFilterToSQL) {
     toSQLref.set((PreparedFilterToSQL)toSQL);

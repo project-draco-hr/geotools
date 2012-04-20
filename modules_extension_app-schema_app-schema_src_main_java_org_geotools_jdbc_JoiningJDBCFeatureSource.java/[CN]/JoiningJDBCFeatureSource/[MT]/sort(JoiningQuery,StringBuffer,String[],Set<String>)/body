@@ -1,0 +1,50 @@
+{
+  boolean orderby=false;
+  Set<String> orderByFields=new LinkedHashSet<String>();
+  for (int j=query.getQueryJoins() == null ? -1 : query.getQueryJoins().size() - 1; j >= -1; j--) {
+    JoiningQuery.QueryJoin join=j < 0 ? null : query.getQueryJoins().get(j);
+    SortBy[] sort=j < 0 ? query.getSortBy() : join.getSortBy();
+    if ((sort != null) && (sort.length > 0)) {
+      if (!orderby) {
+        orderby=true;
+        sql.append(" ORDER BY ");
+      }
+      if (j < 0) {
+        sort(query.getTypeName(),sort,orderByFields,false);
+        if (query.getQueryJoins() != null && query.getQueryJoins().size() > 0) {
+          addMultiValuedSort(query.getTypeName(),orderByFields,query.getQueryJoins().get(0));
+        }
+        if (!pkColumnNames.isEmpty()) {
+          for (          String pk : pkColumnNames) {
+            orderByFields.add(query.getTypeName() + "." + pk);
+          }
+        }
+      }
+ else {
+        if (aliases != null && aliases[j] != null) {
+          sort(aliases[j],sort,orderByFields,true);
+        }
+ else {
+          sort(join.getJoiningTypeName(),sort,orderByFields,false);
+        }
+        if (query.getQueryJoins().size() > j + 1) {
+          addMultiValuedSort(join.getJoiningTypeName(),orderByFields,query.getQueryJoins().get(j + 1));
+        }
+        try {
+          JDBCDataStore ds=getDataStore();
+          PrimaryKey key=ds.getPrimaryKey(ds.getSchema(join.getJoiningTypeName()));
+          pkColumnNames=new HashSet<String>();
+          for (          PrimaryKeyColumn pkCol : key.getColumns()) {
+            pkColumnNames.add(pkCol.getName());
+          }
+        }
+ catch (        IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+  if (orderby) {
+    sql.append(StringUtils.join(orderByFields.toArray(),", "));
+  }
+}
