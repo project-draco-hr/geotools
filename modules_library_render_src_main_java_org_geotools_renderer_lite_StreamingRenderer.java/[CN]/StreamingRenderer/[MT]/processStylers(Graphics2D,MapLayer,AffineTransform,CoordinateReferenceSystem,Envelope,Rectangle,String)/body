@@ -20,29 +20,17 @@
     lfts=createLiteFeatureTypeStyles(style.featureTypeStyles(),schema,graphics);
     if (lfts.isEmpty())     return;
     applyUnitRescale(lfts);
-    List<List<LiteFeatureTypeStyle>> txClassified=new ArrayList<List<LiteFeatureTypeStyle>>();
-    txClassified.add(new ArrayList<LiteFeatureTypeStyle>());
-    Expression transformation=null;
-    for (int i=0; i < lfts.size(); i++) {
-      LiteFeatureTypeStyle curr=lfts.get(i);
-      if (i == 0) {
-        transformation=curr.transformation;
-      }
- else       if (!(transformation == curr.transformation) || (transformation != null && curr.transformation != null && !curr.transformation.equals(transformation))) {
-        txClassified.add(new ArrayList<LiteFeatureTypeStyle>());
-      }
-      txClassified.get(txClassified.size() - 1).add(curr);
-    }
+    List<List<LiteFeatureTypeStyle>> txClassified=classifyByTransformation(lfts);
     for (    List<LiteFeatureTypeStyle> uniform : txClassified) {
       Expression transform=uniform.get(0).transformation;
       inMemoryGeneralization=true;
       Query query=getLayerQuery(currLayer,featureSource,schema,uniform,mapArea,destinationCrs,sourceCrs,screenSize,geometryAttribute,at);
       FeatureCollection rawFeatures;
-      if (transformation != null) {
+      if (transform != null) {
         GridEnvelope2D ge=new GridEnvelope2D(screenSize);
         ReferencedEnvelope re=new ReferencedEnvelope(mapArea,destinationCrs);
         GridGeometry2D gridGeometry=new GridGeometry2D(ge,re);
-        rawFeatures=applyRenderingTransformation(transformation,featureSource,query,gridGeometry);
+        rawFeatures=applyRenderingTransformation(transform,featureSource,query,gridGeometry);
         if (rawFeatures == null) {
           return;
         }

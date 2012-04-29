@@ -1,0 +1,24 @@
+{
+  SimpleFeatureCollection fc=(SimpleFeatureCollection)object;
+  Double distance=null;
+  try {
+    distance=getExpression(0).evaluate(null,Double.class);
+  }
+ catch (  Exception e) {
+    throw new IllegalArgumentException("Filter Function problem for test buffer argument #0 - expected type Double");
+  }
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  GeometryDescriptor gd=fc.getSchema().getGeometryDescriptor();
+  tb.add(gd.getName().getLocalPart(),Polygon.class,gd.getCoordinateReferenceSystem());
+  tb.setName("bufferedCollection");
+  SimpleFeatureType schema=tb.buildFeatureType();
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(schema);
+  ListFeatureCollection result=new ListFeatureCollection(schema);
+  SimpleFeatureIterator fi=fc.features();
+  while (fi.hasNext()) {
+    SimpleFeature f=fi.next();
+    fb.add(((Geometry)f.getDefaultGeometry()).buffer(distance));
+    result.add(fb.buildFeature(null));
+  }
+  return result;
+}
