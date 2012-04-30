@@ -1,0 +1,15 @@
+{
+  Coordinate coordinate=new Coordinate(-110,30);
+  GeometryFactory factory=new GeometryFactory();
+  Point point=factory.createPoint(coordinate);
+  Geometry[] geometries={point};
+  GeometryCollection geometry=new GeometryCollection(geometries,factory);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  PropertyName geomName=ff.property(aname("geo"));
+  Literal lit=ff.literal(geometry);
+  DWithin dwithinGeomFilter=((FilterFactory2)ff).dwithin(geomName,lit,distance,unit);
+  Query query=new Query(tname("geopoint"),dwithinGeomFilter);
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("geopoint")).getFeatures(query);
+  assertEquals(1,features.size());
+  checkSingleResult(features,"Town");
+}
