@@ -14,14 +14,21 @@
       if (attMapping.isList()) {
         Attribute instance=setAttributeValue(target,null,sources.get(0),attMapping,null,null,selectedProperties.get(attMapping));
         if (sources.size() > 1 && instance != null) {
-          Object[] values=new Object[sources.size()];
+          List<Object> values=new ArrayList<Object>();
           Expression sourceExpr=attMapping.getSourceExpression();
-          int i=0;
-          for (          Feature source : sources) {
-            values[i]=getValue(sourceExpr,source);
-            i++;
+          if (listFilter != null && listFilterProperties.contains(attMapping.getTargetXPath())) {
+            for (            Feature source : sources) {
+              if (listFilter.evaluate(source)) {
+                values.add(getValue(sourceExpr,source));
+              }
+            }
           }
-          String valueString=StringUtils.join(values," ");
+ else {
+            for (            Feature source : sources) {
+              values.add(getValue(sourceExpr,source));
+            }
+          }
+          String valueString=StringUtils.join(values.iterator()," ");
           StepList fullPath=attMapping.getTargetXPath();
           StepList leafPath=fullPath.subList(fullPath.size() - 1,fullPath.size());
           if (instance instanceof ComplexAttributeImpl) {

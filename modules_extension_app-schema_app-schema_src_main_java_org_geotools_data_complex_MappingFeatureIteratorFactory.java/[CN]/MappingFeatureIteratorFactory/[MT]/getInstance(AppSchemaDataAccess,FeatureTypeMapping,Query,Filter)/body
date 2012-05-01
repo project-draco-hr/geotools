@@ -2,6 +2,18 @@
   if (mapping instanceof XmlFeatureTypeMapping) {
     return new XmlMappingFeatureIterator(store,mapping,query);
   }
+  List<AttributeMapping> listMappings=mapping.getIsListMappings();
+  Filter isListFilter=null;
+  List<StepList> listFilterProperties=null;
+  if (!listMappings.isEmpty()) {
+    IsListFilterVisitor listChecker=new IsListFilterVisitor(listMappings,mapping);
+    Filter complexFilter=query.getFilter();
+    complexFilter.accept(listChecker,null);
+    listFilterProperties=listChecker.getListFilterProperties();
+    if (!listFilterProperties.isEmpty()) {
+      isListFilter=AppSchemaDataAccess.unrollFilter(complexFilter,mapping);
+    }
+  }
   boolean isJoining=AppSchemaDataAccessConfigurator.isJoining();
   if (isJoining) {
     if (!(query instanceof JoiningQuery)) {
@@ -37,6 +49,10 @@
       }
       boolean isFiltered=!isJoining && preFilter != null && preFilter != Filter.INCLUDE;
       iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered);
+      if (isListFilter != null) {
+        ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
+        ((DataAccessMappingFeatureIterator)iterator).setListFilterProperties(listFilterProperties);
+      }
       if (filter != null && filter != Filter.INCLUDE) {
         iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
       }
@@ -59,6 +75,10 @@
         iterator=new DataAccessMappingFeatureIterator(store,mapping,query);
       }
     }
+  }
+  if (isListFilter != null && iterator instanceof DataAccessMappingFeatureIterator) {
+    ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
+    ((DataAccessMappingFeatureIterator)iterator).setListFilterProperties(listFilterProperties);
   }
   return iterator;
 }
