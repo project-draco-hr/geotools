@@ -6,17 +6,24 @@
       query.setCoordinateSystemReproject(reprojection);
     }
   }
+  Filter fidFilter;
   if (mapping.getFeatureIdExpression().equals(Expression.NIL)) {
     Set<FeatureId> ids=new HashSet<FeatureId>();
     FeatureId featureId=namespaceAwareFilterFactory.featureId(fId);
     ids.add(featureId);
-    query.setFilter(namespaceAwareFilterFactory.id(ids));
-    matchingFeatures=this.mappedSource.getFeatures(query);
+    fidFilter=namespaceAwareFilterFactory.id(ids);
   }
  else {
-    query.setFilter(namespaceAwareFilterFactory.equals(mapping.getFeatureIdExpression(),namespaceAwareFilterFactory.literal(fId)));
-    matchingFeatures=this.mappedSource.getFeatures(query);
+    fidFilter=namespaceAwareFilterFactory.equals(mapping.getFeatureIdExpression(),namespaceAwareFilterFactory.literal(fId));
   }
+  if (listFilter != null) {
+    List<Filter> filters=new ArrayList<Filter>();
+    filters.add(listFilter);
+    filters.add(fidFilter);
+    fidFilter=namespaceAwareFilterFactory.and(filters);
+  }
+  query.setFilter(fidFilter);
+  matchingFeatures=this.mappedSource.getFeatures(query);
   FeatureIterator<? extends Feature> iterator=matchingFeatures.features();
   List<Feature> features=new ArrayList<Feature>();
   while (iterator.hasNext()) {
