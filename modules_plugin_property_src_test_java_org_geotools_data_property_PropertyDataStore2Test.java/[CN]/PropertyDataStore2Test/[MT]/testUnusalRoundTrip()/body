@@ -1,0 +1,53 @@
+{
+  File target=new File("propertyTestData3/trip.properties");
+  if (target.exists()) {
+    boolean deleted=target.delete();
+    assertTrue("unable to delete " + target.getAbsolutePath(),deleted);
+  }
+  assertFalse("trip.properties should not exist yet",target.exists());
+  SimpleFeatureType schema=DataUtilities.createType("trip","point:Point::srid=4326,text:String, number:Integer");
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(schema);
+  GeometryFactory gf=JTSFactoryFinder.getGeometryFactory();
+  List<SimpleFeature> list=new ArrayList<SimpleFeature>();
+  SimpleFeature feature;
+  feature=builder.buildFeature("trip1",new Object[]{gf.createPoint(new Coordinate(0,0)),"hello world",1});
+  feature.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  list.add(feature);
+  feature=builder.buildFeature("trip2",new Object[]{gf.createPoint(new Coordinate(0,0)),"test if | chracter handling",2});
+  feature.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  list.add(feature);
+  feature=builder.buildFeature("trip3",new Object[]{gf.createPoint(new Coordinate(0,0)),"test of\n multi-line handling",3});
+  feature.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  list.add(feature);
+  feature=builder.buildFeature("trip4",new Object[]{gf.createPoint(new Coordinate(0,0)),"    test of\n whitespace handling",4});
+  feature.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  list.add(feature);
+  feature=builder.buildFeature("trip5",new Object[]{gf.createPoint(new Coordinate(0,0)),"test encoding does not get confused over \\n newline and \\twhite space and \\| other markers",5});
+  feature.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  list.add(feature);
+  feature=builder.buildFeature("trip6",new Object[]{gf.createPoint(new Coordinate(0,0)),"How well can we encode 1\\2?",5});
+  feature.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  list.add(feature);
+  ListFeatureCollection features=new ListFeatureCollection(schema,list);
+  unusalStore.createSchema(schema);
+  SimpleFeatureStore trip=(SimpleFeatureStore)unusalStore.getFeatureSource("trip");
+  trip.addFeatures(features);
+  assertTrue("trip.properties created",target.exists());
+  assertEquals("stored",list.size(),trip.getCount(Query.ALL));
+  final Map<String,SimpleFeature> cache=new HashMap<String,SimpleFeature>();
+  SimpleFeatureCollection readFeatures=trip.getFeatures();
+  FeatureVisitor cacheResults=new FeatureVisitor(){
+    @Override public void visit(    Feature f){
+      SimpleFeature feature=(SimpleFeature)f;
+      cache.put(feature.getID(),feature);
+    }
+  }
+;
+  readFeatures.accepts(cacheResults,null);
+  assertEquals("restored",list.size(),cache.size());
+  assertEquals("hello world",cache.get("trip1").getAttribute("text"));
+  assertEquals("test if | chracter handling",cache.get("trip2").getAttribute("text"));
+  assertEquals("test of\n multi-line handling",cache.get("trip3").getAttribute("text"));
+  assertEquals("    test of\n whitespace handling",cache.get("trip4").getAttribute("text"));
+  assertEquals("How well can we encode 1\\2?",cache.get("trip6").getAttribute("text"));
+}
