@@ -8,7 +8,7 @@
     }
  else {
       rawContentType=httpResponse.getContentType();
-      if (rawContentType.startsWith("text/xml")) {
+      if (rawContentType.matches(".*/xml.*")) {
         inputStream=new BufferedInputStream(httpResponse.getResponseStream());
         inputStream.mark(8192);
         try {
@@ -17,9 +17,8 @@
           parser.setInput(inputStream,"UTF-8");
           parser.nextTag();
           String name=parser.getName();
-          String namespace=parser.getNamespace();
           inputStream.reset();
-          if ("ServiceException".equals(name) || "ExecuteResponse".equals(name)) {
+          if ("ServiceException".equals(name) || "ExceptionReport".equals(name) || "ExecuteResponse".equals(name)) {
             parseDocumentResponse(inputStream);
             return;
           }
