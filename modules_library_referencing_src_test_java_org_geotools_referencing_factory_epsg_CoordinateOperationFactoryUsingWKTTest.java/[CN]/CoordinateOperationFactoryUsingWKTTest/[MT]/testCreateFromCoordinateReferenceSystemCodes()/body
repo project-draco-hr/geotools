@@ -1,0 +1,27 @@
+{
+  try {
+    Set<CoordinateOperation> cos=factory.createFromCoordinateReferenceSystemCodes(INVALID_CRS,INVALID_CRS);
+    assertTrue(cos.isEmpty());
+  }
+ catch (  FactoryException e) {
+    fail(factory.getClass().getSimpleName() + " threw a FactoryException when requesting" + "a nonexistent operation. Instead, a NoSuchAuthorityCodeException was expected.");
+  }
+  try {
+    Set<CoordinateOperation> cos=factory.createFromCoordinateReferenceSystemCodes(SOURCE_CRS,TARGET_CRS);
+    assertTrue(cos.size() == 1);
+    CoordinateOperation co=cos.iterator().next();
+    assertNotNull(co);
+    CoordinateReferenceSystem crs=CRS.decode(SOURCE_CRS);
+    assertSame(crs,co.getSourceCRS());
+    crs=CRS.decode(TARGET_CRS);
+    assertSame(crs,co.getTargetCRS());
+    assertTrue(co.getMathTransform() instanceof MathTransform);
+    double[] p=new double[2];
+    co.getMathTransform().transform(SRC_TEST_POINT,0,p,0,1);
+    assertEquals(p[0],DST_TEST_POINT[0],1e-8);
+    assertEquals(p[1],DST_TEST_POINT[1],1e-8);
+  }
+ catch (  FactoryException e) {
+    fail(factory.getClass().getSimpleName() + " threw a FactoryException when creating" + " coordinate operation from an existing code.");
+  }
+}

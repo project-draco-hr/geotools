@@ -1,0 +1,23 @@
+{
+  Hints hints=new Hints(Hints.COORDINATE_OPERATION_AUTHORITY_FACTORY,CoordinateOperationFactoryUsingWKT.class);
+  try {
+    hints.put(Hints.CRS_AUTHORITY_EXTRA_DIRECTORY,"invalid");
+    fail("Should of been tossed out as an invalid hint");
+  }
+ catch (  IllegalArgumentException expected) {
+  }
+  String directory=new File(".").getAbsolutePath();
+  hints=new Hints(Hints.COORDINATE_OPERATION_AUTHORITY_FACTORY,CoordinateOperationFactoryUsingWKT.class);
+  hints.put(Hints.CRS_AUTHORITY_EXTRA_DIRECTORY,directory);
+  CoordinateOperationFactoryUsingWKT fact=(CoordinateOperationFactoryUsingWKT)ReferencingFactoryFinder.getCoordinateOperationAuthorityFactory("EPSG",new Hints(Hints.COORDINATE_OPERATION_AUTHORITY_FACTORY,CoordinateOperationFactoryUsingWKT.class));
+  CoordinateOperation co=fact.createCoordinateOperation(INVERSE_CRS_PAIR);
+  CoordinateReferenceSystem crs=CRS.decode(TARGET_CRS);
+  assertSame(crs,co.getSourceCRS());
+  crs=CRS.decode(SOURCE_CRS);
+  assertSame(crs,co.getTargetCRS());
+  assertTrue(co.getMathTransform() instanceof MathTransform);
+  double[] p=new double[2];
+  co.getMathTransform().transform(DST_TEST_POINT,0,p,0,1);
+  assertEquals(p[0],SRC_TEST_POINT[0],1e-8);
+  assertEquals(p[1],SRC_TEST_POINT[1],1e-8);
+}

@@ -1,0 +1,26 @@
+{
+  if (!fallbackAuthorityFactorySearched) {
+    CoordinateOperationAuthorityFactory candidate=null;
+    Hints h=new Hints();
+    h.put(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.FALSE);
+    h.put(Hints.FORCE_STANDARD_AXIS_DIRECTIONS,Boolean.FALSE);
+    h.put(Hints.FORCE_STANDARD_AXIS_UNITS,Boolean.FALSE);
+    Set<CoordinateOperationAuthorityFactory> factories=ReferencingFactoryFinder.getCoordinateOperationAuthorityFactories(h);
+    Iterator<CoordinateOperationAuthorityFactory> it=factories.iterator();
+    while (it.hasNext()) {
+      candidate=it.next();
+      if (candidate == this) {
+        break;
+      }
+    }
+    while (it.hasNext()) {
+      candidate=it.next();
+      if (!(candidate instanceof CoordinateOperationFactoryUsingWKT) && candidate.getAuthority().getTitle().equals(this.getAuthority().getTitle())) {
+        fallbackAuthorityFactory=candidate;
+        break;
+      }
+    }
+    fallbackAuthorityFactorySearched=true;
+  }
+  return fallbackAuthorityFactory;
+}

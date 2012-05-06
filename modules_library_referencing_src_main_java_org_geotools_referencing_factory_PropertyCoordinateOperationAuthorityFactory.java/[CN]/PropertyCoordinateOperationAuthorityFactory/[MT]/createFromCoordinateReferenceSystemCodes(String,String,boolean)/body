@@ -1,0 +1,55 @@
+{
+  sourceCRS=trimAuthority(sourceCRS);
+  targetCRS=trimAuthority(targetCRS);
+  String id=sourceCRS + "," + targetCRS;
+  String WKT=definitions.getProperty(id);
+  if (WKT == null) {
+    return null;
+  }
+  MathTransform mt=null;
+  try {
+    mt=factories.getMathTransformFactory().createFromWKT(WKT);
+  }
+ catch (  FactoryException e) {
+    LOGGER.warning("Error creating transformation: " + WKT);
+    return null;
+  }
+  String s=this.authority.getIdentifiers().iterator().next().getCode();
+  CoordinateReferenceSystem source=CRS.decode(s + ":" + sourceCRS);
+  CoordinateReferenceSystem target=CRS.decode(s + ":" + targetCRS);
+  DefaultMathTransformFactory mtf=(DefaultMathTransformFactory)factories.getMathTransformFactory();
+  MathTransform mt2=mtf.createBaseToDerived(source,mt,target.getCoordinateSystem());
+  String methodName;
+  try {
+    if (mt instanceof AbstractMathTransform) {
+      methodName=((AbstractMathTransform)mt).getParameterValues().getDescriptor().getName().getCode();
+    }
+ else     if (mt instanceof AffineTransform2D) {
+      methodName=((AffineTransform2D)mt).getParameterValues().getDescriptor().getName().getCode();
+    }
+ else {
+      methodName=mt.getClass().getSimpleName();
+    }
+  }
+ catch (  NullPointerException e) {
+    methodName=mt.getClass().getSimpleName();
+  }
+  Map<String,String> props=new HashMap<String,String>();
+  props.put("name",methodName);
+  OperationMethod method=new DefaultOperationMethod(props,mt2.getSourceDimensions(),mt2.getTargetDimensions(),null);
+  CoordinateOperation coordop=null;
+  if (!inverse) {
+    props.put("name",sourceCRS + " \u21E8 " + targetCRS);
+    coordop=DefaultOperation.create(props,source,target,mt2,method,CoordinateOperation.class);
+  }
+ else {
+    try {
+      props.put("name",targetCRS + " \u21E8 " + sourceCRS);
+      coordop=DefaultOperation.create(props,target,source,mt2.inverse(),method,CoordinateOperation.class);
+    }
+ catch (    NoninvertibleTransformException e) {
+      return null;
+    }
+  }
+  return coordop;
+}
