@@ -11,11 +11,17 @@
     }
   }
   List expressions=getExpressions(candidates);
-  if (candidates.size() == 0 && propertyName.size() > 1) {
+  if (candidates.size() == 0 && propertyName.size() > 0) {
     XPath.Step clientPropertyStep=(Step)propertyName.get(propertyName.size() - 1);
     Name clientPropertyName=Types.toTypeName(clientPropertyStep.getName());
-    XPath.StepList parentPath=new XPath.StepList(propertyName);
-    parentPath.remove(parentPath.size() - 1);
+    XPath.StepList parentPath;
+    if (propertyName.size() == 1) {
+      parentPath=XPath.rootElementSteps(this.target,this.namespaces);
+    }
+ else {
+      parentPath=new XPath.StepList(propertyName);
+      parentPath.remove(parentPath.size() - 1);
+    }
     candidates=getAttributeMappingsIgnoreIndex(parentPath);
     expressions=getClientPropertyExpressions(candidates,clientPropertyName,parentPath);
     if (expressions.isEmpty()) {
