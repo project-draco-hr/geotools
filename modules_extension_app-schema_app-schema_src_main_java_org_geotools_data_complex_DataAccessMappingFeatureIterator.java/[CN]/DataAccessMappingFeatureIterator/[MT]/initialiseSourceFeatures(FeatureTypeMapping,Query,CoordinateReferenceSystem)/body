@@ -21,14 +21,23 @@
     }
     CoordinateReferenceSystem declaredCRS=this.getDeclaredCrs(crs,version);
     CoordinateReferenceSystem target;
-    URI uri=(URI)this.mapping.getTargetFeature().getType().getUserData().get("targetCrs");
-    if (uri != null) {
-      try {
-        target=CRS.decode(uri.toString());
+    Object crsobject=this.mapping.getTargetFeature().getType().getUserData().get("targetCrs");
+    if (crsobject instanceof CoordinateReferenceSystem) {
+      target=(CoordinateReferenceSystem)crsobject;
+    }
+ else     if (crsobject instanceof URI) {
+      URI uri=(URI)crsobject;
+      if (uri != null) {
+        try {
+          target=CRS.decode(uri.toString());
+        }
+ catch (        Exception e) {
+          String msg="Unable to support srsName: " + uri;
+          throw new UnsupportedOperationException(msg,e);
+        }
       }
- catch (      Exception e) {
-        String msg="Unable to support srsName: " + uri;
-        throw new UnsupportedOperationException(msg,e);
+ else {
+        target=declaredCRS;
       }
     }
  else {
@@ -39,6 +48,9 @@
  else {
     this.reprojection=targetCRS;
   }
+  mapping.getTargetFeature().getType().getUserData().put("targetVersion",null);
+  mapping.getTargetFeature().getType().getUserData().put("targetCrs",null);
+  targetFeature=reprojectAttribute(mapping.getTargetFeature());
   query.setMaxFeatures(Query.DEFAULT_MAX);
   sourceFeatures=mappedSource.getFeatures(query);
   if (reprojection != null) {
