@@ -3,9 +3,6 @@
   SimpleFeatureType actualSchema=dataStore.getSchema(tname(POLY3D));
   assertFeatureTypesEqual(poly3DType,actualSchema);
   assertEquals(getNativeSRID(),actualSchema.getGeometryDescriptor().getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID));
-  GeometryFactory gf=new GeometryFactory();
-  LinearRing shell=gf.createLinearRing(new Coordinate[]{new Coordinate(0,0,0),new Coordinate(1,1,1),new Coordinate(1,0,1),new Coordinate(0,0,0)});
-  Polygon poly=gf.createPolygon(shell,null);
   FeatureWriter<SimpleFeatureType,SimpleFeature> fw=dataStore.getFeatureWriterAppend(tname(POLY3D),Transaction.AUTO_COMMIT);
   SimpleFeature f=fw.next();
   f.setAttribute(aname(ID),0);
@@ -13,9 +10,15 @@
   f.setAttribute(aname(NAME),"3dpolygon!");
   fw.write();
   fw.close();
-  FeatureReader<SimpleFeatureType,SimpleFeature> fr=dataStore.getFeatureReader(new DefaultQuery(tname(POLY3D)),Transaction.AUTO_COMMIT);
+  final Hints hints=new Hints();
+  hints.put(Hints.JTS_COORDINATE_SEQUENCE_FACTORY,new LiteCoordinateSequenceFactory());
+  Query query=new DefaultQuery(tname(POLY3D));
+  query.setHints(hints);
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=dataStore.getFeatureReader(query,Transaction.AUTO_COMMIT);
   assertTrue(fr.hasNext());
   f=fr.next();
-  assertTrue(poly.equalsTopo((Geometry)f.getDefaultGeometry()));
+  Geometry fgeom=(Geometry)f.getDefaultGeometry();
+  assertTrue("2D topology does not match",poly.equalsTopo(fgeom));
+  assertTrue("Z values do not match",hasMatchingZValues(poly,fgeom));
   fr.close();
 }
