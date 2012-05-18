@@ -2,7 +2,10 @@
   InputStream gzippedStream=ImageWorkerTest.class.getResource("test-data/sf-sfdem.tif.gz").openStream();
   GZIPInputStream is=new GZIPInputStream(gzippedStream);
   try {
-    BufferedImage bi=ImageIO.read(is);
+    ImageInputStream iis=ImageIO.createImageInputStream(is);
+    ImageReader reader=new TIFFImageReaderSpi().createReaderInstance(iis);
+    reader.setInput(iis);
+    BufferedImage bi=reader.read(0);
     IndexColorModel icm=(IndexColorModel)bi.getColorModel();
     assertEquals(65536,icm.getMapSize());
     final File outFile=TestData.temp(this,"temp.png");
