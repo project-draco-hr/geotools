@@ -1,0 +1,21 @@
+{
+  String fid;
+  int fidSplit=line.indexOf('=');
+  int barSplit=line.indexOf('|');
+  if (fidSplit == -1 || (barSplit != -1 && barSplit < fidSplit)) {
+    fid=null;
+  }
+ else {
+    fid=line.substring(0,fidSplit);
+  }
+  String data=line.substring(fidSplit + 1);
+  String text[]=splitIntoText(data,featureType);
+  Object[] values=new Object[text.length];
+  for (int i=0; i < text.length; i++) {
+    AttributeDescriptor descriptor=featureType.getDescriptor(i);
+    Object value=createValue(descriptor,text[i]);
+    values[i]=value;
+  }
+  SimpleFeature feature=SimpleFeatureBuilder.build(featureType,values,fid);
+  return feature;
+}

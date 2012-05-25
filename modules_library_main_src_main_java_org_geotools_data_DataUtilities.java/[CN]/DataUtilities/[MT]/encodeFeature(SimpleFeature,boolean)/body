@@ -1,0 +1,39 @@
+{
+  StringBuilder build=new StringBuilder();
+  if (includeFid) {
+    String fid=feature.getID();
+    if (feature.getUserData().containsKey(Hints.PROVIDED_FID)) {
+      fid=(String)feature.getUserData().get(Hints.PROVIDED_FID);
+    }
+    build.append(fid);
+    build.append("=");
+  }
+  for (int i=0; i < feature.getAttributeCount(); i++) {
+    Object attribute=feature.getAttribute(i);
+    if (i != 0) {
+      build.append("|");
+    }
+    if (attribute == null) {
+      build.append("<null>");
+    }
+ else     if (attribute instanceof String) {
+      String txt=encodeString((String)attribute);
+      build.append(txt);
+    }
+ else     if (attribute instanceof Geometry) {
+      Geometry geometry=(Geometry)attribute;
+      String txt=geometry.toText();
+      txt=encodeString(txt);
+      build.append(txt);
+    }
+ else {
+      String txt=Converters.convert(attribute,String.class);
+      if (txt == null) {
+        txt=attribute.toString();
+      }
+      txt=encodeString(txt);
+      build.append(txt);
+    }
+  }
+  return build.toString();
+}
