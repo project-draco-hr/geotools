@@ -1,3 +1,21 @@
 {
-  encode(geometry,null);
+  String srsName=null;
+  if (geometry.getUserData() instanceof CoordinateReferenceSystem) {
+    try {
+      CoordinateReferenceSystem crs=(CoordinateReferenceSystem)geometry.getUserData();
+      Integer code=CRS.lookupEpsgCode(crs,false);
+      if (code != null) {
+        if (AxisOrder.NORTH_EAST.equals(CRS.getAxisOrder(crs))) {
+          srsName="urn:ogc:def:crs:EPSG::" + code;
+        }
+ else {
+          srsName="EPSG:" + code;
+        }
+      }
+    }
+ catch (    Exception e) {
+      LOGGER.fine("Failed to encode the CoordinateReferenceSystem into a srsName");
+    }
+  }
+  encode(geometry,srsName);
 }
