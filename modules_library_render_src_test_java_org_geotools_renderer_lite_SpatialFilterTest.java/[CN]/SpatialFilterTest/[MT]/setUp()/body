@@ -1,11 +1,22 @@
 {
+  CRS.reset("all");
+  Hints.putSystemDefault(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE);
+  Set<CRSAuthorityFactory> factories=ReferencingFactoryFinder.getCRSAuthorityFactories(null);
+  for (  CRSAuthorityFactory factory : factories) {
+    if (factory.getClass().getSimpleName().equals("EPSGCRSAuthorityFactory")) {
+      ReferencingFactoryFinder.removeAuthorityFactory(factory);
+    }
+  }
+  assertEquals(AxisOrder.NORTH_EAST,CRS.getAxisOrder(CRS.decode("urn:ogc:def:crs:EPSG::4326")));
   File property=new File(TestData.getResource(this,"square.properties").toURI());
   PropertyDataStore ds=new PropertyDataStore(property.getParentFile());
   squareFS=ds.getFeatureSource("square");
+  pointFS=ds.getFeatureSource("point");
   bounds=new ReferencedEnvelope(0,10,0,10,DefaultGeographicCRS.WGS84);
   renderer=new StreamingRenderer();
   content=new MapContent();
   content.getViewport().setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+  renderer.setMapContent(content);
   renderer.addRenderListener(new RenderListener(){
     public void featureRenderer(    SimpleFeature feature){
       renderedIds.add(feature.getID());

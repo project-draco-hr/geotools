@@ -1,0 +1,18 @@
+{
+  CoordinateReferenceSystem utm31n=CRS.decode("EPSG:32631");
+  CoordinateReferenceSystem wgs84=CRS.decode("EPSG:4326");
+  ReferencedEnvelope envWgs84=new ReferencedEnvelope(1,3,5,7,wgs84);
+  ReferencedEnvelope envUTM31N=envWgs84.transform(utm31n,true);
+  StyleBuilder sb=new StyleBuilder();
+  Symbolizer ps=sb.createPointSymbolizer();
+  Style style=sb.createStyle(ps);
+  Rule rule=style.featureTypeStyles().get(0).rules().get(0);
+  Polygon polygon=JTS.toGeometry(envUTM31N);
+  polygon.setUserData(utm31n);
+  rule.setFilter(ff.intersects(ff.property("geom"),ff.literal(polygon)));
+  renderer.setRendererHints(Collections.singletonMap(StreamingRenderer.FORCE_EPSG_AXIS_ORDER_KEY,true));
+  content.addLayer(new FeatureLayer(pointFS,style));
+  RendererBaseTest.showRender("Spatial in EPSG order",renderer,TIME,bounds);
+  assertEquals(1,renderedIds.size());
+  assertEquals("point.4",renderedIds.iterator().next());
+}
