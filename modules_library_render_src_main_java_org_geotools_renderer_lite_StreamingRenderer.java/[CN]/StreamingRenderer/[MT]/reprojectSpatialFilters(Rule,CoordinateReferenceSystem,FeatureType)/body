@@ -3,15 +3,10 @@
   if (filter == null) {
     return rule;
   }
-  SpatialFilterVisitor sfv=new SpatialFilterVisitor();
-  filter.accept(sfv,null);
-  if (!sfv.hasSpatialFilter()) {
+  Filter reprojected=reprojectSpatialFilter(declaredCRS,schema,filter);
+  if (reprojected == filter) {
     return rule;
   }
-  DefaultCRSFilterVisitor defaulter=new DefaultCRSFilterVisitor(filterFactory,declaredCRS);
-  Filter defaulted=(Filter)filter.accept(defaulter,null);
-  ReprojectingFilterVisitor reprojector=new ReprojectingFilterVisitor(filterFactory,schema);
-  Filter reprojected=(Filter)defaulted.accept(reprojector,null);
   Rule rr=new RuleImpl(rule);
   rr.setFilter(reprojected);
   return rr;

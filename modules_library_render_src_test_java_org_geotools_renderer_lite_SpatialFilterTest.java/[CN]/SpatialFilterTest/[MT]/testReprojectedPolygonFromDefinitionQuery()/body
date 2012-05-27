@@ -6,12 +6,12 @@
   StyleBuilder sb=new StyleBuilder();
   Symbolizer ps=sb.createPointSymbolizer();
   Style style=sb.createStyle(ps);
-  Rule rule=style.featureTypeStyles().get(0).rules().get(0);
-  Polygon polygon=JTS.toGeometry(envUTM31N);
+  FeatureLayer layer=new FeatureLayer(pointFS,style);
+  Polygon polygon=JTS.toGeometry((Envelope)envUTM31N);
   polygon.setUserData(utm31n);
-  rule.setFilter(ff.intersects(ff.property("geom"),ff.literal(polygon)));
-  content.addLayer(new FeatureLayer(pointFS,style));
-  RendererBaseTest.showRender("Reprojected polygon",renderer,TIME,bounds);
+  layer.setQuery(new DefaultQuery(null,ff.intersects(ff.property("geom"),ff.literal(polygon))));
+  content.addLayer(layer);
+  RendererBaseTest.showRender("Reprojected polygon as a definition query",renderer,TIME,bounds);
   assertEquals(1,renderedIds.size());
   assertEquals("point.4",renderedIds.iterator().next());
 }
