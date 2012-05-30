@@ -1,0 +1,41 @@
+import sys, optparse, getpass
+import SOAPpy, SOAPpy.Types
+if (__name__ == '__main__'):
+    p = optparse.OptionParser('Usage: %prog [options] version next_version')
+    p.add_option('-j', '--host', dest='host', default='http://jira.codehaus.org', help='JIRA host, default is codehaus')
+    p.add_option('-k', '--key', dest='key', default='GEOS', help='JIRA project key, default is GEOS')
+    p.add_option('-u', '--user', dest='user', default=getpass.getuser(), help='JIRA user, default is current OS user')
+    p.add_option('-p', '--passwd', dest='passwd', help='JIRA password')
+    p.add_option('-v', '--verbose', dest='verbose', action='store_true', help='Verbose flag')
+    (opts, args) = p.parse_args()
+    if (len(args) < 2):
+        p.error('Must specify version to release and next version')
+    opts = vars(opts)
+    jira = JIRA(opts['host'], opts['key'], opts['user'], opts['passwd'])
+    verbose = opts['verbose']
+    ver = args[0]
+    next_ver = args[1]
+    if (not jira.get_version_id(ver)):
+        sys.exit(('Version %s does not exist in JIRA' % ver))
+    if (jira.is_version_released(ver) == True):
+        print ('Version %s is already released in JIRA, exiting' % ver)
+        sys.exit(0)
+    if (not jira.get_version_id(next_ver)):
+        print ('creating version %s in JIRA' % next_ver)
+        jira.create_version(next_ver)
+    if (not jira.get_version_id(next_ver)):
+        sys.exit(('Unable to create version %s in JIRA' % next_ver))
+    x = 0
+    while (x < 100):
+        issues = jira.get_open_issues(ver)
+        if (len(issues) == 0):
+            break
+        for i in jira.get_open_issues(ver):
+            if (verbose == True):
+                print ('Setting fix version of %s to %s' % (i, next_ver))
+            jira.set_fixed_version(i, next_ver)
+        x += 1
+    if (len(jira.get_open_issues(ver)) > 0):
+        sys.exit(('Unable to move back all issues to version %s' % next_ver))
+    print ('Releasing %s in JIRA' % ver)
+    jira.release_version(ver)
