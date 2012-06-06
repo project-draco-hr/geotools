@@ -1,4 +1,19 @@
 {
+  Geometry workingGeometry;
+  if (transformFeatures) {
+    try {
+      workingGeometry=JTS.transform(geometry,featureToRasterTransform);
+    }
+ catch (    TransformException ex) {
+      throw ex;
+    }
+catch (    MismatchedDimensionException ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+ else {
+    workingGeometry=geometry;
+  }
   Coordinate[] coords=geometry.getCoordinates();
   if (coords.length > coordGridX.length) {
     int n=coords.length / COORD_GRID_CHUNK_SIZE + 1;
@@ -6,16 +21,11 @@
     coordGridY=new int[n * COORD_GRID_CHUNK_SIZE];
   }
   DirectPosition2D worldPos=new DirectPosition2D();
-  try {
-    for (int n=0; n < coords.length; n++) {
-      worldPos.setLocation(coords[n].x,coords[n].y);
-      GridCoordinates2D gridPos=gridGeom.worldToGrid(worldPos);
-      coordGridX[n]=gridPos.x;
-      coordGridY[n]=gridPos.y;
-    }
-  }
- catch (  TransformException ex) {
-    throw new RuntimeException(ex);
+  for (int n=0; n < coords.length; n++) {
+    worldPos.setLocation(coords[n].x,coords[n].y);
+    GridCoordinates2D gridPos=gridGeom.worldToGrid(worldPos);
+    coordGridX[n]=gridPos.x;
+    coordGridY[n]=gridPos.y;
   }
 switch (geomType) {
 case POLYGON:
