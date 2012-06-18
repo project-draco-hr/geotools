@@ -1,0 +1,33 @@
+{
+  Expression attrExpr=null;
+  if (attrName != null) {
+    attrExpr=ECQL.toExpression(attrName);
+  }
+  SimpleFeatureIterator obsIt=obsPoints.features();
+  double[] srcPt=new double[2];
+  double[] dstPt=new double[2];
+  int i=0;
+  try {
+    while (obsIt.hasNext()) {
+      SimpleFeature feature=obsIt.next();
+      try {
+        double val=1;
+        if (attrExpr != null) {
+          val=getPointValue(feature,attrExpr);
+        }
+        Geometry geom=(Geometry)feature.getDefaultGeometry();
+        Coordinate p=getPoint(geom);
+        srcPt[0]=p.x;
+        srcPt[1]=p.y;
+        trans.transform(srcPt,0,dstPt,0,1);
+        Coordinate pobs=new Coordinate(dstPt[0],dstPt[1],val);
+        heatMap.addPoint(pobs.x,pobs.y,val);
+      }
+ catch (      Exception e) {
+      }
+    }
+  }
+  finally {
+    obsIt.close();
+  }
+}
