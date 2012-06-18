@@ -1,0 +1,14 @@
+{
+  ReferencedEnvelope bounds=new ReferencedEnvelope(0,30,0,30,DefaultGeographicCRS.WGS84);
+  Coordinate[] data=new Coordinate[]{new Coordinate(10,10,100),new Coordinate(10,20,20),new Coordinate(20,10,0),new Coordinate(20,20,80)};
+  SimpleFeatureCollection fc=createPoints(data,bounds);
+  ProgressListener monitor=null;
+  BarnesSurfaceProcess process=new BarnesSurfaceProcess();
+  GridCoverage2D cov=process.execute(fc,"value",1000,10.0,(Double)null,(Integer)2,(Integer)null,(Double)null,-999.0,1,0.0,bounds,100,100,monitor);
+  double ERROR_TOL=10;
+  for (  Coordinate p : data) {
+    float covval=coverageValue(cov,p.x,p.y);
+    double error=Math.abs(p.z - covval);
+    assertTrue(error < ERROR_TOL);
+  }
+}

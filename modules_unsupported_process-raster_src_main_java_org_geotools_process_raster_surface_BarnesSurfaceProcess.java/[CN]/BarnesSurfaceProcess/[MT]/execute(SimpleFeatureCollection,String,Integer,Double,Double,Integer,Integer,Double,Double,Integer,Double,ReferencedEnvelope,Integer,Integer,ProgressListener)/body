@@ -1,0 +1,49 @@
+{
+  if (valueAttr == null || valueAttr.length() <= 0) {
+    throw new IllegalArgumentException("Value attribute must be specified");
+  }
+  int dataLimit=0;
+  if (argDataLimit != null)   dataLimit=argDataLimit;
+  double lengthScale=argScale;
+  double convergenceFactor=argConvergence != null ? argConvergence : 0.3;
+  int passes=argPasses != null ? argPasses : 2;
+  int minObsCount=argMinObsCount != null ? argMinObsCount : 2;
+  double maxObsDistance=argMaxObsDistance != null ? argMaxObsDistance : 0.0;
+  float noDataValue=(float)(argNoDataValue != null ? argNoDataValue : -999);
+  int pixelsPerCell=1;
+  if (argPixelsPerCell != null && argPixelsPerCell > 1) {
+    pixelsPerCell=argPixelsPerCell;
+  }
+  int gridWidth=outputWidth;
+  int gridHeight=outputHeight;
+  if (pixelsPerCell > 1) {
+    gridWidth=outputWidth / pixelsPerCell;
+    gridHeight=outputHeight / pixelsPerCell;
+  }
+  CoordinateReferenceSystem srcCRS=obsFeatures.getSchema().getCoordinateReferenceSystem();
+  CoordinateReferenceSystem dstCRS=outputEnv.getCoordinateReferenceSystem();
+  MathTransform trans=null;
+  try {
+    trans=CRS.findMathTransform(srcCRS,dstCRS);
+  }
+ catch (  FactoryException e) {
+    throw new ProcessException(e);
+  }
+  double distanceConversionFactor=distanceConversionFactor(srcCRS,dstCRS);
+  double dstLengthScale=lengthScale * distanceConversionFactor;
+  double dstMaxObsDistance=maxObsDistance * distanceConversionFactor;
+  Coordinate[] pts=null;
+  try {
+    pts=extractPoints(obsFeatures,valueAttr,trans,dataLimit);
+  }
+ catch (  CQLException e) {
+    throw new ProcessException(e);
+  }
+  float[][] barnesGrid=createBarnesGrid(pts,dstLengthScale,convergenceFactor,passes,minObsCount,dstMaxObsDistance,noDataValue,outputEnv,gridWidth,gridHeight);
+  barnesGrid=flipXY(barnesGrid);
+  float[][] outGrid=barnesGrid;
+  if (pixelsPerCell > 1)   outGrid=upsample(barnesGrid,noDataValue,outputWidth,outputHeight);
+  GridCoverageFactory gcf=CoverageFactoryFinder.getGridCoverageFactory(null);
+  GridCoverage2D gridCov=gcf.create("Process Results",outGrid,outputEnv);
+  return gridCov;
+}

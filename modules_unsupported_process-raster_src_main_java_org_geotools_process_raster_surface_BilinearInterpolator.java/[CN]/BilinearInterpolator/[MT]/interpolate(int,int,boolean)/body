@@ -1,0 +1,40 @@
+{
+  int srcWidth=src.length;
+  int srcHeight=src[0].length;
+  float[][] dest=new float[width][height];
+  float xRatio=((float)srcWidth - 1) / width;
+  float yRatio=((float)srcHeight - 1) / height;
+  for (int i=0; i < width; i++) {
+    for (int j=0; j < height; j++) {
+      float x=i * xRatio;
+      float y=j * yRatio;
+      int ix=(int)x;
+      int iy=(int)y;
+      float xfrac=x - ix;
+      float yfrac=y - iy;
+      float val;
+      if (ix < srcWidth - 1 && iy < srcHeight - 1) {
+        float v00=src[ix][iy];
+        float v10=src[ix + 1][iy];
+        float v01=src[ix][iy + 1];
+        float v11=src[ix + 1][iy + 1];
+        if (v00 == noDataValue || v10 == noDataValue || v01 == noDataValue || v11 == noDataValue) {
+          if (smoothBoundary) {
+            val=interpolateBoundaryCell(xfrac,yfrac,v00,v10,v01,v11);
+          }
+ else {
+            val=noDataValue;
+          }
+        }
+ else {
+          val=(v00 * (1 - xfrac) * (1 - yfrac) + v10 * (xfrac) * (1 - yfrac) + v01 * (yfrac) * (1 - xfrac) + v11 * (xfrac * yfrac));
+        }
+      }
+ else {
+        val=src[ix][iy];
+      }
+      dest[i][j]=val;
+    }
+  }
+  return dest;
+}
