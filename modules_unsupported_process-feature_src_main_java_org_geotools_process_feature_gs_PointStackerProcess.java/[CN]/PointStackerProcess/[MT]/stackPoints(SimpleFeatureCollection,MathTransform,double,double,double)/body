@@ -1,0 +1,33 @@
+{
+  SimpleFeatureIterator featureIt=data.features();
+  Map<Coordinate,StackedPoint> stackedPts=new HashMap<Coordinate,StackedPoint>();
+  double[] srcPt=new double[2];
+  double[] dstPt=new double[2];
+  Coordinate indexPt=new Coordinate();
+  try {
+    while (featureIt.hasNext()) {
+      SimpleFeature feature=featureIt.next();
+      Geometry geom=(Geometry)feature.getDefaultGeometry();
+      Coordinate p=getRepresentativePoint(geom);
+      srcPt[0]=p.x;
+      srcPt[1]=p.y;
+      crsTransform.transform(srcPt,0,dstPt,0,1);
+      Coordinate pout=new Coordinate(dstPt[0],dstPt[1]);
+      indexPt.x=pout.x;
+      indexPt.y=pout.y;
+      gridIndex(indexPt,cellSize);
+      StackedPoint stkPt=stackedPts.get(indexPt);
+      if (stkPt == null) {
+        double centreX=indexPt.x * cellSize + cellSize / 2;
+        double centreY=indexPt.y * cellSize + cellSize / 2;
+        stkPt=new StackedPoint(indexPt,new Coordinate(centreX,centreY));
+        stackedPts.put(stkPt.getKey(),stkPt);
+      }
+      stkPt.add(pout);
+    }
+  }
+  finally {
+    featureIt.close();
+  }
+  return stackedPts.values();
+}
