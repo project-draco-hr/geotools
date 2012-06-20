@@ -23,14 +23,22 @@
         int dimensions=2;
         String geomType=CLASS_TO_TYPE_MAP.get(gd.getType().getBinding());
         if (geomType == null)         geomType="GEOMETRY";
-        String sql="DELETE FROM GEOMETRY_COLUMNS" + " WHERE f_table_catalog=''" + " AND f_table_schema = '" + schemaName + "'"+ " AND f_table_name = '"+ tableName+ "'"+ " AND f_geometry_column = '"+ gd.getLocalName()+ "'";
-        LOGGER.fine(sql);
-        st.execute(sql);
-        sql="INSERT INTO GEOMETRY_COLUMNS VALUES (''," + "'" + schemaName + "',"+ "'"+ tableName+ "',"+ "'"+ gd.getLocalName()+ "',"+ dimensions+ ","+ srid+ ","+ "'"+ geomType+ "')";
-        LOGGER.fine(sql);
-        st.execute(sql);
+        String sql=null;
+        if (getVersion(cx).compareTo(V_2_0_0) >= 0) {
+          sql="ALTER TABLE \"" + schemaName + "\".\""+ tableName+ "\" "+ "ALTER COLUMN \""+ gd.getLocalName()+ "\" "+ "TYPE geometry ("+ geomType+ ", "+ srid+ ");";
+          LOGGER.fine(sql);
+          st.execute(sql);
+        }
+ else {
+          sql="DELETE FROM GEOMETRY_COLUMNS" + " WHERE f_table_catalog=''" + " AND f_table_schema = '" + schemaName + "'"+ " AND f_table_name = '"+ tableName+ "'"+ " AND f_geometry_column = '"+ gd.getLocalName()+ "'";
+          LOGGER.fine(sql);
+          st.execute(sql);
+          sql="INSERT INTO GEOMETRY_COLUMNS VALUES (''," + "'" + schemaName + "',"+ "'"+ tableName+ "',"+ "'"+ gd.getLocalName()+ "',"+ dimensions+ ","+ srid+ ","+ "'"+ geomType+ "')";
+          LOGGER.fine(sql);
+          st.execute(sql);
+        }
         if (srid > -1) {
-          sql="ALTER TABLE " + "\"" + schemaName + "\""+ "."+ "\""+ tableName+ "\""+ " ADD CONSTRAINT \"enforce_srid_"+ gd.getLocalName()+ "\""+ " CHECK (SRID("+ "\""+ gd.getLocalName()+ "\""+ ") = "+ srid+ ")";
+          sql="ALTER TABLE " + "\"" + schemaName + "\""+ "."+ "\""+ tableName+ "\""+ " ADD CONSTRAINT \"enforce_srid_"+ gd.getLocalName()+ "\""+ " CHECK (ST_SRID("+ "\""+ gd.getLocalName()+ "\""+ ") = "+ srid+ ")";
           LOGGER.fine(sql);
           st.execute(sql);
         }
@@ -47,7 +55,9 @@
         st.execute(sql);
       }
     }
-    cx.commit();
+    if (!cx.getAutoCommit()) {
+      cx.commit();
+    }
   }
   finally {
     dataStore.closeSafe(st);
