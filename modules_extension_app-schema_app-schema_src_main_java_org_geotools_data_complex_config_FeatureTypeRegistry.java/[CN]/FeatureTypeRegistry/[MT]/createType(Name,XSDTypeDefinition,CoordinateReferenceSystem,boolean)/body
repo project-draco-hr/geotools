@@ -14,10 +14,8 @@
     String targetNamespace=baseType.getTargetNamespace();
     String name=baseType.getName();
     if (name != null) {
-      superType=getType(targetNamespace,name);
-    }
-    if (superType == null) {
-      superType=createType(baseType,crs,attMappings);
+      Name baseTypeName=new NameImpl(targetNamespace,name);
+      superType=getAttributeType(baseTypeName,baseType,crs);
     }
   }
  else {
@@ -27,20 +25,35 @@
     XSDComplexTypeDefinition complexTypeDef;
     complexTypeDef=(XSDComplexTypeDefinition)typeDefinition;
     boolean includeParents=true;
-    List children=Schemas.getChildElementDeclarations(typeDefinition,includeParents);
+    List<XSDElementDeclaration> children=Schemas.getChildElementDeclarations(typeDefinition,includeParents);
     final Collection<PropertyDescriptor> schema=new ArrayList<PropertyDescriptor>(children.size());
     XSDElementDeclaration childDecl;
     AttributeDescriptor descriptor;
     for (Iterator it=children.iterator(); it.hasNext(); ) {
       childDecl=(XSDElementDeclaration)it.next();
       try {
-        descriptor=createAttributeDescriptor(complexTypeDef,childDecl,crs,attMappings);
-        schema.add(descriptor);
+        descriptor=createAttributeDescriptor(complexTypeDef,childDecl,crs);
       }
  catch (      NoSuchElementException e) {
-        LOGGER.log(Level.WARNING,e.getMessage());
-        throw e;
+        String msg="Failed to create descriptor for '" + childDecl.getTargetNamespace() + "#"+ childDecl.getName()+ " from container '"+ typeDefinition.getTargetNamespace()+ "#"+ typeDefinition.getName()+ "'";
+        NoSuchElementException nse=new NoSuchElementException(msg);
+        nse.initCause(e);
+        throw nse;
       }
+      schema.add(descriptor);
+    }
+    for (    XSDElementDeclaration elemDecl : children) {
+      if (elemDecl.isElementDeclarationReference()) {
+        elemDecl=elemDecl.getResolvedElementDeclaration();
+      }
+      PropertyDescriptor att=null;
+      for (      PropertyDescriptor desc : schema) {
+        if (desc.getName().getLocalPart().equals(elemDecl.getName()) && desc.getName().getNamespaceURI().equals(elemDecl.getTargetNamespace())) {
+          att=desc;
+          break;
+        }
+      }
+      setSubstitutionGroup(complexTypeDef,elemDecl,att,crs);
     }
     attType=createComplexAttributeType(assignedName,schema,complexTypeDef,superType);
   }

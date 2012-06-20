@@ -1,0 +1,37 @@
+{
+  XSDTypeDefinition typeDefinition;
+  if (elemDecl.isElementDeclarationReference()) {
+    elemDecl=elemDecl.getResolvedElementDeclaration();
+  }
+  typeDefinition=elemDecl.getAnonymousTypeDefinition();
+  if (typeDefinition == null) {
+    typeDefinition=elemDecl.getTypeDefinition();
+  }
+  if (typeDefinition == null) {
+    QName qname=Types.toQName(Types.typeName(elemDecl.getTargetNamespace(),elemDecl.getName()));
+    for (    SchemaIndex schemaIndex : schemas) {
+      elemDecl=schemaIndex.getElementDeclaration(qname);
+      if (elemDecl != null) {
+        break;
+      }
+    }
+    if (elemDecl != null) {
+      if (elemDecl.isElementDeclarationReference()) {
+        elemDecl=elemDecl.getResolvedElementDeclaration();
+      }
+      typeDefinition=elemDecl.getAnonymousTypeDefinition();
+      if (typeDefinition == null) {
+        typeDefinition=elemDecl.getTypeDefinition();
+      }
+    }
+  }
+  if (typeDefinition == null) {
+    String msg="The element declaration " + elemDecl.getTargetNamespace() + "#"+ elemDecl.getName()+ " has a null type definition, can't continue, fix it on the schema";
+    LOGGER.warning(msg);
+    throw new NoSuchElementException(msg);
+  }
+  String targetNamespace=typeDefinition.getTargetNamespace();
+  String name=typeDefinition.getName();
+  Name typeName=Types.typeName(targetNamespace,name);
+  return getAttributeType(typeName,typeDefinition,crs);
+}

@@ -1,0 +1,55 @@
+{
+  if (descriptor.getUserData().get("substitutionGroup") != null) {
+    return;
+  }
+  List<AttributeDescriptor> substitutionGroup=new ArrayList<AttributeDescriptor>();
+  descriptor.getUserData().put("substitutionGroup",substitutionGroup);
+  int minOccurs=Schemas.getMinOccurs(container,elemDecl);
+  int maxOccurs=Schemas.getMaxOccurs(container,elemDecl);
+  boolean nillable=elemDecl.isNillable();
+  Iterator substitutions=elemDecl.getSubstitutionGroup().iterator();
+  XSDElementDeclaration sub;
+  while (substitutions.hasNext()) {
+    sub=(XSDElementDeclaration)substitutions.next();
+    if (!(sub.getName().equals(elemDecl.getName())) || !(sub.getTargetNamespace().equals(elemDecl.getTargetNamespace()))) {
+      Name elemName=Types.typeName(sub.getTargetNamespace(),sub.getName());
+      AttributeType type=getTypeOf(sub,crs);
+      if (type != null) {
+        substitutionGroup.add(createAttributeDescriptor(type,crs,elemName,minOccurs,maxOccurs,nillable,null));
+      }
+    }
+  }
+  XSDTypeDefinition typeDef=elemDecl.getType();
+  if (typeDef instanceof XSDComplexTypeDefinition) {
+    Name typeName=Types.typeName(typeDef.getTargetNamespace(),typeDef.getName());
+    AttributeType attType=typeRegistry.get(typeName);
+    if (!processingTypes.contains(typeName)) {
+      if (attType == null || attType instanceof AbstractLazyComplexTypeImpl) {
+        LOGGER.finest("Creating attribute type " + typeName);
+        createType(typeName,typeDef,crs,false);
+        LOGGER.finest("Registering attribute type " + typeName);
+      }
+ else       if (attType instanceof ComplexType) {
+        ComplexType complexType=(ComplexType)attType;
+        Collection<PropertyDescriptor> children=complexType.getDescriptors();
+        List<XSDParticle> childParticles=Schemas.getChildElementParticles(typeDef,true);
+        for (        XSDParticle particle : childParticles) {
+          XSDElementDeclaration element=(XSDElementDeclaration)particle.getContent();
+          if (element.isElementDeclarationReference()) {
+            element=element.getResolvedElementDeclaration();
+          }
+          PropertyDescriptor childDesc=null;
+          for (          PropertyDescriptor desc : children) {
+            if (desc.getName().getLocalPart().equals(element.getName()) && desc.getName().getNamespaceURI().equals(element.getTargetNamespace())) {
+              childDesc=desc;
+              break;
+            }
+          }
+          if (childDesc != null) {
+            setSubstitutionGroup((XSDComplexTypeDefinition)typeDef,element,childDesc,crs);
+          }
+        }
+      }
+    }
+  }
+}
