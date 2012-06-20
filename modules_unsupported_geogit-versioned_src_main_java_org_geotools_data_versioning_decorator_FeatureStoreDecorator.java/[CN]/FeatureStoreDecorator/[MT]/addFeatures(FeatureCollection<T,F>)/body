@@ -1,18 +1,38 @@
 {
-  if (isVersioned()) {
+  boolean versioned=isVersioned();
+  if (versioned) {
     checkTransaction();
   }
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
   final FeatureStore<T,F> unversioned=getUnversionedStore();
+  int initialCount=-1;
+  if (versioned) {
+    initialCount=unversioned.getCount(Query.ALL);
+  }
   List<FeatureId> unversionedIds=unversioned.addFeatures(collection);
-  if (isVersioned()) {
+  if (versioned) {
     try {
       final Name typeName=getSchema().getName();
       VersioningTransactionState versioningState=getVersioningState();
-      FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
-      Id id=ff.id(new HashSet<Identifier>(unversionedIds));
-      FeatureCollection<T,F> inserted=unversioned.getFeatures(id);
-      List<FeatureId> versionedIds;
-      versionedIds=versioningState.stageInsert(typeName,inserted,true);
+      List<Filter> block=new ArrayList<Filter>();
+      if (initialCount == 0) {
+        block.add(Filter.INCLUDE);
+      }
+ else {
+        final int PAGE=1000;
+        int SIZE=unversionedIds.size();
+        for (int i=0; i < SIZE; i+=PAGE) {
+          List<FeatureId> list=unversionedIds.subList(i,Math.min(SIZE,i + PAGE));
+          Id id=ff.id(new HashSet<Identifier>(list));
+          block.add(id);
+        }
+      }
+      List<FeatureId> versionedIds=new ArrayList<FeatureId>();
+      for (      Filter filter : block) {
+        FeatureCollection<T,F> inserted=unversioned.getFeatures(filter);
+        List<FeatureId> staged=versioningState.stageInsert(typeName,inserted,true);
+        versionedIds.addAll(staged);
+      }
       return versionedIds;
     }
  catch (    Exception e) {
