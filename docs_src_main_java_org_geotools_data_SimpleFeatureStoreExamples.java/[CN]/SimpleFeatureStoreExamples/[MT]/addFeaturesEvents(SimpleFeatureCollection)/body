@@ -1,0 +1,28 @@
+{
+  Transaction transaction=new DefaultTransaction("Add Example");
+  SimpleFeatureStore store=(SimpleFeatureStore)dataStore.getFeatureSource(typeName);
+  store.setTransaction(transaction);
+class CommitListener implements FeatureListener {
+    public void changed(    FeatureEvent featureEvent){
+      if (featureEvent instanceof BatchFeatureEvent) {
+        BatchFeatureEvent batchEvent=(BatchFeatureEvent)featureEvent;
+        System.out.println("area changed:" + batchEvent.getBounds());
+        System.out.println("created fids:" + batchEvent.fids);
+      }
+ else {
+        System.out.println("bounds:" + featureEvent.getBounds());
+        System.out.println("change:" + featureEvent.filter);
+      }
+    }
+  }
+  CommitListener listener=new CommitListener();
+  store.addFeatureListener(listener);
+  try {
+    List<FeatureId> added=store.addFeatures(collection);
+    transaction.commit();
+  }
+ catch (  Exception problem) {
+    transaction.rollback();
+    throw problem;
+  }
+}

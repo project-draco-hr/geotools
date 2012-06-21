@@ -1,0 +1,18 @@
+{
+  Transaction transaction=new DefaultTransaction("Add Example");
+  SimpleFeatureStore store=(SimpleFeatureStore)dataStore.getFeatureSource(typeName);
+  store.setTransaction(transaction);
+  try {
+    List<FeatureId> added=store.addFeatures(collection);
+    System.out.println(added);
+    transaction.commit();
+    System.out.println(added);
+    Set<FeatureId> selection=new HashSet<FeatureId>(added);
+    FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+    Filter selected=ff.id(selection);
+  }
+ catch (  Exception problem) {
+    transaction.rollback();
+    throw problem;
+  }
+}

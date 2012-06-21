@@ -1,0 +1,19 @@
+{
+  SimpleFeatureStore store=(SimpleFeatureStore)dataStore.getFeatureSource(typeName);
+  SimpleFeatureType featureType=store.getSchema();
+  SimpleFeatureBuilder build=new SimpleFeatureBuilder(featureType);
+  GeometryBuilder geom=new GeometryBuilder();
+  List<SimpleFeature> list=new ArrayList<SimpleFeature>();
+  list.add(build.buildFeature("fid1",new Object[]{geom.point(1,1),"hello"}));
+  list.add(build.buildFeature("fid2",new Object[]{geom.point(2,3),"martin"}));
+  SimpleFeatureCollection collection=new ListFeatureCollection(featureType,list);
+  Transaction transaction=new DefaultTransaction("Add Example");
+  store.setTransaction(transaction);
+  try {
+    store.addFeatures(collection);
+    transaction.commit();
+  }
+ catch (  Exception eek) {
+    transaction.rollback();
+  }
+}
