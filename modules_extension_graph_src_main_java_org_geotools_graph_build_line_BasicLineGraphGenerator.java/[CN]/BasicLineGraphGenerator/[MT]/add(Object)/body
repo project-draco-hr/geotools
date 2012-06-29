@@ -1,23 +1,22 @@
 {
   LineSegment line=(LineSegment)obj;
-  Coordinate c;
+  Coordinate first, last;
   Node n1, n2;
-  c=line.p0;
-  if ((n1=(Node)m_coord2node.get(c)) == null) {
-    n1=getGraphBuilder().buildNode();
-    setObject(n1,c);
-    getGraphBuilder().addNode(n1);
-    m_coord2node.put(c,n1);
+  first=line.p0;
+  n1=retrieveNode(first);
+  if (n1 == null) {
+    n1=createNode(first);
   }
-  c=line.p1;
-  if ((n2=(Node)m_coord2node.get(c)) == null) {
-    n2=getGraphBuilder().buildNode();
-    setObject(n2,c);
-    getGraphBuilder().addNode(n2);
-    m_coord2node.put(c,n2);
+  last=line.p1;
+  n2=retrieveNode(last);
+  if (n2 == null) {
+    n2=createNode(last);
   }
   Edge e=getGraphBuilder().buildEdge(n1,n2);
-  setObject(e,line);
   getGraphBuilder().addEdge(e);
+  if (useTolerance()) {
+    line=alterLine(line,n1,n2);
+  }
+  setObject(e,line);
   return (e);
 }

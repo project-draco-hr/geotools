@@ -1,8 +1,26 @@
 {
   LineString ls=null;
-  if (obj instanceof MultiLineString)   ls=(LineString)((MultiLineString)obj).getGeometryN(0);
- else   ls=(LineString)obj;
+  if (obj instanceof MultiLineString) {
+    ls=(LineString)((MultiLineString)obj).getGeometryN(0);
+  }
+ else {
+    ls=(LineString)obj;
+  }
   Edge e=(Edge)super.add(new LineSegment(ls.getCoordinateN(0),ls.getCoordinateN(ls.getNumPoints() - 1)));
+  if (useTolerance()) {
+    LineSegment lineSegment=(LineSegment)e.getObject();
+    Coordinate[] coordinates=ls.getCoordinates();
+    List<Coordinate> coordinateList=Arrays.asList(coordinates);
+    List<Coordinate> nCoordinateList=new ArrayList<Coordinate>(coordinateList);
+    if (!ls.getCoordinateN(0).equals(lineSegment.p0)) {
+      nCoordinateList.add(0,lineSegment.p0);
+    }
+ else     if (!ls.getCoordinateN(ls.getNumPoints() - 1).equals(lineSegment.p1)) {
+      nCoordinateList.add(lineSegment.p1);
+    }
+    Coordinate[] newCoordinates=nCoordinateList.toArray(new Coordinate[nCoordinateList.size()]);
+    ls=gf.createLineString(newCoordinates);
+  }
   e.setObject(ls);
   return (e);
 }
