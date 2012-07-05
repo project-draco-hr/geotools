@@ -1,0 +1,27 @@
+{
+class TotalVisitor implements FeatureVisitor {
+    int total=0;
+    public void visit(    Feature feature){
+      total++;
+    }
+  }
+  TotalVisitor visitor=new TotalVisitor();
+  int count=featureSource.getCount(Query.ALL);
+  featureSource.accepts(Query.ALL,visitor,null);
+  assertEquals(count,visitor.total);
+  visitor.total=0;
+  JDBCFeatureStore ft1=(JDBCFeatureStore)dataStore.getFeatureSource(tname("ft1"));
+  Transaction transaction=new DefaultTransaction();
+  try {
+    ft1.setTransaction(transaction);
+    Connection connection=ft1.getDataStore().getConnection(ft1.getState());
+    assertFalse("connection established",connection.isClosed());
+    ft1.accepts(Query.ALL,visitor,null);
+    assertFalse("connection maintained",connection.isClosed());
+  }
+  finally {
+    if (transaction != null) {
+      transaction.close();
+    }
+  }
+}
