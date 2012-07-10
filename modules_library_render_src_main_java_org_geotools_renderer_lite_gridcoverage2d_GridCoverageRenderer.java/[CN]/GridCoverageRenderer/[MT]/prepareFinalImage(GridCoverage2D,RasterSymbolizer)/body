@@ -53,9 +53,14 @@
   }
   final Interpolation interpolation=(Interpolation)hints.get(JAI.KEY_INTERPOLATION);
   if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Using interpolation " + interpolation);
+  final Hints localHints=this.hints.clone();
+  if (interpolation instanceof InterpolationNearest) {
+    localHints.add(new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE));
+    localHints.add(new RenderingHints(JAI.KEY_TRANSFORM_ON_COLORMAP,Boolean.TRUE));
+  }
   GridCoverage2D preResample=gridCoverage;
   try {
-    preResample=getCroppedCoverage(gridCoverage,intersectionEnvelope,sourceCoverageCRS,this.hints);
+    preResample=getCroppedCoverage(gridCoverage,intersectionEnvelope,sourceCoverageCRS,localHints);
     if (preResample == null) {
       if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Skipping current coverage because cropped to an empty area");
       return null;
@@ -70,7 +75,7 @@
   }
   GridCoverage2D preSymbolizer;
   if (doReprojection) {
-    preSymbolizer=resample(preResample,destinationCRS,interpolation == null ? new InterpolationNearest() : interpolation,destinationEnvelope,this.hints);
+    preSymbolizer=resample(preResample,destinationCRS,interpolation == null ? new InterpolationNearest() : interpolation,destinationEnvelope,localHints);
     if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Reprojecting to crs " + destinationCRS.toWKT());
   }
  else   preSymbolizer=preResample;
