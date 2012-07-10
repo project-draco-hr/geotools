@@ -1,0 +1,21 @@
+{
+  List<String> geometryNames=transformer.getGeometryPropertyNames();
+  List<String> filtered=getSelectedAttributes(geometryNames,query);
+  if (filtered.isEmpty()) {
+    LOGGER.log(Level.FINE,"No geometry properties in query {0}",query);
+    return null;
+  }
+  List<String> originalNames=transformer.getOriginalNames(filtered);
+  if (originalNames.size() < filtered.size()) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Some of the geometry attributes is the result of a general transformation " + "(not a rename), can't compute the bbox quickly");
+    }
+    return null;
+  }
+  Query txQuery=transformer.transformQuery(query);
+  txQuery.setPropertyNames(originalNames);
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.log(Level.FINE,"The original query for bounds computation{0} has been tranformed to {1}",new Object[]{query,txQuery});
+  }
+  return source.getBounds(txQuery);
+}

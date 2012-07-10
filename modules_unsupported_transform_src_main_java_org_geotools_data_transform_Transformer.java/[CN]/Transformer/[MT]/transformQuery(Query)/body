@@ -1,0 +1,23 @@
+{
+  Filter txFilter=transformFilter(query.getFilter());
+  Query txQuery=new Query(query);
+  txQuery.setTypeName(source.getSchema().getTypeName());
+  txQuery.setPropertyNames(getRequiredAttributes(query));
+  txQuery.setSortBy(getTransformedSortBy(query));
+  txQuery.setFilter(txFilter);
+  QueryCapabilities caps=source.getQueryCapabilities();
+  if (query.getStartIndex() != null && !caps.isJoiningSupported()) {
+    txQuery.setStartIndex(null);
+  }
+  if (query.getSortBy() != null && !caps.supportsSorting(query.getSortBy())) {
+    txQuery.setSortBy(null);
+  }
+  if (query.getSortBy() != null && txQuery.getSortBy() == null) {
+    txQuery.setStartIndex(null);
+    txQuery.setMaxFeatures(Query.DEFAULT_MAX);
+  }
+  if (!caps.isOffsetSupported()) {
+    txQuery.setStartIndex(null);
+  }
+  return txQuery;
+}

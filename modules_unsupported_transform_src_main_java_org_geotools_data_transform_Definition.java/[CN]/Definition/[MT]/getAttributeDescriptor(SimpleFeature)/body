@@ -1,0 +1,51 @@
+{
+  AttributeTypeBuilder ab=new AttributeTypeBuilder();
+  SimpleFeatureType original=originalFeature.getFeatureType();
+  ExpressionTypeEvaluator typeEvaluator=new ExpressionTypeEvaluator(original);
+  if (binding != null) {
+    CoordinateReferenceSystem computedCRS=crs;
+    if (Geometry.class.isAssignableFrom(binding) && computedCRS == null) {
+      computedCRS=evaluateCRS(originalFeature);
+    }
+    ab.setBinding(binding);
+    ab.setName(name);
+    if (computedCRS != null) {
+      ab.setCRS(computedCRS);
+    }
+    return ab.buildDescriptor(name);
+  }
+ else {
+    Class computedBinding=Object.class;
+    if (expression instanceof PropertyName) {
+      PropertyName pn=(PropertyName)expression;
+      AttributeDescriptor descriptor=original.getDescriptor(pn.getPropertyName());
+      if (descriptor == null) {
+        throw new IllegalArgumentException("Original feature type does not have a property named " + name);
+      }
+ else {
+        ab.init(descriptor);
+        ab.setName(name);
+        return ab.buildDescriptor(name);
+      }
+    }
+ else {
+      computedBinding=(Class)expression.accept(typeEvaluator,null);
+      if (computedBinding == null) {
+        Object result=expression.evaluate(originalFeature);
+        if (result != null) {
+          computedBinding=result.getClass();
+        }
+      }
+      CoordinateReferenceSystem computedCRS=crs;
+      if (Geometry.class.isAssignableFrom(computedBinding) && computedCRS == null) {
+        computedCRS=evaluateCRS(originalFeature);
+      }
+      ab.setBinding(computedBinding);
+      ab.setName(name);
+      if (computedCRS != null) {
+        ab.setCRS(computedCRS);
+      }
+      return ab.buildDescriptor(name);
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  return new QueryCapabilities(){
+    @Override public boolean isOffsetSupported(){
+      return true;
+    }
+    @Override public boolean isReliableFIDSupported(){
+      return source.getQueryCapabilities().isReliableFIDSupported();
+    }
+    @Override public boolean isJoiningSupported(){
+      return false;
+    }
+    @Override public boolean isUseProvidedFIDSupported(){
+      return source.getQueryCapabilities().isUseProvidedFIDSupported();
+    }
+    @Override public boolean isVersionSupported(){
+      return source.getQueryCapabilities().isVersionSupported();
+    }
+    @Override public boolean supportsSorting(    SortBy[] sortAttributes){
+      for (      SortBy sortBy : sortAttributes) {
+        if (sortBy == SortBy.NATURAL_ORDER || sortBy == SortBy.REVERSE_ORDER) {
+          continue;
+        }
+ else {
+          String pn=sortBy.getPropertyName().getPropertyName();
+          AttributeDescriptor descriptor=transformer.getSchema().getDescriptor(pn);
+          if (descriptor == null) {
+            return false;
+          }
+ else {
+            Class<?> binding=descriptor.getType().getBinding();
+            if (!Comparable.class.isAssignableFrom(binding)) {
+              if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE,"Can't sort on {0} because its property type {1} is not comparable",new Object[]{descriptor.getLocalName(),binding});
+              }
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+  }
+;
+}

@@ -1,0 +1,25 @@
+{
+  try {
+    Query txQuery=transformer.transformQuery(query);
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"The original query for feature extraction {0} has been transformed to {1}",new Object[]{query,txQuery});
+    }
+    SimpleFeatureIterator fi=transformer.getSource().getFeatures(txQuery).features();
+    SimpleFeatureIterator transformed=new TransformFeatureIteratorWrapper(fi,transformer);
+    if (query.getSortBy() != null && txQuery.getSortBy() == null) {
+      transformed=new SortedFeatureIterator(transformed,getSchema(),query.getSortBy(),-1);
+    }
+    if (query.getStartIndex() != null && txQuery.getStartIndex() == null) {
+      for (int i=0; i < query.getStartIndex() && transformed.hasNext(); i++) {
+        transformed.next();
+      }
+    }
+    if (txQuery.getMaxFeatures() > query.getMaxFeatures()) {
+      transformed=new MaxFeaturesIterator(transformed,query.getMaxFeatures());
+    }
+    return new SimpleFeatureIteratorIterator(transformed);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+}
