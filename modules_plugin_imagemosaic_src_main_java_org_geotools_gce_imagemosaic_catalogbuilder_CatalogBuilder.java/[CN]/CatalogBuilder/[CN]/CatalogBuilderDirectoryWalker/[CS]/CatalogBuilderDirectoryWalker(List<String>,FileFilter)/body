@@ -15,11 +15,25 @@
     transaction.rollback();
   }
  finally {
-    transaction.close();
+    try {
+      transaction.close();
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      fireException(e);
+    }
     try {
       indexingPostamble(!canceled);
     }
  catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      fireException(e);
     }
   }
 }
