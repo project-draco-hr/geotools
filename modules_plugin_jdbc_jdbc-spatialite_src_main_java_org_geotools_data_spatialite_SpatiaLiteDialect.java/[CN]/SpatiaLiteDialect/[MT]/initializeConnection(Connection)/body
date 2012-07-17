@@ -24,12 +24,23 @@
     }
     if (loadSpatialRefSys) {
       try {
-        BufferedReader in=new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("init_spatialite-2.3.sql")));
-        String line=null;
-        while ((line=in.readLine()) != null) {
-          st.execute(line);
+        st.close();
+        boolean isAutoCommit=cx.getAutoCommit();
+        cx.setAutoCommit(false);
+        st=cx.createStatement();
+        try {
+          BufferedReader in=new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("init_spatialite-2.3.sql")));
+          String line=null;
+          while ((line=in.readLine()) != null) {
+            st.addBatch(line);
+          }
+          in.close();
+          st.executeBatch();
+          cx.commit();
         }
-        in.close();
+  finally {
+          cx.setAutoCommit(isAutoCommit);
+        }
       }
  catch (      IOException e) {
         throw new RuntimeException("Error reading spatial ref sys file",e);
