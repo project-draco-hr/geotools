@@ -2,5 +2,23 @@
   if (expression instanceof VolatileFunction) {
     usingVolatileFunctions=true;
   }
+  if (expression instanceof FilterFunction_property) {
+    boolean foundLiteral=false;
+    if (expression.getParameters() != null && expression.getParameters().size() > 0) {
+      org.opengis.filter.expression.Expression firstParam=expression.getParameters().get(0);
+      FilterAttributeExtractor secondary=new FilterAttributeExtractor();
+      firstParam.accept(secondary,null);
+      if (secondary.isConstantExpression()) {
+        String name=firstParam.evaluate(null,String.class);
+        if (name != null) {
+          attributeNames.add(name);
+          foundLiteral=true;
+        }
+      }
+    }
+    if (!foundLiteral) {
+      usingDynamicProperties=true;
+    }
+  }
   return super.visit(expression,data);
 }
