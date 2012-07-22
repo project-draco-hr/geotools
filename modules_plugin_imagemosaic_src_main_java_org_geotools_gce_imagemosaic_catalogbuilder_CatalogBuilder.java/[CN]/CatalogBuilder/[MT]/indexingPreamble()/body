@@ -5,11 +5,12 @@
   final File datastoreProperties=new File(parent,"datastore.properties");
   if (Utils.checkFileReadable(datastoreProperties)) {
     Properties properties=Utils.loadPropertiesFromURL(DataUtilities.fileToURL(datastoreProperties));
-    if (properties == null)     throw new IOException();
+    if (properties == null)     throw new IOException("Unable to load properties from:" + datastoreProperties.getAbsolutePath());
     final String SPIClass=properties.getProperty("SPI");
     try {
       final DataStoreFactorySpi spi=(DataStoreFactorySpi)Class.forName(SPIClass).newInstance();
       final Map<String,Serializable> params=Utils.createDataStoreParamsFromPropertiesFile(properties,spi);
+      params.put("ParentLocation",parent.getAbsolutePath());
       catalog=GranuleCatalogFactory.createGranuleCatalog(params,false,true,spi);
     }
  catch (    ClassNotFoundException e) {

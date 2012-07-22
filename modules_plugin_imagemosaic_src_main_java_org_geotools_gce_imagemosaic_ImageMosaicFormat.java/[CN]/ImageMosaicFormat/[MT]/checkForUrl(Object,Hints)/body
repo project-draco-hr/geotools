@@ -46,33 +46,44 @@
           return false;
         }
         ShapefileDataStore store=new ShapefileDataStore(sourceURL);
-        store.setDbftimeZone(TimeZone.getTimeZone("UTC"));
+        store.setDbftimeZone(Utils.UTC_TIME_ZONE);
         tileIndexStore=store;
       }
-      final String[] typeNames=tileIndexStore.getTypeNames();
-      if (typeNames.length <= 0)       return false;
-      final String typeName=typeNames[0];
-      if (typeName == null)       return false;
-      final SimpleFeatureSource featureSource=tileIndexStore.getFeatureSource(typeName);
-      if (featureSource == null)       return false;
-      final SimpleFeatureType schema=featureSource.getSchema();
-      if (schema == null)       return false;
-      crs=featureSource.getSchema().getGeometryDescriptor().getCoordinateReferenceSystem();
-      if (crs == null)       return false;
       URL propsUrl=null;
       if (shapefile)       propsUrl=DataUtilities.changeUrlExt(sourceURL,"properties");
  else {
         final File parent=DataUtilities.urlToFile(sourceURL).getParentFile();
-        final File[] properties=parent.listFiles((FilenameFilter)FileFilterUtils.andFileFilter(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("indexer.properties")),FileFilterUtils.andFileFilter(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("datastore.properties")),FileFilterUtils.makeFileOnly(FileFilterUtils.suffixFileFilter(".properties")))));
+        final File[] properties=parent.listFiles((FilenameFilter)FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("indexer.properties")),FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("datastore.properties")),FileFilterUtils.makeFileOnly(FileFilterUtils.suffixFileFilter(".properties")))));
         for (        File propFile : properties)         if (Utils.checkFileReadable(propFile) && Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),"") != null) {
           propsUrl=DataUtilities.fileToURL(propFile);
           break;
         }
       }
-      final MosaicConfigurationBean props=Utils.loadMosaicProperties(propsUrl,"location");
-      if (props == null)       return false;
-      final String locationAttributeName=props.getLocationAttribute();
-      if (schema.getDescriptor(locationAttributeName) == null)       return false;
+      final MosaicConfigurationBean configuration=Utils.loadMosaicProperties(propsUrl,"location");
+      if (configuration == null)       return false;
+      String typeName=configuration.getTypeName();
+      if (typeName == null) {
+        final String[] typeNames=tileIndexStore.getTypeNames();
+        if (typeNames.length <= 0)         return false;
+        typeName=typeNames[0];
+      }
+      if (typeName == null)       return false;
+      SimpleFeatureSource featureSource=null;
+      try {
+        featureSource=tileIndexStore.getFeatureSource(typeName);
+      }
+ catch (      Exception e) {
+        featureSource=tileIndexStore.getFeatureSource(typeName.toUpperCase());
+      }
+      if (featureSource == null) {
+        return false;
+      }
+      final SimpleFeatureType schema=featureSource.getSchema();
+      if (schema == null)       return false;
+      crs=featureSource.getSchema().getGeometryDescriptor().getCoordinateReferenceSystem();
+      if (crs == null)       return false;
+      final String locationAttributeName=configuration.getLocationAttribute();
+      if (schema.getDescriptor(locationAttributeName) == null && schema.getDescriptor(locationAttributeName.toUpperCase()) == null)       return false;
       return true;
     }
   finally {

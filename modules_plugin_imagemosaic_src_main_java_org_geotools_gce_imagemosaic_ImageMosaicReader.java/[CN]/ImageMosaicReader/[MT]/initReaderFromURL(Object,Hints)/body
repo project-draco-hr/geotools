@@ -1,8 +1,16 @@
 {
   this.sourceURL=Utils.checkSource(source,hints);
   if (this.sourceURL == null)   throw new DataSourceException("This plugin accepts File, URL or String. The string may describe a File or an URL");
-  final MosaicConfigurationBean configuration=loadMosaicProperties();
+  MosaicConfigurationBean configuration=Utils.loadMosaicProperties(sourceURL,this.locationAttributeName);
+  if (configuration == null) {
+    final File parent=DataUtilities.urlToFile(sourceURL).getParentFile();
+    final File[] properties=parent.listFiles((FilenameFilter)FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("indexer.properties")),FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("datastore.properties")),FileFilterUtils.makeFileOnly(FileFilterUtils.suffixFileFilter(".properties")))));
+    for (    File propFile : properties)     if (Utils.checkFileReadable(propFile) && Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),"") != null) {
+      configuration=Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),this.locationAttributeName);
+    }
+  }
   if (configuration == null)   throw new DataSourceException("Unable to create reader for this mosaic since we could not parse the configuration.");
+  extractProperties(configuration);
   if (this.hints.containsKey(Hints.MOSAIC_LOCATION_ATTRIBUTE))   this.locationAttributeName=((String)this.hints.get(Hints.MOSAIC_LOCATION_ATTRIBUTE));
   try {
     catalog=GranuleCatalogFactory.createGranuleCatalog(sourceURL,configuration);
@@ -25,24 +33,13 @@
  else       crs=tempcrs;
     }
     if (this.locationAttributeName == null) {
-      for (      AttributeDescriptor attribute : type.getAttributeDescriptors()) {
-        if (attribute.getType().getBinding().equals(String.class))         this.locationAttributeName=attribute.getName().toString();
-      }
+      throw new DataSourceException("The provided name for the location attribute is invalid.");
     }
-    if (type.getDescriptor(this.locationAttributeName) == null)     throw new DataSourceException("The provided name for the location attribute is invalid.");
-    if (this.timeAttribute == null) {
-      for (      AttributeDescriptor attribute : type.getAttributeDescriptors()) {
-        if (attribute.getType().getBinding().equals(Date.class)) {
-          this.timeAttribute=attribute.getName().toString();
-          break;
-        }
-        if (attribute.getType().getBinding().equals(Timestamp.class)) {
-          this.timeAttribute=attribute.getName().toString();
-          break;
-        }
-        if (attribute.getType().getBinding().equals(java.sql.Date.class)) {
-          this.timeAttribute=attribute.getName().toString();
-          break;
+ else {
+      if (type.getDescriptor(this.locationAttributeName) == null) {
+        this.locationAttributeName=this.locationAttributeName.toUpperCase();
+        if (type.getDescriptor(this.locationAttributeName) == null) {
+          throw new DataSourceException("The provided name for the location attribute is invalid.");
         }
       }
     }
