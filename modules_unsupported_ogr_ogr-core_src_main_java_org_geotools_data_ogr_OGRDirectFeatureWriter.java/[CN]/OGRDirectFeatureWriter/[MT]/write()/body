@@ -1,0 +1,19 @@
+{
+  if (live == null)   throw new IOException("No current feature to write");
+  boolean changed=!live.equals(original);
+  if (!changed && original != null) {
+  }
+ else   if (original != null) {
+    Object ogrFeature=mapper.convertGTFeature(layerDefinition,live);
+    ogr.CheckError(ogr.LayerSetFeature(layer,ogrFeature));
+  }
+ else {
+    Object ogrFeature=mapper.convertGTFeature(layerDefinition,live);
+    ogr.CheckError(ogr.LayerCreateFeature(layer,ogrFeature));
+    String geotoolsId=mapper.convertOGRFID(featureType,ogrFeature);
+    ((FeatureIdImpl)live.getIdentifier()).setID(geotoolsId);
+    ogr.FeatureDestroy(ogrFeature);
+  }
+  live=null;
+  original=null;
+}

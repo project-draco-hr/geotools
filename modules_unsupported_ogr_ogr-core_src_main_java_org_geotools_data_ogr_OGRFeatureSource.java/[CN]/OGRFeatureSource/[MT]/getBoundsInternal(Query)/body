@@ -1,0 +1,29 @@
+{
+  CoordinateReferenceSystem crs=getSchema().getCoordinateReferenceSystem();
+  OGRFilterTranslator filterTx=new OGRFilterTranslator(getSchema(),query.getFilter());
+  if (Filter.EXCLUDE.equals(filterTx.getFilter())) {
+    return new ReferencedEnvelope(crs);
+  }
+ else   if (!filterTx.isFilterFullySupported()) {
+    return null;
+  }
+ else {
+    Object dataSource=null;
+    Object layer=null;
+    try {
+      String typeName=getEntry().getTypeName();
+      dataSource=getDataStore().openOGRDataSource(false);
+      layer=getDataStore().openOGRLayer(dataSource,typeName);
+      setLayerFilters(layer,filterTx);
+      Object extent=ogr.LayerGetExtent(layer);
+      if (extent == null) {
+        return null;
+      }
+      return ogr.toEnvelope(extent,crs);
+    }
+  finally {
+      ogr.LayerRelease(layer);
+      ogr.DataSourceRelease(dataSource);
+    }
+  }
+}

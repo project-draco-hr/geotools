@@ -1,0 +1,23 @@
+{
+  Object dataSource=null;
+  Object layer=null;
+  try {
+    dataSource=openOrCreateDataSource(options,dataSource);
+    FeatureTypeMapper mapper=new FeatureTypeMapper(ogr);
+    layer=createNewLayer(schema,dataSource,options,mapper);
+    if (!ogr.LayerCanCreateField(layer)) {
+      throw new DataSourceException("OGR reports it's not possible to create fields on this layer");
+    }
+    for (int i=0; i < schema.getAttributeCount(); i++) {
+      AttributeDescriptor ad=schema.getDescriptor(i);
+      if (ad == schema.getGeometryDescriptor())       continue;
+      Object fieldDefinition=mapper.getOGRFieldDefinition(ad);
+      ogr.LayerCreateField(layer,fieldDefinition,approximateFields ? 1 : 0);
+    }
+    ogr.LayerSyncToDisk(layer);
+  }
+  finally {
+    ogr.LayerRelease(layer);
+    ogr.DataSourceRelease(dataSource);
+  }
+}
