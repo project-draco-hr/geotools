@@ -36,6 +36,12 @@
             return false;
           }
         }
+        if (spi instanceof H2DataStoreFactory || spi instanceof H2JNDIDataStoreFactory) {
+          if (params.containsKey(H2DataStoreFactory.DATABASE.key)) {
+            String dbname=(String)params.get(H2DataStoreFactory.DATABASE.key);
+            params.put(H2DataStoreFactory.DATABASE.key,(sourceF.getParent() + "/" + dbname));
+          }
+        }
         tileIndexStore=spi.createDataStore(params);
         if (tileIndexStore == null)         return false;
       }
@@ -59,7 +65,7 @@
           break;
         }
       }
-      final MosaicConfigurationBean configuration=Utils.loadMosaicProperties(propsUrl,"location");
+      final MosaicConfigurationBean configuration=Utils.loadMosaicProperties(propsUrl,Utils.DEFAULT_LOCATION_ATTRIBUTE);
       if (configuration == null)       return false;
       String typeName=configuration.getTypeName();
       if (typeName == null) {
