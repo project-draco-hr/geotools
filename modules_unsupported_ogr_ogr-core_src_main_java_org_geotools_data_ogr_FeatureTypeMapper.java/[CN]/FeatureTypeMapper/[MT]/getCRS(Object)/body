@@ -1,0 +1,31 @@
+{
+  Object spatialReference=null;
+  CoordinateReferenceSystem crs=null;
+  try {
+    spatialReference=ogr.LayerGetSpatialRef(layer);
+    if (spatialReference == null) {
+      return null;
+    }
+    try {
+      String code=ogr.SpatialRefGetAuthorityCode(spatialReference,"EPSG");
+      if (code != null) {
+        String fullCode="EPSG:" + code;
+        crs=CRS.decode(fullCode);
+      }
+    }
+ catch (    Exception e) {
+    }
+    if (crs == null) {
+      try {
+        String wkt=ogr.SpatialRefExportToWkt(spatialReference);
+        crs=CRS.parseWKT(wkt);
+      }
+ catch (      Exception e) {
+      }
+    }
+    return crs;
+  }
+  finally {
+    if (spatialReference != null)     ogr.SpatialRefRelease(spatialReference);
+  }
+}

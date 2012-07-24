@@ -1,0 +1,22 @@
+{
+  if (ogr.LayerCanIgnoreFields(layer)) {
+    List<String> ignoredFields=new ArrayList<String>();
+    ignoredFields.add("OGR_STYLE");
+    if (querySchema.getGeometryDescriptor() == null) {
+      ignoredFields.add("OGR_GEOMETRY");
+    }
+    for (    AttributeDescriptor ad : sourceSchema.getAttributeDescriptors()) {
+      if (!(ad instanceof GeometryDescriptor)) {
+        String name=ad.getLocalName();
+        if (querySchema.getDescriptor(name) == null) {
+          ignoredFields.add(name);
+        }
+      }
+    }
+    if (ignoredFields.size() > 0) {
+      ignoredFields.add(null);
+      String[] ignoredFieldsArr=(String[])ignoredFields.toArray(new String[ignoredFields.size()]);
+      ogr.CheckError(ogr.LayerSetIgnoredFields(layer,ignoredFieldsArr));
+    }
+  }
+}

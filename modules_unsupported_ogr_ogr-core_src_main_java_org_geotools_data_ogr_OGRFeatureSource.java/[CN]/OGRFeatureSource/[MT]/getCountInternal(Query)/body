@@ -1,0 +1,24 @@
+{
+  OGRFilterTranslator filterTx=new OGRFilterTranslator(getSchema(),query.getFilter());
+  if (Filter.EXCLUDE.equals(filterTx.getFilter())) {
+    return 0;
+  }
+ else   if (!filterTx.isFilterFullySupported()) {
+    return -1;
+  }
+ else {
+    Object dataSource=null;
+    Object layer=null;
+    try {
+      String typeName=getEntry().getTypeName();
+      dataSource=getDataStore().openOGRDataSource(false);
+      layer=getDataStore().openOGRLayer(dataSource,typeName);
+      setLayerFilters(layer,filterTx);
+      return (int)ogr.LayerGetFeatureCount(layer);
+    }
+  finally {
+      ogr.LayerRelease(layer);
+      ogr.DataSourceRelease(dataSource);
+    }
+  }
+}

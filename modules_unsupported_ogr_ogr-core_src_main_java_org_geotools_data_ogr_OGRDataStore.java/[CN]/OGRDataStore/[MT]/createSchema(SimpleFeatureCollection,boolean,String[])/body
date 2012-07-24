@@ -1,0 +1,65 @@
+{
+  Object dataSource=null;
+  Object layer=null;
+  SimpleFeatureType schema=data.getSchema();
+  SimpleFeatureIterator features;
+  try {
+    dataSource=openOrCreateDataSource(options,dataSource);
+    FeatureTypeMapper mapper=new FeatureTypeMapper(ogr);
+    layer=createNewLayer(schema,dataSource,options,mapper);
+    if (!ogr.LayerCanCreateField(layer)) {
+      throw new DataSourceException("OGR reports it's not possible to create fields on this layer");
+    }
+    Map<String,String> nameMap=new HashMap<String,String>();
+    for (int i=0, j=0; i < schema.getAttributeCount(); i++) {
+      AttributeDescriptor ad=schema.getDescriptor(i);
+      if (ad == schema.getGeometryDescriptor()) {
+        continue;
+      }
+      Object fieldDefinition=mapper.getOGRFieldDefinition(ad);
+      ogr.LayerCreateField(layer,fieldDefinition,approximateFields ? 1 : 0);
+      String newName=ogr.FieldGetName(fieldDefinition);
+      nameMap.put(newName,ad.getLocalName());
+      j++;
+    }
+    Object layerDefinition=ogr.LayerGetLayerDefn(layer);
+    Map<Integer,Integer> indexMap=new HashMap<Integer,Integer>();
+    int count=ogr.LayerGetFieldCount(layerDefinition);
+    for (int i=0; i < count; i++) {
+      Object fd=ogr.LayerGetFieldDefn(layerDefinition,i);
+      String newName=ogr.FieldGetName(fd);
+      if (newName != null) {
+        String oldName=nameMap.get(newName);
+        for (int j=0; j < schema.getAttributeCount(); j++) {
+          if (schema.getDescriptor(j).getLocalName().equals(oldName)) {
+            indexMap.put(j,i);
+          }
+        }
+      }
+    }
+    GeometryMapper geomMapper=new GeometryMapper.WKB(new GeometryFactory(),ogr);
+    features=data.features();
+    while (features.hasNext()) {
+      SimpleFeature feature=features.next();
+      Object ogrFeature=ogr.LayerNewFeature(layerDefinition);
+      for (int i=0; i < schema.getAttributeCount(); i++) {
+        Object value=feature.getAttribute(i);
+        if (value instanceof Geometry) {
+          Object geometry=geomMapper.parseGTGeometry((Geometry)value);
+          ogr.FeatureSetGeometryDirectly(ogrFeature,geometry);
+        }
+ else {
+          int ogrIndex=indexMap.get(i);
+          FeatureMapper.setFieldValue(layerDefinition,ogrFeature,ogrIndex,value,ogr);
+        }
+      }
+      ogr.CheckError(ogr.LayerCreateFeature(layer,ogrFeature));
+      ogr.FeatureDestroy(ogrFeature);
+    }
+    ogr.LayerSyncToDisk(layer);
+  }
+  finally {
+    ogr.LayerRelease(layer);
+    ogr.DataSourceRelease(dataSource);
+  }
+}
