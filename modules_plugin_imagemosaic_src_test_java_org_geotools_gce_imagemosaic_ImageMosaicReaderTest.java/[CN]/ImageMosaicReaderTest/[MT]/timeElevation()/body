@@ -1,7 +1,6 @@
 {
-  TestData.unzipFile(this,"ensmean.zip");
-  final URL timeElevURL=TestData.url(this,"ensmean");
-  System.setProperty("org.geotools.shapefile.datetime","true");
+  TestData.unzipFile(this,"watertemp.zip");
+  final URL timeElevURL=TestData.url(this,"watertemp");
   final AbstractGridFormat format=getFormat(timeElevURL);
   assertNotNull(format);
   ImageMosaicReader reader=getReader(timeElevURL,format);
@@ -12,9 +11,9 @@
   assertEquals("true",reader.getMetadataValue("HAS_TIME_DOMAIN"));
   final String timeMetadata=reader.getMetadataValue("TIME_DOMAIN");
   assertNotNull(timeMetadata);
-  assertEquals(16,timeMetadata.split(",").length);
+  assertEquals(2,timeMetadata.split(",").length);
   assertEquals(timeMetadata.split(",")[0],reader.getMetadataValue("TIME_DOMAIN_MINIMUM"));
-  assertEquals(timeMetadata.split(",")[15],reader.getMetadataValue("TIME_DOMAIN_MAXIMUM"));
+  assertEquals(timeMetadata.split(",")[1],reader.getMetadataValue("TIME_DOMAIN_MAXIMUM"));
   assertEquals("true",reader.getMetadataValue("HAS_ELEVATION_DOMAIN"));
   final String elevationMetadata=reader.getMetadataValue("ELEVATION_DOMAIN");
   assertNotNull(elevationMetadata);
@@ -33,15 +32,20 @@
   final List<Date> timeValues=new ArrayList<Date>();
   final SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss'Z'");
   sdf.setTimeZone(TimeZone.getTimeZone("GMT+0"));
-  Date date=sdf.parse("2008-10-20T14:00:00.000Z");
+  Date date=sdf.parse("2008-11-01T00:00:00.000Z");
   timeValues.add(date);
   time.setValue(timeValues);
+  final ParameterValue<Boolean> direct=ImageMosaicFormat.USE_JAI_IMAGEREAD.createValue();
+  direct.setValue(false);
   final ParameterValue<double[]> bkg=ImageMosaicFormat.BACKGROUND_VALUES.createValue();
   bkg.setValue(new double[]{-9999.0});
   final ParameterValue<List> elevation=ImageMosaicFormat.ELEVATION.createValue();
-  elevation.setValue(Arrays.asList(10.0));
-  checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation},"Time-Elevation Test");
+  elevation.setValue(Arrays.asList(0.0));
+  checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation,direct},"Time-Elevation Test");
   reader=getReader(timeElevURL,format);
   elevation.setValue(Arrays.asList(NumberRange.create(0.0,10.0)));
-  checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation},"Time-Elevation Test");
+  checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation,direct},"Time-Elevation Test");
+  if (!interactive) {
+    FileUtils.deleteDirectory(TestData.file(this,"watertemp"));
+  }
 }

@@ -1,7 +1,20 @@
 {
   TestData.unzipFile(this,"watertemp.zip");
   final URL timeElevURL=TestData.url(this,"watertemp");
-  System.setProperty("org.geotools.shapefile.datetime","true");
+  FileWriter out=null;
+  try {
+    out=new FileWriter(new File(TestData.file(this,"."),"/watertemp/indexer.properties"));
+    out.write("TimeAttribute=ingestion\n");
+    out.write("ElevationAttribute=elevation\n");
+    out.write("Schema=*the_geom:Polygon,location:String,ingestion:java.util.Date,elevation:Double\n");
+    out.write("PropertyCollectors=TimestampFileNameExtractorSPI[timeregex](ingestion),DoubleFileNameExtractorSPI[elevationregex](elevation)\n");
+    out.flush();
+  }
+  finally {
+    if (out != null) {
+      IOUtils.closeQuietly(out);
+    }
+  }
   final AbstractGridFormat format=getFormat(timeElevURL);
   assertNotNull(format);
   ImageMosaicReader reader=getReader(timeElevURL,format);
@@ -19,6 +32,10 @@
   final String elevationMetadata=reader.getMetadataValue("ELEVATION_DOMAIN");
   assertNotNull(elevationMetadata);
   assertEquals(2,elevationMetadata.split(",").length);
-  assertEquals("0",reader.getMetadataValue("ELEVATION_DOMAIN_MINIMUM"));
-  assertEquals("100",reader.getMetadataValue("ELEVATION_DOMAIN_MAXIMUM"));
+  assertEquals("0.0",reader.getMetadataValue("ELEVATION_DOMAIN_MINIMUM"));
+  assertEquals("100.0",reader.getMetadataValue("ELEVATION_DOMAIN_MAXIMUM"));
+  reader.dispose();
+  if (!interactive) {
+    FileUtils.deleteDirectory(TestData.file(this,"watertemp"));
+  }
 }
