@@ -1,0 +1,57 @@
+{
+  final WFSContentState localState=localStates.get(localTypeName);
+  final WFSLocalTransactionState localTransactionState=localState.getLocalTransactionState();
+  final WFSDiff diff=localTransactionState.getDiff();
+  List<MutableFeatureId> addedFeatureIds=new LinkedList<MutableFeatureId>();
+  final QName remoteTypeName=dataStore.getRemoteTypeName(localTypeName);
+  applyBatchUpdates(remoteTypeName,diff,transactionRequest);
+  final Set<String> ignored=diff.getBatchModified();
+  final SimpleFeatureType remoteType=dataStore.getRemoteSimpleFeatureType(remoteTypeName);
+  final Map<String,SimpleFeature> added=diff.getAdded();
+  if (added.size() > 0) {
+    Insert insert=transactionRequest.createInsert(remoteTypeName);
+    SimpleFeatureBuilder builder=new SimpleFeatureBuilder(remoteType);
+    for (    String fid : diff.getAddedOrder()) {
+      if (ignored.contains(fid)) {
+        continue;
+      }
+      SimpleFeature localFeature=added.get(fid);
+      localState.fireFeatureAdded(source,feature);
+      MutableFeatureId addedFid=(MutableFeatureId)localFeature.getIdentifier();
+      addedFeatureIds.add(addedFid);
+      SimpleFeature remoteFeature=SimpleFeatureBuilder.retype(localFeature,builder);
+      insert.add(remoteFeature);
+    }
+    transactionRequest.add(insert);
+  }
+  final Map<String,SimpleFeature> modified=diff.getModified();
+  Set<Identifier> ids=new LinkedHashSet<Identifier>();
+  for (  Map.Entry<String,SimpleFeature> entry : modified.entrySet()) {
+    if (!(TransactionStateDiff.NULL == entry.getValue())) {
+      continue;
+    }
+    String rid=entry.getKey();
+    if (ignored.contains(rid)) {
+      continue;
+    }
+    Identifier featureId=featureId(rid);
+    ids.add(featureId);
+  }
+  if (!ids.isEmpty()) {
+    Filter deleteFilter=dataStore.getFilterFactory().id(ids);
+    Delete delete=transactionRequest.createDelete(remoteTypeName,deleteFilter);
+    transactionRequest.add(delete);
+  }
+  for (  Map.Entry<String,SimpleFeature> entry : modified.entrySet()) {
+    String fid=entry.getKey();
+    SimpleFeature feature=entry.getValue();
+    if (TransactionStateDiff.NULL == feature) {
+      continue;
+    }
+    if (ignored.contains(fid)) {
+      continue;
+    }
+    applySingleUpdate(remoteTypeName,feature,transactionRequest);
+  }
+  return addedFeatureIds;
+}

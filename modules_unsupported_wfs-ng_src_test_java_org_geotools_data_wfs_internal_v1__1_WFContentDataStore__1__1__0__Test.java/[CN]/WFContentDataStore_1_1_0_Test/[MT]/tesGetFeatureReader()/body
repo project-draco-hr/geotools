@@ -1,0 +1,21 @@
+{
+  final InputStream dataStream=TestData.openStream(this,CUBEWERX_GOVUNITCE.DATA);
+  TestHttpResponse httpResponse=new TestHttpResponse("text/xml; subtype=gml/3.1.1","UTF-8",dataStream);
+  TestHTTPClient mockHttp=new TestHTTPClient(httpResponse);
+  WFSStrategy wfs=createTestProtocol(CUBEWERX_GOVUNITCE.CAPABILITIES,mockHttp,new StrictWFS_1_1_Strategy());
+  wfs=spy(wfs);
+  URL describeUrl=TestData.getResource(this,CUBEWERX_GOVUNITCE.SCHEMA);
+  when(wfs.buildDescribeFeatureTypeParametersForGET(CUBEWERX_GOVUNITCE.FEATURETYPENAME)).thenReturn(describeUrl);
+  WFSContentDataStore ds=new WFSContentDataStore(wfs);
+  Query query=new Query(CUBEWERX_GOVUNITCE.FEATURETYPENAME);
+  FeatureReader<SimpleFeatureType,SimpleFeature> featureReader;
+  featureReader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertNotNull(featureReader);
+  assertTrue(featureReader.hasNext());
+  assertNotNull(featureReader.next());
+  assertTrue(featureReader.hasNext());
+  assertNotNull(featureReader.next());
+  assertTrue(featureReader.hasNext());
+  assertNotNull(featureReader.next());
+  assertFalse(featureReader.hasNext());
+}

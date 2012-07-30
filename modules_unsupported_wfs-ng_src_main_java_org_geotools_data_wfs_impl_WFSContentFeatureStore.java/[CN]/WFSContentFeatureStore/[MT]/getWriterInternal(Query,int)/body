@@ -1,0 +1,18 @@
+{
+  query=joinQuery(query);
+  query=resolvePropertyNames(query);
+  final boolean autoCommit;
+  WFSLocalTransactionState localState;
+  if (Transaction.AUTO_COMMIT.equals(getTransaction())) {
+    localState=new WFSLocalTransactionState(getState());
+    autoCommit=true;
+  }
+ else {
+    autoCommit=false;
+    State state=transaction.getState(getEntry());
+    localState=(WFSLocalTransactionState)state;
+  }
+  final FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(query);
+  final WFSFeatureWriter writer=new WFSFeatureWriter(this,localState,reader,autoCommit);
+  return writer;
+}

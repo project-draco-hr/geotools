@@ -1,0 +1,24 @@
+{
+  List<QName> propertyNames=elem.getPropertyNames();
+  List<Object> newValues=elem.getNewValues();
+  if (propertyNames.size() != newValues.size()) {
+    throw new IllegalArgumentException("Got " + propertyNames.size() + " property names and "+ newValues.size()+ " values");
+  }
+  UpdateElementType update=factory.createUpdateElementType();
+  QName typeName=elem.getTypeName();
+  update.setTypeName(typeName);
+  String srsName=getFeatureTypeInfo(typeName).getDefaultSRS();
+  update.setSrsName(new URI(srsName));
+  Filter filter=elem.getFilter();
+  update.setFilter(filter);
+  @SuppressWarnings("unchecked") List<PropertyType> properties=update.getProperty();
+  for (int i=0; i < propertyNames.size(); i++) {
+    QName propName=propertyNames.get(i);
+    Object value=newValues.get(i);
+    PropertyType property=factory.createPropertyType();
+    property.setName(propName);
+    property.setValue(value);
+    properties.add(property);
+  }
+  return update;
+}

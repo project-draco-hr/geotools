@@ -1,0 +1,30 @@
+{
+  trace("Looking operation URI for ",operation,"/",method);
+  List<OperationType> operations=capabilities.getOperationsMetadata().getOperation();
+  for (  OperationType op : operations) {
+    if (!operation.getName().equals(op.getName())) {
+      continue;
+    }
+    List<DCPType> dcpTypes=op.getDCP();
+    if (null == dcpTypes) {
+      continue;
+    }
+    for (    DCPType d : dcpTypes) {
+      List<RequestMethodType> methods;
+      if (HttpMethod.GET.equals(method)) {
+        methods=d.getHTTP().getGet();
+      }
+ else {
+        methods=d.getHTTP().getPost();
+      }
+      if (null == methods || methods.isEmpty()) {
+        continue;
+      }
+      String href=methods.get(0).getHref();
+      debug("Returning operation URI for ",operation,"/",method,": ",href);
+      return href;
+    }
+  }
+  debug("No operation URI found for ",operation,"/",method);
+  return null;
+}

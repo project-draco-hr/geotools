@@ -1,0 +1,40 @@
+{
+  url_100=new URL(SERVER_URL_100);
+  url_110=new URL(SERVER_URL_110);
+  if (url_100 != null && url_100.toString().indexOf("localhost") != -1) {
+    InputStream stream=null;
+    try {
+      stream=url_100.openStream();
+    }
+ catch (    Throwable t) {
+      System.err.println("Server is not available. test disabled ");
+      url_100=null;
+      url_110=null;
+    }
+ finally {
+      IOUtils.closeQuietly(stream);
+    }
+  }
+  if (url_100 != null) {
+    Loggers.info("Creating 1.0.0 datastore from ",url_100);
+    try {
+      wfs100=getDataStore(url_100,null);
+    }
+ catch (    Throwable t) {
+      url_100=null;
+      Loggers.info("Can't obtain 1.0.0 DataStore, 1.0.0 tests disabled: " + t.getMessage());
+    }
+    assertEquals("1.0.0",wfs100.getInfo().getVersion());
+  }
+  if (url_110 != null) {
+    Loggers.info("Creating 1.1.0 datastore from ",url_110);
+    try {
+      wfs110=getDataStore(url_110,null);
+    }
+ catch (    Exception t) {
+      url_110=null;
+      Loggers.info("Can't obtain 1.1.0 DataStore, 1.1.0 tests disabled: " + t.getMessage());
+    }
+    assertEquals("1.1.0",wfs110.getInfo().getVersion());
+  }
+}

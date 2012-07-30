@@ -1,0 +1,51 @@
+{
+  List<String> added=new ArrayList<String>();
+  int deleted=0, updated=0;
+  for (  TransactionElement e : request.getTransactionElements()) {
+    QName typeName=e.getTypeName();
+    if (e instanceof Insert) {
+      Diff diff=diff(typeName);
+      for (      SimpleFeature f : ((Insert)e).getFeatures()) {
+        String newId="wfs-generated-" + idseq.incrementAndGet();
+        diff.add(f.getID(),f);
+        added.add(newId);
+      }
+    }
+    if (e instanceof Delete) {
+      Diff diff=diff(typeName);
+      Filter filter=((Delete)e).getFilter();
+      List<SimpleFeature> features=features(typeName);
+      for (      SimpleFeature f : features) {
+        if (filter.evaluate(f)) {
+          diff.remove(f.getID());
+          deleted++;
+        }
+      }
+    }
+    if (e instanceof Update) {
+      Diff diff=diff(typeName);
+      Update u=(Update)e;
+      Filter filter=u.getFilter();
+      List<SimpleFeature> features=features(typeName);
+      List<QName> propertyNames=u.getPropertyNames();
+      List<Object> newValues=u.getNewValues();
+      for (      SimpleFeature f : features) {
+        if (!filter.evaluate(f)) {
+          continue;
+        }
+        for (int i=0; i < propertyNames.size(); i++) {
+          QName propName=propertyNames.get(i);
+          Object value=newValues.get(i);
+          String attName=propName.getLocalPart();
+          f.setAttribute(attName,value);
+        }
+        diff.modify(f.getID(),f);
+        updated++;
+      }
+    }
+  }
+  String outputFormat=request.getOutputFormat();
+  String responseContents=createTransactionResponseXml(added,updated,deleted);
+  HTTPResponse httpResponse=new TestHttpResponse(outputFormat,"UTF-8",responseContents);
+  return request.createResponse(httpResponse);
+}

@@ -1,0 +1,37 @@
+{
+  final String fid;
+  try {
+    fid=seekFeature();
+    if (fid == null) {
+      return null;
+    }
+    int tagType;
+    String tagNs;
+    String tagName;
+    Object attributeValue;
+    while (true) {
+      tagType=parser.next();
+      if (XmlPullParser.END_DOCUMENT == tagType) {
+        close();
+        return null;
+      }
+      tagNs=parser.getNamespace();
+      tagName=parser.getName();
+      if (END_TAG == tagType && featureNamespace.equals(tagNs) && featureName.equals(tagName)) {
+        break;
+      }
+      if (START_TAG == tagType) {
+        AttributeDescriptor descriptor=expectedProperties.get(tagName);
+        if (descriptor != null) {
+          attributeValue=parseAttributeValue();
+          builder.set(descriptor.getLocalName(),attributeValue);
+        }
+      }
+    }
+  }
+ catch (  XmlPullParserException e) {
+    throw new DataSourceException(e);
+  }
+  SimpleFeature feature=builder.buildFeature(fid);
+  return feature;
+}

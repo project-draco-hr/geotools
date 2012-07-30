@@ -1,0 +1,46 @@
+{
+  if (url == null)   return;
+  try {
+    System.out.println("FeatureReaderWithFilterTest + " + url);
+    WFS_1_0_0_DataStore wfs=getDataStore(url);
+    assertNotNull("No featureTypes",wfs.getTypeNames());
+    String typeName=wfs.getTypeNames()[i];
+    assertNotNull("Null featureType in [0]",typeName);
+    SimpleFeatureType featureType=wfs.getSchema(typeName);
+    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+    Query query=new Query(featureType.getTypeName());
+    PropertyName theGeom=ff.property(featureType.getGeometryDescriptor().getName());
+    Filter filter=ff.bbox(theGeom,bbox.getMinX(),bbox.getMinY(),bbox.getMaxX(),bbox.getMaxY(),"EPSG:4326");
+    query.setFilter(filter);
+    if (get) {
+      FeatureReader<SimpleFeatureType,SimpleFeature> fr=wfs.getFeatureReaderGet(query,Transaction.AUTO_COMMIT);
+      assertNotNull("GET " + typeName + " FeatureType was null",featureType);
+      assertTrue("GET " + typeName + " has next?",fr.hasNext());
+      assertNotNull("GET " + typeName + " has feature type",fr.getFeatureType());
+      SimpleFeature feature=fr.next();
+      assertNotNull("GET " + typeName + " has non null feature",feature);
+      int j=0;
+      while (fr.hasNext()) {
+        fr.next();
+        j++;
+      }
+      System.out.println("bbox selected " + j + " Features");
+      fr.close();
+    }
+    if (post) {
+      FeatureReader<SimpleFeatureType,SimpleFeature> fr=wfs.getFeatureReaderPost(query,Transaction.AUTO_COMMIT);
+      assertNotNull("POST " + typeName + "FeatureType was null",featureType);
+      assertTrue("POST " + typeName + "must have 1 feature -- fair assumption",fr.hasNext() && fr.getFeatureType() != null && fr.next() != null);
+      int j=0;
+      while (fr.hasNext()) {
+        fr.next();
+        j++;
+      }
+      System.out.println("bbox selected " + j + " Features");
+      fr.close();
+    }
+  }
+ catch (  java.net.SocketException se) {
+    se.printStackTrace();
+  }
+}

@@ -1,0 +1,22 @@
+{
+  WFSCapabilitiesType caps=(WFSCapabilitiesType)capabilities.getParsedCapabilities();
+  this.capabilities=caps;
+  String version=caps.getVersion();
+  try {
+    this.serviceVersion=Versions.find(version);
+  }
+ catch (  IllegalArgumentException e) {
+    LOGGER.warning("Capabilities document didn't advertise a supported version (" + version + "). Defaulting to "+ this.serviceVersion);
+  }
+  typeInfos.clear();
+  FeatureTypeListType featureTypeList=this.capabilities.getFeatureTypeList();
+  if (featureTypeList == null || featureTypeList.getFeatureType().isEmpty()) {
+    Loggers.MODULE.info("WFS Server contains no FeatureTypes: " + getOperationURI(GET_CAPABILITIES,GET));
+    return;
+  }
+  @SuppressWarnings("unchecked") List<FeatureTypeType> featureTypes=featureTypeList.getFeatureType();
+  for (  FeatureTypeType typeInfo : featureTypes) {
+    QName name=typeInfo.getName();
+    typeInfos.put(name,typeInfo);
+  }
+}

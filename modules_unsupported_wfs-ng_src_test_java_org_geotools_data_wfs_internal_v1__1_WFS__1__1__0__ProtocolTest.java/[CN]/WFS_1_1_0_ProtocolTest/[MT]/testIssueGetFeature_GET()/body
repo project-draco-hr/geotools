@@ -1,0 +1,31 @@
+{
+  final InputStream responseContent=TestData.openStream(this,GEOS_ARCHSITES_11.DATA);
+  final TestHttpResponse httpResponse;
+  final String defaultWfs11OutputFormat="text/xml; subtype=gml/3.1.1";
+  httpResponse=new TestHttpResponse(defaultWfs11OutputFormat,"UTF-16",responseContent);
+  TestHTTPClient mockHttp=new TestHTTPClient(httpResponse);
+  StrictWFS_1_1_Strategy strategy=createTestProtocol(GEOS_ARCHSITES_11.CAPABILITIES,mockHttp,new GeoServerPre200Strategy());
+  Query query=new Query(GEOS_ARCHSITES_11.FEATURETYPENAME);
+  GetFeatureRequest getFeature=new GetFeatureQueryAdapter(query,defaultWfs11OutputFormat,"EPSG:4326",ResultType.RESULTS);
+  WFSResponse response;
+  response=strategy.issueGetFeatureGET(getFeature);
+  assertNotNull(response);
+  assertEquals(defaultWfs11OutputFormat,response.getContentType());
+  assertNotNull(response.getInputStream());
+  assertEquals(Charset.forName("UTF-16"),response.getCharacterEncoding());
+  URL baseUrl=mockHttp.targetUrl;
+  Map<String,String> kvp=URIs.parseQueryString(baseUrl.getQuery());
+  assertNotNull(baseUrl);
+  assertNotNull(kvp);
+  assertEquals("http://localhost:8080/geoserver/wfs",baseUrl.getProtocol() + "://" + baseUrl.getHost()+ ":"+ baseUrl.getPort()+ baseUrl.getPath());
+  assertEquals("WFS",kvp.get("SERVICE"));
+  assertEquals("1.1.0",kvp.get("VERSION"));
+  assertEquals("GetFeature",kvp.get("REQUEST"));
+  assertEquals(GEOS_ARCHSITES_11.FEATURETYPENAME,kvp.get("TYPENAME"));
+  assertEquals(defaultWfs11OutputFormat,kvp.get("OUTPUTFORMAT"));
+  assertNotNull(kvp.get("SRSNAME"));
+  assertNull(kvp.get("PROPERTYNAME"));
+  assertNull(kvp.get("MAXFEATURES"));
+  assertNull(kvp.get("FEATUREID"));
+  assertNull(kvp.get("FILTER"));
+}

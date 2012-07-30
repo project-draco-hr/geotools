@@ -1,0 +1,23 @@
+{
+  EObject requestObject;
+switch (request.getOperation()) {
+case DESCRIBE_FEATURETYPE:
+    requestObject=createDescribeFeatureTypeRequestPost((DescribeFeatureTypeRequest)request);
+  break;
+case GET_FEATURE:
+requestObject=createGetFeatureRequestPost((GetFeatureRequest)request);
+break;
+case TRANSACTION:
+requestObject=createTransactionRequest((TransactionRequest)request);
+break;
+default :
+throw new UnsupportedOperationException("not yet implemented for " + request.getOperation());
+}
+ByteArrayOutputStream out=new ByteArrayOutputStream();
+final Encoder encoder=prepareEncoder(request);
+final QName opName=getOperationName(request.getOperation());
+encoder.encode(requestObject,opName,out);
+requestTrace("Encoded ",request.getOperation()," request: ",out);
+System.err.println(out.toString());
+return new ByteArrayInputStream(out.toByteArray());
+}

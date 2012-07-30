@@ -1,0 +1,28 @@
+{
+  WfsFactory factory=WfsFactory.eINSTANCE;
+  TransactionResponseType tr=factory.createTransactionResponseType();
+  tr.setVersion(getStrategy().getVersion());
+  tr.setTransactionSummary(factory.createTransactionSummaryType());
+  tr.getTransactionSummary().setTotalInserted(BigInteger.valueOf(added.size()));
+  tr.getTransactionSummary().setTotalUpdated(BigInteger.valueOf(updated));
+  tr.getTransactionSummary().setTotalDeleted(BigInteger.valueOf(deleted));
+  tr.setTransactionResults(factory.createTransactionResultsType());
+  tr.setInsertResults(factory.createInsertResultsType());
+  if (!added.isEmpty()) {
+    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+    InsertedFeatureType inserted=factory.createInsertedFeatureType();
+    tr.getInsertResults().getFeature().add(inserted);
+    for (    String addedId : added) {
+      FeatureId featureId=ff.featureId(addedId);
+      inserted.getFeatureId().add(featureId);
+    }
+  }
+  Configuration configuration=getStrategy().getWfsConfiguration();
+  Encoder enc=new Encoder(configuration);
+  enc.setEncoding(Charset.forName("UTF-8"));
+  enc.setIndenting(true);
+  enc.setIndentSize(1);
+  String encodedTransactionResponse=enc.encodeAsString(tr,WFS.TransactionResponse);
+  System.err.println(encodedTransactionResponse);
+  return encodedTransactionResponse;
+}

@@ -1,0 +1,35 @@
+{
+  final Configuration configuration=getWfsConfiguration();
+  Charset charset=getConfig().getDefaultEncoding();
+  if (null == charset) {
+    charset=Charset.forName("UTF-8");
+  }
+  Encoder encoder=new Encoder(configuration);
+  encoder.setEncoding(charset);
+  encoder.setIndentSize(1);
+  Set<QName> typeNames=new HashSet<QName>();
+  if (request instanceof TransactionRequest) {
+    TransactionRequest tx=(TransactionRequest)request;
+    typeNames.addAll(tx.getTypeNames());
+  }
+ else {
+    QName typeName=request.getTypeName();
+    if (typeName != null) {
+      typeNames.add(typeName);
+    }
+  }
+  int i=0;
+  for (  QName typeName : typeNames) {
+    String prefix=typeName.getPrefix();
+    String namespaceURI=typeName.getNamespaceURI();
+    if (XMLConstants.NULL_NS_URI.equals(namespaceURI)) {
+      continue;
+    }
+    if (XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
+      prefix="type_ns" + i;
+    }
+    encoder.getNamespaces().declarePrefix(prefix,namespaceURI);
+    i++;
+  }
+  return encoder;
+}

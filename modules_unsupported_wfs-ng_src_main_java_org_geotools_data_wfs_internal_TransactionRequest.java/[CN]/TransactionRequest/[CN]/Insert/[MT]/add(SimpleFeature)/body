@@ -1,0 +1,20 @@
+{
+  Name name=feature.getFeatureType().getName();
+  QName typeName=getTypeName();
+  if (!new NameImpl(typeName).equals(name)) {
+    throw new IllegalArgumentException("Type name does not match. Expected " + new NameImpl(typeName) + ", but got "+ name);
+  }
+  WFSStrategy strategy=getStrategy();
+  FeatureTypeInfo typeInfo=strategy.getFeatureTypeInfo(typeName);
+  CoordinateReferenceSystem crs=typeInfo.getCRS();
+  for (  Property property : feature.getProperties()) {
+    if (!(property instanceof GeometryAttribute)) {
+      continue;
+    }
+    CoordinateReferenceSystem attCrs=((GeometryType)property.getType()).getCoordinateReferenceSystem();
+    if (!CRS.equalsIgnoreMetadata(crs,attCrs)) {
+      throw new IllegalArgumentException("Added Features shall match the native CRS: " + typeInfo.getDefaultSRS() + ". Got "+ attCrs);
+    }
+  }
+  added.add(feature);
+}

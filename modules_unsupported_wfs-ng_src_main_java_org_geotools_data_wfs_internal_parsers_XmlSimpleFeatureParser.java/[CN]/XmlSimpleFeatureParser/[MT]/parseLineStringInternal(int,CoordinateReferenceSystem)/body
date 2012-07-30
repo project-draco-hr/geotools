@@ -1,0 +1,48 @@
+{
+  final QName lineElementName=new QName(parser.getNamespace(),parser.getName());
+  parser.nextTag();
+  Coordinate[] lineCoords;
+  final QName coordsName=new QName(parser.getNamespace(),parser.getName());
+  String tagName=parser.getName();
+  if (GML.pos.equals(coordsName)) {
+    Coordinate[] point;
+    List<Coordinate> coords=new ArrayList<Coordinate>();
+    int eventType;
+    do {
+      point=parseCoordList(dimension);
+      coords.add(point[0]);
+      parser.nextTag();
+      tagName=parser.getName();
+      eventType=parser.getEventType();
+    }
+ while (eventType == START_TAG && tagName == GML.pos.getLocalPart());
+    lineCoords=coords.toArray(new Coordinate[coords.size()]);
+  }
+ else   if (GML.posList.equals(coordsName)) {
+    lineCoords=parseCoordList(dimension);
+    parser.nextTag();
+  }
+ else   if (GML.coordinates.equals(coordsName)) {
+    lineCoords=parseCoordinates(dimension);
+    parser.nextTag();
+  }
+ else   if (GML.coord.equals(coordsName)) {
+    Coordinate point;
+    List<Coordinate> coords=new ArrayList<Coordinate>();
+    int eventType;
+    do {
+      point=parseCoord();
+      coords.add(point);
+      parser.nextTag();
+      tagName=parser.getName();
+      eventType=parser.getEventType();
+    }
+ while (eventType == START_TAG && GML.coord.getLocalPart().equals(tagName));
+    lineCoords=coords.toArray(new Coordinate[coords.size()]);
+  }
+ else {
+    throw new IllegalStateException("Expected posList or pos inside LinearRing: " + tagName);
+  }
+  parser.require(END_TAG,lineElementName.getNamespaceURI(),lineElementName.getLocalPart());
+  return lineCoords;
+}

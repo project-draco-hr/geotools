@@ -1,0 +1,26 @@
+{
+  if (this.localStates.isEmpty()) {
+    return;
+  }
+  WFSClient wfs=dataStore.getWfsClient();
+  TransactionRequest transactionRequest=wfs.createTransaction();
+  List<MutableFeatureId> requestedInsertFids=new ArrayList<MutableFeatureId>();
+  for (  Name typeName : localStates.keySet()) {
+    List<MutableFeatureId> addedFids=applyDiff(typeName,transactionRequest);
+    requestedInsertFids.addAll(addedFids);
+  }
+  TransactionResponse transactionResponse=wfs.issueTransaction(transactionRequest);
+  List<FeatureId> insertedFids=transactionResponse.getInsertedFids();
+  int deleteCount=transactionResponse.getDeleteCount();
+  int updatedCount=transactionResponse.getUpdatedCount();
+  info(getClass().getSimpleName(),"::commit(): Updated: ",updatedCount,", Deleted: ",deleteCount,", Inserted: ",insertedFids);
+  if (requestedInsertFids.size() != insertedFids.size()) {
+    throw new IllegalStateException("Asked to add " + requestedInsertFids.size() + " Features but got "+ insertedFids.size()+ " insert results");
+  }
+  for (int i=0; i < requestedInsertFids.size(); i++) {
+    MutableFeatureId local=requestedInsertFids.get(i);
+    FeatureId inserted=insertedFids.get(i);
+    local.setID(inserted.getID());
+    local.setFeatureVersion(inserted.getFeatureVersion());
+  }
+}

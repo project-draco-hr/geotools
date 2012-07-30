@@ -1,0 +1,32 @@
+{
+  super(request,httpResponse);
+  final WFSStrategy strategy=request.getStrategy();
+  final Configuration wfsConfiguration=strategy.getWfsConfiguration();
+  final QName remoteTypeName=request.getTypeName();
+  final FeatureTypeInfo featureTypeInfo=strategy.getFeatureTypeInfo(remoteTypeName);
+  final CoordinateReferenceSystem defaultCrs=featureTypeInfo.getCRS();
+  InputStream responseStream=httpResponse.getResponseStream();
+  try {
+    File tmp=File.createTempFile(remoteTypeName.getLocalPart(),".xsd");
+    OutputStream output=new BufferedOutputStream(new FileOutputStream(tmp));
+    output=new TeeOutputStream(output,System.out);
+    try {
+      IOUtils.copy(responseStream,output);
+    }
+  finally {
+      output.flush();
+      IOUtils.closeQuietly(output);
+    }
+    try {
+      URL schemaLocation=tmp.toURI().toURL();
+      this.parsed=EmfAppSchemaParser.parse(wfsConfiguration,remoteTypeName,schemaLocation,defaultCrs);
+    }
+  finally {
+      tmp.delete();
+    }
+  }
+  finally {
+    responseStream.close();
+    httpResponse.dispose();
+  }
+}

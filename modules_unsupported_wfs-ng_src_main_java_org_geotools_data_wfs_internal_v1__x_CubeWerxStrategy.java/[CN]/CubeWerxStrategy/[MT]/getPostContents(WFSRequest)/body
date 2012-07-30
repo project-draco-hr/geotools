@@ -1,0 +1,31 @@
+{
+  if (!(request instanceof GetFeatureRequest)) {
+    return super.getPostContents(request);
+  }
+  GetFeatureType requestObject=createGetFeatureRequestPost((GetFeatureRequest)request);
+  final Encoder encoder=prepareEncoder(request);
+  final QName opName=getOperationName(request.getOperation());
+  Document dom;
+  try {
+    dom=encoder.encodeAsDOM(requestObject,opName);
+  }
+ catch (  SAXException e) {
+    throw new IOException(e);
+  }
+catch (  TransformerException e) {
+    throw new IOException(e);
+  }
+  dom.getDocumentElement().removeAttribute("resultType");
+  DOMImplementationLS domImpl=(DOMImplementationLS)dom.getImplementation();
+  ByteArrayOutputStream out=new ByteArrayOutputStream();
+  LSOutput destination=domImpl.createLSOutput();
+  destination.setByteStream(out);
+  LSSerializer serializer=domImpl.createLSSerializer();
+  DOMConfiguration domConfig=serializer.getDomConfig();
+  if (domConfig.canSetParameter("format-pretty-print",Boolean.TRUE)) {
+    domConfig.setParameter("format-pretty-print",Boolean.TRUE);
+  }
+  serializer.write(dom,destination);
+  requestTrace("Encoded ",request.getOperation()," request: ",out);
+  return new ByteArrayInputStream(out.toByteArray());
+}

@@ -1,0 +1,76 @@
+{
+  final QName typeName=request.getTypeName();
+  String simpleName=typeName.getPrefix() + "_" + typeName.getLocalPart();
+  String resource="GetFeature_" + simpleName + ".xml";
+  URL contentUrl=new URL(baseDirectory,resource);
+  String outputFormat=request.getOutputFormat();
+  HTTPResponse httpResponse=new TestHttpResponse(outputFormat,"UTF-8",contentUrl);
+  WFSResponse response=request.createResponse(httpResponse);
+  if (!(response instanceof GetFeatureResponse)) {
+    return response;
+  }
+  final GetFeatureResponse gfr=(GetFeatureResponse)response;
+  final GetFeatureParser allFeatures=gfr.getFeatures();
+  final List<SimpleFeature> originalFeatures=new ArrayList<SimpleFeature>();
+{
+    SimpleFeature feature;
+    while ((feature=allFeatures.parse()) != null) {
+      originalFeatures.add(feature);
+    }
+  }
+  WFSStrategy strategy=getStrategy();
+  final Filter serverFiler=((AbstractWFSStrategy)strategy).splitFilters(typeName,request.getFilter())[0];
+  final Diff diff=diff(typeName);
+  for (Iterator<SimpleFeature> it=originalFeatures.iterator(); it.hasNext(); ) {
+    if (!serverFiler.evaluate(it.next())) {
+      it.remove();
+    }
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> allFeaturesReader;
+  allFeaturesReader=DataUtilities.reader(originalFeatures);
+  final DiffFeatureReader<SimpleFeatureType,SimpleFeature> serverFilteredReader;
+  serverFilteredReader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(allFeaturesReader,diff);
+  final GetFeatureParser filteredParser=new GetFeatureParser(){
+    @Override public void setGeometryFactory(    GeometryFactory geometryFactory){
+    }
+    @Override public SimpleFeature parse() throws IOException {
+      if (!serverFilteredReader.hasNext()) {
+        return null;
+      }
+      return serverFilteredReader.next();
+    }
+    @Override public int getNumberOfFeatures(){
+      if (-1 != allFeatures.getNumberOfFeatures()) {
+        FeatureReader<SimpleFeatureType,SimpleFeature> all;
+        try {
+          all=DataUtilities.reader(originalFeatures);
+          final DiffFeatureReader<SimpleFeatureType,SimpleFeature> serverFiltered;
+          serverFiltered=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(all,diff);
+          int count=0;
+          while (serverFiltered.hasNext()) {
+            serverFiltered.next();
+            count++;
+          }
+          return count;
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
+        }
+      }
+      return -1;
+    }
+    @Override public FeatureType getFeatureType(){
+      return allFeatures.getFeatureType();
+    }
+    @Override public void close() throws IOException {
+    }
+  }
+;
+  try {
+    return new GetFeatureResponse(request,httpResponse,filteredParser);
+  }
+ catch (  ServiceException e) {
+    throw new IOException(e);
+  }
+}
