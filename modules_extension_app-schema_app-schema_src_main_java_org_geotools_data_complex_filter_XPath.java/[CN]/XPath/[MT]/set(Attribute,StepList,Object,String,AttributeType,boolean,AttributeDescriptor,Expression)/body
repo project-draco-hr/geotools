@@ -15,7 +15,25 @@
         steps.remove(0);
       }
  else {
-        return setSimpleContentValue(parent,value);
+        if (Types.isSimpleContentType(parent.getType())) {
+          return setSimpleContentValue(parent,value);
+        }
+ else         if (Types.isGeometryType(parent.getType())) {
+          ComplexFeatureTypeFactoryImpl typeFactory=new ComplexFeatureTypeFactoryImpl();
+          GeometryType geomType;
+          if (parent.getType() instanceof GeometryType) {
+            geomType=(GeometryType)parent.getType();
+          }
+ else {
+            geomType=(GeometryType)((NonFeatureTypeProxy)parent.getType()).getSubject();
+          }
+          GeometryDescriptor geomDescriptor=typeFactory.createGeometryDescriptor(geomType,rootName,parentDescriptor.getMinOccurs(),parentDescriptor.getMaxOccurs(),parentDescriptor.isNillable(),parentDescriptor.getDefaultValue());
+          GeometryAttributeImpl geom=new GeometryAttributeImpl(value,geomDescriptor,null);
+          ArrayList<Property> geomAtts=new ArrayList<Property>();
+          geomAtts.add(geom);
+          parent.setValue(geomAtts);
+          return geom;
+        }
       }
     }
   }
