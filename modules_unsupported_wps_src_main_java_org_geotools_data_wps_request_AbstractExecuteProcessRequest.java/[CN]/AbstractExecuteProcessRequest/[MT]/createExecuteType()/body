@@ -15,13 +15,28 @@
       List<DataType> objects=(List<DataType>)this.inputs.get(key);
       Iterator<DataType> iterator2=objects.iterator();
       while (iterator2.hasNext()) {
-        DataType dt=(DataType)iterator2.next();
-        InputType input=Wps10Factory.eINSTANCE.createInputType();
-        CodeType ct=Ows11Factory.eINSTANCE.createCodeType();
-        ct.setValue((String)key);
-        input.setIdentifier(ct);
-        input.setData((DataType)dt);
-        inputtypes.getInput().add(input);
+        EObject oInput=iterator2.next();
+        if (oInput instanceof DataType) {
+          DataType dt=(DataType)oInput;
+          InputType input=Wps10Factory.eINSTANCE.createInputType();
+          CodeType ct=Ows11Factory.eINSTANCE.createCodeType();
+          ct.setValue((String)key);
+          input.setIdentifier(ct);
+          input.setData((DataType)dt);
+          inputtypes.getInput().add(input);
+        }
+ else         if (oInput instanceof InputReferenceType) {
+          InputReferenceType rt=(InputReferenceType)oInput;
+          InputType input=Wps10Factory.eINSTANCE.createInputType();
+          CodeType ct=Ows11Factory.eINSTANCE.createCodeType();
+          ct.setValue((String)key);
+          input.setIdentifier(ct);
+          input.setReference(rt);
+          inputtypes.getInput().add(input);
+        }
+ else {
+          throw new IllegalStateException("The input for key " + key + " contain an unsupported object of type "+ oInput.getClass());
+        }
       }
     }
     request.setDataInputs(inputtypes);
