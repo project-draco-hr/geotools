@@ -1,0 +1,61 @@
+{
+  if (filter == null) {
+    throw new IllegalArgumentException("filter is null");
+  }
+  filter=resolvePropertyNames(filter);
+{
+    QName typeName=getDataStore().getRemoteTypeName(getName());
+    WFSClient wfsClient=getDataStore().getWfsClient();
+    Filter[] splitFilters=wfsClient.splitFilters(typeName,filter);
+    Filter unsupported=splitFilters[1];
+    if (!Filter.INCLUDE.equals(unsupported)) {
+      super.modifyFeatures(properties,values,filter);
+      return;
+    }
+  }
+  final ContentState contentState=getState();
+  ReferencedEnvelope affectedBounds=new ReferencedEnvelope(getInfo().getCRS());
+  if (contentState.hasListener()) {
+    ReferencedEnvelope before=getBounds(new Query(getSchema().getTypeName(),filter));
+    if (before != null && !before.isEmpty()) {
+      affectedBounds=before;
+    }
+  }
+  final Transaction transaction=getTransaction();
+  FeatureReader<SimpleFeatureType,SimpleFeature> oldFeatures=getReader(filter);
+  try {
+    if (!oldFeatures.hasNext()) {
+      oldFeatures.close();
+      return;
+    }
+  }
+ catch (  IOException e) {
+    oldFeatures.close();
+    throw e;
+  }
+catch (  RuntimeException e) {
+    oldFeatures.close();
+    throw e;
+  }
+  if (Transaction.AUTO_COMMIT.equals(transaction)) {
+    WFSLocalTransactionState localState=new WFSLocalTransactionState(getState());
+    WFSRemoteTransactionState committingState=new WFSRemoteTransactionState(getDataStore());
+    WFSDiff diff=localState.getDiff();
+    ReferencedEnvelope bounds;
+    bounds=diff.batchModify(properties,values,filter,oldFeatures,contentState);
+    affectedBounds.expandToInclude(bounds);
+    committingState.commit();
+  }
+ else {
+    WFSLocalTransactionState localState;
+    localState=(WFSLocalTransactionState)transaction.getState(getEntry());
+    WFSDiff diff=localState.getDiff();
+    ReferencedEnvelope bounds;
+    bounds=diff.batchModify(properties,values,filter,oldFeatures,contentState);
+    affectedBounds.expandToInclude(bounds);
+  }
+  if (contentState.hasListener()) {
+    FeatureEvent event=new FeatureEvent(this,Type.CHANGED,affectedBounds,filter);
+    contentState.fireFeatureEvent(event);
+  }
+}

@@ -1,0 +1,27 @@
+{
+  final String proxyHost=System.getProperty("http.proxyHost");
+  final int proxyPort=Integer.parseInt(System.getProperty("http.proxyPort","80"));
+  if (proxyHost != null) {
+    LOGGER.fine("Found 'http.proxyHost' Java System property. Using it as proxy server. Port: " + proxyPort);
+    HostConfiguration hostConfig=client.getHostConfiguration();
+    hostConfig.setProxy(proxyHost,proxyPort);
+  }
+  final String proxyUser=System.getProperty("http.proxyUser");
+  final String proxyPassword=System.getProperty("http.proxyPassword");
+  if (proxyUser != null) {
+    if (proxyPassword == null || proxyPassword.length() == 0) {
+      LOGGER.warning("System property http.proxyUser provided but http.proxyPassword " + "not provided or empty. Proxy auth credentials will be passed as is anyway.");
+    }
+ else {
+      LOGGER.fine("System property http.proxyUser and http.proxyPassword found," + " setting proxy auth credentials");
+    }
+    HttpState state=client.getState();
+    if (state == null) {
+      state=new HttpState();
+      client.setState(state);
+    }
+    AuthScope authscope=AuthScope.ANY;
+    Credentials credentials=new UsernamePasswordCredentials(proxyUser,proxyPassword);
+    state.setProxyCredentials(authscope,credentials);
+  }
+}

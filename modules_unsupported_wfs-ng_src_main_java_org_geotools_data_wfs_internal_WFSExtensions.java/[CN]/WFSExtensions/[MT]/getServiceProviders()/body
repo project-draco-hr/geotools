@@ -1,0 +1,24 @@
+{
+  if (registry == null) {
+synchronized (WFSExtensions.class) {
+      if (registry == null) {
+        final ClassLoader current=Thread.currentThread().getContextClassLoader();
+        try {
+          final ClassLoader tempClassLoader=WFSDataStoreFactory.class.getClassLoader();
+          Thread.currentThread().setContextClassLoader(tempClassLoader);
+          Iterator<WFSResponseFactory> providers;
+          providers=ServiceRegistry.lookupProviders(WFSResponseFactory.class);
+          registry=new HashSet<WFSResponseFactory>();
+          while (providers.hasNext()) {
+            WFSResponseFactory provider=providers.next();
+            registry.add(provider);
+          }
+        }
+  finally {
+          Thread.currentThread().setContextClassLoader(current);
+        }
+      }
+    }
+  }
+  return registry.iterator();
+}

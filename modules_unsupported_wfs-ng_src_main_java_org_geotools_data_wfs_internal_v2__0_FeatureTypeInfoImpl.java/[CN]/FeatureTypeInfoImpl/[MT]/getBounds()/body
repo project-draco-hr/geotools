@@ -1,0 +1,20 @@
+{
+  ReferencedEnvelope wgs84Bounds=getWGS84BoundingBox();
+  CoordinateReferenceSystem crs=getCRS();
+  if (null == crs) {
+    return wgs84Bounds;
+  }
+  ReferencedEnvelope nativeBounds;
+  try {
+    nativeBounds=wgs84Bounds.transform(crs,true);
+  }
+ catch (  TransformException e) {
+    Loggers.MODULE.log(Level.WARNING,"Can't transform bounds of " + getName() + " to "+ getDefaultSRS(),e);
+    nativeBounds=new ReferencedEnvelope(crs);
+  }
+catch (  FactoryException e) {
+    Loggers.MODULE.log(Level.WARNING,"Can't transform bounds of " + getName() + " to "+ getDefaultSRS(),e);
+    nativeBounds=new ReferencedEnvelope(crs);
+  }
+  return nativeBounds;
+}

@@ -1,11 +1,17 @@
 {
-  Object convertedValue;
+  Object convertedValue=null;
   Map<Object,Object> simpleContentProperties=null;
   if (isFeatureChainedSimpleContent(descriptor,value)) {
-    Collection<Property> simpleContentList=extractSimpleContent(value);
-    convertedValue=simpleContentList;
-    if (!simpleContentList.isEmpty()) {
-      simpleContentProperties=simpleContentList.iterator().next().getUserData();
+    List<Property> nestedPropList=getSimpleContentList(value);
+    if (!nestedPropList.isEmpty()) {
+      Property nestedProp=nestedPropList.iterator().next();
+      if (Types.isGeometryType(descriptor.getType()) || nestedProp.getName().equals(descriptor.getName())) {
+        convertedValue=nestedProp.getValue();
+      }
+ else {
+        convertedValue=nestedPropList;
+      }
+      simpleContentProperties=nestedProp.getUserData();
     }
   }
  else {

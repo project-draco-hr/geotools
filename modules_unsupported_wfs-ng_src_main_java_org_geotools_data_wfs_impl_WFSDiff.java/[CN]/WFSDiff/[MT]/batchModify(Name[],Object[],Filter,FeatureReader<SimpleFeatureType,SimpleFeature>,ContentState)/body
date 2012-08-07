@@ -1,0 +1,27 @@
+{
+  ReferencedEnvelope bounds=new ReferencedEnvelope(contentState.getFeatureType().getCoordinateReferenceSystem());
+synchronized (batchModified) {
+    while (oldFeatures.hasNext()) {
+      SimpleFeature old=oldFeatures.next();
+      BoundingBox fbounds=old.getBounds();
+      if (fbounds != null) {
+        bounds.expandToInclude(new ReferencedEnvelope(fbounds));
+      }
+      for (int i=0; i < properties.length; i++) {
+        Name propName=properties[i];
+        Object newValue=values[i];
+        old.setAttribute(propName,newValue);
+        if (newValue instanceof Geometry) {
+          Envelope envelope=((Geometry)newValue).getEnvelopeInternal();
+          bounds.expandToInclude(envelope);
+        }
+      }
+      String fid=old.getID();
+      super.modify(fid,old);
+      batchModified.add(fid);
+    }
+    BatchUpdate batch=new BatchUpdate(properties,values,filter);
+    batchCommands.add(batch);
+  }
+  return bounds;
+}

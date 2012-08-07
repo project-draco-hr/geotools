@@ -1,0 +1,15 @@
+{
+  FeatureType remoteFeatureType;
+  final String lockObj=remoteTypeName.toString().intern();
+synchronized (lockObj) {
+    remoteFeatureType=remoteFeatureTypes.get(remoteTypeName);
+    if (remoteFeatureType == null) {
+      DescribeFeatureTypeRequest request=client.createDescribeFeatureTypeRequest();
+      request.setTypeName(remoteTypeName);
+      DescribeFeatureTypeResponse response=client.issueRequest(request);
+      remoteFeatureType=response.getFeatureType();
+      remoteFeatureTypes.put(remoteTypeName,remoteFeatureType);
+    }
+  }
+  return remoteFeatureType;
+}

@@ -1,0 +1,35 @@
+{
+  List<PropertyDescriptor> attributes;
+  Collection<PropertyDescriptor> descriptors=realType.getDescriptors();
+  attributes=new ArrayList<PropertyDescriptor>(descriptors);
+  List<String> simpleProperties=new ArrayList<String>();
+  final Set<String> ignoreList=new HashSet<String>(Arrays.asList(new String[]{GML.location.getLocalPart(),GML.metaDataProperty.getLocalPart(),GML.description.getLocalPart(),GML.name.getLocalPart(),GML.boundedBy.getLocalPart()}));
+  if (attributes.size() > ignoreList.size()) {
+    Set<String> firstAtts=new HashSet<String>();
+    for (int i=0; i < ignoreList.size(); i++) {
+      firstAtts.add(attributes.get(i).getName().getLocalPart());
+    }
+    if (ignoreList.equals(firstAtts)) {
+      attributes=attributes.subList(ignoreList.size(),attributes.size());
+    }
+  }
+  for (  PropertyDescriptor descriptor : attributes) {
+    Class<?> binding=descriptor.getType().getBinding();
+    int maxOccurs=descriptor.getMaxOccurs();
+    Name name=descriptor.getName();
+    if (GML.NAMESPACE.equals(name.getNamespaceURI()) || maxOccurs > 1 || Object.class.equals(binding)) {
+      LOGGER.fine("Ignoring multivalued or complex property " + name + " on feature type "+ realType.getName());
+      continue;
+    }
+    simpleProperties.add(((AttributeDescriptor)descriptor).getLocalName());
+  }
+  String[] properties=simpleProperties.toArray(new String[simpleProperties.size()]);
+  SimpleFeatureType subsetType;
+  try {
+    subsetType=DataUtilities.createSubType((SimpleFeatureType)realType,properties);
+  }
+ catch (  SchemaException e) {
+    throw new DataSourceException(e);
+  }
+  return subsetType;
+}

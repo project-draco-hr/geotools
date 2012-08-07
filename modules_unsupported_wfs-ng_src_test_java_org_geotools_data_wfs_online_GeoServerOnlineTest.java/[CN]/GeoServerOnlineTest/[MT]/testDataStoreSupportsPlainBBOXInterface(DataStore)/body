@@ -1,0 +1,52 @@
+{
+  if (url_100 == null)   return;
+  final SimpleFeatureType ft=wfs.getSchema(TO_EDIT_TYPE);
+  SimpleFeatureSource featureSource=wfs.getFeatureSource(TO_EDIT_TYPE);
+  final ReferencedEnvelope bounds=featureSource.getBounds();
+  String srsName=CRS.toSRS(bounds.getCoordinateReferenceSystem());
+  final BBOX bbox=FF.bbox("the_geom",bounds.getMinX(),bounds.getMinY(),bounds.getMaxX(),bounds.getMaxY(),srsName);
+  final BBOX strictBBox=new BBOX(){
+    public boolean evaluate(    Object object){
+      return bbox.evaluate(object);
+    }
+    public Object accept(    FilterVisitor visitor,    Object extraData){
+      return bbox.accept(visitor,extraData);
+    }
+    public Expression getExpression2(){
+      return bbox.getExpression2();
+    }
+    public Expression getExpression1(){
+      return bbox.getExpression1();
+    }
+    public String getSRS(){
+      return bbox.getSRS();
+    }
+    public String getPropertyName(){
+      return bbox.getPropertyName();
+    }
+    public double getMinY(){
+      return bbox.getMinY();
+    }
+    public double getMinX(){
+      return bbox.getMinX();
+    }
+    public double getMaxY(){
+      return bbox.getMaxY();
+    }
+    public double getMaxX(){
+      return bbox.getMaxX();
+    }
+    public MatchAction getMatchAction(){
+      return MatchAction.ANY;
+    }
+  }
+;
+  final Query query=new Query(ft.getTypeName());
+  query.setPropertyNames(new String[]{"the_geom"});
+  query.setFilter(strictBBox);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=wfs.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertNotNull(reader);
+  reader=wfs.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertNotNull(reader);
+}

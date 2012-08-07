@@ -1,0 +1,32 @@
+{
+  Filter[] splitFilters=super.splitFilters(typeName,queryFilter);
+  Filter serverFilter=splitFilters[0];
+  Filter postFilter=splitFilters[1];
+  if (!(serverFilter instanceof BinaryLogicOperator)) {
+    return splitFilters;
+  }
+  postFilter=queryFilter;
+  if (serverFilter instanceof Or) {
+    serverFilter=Filter.INCLUDE;
+  }
+ else {
+    boolean spatialAdded=false;
+    List<Filter> children=new ArrayList<Filter>(((BinaryLogicOperator)serverFilter).getChildren());
+    for (Iterator<Filter> it=children.iterator(); it.hasNext(); ) {
+      Filter f=it.next();
+      if (f instanceof BinarySpatialOperator) {
+        if (spatialAdded) {
+          it.remove();
+        }
+ else {
+          spatialAdded=true;
+        }
+      }
+    }
+    FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+    serverFilter=ff.and(children);
+    SimplifyingFilterVisitor sfv=new SimplifyingFilterVisitor();
+    serverFilter=(Filter)serverFilter.accept(sfv,null);
+  }
+  return new Filter[]{serverFilter,postFilter};
+}

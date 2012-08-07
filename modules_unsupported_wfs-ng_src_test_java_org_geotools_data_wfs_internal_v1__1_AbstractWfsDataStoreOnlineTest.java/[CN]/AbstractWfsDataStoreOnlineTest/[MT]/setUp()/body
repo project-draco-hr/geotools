@@ -1,0 +1,32 @@
+{
+  if (serviceAvailable == null) {
+    URL url=new URL(SERVER_URL);
+    serviceAvailable=Boolean.FALSE;
+    InputStream stream=null;
+    try {
+      stream=url.openStream();
+      serviceAvailable=Boolean.TRUE;
+    }
+ catch (    Throwable t) {
+      LOGGER.log(Level.WARNING,"The test server is not available: " + SERVER_URL + ". "+ getClass().getSimpleName()+ " test disabled ");
+      url=null;
+      return;
+    }
+ finally {
+      if (stream != null)       try {
+        stream.close();
+      }
+ catch (      IOException e) {
+      }
+    }
+  }
+  if (wfs == null && serviceAvailable.booleanValue()) {
+    LOGGER.info("Creating test datastore for " + SERVER_URL);
+    Map<String,Serializable> params=new HashMap<String,Serializable>();
+    params.put(WFSDataStoreFactory.URL.key,SERVER_URL);
+    params.put("USE_PULL_PARSER",Boolean.TRUE);
+    WFSDataStoreFactory dataStoreFactory=new WFSDataStoreFactory();
+    wfs=dataStoreFactory.createDataStore(params);
+    LOGGER.fine("WFS datastore created");
+  }
+}

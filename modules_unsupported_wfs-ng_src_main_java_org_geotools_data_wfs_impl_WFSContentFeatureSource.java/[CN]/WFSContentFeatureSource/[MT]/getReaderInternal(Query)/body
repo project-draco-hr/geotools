@@ -1,0 +1,32 @@
+{
+  if (Filter.EXCLUDE.equals(localQuery.getFilter())) {
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(getSchema());
+  }
+  GetFeatureRequest request=createGetFeature(localQuery,ResultType.RESULTS);
+  final SimpleFeatureType contentType=getQueryType(localQuery);
+  request.setQueryType(contentType);
+  GetFeatureResponse response=client.issueRequest(request);
+  GeometryFactory geometryFactory=findGeometryFactory(localQuery.getHints());
+  GetFeatureParser features=response.getSimpleFeatures(geometryFactory);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  reader=new WFSFeatureReader(features);
+  if (!reader.hasNext()) {
+    return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(contentType);
+  }
+  final SimpleFeatureType readerType=reader.getFeatureType();
+  if (!contentType.equals(readerType)) {
+    final boolean cloneContents=false;
+    reader=new ReTypeFeatureReader(reader,contentType,cloneContents);
+  }
+  Transaction transaction=getTransaction();
+  if (!Transaction.AUTO_COMMIT.equals(transaction)) {
+    ContentEntry entry=getEntry();
+    State state=transaction.getState(entry);
+    WFSLocalTransactionState wfsState=(WFSLocalTransactionState)state;
+    if (wfsState != null) {
+      WFSDiff diff=wfsState.getDiff();
+      reader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(reader,diff);
+    }
+  }
+  return reader;
+}

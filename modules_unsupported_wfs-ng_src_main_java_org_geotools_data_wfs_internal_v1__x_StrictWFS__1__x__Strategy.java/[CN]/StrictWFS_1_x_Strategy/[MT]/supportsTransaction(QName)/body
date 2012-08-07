@@ -1,0 +1,20 @@
+{
+  try {
+    getFeatureTypeInfo(typeName);
+  }
+ catch (  IllegalArgumentException e) {
+    throw e;
+  }
+  if (!supportsOperation(TRANSACTION,POST)) {
+    return false;
+  }
+  OperationsType operations=this.capabilities.getFeatureTypeList().getOperations();
+  @SuppressWarnings("unchecked") List<net.opengis.wfs.OperationType> operation=operations.getOperation();
+  for (  net.opengis.wfs.OperationType required : Arrays.asList(net.opengis.wfs.OperationType.INSERT_LITERAL,net.opengis.wfs.OperationType.UPDATE_LITERAL,net.opengis.wfs.OperationType.DELETE_LITERAL)) {
+    if (!operation.contains(required)) {
+      info("Transactions not supported since WFS didn't declare support for " + required.getName());
+      return false;
+    }
+  }
+  return true;
+}

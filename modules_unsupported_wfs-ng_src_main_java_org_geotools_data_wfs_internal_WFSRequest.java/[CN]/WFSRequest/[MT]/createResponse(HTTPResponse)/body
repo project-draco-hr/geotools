@@ -1,0 +1,26 @@
+{
+  final String contentType=response.getContentType();
+  if (contentType == null) {
+    Logging.getLogger(WFSRequest.class).warning(this.getOperation() + " request returned null content type for URL " + getFinalURL());
+  }
+  WFSResponseFactory responseFactory;
+  try {
+    responseFactory=WFSExtensions.findResponseFactory(this,contentType);
+  }
+ catch (  FactoryNotFoundException fnf) {
+    Loggers.MODULE.log(Level.WARNING,fnf.getMessage());
+    try {
+      if (contentType != null && contentType.startsWith("text")) {
+        byte buff[]=new byte[1024];
+        response.getResponseStream().read(buff);
+        Loggers.MODULE.info("Failed response snippet: " + new String(buff));
+      }
+      throw fnf;
+    }
+ catch (    Exception ignore) {
+      throw fnf;
+    }
+  }
+  WFSResponse wfsResponse=responseFactory.createResponse(this,response);
+  return wfsResponse;
+}

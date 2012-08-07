@@ -1,0 +1,75 @@
+{
+  requestDebug("Creating GetFeature request parameters for ",request.getTypeName());
+  Map<String,String> map=new HashMap<String,String>();
+  map.put("SERVICE","WFS");
+  Version serviceVersion=getServiceVersion();
+  map.put("VERSION",serviceVersion.toString());
+  map.put("REQUEST","GetFeature");
+  String outputFormat=request.getOutputFormat();
+  if (outputFormat == null) {
+    outputFormat=getDefaultOutputFormat(WFSOperationType.GET_FEATURE);
+  }
+  map.put("OUTPUTFORMAT",outputFormat);
+  if (request.getMaxFeatures() != null) {
+    map.put("MAXFEATURES",String.valueOf(request.getMaxFeatures()));
+  }
+  QName typeName=request.getTypeName();
+  String queryTypeName=getPrefixedTypeName(typeName);
+  map.put("TYPENAME",queryTypeName);
+  if (request.getPropertyNames() != null && request.getPropertyNames().length > 0) {
+    List<String> propertyNames=Arrays.asList(request.getPropertyNames());
+    StringBuilder pnames=new StringBuilder();
+    for (Iterator<String> it=propertyNames.iterator(); it.hasNext(); ) {
+      pnames.append(it.next());
+      if (it.hasNext()) {
+        pnames.append(',');
+      }
+    }
+    map.put("PROPERTYNAME",pnames.toString());
+  }
+  final String srsName=request.getSrsName();
+  if (srsName != null) {
+    final Set<String> supportedCRSIdentifiers=getSupportedCRSIdentifiers(typeName);
+    if (supportedCRSIdentifiers.contains(srsName)) {
+      map.put("SRSNAME",srsName.toString());
+    }
+  }
+  final Filter supportedFilter;
+  final Filter unsupportedFilter;
+{
+    final Filter filter=request.getFilter();
+    Filter[] splitFilters=splitFilters(typeName,filter);
+    supportedFilter=splitFilters[0];
+    unsupportedFilter=splitFilters[1];
+    requestTrace("Supported filter: ",supportedFilter,". Unsupported filter: ",unsupportedFilter);
+  }
+  request.setUnsupportedFilter(unsupportedFilter);
+  if (supportedFilter instanceof Id) {
+    final Set<Identifier> identifiers=((Id)supportedFilter).getIdentifiers();
+    StringBuffer idValues=new StringBuffer();
+    for (Iterator<Identifier> it=identifiers.iterator(); it.hasNext(); ) {
+      Object id=it.next().getID();
+      if (id instanceof FeatureId) {
+        idValues.append(((FeatureId)id).getRid());
+      }
+ else {
+        idValues.append(String.valueOf(id));
+      }
+      if (it.hasNext()) {
+        idValues.append(",");
+      }
+    }
+    map.put("FEATUREID",idValues.toString());
+  }
+ else   if (Filter.INCLUDE != supportedFilter) {
+    String xmlEncodedFilter;
+    try {
+      xmlEncodedFilter=encodeGetFeatureGetFilter(supportedFilter);
+    }
+ catch (    IOException e) {
+      throw new RuntimeException(e);
+    }
+    map.put("FILTER",xmlEncodedFilter);
+  }
+  return map;
+}

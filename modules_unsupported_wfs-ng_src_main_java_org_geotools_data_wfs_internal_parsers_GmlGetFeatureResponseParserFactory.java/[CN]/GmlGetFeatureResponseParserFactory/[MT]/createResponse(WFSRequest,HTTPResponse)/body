@@ -1,0 +1,60 @@
+{
+  final GetFeatureRequest getFeature=(GetFeatureRequest)request;
+  final GetFeatureParser parser;
+  final String contentType=response.getContentType();
+  if (SUPPORTED_FORMATS.contains(contentType)) {
+    parser=parser(getFeature,response.getResponseStream());
+  }
+ else {
+    final int buffSize;
+    if (LOGGER.isLoggable(Level.FINER)) {
+      buffSize=4096;
+    }
+ else {
+      buffSize=512;
+    }
+    PushbackInputStream pushbackIn=new PushbackInputStream(response.getResponseStream(),buffSize);
+    byte[] buff=new byte[buffSize];
+    int readCount=0;
+    int r;
+    while ((r=pushbackIn.read(buff,readCount,buffSize - readCount)) != -1) {
+      readCount+=r;
+      if (readCount == buffSize) {
+        break;
+      }
+    }
+    String charset=response.getResponseHeader("Charset");
+    try {
+      Charset.forName(charset);
+    }
+ catch (    Exception e) {
+      charset="UTF-8";
+    }
+    BufferedReader reader=new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buff),charset));
+    StringBuilder head=new StringBuilder();
+    String line;
+    while ((line=reader.readLine()) != null) {
+      head.append(line).append('\n');
+    }
+    if (LOGGER.isLoggable(Level.FINER)) {
+      System.err.println("Response head:");
+      System.err.println(head);
+    }
+    pushbackIn.unread(buff,0,readCount);
+    if (head.indexOf("FeatureCollection") > 0) {
+      parser=parser(getFeature,pushbackIn);
+    }
+ else     if (head.indexOf("ExceptionReport") > 0) {
+      throw new UnsupportedOperationException("implement!");
+    }
+ else {
+      throw new IllegalStateException("Unkown server response: " + head);
+    }
+  }
+  try {
+    return new GetFeatureResponse(request,response,parser);
+  }
+ catch (  ServiceException e) {
+    throw new IOException(e);
+  }
+}

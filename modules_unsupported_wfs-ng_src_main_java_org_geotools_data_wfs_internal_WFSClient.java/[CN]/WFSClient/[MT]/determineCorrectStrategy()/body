@@ -1,0 +1,73 @@
+{
+  final Version capsVersion=new Version(capabilities.getVersion());
+  Document capabilitiesDoc=capabilities.getRawDocument();
+  final String override=config.getWfsStrategy();
+  WFSStrategy strategy=null;
+  if (!"auto".equals(override)) {
+    if (override.equalsIgnoreCase("geoserver")) {
+      strategy=new GeoServerPre200Strategy();
+    }
+ else     if (override.equalsIgnoreCase("cubewerx")) {
+      strategy=new CubeWerxStrategy();
+    }
+ else     if (override.equalsIgnoreCase("ionic")) {
+      strategy=new IonicStrategy();
+    }
+ else {
+      LOGGER.warning("Could not handle wfs strategy override " + override + " proceeding with autodetection");
+    }
+  }
+  if (strategy == null) {
+    NodeList childNodes=capabilitiesDoc.getChildNodes();
+    for (int i=0; i < childNodes.getLength(); i++) {
+      Node child=childNodes.item(i);
+      if (child.getNodeType() == Node.COMMENT_NODE) {
+        String nodeValue=child.getNodeValue();
+        nodeValue=nodeValue.toLowerCase();
+        if (nodeValue.contains("cubewerx")) {
+          strategy=new CubeWerxStrategy();
+          break;
+        }
+      }
+    }
+  }
+  if (strategy == null) {
+    Element root=capabilitiesDoc.getDocumentElement();
+    String ionicNs=root.getAttribute("xmlns:ionic");
+    if (ionicNs != null) {
+      if (ionicNs.equals("http://www.ionicsoft.com/versions/4")) {
+        strategy=new IonicStrategy();
+      }
+ else       if (ionicNs.startsWith("http://www.ionicsoft.com/versions")) {
+        LOGGER.warning("Found a Ionic server but the version may not match the strategy " + "we have (v.4). Ionic namespace url: " + ionicNs);
+        strategy=new IonicStrategy();
+      }
+    }
+  }
+  if (strategy == null) {
+    java.net.URL capabilitiesURL=super.serverURL;
+    String uri=capabilitiesURL.toExternalForm();
+    if (uri.contains("geoserver")) {
+      strategy=new GeoServerPre200Strategy();
+    }
+ else     if (uri.contains("/ArcGIS/services/")) {
+      strategy=new StrictWFS_1_x_Strategy();
+    }
+  }
+  if (strategy == null) {
+    if (Versions.v1_0_0.equals(capsVersion)) {
+      strategy=new StrictWFS_1_x_Strategy(Versions.v1_0_0);
+    }
+ else     if (Versions.v1_1_0.equals(capsVersion)) {
+      strategy=new StrictWFS_1_x_Strategy(Versions.v1_1_0);
+    }
+ else     if (Versions.v2_0_0.equals(capsVersion)) {
+      strategy=new StrictWFS_2_0_Strategy();
+    }
+ else {
+      throw new IllegalArgumentException("Unsupported version: " + capsVersion);
+    }
+  }
+  LOGGER.info("Using WFS Strategy: " + strategy.getClass().getName());
+  return strategy;
+}

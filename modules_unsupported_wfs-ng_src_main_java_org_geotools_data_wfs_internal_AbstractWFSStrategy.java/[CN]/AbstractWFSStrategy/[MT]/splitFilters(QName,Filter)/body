@@ -1,0 +1,41 @@
+{
+  FilterCapabilities filterCapabilities=getFilterCapabilities();
+  Capabilities filterCaps=new Capabilities();
+  if (filterCapabilities != null) {
+    filterCaps.addAll(filterCapabilities);
+    if (Versions.v1_0_0.equals(getServiceVersion())) {
+      SpatialCapabilities spatialCaps=filterCapabilities.getSpatialCapabilities();
+      if (spatialCaps != null) {
+        SpatialOperators spatialOps=spatialCaps.getSpatialOperators();
+        if (spatialOps != null) {
+          if (null != spatialOps.getOperator("Intersect")) {
+            trace("WFS 1.0 capabilities states the spatial operator Intersect. ","Assuming it is Intersects and adding Intersects as a supported filter type");
+            filterCaps.addName(Intersects.NAME);
+          }
+        }
+      }
+    }
+  }
+  filter=simplify(filter);
+  Filter server;
+  Filter post;
+  Integer complianceLevel=getConfig().getFilterCompliance();
+  if (null == complianceLevel) {
+    complianceLevel=XMLHandlerHints.VALUE_FILTER_COMPLIANCE_HIGH;
+  }
+  FilterCompliancePreProcessor compliancePreProcessor=new FilterCompliancePreProcessor(complianceLevel);
+  filter.accept(compliancePreProcessor,null);
+  filter=compliancePreProcessor.getFilter();
+  Id fidFilter=compliancePreProcessor.getFidFilter();
+  if (!fidFilter.getIdentifiers().isEmpty()) {
+    server=fidFilter;
+    post=Filter.EXCLUDE.equals(filter) ? Filter.INCLUDE : filter;
+  }
+ else {
+    CapabilitiesFilterSplitter splitter=new CapabilitiesFilterSplitter(filterCaps,null,null);
+    filter.accept(splitter,null);
+    server=splitter.getFilterPre();
+    post=splitter.getFilterPost();
+  }
+  return new Filter[]{server,post};
+}
