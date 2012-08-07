@@ -1,0 +1,66 @@
+{
+  validate(name,opNode);
+  if (opNode instanceof RenderedOp && name.equalsIgnoreCase("roi")) {
+    RenderedOp op=(RenderedOp)opNode;
+    ParameterBlock pb=op.getParameterBlock();
+    RenderedImage src=(RenderedImage)pb.getRenderedSource(0);
+    Object property=src.getProperty("ROI");
+    if (property == null || property.equals(java.awt.Image.UndefinedProperty) || !(property instanceof ROI)) {
+      return java.awt.Image.UndefinedProperty;
+    }
+    ROI srcROI=(ROI)property;
+    if (srcROI.getBounds().isEmpty()) {
+      return java.awt.Image.UndefinedProperty;
+    }
+    Interpolation interp=(Interpolation)pb.getObjectParameter(1);
+    Rectangle srcBounds=null;
+    PlanarImage dst=op.getRendering();
+    if (dst instanceof GeometricOpImage && ((GeometricOpImage)dst).getBorderExtender() == null) {
+      srcBounds=new Rectangle(src.getMinX() + interp.getLeftPadding(),src.getMinY() + interp.getTopPadding(),src.getWidth() - interp.getWidth() + 1,src.getHeight() - interp.getHeight() + 1);
+    }
+ else {
+      srcBounds=new Rectangle(src.getMinX(),src.getMinY(),src.getWidth(),src.getHeight());
+    }
+    if (!srcBounds.contains(srcROI.getBounds())) {
+      srcROI=srcROI.intersect(new ROIShape(srcBounds));
+    }
+    Warp warp=(Warp)pb.getObjectParameter(0);
+    Rectangle dstBounds=op.getBounds();
+    ImageLayout2 layout=new ImageLayout2();
+    int minx=(int)srcBounds.getMinX();
+    int miny=(int)srcBounds.getMinY();
+    int w=(int)srcBounds.getWidth();
+    int h=(int)srcBounds.getHeight();
+    layout.setMinX(minx);
+    layout.setMinY(miny);
+    layout.setWidth(w);
+    layout.setHeight(h);
+    RenderingHints hints=op.getRenderingHints();
+    hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
+    final PlanarImage constantImage=ConstantDescriptor.create(new Float(w),new Float(h),new Byte[]{(byte)255},hints);
+    PlanarImage roiImage=null;
+    RenderingHints warpingHints=op.getRenderingHints();
+    warpingHints.remove(JAI.KEY_IMAGE_LAYOUT);
+    final ParameterBlock paramBlk=new ParameterBlock();
+    paramBlk.addSource(constantImage);
+    paramBlk.add(warp);
+    paramBlk.add(interp);
+    paramBlk.add(null);
+    paramBlk.add(srcROI);
+    Hints localHints=new Hints(op.getRenderingHints());
+    localHints.remove(JAI.KEY_IMAGE_LAYOUT);
+    ImageLayout il=new ImageLayout();
+    il.setMinX(dstBounds.x);
+    il.setMinY(dstBounds.y);
+    il.setWidth(dstBounds.width);
+    il.setHeight(dstBounds.height);
+    localHints.put(JAI.KEY_IMAGE_LAYOUT,il);
+    roiImage=JAI.create("Warp",paramBlk,localHints);
+    ROI dstROI=new ROI(roiImage,1);
+    if (!dstBounds.contains(dstROI.getBounds())) {
+      dstROI=dstROI.intersect(new ROIShape(dstBounds));
+    }
+    return dstROI;
+  }
+  return java.awt.Image.UndefinedProperty;
+}
