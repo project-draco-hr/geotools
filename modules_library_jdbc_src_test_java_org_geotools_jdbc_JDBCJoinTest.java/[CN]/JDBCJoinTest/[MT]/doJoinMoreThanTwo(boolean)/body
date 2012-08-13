@@ -1,0 +1,29 @@
+{
+  dataStore.setExposePrimaryKeyColumns(exposePrimaryKeys);
+  FilterFactory ff=dataStore.getFilterFactory();
+  Query q=new Query(tname("ftjoin"));
+  q.getJoins().add(new Join(tname("ft1"),ff.equal(ff.property(aname("name")),ff.property(aname("stringProperty")),true)));
+  q.getJoins().add(new Join(tname("ftjoin2"),ff.equal(ff.property(aname("join2intProperty")),ff.property(aname("join1intProperty")),true)));
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("ftjoin")).getFeatures(q);
+  assertEquals(3,features.size());
+  SimpleFeatureIterator it=features.features();
+  try {
+    String[] ft1StringProp=new String[]{"zero","one","two"};
+    String[] ftjoin2StringProp=new String[]{"2nd zero","2nd one","2nd two"};
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      assertEquals(6,f.getAttributeCount());
+      Integer idx=(Integer)f.getAttribute(aname("join1intProperty"));
+      assertTrue(idx < 3);
+      SimpleFeature g=(SimpleFeature)f.getAttribute(tname("ft1"));
+      assertNotNull(g);
+      assertEquals(ft1StringProp[idx],g.getAttribute(aname("stringProperty")));
+      g=(SimpleFeature)f.getAttribute(tname("ftjoin2"));
+      assertNotNull(g);
+      assertEquals(ftjoin2StringProp[idx],g.getAttribute(aname("stringProperty2")));
+    }
+  }
+  finally {
+    it.close();
+  }
+}
