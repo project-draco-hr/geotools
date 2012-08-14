@@ -1,0 +1,17 @@
+{
+  String uriText=uri.trim();
+  int length=BASE_URI.length();
+  if (uriText.regionMatches(true,0,BASE_URI,0,length)) {
+    String[] segments=uriText.substring(length).split(SEPARATOR);
+    if (segments.length == 4 && !segments[0].isEmpty()) {
+      URI_Type uriType=URI_Type.get(segments[0]);
+      if (uriType != null && !segments[1].isEmpty() && !segments[2].isEmpty() && !segments[3].isEmpty()) {
+        String uriAuthority=segments[1];
+        Version uriVersion=segments[2].equals(UNVERSIONED) ? null : new Version(segments[2]);
+        String uriCode=segments[3];
+        return new HTTP_URI_Parser(uriText,uriType,uriAuthority,uriVersion,uriCode);
+      }
+    }
+  }
+  throw new NoSuchAuthorityCodeException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$1,uriText),AUTHORITY,uriText);
+}

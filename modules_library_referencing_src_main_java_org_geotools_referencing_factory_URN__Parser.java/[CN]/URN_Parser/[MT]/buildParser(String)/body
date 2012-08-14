@@ -1,0 +1,27 @@
+{
+  final String code=urn.trim();
+  String type=urn;
+  for (int i=0; i < URN_BASES.length; i++) {
+    final String urnBase=URN_BASES[i];
+    final int typeStart=urnBase.length();
+    if (code.regionMatches(true,0,urnBase,0,typeStart)) {
+      final int typeEnd=code.indexOf(URN_SEPARATOR,typeStart);
+      if (typeEnd >= 0) {
+        type=code.substring(typeStart,typeEnd).trim();
+        final URI_Type candidate=URI_Type.get(type);
+        if (candidate != null) {
+          final int nameEnd=code.indexOf(URN_SEPARATOR,typeEnd + 1);
+          if (nameEnd >= 0) {
+            final int lastEnd=code.lastIndexOf(URN_SEPARATOR);
+            Version urnVersion=(lastEnd <= nameEnd) ? null : new Version(code.substring(nameEnd + 1,lastEnd));
+            String urnAuthority=code.substring(typeEnd + 1,nameEnd).trim();
+            String urnCode=code.substring(lastEnd + 1).trim();
+            URI_Type urnType=candidate;
+            return new URN_Parser(urn,urnType,urnAuthority,urnVersion,urnCode);
+          }
+        }
+      }
+    }
+  }
+  throw new NoSuchAuthorityCodeException(Errors.format(ErrorKeys.ILLEGAL_IDENTIFIER_$1,type),"urn:ogc:def",type);
+}
