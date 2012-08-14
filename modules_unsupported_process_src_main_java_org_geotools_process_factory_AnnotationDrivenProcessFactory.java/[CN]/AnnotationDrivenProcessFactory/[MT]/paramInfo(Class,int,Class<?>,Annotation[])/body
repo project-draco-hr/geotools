@@ -53,10 +53,21 @@
   if (min == 0 && max == 1 && type.isPrimitive()) {
     throw new IllegalArgumentException("Optional values cannot be primitives, " + "use the associated object wrapper instead: " + info.name() + " in process "+ process.getName());
   }
+  Object defaultValue=null;
+  if (info != null && !DescribeParameter.DEFAULT_NULL.equals(info.defaultValue())) {
+    String strDefault=info.defaultValue();
+    defaultValue=lookupConstant(strDefault,process,type);
+    if (defaultValue == null) {
+      defaultValue=Converters.convert(strDefault,type);
+    }
+    if (defaultValue == null) {
+      throw new IllegalArgumentException("Default value " + strDefault + " could not be converted to target type "+ type);
+    }
+  }
   if (info != null) {
-    return new Parameter(info.name(),type,new SimpleInternationalString(info.name()),new SimpleInternationalString(info.description()),min > 0,min,max,null,null);
+    return new Parameter(info.name(),type,new SimpleInternationalString(info.name()),new SimpleInternationalString(info.description()),min > 0,min,max,defaultValue,null);
   }
  else {
-    return new Parameter("arg" + i,type,new SimpleInternationalString("Argument " + i),new SimpleInternationalString("Input " + type.getName() + " value"),min > 0,min,max,null,null);
+    return new Parameter("arg" + i,type,new SimpleInternationalString("Argument " + i),new SimpleInternationalString("Input " + type.getName() + " value"),min > 0,min,max,defaultValue,null);
   }
 }

@@ -1,0 +1,31 @@
+{
+  Field field=null;
+  try {
+    field=holder.getDeclaredField(path);
+  }
+ catch (  NoSuchFieldException e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Failed to locate the field " + path + " in class "+ holder);
+    }
+    return null;
+  }
+  if ((field.getModifiers() & (Modifier.FINAL | Modifier.STATIC)) == 0) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Field " + path + " found in class "+ holder+ ", but it's not a costant");
+    }
+    return null;
+  }
+  try {
+    if (!field.isAccessible()) {
+      field.setAccessible(true);
+    }
+    Object result=field.get(null);
+    return Converters.convert(result,target);
+  }
+ catch (  Exception e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Field " + path + " found in class "+ holder+ ", but failed to access it",e);
+    }
+    return null;
+  }
+}
