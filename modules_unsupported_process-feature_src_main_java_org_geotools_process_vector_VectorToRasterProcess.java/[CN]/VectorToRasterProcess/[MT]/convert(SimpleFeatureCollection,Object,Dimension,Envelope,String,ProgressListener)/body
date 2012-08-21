@@ -1,0 +1,29 @@
+{
+  if (monitor == null) {
+    monitor=new NullProgressListener();
+  }
+  initialize(features,bounds,attribute,gridDim);
+  monitor.setTask(new SimpleInternationalString("Rasterizing features..."));
+  float scale=100.0f / features.size();
+  monitor.started();
+  SimpleFeatureIterator fi=features.features();
+  try {
+    int counter=0;
+    while (fi.hasNext()) {
+      try {
+        processFeature(fi.next(),attribute);
+      }
+ catch (      Exception e) {
+        monitor.exceptionOccurred(e);
+      }
+      monitor.progress(scale * counter++);
+    }
+  }
+  finally {
+    features.close(fi);
+  }
+  monitor.complete();
+  flattenImage();
+  GridCoverageFactory gcf=new GridCoverageFactory();
+  return gcf.create(covName,image,extent);
+}
