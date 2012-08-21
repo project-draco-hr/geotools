@@ -1,0 +1,44 @@
+{
+  SimpleFeatureSource transformed=transformWithExpressions();
+  SortBy[] sortBy=new SortBy[]{FF.sort("total",SortOrder.DESCENDING)};
+  assertTrue(transformed.getQueryCapabilities().supportsSorting(sortBy));
+  Query q=new Query("bstates");
+  q.setSortBy(sortBy);
+  q.setMaxFeatures(2);
+  SimpleFeatureCollection fc=transformed.getFeatures(q);
+  assertEquals(transformed.getSchema(),fc.getSchema());
+  assertEquals(2,fc.size());
+  SimpleFeatureIterator fi=null;
+  List<Number> totals=new ArrayList<Number>();
+  try {
+    fi=fc.features();
+    while (fi.hasNext()) {
+      SimpleFeature f=fi.next();
+      totals.add((Number)f.getAttribute("total"));
+    }
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+  List<Double> sums=new ArrayList<Double>();
+  try {
+    fi=STATES.getFeatures().features();
+    while (fi.hasNext()) {
+      SimpleFeature f=fi.next();
+      double male=(Double)f.getAttribute("male");
+      double female=(Double)f.getAttribute("female");
+      sums.add(male + female);
+    }
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+  Collections.sort(sums);
+  assertEquals(2,totals.size());
+  assertEquals(sums.get(sums.size() - 1),totals.get(0));
+  assertEquals(sums.get(sums.size() - 2),totals.get(1));
+}

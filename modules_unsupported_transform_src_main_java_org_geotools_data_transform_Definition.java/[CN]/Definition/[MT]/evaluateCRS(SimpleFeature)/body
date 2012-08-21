@@ -1,0 +1,20 @@
+{
+  SimpleFeatureType originalSchema=originalFeature.getFeatureType();
+  CoordinateReferenceSystem computedCRS;
+  computedCRS=(CoordinateReferenceSystem)expression.accept(new CRSEvaluator(originalSchema),null);
+  if (computedCRS == null) {
+    Geometry g=expression.evaluate(originalFeature,Geometry.class);
+    if (g != null && g.getUserData() instanceof CoordinateReferenceSystem) {
+      computedCRS=(CoordinateReferenceSystem)g.getUserData();
+    }
+ else {
+      try {
+        computedCRS=CRS.decode("EPSG:" + g.getSRID());
+      }
+ catch (      Exception e) {
+        return null;
+      }
+    }
+  }
+  return computedCRS;
+}

@@ -1,0 +1,27 @@
+{
+  SortBy[] original=query.getSortBy();
+  if (original == null) {
+    return original;
+  }
+  List<SortBy> transformed=new ArrayList<SortBy>();
+  for (  SortBy sort : original) {
+    if (sort == SortBy.NATURAL_ORDER || sort == SortBy.REVERSE_ORDER) {
+      transformed.add(sort);
+    }
+    PropertyName pname=sort.getPropertyName();
+    Expression ex=expressions.get(pname.getPropertyName());
+    if (ex == null) {
+      throw new IllegalArgumentException("Attribute " + pname + " is not part of the output schema");
+    }
+ else     if (ex instanceof PropertyName) {
+      PropertyName pn=(PropertyName)ex;
+      transformed.add(FF.sort(pn.getPropertyName(),sort.getSortOrder()));
+    }
+ else     if (ex instanceof Literal) {
+    }
+ else {
+      return null;
+    }
+  }
+  return transformed.toArray(new SortBy[transformed.size()]);
+}

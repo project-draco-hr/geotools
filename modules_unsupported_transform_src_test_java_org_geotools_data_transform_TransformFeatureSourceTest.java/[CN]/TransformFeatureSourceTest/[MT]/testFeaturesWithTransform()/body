@@ -1,0 +1,31 @@
+{
+  SimpleFeatureSource transformed=transformWithExpressions();
+  SimpleFeatureCollection fc=transformed.getFeatures();
+  assertEquals(transformed.getSchema(),fc.getSchema());
+  assertEquals(transformed.getCount(Query.ALL),fc.size());
+  ReferencedEnvelope bufferedStateBounds=new ReferencedEnvelope(-110.04782099895442,-74.04752638847438,34.98970859966714,43.50933565139621,WGS84);
+  assertEquals(bufferedStateBounds,fc.getBounds());
+  Query q=new Query("usa",CQL.toFilter("name = 'delaware'"));
+  fc=transformed.getFeatures(q);
+  assertEquals(transformed.getSchema(),fc.getSchema());
+  assertEquals(1,fc.size());
+  ReferencedEnvelope bufferedDelawareBounds=new ReferencedEnvelope(-76.78885040499915,-74.05085782368926,37.450389376543036,40.82235239392104,WGS84);
+  assertEquals(bufferedDelawareBounds,fc.getBounds());
+  SimpleFeatureIterator fi=null;
+  try {
+    fi=fc.features();
+    assertTrue(fi.hasNext());
+    SimpleFeature f=fi.next();
+    assertEquals(f.getFeatureType(),transformed.getSchema());
+    assertNotNull(f.getDefaultGeometry());
+    assertEquals(bufferedDelawareBounds,f.getBounds());
+    assertEquals("delaware",f.getAttribute("name"));
+    assertEquals(666168d,f.getAttribute("total"));
+    assertEquals(Math.log(666168),f.getAttribute("logp"));
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+}

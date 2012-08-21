@@ -1,0 +1,28 @@
+{
+  SimpleFeatureSource transformed=transformWithRename();
+  SimpleFeatureCollection fc=transformed.getFeatures();
+  assertEquals(transformed.getSchema(),fc.getSchema());
+  assertEquals(transformed.getCount(Query.ALL),fc.size());
+  assertEquals(transformed.getBounds(),fc.getBounds());
+  Query q=new Query("usa",CQL.toFilter("name = 'Delaware'"));
+  fc=transformed.getFeatures(q);
+  assertEquals(transformed.getSchema(),fc.getSchema());
+  assertEquals(1,fc.size());
+  assertEquals(DELAWARE_BOUNDS,fc.getBounds());
+  SimpleFeatureIterator fi=null;
+  try {
+    fi=fc.features();
+    assertTrue(fi.hasNext());
+    SimpleFeature f=fi.next();
+    assertEquals(f.getFeatureType(),transformed.getSchema());
+    assertNotNull(f.getDefaultGeometry());
+    assertEquals(DELAWARE_BOUNDS,f.getBounds());
+    assertEquals("Delaware",f.getAttribute("name"));
+    assertEquals(666168d,f.getAttribute("people"));
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+}

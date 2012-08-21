@@ -1,0 +1,40 @@
+{
+  List<String> names=transformer.getGeometryPropertyNames();
+  if (names == null) {
+    return null;
+  }
+  boolean geometryTransformed=false;
+  for (  String name : names) {
+    Expression expression=transformer.getExpression(name);
+    if (expression != null && !(expression instanceof PropertyName)) {
+      geometryTransformed=true;
+    }
+  }
+  if (!geometryTransformed) {
+    return wrapped.getBounds();
+  }
+  SimpleFeatureIterator fi=null;
+  ReferencedEnvelope re=null;
+  try {
+    fi=features();
+    while (fi.hasNext()) {
+      SimpleFeature f=fi.next();
+      BoundingBox bb=f.getBounds();
+      if (bb != null) {
+        ReferencedEnvelope ref=ReferencedEnvelope.reference(bb);
+        if (re == null) {
+          re=ref;
+        }
+ else {
+          re.expandToInclude(ref);
+        }
+      }
+    }
+    return re;
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+}

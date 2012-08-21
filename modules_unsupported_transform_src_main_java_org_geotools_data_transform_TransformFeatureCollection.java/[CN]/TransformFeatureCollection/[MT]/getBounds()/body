@@ -1,0 +1,34 @@
+{
+  try {
+    ReferencedEnvelope re=source.getBounds(query);
+    if (re != null) {
+      return re;
+    }
+    SimpleFeatureIterator fi=null;
+    try {
+      fi=source.getFeatures(query).features();
+      while (fi.hasNext()) {
+        SimpleFeature f=fi.next();
+        BoundingBox bb=f.getBounds();
+        if (bb != null) {
+          ReferencedEnvelope ref=ReferencedEnvelope.reference(bb);
+          if (re == null) {
+            re=ref;
+          }
+ else {
+            re.expandToInclude(ref);
+          }
+        }
+      }
+      return re;
+    }
+  finally {
+      if (fi != null) {
+        fi.close();
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+}

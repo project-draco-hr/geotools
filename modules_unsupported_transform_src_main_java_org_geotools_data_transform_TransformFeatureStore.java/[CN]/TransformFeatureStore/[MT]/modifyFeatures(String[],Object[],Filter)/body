@@ -1,0 +1,32 @@
+{
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(getSchema());
+  for (int i=0; i < nameArray.length; i++) {
+    fb.set(nameArray[i],attributeValues[i]);
+  }
+  SimpleFeature sample=fb.buildFeature(null);
+  List<String> names=Arrays.asList(nameArray);
+  Map<String,Object> invertedValueMap=new HashMap<String,Object>();
+  for (  Definition definition : transformer.getDefinitions()) {
+    if (names.contains(definition.getName())) {
+      List<Definition> ids=definition.inverse();
+      if (ids != null) {
+        for (        Definition id : ids) {
+          Object value=id.getExpression().evaluate(sample);
+          invertedValueMap.put(id.getName(),value);
+        }
+      }
+    }
+  }
+  if (!invertedValueMap.isEmpty()) {
+    String[] invertedNames=new String[invertedValueMap.size()];
+    Object[] invertedValues=new Object[invertedValueMap.size()];
+    int i=0;
+    for (    String name : invertedValueMap.keySet()) {
+      invertedNames[i]=name;
+      invertedValues[i]=invertedValueMap.get(name);
+      i++;
+    }
+    Filter txFilter=transformer.transformFilter(filter);
+    store.modifyFeatures(invertedNames,invertedValues,txFilter);
+  }
+}

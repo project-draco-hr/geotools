@@ -1,0 +1,18 @@
+{
+  if (filter == Filter.INCLUDE) {
+    return this;
+  }
+ else   if (filter == Filter.EXCLUDE || query.getFilter() == Filter.EXCLUDE) {
+    return new EmptyFeatureCollection(getSchema());
+  }
+  Query q=new Query(query);
+  if (query.getFilter() == Filter.INCLUDE) {
+    q.setFilter(filter);
+  }
+ else {
+    FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+    Filter combined=ff.and(filter,q.getFilter());
+    q.setFilter(combined);
+  }
+  return new TransformFeatureCollection(source,transformer,q);
+}

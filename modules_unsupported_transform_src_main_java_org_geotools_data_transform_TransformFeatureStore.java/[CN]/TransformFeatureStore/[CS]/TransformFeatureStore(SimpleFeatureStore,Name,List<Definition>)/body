@@ -1,0 +1,22 @@
+{
+  super(store,name,definitions);
+  this.store=store;
+  List<Definition> inverted=new ArrayList<Definition>();
+  for (  Definition definition : definitions) {
+    List<Definition> inverses=definition.inverse();
+    if (inverses != null) {
+      inverted.addAll(inverses);
+    }
+  }
+  if (inverted.size() == 0) {
+    throw new IllegalArgumentException("None of the expressions could be inverted, cannot " + "create a writable transformer");
+  }
+  List<String> requiredAttributes=getRequiredAttributes(store.getSchema());
+  for (  Definition id : inverted) {
+    requiredAttributes.remove(id.getName());
+  }
+  if (requiredAttributes.size() > 0) {
+    throw new IllegalArgumentException("The inverted expressions do not cover some of the required attributes, " + "cannot create a writable transformer. The missing mandatory attributes are: " + requiredAttributes);
+  }
+  invertedTransformer=new Transformer(this,store.getName(),inverted,store.getSchema());
+}

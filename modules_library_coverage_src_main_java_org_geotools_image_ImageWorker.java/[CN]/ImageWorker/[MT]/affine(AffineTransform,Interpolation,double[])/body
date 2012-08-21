@@ -19,7 +19,66 @@
   RenderedImage source=image;
   if (image instanceof RenderedOp) {
     RenderedOp op=(RenderedOp)image;
-    if ("Affine".equals(op.getOperationName())) {
+    Object mtProperty=op.getProperty("MathTransform");
+    Object sourceBoundsProperty=op.getProperty("SourceBoundingBox");
+    String opName=op.getOperationName();
+    if (WARP_REDUCTION_ENABLED && "Warp".equals(opName) && mtProperty instanceof MathTransform2D&& sourceBoundsProperty instanceof Rectangle) {
+      try {
+        MathTransform2D originalTransform=(MathTransform2D)mtProperty;
+        MathTransformFactory factory=ReferencingFactoryFinder.getMathTransformFactory(null);
+        MathTransform affineMT=factory.createAffineTransform(new org.geotools.referencing.operation.matrix.AffineTransform2D(tx));
+        MathTransform2D chained=(MathTransform2D)factory.createConcatenatedTransform(affineMT.inverse(),originalTransform);
+        Double tolerance=(Double)getRenderingHint(Hints.RESAMPLE_TOLERANCE);
+        if (tolerance == null) {
+          tolerance=(Double)Hints.getSystemDefault(Hints.RESAMPLE_TOLERANCE);
+        }
+        if (tolerance == null) {
+          tolerance=0.333;
+        }
+        WarpBuilder wb=new WarpBuilder(tolerance);
+        wb.setMaxPositions(4 * 1024 * 1024);
+        RenderedOp at=AffineDescriptor.create(source,tx,interpolation,bgValues,commonHints);
+        Rectangle targetBB=at.getBounds();
+        at.dispose();
+        Rectangle sourceBB=(Rectangle)sourceBoundsProperty;
+        Rectangle mappingBB;
+        if (source.getProperty("ROI") instanceof ROI) {
+          mappingBB=sourceBB.union(targetBB);
+        }
+ else {
+          mappingBB=targetBB;
+        }
+        Warp warp=wb.buildWarp(chained,mappingBB);
+        Warp sourceWarp=(Warp)op.getParameterBlock().getObjectParameter(0);
+        if (warp instanceof WarpGrid || warp instanceof WarpAffine || !(sourceWarp instanceof WarpGrid || sourceWarp instanceof WarpAffine)) {
+          PlanarImage sourceImage=op.getSourceImage(0);
+          final ParameterBlock paramBlk=new ParameterBlock().addSource(sourceImage);
+          Object property=sourceImage.getProperty("ROI");
+          if ((property == null) || property.equals(java.awt.Image.UndefinedProperty) || !(property instanceof ROI)) {
+            paramBlk.add(warp).add(interpolation).add(bgValues);
+          }
+ else {
+            paramBlk.add(warp).add(interpolation).add(bgValues).add((ROI)property);
+          }
+          Hints localHints=new Hints(commonHints);
+          localHints.remove(JAI.KEY_IMAGE_LAYOUT);
+          ImageLayout il=new ImageLayout();
+          il.setMinX(targetBB.x);
+          il.setMinY(targetBB.y);
+          il.setWidth(targetBB.width);
+          il.setHeight(targetBB.height);
+          localHints.put(JAI.KEY_IMAGE_LAYOUT,il);
+          RenderedOp result=JAI.create("Warp",paramBlk,localHints);
+          result.setProperty("MathTransform",chained);
+          image=result;
+          return this;
+        }
+      }
+ catch (      Exception e) {
+        LOGGER.log(Level.WARNING,"Failed to squash warp and affine into a single operation, chaining them instead",e);
+      }
+    }
+    if ("Affine".equals(opName)) {
       ParameterBlock paramBlock=op.getParameterBlock();
       RenderedImage sSource=paramBlock.getRenderedSource(0);
       AffineTransform sTx=(AffineTransform)paramBlock.getObjectParameter(0);
@@ -32,7 +91,7 @@
         source=sSource;
       }
     }
- else     if ("Scale".equals(op.getOperationName())) {
+ else     if ("Scale".equals(opName)) {
       ParameterBlock paramBlock=op.getParameterBlock();
       RenderedImage sSource=paramBlock.getRenderedSource(0);
       float xScale=paramBlock.getFloatParameter(0);

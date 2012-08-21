@@ -1,0 +1,28 @@
+{
+  SimpleFeatureSource transformed=transformWithRename();
+  SortBy[] sortBy=new SortBy[]{FF.sort("name",SortOrder.DESCENDING)};
+  assertTrue(transformed.getQueryCapabilities().supportsSorting(sortBy));
+  Query q=new Query("usa");
+  q.setSortBy(sortBy);
+  q.setMaxFeatures(2);
+  SimpleFeatureCollection fc=transformed.getFeatures(q);
+  assertEquals(transformed.getSchema(),fc.getSchema());
+  assertEquals(2,fc.size());
+  SimpleFeatureIterator fi=null;
+  List<String> names=new ArrayList<String>();
+  try {
+    fi=fc.features();
+    while (fi.hasNext()) {
+      SimpleFeature f=fi.next();
+      names.add((String)f.getAttribute("name"));
+    }
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+  assertEquals(2,names.size());
+  assertEquals("West Virginia",names.get(0));
+  assertEquals("Virginia",names.get(1));
+}
