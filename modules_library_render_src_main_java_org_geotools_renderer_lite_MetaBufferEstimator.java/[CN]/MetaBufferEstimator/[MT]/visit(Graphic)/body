@@ -1,24 +1,25 @@
 {
   try {
     Expression grSize=gr.getSize();
-    if (!isNull(grSize)) {
-      evaluateWidth(grSize);
+    int imageSize=-1;
+    boolean isSizeLiteral=false;
+    if (grSize instanceof Literal) {
+      isSizeLiteral=true;
+      imageSize=(int)Math.ceil(grSize.evaluate(null,Double.class));
     }
+ else     if (!(grSize == null || grSize instanceof NilExpression)) {
+      estimateAccurate=false;
+      return;
+    }
+    for (    GraphicalSymbol gs : gr.graphicalSymbols()) {
+      if (gs instanceof ExternalGraphic) {
+        ExternalGraphic eg=(ExternalGraphic)gs;
+        Icon icon=null;
+        if (eg.getInlineContent() != null) {
+          icon=eg.getInlineContent();
+        }
  else {
-      for (      GraphicalSymbol gs : gr.graphicalSymbols()) {
-        if (gs instanceof ExternalGraphic) {
-          ExternalGraphic eg=(ExternalGraphic)gs;
           String location=eg.getLocation().toExternalForm();
-          if (location == null) {
-            Icon icon=eg.getInlineContent();
-            if (icon != null) {
-              int size=Math.max(icon.getIconHeight(),icon.getIconWidth());
-              if (size > buffer) {
-                buffer=size;
-              }
-              return;
-            }
-          }
           Expression expanded=ExpressionExtractor.extractCqlExpressions(location);
           if (!(expanded instanceof Literal)) {
             estimateAccurate=false;
@@ -27,21 +28,31 @@
           Iterator<ExternalGraphicFactory> it=DynamicSymbolFactoryFinder.getExternalGraphicFactories();
           while (it.hasNext()) {
             try {
-              Icon icon=it.next().getIcon(null,expanded,eg.getFormat(),-1);
-              if (icon != null) {
-                int size=Math.max(icon.getIconHeight(),icon.getIconWidth());
-                if (size > buffer) {
-                  buffer=size;
-                }
-                return;
-              }
+              icon=it.next().getIcon(null,expanded,eg.getFormat(),imageSize);
             }
  catch (            Exception e) {
               LOGGER.log(Level.FINE,"Error occurred evaluating external graphic",e);
             }
           }
         }
- else         if (gs instanceof Mark) {
+        if (icon != null) {
+          if (icon != null) {
+            int size=Math.max(icon.getIconHeight(),icon.getIconWidth());
+            if (size > buffer) {
+              buffer=size;
+            }
+            return;
+          }
+        }
+      }
+ else       if (gs instanceof Mark) {
+        if (isSizeLiteral) {
+          if (imageSize > buffer) {
+            buffer=imageSize;
+          }
+          return;
+        }
+ else {
           estimateAccurate=false;
           return;
         }
