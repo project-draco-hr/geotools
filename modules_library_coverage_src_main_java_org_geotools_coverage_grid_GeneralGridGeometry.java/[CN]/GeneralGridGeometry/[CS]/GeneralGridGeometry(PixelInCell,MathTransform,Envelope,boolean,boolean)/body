@@ -1,2 +1,64 @@
 {
+  this.gridToCRS=PixelTranslation.translate(gridToCRS,anchor,PixelInCell.CELL_CENTER);
+  if (PixelInCell.CELL_CORNER.equals(anchor)) {
+    cornerToCRS=gridToCRS;
+  }
+ else   cornerToCRS=PixelTranslation.translate(gridToCRS,anchor,PixelInCell.CELL_CORNER);
+  if (envelope == null) {
+    this.envelope=null;
+    this.gridRange=null;
+    return;
+  }
+  this.envelope=new GeneralEnvelope(envelope);
+  if (gridToCRS == null) {
+    this.gridRange=null;
+    return;
+  }
+  final GeneralEnvelope transformed;
+  try {
+    transformed=org.geotools.referencing.CRS.transform(cornerToCRS.inverse(),envelope);
+  }
+ catch (  TransformException exception) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_TRANSFORM_$1,Classes.getClass(gridToCRS)),exception);
+  }
+  gridRange=new GeneralGridEnvelope(transformed,PixelInCell.CELL_CORNER,gridMaxInclusive);
+  if (preserveGridToCRS) {
+    GeneralEnvelope tempEnvelope;
+    try {
+      tempEnvelope=CRS.transform(getGridToCRS(),toEnvelope(gridRange));
+    }
+ catch (    Throwable e) {
+      throw new RuntimeException(e);
+    }
+    tempEnvelope.setCoordinateReferenceSystem(envelope.getCoordinateReferenceSystem());
+    this.envelope=tempEnvelope;
+  }
+ else {
+    if (gridToCRS != null) {
+      final double xScale=transformed.getSpan(0) / gridRange.getSpan(0);
+      final double yScale=transformed.getSpan(1) / gridRange.getSpan(1);
+      final double xTrans=transformed.getMinimum(0) - xScale * gridRange.getLow(0);
+      final double yTrans=transformed.getMinimum(1) - yScale * gridRange.getLow(1);
+      final AffineTransform newTr=new AffineTransform(xScale,0,0,yScale,xTrans,yTrans);
+      newTr.preConcatenate((AffineTransform)this.cornerToCRS);
+      this.cornerToCRS=ProjectiveTransform.create(newTr);
+      this.gridToCRS=PixelTranslation.translate(cornerToCRS,PixelInCell.CELL_CORNER,PixelInCell.CELL_CENTER);
+      if (assertsEnabled) {
+        try {
+          final MathTransform tr=cornerToCRS;
+          if (!(tr instanceof AffineTransform))           return;
+          final AffineTransform transform=(AffineTransform)tr;
+          final double scale=Math.min(XAffineTransform.getScaleX0(transform),XAffineTransform.getScaleY0(transform));
+          final GeneralEnvelope tempEnvelope=CRS.transform(tr,toEnvelope(gridRange));
+          tempEnvelope.setCoordinateReferenceSystem(envelope.getCoordinateReferenceSystem());
+          if (LOGGER.isLoggable(Level.FINE) && !tempEnvelope.equals(envelope,scale * 1E-3,true)) {
+            LOGGER.log(Level.FINE,"Unable to preserve the envelope for this GridGeometry, expected " + envelope + ", actual "+ tempEnvelope);
+          }
+        }
+ catch (        Throwable e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
 }

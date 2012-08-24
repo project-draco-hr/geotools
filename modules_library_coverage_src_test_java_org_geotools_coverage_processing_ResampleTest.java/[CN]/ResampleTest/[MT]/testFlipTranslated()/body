@@ -1,0 +1,24 @@
+{
+  SampleModel sm=RasterFactory.createPixelInterleavedSampleModel(DataBuffer.TYPE_BYTE,256,256,3);
+  ColorModel cm=PlanarImage.createColorModel(sm);
+  TiledImage ti=new TiledImage(-10,-10,5,5,0,0,sm,cm);
+  Graphics2D g=ti.createGraphics();
+  g.setColor(Color.GREEN);
+  g.fillRect(-10,-10,5,5);
+  g.dispose();
+  CoordinateReferenceSystem wgs84LatLon=CRS.decode("EPSG:4326");
+  final GridCoverageFactory factory=CoverageFactoryFinder.getGridCoverageFactory(null);
+  GridCoverage2D coverage=factory.create("translated",ti,new Envelope2D(wgs84LatLon,3,5,6,8));
+  int[] pixel=new int[3];
+  coverage.evaluate((DirectPosition)new DirectPosition2D(4,6),pixel);
+  assertEquals(0,pixel[0]);
+  assertEquals(255,pixel[1]);
+  assertEquals(0,pixel[2]);
+  CoordinateReferenceSystem wgs84LonLat=CRS.decode("EPSG:4326",true);
+  GridGeometry gg=new GridGeometry2D(new GridEnvelope2D(-10,-10,5,5),(Envelope)new Envelope2D(wgs84LonLat,5,3,8,6));
+  GridCoverage2D flipped=(GridCoverage2D)Operations.DEFAULT.resample(coverage,wgs84LonLat,gg,Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+  flipped.evaluate((DirectPosition)new DirectPosition2D(6,4),pixel);
+  assertEquals(0,pixel[0]);
+  assertEquals(255,pixel[1]);
+  assertEquals(0,pixel[2]);
+}
