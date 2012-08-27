@@ -1,6 +1,6 @@
 {
   final SimpleFeatureType schema=this.schema;
-  final String colName;
+  final List<String> colNames=new ArrayList<String>(2);
 {
     String fidAtt;
     if (fidReader.getFidColumn() == null) {
@@ -9,9 +9,13 @@
  else {
       fidAtt=fidReader.getFidColumn();
     }
-    colName=filters.getSqlEncoder().getColumnDefinition(fidAtt);
+    colNames.add(fidAtt);
   }
-  final SeQueryInfo qInfo=filters.getQueryInfo(new String[]{colName});
+  if (null != schema.getGeometryDescriptor()) {
+    String geomCol=schema.getGeometryDescriptor().getLocalName();
+    colNames.add(geomCol);
+  }
+  final SeQueryInfo qInfo=filters.getQueryInfo(colNames.toArray(new String[colNames.size()]));
   final SeFilter[] spatialFilters=filters.getSpatialFilters();
   final Command<Integer> countCmd=new Command<Integer>(){
     @Override public Integer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
@@ -38,7 +42,7 @@
         }
         final int defaultMaxDistinctValues=0;
         final SeTable.SeTableStats tableStats;
-        tableStats=query.calculateTableStatistics(colName,SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
+        tableStats=query.calculateTableStatistics(colNames.get(0),SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
         int actualCount=tableStats.getCount();
         return new Integer(actualCount);
       }
