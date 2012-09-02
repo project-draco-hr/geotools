@@ -1,3 +1,20 @@
 {
-  return size() == 0;
+  Query notEmptyQuery=new Query(query);
+  notEmptyQuery.setMaxFeatures(1);
+  AttributeDescriptor smallAttribute=getSmallAttributeInSchema();
+  if (smallAttribute != null) {
+    notEmptyQuery.setPropertyNames(Collections.singletonList(smallAttribute.getLocalName()));
+  }
+  try {
+    FeatureReader fr=featureSource.getReader(notEmptyQuery);
+    try {
+      return !fr.hasNext();
+    }
+  finally {
+      fr.close();
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
 }
