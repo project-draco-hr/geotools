@@ -9,6 +9,25 @@
       reader.next();
     }
     assertEquals(count,store.getCount(Query.ALL));
+    SimpleFeatureSource featureSource=store.getFeatureSource();
+    SimpleFeatureCollection features=featureSource.getFeatures();
+    assertEquals(count,features.size());
+    assertFalse(features.isEmpty());
+    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+    SimpleFeatureType schema=featureSource.getSchema();
+    String geomName=schema.getGeometryDescriptor().getName().getLocalPart();
+    Query query=new Query(schema.getTypeName());
+    query.setPropertyNames(Query.ALL_NAMES);
+    ReferencedEnvelope bounds=features.getBounds();
+    query.setFilter(ff.bbox(ff.property(geomName),bounds));
+    features=featureSource.getFeatures(query);
+    assertEquals(count,features.size());
+    assertFalse(features.isEmpty());
+    bounds=new ReferencedEnvelope(bounds.getMaxX() + 1,bounds.getMaxX() + 2,bounds.getMaxY() + 1,bounds.getMaxY() + 2,bounds.getCoordinateReferenceSystem());
+    query.setFilter(ff.bbox(ff.property(geomName),bounds));
+    features=featureSource.getFeatures(query);
+    assertEquals(0,features.size());
+    assertTrue(features.isEmpty());
   }
   finally {
     reader.close();
