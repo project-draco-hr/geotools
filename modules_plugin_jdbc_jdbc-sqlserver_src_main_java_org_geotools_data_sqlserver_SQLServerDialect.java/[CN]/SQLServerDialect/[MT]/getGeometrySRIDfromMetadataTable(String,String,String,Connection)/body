@@ -1,0 +1,22 @@
+{
+  if (geometryMetadataTable == null) {
+    return null;
+  }
+  Statement statement=null;
+  ResultSet result=null;
+  try {
+    String schema=dataStore.getDatabaseSchema();
+    String sql="SELECT SRID FROM " + geometryMetadataTable + " WHERE "+ (schema == null ? "" : "F_TABLE_SCHEMA = '" + dataStore.getDatabaseSchema() + "' AND ")+ "F_TABLE_NAME = '"+ tableName+ "' ";
+    LOGGER.log(Level.FINE,"Geometry type check; {0} ",sql);
+    statement=cx.createStatement();
+    result=statement.executeQuery(sql);
+    if (result.next()) {
+      return result.getInt(1);
+    }
+  }
+  finally {
+    dataStore.closeSafe(result);
+    dataStore.closeSafe(statement);
+  }
+  return null;
+}
