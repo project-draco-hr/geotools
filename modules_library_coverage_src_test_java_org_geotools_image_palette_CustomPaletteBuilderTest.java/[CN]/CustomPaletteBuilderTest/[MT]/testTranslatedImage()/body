@@ -1,17 +1,25 @@
 {
-  BufferedImage bi=new BufferedImage(256,256,BufferedImage.TYPE_BYTE_GRAY);
-  TiledImage image=new TiledImage(0,0,256,256,1,1,bi.getSampleModel().createCompatibleSampleModel(256,256),bi.getColorModel());
+  BufferedImage image=new BufferedImage(256,256,BufferedImage.TYPE_BYTE_GRAY);
   Graphics g=image.createGraphics();
   g.setColor(Color.WHITE);
-  g.fillRect(0,0,20,20);
-  g.setColor(new Color(20,20,20));
-  g.fillRect(20,20,20,20);
+  g.fillRect(236,236,20,20);
+  g.setColor(new Color(80,80,80));
+  g.fillRect(216,216,20,20);
   g.setColor(new Color(200,200,200));
-  g.fillRect(0,20,20,20);
+  g.fillRect(216,236,20,20);
   g.dispose();
+  image=image.getSubimage(128,128,128,128);
   CustomPaletteBuilder builder=new CustomPaletteBuilder(image,256,1,1,1);
   RenderedImage indexed=builder.buildPalette().getIndexedImage();
   assertTrue(indexed.getColorModel() instanceof IndexColorModel);
   IndexColorModel icm=(IndexColorModel)indexed.getColorModel();
   assertEquals(4,icm.getMapSize());
+  ImageWorker iw=new ImageWorker(indexed).forceComponentColorModel().intensity();
+  double[] mins=iw.getMinimums();
+  double[] maxs=iw.getMaximums();
+  boolean result=true;
+  for (int i=0; i < mins.length; i++) {
+    result=mins[i] == maxs[i] ? false : result;
+  }
+  assertTrue(result);
 }

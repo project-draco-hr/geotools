@@ -27,29 +27,40 @@
   for (int ty=minTileY; ty < maxTileY; ty++) {
     for (int tx=minTileX; tx < maxTileX; tx++) {
       final Raster r=src.getTile(tx,ty);
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("Working on tile tx:" + tx + "ty:"+ ty);
+      }
       int minx=r.getMinX();
       int miny=r.getMinY();
-      int sampleModelTx=r.getSampleModelTranslateX();
-      int sampleModelTy=r.getSampleModelTranslateY();
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("minx:" + minx + " miny:"+ miny);
+      }
       minx=minx < minx_ ? minx_ : minx;
       miny=miny < miny_ ? miny_ : miny;
       int maxx=minx + tileW;
       int maxy=miny + tileH;
-      int maxxR=maxx + sampleModelTx;
-      int maxyR=maxy + sampleModelTy;
-      maxx=maxx > maxx_ ? (maxx_ > maxxR ? maxxR : maxx_) : (maxx > maxxR ? maxxR : maxx);
-      maxy=maxy > maxy_ ? (maxy_ > maxyR ? maxyR : maxy_) : (maxy > maxyR ? maxyR : maxy);
+      maxx=maxx > maxx_ ? maxx_ : maxx;
+      maxy=maxy > maxy_ ? maxy_ : maxy;
       for (int j=miny; j < maxy; j++) {
         if ((subsampley > 1) && ((j % subsampley) != 0)) {
+          if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer("Skipping J:" + j + " due to subsy:"+ subsampley);
+          }
           continue;
         }
         for (int i=minx; i < maxx; i++) {
           if ((subsampleX > 1) && ((i % subsampleX) != 0)) {
+            if (LOGGER.isLoggable(Level.FINER)) {
+              LOGGER.finer("Skipping I:" + j + " due to subsx:"+ subsampleX);
+            }
             continue;
           }
           r.getPixel(i,j,rgba);
           if (discriminantTransparency && (rgba[transpBand] < alphaThreshold)) {
             transColor=insertNode(transColor,rgba,0);
+            if (LOGGER.isLoggable(Level.FINER)) {
+              LOGGER.finer("Transparent color!");
+            }
           }
  else {
             root=insertNode(root,rgba,0);
