@@ -1,0 +1,69 @@
+{
+  final File workDir=new File(TestData.file(this,"."),"watertemp4");
+  assertTrue(workDir.mkdir());
+  FileUtils.copyFile(TestData.file(this,"watertemp.zip"),new File(workDir,"watertemp.zip"));
+  TestData.unzipFile(this,"watertemp4/watertemp.zip");
+  final URL timeElevURL=TestData.url(this,"watertemp4");
+  FileWriter out=null;
+  try {
+    out=new FileWriter(new File(TestData.file(this,"."),"/watertemp4/datastore.properties"));
+    final Set<Object> keyset=fixture.keySet();
+    for (    Object key : keyset) {
+      final String key_=(String)key;
+      final String value=fixture.getProperty(key_);
+      out.write(key_.replace(" ","\\ ") + "=" + value.replace(" ","\\ ")+ "\n");
+    }
+    out.flush();
+  }
+  finally {
+    if (out != null) {
+      IOUtils.closeQuietly(out);
+    }
+  }
+  final AbstractGridFormat format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  ImageMosaicReader reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  final String[] metadataNames=reader.getMetadataNames();
+  assertNotNull(metadataNames);
+  assertEquals(metadataNames.length,10);
+  assertEquals("true",reader.getMetadataValue("HAS_TIME_DOMAIN"));
+  assertEquals("true",reader.getMetadataValue("HAS_ELEVATION_DOMAIN"));
+  reader.dispose();
+  final MyImageMosaicReader reader1=new MyImageMosaicReader(timeElevURL);
+  final RasterManager rm=reader1.getRasterManager();
+  final SimpleFeatureType type=rm.granuleCatalog.getType();
+  Query query=null;
+  if (type != null) {
+    query=new Query(rm.granuleCatalog.getType().getTypeName());
+    query.setMaxFeatures(1);
+    final SortBy[] clauses=new SortBy[]{new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("ingestion"),SortOrder.DESCENDING),new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("elevation"),SortOrder.ASCENDING)};
+    query.setSortBy(clauses);
+  }
+  Collection<GranuleDescriptor> features=rm.getGranules(query);
+  assertEquals(features.size(),1);
+  GranuleDescriptor granule=features.iterator().next();
+  SimpleFeature sf=granule.getOriginator();
+  assertNotNull(sf);
+  Object ingestion=sf.getAttribute("ingestion");
+  assertTrue(ingestion instanceof Timestamp);
+  final GregorianCalendar gc=new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+  gc.setTimeInMillis(1225497600000l);
+  assertEquals(0,(((Timestamp)ingestion).compareTo(gc.getTime())));
+  Object elevation=sf.getAttribute("elevation");
+  assertTrue(elevation instanceof Integer);
+  assertEquals(((Integer)elevation).intValue(),0);
+  final SortBy[] clauses=new SortBy[]{new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("ingestion"),SortOrder.ASCENDING),new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("elevation"),SortOrder.DESCENDING)};
+  query.setSortBy(clauses);
+  features=rm.getGranules(query);
+  assertEquals(features.size(),1);
+  granule=features.iterator().next();
+  sf=granule.getOriginator();
+  assertNotNull(sf);
+  ingestion=sf.getAttribute("ingestion");
+  assertTrue(ingestion instanceof Timestamp);
+  assertNotSame(0,(((Timestamp)ingestion).compareTo(gc.getTime())));
+  elevation=sf.getAttribute("elevation");
+  assertTrue(elevation instanceof Integer);
+  assertNotSame(((Integer)elevation).intValue(),0);
+}
