@@ -4,7 +4,7 @@
     return;
   }
   final SimpleFeatureType TYPE=DataUtilities.createType("Location","location:Point:srid=4326," + "name:String," + "number:Integer");
-  SimpleFeatureCollection collection=FeatureCollections.newCollection();
+  List<SimpleFeature> features=new ArrayList<SimpleFeature>();
   GeometryFactory geometryFactory=JTSFactoryFinder.getGeometryFactory();
   SimpleFeatureBuilder featureBuilder=new SimpleFeatureBuilder(TYPE);
   BufferedReader reader=new BufferedReader(new FileReader(file));
@@ -23,7 +23,7 @@
         featureBuilder.add(name);
         featureBuilder.add(number);
         SimpleFeature feature=featureBuilder.buildFeature(null);
-        collection.add(feature);
+        features.add(feature);
       }
     }
   }
@@ -43,6 +43,7 @@
   SimpleFeatureSource featureSource=newDataStore.getFeatureSource(typeName);
   if (featureSource instanceof SimpleFeatureStore) {
     SimpleFeatureStore featureStore=(SimpleFeatureStore)featureSource;
+    SimpleFeatureCollection collection=new ListFeatureCollection(TYPE,features);
     featureStore.setTransaction(transaction);
     try {
       featureStore.addFeatures(collection);
