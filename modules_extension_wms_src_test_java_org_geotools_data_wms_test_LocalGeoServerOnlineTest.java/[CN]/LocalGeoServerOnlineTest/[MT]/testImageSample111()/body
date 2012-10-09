@@ -1,0 +1,17 @@
+{
+  WebMapServer wms111=new WebMapServer(new URL(serverURL + "&VERSION=1.1.1"));
+  WMSCapabilities caps=wms111.getCapabilities();
+  assertEquals("1.1.1",caps.getVersion());
+  Layer img_sample=find("nurc:Img_Sample",caps);
+  assertNotNull("Img_Sample layer found",img_sample);
+  CRSEnvelope latLon=img_sample.getLatLonBoundingBox();
+  assertEquals("LatLonBoundingBox axis 0 name","Geodetic longitude",axisName(latLon.getCoordinateReferenceSystem(),0));
+  assertEquals("LatLonBoundingBox axis 1 name","Geodetic latitude",axisName(latLon.getCoordinateReferenceSystem(),1));
+  CRSEnvelope bounds=img_sample.getBoundingBoxes().get("EPSG:4326");
+  assertEquals("EPSG:4326 axis 0 name","Geodetic longitude",axisName(bounds.getCoordinateReferenceSystem(),0));
+  assertEquals("EPSG:4326 axis 1 name","Geodetic latitude",axisName(bounds.getCoordinateReferenceSystem(),1));
+  assertEquals("axis order 0 min",latLon.getMinimum(0),bounds.getMinimum(0));
+  assertEquals("axis order 1 min",latLon.getMinimum(1),bounds.getMinimum(1));
+  assertEquals("axis order 1 max",latLon.getMaximum(0),bounds.getMaximum(0));
+  assertEquals("axis order 1 min",latLon.getMaximum(1),bounds.getMaximum(1));
+}
