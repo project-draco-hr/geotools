@@ -2,7 +2,24 @@
 synchronized (this) {
     if (crs == null) {
       try {
-        crs=CRS.decode(srsName);
+        if (srsName != null) {
+          if (forceXY == null) {
+            crs=CRS.decode(srsName);
+          }
+ else           if (forceXY == Boolean.TRUE) {
+            crs=CRS.decode(srsName,true);
+          }
+ else           if (srsName.startsWith("EPSG:") && Boolean.getBoolean(GeoTools.FORCE_LONGITUDE_FIRST_AXIS_ORDER)) {
+            String explicit=srsName.replace("EPSG:","urn:x-ogc:def:crs:EPSG:");
+            crs=CRS.decode(explicit,false);
+          }
+ else {
+            crs=CRS.decode(srsName,false);
+          }
+        }
+ else {
+          crs=CRS.decode("CRS:84");
+        }
       }
  catch (      NoSuchAuthorityCodeException e) {
         crs=DefaultEngineeringCRS.CARTESIAN_2D;
