@@ -1,34 +1,12 @@
 {
   if (byte[].class.equals(type)) {
-    StringBuffer sb=new StringBuffer();
     byte[] input=(byte[])value;
-    for (int i=0; i < input.length; i++) {
-      byte b=input[i];
-      if (b == 0) {
-        sb.append("\\\\000");
-      }
- else       if (b == 39) {
-        sb.append("\\'");
-      }
- else       if (b == 92) {
-        sb.append("\\\\134'");
-      }
- else       if (b < 31 || b >= 127) {
-        sb.append("\\\\");
-        String octal=Integer.toOctalString(b);
-        if (octal.length() == 1) {
-          sb.append("00");
-        }
- else         if (octal.length() == 2) {
-          sb.append("0");
-        }
-        sb.append(octal);
-      }
- else {
-        sb.append((char)b);
-      }
+    if (pgsqlVersion.compareTo(PGSQL_V_9_0) >= 0) {
+      encodeByteArrayAsHex(input,sql);
     }
-    super.encodeValue(sb.toString(),String.class,sql);
+ else {
+      encodeByteArrayAsEscape(input,sql);
+    }
   }
  else {
     super.encodeValue(value,type,sql);
