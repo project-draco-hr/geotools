@@ -1,0 +1,24 @@
+{
+  nsContext.pushContext();
+  for (int i=0; i < attrs.getLength(); ++i) {
+    String attQName=attrs.getQName(i);
+    if (attQName.startsWith("xmlns")) {
+      String prefix=attQName.length() > 5 ? attQName.substring(6) : "";
+      nsContext.declarePrefix(prefix,attrs.getValue(i));
+    }
+  }
+  uri=namespace(qName);
+  Element e=doc.createElementNS(uri,qName);
+  for (int i=0; i < attrs.getLength(); ++i) {
+    String attQName=attrs.getQName(i);
+    if (attQName.startsWith("xmlns")) {
+      continue;
+    }
+    String attUri=namespace(attQName);
+    Attr a=doc.createAttributeNS(attUri,attQName);
+    a.setValue(attrs.getValue(i));
+    e.setAttributeNodeNS(a);
+  }
+  node.appendChild(e);
+  node=e;
+}

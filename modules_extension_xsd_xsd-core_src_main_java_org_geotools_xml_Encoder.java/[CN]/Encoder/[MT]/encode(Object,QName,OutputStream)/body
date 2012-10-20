@@ -3,8 +3,17 @@
     String msg="Must use 'encode(Object,QName,ContentHandler)' when inline flag is set";
     throw new IllegalStateException(msg);
   }
-  XMLSerializer xmls=new XMLSerializer(out,outputFormat);
-  xmls.setNamespaces(namespaceAware);
+  SAXTransformerFactory txFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
+  TransformerHandler xmls;
+  try {
+    xmls=txFactory.newTransformerHandler();
+  }
+ catch (  TransformerConfigurationException e) {
+    throw new IOException(e);
+  }
+  xmls.getTransformer().setOutputProperties(outputProps);
+  xmls.getTransformer().setOutputProperty(OutputKeys.METHOD,"XML");
+  xmls.setResult(new StreamResult(out));
   try {
     encode(object,name,xmls);
   }

@@ -25,15 +25,22 @@
     Name name=type.getName();
     stringBuffer.append(TEXT_7);
     XSDTypeDefinition xsdType=sg.getXSDType(type);
-    OutputFormat output=new OutputFormat();
-    output.setOmitXMLDeclaration(true);
-    output.setIndenting(true);
     StringWriter writer=new StringWriter();
-    XMLSerializer serializer=new XMLSerializer(writer,output);
+    SAXTransformerFactory txFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
+    TransformerHandler xmls;
     try {
-      serializer.serialize(xsdType.getElement());
+      xmls=txFactory.newTransformerHandler();
     }
- catch (    IOException e) {
+ catch (    TransformerConfigurationException e) {
+      throw new RuntimeException(e);
+    }
+    xmls.getTransformer().setOutputProperty(OutputKeys.METHOD,"XML");
+    xmls.getTransformer().setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"true");
+    xmls.getTransformer().setOutputProperty(OutputKeys.INDENT,"true");
+    try {
+      xmls.getTransformer().transform(new DOMSource(xsdType.getElement()),new StreamResult(writer));
+    }
+ catch (    Exception e) {
       e.printStackTrace();
       return null;
     }

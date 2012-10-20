@@ -3,16 +3,11 @@
   QueryExpressionTextType qe=(QueryExpressionTextType)object;
   if (!qe.isIsPrivate()) {
     DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
-    DocumentBuilder db=dbf.newDocumentBuilder();
-    Document d=db.parse(new ByteArrayInputStream(qe.getValue().getBytes()));
-    for (Enumeration en=namespaceContext.getPrefixes(); en.hasMoreElements(); ) {
-      String prefix=(String)en.nextElement();
-      if (prefix == null) {
-        continue;
-      }
-      String uri=namespaceContext.getURI(prefix);
-      d.getDocumentElement().setAttribute("xmlns:" + prefix,uri);
-    }
+    dbf.setNamespaceAware(true);
+    ConvertToDomHandler h=new ConvertToDomHandler(dbf.newDocumentBuilder().newDocument(),namespaceContext);
+    SAXParser saxp=SAXParserFactory.newInstance().newSAXParser();
+    saxp.parse(new ByteArrayInputStream(qe.getValue().getBytes()),h);
+    Document d=h.getDocument();
     e.appendChild(document.importNode(d.getDocumentElement(),true));
   }
   return e;
