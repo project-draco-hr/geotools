@@ -1,8 +1,18 @@
 {
   SimpleFeatureBuilder builder=this.builder != null ? this.builder : createBuilder();
   SimpleFeatureType featureType=builder.getFeatureType();
+  SimpleFeature f=builder.buildFeature(id);
   if (geometry != null) {
-    builder.set(featureType.getGeometryDescriptor().getLocalName(),geometry);
+    if (featureType.getGeometryDescriptor() == null) {
+      SimpleFeatureTypeBuilder typeBuilder=new SimpleFeatureTypeBuilder();
+      typeBuilder.init(featureType);
+      addGeometryType(typeBuilder,geometry);
+      featureType=typeBuilder.buildFeatureType();
+      SimpleFeatureBuilder newBuilder=new SimpleFeatureBuilder(featureType);
+      newBuilder.init(f);
+      f=newBuilder.buildFeature(id);
+    }
+    f.setAttribute(featureType.getGeometryDescriptor().getLocalName(),geometry);
   }
-  return builder.buildFeature(id);
+  return f;
 }
