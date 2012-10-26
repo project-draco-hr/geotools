@@ -1,0 +1,21 @@
+{
+  ArrayList<LiteFeatureTypeStyle> lfts=new ArrayList<LiteFeatureTypeStyle>();
+  for (  FeatureTypeStyle fts : featureTypeStyles) {
+    List<Rule> ruleList=new ArrayList<Rule>(Arrays.asList(rules));
+    List<Rule> elseRuleList=new ArrayList<Rule>();
+    LiteFeatureTypeStyle s=new LiteFeatureTypeStyle(null,ruleList,elseRuleList,fts.getTransformation());
+    lfts.add(s);
+  }
+  Map hints=new HashMap();
+  hints.put("dpi",new Double(dpi));
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.scaleDenominator=1;
+  renderer.setRendererHints(hints);
+  renderer.applyUnitRescale(lfts);
+  for (  LiteFeatureTypeStyle s : lfts) {
+    Rule r=s.ruleList[0];
+    LineSymbolizer rescaledLineSymbolizer=(LineSymbolizer)r.getSymbolizers()[0];
+    return rescaledLineSymbolizer.getStroke().getWidth().evaluate(null,Double.class);
+  }
+  return -1;
+}
