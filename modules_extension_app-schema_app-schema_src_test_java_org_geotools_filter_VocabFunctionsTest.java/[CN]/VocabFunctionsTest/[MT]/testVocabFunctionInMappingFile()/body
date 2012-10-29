@@ -7,13 +7,17 @@
     }
   }
 ;
-  Iterator<Feature> features=exCollection.iterator();
-  while (features.hasNext()) {
-    Feature feature=features.next();
-    String fId=feature.getIdentifier().getID();
-    ComplexAttribute complexAttribute=(ComplexAttribute)ff.property("gml:name[2]").evaluate(feature);
-    String value=Converters.convert(GML3EncodingUtils.getSimpleContent(complexAttribute),String.class);
-    assertEquals(VALUE_MAP.get(fId),value);
+  FeatureIterator<Feature> features=exCollection.features();
+  try {
+    while (features.hasNext()) {
+      Feature feature=features.next();
+      String fId=feature.getIdentifier().getID();
+      ComplexAttribute complexAttribute=(ComplexAttribute)ff.property("gml:name[2]").evaluate(feature);
+      String value=Converters.convert(GML3EncodingUtils.getSimpleContent(complexAttribute),String.class);
+      assertEquals(VALUE_MAP.get(fId),value);
+    }
   }
-  exCollection.close(features);
+  finally {
+    features.close();
+  }
 }

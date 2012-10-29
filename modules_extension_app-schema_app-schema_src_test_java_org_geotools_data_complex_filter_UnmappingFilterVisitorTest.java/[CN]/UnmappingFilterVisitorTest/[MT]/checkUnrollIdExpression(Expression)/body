@@ -16,10 +16,15 @@
   }
   featureMapping.setIdentifierExpression(idExpression);
   this.visitor=new UnmappingFilterVisitor(this.mapping);
-  FeatureCollection<SimpleFeatureType,SimpleFeature> content=mapping.getSource().getFeatures();
-  Iterator iterator=content.iterator();
-  Feature sourceFeature=(Feature)iterator.next();
-  content.close(iterator);
+  FeatureCollection<?,?> content=mapping.getSource().getFeatures();
+  FeatureIterator<?> iterator=content.features();
+  Feature sourceFeature=null;
+  try {
+    sourceFeature=iterator.next();
+  }
+  finally {
+    iterator.close();
+  }
   String fid=sourceFeature.getIdentifier().toString();
   Id fidFilter=ff.id(Collections.singleton(ff.featureId(fid)));
   Filter unrolled=(Filter)fidFilter.accept(visitor,null);
@@ -27,8 +32,8 @@
   assertTrue(unrolled instanceof Id);
   FeatureCollection<SimpleFeatureType,SimpleFeature> results=mapping.getSource().getFeatures(unrolled);
   assertEquals(1,getCount(results));
-  iterator=results.iterator();
+  iterator=results.features();
   SimpleFeature unmappedFeature=(SimpleFeature)iterator.next();
-  results.close(iterator);
+  iterator.close();
   assertEquals(fid,unmappedFeature.getID());
 }
