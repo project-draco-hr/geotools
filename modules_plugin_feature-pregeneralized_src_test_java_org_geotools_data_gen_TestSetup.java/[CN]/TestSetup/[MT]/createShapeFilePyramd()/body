@@ -19,12 +19,17 @@
   ds.createSchema(fs.getSchema());
   ds.forceSchemaCRS(fs.getSchema().getCoordinateReferenceSystem());
   FeatureWriter<SimpleFeatureType,SimpleFeature> writer=ds.getFeatureWriter(ds.getTypeNames()[0],Transaction.AUTO_COMMIT);
-  Iterator<SimpleFeature> it=fs.getFeatures().iterator();
-  while (it.hasNext()) {
-    SimpleFeature f=it.next();
-    SimpleFeature fNew=writer.next();
-    fNew.setAttributes(f.getAttributes());
-    writer.write();
+  SimpleFeatureIterator it=fs.getFeatures().features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      SimpleFeature fNew=writer.next();
+      fNew.setAttributes(f.getAttributes());
+      writer.write();
+    }
+  }
+  finally {
+    it.close();
   }
   writer.close();
   ds.dispose();
