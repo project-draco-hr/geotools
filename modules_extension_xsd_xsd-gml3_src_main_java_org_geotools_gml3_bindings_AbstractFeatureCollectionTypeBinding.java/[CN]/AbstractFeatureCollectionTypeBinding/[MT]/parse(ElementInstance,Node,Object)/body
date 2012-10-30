@@ -1,14 +1,25 @@
 {
   SimpleFeatureCollection featureCollection=(SimpleFeatureCollection)node.getChildValue(FeatureCollection.class);
   if (featureCollection == null) {
-    featureCollection=DefaultFeatureCollections.newCollection();
+    featureCollection=new DefaultFeatureCollection();
   }
-  featureCollection.addAll(node.getChildValues(SimpleFeature.class));
+  List childValues=node.getChildValues(SimpleFeature.class);
+  if (featureCollection instanceof Collection) {
+    ((Collection)featureCollection).addAll(childValues);
+  }
+ else {
+    throw new IllegalStateException("DefaultFeatureCollection or ListFeatureCollection required");
+  }
   SimpleFeature[] featureMembers=(SimpleFeature[])node.getChildValue(SimpleFeature[].class);
-  if (featureMembers != null) {
-    for (int i=0; i < featureMembers.length; i++) {
-      featureCollection.add(featureMembers[i]);
+  if (featureCollection instanceof Collection) {
+    if (featureMembers != null) {
+      for (int i=0; i < featureMembers.length; i++) {
+        ((Collection)featureCollection).add(featureMembers[i]);
+      }
     }
+  }
+ else {
+    throw new IllegalStateException("DefaultFeatureCollection or ListFeatureCollection required");
   }
   return featureCollection;
 }
