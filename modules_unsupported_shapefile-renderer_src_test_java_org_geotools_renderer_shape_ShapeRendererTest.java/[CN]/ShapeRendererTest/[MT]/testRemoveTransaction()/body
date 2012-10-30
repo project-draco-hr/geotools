@@ -8,9 +8,15 @@
   store.setTransaction(t);
   SimpleFeatureCollection collection=store.getFeatures();
   SimpleFeatureIterator iter=collection.features();
-  FeatureId id=TestUtilites.filterFactory.featureId(iter.next().getID());
+  String fid=null;
+  try {
+    fid=iter.next().getID();
+  }
+  finally {
+    iter.close();
+  }
+  FeatureId id=TestUtilites.filterFactory.featureId(fid);
   Id createFidFilter=TestUtilites.filterFactory.id(Collections.singleton(id));
-  collection.close(iter);
   store.removeFeatures(createFidFilter);
   MapContext context=new DefaultMapContext();
   context.addLayer(store,st);
@@ -26,9 +32,13 @@
   t.commit();
   collection=store.getFeatures();
   iter=collection.features();
-  final SimpleFeature feature=iter.next();
-  collection.close(iter);
-  SimpleFeatureType type=store.getSchema();
+  try {
+    @SuppressWarnings("unused") SimpleFeature first=iter.next();
+  }
+  finally {
+    iter.close();
+  }
+  @SuppressWarnings("unused") SimpleFeatureType type=store.getSchema();
   store.addFeatures(DataUtilities.collection(new SimpleFeature[]{sf}));
   t.commit();
   System.out.println("Count: " + ds.getFeatureSource().getCount(Query.ALL));

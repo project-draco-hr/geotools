@@ -5,14 +5,18 @@
   SimpleFeatureCollection features=featureSource.getFeatures();
   Set<FeatureId> selectedFids=new HashSet<FeatureId>();
 {
-    Iterator<SimpleFeature> fIt=features.iterator();
-    int count=0;
-    while (fIt.hasNext()) {
-      SimpleFeature sf=fIt.next();
-      if (count++ % 3 != 0)       continue;
-      selectedFids.add(sf.getIdentifier());
+    SimpleFeatureIterator fIt=features.features();
+    try {
+      int count=0;
+      while (fIt.hasNext()) {
+        SimpleFeature sf=fIt.next();
+        if (count++ % 3 != 0)         continue;
+        selectedFids.add(sf.getIdentifier());
+      }
     }
-    features.close(fIt);
+  finally {
+      fIt.close();
+    }
   }
   assertEquals(84,selectedFids.size());
   Id filter=CommonFactoryFinder.getFilterFactory2(null).id(selectedFids);
