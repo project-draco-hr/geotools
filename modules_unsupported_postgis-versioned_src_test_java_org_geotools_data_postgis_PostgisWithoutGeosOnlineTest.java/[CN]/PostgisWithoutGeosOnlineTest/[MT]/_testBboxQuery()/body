@@ -2,10 +2,16 @@
   List bbox=new ArrayList();
   List fids=new ArrayList();
   SimpleFeatureCollection fc=data.getFeatureSource("road").getFeatures();
-  for (Iterator itr=fc.iterator(); itr.hasNext(); ) {
-    SimpleFeature f=(SimpleFeature)itr.next();
-    bbox.add(((Geometry)f.getDefaultGeometry()).getEnvelopeInternal());
-    fids.add(f.getID());
+  SimpleFeatureIterator itr=fc.features();
+  try {
+    while (itr.hasNext()) {
+      SimpleFeature f=(SimpleFeature)itr.next();
+      bbox.add(((Geometry)f.getDefaultGeometry()).getEnvelopeInternal());
+      fids.add(f.getID());
+    }
+  }
+  finally {
+    itr.close();
   }
   SimpleFeatureType type=data.getSchema("road");
   FilterFactory ff=FilterFactoryFinder.createFilterFactory();
