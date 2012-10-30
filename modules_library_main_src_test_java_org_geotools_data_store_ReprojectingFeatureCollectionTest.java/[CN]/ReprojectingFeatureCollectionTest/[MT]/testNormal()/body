@@ -1,26 +1,32 @@
 {
-  Iterator reproject=new ReprojectingFeatureCollection(delegate,target).iterator();
-  Iterator reader=delegate.iterator();
-  while (reader.hasNext()) {
-    SimpleFeature normal=(SimpleFeature)reader.next();
-    SimpleFeature reprojected=(SimpleFeature)reproject.next();
-    Point p1=(Point)normal.getAttribute("defaultGeom");
-    Point p2=(Point)reprojected.getAttribute("defaultGeom");
-    if (p1 != null) {
-      p1=(Point)transformer.transform(p1);
-      assertTrue(p1.equalsExact(p2));
-    }
+  SimpleFeatureIterator reproject=new ReprojectingFeatureCollection(delegate,target).features();
+  SimpleFeatureIterator reader=delegate.features();
+  try {
+    while (reader.hasNext()) {
+      SimpleFeature normal=(SimpleFeature)reader.next();
+      SimpleFeature reprojected=(SimpleFeature)reproject.next();
+      Point p1=(Point)normal.getAttribute("defaultGeom");
+      Point p2=(Point)reprojected.getAttribute("defaultGeom");
+      if (p1 != null) {
+        p1=(Point)transformer.transform(p1);
+        assertTrue(p1.equalsExact(p2));
+      }
  else {
-      assertNull(p2);
-    }
-    LineString l1=(LineString)normal.getAttribute("otherGeom");
-    LineString l2=(LineString)reprojected.getAttribute("otherGeom");
-    if (l1 != null) {
-      l1=(LineString)transformer.transform(l1);
-      assertTrue(l1.equalsExact(l2));
-    }
+        assertNull(p2);
+      }
+      LineString l1=(LineString)normal.getAttribute("otherGeom");
+      LineString l2=(LineString)reprojected.getAttribute("otherGeom");
+      if (l1 != null) {
+        l1=(LineString)transformer.transform(l1);
+        assertTrue(l1.equalsExact(l2));
+      }
  else {
-      assertNull(l2);
+        assertNull(l2);
+      }
     }
+  }
+  finally {
+    reproject.close();
+    reader.close();
   }
 }

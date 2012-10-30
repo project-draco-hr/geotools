@@ -9,14 +9,16 @@
       changed|=added;
       if (added)       featuresAdded.add(f);
     }
-    if (changed) {
-      fireChange(featuresAdded,CollectionEvent.FEATURES_ADDED);
-    }
     return changed;
   }
   finally {
-    if (collection instanceof FeatureCollection) {
-      ((SimpleFeatureCollection)collection).close(iterator);
+    if (iterator instanceof Closeable) {
+      try {
+        ((Closeable)iterator).close();
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 }

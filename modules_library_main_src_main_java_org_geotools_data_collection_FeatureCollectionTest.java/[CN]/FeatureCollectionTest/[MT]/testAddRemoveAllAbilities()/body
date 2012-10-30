@@ -1,28 +1,31 @@
 {
   Collection half=randomPiece(features);
   Collection otherHalf=DataUtilities.list(features);
-  otherHalf.removeAll(half);
-  features.removeAll(half);
-  assertTrue(features.containsAll(otherHalf));
-  assertTrue(!features.containsAll(half));
-  features.removeAll(otherHalf);
-  assertTrue(features.size() == 0);
-  features.addAll(half);
-  assertTrue(features.containsAll(half));
-  features.addAll(otherHalf);
-  assertTrue(features.containsAll(otherHalf));
-  features.retainAll(otherHalf);
-  assertTrue(features.containsAll(otherHalf));
-  assertTrue(!features.containsAll(half));
-  features.addAll(otherHalf);
-  Iterator i=features.iterator();
-  while (i.hasNext()) {
-    i.next();
-    i.remove();
+  if (features instanceof Collection) {
+    Collection<SimpleFeature> collection=(Collection<SimpleFeature>)features;
+    otherHalf.removeAll(half);
+    collection.removeAll(half);
+    assertTrue(features.containsAll(otherHalf));
+    assertTrue(!features.containsAll(half));
+    collection.removeAll(otherHalf);
+    assertTrue(features.size() == 0);
+    collection.addAll(half);
+    assertTrue(features.containsAll(half));
+    collection.addAll(otherHalf);
+    assertTrue(features.containsAll(otherHalf));
+    collection.retainAll(otherHalf);
+    assertTrue(features.containsAll(otherHalf));
+    assertTrue(!features.containsAll(half));
+    collection.addAll(otherHalf);
+    Iterator<SimpleFeature> i=collection.iterator();
+    while (i.hasNext()) {
+      i.next();
+      i.remove();
+    }
+    assertEquals(features.size(),0);
+    SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+    tb.setName("XXX");
+    SimpleFeatureBuilder b=new SimpleFeatureBuilder(tb.buildFeatureType());
+    assertTrue(!collection.remove(b.buildFeature(null)));
   }
-  assertEquals(features.size(),0);
-  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
-  tb.setName("XXX");
-  SimpleFeatureBuilder b=new SimpleFeatureBuilder(tb.buildFeatureType());
-  assertTrue(!features.remove(b.buildFeature(null)));
 }
