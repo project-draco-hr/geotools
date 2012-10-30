@@ -6,19 +6,23 @@
   b.set(aname("geometry"),new GeometryFactory().createPoint(new Coordinate(3,3)));
   SimpleFeature feature=b.buildFeature(null);
   assertEquals(3,collection.size());
-  collection.add(feature);
+  source.addFeatures(DataUtilities.collection(feature));
   assertEquals(4,collection.size());
-  Iterator i=collection.iterator();
-  boolean found=false;
-  while (i.hasNext()) {
-    SimpleFeature f=(SimpleFeature)i.next();
-    if ("three".equals(f.getAttribute(aname("stringProperty")))) {
-      assertEquals(feature.getAttribute(aname("doubleProperty")),f.getAttribute(aname("doubleProperty")));
-      assertEquals(feature.getAttribute(aname("stringProperty")),f.getAttribute(aname("stringProperty")));
-      assertEquals(feature.getAttribute(aname("geometry")),f.getAttribute(aname("geometry")));
-      found=true;
+  SimpleFeatureIterator i=collection.features();
+  try {
+    boolean found=false;
+    while (i.hasNext()) {
+      SimpleFeature f=(SimpleFeature)i.next();
+      if ("three".equals(f.getAttribute(aname("stringProperty")))) {
+        assertEquals(feature.getAttribute(aname("doubleProperty")),f.getAttribute(aname("doubleProperty")));
+        assertEquals(feature.getAttribute(aname("stringProperty")),f.getAttribute(aname("stringProperty")));
+        assertEquals(feature.getAttribute(aname("geometry")),f.getAttribute(aname("geometry")));
+        found=true;
+      }
     }
+    assertTrue(found);
   }
-  assertTrue(found);
-  collection.close(i);
+  finally {
+    i.close();
+  }
 }

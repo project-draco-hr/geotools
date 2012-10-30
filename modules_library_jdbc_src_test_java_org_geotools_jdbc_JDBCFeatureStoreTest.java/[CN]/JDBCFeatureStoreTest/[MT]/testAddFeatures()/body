@@ -8,7 +8,7 @@
     collection.add(b.buildFeature(null));
   }
   featureStore.addFeatureListener(watcher);
-  List<FeatureId> fids=featureStore.addFeatures(collection);
+  List<FeatureId> fids=featureStore.addFeatures((SimpleFeatureCollection)collection);
   assertEquals(watcher.bounds,collection.getBounds());
   assertEquals(3,fids.size());
   SimpleFeatureCollection features=featureStore.getFeatures();
@@ -20,11 +20,15 @@
     Id filter=ff.id(Collections.singleton(identifier));
     features=featureStore.getFeatures(filter);
     assertEquals(1,features.size());
-    Iterator iterator=features.iterator();
-    assertTrue(iterator.hasNext());
-    SimpleFeature feature=(SimpleFeature)iterator.next();
-    assertEquals(fid,feature.getID());
-    assertFalse(iterator.hasNext());
-    features.close(iterator);
+    SimpleFeatureIterator iterator=features.features();
+    try {
+      assertTrue(iterator.hasNext());
+      SimpleFeature feature=(SimpleFeature)iterator.next();
+      assertEquals(fid,feature.getID());
+      assertFalse(iterator.hasNext());
+    }
+  finally {
+      iterator.close();
+    }
   }
 }

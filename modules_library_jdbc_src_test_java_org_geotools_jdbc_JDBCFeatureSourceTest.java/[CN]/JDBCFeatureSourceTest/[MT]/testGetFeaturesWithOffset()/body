@@ -1,15 +1,19 @@
 {
-  DefaultQuery q=new DefaultQuery(featureSource.getSchema().getTypeName());
+  Query q=new Query(featureSource.getSchema().getTypeName());
   q.setSortBy(new SortBy[]{dataStore.getFilterFactory().sort(aname("intProperty"),SortOrder.ASCENDING)});
   q.setStartIndex(2);
   SimpleFeatureCollection features=featureSource.getFeatures(q);
   assertEquals(1,features.size());
-  Iterator<SimpleFeature> it=features.iterator();
-  assertTrue(it.hasNext());
-  SimpleFeature f=it.next();
-  ReferencedEnvelope fe=ReferencedEnvelope.reference(f.getBounds());
-  assertEquals(2,((Number)f.getAttribute(aname("intProperty"))).intValue());
-  assertFalse(it.hasNext());
-  features.close(it);
-  assertTrue(areReferencedEnvelopesEuqal(fe,features.getBounds()));
+  SimpleFeatureIterator it=features.features();
+  try {
+    assertTrue(it.hasNext());
+    SimpleFeature f=it.next();
+    ReferencedEnvelope fe=ReferencedEnvelope.reference(f.getBounds());
+    assertEquals(2,((Number)f.getAttribute(aname("intProperty"))).intValue());
+    assertFalse(it.hasNext());
+    assertTrue(areReferencedEnvelopesEuqal(fe,features.getBounds()));
+  }
+  finally {
+    it.close();
+  }
 }

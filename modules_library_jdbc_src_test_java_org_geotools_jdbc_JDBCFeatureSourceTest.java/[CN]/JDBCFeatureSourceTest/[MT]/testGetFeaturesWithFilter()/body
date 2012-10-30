@@ -3,10 +3,14 @@
   PropertyIsEqualTo filter=ff.equals(ff.property(aname("stringProperty")),ff.literal("one"));
   SimpleFeatureCollection features=featureSource.getFeatures(filter);
   assertEquals(1,features.size());
-  Iterator<SimpleFeature> iterator=features.iterator();
-  assertTrue(iterator.hasNext());
-  SimpleFeature feature=(SimpleFeature)iterator.next();
-  assertEquals("one",feature.getAttribute(aname("stringProperty")));
-  assertEquals(new Double(1.1),feature.getAttribute(aname("doubleProperty")));
-  features.close(iterator);
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    assertTrue(iterator.hasNext());
+    SimpleFeature feature=(SimpleFeature)iterator.next();
+    assertEquals("one",feature.getAttribute(aname("stringProperty")));
+    assertEquals(new Double(1.1),feature.getAttribute(aname("doubleProperty")));
+  }
+  finally {
+    iterator.close();
+  }
 }

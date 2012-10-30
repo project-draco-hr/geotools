@@ -4,8 +4,14 @@
   SimpleFeatureCollection fColl=fs.getFeatures();
   SimpleFeatureIterator iterator=fColl.features();
   Geometry original=null;
-  if (iterator.hasNext())   original=(Geometry)iterator.next().getDefaultGeometry();
-  fColl.close(iterator);
+  try {
+    if (iterator.hasNext()) {
+      original=(Geometry)iterator.next().getDefaultGeometry();
+    }
+  }
+  finally {
+    iterator.close();
+  }
   double width=original.getEnvelope().getEnvelopeInternal().getWidth();
   DefaultQuery query=new DefaultQuery();
   Hints hints=new Hints(Hints.GEOMETRY_GENERALIZATION,width / 2);
@@ -13,7 +19,13 @@
   Geometry generalized=null;
   fColl=fs.getFeatures(query);
   iterator=fColl.features();
-  if (iterator.hasNext())   generalized=(Geometry)iterator.next().getDefaultGeometry();
-  fColl.close(iterator);
+  try {
+    if (iterator.hasNext()) {
+      generalized=(Geometry)iterator.next().getDefaultGeometry();
+    }
+  }
+  finally {
+    iterator.close();
+  }
   assertTrue(original.getNumPoints() >= generalized.getNumPoints());
 }

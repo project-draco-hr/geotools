@@ -1,17 +1,21 @@
 {
-  DefaultQuery q=new DefaultQuery(featureSource.getSchema().getTypeName());
+  Query q=new Query(featureSource.getSchema().getTypeName());
   q.setMaxFeatures(2);
   SimpleFeatureCollection features=featureSource.getFeatures(q);
   assertEquals(2,features.size());
-  Iterator<SimpleFeature> it=features.iterator();
-  int count=0;
-  ReferencedEnvelope env=new ReferencedEnvelope(features.getSchema().getCoordinateReferenceSystem());
-  while (it.hasNext()) {
-    SimpleFeature f=it.next();
-    env.expandToInclude(ReferencedEnvelope.reference(f.getBounds()));
-    count++;
+  SimpleFeatureIterator it=features.features();
+  try {
+    int count=0;
+    ReferencedEnvelope env=new ReferencedEnvelope(features.getSchema().getCoordinateReferenceSystem());
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      env.expandToInclude(ReferencedEnvelope.reference(f.getBounds()));
+      count++;
+    }
+    assertEquals(2,count);
+    assertTrue(areReferencedEnvelopesEuqal(env,features.getBounds()));
   }
-  assertEquals(2,count);
-  features.close(it);
-  assertTrue(areReferencedEnvelopesEuqal(env,features.getBounds()));
+  finally {
+    it.close();
+  }
 }

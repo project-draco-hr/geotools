@@ -2,11 +2,15 @@
   SimpleFeatureType t=featureStore.getSchema();
   featureStore.modifyFeatures(t.getDescriptor(aname("stringProperty")),"foo",Filter.INCLUDE);
   SimpleFeatureCollection features=featureStore.getFeatures();
-  Iterator i=features.iterator();
-  assertTrue(i.hasNext());
-  while (i.hasNext()) {
-    SimpleFeature feature=(SimpleFeature)i.next();
-    assertEquals("foo",feature.getAttribute(aname("stringProperty")));
+  SimpleFeatureIterator i=features.features();
+  try {
+    assertTrue(i.hasNext());
+    while (i.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)i.next();
+      assertEquals("foo",feature.getAttribute(aname("stringProperty")));
+    }
   }
-  features.close(i);
+  finally {
+    i.close();
+  }
 }

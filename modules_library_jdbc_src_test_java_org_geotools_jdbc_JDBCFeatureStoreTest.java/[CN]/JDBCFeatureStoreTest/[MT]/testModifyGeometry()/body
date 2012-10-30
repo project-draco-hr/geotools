@@ -4,11 +4,15 @@
   Point point=gf.createPoint(new Coordinate(-10,0));
   featureStore.modifyFeatures(new AttributeDescriptor[]{t.getDescriptor(aname("geometry"))},new Object[]{point},Filter.INCLUDE);
   SimpleFeatureCollection features=featureStore.getFeatures();
-  Iterator i=features.iterator();
-  assertTrue(i.hasNext());
-  while (i.hasNext()) {
-    SimpleFeature feature=(SimpleFeature)i.next();
-    assertTrue(point.equalsExact((Geometry)feature.getAttribute(aname("geometry"))));
+  SimpleFeatureIterator i=features.features();
+  try {
+    assertTrue(i.hasNext());
+    while (i.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)i.next();
+      assertTrue(point.equalsExact((Geometry)feature.getAttribute(aname("geometry"))));
+    }
   }
-  features.close(i);
+  finally {
+    i.close();
+  }
 }
