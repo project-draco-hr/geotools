@@ -1,13 +1,12 @@
 {
-  if (progress == null) {
-    progress=new NullProgressListener();
-  }
-  SimpleFeatureIterator iterator=features();
+  SimpleFeatureIterator iterator=null;
+  if (progress == null)   progress=new NullProgressListener();
   try {
     float size=size();
     float position=0;
     progress.started();
-    while (!progress.isCanceled() && iterator.hasNext()) {
+    for (iterator=features(); !progress.isCanceled() && iterator.hasNext(); ) {
+      if (size > 0)       progress.progress(position++ / size);
       try {
         SimpleFeature feature=(SimpleFeature)iterator.next();
         visitor.visit(feature);
@@ -15,7 +14,6 @@
  catch (      Exception erp) {
         progress.exceptionOccurred(erp);
       }
-      progress.progress(position++ / size);
     }
   }
   finally {
