@@ -3,6 +3,7 @@
   ftBuilder.setName(node.getComponent().getName());
   ftBuilder.setNamespaceURI(node.getComponent().getNamespace());
   ftBuilder.setCRS(null);
+  CoordinateReferenceSystem crs=null;
   if (!node.hasChild("description")) {
     ftBuilder.add("description",String.class);
   }
@@ -12,10 +13,18 @@
   if (!node.hasChild("boundedBy")) {
     ftBuilder.add("boundedBy",ReferencedEnvelope.class);
   }
+ else {
+    if (node.getChild("boundedBy").hasChild("Box")) {
+      crs=crs(node.getChild("boundedBy").getChild("Box"));
+    }
+  }
   for (Iterator c=node.getChildren().iterator(); c.hasNext(); ) {
     Node child=(Node)c.next();
     String name=child.getComponent().getName();
     Object valu=child.getValue();
+    if (Geometry.class.isAssignableFrom(valu.getClass()) && crs != null) {
+      ftBuilder.crs(crs);
+    }
     ftBuilder.add(name,(valu != null) ? valu.getClass() : Object.class);
   }
   return ftBuilder.buildFeatureType();
