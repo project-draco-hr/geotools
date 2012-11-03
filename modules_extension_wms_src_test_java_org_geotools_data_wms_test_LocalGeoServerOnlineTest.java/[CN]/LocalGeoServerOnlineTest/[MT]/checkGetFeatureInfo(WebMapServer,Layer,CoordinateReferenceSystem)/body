@@ -1,0 +1,38 @@
+{
+  layer.clearCache();
+  CRSEnvelope latLon=layer.getLatLonBoundingBox();
+  GeneralEnvelope envelope=wms.getEnvelope(layer,crs);
+  assertFalse(envelope.isEmpty() || envelope.isNull() || envelope.isInfinite());
+  assertNotNull("Envelope " + CRS.toSRS(crs),envelope);
+  GetMapRequest getMap=wms.createGetMapRequest();
+  OperationType operationType=wms.getCapabilities().getRequest().getGetMap();
+  getMap.addLayer(layer);
+  String version=wms.getCapabilities().getVersion();
+  String srs=CRS.toSRS(envelope.getCoordinateReferenceSystem());
+  getMap.setBBox(envelope);
+  String format=format(operationType,"jpeg");
+  getMap.setFormat(format);
+  getMap.setDimensions(500,500);
+  URL url=getMap.getFinalURL();
+  GetFeatureInfoRequest getFeatureInfo=wms.createGetFeatureInfoRequest(getMap);
+  getFeatureInfo.setInfoFormat("text/html");
+  getFeatureInfo.setQueryLayers(Collections.singleton(layer));
+  getFeatureInfo.setQueryPoint(75,100);
+  URL url2=getFeatureInfo.getFinalURL();
+  GetFeatureInfoResponse response=wms.issueRequest(getFeatureInfo);
+  assertEquals("text/html",response.getContentType());
+  InputStream stream=response.getInputStream();
+  StringBuilderWriter writer=new StringBuilderWriter();
+  IOUtils.copy(stream,writer);
+  String info=writer.toString();
+  assertTrue("response available",!info.isEmpty());
+  assertTrue("html",info.contains("<html") || info.contains("<HTML"));
+  boolean forceXY=Boolean.getBoolean(GeoTools.FORCE_LONGITUDE_FIRST_AXIS_ORDER);
+  String context="srs=" + srs + " forceXY="+ forceXY+ " Version="+ version;
+  if (!info.contains("tasmania_water_bodies.3")) {
+    System.out.println("FAIL: " + context + ": GetFeatureInfo BBOX="+ envelope);
+    System.out.println("GETMAP         --> " + url);
+    System.out.println("GETFEATUREINFO --> " + url2);
+    fail(context + ": GetFeatureInfo BBOX=" + envelope);
+  }
+}
