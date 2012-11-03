@@ -3,23 +3,14 @@
   if (featureCollection == null) {
     featureCollection=new DefaultFeatureCollection();
   }
-  List childValues=node.getChildValues(SimpleFeature.class);
-  if (featureCollection instanceof Collection) {
-    ((Collection)featureCollection).addAll(childValues);
-  }
- else {
-    throw new IllegalStateException("DefaultFeatureCollection or ListFeatureCollection required");
-  }
+  List<SimpleFeature> childValues=node.getChildValues(SimpleFeature.class);
+  Collection<SimpleFeature> collection=DataUtilities.collectionCast(featureCollection);
+  collection.addAll(childValues);
   SimpleFeature[] featureMembers=(SimpleFeature[])node.getChildValue(SimpleFeature[].class);
-  if (featureCollection instanceof Collection) {
-    if (featureMembers != null) {
-      for (int i=0; i < featureMembers.length; i++) {
-        ((Collection)featureCollection).add(featureMembers[i]);
-      }
+  if (featureMembers != null) {
+    for (int i=0; i < featureMembers.length; i++) {
+      collection.add(featureMembers[i]);
     }
-  }
- else {
-    throw new IllegalStateException("DefaultFeatureCollection or ListFeatureCollection required");
   }
   return featureCollection;
 }
