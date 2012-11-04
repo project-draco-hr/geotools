@@ -1,0 +1,54 @@
+{
+  final LiteFeatureTypeStyle[] fts_array=lfts.toArray(new LiteFeatureTypeStyle[lfts.size()]);
+  for (  LiteFeatureTypeStyle liteFeatureTypeStyle : fts_array) {
+    Iterator<?> iterator=null;
+    if (collection != null) {
+      iterator=collection.iterator();
+      if (iterator == null) {
+        return;
+      }
+      try {
+        boolean clone=isCloningRequired(currLayer,fts_array);
+        RenderableFeature rf=new RenderableFeature(currLayer,clone);
+        while (iterator.hasNext() && !renderingStopRequested) {
+          try {
+            rf.setFeature(iterator.next());
+            process(rf,liteFeatureTypeStyle,scaleRange,at,destinationCrs,layerId);
+          }
+ catch (          Throwable tr) {
+            fireErrorEvent(tr);
+          }
+        }
+      }
+  finally {
+        DataUtilities.close(iterator);
+      }
+    }
+ else     if (features != null) {
+      FeatureIterator<?> featureIterator=((FeatureCollection<?,?>)features).features();
+      if (featureIterator == null) {
+        return;
+      }
+      iterator=DataUtilities.iterator(featureIterator);
+    }
+ else {
+      return;
+    }
+    try {
+      boolean clone=isCloningRequired(currLayer,fts_array);
+      RenderableFeature rf=new RenderableFeature(currLayer,clone);
+      while (iterator.hasNext() && !renderingStopRequested) {
+        try {
+          rf.setFeature(iterator.next());
+          process(rf,liteFeatureTypeStyle,scaleRange,at,destinationCrs,layerId);
+        }
+ catch (        Throwable tr) {
+          fireErrorEvent(tr);
+        }
+      }
+    }
+  finally {
+      DataUtilities.close(iterator);
+    }
+  }
+}

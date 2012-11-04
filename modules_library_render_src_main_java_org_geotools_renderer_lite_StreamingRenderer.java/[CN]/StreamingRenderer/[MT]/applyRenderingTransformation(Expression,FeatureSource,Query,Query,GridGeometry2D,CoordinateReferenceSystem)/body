@@ -12,7 +12,8 @@
         RenderingTransformation tx=(RenderingTransformation)transformation;
         readGG=(GridGeometry2D)tx.invertGridGeometry(renderingQuery,gridGeometry);
       }
-      Feature gridWrapper=featureSource.getFeatures().features().next();
+      FeatureCollection<?,?> sample=featureSource.getFeatures();
+      Feature gridWrapper=DataUtilities.first(sample);
       if (FeatureUtilities.isWrappedCoverageReader(simpleSchema)) {
         final Object params=paramsPropertyName.evaluate(gridWrapper);
         final AbstractGridCoverage2DReader reader=(AbstractGridCoverage2DReader)gridPropertyName.evaluate(gridWrapper);
@@ -93,7 +94,7 @@
       optimizedQuery=tx.invertQuery(renderingQuery,gridGeometry);
     }
     if (optimizedQuery == null) {
-      Envelope bounds=(Envelope)renderingQuery.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,null);
+      Envelope bounds=(Envelope)query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,null);
       Filter bbox=new FastBBOX(filterFactory.property(""),bounds,filterFactory);
       optimizedQuery=new Query(null,bbox);
     }
