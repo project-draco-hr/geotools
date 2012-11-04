@@ -1,16 +1,17 @@
 {
-  FeatureIterator<F> iterator=null;
-  float size=progress != null ? size() : 0;
+  FeatureIterator<?> iterator=null;
+  float size=progress != null ? collection.size() : 0;
   if (progress == null) {
     progress=new NullProgressListener();
   }
   try {
     float position=0;
     progress.started();
-    iterator=features();
+    iterator=collection.features();
     while (!progress.isCanceled() && iterator.hasNext()) {
+      Feature feature=null;
       try {
-        F feature=iterator.next();
+        feature=iterator.next();
         visitor.visit(feature);
         if (size > 0) {
           progress.progress(position++ / size);
@@ -18,7 +19,8 @@
       }
  catch (      Exception erp) {
         progress.exceptionOccurred(erp);
-        throw new IOException("Error occurred while iterating over features",erp);
+        String fid=feature == null ? "feature" : feature.getIdentifier().toString();
+        throw new IOException("Problem with " + collection.getID() + " visiting "+ fid+ ":"+ erp,erp);
       }
     }
   }
