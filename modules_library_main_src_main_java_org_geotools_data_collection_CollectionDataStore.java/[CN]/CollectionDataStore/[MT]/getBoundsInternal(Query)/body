@@ -1,16 +1,21 @@
 {
-  FeatureIterator<SimpleFeature> iterator=collection.features();
   ReferencedEnvelope envelope=new ReferencedEnvelope(featureType.getCoordinateReferenceSystem());
-  if (iterator.hasNext()) {
-    int count=1;
-    Filter filter=query.getFilter();
-    while (iterator.hasNext() && (count < query.getMaxFeatures())) {
-      SimpleFeature feature=iterator.next();
-      if (filter.evaluate(feature)) {
-        count++;
-        envelope.expandToInclude(((Geometry)feature.getDefaultGeometry()).getEnvelopeInternal());
+  FeatureIterator<SimpleFeature> iterator=collection.features();
+  try {
+    if (iterator.hasNext()) {
+      int count=1;
+      Filter filter=query.getFilter();
+      while (iterator.hasNext() && (count < query.getMaxFeatures())) {
+        SimpleFeature feature=iterator.next();
+        if (filter.evaluate(feature)) {
+          count++;
+          envelope.expandToInclude(((Geometry)feature.getDefaultGeometry()).getEnvelopeInternal());
+        }
       }
     }
+  }
+  finally {
+    iterator.close();
   }
   return envelope;
 }
