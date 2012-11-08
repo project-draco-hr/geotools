@@ -2,16 +2,23 @@
   URL url=null;
   try {
     url=new URL(uri);
+    File f=DataUtilities.urlToFile(url);
+    if (f != null && !f.isAbsolute()) {
+      if (!f.exists()) {
+        URL relativeUrl=makeRelativeURL(f.getPath());
+        if (relativeUrl != null) {
+          f=DataUtilities.urlToFile(relativeUrl);
+          if (f.exists()) {
+            url=relativeUrl;
+          }
+        }
+      }
+    }
   }
  catch (  MalformedURLException mfe) {
     LOGGER.fine("Looks like " + uri + " is a relative path..");
     if (sourceUrl != null) {
-      try {
-        url=new URL(sourceUrl,uri);
-      }
- catch (      MalformedURLException e) {
-        LOGGER.warning("can't parse " + uri + " as relative to"+ sourceUrl.toExternalForm());
-      }
+      url=makeRelativeURL(uri);
     }
     if (url == null) {
       url=getClass().getResource(uri);
