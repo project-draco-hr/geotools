@@ -1,7 +1,28 @@
 {
-  CapabilitiesFilterSplitter splitter=new CapabilitiesFilterSplitter(caps,null,null);
-  queryFilter.accept(splitter,null);
-  Filter server=splitter.getFilterPre();
-  Filter post=splitter.getFilterPost();
-  return new Filter[]{server,post};
+  FilterCapabilities filterCapabilities=caps.getContents();
+  IdCapabilities idCapabilities=filterCapabilities.getIdCapabilities();
+  if (idCapabilities != null && (idCapabilities.hasEID() || idCapabilities.hasFID())) {
+    Capabilities idFilterCaps=new Capabilities();
+    idFilterCaps.addName("Id");
+    CapabilitiesFilterSplitter splitter=new CapabilitiesFilterSplitter(idFilterCaps,null,null);
+    queryFilter.accept(splitter,null);
+    Filter server=splitter.getFilterPre();
+    if (server.equals(Filter.INCLUDE)) {
+      FilterCapabilities filterCapabilitiesWithoutId=new FilterCapabilitiesImpl(filterCapabilities.getVersion(),filterCapabilities.getScalarCapabilities(),filterCapabilities.getSpatialCapabilities(),null,filterCapabilities.getTemporalCapabilities());
+      Capabilities capabilitiesWithoutId=new Capabilities();
+      capabilitiesWithoutId.addAll(filterCapabilitiesWithoutId);
+      return splitFilters(capabilitiesWithoutId,queryFilter);
+    }
+ else {
+      Filter post=splitter.getFilterPost();
+      return new Filter[]{server,post};
+    }
+  }
+ else {
+    CapabilitiesFilterSplitter splitter=new CapabilitiesFilterSplitter(caps,null,null);
+    queryFilter.accept(splitter,null);
+    Filter server=splitter.getFilterPre();
+    Filter post=splitter.getFilterPost();
+    return new Filter[]{server,post};
+  }
 }
