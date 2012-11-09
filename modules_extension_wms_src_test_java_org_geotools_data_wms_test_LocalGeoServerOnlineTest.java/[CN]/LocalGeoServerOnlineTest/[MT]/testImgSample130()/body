@@ -7,11 +7,24 @@
   boolean globalXY=Boolean.getBoolean("org.geotools.referencing.forceXY");
   CRSEnvelope bounds=water_bodies.getBoundingBoxes().get("EPSG:4326");
   CoordinateReferenceSystem boundsCRS=bounds.getCoordinateReferenceSystem();
-  assertEquals("EPSG:4326",AxisOrder.EAST_NORTH,CRS.getAxisOrder(boundsCRS));
-  assertEquals("axis order 0 min",latLon.getMinimum(1),bounds.getMinimum(0));
-  assertEquals("axis order 1 min",latLon.getMinimum(0),bounds.getMinimum(1));
-  assertEquals("axis order 1 max",latLon.getMaximum(0),bounds.getMaximum(1));
-  assertEquals("axis order 1 min",latLon.getMaximum(1),bounds.getMaximum(0));
+  if (globalXY) {
+    assertEquals("EPSG:4326",AxisOrder.EAST_NORTH,CRS.getAxisOrder(boundsCRS));
+  }
+ else {
+    assertEquals("EPSG:4326",AxisOrder.NORTH_EAST,CRS.getAxisOrder(boundsCRS));
+  }
+  if (CRS.getAxisOrder(boundsCRS) == AxisOrder.EAST_NORTH) {
+    assertEquals("axis order 0 min",latLon.getMinimum(1),bounds.getMinimum(1));
+    assertEquals("axis order 1 min",latLon.getMinimum(0),bounds.getMinimum(0));
+    assertEquals("axis order 1 max",latLon.getMaximum(0),bounds.getMaximum(0));
+    assertEquals("axis order 1 min",latLon.getMaximum(1),bounds.getMaximum(1));
+  }
+  if (CRS.getAxisOrder(boundsCRS) == AxisOrder.NORTH_EAST) {
+    assertEquals("axis order 0 min",latLon.getMinimum(1),bounds.getMinimum(0));
+    assertEquals("axis order 1 min",latLon.getMinimum(0),bounds.getMinimum(1));
+    assertEquals("axis order 1 max",latLon.getMaximum(0),bounds.getMaximum(1));
+    assertEquals("axis order 1 min",latLon.getMaximum(1),bounds.getMaximum(0));
+  }
   checkGetMap(wms,water_bodies,DefaultGeographicCRS.WGS84);
   checkGetMap(wms,water_bodies,CRS.decode("CRS:84"));
   checkGetMap(wms,water_bodies,CRS.decode("EPSG:4326"));

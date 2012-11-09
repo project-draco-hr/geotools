@@ -8,8 +8,19 @@
   OperationType operationType=wms.getCapabilities().getRequest().getGetMap();
   getMap.addLayer(layer);
   String version=wms.getCapabilities().getVersion();
-  String srs=CRS.toSRS(envelope.getCoordinateReferenceSystem());
   getMap.setBBox(envelope);
+  Properties properties=getMap.getProperties();
+  String srs=null;
+  if (properties.containsKey("SRS")) {
+    srs=properties.getProperty("SRS");
+  }
+ else   if (properties.containsKey("CRS")) {
+    srs=properties.getProperty("CRS");
+  }
+  assertNotNull("setBBox supplied SRS information",srs);
+  String expectedSRS=CRS.toSRS(envelope.getCoordinateReferenceSystem());
+  assertEquals("srs matches CRS.toSRS",expectedSRS,srs);
+  assertTrue("cite authority:" + srs,srs.contains("CRS") || srs.contains("EPSG"));
   String format=format(operationType,"jpeg");
   getMap.setFormat(format);
   getMap.setDimensions(500,500);
