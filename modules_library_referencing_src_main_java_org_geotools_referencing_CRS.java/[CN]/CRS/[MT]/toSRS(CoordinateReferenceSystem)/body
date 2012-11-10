@@ -23,17 +23,25 @@
   if (crs == DefaultGeographicCRS.WGS84) {
     return "CRS:84";
   }
-  for (  ReferenceIdentifier identifier : crs.getIdentifiers()) {
-    if (identifier.toString().contains("EPSG:") || identifier.toString().contains("CRS:")) {
-      return identifier.toString();
-    }
-  }
-  final ReferenceIdentifier name=crs.getName();
-  if (name != null) {
-    if (name.toString().contains("EPSG:") || name.toString().contains("CRS:")) {
+  Set<ReferenceIdentifier> identifiers=crs.getIdentifiers();
+  if (identifiers.isEmpty()) {
+    final ReferenceIdentifier name=crs.getName();
+    if (name != null) {
       return name.toString();
     }
-    return "CUSTOM:" + name.toString();
+    return null;
   }
-  return null;
+ else {
+    for (    ReferenceIdentifier identifier : crs.getIdentifiers()) {
+      String srs=identifier.toString();
+      if (srs.contains("EPSG:") || srs.contains("CRS:")) {
+        return srs;
+      }
+    }
+    ReferenceIdentifier name=crs.getName();
+    if (name != null && (name.toString().contains("EPSG:") || name.toString().contains("CRS:"))) {
+      return name.toString();
+    }
+    return identifiers.iterator().next().toString();
+  }
 }
