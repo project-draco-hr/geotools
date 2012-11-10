@@ -1,4 +1,7 @@
 {
+  if (crs == null) {
+    return null;
+  }
   boolean forcedLonLat=false;
   try {
     forcedLonLat=Boolean.getBoolean("org.geotools.referencing.forceXY") || Boolean.TRUE.equals(Hints.getSystemDefault(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER));
@@ -17,18 +20,28 @@
       LOGGER.log(Level.FINE,"Failed to determine EPSG code",e);
     }
   }
-  if (crs == null) {
-    return null;
+  if (crs == DefaultGeographicCRS.WGS84) {
+    return "CRS:84";
   }
-  final Set<ReferenceIdentifier> identifiers=crs.getIdentifiers();
+  Set<ReferenceIdentifier> identifiers=crs.getIdentifiers();
   if (identifiers.isEmpty()) {
     final ReferenceIdentifier name=crs.getName();
     if (name != null) {
       return name.toString();
     }
+    return null;
   }
  else {
+    for (    ReferenceIdentifier identifier : crs.getIdentifiers()) {
+      String srs=identifier.toString();
+      if (srs.contains("EPSG:") || srs.contains("CRS:")) {
+        return srs;
+      }
+    }
+    ReferenceIdentifier name=crs.getName();
+    if (name != null && (name.toString().contains("EPSG:") || name.toString().contains("CRS:"))) {
+      return name.toString();
+    }
     return identifiers.iterator().next().toString();
   }
-  return null;
 }
