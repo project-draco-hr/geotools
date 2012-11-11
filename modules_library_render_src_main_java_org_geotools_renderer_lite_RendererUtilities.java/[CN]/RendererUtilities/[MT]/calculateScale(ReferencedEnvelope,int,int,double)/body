@@ -3,37 +3,42 @@
   if (!(envelope.getCoordinateReferenceSystem() instanceof EngineeringCRS)) {
     final CoordinateReferenceSystem tempCRS=CRS.getHorizontalCRS(envelope.getCoordinateReferenceSystem());
     if (tempCRS == null)     throw new TransformException(Errors.format(ErrorKeys.CANT_REDUCE_TO_TWO_DIMENSIONS_$1,envelope.getCoordinateReferenceSystem()));
-    envelope=new ReferencedEnvelope((Envelope)envelope,tempCRS);
-    final MathTransform toWGS84=CRS.findMathTransform(tempCRS,DefaultGeographicCRS.WGS84,true);
-    GeneralEnvelope sourceCRSEnvelope=(GeneralEnvelope)CRS.getEnvelope(tempCRS);
-    if (sourceCRSEnvelope == null) {
-      try {
-        sourceCRSEnvelope=CRS.transform(toWGS84.inverse(),CRS.getEnvelope(DefaultGeographicCRS.WGS84));
-      }
- catch (      TransformException e) {
-      }
-catch (      AssertionError ae) {
-      }
+    if (tempCRS instanceof GeographicCRS) {
+      diagonalGroundDistance=geodeticDiagonalDistance(envelope);
     }
-    final GeneralEnvelope intersectedEnvelope=new GeneralEnvelope(envelope);
-    if (sourceCRSEnvelope != null) {
-      intersectedEnvelope.intersect(sourceCRSEnvelope);
-      if (intersectedEnvelope.isEmpty())       throw new IllegalArgumentException("The provided envelope is outside the source CRS definition area");
-      if (!intersectedEnvelope.equals(envelope)) {
-        final double scale0=intersectedEnvelope.getSpan(0) / envelope.getSpan(0);
-        final double scale1=intersectedEnvelope.getSpan(1) / envelope.getSpan(1);
-        imageWidth*=scale0;
-        imageHeight*=scale1;
+ else {
+      envelope=new ReferencedEnvelope((Envelope)envelope,tempCRS);
+      final MathTransform toWGS84=CRS.findMathTransform(tempCRS,DefaultGeographicCRS.WGS84,true);
+      GeneralEnvelope sourceCRSEnvelope=(GeneralEnvelope)CRS.getEnvelope(tempCRS);
+      if (sourceCRSEnvelope == null) {
+        try {
+          sourceCRSEnvelope=CRS.transform(toWGS84.inverse(),CRS.getEnvelope(DefaultGeographicCRS.WGS84));
+        }
+ catch (        TransformException e) {
+        }
+catch (        AssertionError ae) {
+        }
       }
+      final GeneralEnvelope intersectedEnvelope=new GeneralEnvelope(envelope);
+      if (sourceCRSEnvelope != null) {
+        intersectedEnvelope.intersect(sourceCRSEnvelope);
+        if (intersectedEnvelope.isEmpty())         throw new IllegalArgumentException("The provided envelope is outside the source CRS definition area");
+        if (!intersectedEnvelope.equals(envelope)) {
+          final double scale0=intersectedEnvelope.getSpan(0) / envelope.getSpan(0);
+          final double scale1=intersectedEnvelope.getSpan(1) / envelope.getSpan(1);
+          imageWidth*=scale0;
+          imageHeight*=scale1;
+        }
+      }
+      final GeneralEnvelope geographicEnvelope=CRS.transform(toWGS84,intersectedEnvelope);
+      geographicEnvelope.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+      final GeodeticCalculator calculator=new GeodeticCalculator(DefaultGeographicCRS.WGS84);
+      final DirectPosition lowerLeftCorner=geographicEnvelope.getLowerCorner();
+      final DirectPosition upperRightCorner=geographicEnvelope.getUpperCorner();
+      calculator.setStartingGeographicPoint(lowerLeftCorner.getOrdinate(0),lowerLeftCorner.getOrdinate(1));
+      calculator.setDestinationGeographicPoint(upperRightCorner.getOrdinate(0),upperRightCorner.getOrdinate(1));
+      diagonalGroundDistance=calculator.getOrthodromicDistance();
     }
-    final GeneralEnvelope geographicEnvelope=CRS.transform(toWGS84,intersectedEnvelope);
-    geographicEnvelope.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
-    final GeodeticCalculator calculator=new GeodeticCalculator(DefaultGeographicCRS.WGS84);
-    final DirectPosition lowerLeftCorner=geographicEnvelope.getLowerCorner();
-    final DirectPosition upperRightCorner=geographicEnvelope.getUpperCorner();
-    calculator.setStartingGeographicPoint(lowerLeftCorner.getOrdinate(0),lowerLeftCorner.getOrdinate(1));
-    calculator.setDestinationGeographicPoint(upperRightCorner.getOrdinate(0),upperRightCorner.getOrdinate(1));
-    diagonalGroundDistance=calculator.getOrthodromicDistance();
   }
  else {
     diagonalGroundDistance=Math.sqrt(envelope.getWidth() * envelope.getWidth() + envelope.getHeight() * envelope.getHeight());
