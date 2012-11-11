@@ -1,0 +1,25 @@
+{
+  Style style=RendererBaseTest.loadStyle(this,invert ? "attributeRename.sld" : "attributeRenameNoInvert.sld");
+  File property=new File(TestData.getResource(this,"point.properties").toURI());
+  PropertyDataStore ds=new PropertyDataStore(property.getParentFile());
+  FeatureSource fs=ds.getFeatureSource("point");
+  FeatureLayer layer=new FeatureLayer(fs,style);
+  layer.setQuery(new Query(null,CQL.toFilter("id > 5")));
+  MapContent mc=new MapContent();
+  mc.addLayer(layer);
+  StreamingRenderer renderer=new StreamingRenderer();
+  final AtomicInteger counter=new AtomicInteger();
+  renderer.addRenderListener(new RenderListener(){
+    @Override public void featureRenderer(    SimpleFeature feature){
+      counter.incrementAndGet();
+    }
+    @Override public void errorOccurred(    Exception e){
+    }
+  }
+);
+  renderer.setMapContent(mc);
+  ReferencedEnvelope re=new ReferencedEnvelope(0,12,0,12,CRS.decode("EPSG:4326"));
+  BufferedImage image=RendererBaseTest.showRender("Lines with circle stroke",renderer,TIME,re);
+  assertEquals(1,counter.get());
+  assertEquals(Color.RED,getPixelColor(image,image.getWidth() / 2,image.getHeight() / 2));
+}

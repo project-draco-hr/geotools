@@ -1,0 +1,35 @@
+{
+  final String source=getAttribute(null,0,String.class,true);
+  final String target=getAttribute(null,1,String.class,true);
+  Boolean invert=getAttribute(null,2,Boolean.class,false);
+  if (invert == null || !invert) {
+    return null;
+  }
+ else {
+    Query q=new Query(targetQuery);
+    if (q.getPropertyNames() != null) {
+      String[] names=Arrays.copyOf(q.getPropertyNames(),q.getPropertyNames().length);
+      for (int i=0; i < names.length; i++) {
+        if (names[i].equals(target)) {
+          names[i]=source;
+        }
+      }
+      q.setPropertyNames(names);
+    }
+    if (q.getFilter() != null) {
+      Filter renamed=(Filter)q.getFilter().accept(new DuplicatingFilterVisitor(){
+        @Override public Object visit(        PropertyName expression,        Object extraData){
+          if (expression.getPropertyName().equals(target)) {
+            return ff.property(source);
+          }
+ else {
+            return super.visit(expression,extraData);
+          }
+        }
+      }
+,null);
+      q.setFilter(renamed);
+    }
+    return q;
+  }
+}

@@ -1,0 +1,33 @@
+{
+  String source=getAttribute(object,0,String.class,true);
+  String target=getAttribute(object,1,String.class,true);
+  SimpleFeatureCollection fc=(SimpleFeatureCollection)object;
+  SimpleFeatureType sourceSchema=fc.getSchema();
+  SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  for (  AttributeDescriptor ad : sourceSchema.getAttributeDescriptors()) {
+    if (ad.getLocalName().equals(source)) {
+      tb.add(target,ad.getType().getBinding());
+    }
+ else {
+      tb.add(ad);
+    }
+  }
+  tb.setName(sourceSchema.getName());
+  SimpleFeatureType targetSchema=tb.buildFeatureType();
+  final SimpleFeatureBuilder fb=new SimpleFeatureBuilder(targetSchema);
+  final List<SimpleFeature> features=new ArrayList<SimpleFeature>();
+  try {
+    fc.accepts(new FeatureVisitor(){
+      @Override public void visit(      Feature feature){
+        fb.init((SimpleFeature)feature);
+        SimpleFeature f=fb.buildFeature(feature.getIdentifier().getID());
+        features.add(f);
+      }
+    }
+,null);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Failed to compute output collection",e);
+  }
+  return new ListFeatureCollection(targetSchema,features);
+}

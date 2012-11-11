@@ -10,7 +10,7 @@
       GridGeometry2D readGG=gridGeometry;
       if (transformation instanceof RenderingTransformation) {
         RenderingTransformation tx=(RenderingTransformation)transformation;
-        readGG=(GridGeometry2D)tx.invertGridGeometry(query,gridGeometry);
+        readGG=(GridGeometry2D)tx.invertGridGeometry(renderingQuery,gridGeometry);
       }
       Feature gridWrapper=featureSource.getFeatures().features().next();
       if (FeatureUtilities.isWrappedCoverageReader(simpleSchema)) {
@@ -90,25 +90,22 @@
     Query optimizedQuery=null;
     if (transformation instanceof RenderingTransformation) {
       RenderingTransformation tx=(RenderingTransformation)transformation;
-      optimizedQuery=tx.invertQuery(query,gridGeometry);
+      optimizedQuery=tx.invertQuery(renderingQuery,gridGeometry);
     }
     if (optimizedQuery == null) {
-      Envelope bounds=(Envelope)query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,null);
+      Envelope bounds=(Envelope)renderingQuery.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,null);
       Filter bbox=new FastBBOX(filterFactory.property(""),bounds,filterFactory);
       optimizedQuery=new Query(null,bbox);
     }
-    originalFeatures=featureSource.getFeatures(optimizedQuery);
+    Query mixedQuery=DataUtilities.mixQueries(layerQuery,optimizedQuery,null);
+    originalFeatures=featureSource.getFeatures(mixedQuery);
     result=transformation.evaluate(originalFeatures);
   }
   if (result == null) {
     return null;
   }
   if (result instanceof FeatureCollection) {
-    final SimpleFeatureSource source=DataUtilities.source((FeatureCollection)result);
-    SimpleFeatureType transformedSchema=source.getSchema();
-    Query adapted=adaptQuery(query,transformedSchema,schema);
-    checkAttributeExistence(transformedSchema,adapted);
-    return source.getFeatures(adapted);
+    return (FeatureCollection)result;
   }
  else   if (result instanceof GridCoverage2D) {
     return FeatureUtilities.wrapGridCoverage((GridCoverage2D)result);
