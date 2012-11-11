@@ -1,0 +1,25 @@
+{
+  Style style=RendererBaseTest.loadStyle(this,"reproject-rt.sld");
+  File property=new File(TestData.getResource(this,"point.properties").toURI());
+  PropertyDataStore ds=new PropertyDataStore(property.getParentFile());
+  FeatureSource fs=ds.getFeatureSource("point");
+  FeatureLayer layer=new FeatureLayer(fs,style);
+  ReferencedEnvelope reWgs84=new ReferencedEnvelope(0,12,0,12,CRS.decode("EPSG:4326"));
+  ReferencedEnvelope reUTM32N=reWgs84.transform(CRS.decode("EPSG:32632"),true);
+  MapContent mc=new MapContent();
+  mc.addLayer(layer);
+  StreamingRenderer renderer=new StreamingRenderer();
+  final AtomicInteger counter=new AtomicInteger();
+  renderer.addRenderListener(new RenderListener(){
+    @Override public void featureRenderer(    SimpleFeature feature){
+      counter.incrementAndGet();
+    }
+    @Override public void errorOccurred(    Exception e){
+    }
+  }
+);
+  renderer.setMapContent(mc);
+  BufferedImage image=RendererBaseTest.showRender("Lines with circle stroke",renderer,TIME,reUTM32N);
+  assertEquals(10,counter.get());
+  assertEquals(Color.RED,getPixelColor(image,image.getWidth() / 2,image.getHeight() / 2));
+}

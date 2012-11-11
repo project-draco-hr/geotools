@@ -25,24 +25,23 @@
     for (    List<LiteFeatureTypeStyle> uniform : txClassified) {
       Expression transform=uniform.get(0).transformation;
       inMemoryGeneralization=true;
-      FeatureCollection rawFeatures;
       Query styleQuery=getStyleQuery(featureSource,schema,uniform,mapArea,destinationCrs,sourceCrs,screenSize,geometryAttribute,at);
       Query definitionQuery=getDefinitionQuery(currLayer,featureSource,sourceCrs);
       if (transform != null) {
         GridEnvelope2D ge=new GridEnvelope2D(screenSize);
         ReferencedEnvelope re=new ReferencedEnvelope(mapArea,destinationCrs);
         GridGeometry2D gridGeometry=new GridGeometry2D(ge,re);
-        rawFeatures=applyRenderingTransformation(transform,featureSource,definitionQuery,styleQuery,gridGeometry);
-        if (rawFeatures == null) {
+        features=applyRenderingTransformation(transform,featureSource,definitionQuery,styleQuery,gridGeometry,sourceCrs);
+        if (features == null) {
           return;
         }
       }
  else {
         Query mixed=DataUtilities.mixQueries(definitionQuery,styleQuery,null);
         checkAttributeExistence(featureSource.getSchema(),mixed);
-        rawFeatures=featureSource.getFeatures(mixed);
+        features=featureSource.getFeatures(mixed);
+        features=prepFeatureCollection(features,sourceCrs);
       }
-      features=prepFeatureCollection(rawFeatures,sourceCrs);
       if (!(features instanceof SimpleFeatureCollection)) {
         features.getSchema().getUserData().put("targetCrs",destinationCrs);
         features.getSchema().getUserData().put("targetVersion","wms:getmap");
