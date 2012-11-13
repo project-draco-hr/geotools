@@ -10,23 +10,19 @@
   WFSDataStore wfs=dataStoreFactory.createDataStore(params);
   final WFS_1_1_0_Protocol originalHandler=(WFS_1_1_0_Protocol)((WFS_1_1_0_DataStore)wfs).wfs;
   originalHandler.http=new HttpProtocolWrapper(originalHandler.http){
-    @Override public HTTPResponse issueGet(    URL baseUrl,    Map<String,String> kvp) throws IOException {
+    @Override public HTTPResponse get(    URL url) throws IOException {
+      Map<String,String> kvp=HttpUtil.requestKvp(url);
       assertEquals("true",kvp.get("strict"));
       assertEquals("mysecret",kvp.get("authkey"));
       assertEquals("low:2000000;high:5000000",kvp.get("viewparams"));
-      return super.issueGet(baseUrl,kvp);
+      return super.get(url);
     }
-    @Override public HTTPResponse issuePost(    URL targetUrl,    POSTCallBack callback) throws IOException {
-      String[] keyValueArray=targetUrl.getQuery().split("&");
-      Map<String,String> kvp=new HashMap<String,String>();
-      for (      String keyValue : keyValueArray) {
-        String[] skv=keyValue.split("=");
-        kvp.put(skv[0],skv[1]);
-      }
+    @Override public HTTPResponse post(    URL url,    InputStream postContent,    String postContentType) throws IOException {
+      Map<String,String> kvp=HttpUtil.requestKvp(url);
       assertEquals("true",kvp.get("strict"));
       assertEquals("mysecret",kvp.get("authkey"));
       assertEquals("low%3A2000000%3Bhigh%3A5000000",kvp.get("viewparams"));
-      return super.issuePost(targetUrl,callback);
+      return super.post(url,postContent,postContentType);
     }
   }
 ;

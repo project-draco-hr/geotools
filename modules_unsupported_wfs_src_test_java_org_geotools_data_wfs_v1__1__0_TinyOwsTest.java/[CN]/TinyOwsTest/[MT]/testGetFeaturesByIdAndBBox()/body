@@ -1,0 +1,24 @@
+{
+  final String[] queryTokens={"<ogc:BBOX>","<ogc:PropertyName>the_geom</ogc:PropertyName>","<gml:Envelope srsDimension=\"2\" srsName=\"urn:x-ogc:def:crs:EPSG:3857\">","<gml:lowerCorner>4623055.0 815134.0</gml:lowerCorner>","<gml:upperCorner>4629904.0 820740.0</gml:upperCorner>"};
+  WFSDataStore wfs=getWFSDataStore(new TinyOwsMockHttpClient(){
+    @Override public HTTPResponse post(    URL url,    InputStream postContent,    String postContentType) throws IOException {
+      String request=new String(IOUtils.toByteArray(postContent),"UTF-8");
+      if (isResultsRequest(request,queryTokens)) {
+        assertXMLEqual("tinyows/GetFeaturesByBBoxRequest.xml",request);
+        return new MockHttpResponse(TestData.getResource(this,"tinyows/GetFeaturesByBBox.xml"),"text/xml");
+      }
+ else {
+        return super.post(url,new ByteArrayInputStream(request.getBytes("UTF-8")),postContentType);
+      }
+    }
+  }
+);
+  SimpleFeatureSource source=wfs.getFeatureSource(typeName);
+  SimpleFeature sf=getSampleSimpleFeature(source);
+  Set<FeatureId> fids=new HashSet<FeatureId>();
+  fids.add(new FeatureIdImpl("comuni11.2671"));
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  PropertyName bboxProperty=ff.property(sf.getDefaultGeometryProperty().getName());
+  Query query=new Query(typeName,ff.and(ff.id(fids),ff.bbox(bboxProperty,sf.getBounds())));
+  iterate(source.getFeatures(query),1,false);
+}
