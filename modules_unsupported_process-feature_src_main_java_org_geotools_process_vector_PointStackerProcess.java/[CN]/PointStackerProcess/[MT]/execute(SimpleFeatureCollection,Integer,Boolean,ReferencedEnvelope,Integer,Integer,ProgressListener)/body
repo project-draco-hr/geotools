@@ -10,13 +10,13 @@
  catch (  FactoryException e) {
     throw new ProcessException(e);
   }
-  boolean stretch=false;
-  if (argStretch != null) {
-    stretch=argStretch;
+  boolean normalize=false;
+  if (argNormalize != null) {
+    normalize=argNormalize;
   }
   double cellSizeSrc=cellSize * outputEnv.getWidth() / outputWidth;
   Collection<StackedPoint> stackedPts=stackPoints(data,crsTransform,cellSizeSrc,outputEnv.getMinX(),outputEnv.getMinY());
-  SimpleFeatureType schema=createType(srcCRS,stretch);
+  SimpleFeatureType schema=createType(srcCRS,normalize);
   ListFeatureCollection result=new ListFeatureCollection(schema);
   SimpleFeatureBuilder fb=new SimpleFeatureBuilder(schema);
   GeometryFactory factory=new GeometryFactory(new PackedCoordinateSequenceFactory());
@@ -24,7 +24,7 @@
   double[] dstPt=new double[2];
   int maxCount=0;
   int maxCountUnique=0;
-  if (stretch) {
+  if (normalize) {
     for (    StackedPoint sp : stackedPts) {
       if (maxCount < sp.getCount())       maxCount=sp.getCount();
       if (maxCountUnique < sp.getCount())       maxCountUnique=sp.getCountUnique();
@@ -40,9 +40,9 @@
     fb.add(point);
     fb.add(sp.getCount());
     fb.add(sp.getCountUnique());
-    if (stretch) {
-      fb.add(((float)sp.getCount()) / maxCount);
-      fb.add(((float)sp.getCountUnique()) / maxCountUnique);
+    if (normalize) {
+      fb.add(((double)sp.getCount()) / maxCount);
+      fb.add(((double)sp.getCountUnique()) / maxCountUnique);
     }
     result.add(fb.buildFeature(null));
   }
