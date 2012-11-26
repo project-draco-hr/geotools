@@ -1,0 +1,16 @@
+{
+  Capabilities caps=new Capabilities();
+  caps.addAll(Capabilities.SIMPLE_COMPARISONS_OPENGIS);
+  visitor=newVisitor(caps);
+  Filter f1=ff.greater(ff.property("foo"),ff.literal(42));
+  Filter f2=ff.less(ff.property("bar"),ff.literal(21));
+  Filter andFilter=ff.and(f1,f2);
+  andFilter.accept(visitor,null);
+  assertEquals(f1,visitor.getFilterPre());
+  assertEquals(f2,visitor.getFilterPost());
+  Filter f3=ff.greater(ff.property("height"),ff.literal(84));
+  andFilter=ff.and(Arrays.asList(new Filter[]{f1,f2,f3}));
+  andFilter.accept(visitor,null);
+  assertEquals(f1,visitor.getFilterPre());
+  assertEquals(ff.and(f2,f3),visitor.getFilterPost());
+}
