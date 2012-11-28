@@ -1,0 +1,47 @@
+{
+  if (handler.getLogger() == null) {
+    handler.startDocument();
+  }
+  int depth=0;
+  LOOP:   do {
+    int e=pp.next();
+switch (e) {
+case XMLStreamReader.START_ELEMENT:
+      int count=pp.getNamespaceCount();
+    for (int i=0; i < count; i++) {
+      String pre=pp.getNamespacePrefix(i);
+      handler.startPrefixMapping(pre != null ? pre : "",pp.getNamespaceURI(i));
+    }
+{
+    QName qName=pp.getName();
+    handler.startElement(pp.getNamespaceURI(),pp.getLocalName(),str(qName),atts);
+  }
+break;
+case XMLStreamReader.CHARACTERS:
+char[] chars=pp.getTextCharacters();
+handler.characters(chars,pp.getTextStart(),pp.getTextLength());
+break;
+case XMLStreamReader.END_ELEMENT:
+depth--;
+{
+QName qName=pp.getName();
+handler.endElement(pp.getNamespaceURI(),pp.getLocalName(),str(qName));
+}
+count=pp.getNamespaceCount();
+for (int i=count - 1; i >= 0; i--) {
+handler.endPrefixMapping(pp.getNamespacePrefix(i));
+}
+if (handler.getObject() != null) {
+return handler.getObject();
+}
+if (depth == 0) {
+return null;
+}
+break;
+case XMLStreamReader.END_DOCUMENT:
+break LOOP;
+}
+}
+ while (true);
+return null;
+}
