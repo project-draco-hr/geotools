@@ -1,4 +1,18 @@
 {
+  SimpleFeatureType featureType=FeatureType;
+  @SuppressWarnings("unchecked") Map<String,Object> extData=(Map<String,Object>)node.getChildValue("ExtendedData");
+  if (extData != null) {
+    @SuppressWarnings("unchecked") List<URI> schemaURI=(List<URI>)extData.get("schemas");
+    if (schemaURI != null) {
+      for (      URI uri : schemaURI) {
+        String normalizedSchemaName=normalizeSchemaName(uri);
+        SimpleFeatureType schemaType=schemaRegistry.get(normalizedSchemaName);
+        featureType=appendAttributes(featureType,schemaType);
+      }
+    }
+  }
+  SimpleFeatureType customFeatureType=schemaRegistry.get(instance.getName());
+  featureType=appendAttributes(featureType,customFeatureType);
   SimpleFeatureBuilder b=new SimpleFeatureBuilder(featureType);
   b.set("name",node.getChildValue("name"));
   b.set("visibility",node.getChildValue("visibility",Boolean.TRUE));
@@ -12,5 +26,27 @@
     b.set("Style",styleMap.get(uri));
   }
   b.set("Region",node.getChildValue("Region"));
+  if (extData != null) {
+    b.featureUserData("UntypedExtendedData",extData.get("untyped"));
+    @SuppressWarnings("unchecked") Map<String,Object> typedUserData=(Map<String,Object>)extData.get("typed");
+    if (typedUserData != null) {
+      for (      Entry<String,Object> entry : typedUserData.entrySet()) {
+        String attrName=entry.getKey();
+        if (featureType.getDescriptor(attrName) != null) {
+          b.set(attrName,entry.getValue());
+        }
+      }
+    }
+  }
+  if (customFeatureType != null) {
+    for (    AttributeDescriptor ad : customFeatureType.getAttributeDescriptors()) {
+      String attrName=ad.getLocalName();
+      Object childValue=node.getChildValue(attrName);
+      if (childValue != null) {
+        b.set(attrName,childValue);
+      }
+    }
+  }
+  b.featureUserData("Folder",folderStack.asList());
   return b.buildFeature((String)node.getAttributeValue("id"));
 }

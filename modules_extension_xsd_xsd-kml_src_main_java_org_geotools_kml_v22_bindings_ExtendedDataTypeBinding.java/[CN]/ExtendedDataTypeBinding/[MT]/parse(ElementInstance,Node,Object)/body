@@ -1,0 +1,22 @@
+{
+  Map<String,Object> extendedData=new HashMap<String,Object>();
+  Map<String,Object> unTypedData=new LinkedHashMap<String,Object>();
+  for (  Node n : (List<Node>)node.getChildren("Data")) {
+    unTypedData.put((String)n.getAttributeValue("name"),n.getChildValue("value"));
+  }
+  Map<String,Object> typedData=new LinkedHashMap<String,Object>();
+  List<URI> schemas=new ArrayList<URI>();
+  for (  Node schemaData : (List<Node>)node.getChildren("SchemaData")) {
+    URI schemaUrl=(URI)schemaData.getAttributeValue("schemaUrl");
+    if (schemaUrl != null) {
+      for (      Node n : (List<Node>)schemaData.getChildren("SimpleData")) {
+        typedData.put((String)n.getAttributeValue("name"),n.getValue());
+      }
+      schemas.add(schemaUrl);
+    }
+  }
+  extendedData.put("schemas",schemas);
+  extendedData.put("untyped",unTypedData);
+  extendedData.put("typed",typedData);
+  return extendedData;
+}
