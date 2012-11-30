@@ -1,0 +1,31 @@
+{
+  final double xmin=sourceEnvelope.getMinX();
+  final double xmax=sourceEnvelope.getMaxX();
+  final double ymin=sourceEnvelope.getMinY();
+  final double ymax=sourceEnvelope.getMaxY();
+  final double scaleX=(xmax - xmin) / npoints;
+  final double scaleY=(ymax - ymin) / npoints;
+  ReferencedEnvelope3D targetEnvelope=new ReferencedEnvelope3D(targetCRS);
+  CoordinateOperationFactory coordinateOperationFactory=CRS.getCoordinateOperationFactory(lenient);
+  CoordinateOperation operation1=coordinateOperationFactory.createOperation(sourceEnvelope.getCoordinateReferenceSystem(),DefaultGeographicCRS.WGS84);
+  MathTransform transform1=operation1.getMathTransform();
+  final CoordinateOperation operation2=coordinateOperationFactory.createOperation(DefaultGeographicCRS.WGS84_3D,targetCRS);
+  MathTransform transform2=operation2.getMathTransform();
+  for (int t=0; t < npoints; t++) {
+    double dx=scaleX * t;
+    double dy=scaleY * t;
+    GeneralDirectPosition left=new GeneralDirectPosition(xmin,ymin + dy);
+    DirectPosition pt=transformUp(left,transform1,transform2);
+    targetEnvelope.expandToInclude(pt);
+    GeneralDirectPosition top=new GeneralDirectPosition(xmin + dx,ymax);
+    pt=transformUp(top,transform1,transform2);
+    targetEnvelope.expandToInclude(pt);
+    GeneralDirectPosition right=new GeneralDirectPosition(xmax,ymin - dy);
+    pt=transformUp(right,transform1,transform2);
+    targetEnvelope.expandToInclude(pt);
+    GeneralDirectPosition bottom=new GeneralDirectPosition(xmax - dx,ymax);
+    pt=transformUp(bottom,transform1,transform2);
+    targetEnvelope.expandToInclude(pt);
+  }
+  return targetEnvelope;
+}
