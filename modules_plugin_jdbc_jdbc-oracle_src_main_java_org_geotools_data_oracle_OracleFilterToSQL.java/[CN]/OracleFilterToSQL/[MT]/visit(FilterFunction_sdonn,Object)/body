@@ -1,0 +1,61 @@
+{
+  Expression geometryExp=getParameter(sdoNnQuery,0,true);
+  Expression sdoNumResExp=getParameter(sdoNnQuery,1,true);
+  Expression cqlLiteralExp=getParameter(sdoNnQuery,2,false);
+  Expression sdoBatchSizeExp=getParameter(sdoNnQuery,3,false);
+  try {
+    List<PrimaryKeyColumn> pkColumns=getPrimaryKey().getColumns();
+    if (pkColumns.size() > 1) {
+      throw new UnsupportedOperationException("Unsupported usage of SDO_NN Oracle function: table with composite primary key");
+    }
+    PrimaryKeyColumn pkColumn=pkColumns.get(0);
+    StringBuffer sb=new StringBuffer();
+    dialect.encodeColumnName(pkColumn.getName(),sb);
+    sb.append(" in (select ");
+    dialect.encodeColumnName(pkColumn.getName(),sb);
+    sb.append(" from ");
+    if (getDatabaseSchema() != null) {
+      dialect.encodeSchemaName(getDatabaseSchema(),sb);
+      sb.append(".");
+    }
+    dialect.encodeTableName(getPrimaryKey().getTableName(),sb);
+    sb.append(" where SDO_NN(");
+    dialect.encodeColumnName(featureType.getGeometryDescriptor().getLocalName(),sb);
+    sb.append(",");
+    Geometry geomValue=(Geometry)evaluateLiteral((Literal)geometryExp,Geometry.class);
+    sb.append("?");
+    literalValues.add(clipToWorldFeatureTypeGeometry(geomValue));
+    literalTypes.add(Geometry.class);
+    SRIDs.add(getFeatureTypeGeometrySRID());
+    int sdo_num_res=getIntFromLiteral((Literal)sdoNumResExp);
+    if (sdoBatchSizeExp != null) {
+      int sdo_batch_size=getIntFromLiteral((Literal)sdoBatchSizeExp);
+      sb.append(",'sdo_batch_size=" + sdo_batch_size + "'");
+    }
+ else     if (cqlLiteralExp == null) {
+      sb.append(",'sdo_num_res=" + sdo_num_res + "'");
+    }
+    sb.append(") = 'TRUE' ");
+    if (cqlLiteralExp != null) {
+      try {
+        sb.append("AND ");
+        out.write(sb.toString());
+        sb.setLength(0);
+        Filter cqlExp=CQL.toFilter((String)evaluateLiteral((Literal)cqlLiteralExp,String.class));
+        cqlExp.accept(this,extraData);
+      }
+ catch (      CQLException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+    if (sdoBatchSizeExp != null || cqlLiteralExp != null) {
+      sb.append(" AND ROWNUM <= " + sdo_num_res);
+    }
+    sb.append(")");
+    out.write(sb.toString());
+  }
+ catch (  IOException ioe) {
+    throw new RuntimeException(IO_ERROR,ioe);
+  }
+  return extraData;
+}
