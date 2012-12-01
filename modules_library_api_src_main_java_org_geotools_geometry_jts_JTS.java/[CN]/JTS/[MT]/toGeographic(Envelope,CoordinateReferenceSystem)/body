@@ -1,13 +1,10 @@
 {
   if (CRS.equalsIgnoreMetadata(crs,DefaultGeographicCRS.WGS84)) {
-    return envelope;
+    if (envelope instanceof ReferencedEnvelope) {
+      return envelope;
+    }
+    return ReferencedEnvelope.reference(envelope,DefaultGeographicCRS.WGS84);
   }
-  final MathTransform transform;
-  try {
-    transform=CRS.findMathTransform(crs,DefaultGeographicCRS.WGS84,true);
-  }
- catch (  FactoryException exception) {
-    throw new TransformPathNotFoundException(Errors.format(ErrorKeys.CANT_TRANSFORM_ENVELOPE,exception));
-  }
-  return transform(envelope,transform);
+  ReferencedEnvelope initial=ReferencedEnvelope.reference(envelope,crs);
+  return toGeographic(initial);
 }
