@@ -20,10 +20,11 @@
         sql.append("') FROM DUAL");
         rs=st.executeQuery(sql.toString());
         if (rs.next()) {
-          Envelope env=decodeGeometryEnvelope(rs,1,cx);
+          GeometryDescriptor descriptor=(GeometryDescriptor)att;
+          Geometry geometry=readGeometry(rs,1,new GeometryFactory(),cx);
+          ReferencedEnvelope env=JTS.bounds(geometry,descriptor.getCoordinateReferenceSystem());
           if (env != null && !env.isNull()) {
-            CoordinateReferenceSystem crs=((GeometryDescriptor)att).getCoordinateReferenceSystem();
-            result.add(new ReferencedEnvelope(env,crs));
+            result.add(env);
           }
         }
         rs.close();
