@@ -1,8 +1,38 @@
 {
   if (original == null)   original=filter;
   if (!fcs.supports(filter)) {
-    postStack.push(filter);
-    return;
+    if (filter instanceof And) {
+      Iterator<Filter> it=((And)filter).getChildren().iterator();
+      Filter supportedChild=null;
+      List<Filter> otherChildren=new ArrayList<Filter>();
+      while (it.hasNext()) {
+        Filter child=(Filter)it.next();
+        if (supportedChild == null && fcs.supports(child)) {
+          supportedChild=child;
+        }
+ else {
+          otherChildren.add(child);
+        }
+      }
+      if (supportedChild == null) {
+        postStack.push(filter);
+        return;
+      }
+ else {
+        preStack.push(supportedChild);
+        if (otherChildren.size() == 1) {
+          postStack.push(otherChildren.get(0));
+        }
+ else {
+          postStack.push(ff.and(otherChildren));
+        }
+        return;
+      }
+    }
+ else {
+      postStack.push(filter);
+      return;
+    }
   }
   int i=postStack.size();
   int j=preStack.size();
