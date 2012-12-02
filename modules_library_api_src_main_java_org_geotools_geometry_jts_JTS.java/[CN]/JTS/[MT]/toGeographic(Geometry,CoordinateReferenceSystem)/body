@@ -1,0 +1,27 @@
+{
+  if (crs == null) {
+    return geom;
+  }
+  if (crs.getCoordinateSystem().getDimension() >= 3) {
+    try {
+      MathTransform transform=CRS.findMathTransform(crs,DefaultGeographicCRS.WGS84_3D);
+      Geometry geometry=transform(geom,transform);
+      return geometry;
+    }
+ catch (    FactoryException exception) {
+      throw new TransformException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,crs));
+    }
+  }
+ else   if (CRS.equalsIgnoreMetadata(crs,DefaultGeographicCRS.WGS84)) {
+    return geom;
+  }
+ else {
+    try {
+      MathTransform transform=CRS.findMathTransform(crs,DefaultGeographicCRS.WGS84);
+      return transform(geom,transform);
+    }
+ catch (    FactoryException exception) {
+      throw new TransformException(Errors.format(ErrorKeys.CANT_REPROJECT_$1,crs));
+    }
+  }
+}
