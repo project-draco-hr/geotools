@@ -6,6 +6,10 @@
   Charset dbfCharset=(Charset)DBFCHARSET.lookUp(params);
   TimeZone dbfTimeZone=(TimeZone)DBFTIMEZONE.lookUp(params);
   Boolean isCreateSpatialIndex=(Boolean)CREATE_SPATIAL_INDEX.lookUp(params);
+  Boolean isEnableSpatialIndex=(Boolean)ENABLE_SPATIAL_INDEX.lookUp(params);
+  if (isEnableSpatialIndex == null) {
+    isEnableSpatialIndex=Boolean.TRUE;
+  }
   if (isCreateSpatialIndex == null) {
     assert(true);
     isCreateSpatialIndex=Boolean.TRUE;
@@ -32,11 +36,12 @@
     ShpFiles shpFiles=new ShpFiles(url);
     boolean isLocal=shpFiles.isLocal();
     boolean useMemoryMappedBuffer=isLocal && isMemoryMapped.booleanValue();
+    boolean enableIndex=isEnableSpatialIndex.booleanValue() && isLocal;
     boolean createIndex=isCreateSpatialIndex.booleanValue() && isLocal;
     try {
       ShapefileDataStore store;
-      if (createIndex) {
-        store=new IndexedShapefileDataStore(url,namespace,useMemoryMappedBuffer,cacheMemoryMaps,true,IndexType.QIX,dbfCharset);
+      if (enableIndex) {
+        store=new IndexedShapefileDataStore(url,namespace,useMemoryMappedBuffer,cacheMemoryMaps,createIndex,IndexType.QIX,dbfCharset);
       }
  else {
         store=new ShapefileDataStore(url,namespace,useMemoryMappedBuffer,cacheMemoryMaps,dbfCharset);
