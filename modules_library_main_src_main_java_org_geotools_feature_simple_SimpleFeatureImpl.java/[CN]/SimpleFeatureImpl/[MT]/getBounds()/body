@@ -1,19 +1,14 @@
 {
-  Envelope bounds;
-  if (featureType.getCoordinateReferenceSystem() != null && featureType.getCoordinateReferenceSystem().getCoordinateSystem().getDimension() == 3) {
-    bounds=new ReferencedEnvelope3D(featureType.getCoordinateReferenceSystem());
-  }
- else {
-    bounds=new ReferencedEnvelope(featureType.getCoordinateReferenceSystem());
-  }
+  CoordinateReferenceSystem crs=featureType.getCoordinateReferenceSystem();
+  Envelope bounds=ReferencedEnvelope.create(crs);
   for (  Object o : values) {
     if (o instanceof Geometry) {
       Geometry g=(Geometry)o;
       if (bounds.isNull()) {
-        bounds.init(g.getEnvelopeInternal());
+        bounds.init(JTS.bounds(g,crs));
       }
  else {
-        bounds.expandToInclude(g.getEnvelopeInternal());
+        bounds.expandToInclude(JTS.bounds(g,crs));
       }
     }
   }
