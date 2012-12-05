@@ -1,0 +1,22 @@
+{
+  String typeName=featuerSource.getSchema().getTypeName();
+  MapContent content=new MapContent();
+  ReferencedEnvelope dataBounds=featuerSource.getBounds();
+  assertNotNull(typeName + " bounds",dataBounds);
+  assertFalse(typeName + " bounds empty",dataBounds.isEmpty());
+  assertFalse(typeName + " bounds null",dataBounds.isNull());
+  ReferencedEnvelope bounds=JTS.toGeographic(dataBounds);
+  assertNotNull(typeName + " world",bounds);
+  assertTrue(typeName + " world WGS84",CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,bounds.getCoordinateReferenceSystem()));
+  assertFalse(typeName + " world empty",bounds.isEmpty());
+  assertFalse(typeName + " world null",bounds.isNull());
+  content.getViewport().setBounds(bounds);
+  assertTrue(CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,content.getViewport().getCoordinateReferenceSystem()));
+  content.addLayer(new FeatureLayer(featuerSource,style));
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setMapContent(content);
+  renderer.setJava2DHints(new RenderingHints(KEY_ANTIALIASING,VALUE_ANTIALIAS_ON));
+  BufferedImage image=RendererBaseTest.showRender(typeName,renderer,TIME,bounds);
+  assertNotNull(image);
+  return image;
+}
