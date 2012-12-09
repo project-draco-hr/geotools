@@ -2,12 +2,17 @@
   if (isMixed()) {
     ((NodeImpl)node).collapseWhitespace();
   }
-  ParseExecutor executor=new ParseExecutor(element,node,getParentHandler().getContext(),parser);
-  parser.getBindingWalker().walk(element.getElementDeclaration(),executor,container(),getParentHandler().getContext());
-  value=executor.getValue();
-  if (value == null) {
-    if (parser.getLogger().isLoggable(Level.FINE)) {
-      parser.getLogger().fine("Binding for " + element.getName() + " returned null");
+  if (isNil(element)) {
+    value=null;
+  }
+ else {
+    ParseExecutor executor=new ParseExecutor(element,node,getParentHandler().getContext(),parser);
+    parser.getBindingWalker().walk(element.getElementDeclaration(),executor,container(),getParentHandler().getContext());
+    value=executor.getValue();
+    if (value == null) {
+      if (parser.getLogger().isLoggable(Level.FINE)) {
+        parser.getLogger().fine("Binding for " + element.getName() + " returned null");
+      }
     }
   }
   node.setValue(value);
