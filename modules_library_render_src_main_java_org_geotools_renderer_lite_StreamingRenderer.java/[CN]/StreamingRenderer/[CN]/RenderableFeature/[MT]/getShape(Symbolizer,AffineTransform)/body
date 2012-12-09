@@ -12,13 +12,12 @@
       }
     }
     SymbolizerAssociation sa=(SymbolizerAssociation)symbolizerAssociationHT.get(symbolizer);
-    MathTransform2D crsTransform=null;
-    MathTransform2D atTransform=null;
-    MathTransform2D fullTransform=null;
+    MathTransform crsTransform=null;
+    MathTransform atTransform=null;
+    MathTransform fullTransform=null;
     if (sa == null) {
       sa=new SymbolizerAssociation();
       sa.crs=(findGeometryCS(layer,content,symbolizer));
-      sa.forceWGS84=sa.crs != null ? sa.crs.getCoordinateSystem().getDimension() >= 3 : false;
       try {
         crsTransform=buildTransform(sa.crs,destinationCrs);
         atTransform=(MathTransform2D)ProjectiveTransform.create(worldToScreenTransform);
@@ -31,9 +30,6 @@
       sa.crsxform=crsTransform;
       sa.axform=atTransform;
       symbolizerAssociationHT.put(symbolizer,sa);
-    }
-    if (sa != null && sa.forceWGS84 != null && sa.forceWGS84) {
-      g=JTS.toGeographic(g,sa.crs);
     }
     if (symbolizer instanceof PointSymbolizer) {
       if (!clone && g.getFactory().getCoordinateSequenceFactory() instanceof LiteCoordinateSequenceFactory) {

@@ -1,5 +1,9 @@
 {
+  MathTransform transform=null;
   if (sourceCRS != null && sourceCRS.getCoordinateSystem().getDimension() >= 3) {
+    MathTransform toWgs84_3d=CRS.findMathTransform(sourceCRS,DefaultGeographicCRS.WGS84_3D);
+    MathTransform toWgs84_2d=CRS.findMathTransform(DefaultGeographicCRS.WGS84_3D,DefaultGeographicCRS.WGS84);
+    transform=ConcatenatedTransform.create(toWgs84_3d,toWgs84_2d);
     sourceCRS=DefaultGeographicCRS.WGS84;
   }
   MathTransform2D mt;
@@ -9,5 +13,15 @@
  else {
     mt=(MathTransform2D)CRS.findMathTransform(sourceCRS,destCRS,true);
   }
-  return mt;
+  if (transform != null) {
+    if (mt == null) {
+      return transform;
+    }
+ else {
+      return ConcatenatedTransform.create(transform,mt);
+    }
+  }
+ else {
+    return mt;
+  }
 }
