@@ -7,7 +7,7 @@
   final double scaleY=(ymax - ymin) / npoints;
   final double zmin=sourceEnvelope.getMinimum(2);
   final double zmax=sourceEnvelope.getMaximum(2);
-  final double z=(zmax - zmin) / 2;
+  final double scaleZ=(zmax - zmin) / npoints;
   ReferencedEnvelope targetEnvelope=new ReferencedEnvelope(targetCRS);
   CoordinateOperationFactory coordinateOperationFactory=CRS.getCoordinateOperationFactory(lenient);
   CoordinateReferenceSystem sourceCRS=sourceEnvelope.getCoordinateReferenceSystem();
@@ -18,21 +18,25 @@
   for (int t=0; t < npoints; t++) {
     double dx=scaleX * t;
     double dy=scaleY * t;
-    GeneralDirectPosition position=new GeneralDirectPosition(sourceCRS);
-    position.setOrdinate(0,xmin);
-    position.setOrdinate(1,ymin + dy);
-    position.setOrdinate(2,z);
-    DirectPosition pt=transformTo2D(position,transform1,transform2);
-    targetEnvelope.expandToInclude(pt);
-    GeneralDirectPosition top=new GeneralDirectPosition(xmin + dx,ymax,z);
-    pt=transformTo2D(top,transform1,transform2);
-    targetEnvelope.expandToInclude(pt);
-    GeneralDirectPosition right=new GeneralDirectPosition(xmax,ymin - dy,z);
-    pt=transformTo2D(right,transform1,transform2);
-    targetEnvelope.expandToInclude(pt);
-    GeneralDirectPosition bottom=new GeneralDirectPosition(xmax - dx,ymax,z);
-    pt=transformTo2D(bottom,transform1,transform2);
-    targetEnvelope.expandToInclude(pt);
+    for (int u=0; u < npoints; u++) {
+      double dz=scaleZ * u;
+      double z=zmin + dz;
+      GeneralDirectPosition left=new GeneralDirectPosition(xmin,ymin + dy,z);
+      DirectPosition pt=transformTo2D(left,transform1,transform2);
+      targetEnvelope.expandToInclude(pt);
+      GeneralDirectPosition top=new GeneralDirectPosition(xmin + dx,ymax,z);
+      pt=transformTo2D(top,transform1,transform2);
+      targetEnvelope.expandToInclude(pt);
+      GeneralDirectPosition right=new GeneralDirectPosition(xmax,ymax - dy,z);
+      pt=transformTo2D(right,transform1,transform2);
+      targetEnvelope.expandToInclude(pt);
+      GeneralDirectPosition bottom=new GeneralDirectPosition(xmax - dx,ymax,z);
+      pt=transformTo2D(bottom,transform1,transform2);
+      targetEnvelope.expandToInclude(pt);
+      if (zmin == zmax) {
+        break;
+      }
+    }
   }
   return targetEnvelope;
 }
