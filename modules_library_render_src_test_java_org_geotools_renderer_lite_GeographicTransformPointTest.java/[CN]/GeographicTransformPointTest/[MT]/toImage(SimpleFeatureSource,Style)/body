@@ -10,9 +10,13 @@
   assertTrue(typeName + " world WGS84",CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,bounds.getCoordinateReferenceSystem()));
   assertFalse(typeName + " world empty",bounds.isEmpty());
   assertFalse(typeName + " world null",bounds.isNull());
-  ReferencedEnvelope reference=point_test_2d.getBounds();
+  ReferencedEnvelope reference=JTS.toGeographic(point_test_2d.getBounds());
+  assertNotNull("reference point_test_2d bounds",reference);
+  assertTrue("reference point_test_2d bounds available",!reference.isEmpty() && !reference.isNull());
+  assertTrue("bounds WGS84",CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,reference.getCoordinateReferenceSystem()));
   content.getViewport().setBounds(reference);
-  assertTrue(CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,content.getViewport().getCoordinateReferenceSystem()));
+  assertEquals("map viewport set",reference,content.getViewport().getBounds());
+  assertTrue("map viewport WGS84",CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,content.getCoordinateReferenceSystem()));
   content.addLayer(new FeatureLayer(featuerSource,style));
   StreamingRenderer renderer=new StreamingRenderer();
   renderer.setMapContent(content);
