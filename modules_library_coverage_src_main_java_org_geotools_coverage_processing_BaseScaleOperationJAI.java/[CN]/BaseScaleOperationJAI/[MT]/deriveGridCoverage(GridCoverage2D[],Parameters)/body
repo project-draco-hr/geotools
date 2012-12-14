@@ -1,7 +1,7 @@
 {
   int indexOfInterpolationParam;
   try {
-    indexOfInterpolationParam=parameters.parameters.indexOfParam("Interpolation");
+    indexOfInterpolationParam=parameters.parameters.indexOfParam("interpolation");
   }
  catch (  IllegalArgumentException e) {
     indexOfInterpolationParam=-1;
@@ -13,11 +13,10 @@
  catch (  IllegalArgumentException e) {
     indexOfBorderExtenderParam=-1;
   }
-  final Interpolation interpolation=(Interpolation)(indexOfInterpolationParam == -1 ? new InterpolationNearest() : parameters.parameters.getObjectParameter("Interpolation"));
+  final Interpolation interpolation=(Interpolation)(indexOfInterpolationParam == -1 ? new InterpolationNearest() : parameters.parameters.getObjectParameter("interpolation"));
   ;
   final BorderExtender borderExtender=(BorderExtender)(indexOfBorderExtenderParam != -1 ? parameters.parameters.getObjectParameter("BorderExtender") : BorderExtender.createInstance(BorderExtender.BORDER_COPY));
   GridCoverage2D sourceCoverage=sources[PRIMARY_SOURCE_INDEX];
-  final MathTransform sourceG2W=(sourceCoverage.getGridGeometry()).getGridToCRS2D(PixelOrientation.UPPER_LEFT);
   RenderedImage sourceImage=sourceCoverage.getRenderedImage();
   ViewType strategy=CoverageUtilities.preferredViewForOperation(sourceCoverage,interpolation,false,parameters.hints);
 switch (strategy) {
@@ -29,7 +28,7 @@ case PACKED:
 sourceImage=sourceCoverage.getRenderedImage();
 break;
 }
-RenderingHints targetHints=ImageUtilities.getRenderingHints(sourceImage);
+RenderingHints targetHints=parameters.hints != null ? parameters.hints : ImageUtilities.getRenderingHints(sourceImage);
 if (targetHints == null) targetHints=new RenderingHints(null);
 if (parameters.hints != null) targetHints.add(parameters.hints);
 ImageLayout layout=(ImageLayout)targetHints.get(JAI.KEY_IMAGE_LAYOUT);
@@ -57,13 +56,25 @@ layout.unsetValid(ImageLayout.COLOR_MODEL_MASK);
 layout.unsetValid(ImageLayout.SAMPLE_MODEL_MASK);
 }
 RenderedImage image=createRenderedImage(parameters.parameters,targetHints);
-final PixelTranslation translationValue=PixelTranslation.getPixelTranslation(PixelOrientation.LOWER_RIGHT);
-final LinearTransform translation=ProjectiveTransform.create(AffineTransform.getTranslateInstance(translationValue.dx,translationValue.dy));
-final LinearTransform scale=ProjectiveTransform.create(AffineTransform.getScaleInstance(sourceImage.getWidth() / (1.0 * image.getWidth()),sourceImage.getHeight() / (1.0 * image.getHeight())));
-final MathTransform finalTransform=ConcatenatedTransform.create(translation,ConcatenatedTransform.create(scale,sourceG2W));
+final double scaleX=image.getWidth() / (1.0 * sourceImage.getWidth());
+final double scaleY=image.getHeight() / (1.0 * sourceImage.getHeight());
+final double tX=image.getMinX() - sourceImage.getMinX() * scaleX;
+final double tY=image.getMinY() - sourceImage.getMinY() * scaleY;
+final AffineTransform scaleTranslate=new AffineTransform(scaleX,0,0,scaleY,tX,tY);
+final MathTransform finalTransform;
+try {
+scaleTranslate.invert();
+scaleTranslate.preConcatenate(CoverageUtilities.CENTER_TO_CORNER);
+final AffineTransform2D tr=new AffineTransform2D(scaleTranslate);
+finalTransform=ConcatenatedTransform.create(tr,sourceCoverage.getGridGeometry().getGridToCRS2D());
+}
+ catch (Exception e) {
+throw new RuntimeException(e);
+}
 final InternationalString name=deriveName(sources,0,parameters);
 final Map<String,?> properties=getProperties(image,parameters.crs,name,finalTransform,sources,parameters);
-final GridCoverage2D result=getFactory(parameters.hints).create(name,image,parameters.crs,finalTransform,(GridSampleDimension[])(strategy == ViewType.PHOTOGRAPHIC ? null : sourceCoverage.getSampleDimensions().clone()),sources,properties);
+final GridGeometry2D gg2D=new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(image).getBounds()),PixelInCell.CELL_CORNER,finalTransform,parameters.crs,null);
+final GridCoverage2D result=getFactory(parameters.hints).create(name,image,gg2D,(GridSampleDimension[])(strategy == ViewType.PHOTOGRAPHIC ? null : sourceCoverage.getSampleDimensions().clone()),sources,properties);
 if (strategy == ViewType.GEOPHYSICS) return result.view(ViewType.PACKED);
 if (strategy == ViewType.PACKED) return result.view(ViewType.GEOPHYSICS);
 return result;
