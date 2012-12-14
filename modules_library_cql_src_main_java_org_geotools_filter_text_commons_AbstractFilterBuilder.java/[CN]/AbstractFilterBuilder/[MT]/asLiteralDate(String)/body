@@ -1,24 +1,32 @@
 {
   try {
-    final String date=extractDate(cqlDateTime);
-    final String time=extractTime(cqlDateTime);
+    final String strDate=extractDate(cqlDateTime);
+    final String strTime=extractTime(cqlDateTime);
     final String timeZone=extractTimeZone(cqlDateTime);
     StringBuilder format=new StringBuilder("yyyy-MM-dd");
-    if (!"".equals(time)) {
-      format.append("'T'HH:mm:ss");
+    if (!"".equals(strTime)) {
+      format.append("' 'HH:mm:ss");
     }
+    TimeZone tz=null;
+    String timeZoneOffset="";
     if (!"".equals(timeZone)) {
       if ("Z".equals(timeZone)) {
-        format.append("'Z'");
+        timeZoneOffset="GMT+00:00";
+        tz=TimeZone.getTimeZone("GMT+00:00");
       }
  else {
-        format.append("Z");
+        timeZoneOffset="GMT" + timeZone;
+        tz=TimeZone.getTimeZone(timeZoneOffset);
       }
+      format.append("z");
     }
-    String dateTimeFormat=format.toString();
-    DateFormat formatter=new SimpleDateFormat(dateTimeFormat);
-    Date dateTime=formatter.parse(date + "T" + time+ timeZone);
-    Literal literalDate=filterFactory.literal(dateTime);
+ else {
+      tz=TimeZone.getDefault();
+    }
+    SimpleDateFormat formatter=new SimpleDateFormat(format.toString());
+    formatter.setTimeZone(tz);
+    Date date=formatter.parse(strDate + " " + strTime+ " "+ timeZoneOffset);
+    Literal literalDate=filterFactory.literal(date);
     return literalDate;
   }
  catch (  java.text.ParseException e) {
