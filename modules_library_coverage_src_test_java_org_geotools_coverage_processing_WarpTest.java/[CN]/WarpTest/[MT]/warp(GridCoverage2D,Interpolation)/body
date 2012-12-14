@@ -1,0 +1,23 @@
+{
+  final RenderedImage originalImage=coverage.getRenderedImage();
+  final int w=originalImage.getWidth();
+  final int h=originalImage.getHeight();
+  final ParameterValueGroup param=processor.getOperation("Warp").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("warp").setValue(new WarpAffine(AffineTransform.getScaleInstance(2,2)));
+  param.parameter("Interpolation").setValue(interp);
+  final ImageLayout2 layout=new ImageLayout2(0,0,(int)(w / 2.0),(int)(h / 2.0));
+  GridCoverage2D scaled=(GridCoverage2D)processor.doOperation(param,new Hints(JAI.KEY_IMAGE_LAYOUT,layout));
+  assertEnvelopeEquals(coverage,scaled);
+  RenderedImage scaledImage=scaled.getRenderedImage();
+  assertEquals(w / 2.0,scaledImage.getWidth(),EPS);
+  assertEquals(h / 2.0,scaledImage.getHeight(),EPS);
+  if (SHOW) {
+    Viewer.show(coverage);
+    Viewer.show(scaled);
+  }
+ else {
+    assertNotNull(coverage.getRenderedImage().getData());
+    assertNotNull(scaledImage.getData());
+  }
+}
