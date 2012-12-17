@@ -1,16 +1,19 @@
 {
   ISession session=dstore.getSession(Transaction.AUTO_COMMIT);
   FeatureTypeInfo fti=ArcSDEAdapter.fetchSchema(typeName,null,session);
-  Filter filter=toFilter("INT32_COL < 5 AND BBOX(SHAPE, -180, -90, -170, -80)");
   filteringQuery=new Query(typeName,filter);
   ArcSDEQuery q=ArcSDEQuery.createQuery(session,ftype,filteringQuery,fti.getFidStrategy(),new AutoCommitVersionHandler(SeVersion.SE_QUALIFIED_DEFAULT_VERSION_NAME));
-  int calculated;
+  Envelope queryExtent=q.calculateQueryExtent();
+  assertFalse(queryExtent.isNull());
+  Filter supportedFilter=q.getFilters().getSqlFilter();
+  Assert.assertEquals(filter,supportedFilter);
+  int count;
   try {
-    calculated=q.calculateResultCount();
+    count=q.calculateResultCount();
   }
   finally {
     q.session.dispose();
     q.close();
   }
-  Assert.assertEquals(1,calculated);
+  Assert.assertEquals(expectedCount,count);
 }

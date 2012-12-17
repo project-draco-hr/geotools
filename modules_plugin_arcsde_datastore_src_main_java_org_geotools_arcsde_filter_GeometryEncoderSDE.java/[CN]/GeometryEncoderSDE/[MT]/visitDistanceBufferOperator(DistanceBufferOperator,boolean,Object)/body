@@ -1,0 +1,26 @@
+{
+  PropertyName property;
+  Literal literal;
+{
+    Expression expression1=filter.getExpression1();
+    Expression expression2=filter.getExpression2();
+    if (expression1 instanceof PropertyName && expression2 instanceof Literal) {
+      property=(PropertyName)expression1;
+      literal=(Literal)expression2;
+    }
+ else     if (expression2 instanceof PropertyName && expression1 instanceof Literal) {
+      property=(PropertyName)expression2;
+      literal=(Literal)expression1;
+    }
+ else {
+      throw new IllegalArgumentException("expected propertyname/literal, got " + expression1 + "/"+ expression2);
+    }
+  }
+  final Geometry geom=literal.evaluate(null,Geometry.class);
+  final double distance=filter.getDistance();
+  final Geometry buffer=geom.buffer(distance);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  BinarySpatialOperator intersects=ff.intersects(property,ff.literal(buffer));
+  addSpatialFilter(intersects,SeFilter.METHOD_II_OR_ET,truth,extraData);
+  return extraData;
+}

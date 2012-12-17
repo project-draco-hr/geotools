@@ -31,18 +31,19 @@
           final boolean unsupported=versioningHandler != ArcSdeVersionHandler.NONVERSIONED_HANDLER && dbmsInfo.dbmsId == SeDBMSInfo.SE_DBMS_IS_ORACLE;
           if (unsupported) {
             LOGGER.fine("ArcSDE on Oracle can't calculate count statistics " + "on versioned layers with spatial filters");
+            query.prepareQueryInfo(queryInfo);
+            query.execute();
+            int count=0;
+            while (query.fetch() != null) {
+              count++;
+            }
+            return count;
           }
-          query.prepareQueryInfo(queryInfo);
-          query.execute();
-          int count=0;
-          while (query.fetch() != null) {
-            count++;
-          }
-          return count;
         }
         final int defaultMaxDistinctValues=0;
         final SeTable.SeTableStats tableStats;
-        tableStats=query.calculateTableStatistics(colNames.get(0),SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
+        final String statsCol=colNames.get(0);
+        tableStats=query.calculateTableStatistics(statsCol,SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
         int actualCount=tableStats.getCount();
         return new Integer(actualCount);
       }
