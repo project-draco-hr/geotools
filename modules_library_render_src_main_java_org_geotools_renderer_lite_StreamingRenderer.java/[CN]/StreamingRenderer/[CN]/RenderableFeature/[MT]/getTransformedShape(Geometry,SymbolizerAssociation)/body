@@ -18,7 +18,20 @@
       Decimator d=getDecimator(sa.xform);
       d.decimateTransformGeneralize(geom,sa.crsxform);
       geom.geometryChanged();
-      MathTransform reverse=sa.crsxform == null ? null : sa.crsxform.inverse();
+      MathTransform reverse=null;
+      if (sa.crsxform != null) {
+        if (sa.crsxform instanceof ConcatenatedTransform && ((ConcatenatedTransform)sa.crsxform).transform1.getTargetDimensions() >= 3 && ((ConcatenatedTransform)sa.crsxform).transform2.getTargetDimensions() == 2) {
+          reverse=null;
+        }
+ else {
+          try {
+            reverse=sa.crsxform.inverse();
+          }
+ catch (          Exception cannotReverse) {
+            reverse=null;
+          }
+        }
+      }
       geom=projectionHandler.postProcess(reverse,geom);
       if (geom == null) {
         shape=null;
