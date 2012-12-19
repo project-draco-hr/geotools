@@ -33,9 +33,15 @@
     }
     if (symbolizer instanceof PointSymbolizer) {
       if (!clone && g.getFactory().getCoordinateSequenceFactory() instanceof LiteCoordinateSequenceFactory) {
-        Shape first=getTransformedShape(g,sa);
+        LiteShape2 first=getTransformedShape(g,sa);
         if (first != null) {
-          return getTransformedShape(RendererUtilities.getCentroid(g),null);
+          if (projectionHandler != null) {
+            Geometry tx=JTS.transform(first.getGeometry(),sa.xform.inverse());
+            return getTransformedShape(RendererUtilities.getCentroid(tx),sa);
+          }
+ else {
+            return getTransformedShape(RendererUtilities.getCentroid(g),null);
+          }
         }
  else {
           return null;
