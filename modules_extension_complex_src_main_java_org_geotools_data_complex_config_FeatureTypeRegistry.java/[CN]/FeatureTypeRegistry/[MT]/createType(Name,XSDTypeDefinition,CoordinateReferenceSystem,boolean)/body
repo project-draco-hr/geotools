@@ -1,0 +1,79 @@
+{
+  AttributeType attType;
+  if (processingTypes.contains(assignedName)) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Recursion found for type " + assignedName + ". Proxying it.");
+    }
+    attType=createProxiedType(assignedName,typeDefinition,anonymous ? anonTypeRegistry : typeRegistry);
+    return attType;
+  }
+  processingTypes.push(assignedName);
+  final XSDTypeDefinition baseType=typeDefinition.getBaseType();
+  AttributeType superType=null;
+  if (baseType != null) {
+    String targetNamespace=baseType.getTargetNamespace();
+    String name=baseType.getName();
+    if (name != null) {
+      Name baseTypeName=new NameImpl(targetNamespace,name);
+      superType=getAttributeType(baseTypeName,baseType,crs);
+    }
+  }
+ else {
+    LOGGER.warning(assignedName + " has no super type");
+  }
+  if (typeDefinition instanceof XSDComplexTypeDefinition) {
+    XSDComplexTypeDefinition complexTypeDef;
+    complexTypeDef=(XSDComplexTypeDefinition)typeDefinition;
+    boolean includeParents=true;
+    List<XSDElementDeclaration> children=Schemas.getChildElementDeclarations(typeDefinition,includeParents);
+    final Collection<PropertyDescriptor> schema=new ArrayList<PropertyDescriptor>(children.size());
+    XSDElementDeclaration childDecl;
+    AttributeDescriptor descriptor;
+    for (Iterator it=children.iterator(); it.hasNext(); ) {
+      childDecl=(XSDElementDeclaration)it.next();
+      try {
+        descriptor=createAttributeDescriptor(complexTypeDef,childDecl,crs);
+      }
+ catch (      NoSuchElementException e) {
+        String msg="Failed to create descriptor for '" + childDecl.getTargetNamespace() + "#"+ childDecl.getName()+ " from container '"+ typeDefinition.getTargetNamespace()+ "#"+ typeDefinition.getName()+ "'";
+        NoSuchElementException nse=new NoSuchElementException(msg);
+        nse.initCause(e);
+        throw nse;
+      }
+      schema.add(descriptor);
+    }
+    if (includeAttributes) {
+      for (      XSDAttributeUse attgcontent : complexTypeDef.getAttributeUses()) {
+        XSDAttributeDeclaration att=attgcontent.getContent();
+        descriptor=createAttributeDescriptor(getXmlAttributeType(),null,new NameImpl(null,"@" + att.getName()),0,1,false,null);
+        schema.add(descriptor);
+      }
+    }
+    for (    XSDElementDeclaration elemDecl : children) {
+      if (elemDecl.isElementDeclarationReference()) {
+        elemDecl=elemDecl.getResolvedElementDeclaration();
+      }
+      PropertyDescriptor att=null;
+      for (      PropertyDescriptor desc : schema) {
+        if (desc.getName().getLocalPart().equals(elemDecl.getName()) && desc.getName().getNamespaceURI().equals(elemDecl.getTargetNamespace())) {
+          att=desc;
+          break;
+        }
+      }
+      setSubstitutionGroup(complexTypeDef,elemDecl,att,crs);
+    }
+    attType=createComplexAttributeType(assignedName,schema,complexTypeDef,superType);
+  }
+ else {
+    Class<?> binding=String.class;
+    boolean isIdentifiable=false;
+    boolean isAbstract=false;
+    List<Filter> restrictions=Collections.emptyList();
+    InternationalString description=null;
+    attType=typeFactory.createAttributeType(assignedName,binding,isIdentifiable,isAbstract,restrictions,superType,description);
+  }
+  attType.getUserData().put(XSDTypeDefinition.class,typeDefinition);
+  processingTypes.pop();
+  register(attType,anonymous);
+  return attType;
+}
