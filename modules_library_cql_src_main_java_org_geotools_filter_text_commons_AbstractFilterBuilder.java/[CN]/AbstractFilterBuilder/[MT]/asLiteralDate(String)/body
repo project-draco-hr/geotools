@@ -2,30 +2,30 @@
   try {
     final String strDate=extractDate(cqlDateTime);
     final String strTime=extractTime(cqlDateTime);
-    final String timeZone=extractTimeZone(cqlDateTime);
+    String timeZoneOffset=extractTimeZone(cqlDateTime);
     StringBuilder format=new StringBuilder("yyyy-MM-dd");
     if (!"".equals(strTime)) {
-      format.append("' 'HH:mm:ss");
+      format.append(" HH:mm:ss");
     }
     TimeZone tz=null;
-    String timeZoneOffset="";
-    if (!"".equals(timeZone)) {
-      if ("Z".equals(timeZone)) {
+    if (!"".equals(timeZoneOffset)) {
+      if ("Z".equals(timeZoneOffset)) {
         timeZoneOffset="GMT+00:00";
-        tz=TimeZone.getTimeZone("GMT+00:00");
       }
- else {
-        timeZoneOffset="GMT" + timeZone;
-        tz=TimeZone.getTimeZone(timeZoneOffset);
-      }
-      format.append("z");
+      tz=TimeZone.getTimeZone(timeZoneOffset);
     }
  else {
       tz=TimeZone.getDefault();
     }
-    SimpleDateFormat formatter=new SimpleDateFormat(format.toString());
+    DateFormat formatter=new SimpleDateFormat(format.toString());
     formatter.setTimeZone(tz);
-    Date date=formatter.parse(strDate + " " + strTime+ " "+ timeZoneOffset);
+    Date date;
+    if (!"".equals(strTime)) {
+      date=formatter.parse(strDate + " " + strTime);
+    }
+ else {
+      date=formatter.parse(strDate);
+    }
     Literal literalDate=filterFactory.literal(date);
     return literalDate;
   }
