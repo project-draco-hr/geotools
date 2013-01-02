@@ -1,0 +1,35 @@
+{
+  GeodeticDatum datum=null;
+  final String datumCode=metadata.getGeoKey(GeoTiffGCSCodes.GeogGeodeticDatumGeoKey);
+  if (datumCode == null) {
+    throw new GeoTiffException(metadata,"GeoTiffMetadata2CRSAdapter::createGeodeticDatum(Unit unit):A user defined Geographic Coordinate system must include a predefined datum!",null);
+  }
+  if (datumCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
+    String name=metadata.getGeoKey(GeoTiffGCSCodes.GeogCitationGeoKey);
+    if (name == null) {
+      name="unnamed";
+    }
+ else {
+      String[] values=name.split("\\|");
+      if (values != null && values.length >= 2) {
+        name=values[1];
+      }
+    }
+    if (name.trim().equalsIgnoreCase("WGS84")) {
+      return DefaultGeodeticDatum.WGS84;
+    }
+    final Ellipsoid ellipsoid=createEllipsoid(unit,metadata);
+    final PrimeMeridian primeMeridian=createPrimeMeridian(metadata,unit);
+    datum=new DefaultGeodeticDatum(cleanName(name),ellipsoid,primeMeridian);
+  }
+ else {
+    try {
+      datum=(GeodeticDatum)(this.allAuthoritiesFactory.createDatum("EPSG:" + datumCode));
+    }
+ catch (    Exception cce) {
+      final GeoTiffException ex=new GeoTiffException(metadata,cce.getLocalizedMessage(),cce);
+      throw ex;
+    }
+  }
+  return datum;
+}

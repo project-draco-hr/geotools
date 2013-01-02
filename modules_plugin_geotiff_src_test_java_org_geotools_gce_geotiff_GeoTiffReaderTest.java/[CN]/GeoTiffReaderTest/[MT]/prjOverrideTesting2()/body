@@ -1,9 +1,13 @@
 {
-  final File noCrs=TestData.file(GeoTiffReaderTest.class,"sample.tif");
-  final File prj=TestData.file(GeoTiffReaderTest.class,"sample.prj");
+  final File noCrs=TestData.file(GeoTiffReaderTest.class,"override/sample.tif");
+  final File prj=TestData.file(GeoTiffReaderTest.class,"override/sample.prj");
   final CoordinateReferenceSystem crs_=new PrjFileReader(new FileInputStream(prj).getChannel()).getCoordinateReferenceSystem();
   GeoTiffReader.OVERRIDE_INNER_CRS=false;
   GeoTiffReader reader=new GeoTiffReader(noCrs);
+  if (TestData.isInteractiveTest()) {
+    IIOMetadataDumper iIOMetadataDumper=new IIOMetadataDumper(((GeoTiffReader)reader).getMetadata().getRootNode());
+    System.out.println(iIOMetadataDumper.getMetadata());
+  }
   GridCoverage2D coverage1=(GridCoverage2D)reader.read(null);
   assertNotNull(coverage1);
   assertNotNull(coverage1.getCoordinateReferenceSystem());

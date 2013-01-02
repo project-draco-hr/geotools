@@ -1,0 +1,57 @@
+{
+  int key1=-1, key2;
+switch (model) {
+case 0:
+    key1=GeoTiffGCSCodes.GeogAngularUnitsGeoKey;
+  key2=GeoTiffGCSCodes.GeogAngularUnitSizeGeoKey;
+break;
+case 1:
+key1=GeoTiffPCSCodes.ProjLinearUnitsGeoKey;
+key2=GeoTiffPCSCodes.ProjLinearUnitSizeGeoKey;
+break;
+case 2:
+key1=GeoTiffGCSCodes.GeogLinearUnitsGeoKey;
+key2=GeoTiffGCSCodes.GeogLinearUnitSizeGeoKey;
+break;
+default :
+throw new IllegalStateException("Unable to map model " + model + " for this unit");
+}
+if (unit.equals(SI.METER)) {
+metadata.addGeoShortParam(key1,GeoTiffUoMCodes.Linear_Meter);
+}
+ else if (unit.equals(NonSI.FOOT)) {
+metadata.addGeoShortParam(key1,GeoTiffUoMCodes.Linear_Foot);
+}
+ else if (unit.equals(NonSI.FOOT_SURVEY_US)) {
+metadata.addGeoShortParam(key1,GeoTiffUoMCodes.Linear_Foot_US_Survey);
+}
+ else if (unit.equals(NonSI.GRADE)) {
+metadata.addGeoShortParam(key1,GeoTiffUoMCodes.Angular_Grad);
+}
+ else if (unit.equals(SI.RADIAN)) {
+metadata.addGeoShortParam(key1,GeoTiffUoMCodes.Angular_Radian);
+}
+ else if (unit.equals(NonSI.DEGREE_ANGLE)) {
+metadata.addGeoShortParam(key1,GeoTiffUoMCodes.Angular_Degree);
+}
+ else {
+metadata.addGeoShortParam(key1,GeoTiffConstants.GTUserDefinedGeoKey);
+metadata.addGeoAscii(GeoTiffGCSCodes.GeogCitationGeoKey,unit.toString());
+Unit<?> base=null;
+if (SI.METER.isCompatible(unit)) {
+base=SI.METER;
+}
+ else if (SI.SECOND.isCompatible(unit)) {
+base=SI.SECOND;
+}
+ else if (SI.RADIAN.isCompatible(unit)) {
+if (!Unit.ONE.equals(unit)) {
+base=SI.RADIAN;
+}
+}
+if (base != null) {
+metadata.addGeoDoubleParam(key2,unit.getConverterTo(base).convert(1));
+}
+ else metadata.addGeoDoubleParam(key2,1);
+}
+}

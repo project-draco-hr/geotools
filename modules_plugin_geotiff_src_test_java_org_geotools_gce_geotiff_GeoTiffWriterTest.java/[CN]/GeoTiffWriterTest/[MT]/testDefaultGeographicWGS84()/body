@@ -1,0 +1,17 @@
+{
+  final File geotiff=TestData.temp(this,"test");
+  GridCoverageFactory factory=new GridCoverageFactory();
+  BufferedImage bi=new BufferedImage(10,10,BufferedImage.TYPE_4BYTE_ABGR);
+  ReferencedEnvelope envelope=new ReferencedEnvelope(0,10,0,10,DefaultGeographicCRS.WGS84);
+  GridCoverage2D test=factory.create("test",bi,envelope);
+  GeoTiffWriter writer=new GeoTiffWriter(geotiff);
+  writer.write(test,null);
+  writer.dispose();
+  final GeoTiffReader reader=new GeoTiffReader(geotiff);
+  if (TestData.isInteractiveTest()) {
+    IIOMetadataDumper iIOMetadataDumper=new IIOMetadataDumper(((GeoTiffReader)reader).getMetadata().getRootNode());
+    System.out.println(iIOMetadataDumper.getMetadata());
+  }
+  assertTrue(CRS.findMathTransform(reader.getCrs(),DefaultGeographicCRS.WGS84,true).isIdentity());
+  assertTrue(CRS.equalsIgnoreMetadata(reader.getCrs(),DefaultGeographicCRS.WGS84));
+}

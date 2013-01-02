@@ -5,12 +5,23 @@
     if (pmCode != null) {
       if (pmCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
         try {
-          final String name=metadata.getGeoKey(GeoTiffGCSCodes.GeogCitationGeoKey);
+          String name=metadata.getGeoKey(GeoTiffGCSCodes.GeogCitationGeoKey);
+          if (name == null) {
+            name="unnamed";
+          }
+ else {
+            String[] values=name.split("\\|");
+            if (values != null && values.length >= 4) {
+              name=values[3];
+            }
+          }
           final String pmValue=metadata.getGeoKey(GeoTiffGCSCodes.GeogPrimeMeridianLongGeoKey);
           final double pmNumeric=Double.parseDouble(pmValue);
-          if (pmNumeric == 0)           return DefaultPrimeMeridian.GREENWICH;
-          final Map props=new HashMap();
-          props.put("name",(name != null) ? name : "User Defined GEOTIFF Prime Meridian");
+          if (pmNumeric == 0) {
+            return DefaultPrimeMeridian.GREENWICH;
+          }
+          final Map<String,String> props=new HashMap<String,String>();
+          props.put("name",name);
           pm=datumObjFactory.createPrimeMeridian(props,pmNumeric,linearUnit);
         }
  catch (        NumberFormatException nfe) {

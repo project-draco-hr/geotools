@@ -1,0 +1,29 @@
+{
+  final String unitCode=metadata.getGeoKey(key);
+  if (unitCode == null) {
+    return null;
+  }
+  if (unitCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
+    try {
+      final String unitSize=metadata.getGeoKey(userDefinedKey);
+      if (unitSize == null) {
+        throw new GeoTiffException(metadata,"GeoTiffMetadata2CRSAdapter::createUnit:Must define unit length when using a user defined unit",null);
+      }
+      double sz=Double.parseDouble(unitSize);
+      return base.times(sz);
+    }
+ catch (    NumberFormatException nfe) {
+      final IOException ioe=new GeoTiffException(metadata,nfe.getLocalizedMessage(),nfe);
+      throw ioe;
+    }
+  }
+ else {
+    try {
+      return (Unit<?>)this.allAuthoritiesFactory.createUnit("EPSG:" + unitCode);
+    }
+ catch (    FactoryException fe) {
+      final IOException io=new GeoTiffException(metadata,fe.getLocalizedMessage(),fe);
+      throw io;
+    }
+  }
+}

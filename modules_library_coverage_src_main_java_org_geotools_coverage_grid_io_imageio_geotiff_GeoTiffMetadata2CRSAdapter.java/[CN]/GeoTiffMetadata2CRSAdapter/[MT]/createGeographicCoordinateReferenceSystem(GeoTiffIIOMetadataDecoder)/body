@@ -1,0 +1,50 @@
+{
+  GeographicCRS gcs=null;
+  final String tempCode=metadata.getGeoKey(GeoTiffGCSCodes.GeographicTypeGeoKey);
+  Unit<?> angularUnit=null;
+  try {
+    angularUnit=createUnit(GeoTiffGCSCodes.GeogAngularUnitsGeoKey,GeoTiffGCSCodes.GeogAngularUnitSizeGeoKey,SI.RADIAN,metadata);
+  }
+ catch (  GeoTiffException e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+    angularUnit=null;
+  }
+  if (angularUnit == null) {
+    angularUnit=NonSI.DEGREE_ANGLE;
+  }
+  Unit<?> linearUnit=null;
+  try {
+    linearUnit=createUnit(GeoTiffGCSCodes.GeogLinearUnitsGeoKey,GeoTiffGCSCodes.GeogLinearUnitSizeGeoKey,SI.METER,metadata);
+  }
+ catch (  GeoTiffException e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+    linearUnit=null;
+  }
+  if (linearUnit == null) {
+    linearUnit=SI.METER;
+  }
+  if (tempCode == null || tempCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
+    gcs=createUserDefinedGCS(metadata,linearUnit,angularUnit);
+  }
+ else {
+    try {
+      final StringBuilder geogCode=new StringBuilder(tempCode);
+      if (!tempCode.startsWith("EPSG") && !tempCode.startsWith("epsg")) {
+        geogCode.insert(0,"EPSG:");
+      }
+      gcs=(GeographicCRS)allAuthoritiesFactory.createCoordinateReferenceSystem(geogCode.toString());
+      if (angularUnit != null && !angularUnit.equals(gcs.getCoordinateSystem().getAxis(0).getUnit())) {
+        gcs=new DefaultGeographicCRS(DefaultEllipsoidalCS.getName(gcs,new CitationImpl("EPSG")),(GeodeticDatum)gcs.getDatum(),DefaultEllipsoidalCS.GEODETIC_2D.usingUnit(angularUnit));
+      }
+    }
+ catch (    FactoryException fe) {
+      final IOException ex=new GeoTiffException(metadata,fe.getLocalizedMessage(),fe);
+      throw ex;
+    }
+  }
+  return gcs;
+}

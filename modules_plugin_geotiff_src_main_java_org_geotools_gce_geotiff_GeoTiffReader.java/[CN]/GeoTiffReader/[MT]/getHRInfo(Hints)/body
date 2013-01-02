@@ -23,10 +23,14 @@
       }
     }
     if (crs == null) {
-      if (LOGGER.isLoggable(Level.WARNING))       LOGGER.warning("Coordinate Reference System is not available");
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.warning("Coordinate Reference System is not available");
+      }
       crs=AbstractGridFormat.getDefaultCRS();
     }
-    if (metadata.hasNoData())     noData=metadata.getNoData();
+    if (metadata.hasNoData()) {
+      noData=metadata.getNoData();
+    }
     numOverviews=reader.getNumImages(true) - 1;
     int hrWidth=reader.getWidth(0);
     int hrHeight=reader.getHeight(0);
@@ -42,7 +46,7 @@
       throw new DataSourceException("Raster to Model Transformation is not available");
     }
     final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
-    tempTransform.translate(-0.5,-0.5);
+    tempTransform.concatenate(CoverageUtilities.CENTER_TO_CORNER);
     originalEnvelope=CRS.transform(ProjectiveTransform.create(tempTransform),new GeneralEnvelope(actualDim));
     originalEnvelope.setCoordinateReferenceSystem(crs);
     highestRes=new double[2];

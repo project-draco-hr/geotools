@@ -1,10 +1,21 @@
 {
   final String ellipsoidKey=metadata.getGeoKey(GeoTiffGCSCodes.GeogEllipsoidGeoKey);
   String temp=null;
-  if (ellipsoidKey.equalsIgnoreCase(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
-    String nameEllipsoid=metadata.getGeoKey(GeoTiffGCSCodes.GeogCitationGeoKey);
-    if (nameEllipsoid == null)     nameEllipsoid="unnamed";
-    if (nameEllipsoid.trim().equalsIgnoreCase("WGS84"))     return DefaultEllipsoid.WGS84;
+  if (ellipsoidKey.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
+    String name=metadata.getGeoKey(GeoTiffGCSCodes.GeogCitationGeoKey);
+    if (name == null) {
+      name="unnamed";
+    }
+ else {
+      name=cleanName(name);
+      String[] values=name.split("\\|");
+      if (values != null && values.length >= 3) {
+        name=values[2];
+      }
+    }
+    if (name.trim().equalsIgnoreCase("WGS84")) {
+      return DefaultEllipsoid.WGS84;
+    }
     temp=metadata.getGeoKey(GeoTiffGCSCodes.GeogSemiMajorAxisGeoKey);
     final double semiMajorAxis=(temp != null ? Double.parseDouble(temp) : Double.NaN);
     temp=metadata.getGeoKey(GeoTiffGCSCodes.GeogInvFlatteningGeoKey);
@@ -17,10 +28,10 @@
       final double semiMinorAxis=(temp != null ? Double.parseDouble(temp) : Double.NaN);
       inverseFlattening=semiMajorAxis / (semiMajorAxis - semiMinorAxis);
     }
-    return DefaultEllipsoid.createFlattenedSphere(nameEllipsoid,semiMajorAxis,inverseFlattening,unit);
+    return DefaultEllipsoid.createFlattenedSphere(name,semiMajorAxis,inverseFlattening,unit);
   }
   try {
-    return this.allAuthoritiesFactory.createEllipsoid(new StringBuffer("EPSG:").append(ellipsoidKey).toString());
+    return this.allAuthoritiesFactory.createEllipsoid(new StringBuilder("EPSG:").append(ellipsoidKey).toString());
   }
  catch (  FactoryException fe) {
     final GeoTiffException ex=new GeoTiffException(metadata,fe.getLocalizedMessage(),fe);

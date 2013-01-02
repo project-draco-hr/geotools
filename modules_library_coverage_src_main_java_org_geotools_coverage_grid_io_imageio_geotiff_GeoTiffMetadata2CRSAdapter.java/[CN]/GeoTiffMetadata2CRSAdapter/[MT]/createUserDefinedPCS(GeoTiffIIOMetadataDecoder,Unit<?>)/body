@@ -1,0 +1,48 @@
+{
+  final GeographicCRS baseCRS=createGeographicCoordinateReferenceSystem(metadata);
+  String projectedCrsName=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+  if (projectedCrsName == null) {
+    projectedCrsName="unnamed".intern();
+  }
+ else {
+    projectedCrsName=cleanName(projectedCrsName);
+  }
+  final String projCode=metadata.getGeoKey(GeoTiffPCSCodes.ProjectionGeoKey);
+  boolean projUserDefined=false;
+  if (projCode == null || projCode.equals(GeoTiffConstants.GTUserDefinedGeoKey_String)) {
+    projUserDefined=true;
+  }
+  final Conversion conversionFromBase;
+  String projectionName=null;
+  final ParameterValueGroup parameters;
+  final MathTransform transform;
+  if (projUserDefined) {
+    projectionName=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+    if (projectionName == null) {
+      projectionName="unnamed";
+    }
+    parameters=createUserDefinedProjectionParameter(projectionName,metadata);
+    if (parameters == null) {
+      throw new GeoTiffException(metadata,"GeoTiffMetadata2CRSAdapter::createUserDefinedPCS:Projection is not supported.",null);
+    }
+    refineParameters(baseCRS,parameters);
+    transform=mtFactory.createParameterizedTransform(parameters);
+    conversionFromBase=new DefiningConversion(Collections.singletonMap("name",cleanName(projectionName)),new DefaultOperationMethod(transform),transform);
+  }
+ else {
+    conversionFromBase=(Conversion)this.allAuthoritiesFactory.createCoordinateOperation(new StringBuilder("EPSG:").append(projCode).toString());
+    parameters=conversionFromBase.getParameterValues();
+    refineParameters(baseCRS,parameters);
+    transform=mtFactory.createParameterizedTransform(parameters);
+  }
+  if (projUserDefined) {
+    if (linearUnit != null && linearUnit.equals(SI.METER)) {
+      return new DefaultProjectedCRS(java.util.Collections.singletonMap("name",projectedCrsName),conversionFromBase,baseCRS,transform,DefaultCartesianCS.PROJECTED);
+    }
+    return new DefaultProjectedCRS(java.util.Collections.singletonMap("name",projectedCrsName),conversionFromBase,baseCRS,transform,DefaultCartesianCS.PROJECTED.usingUnit(linearUnit));
+  }
+  if (linearUnit != null && !linearUnit.equals(SI.METER)) {
+    return new DefaultProjectedCRS(Collections.singletonMap("name",projectedCrsName),conversionFromBase,baseCRS,transform,DefaultCartesianCS.PROJECTED.usingUnit(linearUnit));
+  }
+  return new DefaultProjectedCRS(Collections.singletonMap("name",projectedCrsName),conversionFromBase,baseCRS,transform,DefaultCartesianCS.PROJECTED);
+}

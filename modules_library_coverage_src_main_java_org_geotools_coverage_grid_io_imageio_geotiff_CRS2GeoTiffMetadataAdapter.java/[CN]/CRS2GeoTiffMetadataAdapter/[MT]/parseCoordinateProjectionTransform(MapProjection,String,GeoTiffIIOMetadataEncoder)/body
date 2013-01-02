@@ -14,7 +14,7 @@
     List<GeneralParameterValue> values=parameters.values();
     for (    GeneralParameterValue value : values) {
       if (value instanceof ParameterValue) {
-        ParameterValue paramValue=(ParameterValue)value;
+        ParameterValue<?> paramValue=(ParameterValue<?>)value;
         if (AbstractIdentifiedObject.nameMatches(value.getDescriptor(),"latitude_of_origin")) {
           metadata.addGeoDoubleParam(GeoTiffPCSCodes.ProjNatOriginLatGeoKey,(paramValue).doubleValue());
         }
@@ -119,4 +119,12 @@
     metadata.addGeoDoubleParam(GeoTiffPCSCodes.ProjFalseNorthingGeoKey,parameters.parameter("false_northing").doubleValue());
     return;
   }
+  if (projTransf instanceof WorldVanDerGrintenI && name.equalsIgnoreCase("World_Van_der_Grinten_I")) {
+    metadata.addGeoShortParam(GeoTiffPCSCodes.ProjCoordTransGeoKey,GeoTiffCoordinateTransformationsCodes.CT_VanDerGrinten);
+    metadata.addGeoDoubleParam(GeoTiffPCSCodes.ProjCenterLongGeoKey,parameters.parameter("central_meridian").doubleValue());
+    metadata.addGeoDoubleParam(GeoTiffPCSCodes.ProjFalseEastingGeoKey,parameters.parameter("false_easting").doubleValue());
+    metadata.addGeoDoubleParam(GeoTiffPCSCodes.ProjFalseNorthingGeoKey,parameters.parameter("false_northing").doubleValue());
+    return;
+  }
+  throw new IllegalArgumentException("Unable to map projection" + projTransf.getName());
 }
