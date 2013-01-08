@@ -1,0 +1,34 @@
+{
+  PropertyDescriptor propertyDescriptor=featureType.getDescriptor(name);
+  if (propertyDescriptor == null) {
+    throw new IllegalArgumentException(String.format("The name '%s' is not a valid descriptor name for the type '%s'.",name,this.featureType.getName()));
+  }
+  Class<?> expectedClass=propertyDescriptor.getType().getBinding();
+  if (value != null) {
+    Class<?> providedClass=value.getType().getBinding();
+    if (!providedClass.equals(expectedClass) && !expectedClass.isAssignableFrom(providedClass)) {
+      throw new IllegalArgumentException(String.format("The value provided contains an object of '%s' but the method expects an object of '%s'.",providedClass,expectedClass));
+    }
+  }
+ else {
+    if (propertyDescriptor.isNillable()) {
+      value=(Property)expectedClass.cast(null);
+    }
+ else {
+      value=(Property)expectedClass.cast(null);
+    }
+  }
+  ArrayList<Property> valueList;
+  if (values.containsKey(name)) {
+    valueList=values.get(name);
+    int maxOccurs=propertyDescriptor.getMaxOccurs();
+    if (valueList.size() == maxOccurs) {
+      throw new IndexOutOfBoundsException(String.format("You can't add another object with the name of '%s' because you already have the maximum number (%s) allowed by the property descriptor.",name,maxOccurs));
+    }
+  }
+ else {
+    valueList=new ArrayList<Property>();
+    values.put(name,valueList);
+  }
+  valueList.add(value);
+}

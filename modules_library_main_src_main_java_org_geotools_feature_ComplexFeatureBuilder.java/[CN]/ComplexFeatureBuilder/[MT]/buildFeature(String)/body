@@ -1,0 +1,35 @@
+{
+  id=id == null ? FeatureBuilder.createDefaultFeatureId() : id;
+  for (  PropertyDescriptor propertyDescriptor : super.featureType.getDescriptors()) {
+    Name name=propertyDescriptor.getName();
+    if (!values.containsKey(name)) {
+      values.put(name,new ArrayList<Property>());
+    }
+    List<Property> properties=values.get(name);
+    int minOccurs=propertyDescriptor.getMinOccurs();
+    int numberOfProperties=properties.size();
+    if (numberOfProperties < minOccurs) {
+      if (propertyDescriptor.isNillable() && AttributeDescriptor.class.isAssignableFrom(propertyDescriptor.getClass())) {
+        do {
+          Property nullProperty=new AttributeImpl(propertyDescriptor.getType().getBinding().cast(null),(AttributeDescriptor)propertyDescriptor,null);
+          properties.add(nullProperty);
+        }
+ while (++numberOfProperties < minOccurs);
+      }
+ else {
+        throw new IllegalStateException(String.format("Failed to build feature '%s'; its property '%s' requires at least %s occurrence(s) but number of occurrences was %s.",featureType.getName(),name,minOccurs,numberOfProperties));
+      }
+    }
+  }
+  Collection<Property> properties=new ArrayList<Property>();
+  for (  Name key : values.keySet()) {
+    properties.addAll(values.get(key));
+  }
+  this.values.clear();
+  if (ad != null) {
+    return factory.createFeature(properties,ad,id);
+  }
+ else {
+    return factory.createFeature(properties,featureType,id);
+  }
+}

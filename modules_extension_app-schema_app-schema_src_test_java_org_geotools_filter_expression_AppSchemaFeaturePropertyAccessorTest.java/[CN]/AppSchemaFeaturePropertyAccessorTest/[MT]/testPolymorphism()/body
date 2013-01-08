@@ -1,0 +1,25 @@
+{
+  SchemaIndex schemaIndex=loadSchema("http://schemas.opengis.net/GeoSciML/Gsml.xsd");
+  AppSchemaFeatureTypeRegistry typeRegistry=new AppSchemaFeatureTypeRegistry();
+  try {
+    typeRegistry.addSchemas(schemaIndex);
+    Name typeName=Types.typeName(GSMLNS,"MappedFeatureType");
+    ComplexType mf=(ComplexType)typeRegistry.getAttributeType(typeName);
+    assertNotNull(mf);
+    assertTrue(mf instanceof FeatureType);
+    AttributeExpressionImpl ex=new AttributeExpressionImpl("gsml:specification/gsml:GeologicUnit/gsml:preferredAge/gsml:GeologicEvent/gsml:eventAge/gsml:CGI_TermRange/gsml:upper/gsml:CGI_TermValue/gsml:value",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,GSMLNAMESPACES));
+    Object o=ex.evaluate(mf);
+    assertNotNull(o);
+    assertTrue(o instanceof PropertyDescriptor);
+    ex=new AttributeExpressionImpl("gsml:specification/gsml:GeologicUnit/gsml:composition/gsml:CompositionPart/gsml:lithology/@xlink:href",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,GSMLNAMESPACES));
+    o=ex.evaluate(mf);
+    assertNotNull(o);
+    assertTrue(o.equals(Types.typeName(XLINKNS,"href")));
+    ex=new AttributeExpressionImpl("gsml:specification/gsml:GeologicUnit/gsml:composition/gsml:CompositionPart/gsml:lithology/@foo:bar",new Hints(FeaturePropertyAccessorFactory.NAMESPACE_CONTEXT,GSMLNAMESPACES));
+    o=ex.evaluate(mf);
+    assertNull(o);
+  }
+  finally {
+    typeRegistry.disposeSchemaIndexes();
+  }
+}
