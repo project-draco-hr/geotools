@@ -8,13 +8,18 @@
     if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine("Unable to create a granuleDescriptor " + this.toString() + " due to jai scale bug");
     return null;
   }
-  final ImageLayout layout=new ImageLayout(finalImage);
+  final ImageLayout2 layout=new ImageLayout2(finalImage);
   layout.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(tileSizeY).setTileWidth(tileSizeX);
   final RenderingHints localHints=this.hints.clone();
   localHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
   if (interpolation instanceof InterpolationNearest) {
     localHints.add(new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE));
     localHints.add(new RenderingHints(JAI.KEY_TRANSFORM_ON_COLORMAP,Boolean.TRUE));
+  }
+ else {
+    if (finalImage.getColorModel() instanceof IndexColorModel) {
+      layout.unsetValid(ImageLayout2.COLOR_MODEL_MASK).unsetValid(ImageLayout2.SAMPLE_MODEL_MASK);
+    }
   }
   localHints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,BorderExtender.createInstance(BorderExtender.BORDER_COPY)));
   RenderedImage im=null;
