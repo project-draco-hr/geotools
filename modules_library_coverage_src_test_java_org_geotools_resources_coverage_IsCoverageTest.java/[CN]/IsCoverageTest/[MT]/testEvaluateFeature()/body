@@ -1,0 +1,17 @@
+{
+  Filter isCoverage=ECQL.toFilter("isCoverage() = true");
+  Filter isNotCoverage=ECQL.toFilter("isCoverage() = false");
+  CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
+  GridCoverage2D coverage=getRandomCoverage(crs);
+  SimpleFeatureCollection featureCollection=FeatureUtilities.wrapGridCoverage(coverage);
+  SimpleFeature feature=featureCollection.features().next();
+  Assert.equals(true,isCoverage.evaluate(feature));
+  Assert.equals(false,isNotCoverage.evaluate(feature));
+  SimpleFeatureType type=DataUtilities.createType("ns","name:string,geom:Geometry");
+  SimpleFeatureBuilder build=new SimpleFeatureBuilder(type);
+  build.add("testName");
+  build.add(null);
+  feature=build.buildFeature(null);
+  Assert.equals(false,isCoverage.evaluate(feature));
+  Assert.equals(true,isNotCoverage.evaluate(feature));
+}
