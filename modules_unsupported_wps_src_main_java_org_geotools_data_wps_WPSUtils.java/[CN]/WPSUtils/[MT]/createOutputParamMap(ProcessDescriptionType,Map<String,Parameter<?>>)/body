@@ -17,9 +17,19 @@
     SupportedComplexDataType complexOutput=odt.getComplexOutput();
     Class type=Object.class;
     if (literalOutput != null) {
-      if (literalOutput.getDataType() != null) {
-        String reference=literalOutput.getDataType().getReference();
-        type=getLiteralTypeFromReference(reference);
+      DomainMetadataType dataType=literalOutput.getDataType();
+      if (dataType != null) {
+        Class literalType=null;
+        if (dataType.getReference() != null) {
+          literalType=guessLiteralType(dataType.getReference());
+          if (literalType == null) {
+            LOGGER.warning("Unparsable ows:reference " + dataType.getReference());
+          }
+        }
+        if (literalType == null) {
+          literalType=guessLiteralType(dataType.getValue());
+        }
+        type=literalType != null ? literalType : String.class;
       }
  else {
         type=String.class;
