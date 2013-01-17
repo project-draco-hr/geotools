@@ -20,6 +20,12 @@
     sortClause=param.stringValue();
     return;
   }
+  if (name.equals(ImageMosaicFormat.MERGE_BEHAVIOR.getName())) {
+    final Object value=param.getValue();
+    if (value == null)     return;
+    mergeBehavior=MergeBehavior.valueOf(param.stringValue().toUpperCase());
+    return;
+  }
   if (name.equals(AbstractGridFormat.OVERVIEW_POLICY.getName())) {
     final Object value=param.getValue();
     if (value == null)     return;
@@ -149,13 +155,12 @@
   String paramName=name.getCode();
   if (rasterManager.parent.isParameterSupported(name)) {
     final Object value=param.getValue();
-    if (value == null)     return;
+    if (value == null) {
+      return;
+    }
     if (value instanceof List) {
-      List<String> values=(List<String>)value;
-      if (requestedAdditionalDomains == null) {
-        requestedAdditionalDomains=new ArrayList<String>(INIT_DOMAINS_NUMBER);
-      }
-      requestedAdditionalDomains.add(paramName + "=" + (String)values.get(0));
+      List values=(List)value;
+      requestedAdditionalDomains.put(paramName,values);
     }
     return;
   }

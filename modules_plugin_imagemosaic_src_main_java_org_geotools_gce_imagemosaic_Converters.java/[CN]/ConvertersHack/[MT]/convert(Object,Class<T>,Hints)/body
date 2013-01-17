@@ -1,0 +1,25 @@
+{
+  if (source == null)   return null;
+  final Class<?> sourceClass=source.getClass();
+  if (sourceClass == target || sourceClass.equals(target) || target.isAssignableFrom(sourceClass)) {
+    return target.cast(source);
+  }
+  for (  ConverterFactory factory : factories) {
+    Converter converter=factory.createConverter(sourceClass,target,hints);
+    if (converter != null) {
+      try {
+        T converted=converter.convert(source,target);
+        if (converted != null) {
+          return converted;
+        }
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINER))         LOGGER.log(Level.FINER,"Error applying the converter " + converter.getClass() + " on ("+ source+ ","+ target+ ")",e);
+      }
+    }
+  }
+  if (String.class.equals(target)) {
+    return target.cast(source.toString());
+  }
+  return null;
+}

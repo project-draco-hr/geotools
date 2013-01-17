@@ -5,11 +5,21 @@
   final GridSampleDimension[] bands=new GridSampleDimension[numBands];
   Set<String> bandNames=new HashSet<String>();
   for (int i=0; i < numBands; i++) {
-    final ColorInterpretation colorInterpretation=TypeMap.getColorInterpretation(cm,i);
-    if (colorInterpretation == null)     throw new IOException("Unrecognized sample dimension type");
-    String bandName=colorInterpretation.name();
-    if (colorInterpretation == ColorInterpretation.UNDEFINED || bandNames.contains(bandName)) {
+    ColorInterpretation colorInterpretation=null;
+    String bandName=null;
+    if (cm != null) {
+      colorInterpretation=TypeMap.getColorInterpretation(cm,i);
+      if (colorInterpretation == null) {
+        throw new IOException("Unrecognized sample dimension type");
+      }
+      bandName=colorInterpretation.name();
+      if (bandNames.contains(bandName)) {
+        bandName="Band" + (i + 1);
+      }
+    }
+ else {
       bandName="Band" + (i + 1);
+      colorInterpretation=ColorInterpretation.UNDEFINED;
     }
     final SampleDimensionType st=TypeMap.getSampleDimensionType(sm,i);
     final double noData;
