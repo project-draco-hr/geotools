@@ -1,7 +1,9 @@
 {
   final ImageLayout layout=new ImageLayout(rasterBounds.x,rasterBounds.y,rasterBounds.width,rasterBounds.height);
   final Dimension tileDimensions=request.getTileDimensions();
-  if (tileDimensions != null)   layout.setTileHeight(tileDimensions.width).setTileWidth(tileDimensions.height);
+  if (tileDimensions != null) {
+    layout.setTileHeight(tileDimensions.width).setTileWidth(tileDimensions.height);
+  }
   final RenderingHints localHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
   if (hints != null && !hints.isEmpty()) {
     if (hints.containsKey(JAI.KEY_TILE_CACHE)) {
@@ -50,7 +52,7 @@
       }
     }
   }
-  final RenderedImage mosaic=MosaicDescriptor.create(visitor.getSourcesAsArray(),request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,(alphaIn || visitor.doInputTransparency) ? visitor.alphaChannels : null,sourceRoi,visitor.sourceThreshold,backgroundValues,localHints);
+  final RenderedImage mosaic=request.getMergeBehavior().process(visitor.getSourcesAsArray(),backgroundValues,visitor.sourceThreshold,(alphaIn || visitor.doInputTransparency) ? visitor.alphaChannels : null,sourceRoi,request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,localHints);
   if (setRoiProperty) {
     RenderedOp rop=(RenderedOp)mosaic;
     ROI globalRoi=null;

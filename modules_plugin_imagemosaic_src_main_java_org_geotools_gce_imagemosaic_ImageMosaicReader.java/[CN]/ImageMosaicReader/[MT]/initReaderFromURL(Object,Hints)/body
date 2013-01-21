@@ -11,13 +11,33 @@
   }
   if (configuration == null)   throw new DataSourceException("Unable to create reader for this mosaic since we could not parse the configuration.");
   extractProperties(configuration);
-  if (this.hints.containsKey(Hints.MOSAIC_LOCATION_ATTRIBUTE))   this.locationAttributeName=((String)this.hints.get(Hints.MOSAIC_LOCATION_ATTRIBUTE));
+  if (this.hints.containsKey(Hints.MOSAIC_LOCATION_ATTRIBUTE)) {
+    this.locationAttributeName=((String)this.hints.get(Hints.MOSAIC_LOCATION_ATTRIBUTE));
+  }
   try {
     catalog=GranuleCatalogFactory.createGranuleCatalog(sourceURL,configuration);
-    if (catalog == null)     throw new DataSourceException("Unable to create index for this URL " + sourceURL);
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Connected mosaic reader to its index " + sourceURL.toString());
+    if (catalog == null) {
+      throw new DataSourceException("Unable to create index for this URL " + sourceURL);
+    }
     final SimpleFeatureType type=catalog.getType();
-    if (type == null)     throw new IllegalArgumentException("Problems when opening the index, no typenames for the schema are defined");
+    if (type == null) {
+      throw new IllegalArgumentException("Problems when opening the index, no typenames for the schema are defined");
+    }
+    SimpleFeatureType schema=catalog.getType();
+    if (configuration.getAdditionalDomainAttributes() != null) {
+      domainsManager=new DomainManager(configuration.getAdditionalDomainAttributes(),schema);
+    }
+    if (configuration.getTimeAttribute() != null) {
+      final HashMap<String,String> init=new HashMap<String,String>();
+      init.put("TIME",configuration.getTimeAttribute());
+      timeDomainManager=new DomainManager(init,schema);
+    }
+    if (configuration.getElevationAttribute() != null) {
+      final HashMap<String,String> init=new HashMap<String,String>();
+      init.put("ELEVATION",configuration.getElevationAttribute());
+      elevationDomainManager=new DomainManager(init,schema);
+    }
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Connected mosaic reader to its index " + sourceURL.toString());
     setGridGeometry(configuration.getEnvelope());
     final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
     if (tempCRS != null) {
@@ -43,15 +63,18 @@
         }
       }
     }
-    if (this.timeAttribute != null && this.timeAttribute.length() > 0 && type.getDescriptor(this.timeAttribute) == null)     throw new DataSourceException("The provided name for the timeAttribute attribute is invalid.");
     rasterManager=new RasterManager(this);
   }
  catch (  Throwable e) {
     try {
-      if (catalog != null)       catalog.dispose();
+      if (catalog != null) {
+        catalog.dispose();
+      }
     }
  catch (    Throwable e1) {
-      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e1.getLocalizedMessage(),e1);
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.log(Level.FINEST,e1.getLocalizedMessage(),e1);
+      }
     }
  finally {
       catalog=null;
@@ -64,15 +87,6 @@
     }
  finally {
       rasterManager=null;
-    }
-    try {
-      if (additionalDomainManager != null)       additionalDomainManager.dispose();
-    }
- catch (    Throwable e1) {
-      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e1.getLocalizedMessage(),e1);
-    }
- finally {
-      additionalDomainManager=null;
     }
     throw new DataSourceException(e);
   }

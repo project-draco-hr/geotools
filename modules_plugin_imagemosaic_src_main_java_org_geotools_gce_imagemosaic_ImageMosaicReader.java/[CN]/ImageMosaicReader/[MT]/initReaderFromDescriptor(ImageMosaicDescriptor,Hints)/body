@@ -9,6 +9,23 @@
   if (catalog == null) {
     throw new DataSourceException("Unable to create reader for this mosaic since the inner catalog is null.");
   }
+  final SimpleFeatureType schema=catalog.getType();
+  if (schema == null) {
+    throw new DataSourceException("Unable to create reader for this mosaic since the inner catalog schema is null.");
+  }
+  if (configuration.getAdditionalDomainAttributes() != null) {
+    domainsManager=new DomainManager(configuration.getAdditionalDomainAttributes(),schema);
+  }
+  if (configuration.getTimeAttribute() != null) {
+    final HashMap<String,String> init=new HashMap<String,String>();
+    init.put("TIME",configuration.getTimeAttribute());
+    timeDomainManager=new DomainManager(init,schema);
+  }
+  if (configuration.getElevationAttribute() != null) {
+    final HashMap<String,String> init=new HashMap<String,String>();
+    init.put("ELEVATION",configuration.getElevationAttribute());
+    elevationDomainManager=new DomainManager(init,schema);
+  }
   setGridGeometry();
   rasterManager=new RasterManager(this);
   rasterManager.defaultSM=configuration.getSampleModel();

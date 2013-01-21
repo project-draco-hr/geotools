@@ -1,0 +1,55 @@
+{
+  boolean isSafeOnly=false;
+  if (hints != null) {
+    Object safe=hints.get(ConverterFactory.SAFE_CONVERSION);
+    if (safe instanceof Boolean && ((Boolean)safe).booleanValue()) {
+      isSafeOnly=true;
+    }
+  }
+  if (Date.class.isAssignableFrom(source)) {
+    if (String.class.equals(target)) {
+      final SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      df.setTimeZone(TimeZone.getTimeZone("UTC"));
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          if (source instanceof Date) {
+            return df.format((Date)source);
+          }
+          return null;
+        }
+      }
+;
+    }
+  }
+  if (Calendar.class.isAssignableFrom(source)) {
+    if (String.class.equals(target)) {
+      final SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      df.setTimeZone(TimeZone.getTimeZone("UTC"));
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          if (source instanceof Calendar) {
+            return df.format(((Calendar)source).getTime());
+          }
+          return null;
+        }
+      }
+;
+    }
+  }
+  if (XMLGregorianCalendar.class.isAssignableFrom(source)) {
+    if (String.class.equals(target)) {
+      final SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      df.setTimeZone(TimeZone.getTimeZone("UTC"));
+      return new Converter(){
+        public Object convert(        Object source,        Class target) throws Exception {
+          if (source instanceof XMLGregorianCalendar) {
+            return df.format(((XMLGregorianCalendar)source).toGregorianCalendar(TimeZone.getTimeZone("GMT"),Locale.getDefault(),null).getTime());
+          }
+          return null;
+        }
+      }
+;
+    }
+  }
+  return null;
+}
