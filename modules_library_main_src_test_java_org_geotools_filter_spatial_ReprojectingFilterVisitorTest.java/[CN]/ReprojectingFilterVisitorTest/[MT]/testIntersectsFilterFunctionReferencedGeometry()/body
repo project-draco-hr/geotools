@@ -1,0 +1,16 @@
+{
+  GeometryFactory gf=new GeometryFactory();
+  LineString ls=gf.createLineString(new Coordinate[]{new Coordinate(10,15),new Coordinate(20,25)});
+  ls.setUserData(CRS.decode("urn:x-ogc:def:crs:EPSG:6.11.2:4326"));
+  Function intersects=ff.function("intersects",ff.property("geom"),ff.literal(ls));
+  Function clone=(Function)intersects.accept(reprojector,null);
+  assertNotSame(intersects,clone);
+  assertEquals(clone.getParameters().get(0),intersects.getParameters().get(0));
+  assertFalse(clone.getParameters().get(1).equals(intersects.getParameters().get(1)));
+  LineString clonedLs=(LineString)((Literal)clone.getParameters().get(1)).getValue();
+  assertTrue(15 == clonedLs.getCoordinateN(0).x);
+  assertTrue(10 == clonedLs.getCoordinateN(0).y);
+  assertTrue(25 == clonedLs.getCoordinateN(1).x);
+  assertTrue(20 == clonedLs.getCoordinateN(1).y);
+  assertEquals(CRS.decode("EPSG:4326"),clonedLs.getUserData());
+}
