@@ -1,0 +1,13 @@
+{
+  Handler handler=Logging.getLogger("").getHandlers()[0];
+  handler.setLevel(Level.FINEST);
+  org.geotools.util.logging.Logging.getLogger("org.geotools.jdbc").setLevel(Level.FINEST);
+  SimpleFeatureType schema=dataStore.getSchema("lakesview2");
+  TessellationInfo tesselation=(TessellationInfo)schema.getGeometryDescriptor().getUserData().get(TessellationInfo.KEY);
+  assertNotNull("expected tessleation info",tesselation);
+  assertEquals("lakesview2_geom_idx",tesselation.getIndexTableName());
+  BBOX bbox=CommonFactoryFinder.getFilterFactory2(null).bbox("geom",-20,-20,20,20,null);
+  assertEquals(0,query(bbox));
+  bbox=CommonFactoryFinder.getFilterFactory2(null).bbox("geom",-179,-89,179,89,null);
+  assertEquals(1,query(bbox));
+}
