@@ -1,0 +1,59 @@
+{
+  if (rasterManager.expandMe && granule.getColorModel() instanceof IndexColorModel) {
+    granule=new ImageWorker(granule).forceComponentColorModel().getRenderedImage();
+  }
+  if (doInputTransparency) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Support for alpha on input granule " + result.granuleUrl);
+    }
+    granule=new ImageWorker(granule).makeColorTransparent(inputTransparentColor).getRenderedImage();
+    alphaIndex[0]=granule.getColorModel().getNumComponents() - 1;
+  }
+  PlanarImage alphaChannel=null;
+  if (hasAlpha || doInputTransparency) {
+    ImageWorker w=new ImageWorker(granule);
+    if (granule.getSampleModel() instanceof MultiPixelPackedSampleModel) {
+      w.forceComponentColorModel();
+    }
+    if (granule.getColorModel() instanceof IndexColorModel) {
+      alphaChannel=w.forceComponentColorModel().retainLastBand().getPlanarImage();
+    }
+ else {
+      alphaChannel=w.retainBands(alphaIndex).getPlanarImage();
+    }
+  }
+  final Rectangle bounds=PlanarImage.wrapRenderedImage(granule).getBounds();
+  Geometry mask=JTS.toGeometry(new Envelope(bounds.getMinX(),bounds.getMaxX(),bounds.getMinY(),bounds.getMaxY()));
+  ROI imageROI=new ROIGeometry(mask);
+  if (footprintManagement) {
+    final ROI footprint=result.getFootprint();
+    if (footprint != null) {
+      if (imageROI.contains(footprint.getBounds2D().getBounds())) {
+        imageROI=footprint;
+      }
+ else {
+        imageROI=imageROI.intersect(footprint);
+      }
+    }
+    if (defaultArtifactsFilterThreshold != Integer.MIN_VALUE && result.isDoFiltering()) {
+      int artifactThreshold=defaultArtifactsFilterThreshold;
+      if (artifactsFilterPTileThreshold != -1) {
+        if (canonicalPath != null) {
+          final String path=FilenameUtils.getFullPath(canonicalPath);
+          final String baseName=FilenameUtils.getBaseName(canonicalPath);
+          final String histogramPath=path + baseName + "."+ "histogram";
+          final Histogram histogram=Utils.getHistogram(histogramPath);
+          if (histogram != null) {
+            final double[] p=histogram.getPTileThreshold(artifactsFilterPTileThreshold);
+            artifactThreshold=(int)p[0];
+          }
+        }
+      }
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,"Filtering granules artifacts");
+      }
+      granule=ArtifactsFilterDescriptor.create(granule,imageROI,new double[]{0},artifactThreshold,3,hints);
+    }
+  }
+  return new MosaicElement(alphaChannel,imageROI,granule);
+}
