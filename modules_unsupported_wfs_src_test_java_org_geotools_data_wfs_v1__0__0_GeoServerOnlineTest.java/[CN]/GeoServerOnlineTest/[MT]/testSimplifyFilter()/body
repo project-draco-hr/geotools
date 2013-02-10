@@ -1,0 +1,24 @@
+{
+  if (url == null)   return;
+  Map m=new HashMap();
+  m.put(WFSDataStoreFactory.URL.key,url);
+  m.put(WFSDataStoreFactory.TIMEOUT.key,new Integer(100000));
+  WFS_1_0_0_DataStore wfs=(WFS_1_0_0_DataStore)(new WFSDataStoreFactory()).createDataStore(m);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+  WFSFeatureSource fs=wfs.getFeatureSource("topp:states");
+  Filter f=ff.or(Arrays.asList(Filter.EXCLUDE,ff.and(Filter.INCLUDE,ff.greater(ff.property("PERSONS"),ff.literal(10000000)))));
+  SimpleFeatureCollection fc=fs.getFeatures(f);
+  int size=fc.size();
+  SimpleFeatureIterator fi=null;
+  try {
+    fi=fc.features();
+    if (fi.hasNext()) {
+      fi.next();
+    }
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+}
