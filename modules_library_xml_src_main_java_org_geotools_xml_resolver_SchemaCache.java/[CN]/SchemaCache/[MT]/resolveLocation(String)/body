@@ -1,0 +1,29 @@
+{
+  String path=SchemaResolver.getSimpleHttpResourcePath(location,this.keepQuery);
+  if (path == null) {
+    return null;
+  }
+  String relativePath=path.substring(1);
+  File file;
+  try {
+    file=new File(getDirectory(),relativePath).getCanonicalFile();
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  if (file.exists()) {
+    return DataUtilities.fileToURL(file).toExternalForm();
+  }
+ else   if (isDownloadAllowed()) {
+    byte[] bytes=download(location);
+    if (bytes == null) {
+      return null;
+    }
+    store(file,bytes);
+    LOGGER.info("Cached application schema: " + location);
+    return DataUtilities.fileToURL(file).toExternalForm();
+  }
+ else {
+    return null;
+  }
+}
