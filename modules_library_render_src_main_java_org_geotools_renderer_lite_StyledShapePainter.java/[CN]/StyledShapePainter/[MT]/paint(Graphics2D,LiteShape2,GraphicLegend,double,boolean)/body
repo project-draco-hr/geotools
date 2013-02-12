@@ -1,0 +1,27 @@
+{
+  if (legend == null) {
+    throw new NullPointerException("ShapePainter has been asked to paint a null legend!!");
+  }
+  Iterator<GraphicalSymbol> symbolIter=legend.graphicalSymbols().iterator();
+  while (symbolIter.hasNext()) {
+    GraphicalSymbol symbol=symbolIter.next();
+    if (symbol instanceof ExternalGraphic) {
+      float[] coords=new float[2];
+      PathIterator iter=getPathIterator(shape);
+      iter.currentSegment(coords);
+      double rotation=Double.parseDouble(((Literal)legend.getRotation()).getValue().toString());
+      float opacity=Float.parseFloat(((Literal)legend.getOpacity()).getValue().toString());
+      ExternalGraphic graphic=(ExternalGraphic)symbol;
+      while (!(iter.isDone())) {
+        iter.currentSegment(coords);
+        try {
+          renderImage(graphics,coords[0],coords[1],ImageIO.read(graphic.getOnlineResource().getLinkage().toURL()),rotation,opacity,isLabelObstacle);
+        }
+ catch (        IOException ex) {
+          Logger.getLogger(StyledShapePainter.class.getName()).log(Level.SEVERE,null,ex);
+        }
+        iter.next();
+      }
+    }
+  }
+}
