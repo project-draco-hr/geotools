@@ -11,16 +11,37 @@
  catch (  IOException e) {
     throw new RuntimeException(e);
   }
-  if (file.exists()) {
-    return DataUtilities.fileToURL(file).toExternalForm();
+  boolean isTemp=false;
+synchronized (locationsInDownload) {
+    if (!locationsInDownload.contains(location)) {
+      if (file.exists()) {
+        return DataUtilities.fileToURL(file).toExternalForm();
+      }
+    }
+ else {
+      isTemp=true;
+      try {
+        file=new File(getTempDirectory(),relativePath).getCanonicalFile();
+      }
+ catch (      IOException e) {
+        LOGGER.severe("Can't create temporary file: " + file.getAbsolutePath());
+        throw new RuntimeException(e);
+      }
+    }
   }
- else   if (isDownloadAllowed()) {
+  if (isDownloadAllowed()) {
+    startDownload(location,file,isTemp);
     byte[] bytes=download(location);
     if (bytes == null) {
+      endDownload(location,isTemp);
       return null;
     }
     store(file,bytes);
-    LOGGER.info("Cached application schema: " + location);
+    LOGGER.info("Cached XML schema: " + location);
+    endDownload(location,isTemp);
+    if (isTemp) {
+      file.deleteOnExit();
+    }
     return DataUtilities.fileToURL(file).toExternalForm();
   }
  else {
