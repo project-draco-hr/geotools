@@ -4,22 +4,32 @@
   Statement st=null;
   String metadataSchema=getMetadataSchema(store);
   try {
-    try {
-      st=cx.createStatement();
-      StringBuffer sb=new StringBuffer();
-      sb.append("SELECT * FROM ");
-      if (metadataSchema != null) {
-        sb.append(metadataSchema);
-        sb.append(".");
-      }
-      sb.append(tableName);
-      rs=st.executeQuery(sb.toString());
-    }
- catch (    Exception e) {
-      return null;
-    }
+    if (metadataTableExists == null) {
+synchronized (this) {
+        if (metadataTableExists == null) {
+          try {
+            st=cx.createStatement();
+            StringBuffer sb=new StringBuffer();
+            sb.append("SELECT * FROM ");
+            if (metadataSchema != null) {
+              sb.append(metadataSchema);
+              sb.append(".");
+            }
+            sb.append(tableName).append(" WHERE 1 = 0");
+            rs=st.executeQuery(sb.toString());
+            metadataTableExists=true;
+          }
+ catch (          Exception e) {
+            metadataTableExists=false;
+          }
  finally {
-      store.closeSafe(rs);
+            store.closeSafe(rs);
+          }
+        }
+      }
+    }
+    if (!metadataTableExists) {
+      return null;
     }
     SQLDialect dialect=store.getSQLDialect();
     StringBuffer sb=new StringBuffer();
