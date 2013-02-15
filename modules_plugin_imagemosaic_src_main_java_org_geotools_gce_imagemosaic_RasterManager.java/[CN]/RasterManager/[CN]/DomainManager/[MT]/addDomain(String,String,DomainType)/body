@@ -1,0 +1,22 @@
+{
+  Utilities.ensureNonNull("name",name);
+  Utilities.ensureNonNull("propertyName",propertyName);
+  if (domainsMap.containsKey(name)) {
+    throw new IllegalArgumentException("Trying to add a domain with an existing name" + name);
+  }
+  String basePropertyName=propertyName;
+  String additionalPropertyName=null;
+  if (domainType != DomainType.SINGLE_VALUE) {
+    if (propertyName.contains("(") && propertyName.contains(")")) {
+      propertyName=propertyName.substring(propertyName.indexOf("(")).replace("(","").replace(")","");
+    }
+    String properties[]=propertyName.split(Utils.RANGE_SPLITTER_CHAR);
+    if (properties == null || properties.length != 2) {
+      throw new IllegalArgumentException("Malformed domain with ranges: it should contain 2 attributes");
+    }
+    basePropertyName=properties[0];
+    additionalPropertyName=properties[1];
+  }
+  final String upperCase=name.toUpperCase();
+  domainsMap.put(upperCase + DomainDescriptor.DOMAIN_SUFFIX,new DomainDescriptor(name,domainType,basePropertyName,additionalPropertyName));
+}

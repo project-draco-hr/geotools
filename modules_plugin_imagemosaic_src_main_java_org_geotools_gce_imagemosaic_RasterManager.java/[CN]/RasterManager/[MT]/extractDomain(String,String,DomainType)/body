@@ -1,0 +1,13 @@
+{
+  final Query query=new Query(granuleCatalog.getType().getTypeName());
+  final FilterFactory factory=CommonFactoryFinder.getFilterFactory(null);
+  final PropertyName propertyName=factory.property(attribute);
+  query.setPropertyNames(Arrays.asList(attribute,secondAttribute));
+  final SortByImpl[] sb=new SortByImpl[]{new SortByImpl(propertyName,SortOrder.ASCENDING)};
+  if (granuleCatalog.getQueryCapabilities().supportsSorting(sb)) {
+    query.setSortBy(sb);
+  }
+  final FeatureCalc visitor=domainType == DomainType.TIME_RANGE ? new DateRangeVisitor(attribute,secondAttribute) : new RangeVisitor(attribute,secondAttribute);
+  granuleCatalog.computeAggregateFunction(query,visitor);
+  return domainType == DomainType.TIME_RANGE ? ((DateRangeVisitor)visitor).getRange() : ((RangeVisitor)visitor).getRange();
+}

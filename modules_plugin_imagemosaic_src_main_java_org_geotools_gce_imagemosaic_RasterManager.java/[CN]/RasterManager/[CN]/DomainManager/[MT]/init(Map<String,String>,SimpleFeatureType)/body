@@ -1,10 +1,16 @@
 {
-  for (  java.util.Map.Entry<String,String> entry : additionalDomainAttributes.entrySet()) {
+  for (  java.util.Map.Entry<String,String> entry : domainAttributes.entrySet()) {
+    DomainType domainType=DomainType.SINGLE_VALUE;
     final String domainName=entry.getKey();
     String propertyName=entry.getValue();
     try {
-      if (simpleFeatureType.getDescriptor(propertyName) != null) {
-        addDomain(domainName,propertyName);
+      if (attributeHasRange(propertyName)) {
+        domainType=domainAttributes.containsKey(DomainDescriptor.TIME_DOMAIN) ? DomainType.TIME_RANGE : DomainType.NUMBER_RANGE;
+        addDomain(domainName,propertyName,domainType);
+        continue;
+      }
+ else       if (simpleFeatureType.getDescriptor(propertyName) != null) {
+        addDomain(domainName,propertyName,domainType);
         continue;
       }
     }
@@ -17,7 +23,7 @@
       propertyName=propertyName.substring(0,10);
       try {
         if (simpleFeatureType.getDescriptor(propertyName) != null) {
-          addDomain(domainName,propertyName);
+          addDomain(domainName,propertyName,domainType);
           continue;
         }
       }

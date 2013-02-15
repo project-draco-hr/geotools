@@ -7,13 +7,15 @@
     for (int i=dimensionValueFilters.size() - 1; i >= 0; i--) {
       final Filter filter=dimensionValueFilters.get(i);
       if (filter != null && filter.evaluate(granuleDescriptor.originator)) {
-        if (multithreadingAllowed && rasterManager.parent.multiThreadedLoader != null) {
-          granulesFutures.get(i).add(rasterManager.parent.multiThreadedLoader.submit(loader));
-        }
+        if (!dryRun) {
+          if (multithreadingAllowed && rasterManager.parent.multiThreadedLoader != null) {
+            granulesFutures.get(i).add(rasterManager.parent.multiThreadedLoader.submit(loader));
+          }
  else {
-          final FutureTask<GranuleLoadingResult> task=new FutureTask<GranuleLoadingResult>(loader);
-          granulesFutures.get(i).add(task);
-          task.run();
+            final FutureTask<GranuleLoadingResult> task=new FutureTask<GranuleLoadingResult>(loader);
+            granulesFutures.get(i).add(task);
+            task.run();
+          }
         }
         granulesNumber++;
         found=true;
