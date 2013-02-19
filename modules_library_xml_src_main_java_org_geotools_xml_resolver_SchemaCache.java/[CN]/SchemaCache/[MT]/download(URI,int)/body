@@ -1,0 +1,62 @@
+{
+  try {
+    URL url=location.toURL();
+    String protocol=url.getProtocol();
+    if (protocol == null || !(protocol.equals("http") || protocol.equals("https"))) {
+      LOGGER.warning("Unexpected download URL protocol: " + protocol);
+      return null;
+    }
+    HttpURLConnection connection=(HttpURLConnection)url.openConnection();
+    connection.setConnectTimeout(10000);
+    connection.setReadTimeout(10000);
+    connection.setUseCaches(false);
+    connection.connect();
+    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+      LOGGER.warning(String.format("Unexpected response \"%d %s\" while downloading %s",connection.getResponseCode(),connection.getResponseMessage(),location.toString()));
+      return null;
+    }
+    InputStream input=null;
+    List<byte[]> blocks=new LinkedList<byte[]>();
+    try {
+      input=connection.getInputStream();
+      while (true) {
+        byte[] block=new byte[blockSize];
+        int count=input.read(block);
+        if (count == -1) {
+          break;
+        }
+ else         if (count == blockSize) {
+          blocks.add(block);
+        }
+ else {
+          byte[] shortBlock=new byte[count];
+          System.arraycopy(block,0,shortBlock,0,count);
+          blocks.add(shortBlock);
+        }
+      }
+    }
+  finally {
+      if (input != null) {
+        try {
+          input.close();
+        }
+ catch (        Exception e) {
+        }
+      }
+    }
+    int totalCount=0;
+    for (    byte[] b : blocks) {
+      totalCount+=b.length;
+    }
+    byte[] bytes=new byte[totalCount];
+    int position=0;
+    for (    byte[] b : blocks) {
+      System.arraycopy(b,0,bytes,position,b.length);
+      position+=b.length;
+    }
+    return bytes;
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+}
