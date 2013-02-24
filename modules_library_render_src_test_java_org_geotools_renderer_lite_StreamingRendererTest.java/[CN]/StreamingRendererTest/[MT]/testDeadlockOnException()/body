@@ -1,0 +1,42 @@
+{
+  ReferencedEnvelope reWgs=new ReferencedEnvelope(new Envelope(-180,180,-90,90),DefaultGeographicCRS.WGS84);
+  BufferedImage testImage=new BufferedImage(200,200,BufferedImage.TYPE_4BYTE_ABGR);
+  GridCoverage2D testCoverage=new GridCoverageFactory().create("test",testImage,reWgs);
+  GridCoverage2D oomCoverage=new GridCoverage2D("test",testCoverage){
+    @Override public RenderedImage getRenderedImage(){
+      throw new OutOfMemoryError("Boom!");
+    }
+  }
+;
+  SimpleFeatureCollection lines=createLineCollection();
+  Style rasterStyle=createRasterStyle();
+  Style lineStyle=createLineStyle();
+  MapContent mapContent=new MapContent();
+  mapContent.addLayer(new GridCoverageLayer(oomCoverage,rasterStyle));
+  mapContent.addLayer(new FeatureLayer(lines,lineStyle));
+  final StreamingRenderer sr=new StreamingRenderer(){
+    protected BlockingQueue<RenderingRequest> getRequestsQueue(){
+      return new RenderingBlockingQueue(1);
+    }
+  }
+;
+  sr.setMapContent(mapContent);
+  final List<Exception> exceptions=new ArrayList<Exception>();
+  sr.addRenderListener(new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+      features++;
+    }
+    public void errorOccurred(    Exception e){
+      errors++;
+      exceptions.add(e);
+    }
+  }
+);
+  errors=0;
+  features=0;
+  BufferedImage image=new BufferedImage(200,200,BufferedImage.TYPE_4BYTE_ABGR);
+  sr.paint((Graphics2D)image.getGraphics(),new Rectangle(200,200),reWgs);
+  assertEquals(4,features);
+  assertEquals(1,errors);
+  assertTrue(exceptions.get(0).getCause() instanceof OutOfMemoryError);
+}
