@@ -1,0 +1,19 @@
+import sys, optparse, getpass, urllib2, json
+from base64 import b64encode
+from datetime import datetime
+if (__name__ == '__main__'):
+    p = optparse.OptionParser('Usage: %prog [options] username password')
+    p.add_option('-d', '--date', dest='date', help='Date filter (YYYY-MM-DD)')
+    "\n  p.add_option('-j', '--host', dest='host', default='http://jira.codehaus.org', \n    help='JIRA host, default is codehaus') \n  p.add_option('-k', '--key', dest='key', default='GEOT',\n    help='JIRA project key, default is GEOT') \n  p.add_option('-u', '--user', dest='user', default=getpass.getuser(), \n    help='JIRA user, default is current OS user')\n  p.add_option('-p', '--passwd', dest='passwd', \n    help='JIRA password')\n  p.add_option('-v', '--verbose', dest='verbose', action='store_true',\n    help='Verbose flag')\n  "
+    (opts, args) = p.parse_args()
+    if (len(args) < 2):
+        p.error('Must specify a GitHub username and password')
+    opts = vars(opts)
+    date = (datetime.strptime(opts['date'], '%Y-%m-%d') if (opts['date'] is not None) else None)
+    gh = GitHub(args[0], args[1])
+    for pr in gh.list_pulls(date):
+        print pr.title()
+        print pr.author()
+        print pr.url()
+        print pr.merged()
+        print ''
