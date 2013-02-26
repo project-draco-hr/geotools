@@ -1,0 +1,19 @@
+{
+  if (granulesNumber == 0) {
+    LOGGER.log(Level.FINE,"Unable to load any granuleDescriptor ");
+    return null;
+  }
+  LOGGER.fine("Producing the final mosaic, step 1, loop through granule collectors");
+  final List<MosaicElement> mosaicInputs=new ArrayList<RasterLayerResponse.MosaicElement>();
+  GranuleCollector first=null;
+  for (  GranuleCollector collector : granuleCollectors) {
+    LOGGER.fine("Using collector with filter:" + collector.granuleFilter.toString());
+    final MosaicElement preparedMosaic=new Mosaicker(collector.collectGranules(),MergeBehavior.FLAT).createMosaic();
+    mosaicInputs.add(preparedMosaic);
+    if (first == null) {
+      first=collector;
+    }
+  }
+  LOGGER.fine("Producing the final mosaic, step 2, final mosaicking");
+  return new Mosaicker(new MosaicInputs(first.doInputTransparency,first.hasAlpha,mosaicInputs,first.sourceThreshold),mergeBehavior).createMosaic().source;
+}
