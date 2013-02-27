@@ -1,33 +1,8 @@
 {
   try {
-    final String strDate=extractDate(cqlDateTime);
-    final String strTime=extractTime(cqlDateTime);
-    String timeZoneOffset=extractTimeZone(cqlDateTime);
-    StringBuilder format=new StringBuilder("yyyy-MM-dd");
-    if (!"".equals(strTime)) {
-      format.append(" HH:mm:ss");
-    }
-    TimeZone tz=null;
-    if (!"".equals(timeZoneOffset)) {
-      if ("Z".equals(timeZoneOffset)) {
-        timeZoneOffset="GMT+00:00";
-      }
-      tz=TimeZone.getTimeZone(timeZoneOffset);
-    }
- else {
-      tz=TimeZone.getDefault();
-    }
-    DateFormat formatter=new SimpleDateFormat(format.toString());
-    formatter.setTimeZone(tz);
-    Date date;
-    if (!"".equals(strTime)) {
-      date=formatter.parse(strDate + " " + strTime);
-    }
- else {
-      date=formatter.parse(strDate);
-    }
-    Literal literalDate=filterFactory.literal(date);
-    return literalDate;
+    String strDate=extractDate(cqlDate);
+    String strTimeZone=extractTimeZone(cqlDate);
+    return asLiteralTemporal(strDate,null,strTimeZone);
   }
  catch (  java.text.ParseException e) {
     throw new CQLException("Unsupported date time format: " + e.getMessage(),this.cqlSource);
