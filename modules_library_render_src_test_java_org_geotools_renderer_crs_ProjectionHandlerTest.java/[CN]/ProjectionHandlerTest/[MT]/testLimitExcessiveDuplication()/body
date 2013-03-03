@@ -1,0 +1,12 @@
+{
+  ReferencedEnvelope renderingEnvelope=new ReferencedEnvelope(-1800000,1800000,-50,50,WGS84);
+  Geometry g=new WKTReader().read("LINESTRING(-179 -89, 179 89)");
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(renderingEnvelope,true);
+  assertTrue(handler.requiresProcessing(WGS84,g));
+  Geometry preProcessed=handler.preProcess(WGS84,g);
+  assertEquals(g,preProcessed);
+  Geometry postProcessed=handler.postProcess(IdentityTransform.create(2),g);
+  assertTrue(postProcessed instanceof MultiLineString);
+  MultiLineString mls=(MultiLineString)postProcessed;
+  assertEquals(ProjectionHandlerFinder.WRAP_LIMIT * 2 + 1,mls.getNumGeometries());
+}
