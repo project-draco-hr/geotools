@@ -1,0 +1,33 @@
+{
+  if (!testingEnabled()) {
+    return;
+  }
+  String fileName="multiband.bsq";
+  File file=null;
+  try {
+    file=TestData.file(this,fileName);
+  }
+ catch (  FileNotFoundException fnfe) {
+    LOGGER.warning("test-data not found: " + fileName + "\nTests are skipped");
+    return;
+  }
+catch (  IOException ioe) {
+    LOGGER.warning("test-data not found: " + fileName + "\nTests are skipped");
+    return;
+  }
+  final ImageLayout l=new ImageLayout();
+  l.setTileGridXOffset(0).setTileGridYOffset(0).setTileHeight(512).setTileWidth(512);
+  Hints hints=new Hints();
+  hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,l));
+  final URL url=file.toURI().toURL();
+  final Object source=url;
+  final BaseGDALGridCoverage2DReader reader=new EnviHdrReader(source,hints);
+  Assert.assertEquals(reader.getSource(),source);
+  GridCoverage2D gc=(GridCoverage2D)reader.read(null);
+  forceDataLoading(gc);
+  GridSampleDimension[] sampleDimensions=gc.getSampleDimensions();
+  Assert.assertEquals(9,sampleDimensions.length);
+  for (int i=0; i < sampleDimensions.length; i++) {
+    Assert.assertEquals("Band" + (i + 1),sampleDimensions[i].getDescription().toString());
+  }
+}
