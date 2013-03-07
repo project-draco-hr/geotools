@@ -1,0 +1,29 @@
+{
+  final List times=request.getRequestedTimes();
+  final List elevations=request.getElevation();
+  final Map<String,List> additionalDomains=request.getRequestedAdditionalDomains();
+  final Filter filter=request.getFilter();
+  final boolean hasTime=(times != null && times.size() > 0);
+  final boolean hasElevation=(elevations != null && elevations.size() > 0);
+  final boolean hasAdditionalDomains=additionalDomains.size() > 0;
+  final boolean hasFilter=filter != null && !Filter.INCLUDE.equals(filter);
+  if (hasElevation) {
+    final Filter elevationF=rasterManager.elevationDomainManager.createFilter(ImageMosaicReader.ELEVATION_DOMAIN,elevations);
+    query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(query.getFilter(),elevationF));
+  }
+  if (hasFilter) {
+    query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(query.getFilter(),filter));
+  }
+  if (hasTime) {
+    final Filter timeFilter=this.rasterManager.timeDomainManager.createFilter(ImageMosaicReader.TIME_DOMAIN,times);
+    query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(query.getFilter(),timeFilter));
+  }
+  if (hasAdditionalDomains) {
+    final List<Filter> additionalFilter=new ArrayList<Filter>();
+    for (    Entry<String,List> entry : additionalDomains.entrySet()) {
+      final String domainName=entry.getKey() + DomainDescriptor.DOMAIN_SUFFIX;
+      additionalFilter.add(rasterManager.domainsManager.createFilter(domainName,(List)entry.getValue()));
+    }
+    query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(query.getFilter(),FeatureUtilities.DEFAULT_FILTER_FACTORY.and(additionalFilter)));
+  }
+}

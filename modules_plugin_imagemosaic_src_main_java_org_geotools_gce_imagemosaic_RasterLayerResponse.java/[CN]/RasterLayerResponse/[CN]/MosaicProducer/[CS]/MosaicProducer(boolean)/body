@@ -1,0 +1,21 @@
+{
+  mergeBehavior=request.getMergeBehavior();
+  if (mergeBehavior.equals(MergeBehavior.STACK)) {
+    final Map<String,List> requestedAdditionalDomains=request.getRequestedAdditionalDomains();
+    if (!requestedAdditionalDomains.isEmpty()) {
+      Set<Entry<String,List>> entries=requestedAdditionalDomains.entrySet();
+      if (entries.size() > 1) {
+        throw new IllegalStateException("Unable to handle dimensions stacking for more than 1 dimension");
+      }
+      final Entry<String,List> element=entries.iterator().next();
+      final String domainName=element.getKey() + DomainDescriptor.DOMAIN_SUFFIX;
+      final List values=(List)element.getValue();
+      for (      Object o : values) {
+        granuleCollectors.add(new GranuleCollector(rasterManager.domainsManager.createFilter(domainName,Arrays.asList(o)),dryRun));
+      }
+    }
+  }
+  if (granuleCollectors.isEmpty()) {
+    granuleCollectors.add(new GranuleCollector(Filter.INCLUDE,dryRun));
+  }
+}

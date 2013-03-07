@@ -1,0 +1,38 @@
+{
+  for (  java.util.Map.Entry<String,String> entry : domainAttributes.entrySet()) {
+    DomainType domainType=DomainType.SINGLE_VALUE;
+    final String domainName=entry.getKey();
+    String propertyName=entry.getValue();
+    try {
+      if (attributeHasRange(propertyName)) {
+        domainType=domainAttributes.containsKey(DomainDescriptor.TIME_DOMAIN) ? DomainType.TIME_RANGE : DomainType.NUMBER_RANGE;
+        addDomain(domainName,propertyName,domainType);
+        continue;
+      }
+ else       if (simpleFeatureType.getDescriptor(propertyName) != null) {
+        addDomain(domainName,propertyName,domainType);
+        continue;
+      }
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+    if (propertyName.length() > 10) {
+      propertyName=propertyName.substring(0,10);
+      try {
+        if (simpleFeatureType.getDescriptor(propertyName) != null) {
+          addDomain(domainName,propertyName,domainType);
+          continue;
+        }
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+        }
+      }
+    }
+    throw new IllegalArgumentException("Unable to add this domain:" + domainName + "-"+ propertyName);
+  }
+}

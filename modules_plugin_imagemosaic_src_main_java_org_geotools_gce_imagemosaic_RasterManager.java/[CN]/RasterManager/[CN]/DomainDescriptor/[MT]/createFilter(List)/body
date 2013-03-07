@@ -1,0 +1,41 @@
+{
+  final int size=values.size();
+  final List<Filter> filters=new ArrayList<Filter>();
+  for (int i=0; i < size; i++) {
+    Object value=values.get(i);
+    if (value == null) {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("Ignoring null date for the filter:" + this.identifier);
+      }
+      continue;
+    }
+    if (domainType == DomainType.SINGLE_VALUE) {
+      if (value instanceof Range) {
+        final Range range=(Range)value;
+        filters.add(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(FeatureUtilities.DEFAULT_FILTER_FACTORY.lessOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(range.getMaxValue())),FeatureUtilities.DEFAULT_FILTER_FACTORY.greaterOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(range.getMinValue()))));
+      }
+ else {
+        filters.add(FeatureUtilities.DEFAULT_FILTER_FACTORY.equal(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(value),true));
+      }
+    }
+ else {
+      if (value instanceof Range) {
+        final Range range=(Range)value;
+        final Comparable maxValue=range.getMaxValue();
+        final Comparable minValue=range.getMinValue();
+        if (maxValue.compareTo(minValue) != 0) {
+          Filter condition1=FeatureUtilities.DEFAULT_FILTER_FACTORY.and(FeatureUtilities.DEFAULT_FILTER_FACTORY.greaterOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(additionalPropertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(maxValue)),FeatureUtilities.DEFAULT_FILTER_FACTORY.lessOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(maxValue)));
+          Filter condition2=FeatureUtilities.DEFAULT_FILTER_FACTORY.and(FeatureUtilities.DEFAULT_FILTER_FACTORY.lessOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(additionalPropertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(minValue)),FeatureUtilities.DEFAULT_FILTER_FACTORY.greaterOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(minValue)));
+          Filter condition3=FeatureUtilities.DEFAULT_FILTER_FACTORY.and(FeatureUtilities.DEFAULT_FILTER_FACTORY.lessOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(additionalPropertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(maxValue)),FeatureUtilities.DEFAULT_FILTER_FACTORY.greaterOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(minValue)));
+          filters.add(FeatureUtilities.DEFAULT_FILTER_FACTORY.or(Arrays.asList(condition1,condition2,condition3)));
+          continue;
+        }
+ else {
+          value=maxValue;
+        }
+      }
+      filters.add(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(FeatureUtilities.DEFAULT_FILTER_FACTORY.lessOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(propertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(value)),FeatureUtilities.DEFAULT_FILTER_FACTORY.greaterOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(additionalPropertyName),FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(value))));
+    }
+  }
+  return FeatureUtilities.DEFAULT_FILTER_FACTORY.or(filters);
+}

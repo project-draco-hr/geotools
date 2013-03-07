@@ -1,6 +1,14 @@
 {
-  final AbstractGridFormat format=getFormat(heterogeneousGranulesURL);
-  final ImageMosaicReader reader=getReader(heterogeneousGranulesURL,format);
+  final CoordinateReferenceSystem WGS84=CRS.decode("EPSG:4326",true);
+  final ReferencedEnvelope TEST_BBOX_A=new ReferencedEnvelope(-180,0,-90,90,WGS84);
+  final ReferencedEnvelope TEST_BBOX_B=new ReferencedEnvelope(0,180,0,90,WGS84);
+  URL heterogeneousGranulesURL=TestData.url(this,"heterogeneous");
+  final Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,WGS84);
+  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(heterogeneousGranulesURL,hints);
+  Assert.assertNotNull(format);
+  Assert.assertFalse("UknownFormat",format instanceof UnknownFormat);
+  final ImageMosaicReader reader=(ImageMosaicReader)format.getReader(heterogeneousGranulesURL,hints);
+  Assert.assertNotNull(reader);
   final int nOv=reader.getNumberOfOvervies();
   final double[] hRes=reader.getHighestRes();
   final RasterManager rasterManager=new RasterManager(reader);

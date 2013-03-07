@@ -1,0 +1,57 @@
+{
+  if (granulesNumber <= 0) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"granules number <= 0");
+    }
+    return null;
+  }
+  final StringBuilder paths=new StringBuilder();
+  final List<MosaicElement> returnValues=new ArrayList<RasterLayerResponse.MosaicElement>();
+  for (  Future<GranuleLoadingResult> future : granulesFutures) {
+    try {
+      final GranuleLoadingResult result=future.get();
+      if (result == null) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.log(Level.FINE,"Unable to load the raster for granule with request " + request.toString());
+        }
+        continue;
+      }
+      final RenderedImage loadedImage=result.getRaster();
+      if (loadedImage == null) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.log(Level.FINE,"Unable to load the raster for granuleDescriptor " + result.granuleUrl + " with request "+ request.toString());
+        }
+        continue;
+      }
+      if (sourceThreshold == null) {
+        final ColorModel cm=loadedImage.getColorModel();
+        hasAlpha=cm.hasAlpha();
+        if (hasAlpha || doInputTransparency) {
+          alphaIndex=new int[]{cm.getNumComponents() - 1};
+        }
+        sourceThreshold=new double[][]{{CoverageUtilities.getMosaicThreshold(loadedImage.getSampleModel().getDataType())}};
+      }
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Adding to mosaic granule " + result.granuleUrl);
+      }
+      File inputFile=DataUtilities.urlToFile(result.granuleUrl);
+      String canonicalPath=inputFile.getCanonicalPath();
+      paths.append(canonicalPath).append(",");
+      MosaicElement input=processGranuleRaster(loadedImage,result,canonicalPath);
+      returnValues.add(input);
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Adding to mosaic failed, original request was " + request);
+      }
+      continue;
+    }
+    granulesPaths=paths.length() > 1 ? paths.substring(0,paths.length() - 1) : "";
+  }
+  if (returnValues == null || returnValues.isEmpty()) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("The MosaicElement list is null or empty");
+    }
+  }
+  return new MosaicInputs(doInputTransparency,hasAlpha,returnValues,sourceThreshold);
+}

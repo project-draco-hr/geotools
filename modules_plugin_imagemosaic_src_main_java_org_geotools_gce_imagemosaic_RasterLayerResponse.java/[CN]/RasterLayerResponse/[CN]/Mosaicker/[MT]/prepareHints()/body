@@ -1,0 +1,25 @@
+{
+  final ImageLayout layout=new ImageLayout(rasterBounds.x,rasterBounds.y,rasterBounds.width,rasterBounds.height);
+  Dimension tileDimensions=request.getTileDimensions();
+  if (tileDimensions == null) {
+    tileDimensions=(Dimension)JAI.getDefaultTileSize().clone();
+  }
+  layout.setTileHeight(tileDimensions.width).setTileWidth(tileDimensions.height);
+  final RenderingHints localHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+  if (hints != null && !hints.isEmpty()) {
+    TileCache tc=Utils.getTileCacheHint(hints);
+    if (tc != null) {
+      localHints.add(new RenderingHints(JAI.KEY_TILE_CACHE,(TileCache)tc));
+    }
+    localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
+    BorderExtender be=Utils.getBorderExtenderHint(hints);
+    if (be != null) {
+      localHints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,be));
+    }
+    TileScheduler tileScheduler=Utils.getTileSchedulerHint(hints);
+    if (tileScheduler != null) {
+      localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,tileScheduler));
+    }
+  }
+  return localHints;
+}

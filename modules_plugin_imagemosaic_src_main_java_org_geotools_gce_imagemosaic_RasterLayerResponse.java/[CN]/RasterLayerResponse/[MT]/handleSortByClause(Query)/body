@@ -1,0 +1,44 @@
+{
+  Utilities.ensureNonNull("query",query);
+  LOGGER.fine("Prepping to manage SortBy Clause");
+  final String sortByClause=request.getSortClause();
+  if (sortByClause != null && sortByClause.length() > 0) {
+    final String[] elements=sortByClause.split(",");
+    if (elements != null && elements.length > 0) {
+      final List<SortBy> clauses=new ArrayList<SortBy>(elements.length);
+      for (      String element : elements) {
+        if (element == null || element.length() <= 0) {
+          continue;
+        }
+        try {
+          element=element.trim();
+          if (element.endsWith(Utils.ASCENDING_ORDER_IDENTIFIER)) {
+            String attribute=element.substring(0,element.length() - 2);
+            clauses.add(new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(attribute),SortOrder.ASCENDING));
+            LOGGER.fine("Added clause ASCENDING on attribute:" + attribute);
+          }
+ else           if (element.contains(Utils.DESCENDING_ORDER_IDENTIFIER)) {
+            String attribute=element.substring(0,element.length() - 2);
+            clauses.add(new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(attribute),SortOrder.DESCENDING));
+            LOGGER.fine("Added clause DESCENDING on attribute:" + attribute);
+          }
+ else {
+            LOGGER.fine("Ignoring sort clause :" + element);
+          }
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.log(Level.INFO,e.getLocalizedMessage(),e);
+          }
+        }
+      }
+      final SortBy[] sb=clauses.toArray(new SortBy[]{});
+      if (rasterManager.granuleCatalog.getQueryCapabilities().supportsSorting(sb)) {
+        query.setSortBy(sb);
+      }
+    }
+ else {
+      LOGGER.fine("No SortBy Clause");
+    }
+  }
+}

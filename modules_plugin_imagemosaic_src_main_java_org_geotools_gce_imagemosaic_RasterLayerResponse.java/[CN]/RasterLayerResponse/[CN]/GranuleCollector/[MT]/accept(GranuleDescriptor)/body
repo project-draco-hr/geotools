@@ -1,0 +1,27 @@
+{
+  Utilities.ensureNonNull("granuleDescriptor",granuleDescriptor);
+  if (granuleFilter.evaluate(granuleDescriptor.originator)) {
+    final GranuleLoader loader=new GranuleLoader(baseReadParameters,imageChoice,mosaicBBox,finalWorldToGridCorner,granuleDescriptor,request,hints);
+    if (!dryRun) {
+      if (multithreadingAllowed && rasterManager.parent.multiThreadedLoader != null) {
+        granulesFutures.add(rasterManager.parent.multiThreadedLoader.submit(loader));
+      }
+ else {
+        final FutureTask<GranuleLoadingResult> task=new FutureTask<GranuleLoadingResult>(loader);
+        granulesFutures.add(task);
+        task.run();
+      }
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("We added the granule " + granuleDescriptor.toString());
+    }
+    granulesNumber++;
+    return true;
+  }
+ else {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("We filtered out the granule " + granuleDescriptor.toString());
+    }
+  }
+  return false;
+}
