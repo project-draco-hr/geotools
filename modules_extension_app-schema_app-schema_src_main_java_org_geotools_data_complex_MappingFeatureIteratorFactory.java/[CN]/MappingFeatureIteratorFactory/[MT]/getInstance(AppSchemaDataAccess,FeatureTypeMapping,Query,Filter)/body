@@ -3,6 +3,15 @@
     return new XmlMappingFeatureIterator(store,mapping,query);
   }
   boolean isJoining=AppSchemaDataAccessConfigurator.isJoining();
+  FeatureSource mappedSource=mapping.getSource();
+  if (isJoining && !(mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore)) {
+    if (AppSchemaDataAccessConfigurator.isJoiningSet()) {
+      throw new IllegalArgumentException("Joining queries are only supported on JDBC data stores");
+    }
+ else {
+      isJoining=false;
+    }
+  }
   if (isJoining) {
     if (!(query instanceof JoiningQuery)) {
       query=new JoiningQuery(query);
@@ -29,15 +38,6 @@
       complexFilter.accept(listChecker,null);
       if (listChecker.isListFilterExists()) {
         isListFilter=AppSchemaDataAccess.unrollFilter(complexFilter,mapping);
-      }
-    }
-    FeatureSource mappedSource=mapping.getSource();
-    if (isJoining && !(mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore)) {
-      if (AppSchemaDataAccessConfigurator.isJoiningSet()) {
-        throw new IllegalArgumentException("Joining queries are only supported on JDBC data stores");
-      }
- else {
-        isJoining=false;
       }
     }
     if (isJoining || mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore) {
