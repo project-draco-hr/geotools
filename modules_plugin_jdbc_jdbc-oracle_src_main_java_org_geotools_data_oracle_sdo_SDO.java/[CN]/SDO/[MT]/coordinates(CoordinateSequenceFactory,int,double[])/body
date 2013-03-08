@@ -10,9 +10,12 @@
     for (int i=0; i < 2; i++)     cs.setOrdinate(0,i,ordinates[i]);
     return cs;
   }
-  final int LEN=D + L;
+  final int LEN=D;
   if ((ordinates.length % LEN) != 0) {
-    throw new IllegalArgumentException("Dimension D:" + D + " and L:"+ L+ " denote Coordiantes "+ "of "+ LEN+ " ordinates. This cannot be resolved with"+ "an ordinate array of length "+ ordinates.length);
+    throw new IllegalArgumentException("Dimension D:" + D + " denote Coordiantes "+ "of "+ LEN+ " ordinates. This cannot be resolved with"+ "an ordinate array of length "+ ordinates.length);
+  }
+  if (L != 0 && L > D) {
+    throw new IllegalArgumentException("Dimension D:" + D + " and LRS with L: "+ L+ " is not supported at a position > D");
   }
   if (D == 2 && L == 0 && f instanceof LiteCoordinateSequenceFactory) {
     return ((LiteCoordinateSequenceFactory)f).create(ordinates);
@@ -21,14 +24,11 @@
   OrdinateList x=new OrdinateList(ordinates,0,LEN);
   OrdinateList y=new OrdinateList(ordinates,1,LEN);
   OrdinateList z=null;
-  if (D == 3) {
+  if (D >= 3 && L != 3) {
     z=new OrdinateList(ordinates,2,LEN);
   }
   if (L != 0) {
-    OrdinateList[] m=new OrdinateList[L];
-    for (int i=0; i < L; i++) {
-      m[i]=new OrdinateList(ordinates,D + i,LEN);
-    }
+    OrdinateList m=new OrdinateList(ordinates,L - 1,LEN);
     return coordiantes(f,x,y,z,m);
   }
  else {
