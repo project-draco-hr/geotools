@@ -15,6 +15,22 @@
         return setPolymorphicValues((Name)mappingName,target,id,nestedMapping,source,xpath,clientPropsMappings);
       }
  else       if (mappingName instanceof String) {
+        if (attMapping instanceof JoiningNestedAttributeMapping) {
+          if (values == null && source != null) {
+            values=getValues(attMapping.isMultiValued(),sourceExpression,source);
+          }
+          if (values != null) {
+            List<Object> idValues=getIdValues(source);
+            if (values instanceof Collection) {
+              for (              Object singleVal : (Collection)values) {
+                ((JoiningNestedAttributeMapping)attMapping).skip(this,singleVal,idValues);
+              }
+            }
+ else {
+              ((JoiningNestedAttributeMapping)attMapping).skip(this,values,idValues);
+            }
+          }
+        }
         return setPolymorphicReference((String)mappingName,clientPropsMappings,target,xpath,targetNodeType);
       }
     }
