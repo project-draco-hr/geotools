@@ -1,0 +1,37 @@
+{
+  SLDParser parser=new SLDParser(styleFactory,input(SLD_EXTERNALENTITY));
+  try {
+    parser.readXML();
+    fail("parsing should thrown an error");
+  }
+ catch (  RuntimeException e) {
+    assertTrue(e.getCause() instanceof FileNotFoundException);
+  }
+  parser=new SLDParser(styleFactory,input(SLD_EXTERNALENTITY));
+  parser.setEntityResolver(new EntityResolver(){
+    @Override public InputSource resolveEntity(    String publicId,    String systemId) throws SAXException, IOException {
+      return new InputSource();
+    }
+  }
+);
+  try {
+    parser.readXML();
+    fail("parsing should thrown an error");
+  }
+ catch (  RuntimeException e) {
+    assertTrue(e.getCause() instanceof MalformedURLException);
+  }
+  parser=new SLDParser(styleFactory,input(SLD_EXTERNALENTITY));
+  parser.setEntityResolver(new EntityResolver(){
+    @Override public InputSource resolveEntity(    String publicId,    String systemId) throws SAXException, IOException {
+      if ("file:///this/file/is/top/secret".equals(systemId)) {
+        return new InputSource(new StringReader("hello"));
+      }
+ else {
+        return new InputSource();
+      }
+    }
+  }
+);
+  parser.readXML();
+}

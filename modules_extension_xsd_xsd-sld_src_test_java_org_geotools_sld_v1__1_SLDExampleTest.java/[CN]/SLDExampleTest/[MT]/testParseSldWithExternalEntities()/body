@@ -1,0 +1,24 @@
+{
+  String file="../example-textsymbolizer-externalentities.xml";
+  Parser parser=new Parser(new SLDConfiguration());
+  try {
+    InputStream location=getClass().getResourceAsStream(file);
+    parser.parse(location);
+    fail("parsing should fail with a FileNotFoundException because the parser try to access a file that doesn't exist");
+  }
+ catch (  FileNotFoundException e) {
+  }
+  parser.setEntityResolver(new EntityResolver(){
+    @Override public InputSource resolveEntity(    String publicId,    String systemId) throws SAXException, IOException {
+      return new InputSource();
+    }
+  }
+);
+  try {
+    InputStream location=getClass().getResourceAsStream(file);
+    parser.parse(location);
+    fail("parsing should fail with a MalformedURLException because the EntityResolver blocked entity resolution");
+  }
+ catch (  MalformedURLException e) {
+  }
+}

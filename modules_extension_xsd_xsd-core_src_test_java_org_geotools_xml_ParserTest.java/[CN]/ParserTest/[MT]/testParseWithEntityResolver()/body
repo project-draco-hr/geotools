@@ -1,0 +1,33 @@
+{
+  Parser parser=new Parser(new MLConfiguration());
+  try {
+    parser.parse(MLSchemaLocationResolver.class.getResourceAsStream("mails-external-entities.xml"));
+    fail("parsing should throw an exception since referenced file does not exist");
+  }
+ catch (  FileNotFoundException e) {
+  }
+  parser.setEntityResolver(new EntityResolver(){
+    @Override public InputSource resolveEntity(    String publicId,    String systemId) throws SAXException, IOException {
+      return new InputSource();
+    }
+  }
+);
+  try {
+    parser.parse(MLSchemaLocationResolver.class.getResourceAsStream("mails-external-entities.xml"));
+    fail("parsing an XML with external entities should throw a MalformedURLException");
+  }
+ catch (  MalformedURLException e) {
+  }
+  parser.setEntityResolver(new EntityResolver(){
+    @Override public InputSource resolveEntity(    String publicId,    String systemId) throws SAXException, IOException {
+      if ("file:///this/file/does/not/exist".equals(systemId)) {
+        return new InputSource(new StringReader("hello"));
+      }
+ else {
+        return new InputSource();
+      }
+    }
+  }
+);
+  parser.parse(MLSchemaLocationResolver.class.getResourceAsStream("mails-external-entities.xml"));
+}
