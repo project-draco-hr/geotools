@@ -15,7 +15,18 @@
       while (!(iter.isDone())) {
         iter.currentSegment(coords);
         try {
-          renderImage(graphics,coords[0],coords[1],ImageIO.read(graphic.getOnlineResource().getLinkage().toURL()),rotation,opacity,isLabelObstacle);
+          BufferedImage image=ImageIO.read(graphic.getOnlineResource().getLinkage().toURL());
+          if (symbolScale != 1.0) {
+            int w=(int)(image.getWidth() / symbolScale);
+            int h=(int)(image.getHeight() / symbolScale);
+            BufferedImage rescaled=new BufferedImage(w,h,image.getType());
+            Graphics2D g=rescaled.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(image,0,0,w,h,0,0,image.getWidth(),image.getHeight(),null);
+            g.dispose();
+            image=rescaled;
+          }
+          renderImage(graphics,coords[0],coords[1],image,rotation,opacity,isLabelObstacle);
         }
  catch (        IOException ex) {
           Logger.getLogger(StyledShapePainter.class.getName()).log(Level.SEVERE,null,ex);
