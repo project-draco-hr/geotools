@@ -1,0 +1,49 @@
+{
+  final boolean datetime_enabled=Boolean.getBoolean("org.geotools.shapefile.datetime");
+  File file=org.geotools.test.TestData.temp(this,"timestamp.shp");
+  URL toURL=file.toURI().toURL();
+  ShapefileDataStore ds=new ShapefileDataStore(toURL);
+  ds.setDbftimeZone(TimeZone.getTimeZone("UTC"));
+  ds.createSchema(DataUtilities.createType("test","geom:Point,timestamp:java.util.Date,date:java.util.Date,timestamp2:java.util.Date,timestamp3:java.util.Date"));
+  final FeatureWriter<SimpleFeatureType,SimpleFeature> fw;
+  fw=ds.getFeatureWriterAppend(Transaction.AUTO_COMMIT);
+  final SimpleFeature sf;
+  DateFormat dateFormatter=new SimpleDateFormat("yyyy-MM-dd Z");
+  Date date=(Date)dateFormatter.parse(str_date + " GMT");
+  Calendar timestampCal=Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+  timestampCal.setTime(date);
+  timestampCal.add(Calendar.MILLISECOND,1);
+  Date timestamp=timestampCal.getTime();
+  timestampCal.add(Calendar.MILLISECOND,12 * 60 * 60* 1000);
+  Date timestamp2=timestampCal.getTime();
+  timestampCal.add(Calendar.MILLISECOND,11 * 60 * 60* 1000 + 59 * 60 * 1000 + 59 * 1000 + 998);
+  Date timestamp3=timestampCal.getTime();
+  sf=fw.next();
+  sf.setAttribute(0,new GeometryFactory().createPoint(new Coordinate(1,-1)));
+  sf.setAttribute(1,timestamp);
+  sf.setAttribute(2,date);
+  sf.setAttribute(3,timestamp2);
+  sf.setAttribute(4,timestamp3);
+  fw.close();
+  final FeatureReader<SimpleFeatureType,SimpleFeature> fr;
+  fr=ds.getFeatureReader();
+  assertTrue(fr.hasNext());
+  final SimpleFeature sf1=fr.next();
+  Date timestamp_=(Date)sf1.getAttribute(1);
+  Date timestamp2_=(Date)sf1.getAttribute(3);
+  Date timestamp3_=(Date)sf1.getAttribute(4);
+  if (datetime_enabled) {
+    assertEquals(timestamp,timestamp_);
+    assertEquals(timestamp2,timestamp2_);
+    assertEquals(timestamp3,timestamp3_);
+  }
+ else {
+    assertEquals(date,timestamp_);
+    assertEquals(date,timestamp2_);
+    assertEquals(date,timestamp3_);
+  }
+  Date date_=(Date)sf1.getAttribute(2);
+  assertEquals(date,date_);
+  fr.close();
+  ds.dispose();
+}

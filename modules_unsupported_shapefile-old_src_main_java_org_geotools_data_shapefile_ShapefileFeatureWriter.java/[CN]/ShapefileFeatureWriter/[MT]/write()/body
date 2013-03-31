@@ -1,0 +1,44 @@
+{
+  if (currentFeature == null) {
+    throw new IOException("Current feature is null");
+  }
+  if (featureReader == null) {
+    throw new IOException("Writer closed");
+  }
+  Geometry g=(Geometry)currentFeature.getDefaultGeometry();
+  if (shapeType == null) {
+    try {
+      if (g != null) {
+        int dims=JTSUtilities.guessCoorinateDims(g.getCoordinates());
+        shapeType=JTSUtilities.getShapeType(g,dims);
+      }
+ else {
+        shapeType=JTSUtilities.getShapeType(currentFeature.getType().getGeometryDescriptor());
+      }
+      shpWriter.writeHeaders(new Envelope(),shapeType,0,0);
+      handler=shapeType.getShapeHandler(gf);
+    }
+ catch (    ShapefileException se) {
+      throw new RuntimeException("Unexpected Error",se);
+    }
+  }
+  g=JTSUtilities.convertToCollection(g,shapeType);
+  if (g != null) {
+    Envelope b=g.getEnvelopeInternal();
+    if (!b.isNull()) {
+      bounds.expandToInclude(b);
+    }
+  }
+  if (g != null)   shapefileLength+=(handler.getLength(g) + 8);
+ else   shapefileLength+=(4 + 8);
+  shpWriter.writeGeometry(g);
+  int idx=0;
+  for (int i=0, ii=featureType.getAttributeCount(); i < ii; i++) {
+    if (writeFlags[i] > 0) {
+      transferCache[idx++]=currentFeature.getAttribute(i);
+    }
+  }
+  dbfWriter.write(transferCache);
+  records++;
+  currentFeature=null;
+}

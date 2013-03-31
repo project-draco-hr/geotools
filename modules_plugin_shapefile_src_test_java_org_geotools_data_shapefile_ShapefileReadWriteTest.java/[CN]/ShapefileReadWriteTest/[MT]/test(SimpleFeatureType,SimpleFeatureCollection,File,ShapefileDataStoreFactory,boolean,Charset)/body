@@ -5,22 +5,22 @@
   params.put(ShapefileDataStoreFactory.URLP.key,tmp.toURI().toURL());
   params.put(ShapefileDataStoreFactory.MEMORY_MAPPED.key,memorymapped);
   shapefile=(ShapefileDataStore)maker.createDataStore(params);
-  if (charset != null)   shapefile.setStringCharset(charset);
+  if (charset != null)   shapefile.setCharset(charset);
   shapefile.createSchema(type);
-  SimpleFeatureStore store=(SimpleFeatureStore)shapefile.getFeatureSource(type.getTypeName());
+  SimpleFeatureStore store=(SimpleFeatureStore)shapefile.getFeatureSource();
   store.addFeatures(original);
   SimpleFeatureCollection copy=store.getFeatures();
   compare(original,copy);
-  if (true) {
-    ShapefileDataStore review;
-    if (charset == null)     review=new ShapefileDataStore(tmp.toURI().toURL(),tmp.toURI(),memorymapped);
- else     review=new ShapefileDataStore(tmp.toURI().toURL(),tmp.toURI(),memorymapped,charset);
-    typeName=review.getTypeNames()[0];
-    SimpleFeatureSource featureSource=review.getFeatureSource(typeName);
-    SimpleFeatureCollection again=featureSource.getFeatures();
-    compare(copy,again);
-    compare(original,again);
-    review.dispose();
+  ShapefileDataStore review=new ShapefileDataStore(tmp.toURI().toURL());
+  review.setMemoryMapped(memorymapped);
+  if (charset != null) {
+    review.setCharset(charset);
   }
+  typeName=review.getTypeNames()[0];
+  SimpleFeatureSource featureSource=review.getFeatureSource(typeName);
+  SimpleFeatureCollection again=featureSource.getFeatures();
+  compare(copy,again);
+  compare(original,again);
+  review.dispose();
   shapefile.dispose();
 }
