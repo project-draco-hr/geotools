@@ -3,10 +3,20 @@
   if (bytes == null) {
     return null;
   }
-  try {
-    return new WKBReader(factory).read(bytes);
+  if (useNativeSerialization) {
+    try {
+      return new SqlServerBinaryReader(factory).read(bytes);
+    }
+ catch (    IOException e) {
+      throw (IOException)new IOException().initCause(e);
+    }
   }
- catch (  ParseException e) {
-    throw (IOException)new IOException().initCause(e);
+ else {
+    try {
+      return new WKBReader(factory).read(bytes);
+    }
+ catch (    ParseException e) {
+      throw (IOException)new IOException().initCause(e);
+    }
   }
 }
