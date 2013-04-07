@@ -6,6 +6,10 @@
   Charset dbfCharset=lookup(DBFCHARSET,params,Charset.class);
   TimeZone dbfTimeZone=lookup(DBFTIMEZONE,params,TimeZone.class);
   Boolean isCreateSpatialIndex=lookup(CREATE_SPATIAL_INDEX,params,Boolean.class);
+  Boolean isEnableSpatialIndex=(Boolean)ENABLE_SPATIAL_INDEX.lookUp(params);
+  if (isEnableSpatialIndex == null) {
+    isEnableSpatialIndex=Boolean.TRUE;
+  }
   File dir=DataUtilities.urlToFile(url);
   if (dir != null && dir.isDirectory()) {
     return new DirectoryDataStore(DataUtilities.urlToFile(url),new ShpFileStoreFactory(this,params));
@@ -14,7 +18,8 @@
     ShpFiles shpFiles=new ShpFiles(url);
     boolean isLocal=shpFiles.isLocal();
     boolean useMemoryMappedBuffer=isLocal && isMemoryMapped.booleanValue();
-    boolean createIndex=isCreateSpatialIndex.booleanValue() && isLocal;
+    boolean enableIndex=isEnableSpatialIndex.booleanValue() && isLocal;
+    boolean createIndex=isCreateSpatialIndex.booleanValue() && enableIndex;
     ShapefileDataStore store=new ShapefileDataStore(url);
     if (namespace != null) {
       store.setNamespaceURI(namespace.toString());
@@ -23,7 +28,8 @@
     store.setBufferCachingEnabled(cacheMemoryMaps);
     store.setCharset(dbfCharset);
     store.setTimeZone(dbfTimeZone);
-    store.setIndexed(createIndex);
+    store.setIndexed(enableIndex);
+    store.setIndexCreationEnabled(createIndex);
     return store;
   }
 }

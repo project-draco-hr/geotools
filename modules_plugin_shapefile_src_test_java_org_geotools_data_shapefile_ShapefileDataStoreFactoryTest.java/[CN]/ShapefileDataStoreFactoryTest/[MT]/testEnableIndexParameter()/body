@@ -1,0 +1,30 @@
+{
+  Map<String,Serializable> params;
+  ShapefileDataStore ds;
+  URL remoteUrl=TestData.url(STATE_POP);
+  File f=copyShapefiles(STATE_POP);
+  URL localUrl=f.toURI().toURL();
+  params=map(URLP.key,remoteUrl,ENABLE_SPATIAL_INDEX.key,true);
+  ds=(ShapefileDataStore)factory.createDataStore(params);
+  assertNotNull("Null datastore should not be returned",ds);
+  assertTrue("should be a non indexed shapefile",ds instanceof org.geotools.data.shapefile.ShapefileDataStore);
+  ds.dispose();
+  params=map(URLP.key,localUrl);
+  ds=(ShapefileDataStore)factory.createDataStore(params);
+  assertNotNull("Null datastore should not be returned",ds);
+  assertTrue(ds.isIndexed());
+  assertTrue(ds.isIndexCreationEnabled());
+  ds.dispose();
+  params=map(URLP.key,localUrl,ENABLE_SPATIAL_INDEX.key,false);
+  ds=(ShapefileDataStore)factory.createDataStore(params);
+  assertNotNull("Null datastore should not be returned",ds);
+  assertFalse(ds.isIndexed());
+  assertFalse(ds.isIndexCreationEnabled());
+  ds.dispose();
+  params=map(URLP.key,localUrl,ENABLE_SPATIAL_INDEX.key,true);
+  ds=(ShapefileDataStore)factory.createDataStore(params);
+  assertNotNull("Null datastore should not be returned",ds);
+  assertTrue(ds.isIndexed());
+  assertTrue(ds.isIndexCreationEnabled());
+  ds.dispose();
+}

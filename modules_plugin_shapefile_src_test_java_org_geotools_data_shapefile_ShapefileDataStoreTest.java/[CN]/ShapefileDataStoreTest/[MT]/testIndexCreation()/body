@@ -1,0 +1,23 @@
+{
+  File shpFile=copyShapefiles(STATE_POP);
+  String name=shpFile.getName();
+  File qixFile=new File(shpFile.getParentFile(),name.substring(0,name.length() - 4) + ".qix");
+  qixFile.delete();
+  URL url=shpFile.toURI().toURL();
+  ShapefileDataStore ds=new ShapefileDataStore(url);
+  try {
+    ds.setIndexed(false);
+    ds.setIndexCreationEnabled(false);
+    performSpatialQuery(ds);
+    assertFalse(qixFile.exists());
+    ds.setIndexed(true);
+    performSpatialQuery(ds);
+    assertFalse(qixFile.exists());
+    ds.setIndexCreationEnabled(true);
+    performSpatialQuery(ds);
+    assertTrue(qixFile.exists());
+  }
+  finally {
+    ds.dispose();
+  }
+}
