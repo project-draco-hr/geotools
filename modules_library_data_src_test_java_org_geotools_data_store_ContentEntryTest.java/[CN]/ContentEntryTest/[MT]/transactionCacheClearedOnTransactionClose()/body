@@ -1,0 +1,25 @@
+{
+  ContentDataStore dataStore=new ContentDataStore(){
+    @Override protected List<Name> createTypeNames() throws IOException {
+      return null;
+    }
+    @Override protected ContentFeatureSource createFeatureSource(    ContentEntry entry) throws IOException {
+      return null;
+    }
+  }
+;
+  Transaction transaction=new DefaultTransaction();
+  ContentEntry entry=new ContentEntry(dataStore,new NameImpl("test"));
+  ContentState state=entry.getState(transaction);
+  new DiffTransactionState(state);
+  assertSame(state,entry.getState(transaction));
+  assertSame(state.getTransaction(),transaction);
+  try {
+    transaction.close();
+    ContentState stateForClosedTransaction=entry.getState(transaction);
+    assertNotSame(stateForClosedTransaction,state);
+  }
+ catch (  IOException e) {
+    fail("Cannot close transaction: " + e.getLocalizedMessage());
+  }
+}
