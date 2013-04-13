@@ -1,0 +1,18 @@
+{
+  SimpleFeatureSource featureSource=ds.getFeatureSource();
+  SimpleFeatureType schema=featureSource.getSchema();
+  Query query=new Query(schema.getTypeName());
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  String geomName=schema.getGeometryDescriptor().getName().getLocalPart();
+  ReferencedEnvelope bounds=featureSource.getBounds();
+  bounds.expandBy(-bounds.getWidth() / 2,-bounds.getHeight() / 2);
+  query.setFilter(ff.bbox(ff.property(geomName),bounds));
+  SimpleFeatureCollection features=featureSource.getFeatures(query);
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    iterator.next();
+  }
+  finally {
+    iterator.close();
+  }
+}
