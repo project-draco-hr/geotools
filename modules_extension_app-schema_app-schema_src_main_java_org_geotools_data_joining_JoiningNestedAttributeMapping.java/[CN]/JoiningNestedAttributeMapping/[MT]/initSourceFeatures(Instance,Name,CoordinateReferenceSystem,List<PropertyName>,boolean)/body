@@ -18,6 +18,11 @@
   join.setJoiningKeyName(nestedSourceExpression);
   join.setJoiningTypeName(instance.baseTableQuery.getTypeName());
   join.setSortBy(instance.baseTableQuery.getSortBy());
+  FilterAttributeExtractor extractor=new FilterAttributeExtractor();
+  instance.mapping.getFeatureIdExpression().accept(extractor,null);
+  for (  String pn : extractor.getAttributeNameSet()) {
+    join.addId(pn);
+  }
   joins.add(0,join);
   query.setQueryJoins(joins);
   if (selectedProperties != null) {
@@ -44,7 +49,7 @@
   DataAccessMappingFeatureIterator daFeatureIterator=(DataAccessMappingFeatureIterator)featureIterator;
   List<Expression> foreignIds=new ArrayList<Expression>();
   for (int i=0; i < query.getQueryJoins().size(); i++) {
-    for (int j=0; j < query.getQueryJoins().get(i).getSortBy().length; j++) {
+    for (int j=0; j < join.getIds().size(); j++) {
       foreignIds.add(filterFac.property(JoiningJDBCFeatureSource.FOREIGN_ID + "_" + i+ "_"+ j));
     }
   }
