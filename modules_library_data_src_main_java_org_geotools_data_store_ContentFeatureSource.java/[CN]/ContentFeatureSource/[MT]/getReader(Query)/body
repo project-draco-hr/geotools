@@ -44,13 +44,20 @@
     }
   }
   if (!canReproject()) {
-    if (query.getCoordinateSystemReproject() != null) {
-      try {
-        reader=new ReprojectFeatureReader(reader,query.getCoordinateSystemReproject());
+    CoordinateReferenceSystem targetCRS=query.getCoordinateSystemReproject();
+    if (targetCRS != null) {
+      CoordinateReferenceSystem nativeCRS=reader.getFeatureType().getCoordinateReferenceSystem();
+      if (nativeCRS == null) {
+        throw new IOException("Cannot reproject data, the source CRS is not available");
       }
- catch (      Exception e) {
-        if (e instanceof IOException)         throw (IOException)e;
- else         throw (IOException)new IOException("Error occurred trying to reproject data").initCause(e);
+ else       if (!nativeCRS.equals(targetCRS)) {
+        try {
+          reader=new ReprojectFeatureReader(reader,targetCRS);
+        }
+ catch (        Exception e) {
+          if (e instanceof IOException)           throw (IOException)e;
+ else           throw (IOException)new IOException("Error occurred trying to reproject data").initCause(e);
+        }
       }
     }
   }

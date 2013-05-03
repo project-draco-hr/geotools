@@ -10,25 +10,32 @@
         sql.append(" ORDER BY ");
       }
       if (j < 0) {
-        sort(query.getTypeName(),sort,orderByFields,false);
+        sort(query.getTypeName(),sort,orderByFields,false,sql);
         if (query.getQueryJoins() != null && query.getQueryJoins().size() > 0) {
-          addMultiValuedSort(query.getTypeName(),orderByFields,query.getQueryJoins().get(0));
+          addMultiValuedSort(query.getTypeName(),orderByFields,query.getQueryJoins().get(0),sql);
         }
         if (!pkColumnNames.isEmpty()) {
           for (          String pk : pkColumnNames) {
-            orderByFields.add(query.getTypeName() + "." + pk);
+            StringBuffer pkSql=new StringBuffer();
+            encodeColumnName(pk,query.getTypeName(),pkSql,null);
+            if (!pkSql.toString().isEmpty() && orderByFields.add(pkSql.toString())) {
+              if (orderByFields.size() > 1) {
+                sql.append(", ");
+              }
+              sql.append(pkSql);
+            }
           }
         }
       }
  else {
         if (aliases != null && aliases[j] != null) {
-          sort(aliases[j],sort,orderByFields,true);
+          sort(aliases[j],sort,orderByFields,true,sql);
         }
  else {
-          sort(join.getJoiningTypeName(),sort,orderByFields,false);
+          sort(join.getJoiningTypeName(),sort,orderByFields,false,sql);
         }
         if (query.getQueryJoins().size() > j + 1) {
-          addMultiValuedSort(join.getJoiningTypeName(),orderByFields,query.getQueryJoins().get(j + 1));
+          addMultiValuedSort(join.getJoiningTypeName(),orderByFields,query.getQueryJoins().get(j + 1),sql);
         }
         try {
           JDBCDataStore ds=getDataStore();
@@ -43,8 +50,5 @@
         }
       }
     }
-  }
-  if (orderby) {
-    sql.append(StringUtils.join(orderByFields.toArray(),", "));
   }
 }

@@ -1,0 +1,20 @@
+{
+  Shape shape=binary.getShape(shapeIndex);
+  int figureOffset=shape.getFigureOffset();
+  int figureStopIndex=binary.getFigures().length - 1;
+  if (shapeIndex + 1 < binary.getShapes().length) {
+    Shape nextShape=binary.getShape(shapeIndex + 1);
+    figureStopIndex=nextShape.getFigureOffset() - 1;
+  }
+  List<LinearRing> linearRings=new ArrayList<LinearRing>();
+  if (figureOffset <= -1) {
+    return gf.createPolygon(new Coordinate[0]);
+  }
+  for (int i=figureOffset; i <= figureStopIndex; i++) {
+    CoordinateSequence sequence=binary.getSequence(i);
+    linearRings.add(gf.createLinearRing(sequence));
+  }
+  LinearRing outerShell=linearRings.remove(0);
+  LinearRing[] holes=linearRings.toArray(new LinearRing[linearRings.size()]);
+  return gf.createPolygon(outerShell,holes);
+}

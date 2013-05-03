@@ -1,0 +1,26 @@
+{
+  dis.setInStream(is);
+  dis.setOrder(ByteOrderValues.LITTLE_ENDIAN);
+  binary.setSrid(dis.readInt());
+  byte version=dis.readByte();
+  if (version != 1) {
+    throw new SqlServerBinaryParseException("Unsupported version (only supports version 1): " + version);
+  }
+  binary.setSerializationProperties(dis.readByte());
+  readNumberOfPoints();
+  readCoordinates();
+  readZValues();
+  readMValues();
+  if (binary.isSinglePoint()) {
+    binary.setFigures(new Figure[]{new Figure(1,0)});
+    binary.setShapes(new Shape[]{new Shape(-1,0,2)});
+  }
+ else   if (binary.hasSingleLineSegment()) {
+    binary.setFigures(new Figure[]{new Figure(1,0)});
+    binary.setShapes(new Shape[]{new Shape(-1,0,1)});
+  }
+ else {
+    readFigures();
+    readShapes();
+  }
+}

@@ -5,18 +5,21 @@
   if (currentFeature != null) {
     write();
   }
-  if (attReader != null && attReader.internalReadersHaveNext()) {
-    shapeType=attReader.shp.getHeader().getShapeType();
+  if (featureReader.nextFeature != null) {
+    currentFeature=featureReader.nextFeature;
+    write();
+  }
+  if (featureReader != null) {
     handler=shapeType.getShapeHandler(gf);
     if (records == 0) {
       shpWriter.writeHeaders(bounds,shapeType,0,0);
     }
     double[] env=new double[4];
-    while (attReader.internalReadersHaveNext()) {
-      shapefileLength+=attReader.shp.transferTo(shpWriter,++records,env);
+    while (featureReader.filesHaveMore()) {
+      shapefileLength+=featureReader.shp.transferTo(shpWriter,++records,env);
       bounds.expandToInclude(env[0],env[1]);
       bounds.expandToInclude(env[2],env[3]);
-      attReader.dbf.transferTo(dbfWriter);
+      featureReader.dbf.transferTo(dbfWriter);
     }
   }
   doClose();
