@@ -42,6 +42,13 @@
     values=getValues(attMapping.isMultiValued(),sourceExpression,source);
   }
   boolean isHRefLink=isByReference(clientPropsMappings,isNestedFeature);
+  int newResolveDepth=resolveDepth;
+  boolean ignoreXlinkHref=false;
+  if (isHRefLink && newResolveDepth > 0) {
+    isHRefLink=false;
+    newResolveDepth--;
+    ignoreXlinkHref=true;
+  }
   if (isNestedFeature) {
     if (values == null) {
       return null;
@@ -62,7 +69,7 @@
           nestedFeatures.addAll(((NestedAttributeMapping)attMapping).getInputFeatures(this,val,getIdValues(source),source,reprojection,selectedProperties,includeMandatory));
         }
  else {
-          nestedFeatures.addAll(((NestedAttributeMapping)attMapping).getFeatures(this,val,getIdValues(source),reprojection,source,selectedProperties,includeMandatory));
+          nestedFeatures.addAll(((NestedAttributeMapping)attMapping).getFeatures(this,val,getIdValues(source),reprojection,source,selectedProperties,includeMandatory,newResolveDepth,resolveTimeOut));
         }
       }
       values=nestedFeatures;
@@ -71,7 +78,7 @@
       values=((NestedAttributeMapping)attMapping).getInputFeatures(this,values,getIdValues(source),source,reprojection,selectedProperties,includeMandatory);
     }
  else {
-      values=((NestedAttributeMapping)attMapping).getFeatures(this,values,getIdValues(source),reprojection,source,selectedProperties,includeMandatory);
+      values=((NestedAttributeMapping)attMapping).getFeatures(this,values,getIdValues(source),reprojection,source,selectedProperties,includeMandatory,newResolveDepth,resolveTimeOut);
     }
     if (isHRefLink) {
       setXlinkReference(target,clientPropsMappings,values,xpath,targetNodeType);
@@ -102,8 +109,7 @@
  else {
         valueList.add(singleVal);
       }
-      instance=xpathAttributeBuilder.set(target,xpath,valueList,id,targetNodeType,false,sourceExpression);
-      setClientProperties(instance,source,clientPropsMappings);
+      instance=setAttributeContent(target,xpath,valueList,id,targetNodeType,false,sourceExpression,source,clientPropsMappings,ignoreXlinkHref);
     }
   }
  else {
@@ -115,8 +121,7 @@
       }
       values=((Attribute)values).getValue();
     }
-    instance=xpathAttributeBuilder.set(target,xpath,values,id,targetNodeType,false,sourceExpression);
-    setClientProperties(instance,source,clientPropsMappings);
+    instance=setAttributeContent(target,xpath,values,id,targetNodeType,false,sourceExpression,source,clientPropsMappings,ignoreXlinkHref);
   }
   if (instance != null && attMapping.encodeIfEmpty()) {
     instance.getDescriptor().getUserData().put("encodeIfEmpty",attMapping.encodeIfEmpty());

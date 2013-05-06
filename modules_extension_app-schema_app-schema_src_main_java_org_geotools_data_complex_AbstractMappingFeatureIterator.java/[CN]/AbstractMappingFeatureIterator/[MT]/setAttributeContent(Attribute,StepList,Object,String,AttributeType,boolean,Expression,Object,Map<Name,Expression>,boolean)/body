@@ -1,0 +1,44 @@
+{
+  Attribute instance=null;
+  Map<Name,Expression> properties=new HashMap<Name,Expression>(clientProperties);
+  if (ignoreXlinkHref) {
+    properties.remove(XLINK_HREF_NAME);
+  }
+  if (properties.containsKey(XLINK_HREF_NAME) && resolveDepth > 0) {
+    String refid=referenceToIdentifier(getValue(properties.get(XLINK_HREF_NAME),source).toString());
+    if (refid != null) {
+      final Hints hints=new Hints();
+      if (resolveDepth > 1) {
+        hints.put(Hints.RESOLVE,ResolveValueType.ALL);
+        hints.put(Hints.RESOLVE_TIMEOUT,resolveTimeOut);
+        hints.put(Hints.ASSOCIATION_TRAVERSAL_DEPTH,resolveDepth - 1);
+      }
+ else {
+        hints.put(Hints.RESOLVE,ResolveValueType.NONE);
+      }
+      FeatureFinder finder=new FeatureFinder(refid,hints);
+      Thread thread=new Thread(finder);
+      long currentTime=System.currentTimeMillis();
+      thread.start();
+      while (thread.isAlive() && (System.currentTimeMillis() - currentTime) / 1000 < resolveTimeOut) {
+        try {
+          Thread.sleep(500);
+        }
+ catch (        InterruptedException t) {
+        }
+      }
+synchronized (finder.stopFlag) {
+        finder.stopFlag.set(true);
+      }
+      if (finder.getFeature() != null) {
+        instance=xpathAttributeBuilder.set(target,xpath,Collections.singletonList(finder.getFeature()),id,targetNodeType,false,sourceExpression);
+        properties.remove(XLINK_HREF_NAME);
+      }
+    }
+  }
+  if (instance == null) {
+    instance=xpathAttributeBuilder.set(target,xpath,value,id,targetNodeType,false,sourceExpression);
+  }
+  setClientProperties(instance,source,properties);
+  return instance;
+}
