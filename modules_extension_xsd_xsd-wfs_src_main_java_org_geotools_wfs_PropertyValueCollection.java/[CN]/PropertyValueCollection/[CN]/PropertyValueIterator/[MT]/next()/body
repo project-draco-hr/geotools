@@ -1,11 +1,15 @@
 {
+  Object value=values.remove();
   AttributeType xmlType=findType(descriptor.getType().getBinding());
   if (xmlType == null) {
     throw new RuntimeException("Unable to map attribute " + descriptor.getName() + " to xml type");
   }
-  Object value=next.getProperty(descriptor.getName()).getValue();
   Name name=new NameImpl(next.getType().getName().getNamespaceURI(),descriptor.getLocalName());
   AttributeDescriptor newDescriptor=typeFactory.createAttributeDescriptor(xmlType,name,descriptor.getMinOccurs(),descriptor.getMaxOccurs(),descriptor.isNillable(),descriptor.getDefaultValue());
-  next=null;
-  return factory.createAttribute(value,newDescriptor,null);
+  if (next instanceof SimpleFeature) {
+    return factory.createAttribute(value,newDescriptor,null);
+  }
+ else {
+    return factory.createComplexAttribute(Collections.<Property>singletonList((Property)value),newDescriptor,null);
+  }
 }
