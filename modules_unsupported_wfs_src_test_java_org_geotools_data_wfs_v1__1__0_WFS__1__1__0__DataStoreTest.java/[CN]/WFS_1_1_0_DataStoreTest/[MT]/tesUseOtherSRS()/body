@@ -1,0 +1,28 @@
+{
+  final InputStream dataStream=TestData.openStream(this,CUBEWERX_GOVUNITCE.DATA);
+  TestHttpResponse httpResponse=new TestHttpResponse("text/xml; subtype=gml/3.1.1","UTF-8",dataStream);
+  TestHttpProtocol mockHttp=new TestHttpProtocol(httpResponse);
+  createTestProtocol(CUBEWERX_GOVUNITCE.CAPABILITIES,mockHttp);
+  URL describeUrl=TestData.getResource(this,CUBEWERX_GOVUNITCE.SCHEMA);
+  wfs.setDescribeFeatureTypeURLOverride(describeUrl);
+  WFS_1_1_0_DataStore ds=new WFS_1_1_0_DataStore(wfs);
+  ds.setUseDefaultSRS(true);
+  Query query=new Query(CUBEWERX_GOVUNITCE.FEATURETYPENAME);
+  CoordinateReferenceSystem otherCrs=CRS.decode(CUBEWERX_GOVUNITCE.ALTERNATIVECRS);
+  query.setCoordinateSystem(otherCrs);
+  FeatureReader<SimpleFeatureType,SimpleFeature> featureReader;
+  featureReader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertNotNull(featureReader);
+  assertTrue(featureReader instanceof ReprojectFeatureReader);
+  assertEquals(otherCrs,featureReader.getFeatureType().getCoordinateReferenceSystem());
+  GetFeature request=wfs.getRequest();
+  assertEquals(CUBEWERX_GOVUNITCE.CRS,request.getSrsName());
+  CoordinateReferenceSystem unknownCrs=CRS.decode("EPSG:3003");
+  query.setCoordinateSystem(unknownCrs);
+  featureReader=ds.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertNotNull(featureReader);
+  assertTrue(featureReader instanceof ReprojectFeatureReader);
+  assertEquals(unknownCrs,featureReader.getFeatureType().getCoordinateReferenceSystem());
+  request=wfs.getRequest();
+  assertEquals(CUBEWERX_GOVUNITCE.CRS,request.getSrsName());
+}
