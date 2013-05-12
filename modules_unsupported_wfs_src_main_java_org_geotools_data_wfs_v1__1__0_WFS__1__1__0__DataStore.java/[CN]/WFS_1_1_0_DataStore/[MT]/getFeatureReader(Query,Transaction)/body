@@ -31,9 +31,18 @@
   }
   final SimpleFeatureType readerType=reader.getFeatureType();
   CoordinateReferenceSystem readerCrs=readerType.getCoordinateReferenceSystem();
-  if (queryCrs != null && !queryCrs.equals(readerCrs)) {
+  String serverSrs=getServerSrs(query);
+  if (queryCrs != null && serverSrs == null && !queryCrs.equals(readerCrs)) {
     try {
       reader=new ReprojectFeatureReader(reader,queryCrs);
+    }
+ catch (    Exception e) {
+      throw new DataSourceException(e);
+    }
+  }
+  if (serverSrs != null) {
+    try {
+      reader=new ForceCoordinateSystemFeatureReader(reader,CRS.decode(serverSrs));
     }
  catch (    Exception e) {
       throw new DataSourceException(e);
