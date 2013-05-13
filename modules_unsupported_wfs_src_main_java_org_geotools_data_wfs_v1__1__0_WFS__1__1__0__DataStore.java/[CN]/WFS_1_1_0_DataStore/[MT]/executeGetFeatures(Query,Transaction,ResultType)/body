@@ -1,6 +1,15 @@
 {
   final String outputFormat=wfs.getDefaultOutputFormat(GET_FEATURE);
   String srsName=adaptQueryForSupportedCrs((Query)query);
+  try {
+    invertAxisInFilterIfNeeded(query,CRS.decode(srsName));
+  }
+ catch (  NoSuchAuthorityCodeException e) {
+    LOGGER.log(Level.FINER,e.getMessage(),e);
+  }
+catch (  FactoryException e) {
+    LOGGER.log(Level.FINER,e.getMessage(),e);
+  }
   GetFeature request=new GetFeatureQueryAdapter(query,outputFormat,srsName,resultType);
   final WFSResponse response=sendGetFeatures(request);
   return response;
