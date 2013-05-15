@@ -1,0 +1,29 @@
+{
+  final InputStream dataStream=TestData.openStream(this,"axisorder/GetFeatureById4326.xml");
+  TestHttpResponse httpResponse=new TestHttpResponse("text/xml; subtype=gml/3.1.1","UTF-8",dataStream);
+  TestHttpProtocol mockHttp=new TestHttpProtocol(httpResponse);
+  createTestProtocol("axisorder/GetCapabilities.xml",mockHttp);
+  URL describeUrl=TestData.getResource(this,"axisorder/DescribeFeatureType.xsd");
+  wfs.setDescribeFeatureTypeURLOverride(describeUrl);
+  WFS_1_1_0_DataStore ds=new WFS_1_1_0_DataStore(wfs);
+  ds.setAxisOrder(WFSDataStore.AXIS_ORDER_COMPLIANT,WFSDataStore.AXIS_ORDER_COMPLIANT);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  Set<FeatureId> fids=new HashSet<FeatureId>();
+  fids.add(new FeatureIdImpl("comuni11.2671"));
+  Query query=new Query(typeName,ff.id(fids));
+  SimpleFeatureSource source=ds.getFeatureSource(typeName);
+  SimpleFeature feature=iterate(source.getFeatures(query),1,true);
+  Geometry geometry=(Geometry)feature.getDefaultGeometry();
+  double x=geometry.getCoordinate().x;
+  double y=geometry.getCoordinate().y;
+  assertEquals(7.344559874483752,x,0);
+  assertEquals(41.587164718505285,y,0);
+  ds.setAxisOrder(WFSDataStore.AXIS_ORDER_NORTH_EAST,WFSDataStore.AXIS_ORDER_COMPLIANT);
+  source=ds.getFeatureSource(typeName);
+  feature=iterate(source.getFeatures(query),1,true);
+  geometry=(Geometry)feature.getDefaultGeometry();
+  x=geometry.getCoordinate().x;
+  y=geometry.getCoordinate().y;
+  assertEquals(7.344559874483752,x,0);
+  assertEquals(41.587164718505285,y,0);
+}
