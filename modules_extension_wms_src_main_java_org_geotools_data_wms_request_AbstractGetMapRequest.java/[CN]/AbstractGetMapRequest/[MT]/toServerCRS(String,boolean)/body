@@ -2,9 +2,16 @@
   try {
     if (srsName != null) {
       if (forceXY) {
-        return CRS.decode(srsName,true);
+        CoordinateReferenceSystem crs=CRS.decode(srsName,true);
+        if (CRS.getAxisOrder(crs) == AxisOrder.NORTH_EAST) {
+          Integer epsgCode=CRS.lookupEpsgCode(crs,false);
+          if (epsgCode == null) {
+            throw new IllegalArgumentException("Could not find EPSG code for " + srsName);
+          }
+          return CRS.decode("EPSG:" + epsgCode,true);
+        }
       }
- else       if (srsName.startsWith("EPSG:") && Boolean.getBoolean(GeoTools.FORCE_LONGITUDE_FIRST_AXIS_ORDER)) {
+ else       if (srsName.startsWith("EPSG:") && isGeotoolsLongitudeFirstAxisOrderForced()) {
         String explicit=srsName.replace("EPSG:","urn:x-ogc:def:crs:EPSG::");
         return CRS.decode(explicit,false);
       }
