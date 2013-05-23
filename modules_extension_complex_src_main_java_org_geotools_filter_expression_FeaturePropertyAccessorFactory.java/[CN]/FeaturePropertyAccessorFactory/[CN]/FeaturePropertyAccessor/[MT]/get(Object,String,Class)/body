@@ -6,10 +6,16 @@
     String uri=namespaces.getURI(prefix);
     context.registerNamespace(prefix,uri);
   }
-  Iterator it=context.iterate(xpath);
+  Iterator it=context.iteratePointers(xpath);
   List results=new ArrayList<Object>();
   while (it.hasNext()) {
-    results.add(it.next());
+    Pointer pointer=(Pointer)it.next();
+    if (pointer instanceof AttributeNodePointer) {
+      results.add(((AttributeNodePointer)pointer).getImmediateAttribute());
+    }
+ else {
+      results.add(pointer.getValue());
+    }
   }
   if (results.size() == 0) {
     throw new IllegalArgumentException("x-path gives no results.");
