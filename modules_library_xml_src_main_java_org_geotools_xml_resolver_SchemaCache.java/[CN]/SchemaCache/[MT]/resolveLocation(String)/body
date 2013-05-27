@@ -31,18 +31,24 @@ synchronized (locationsInDownload) {
   }
   if (isDownloadAllowed()) {
     startDownload(location,file,isTemp);
-    byte[] bytes=download(location);
-    if (bytes == null) {
+    try {
+      byte[] bytes=download(location);
+      if (bytes == null) {
+        return null;
+      }
+      store(file,bytes);
+      LOGGER.info("Cached XML schema: " + location);
+      if (isTemp) {
+        file.deleteOnExit();
+      }
+      return DataUtilities.fileToURL(file).toExternalForm();
+    }
+ catch (    IOException e) {
+      throw new RuntimeException(e);
+    }
+ finally {
       endDownload(location,isTemp);
-      return null;
     }
-    store(file,bytes);
-    LOGGER.info("Cached XML schema: " + location);
-    endDownload(location,isTemp);
-    if (isTemp) {
-      file.deleteOnExit();
-    }
-    return DataUtilities.fileToURL(file).toExternalForm();
   }
  else {
     return null;
