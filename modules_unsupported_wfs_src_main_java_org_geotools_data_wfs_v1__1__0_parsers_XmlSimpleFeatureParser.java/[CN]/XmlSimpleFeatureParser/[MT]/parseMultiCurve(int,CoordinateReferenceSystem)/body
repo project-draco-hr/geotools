@@ -1,0 +1,33 @@
+{
+  Geometry geom;
+  parser.nextTag();
+  final QName memberTag=new QName(parser.getNamespace(),parser.getName());
+  List<LineString> lineStrings=new ArrayList<LineString>(2);
+  if (GML.curveMembers.equals(memberTag)) {
+    while (true) {
+      parser.nextTag();
+      if (XmlPullParser.END_TAG == parser.getEventType() && GML.curveMembers.getLocalPart().equals(parser.getName())) {
+        break;
+      }
+      LineString l=parseLineString(dimension,crs);
+      lineStrings.add(l);
+    }
+    parser.nextTag();
+  }
+ else   if (GML.curveMember.equals(memberTag)) {
+    while (true) {
+      parser.nextTag();
+      LineString l=parseLineString(dimension,crs);
+      lineStrings.add(l);
+      parser.nextTag();
+      parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.curveMember.getLocalPart());
+      parser.nextTag();
+      if (XmlPullParser.END_TAG == parser.getEventType() && GML.MultiCurve.getLocalPart().equals(parser.getName())) {
+        break;
+      }
+    }
+  }
+  parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.MultiCurve.getLocalPart());
+  geom=geomFac.createMultiLineString(lineStrings.toArray(new LineString[lineStrings.size()]));
+  return geom;
+}

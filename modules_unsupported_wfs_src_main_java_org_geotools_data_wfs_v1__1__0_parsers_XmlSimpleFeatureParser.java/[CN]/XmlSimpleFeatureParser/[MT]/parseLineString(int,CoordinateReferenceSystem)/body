@@ -1,11 +1,13 @@
 {
-  LineString geom;
+  LineString geom=null;
   parser.nextTag();
-  parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.posList.getLocalPart());
-  crs=crs(crs);
-  Coordinate[] coords=parseCoordList(dimension,crs);
-  geom=geomFac.createLineString(coords);
-  geom.setUserData(crs);
+  final QName memberTag=new QName(parser.getNamespace(),parser.getName());
+  if (GML.coordinates.equals(memberTag) || GML.posList.equals(memberTag)) {
+    crs=crs(crs);
+    Coordinate[] coords=parseCoordList(dimension,crs);
+    geom=geomFac.createLineString(coords);
+    geom.setUserData(crs);
+  }
   parser.nextTag();
   parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.LineString.getLocalPart());
   return geom;
