@@ -1,16 +1,6 @@
 {
-  byte[] wkb=rs.getBytes(column);
-  try {
-    if (wkb != null) {
-      Geometry geom=new DB2WKBReader().read(wkb);
-      return geom.getEnvelopeInternal();
-    }
- else {
-      return new Envelope();
-    }
-  }
- catch (  ParseException e) {
-    String msg="Error decoding wkb for envelope";
-    throw (IOException)new IOException(msg).initCause(e);
-  }
+  if (column % 4 != 1)   return null;
+  double minX=rs.getDouble(column);
+  if (rs.wasNull())   return null;
+  return new Envelope(minX,rs.getDouble(3),rs.getDouble(2),rs.getDouble(4));
 }

@@ -2,33 +2,35 @@
   if (getDb2DialectInfo().isSupportingPrecalculatedExtents() == false)   return null;
   if (dataStore.getVirtualTables().get(featureType.getTypeName()) != null)   return null;
   if (schema == null || "".equals(schema))   return null;
-  GeometryDescriptor descriptor=featureType.getGeometryDescriptor();
-  if (descriptor == null)   return null;
   String tableName=featureType.getTypeName();
   Statement st=null;
   ResultSet rs=null;
   List<ReferencedEnvelope> result=new ArrayList<ReferencedEnvelope>();
   try {
     st=cx.createStatement();
-    StringBuffer sql=new StringBuffer();
-    sql.append("select min_x,min_y,max_x,max_y from db2gse.st_geometry_columns where  TABLE_SCHEMA='");
-    sql.append(schema).append("' AND TABLE_NAME='");
-    sql.append(tableName).append("' AND COLUMN_NAME='");
-    sql.append(descriptor.getName().getLocalPart()).append("'");
-    LOGGER.log(Level.FINE,"Getting the full extent of the table using optimized search: {0}",sql);
-    rs=st.executeQuery(sql.toString());
-    if (rs.next()) {
-      Double min_x=rs.getDouble(1);
-      if (rs.wasNull())       return null;
-      Double min_y=rs.getDouble(2);
-      if (rs.wasNull())       return null;
-      Double max_x=rs.getDouble(3);
-      if (rs.wasNull())       return null;
-      Double max_y=rs.getDouble(4);
-      if (rs.wasNull())       return null;
-      Geometry geometry=new GeometryFactory().createPolygon(new Coordinate[]{new Coordinate(min_x,min_y),new Coordinate(min_x,max_y),new Coordinate(max_x,max_y),new Coordinate(max_x,min_y),new Coordinate(min_x,min_y)});
-      ReferencedEnvelope env=JTS.bounds(geometry,descriptor.getCoordinateReferenceSystem());
-      if (env != null && !env.isNull())       result.add(env);
+    for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+      if (att instanceof GeometryDescriptor) {
+        StringBuffer sql=new StringBuffer();
+        sql.append("select min_x,min_y,max_x,max_y from db2gse.st_geometry_columns where  TABLE_SCHEMA='");
+        sql.append(schema).append("' AND TABLE_NAME='");
+        sql.append(tableName).append("' AND COLUMN_NAME='");
+        sql.append(att.getName().getLocalPart()).append("'");
+        LOGGER.log(Level.FINE,"Getting the full extent of the table using optimized search: {0}",sql);
+        rs=st.executeQuery(sql.toString());
+        if (rs.next()) {
+          Double min_x=rs.getDouble(1);
+          if (rs.wasNull())           return null;
+          Double min_y=rs.getDouble(2);
+          if (rs.wasNull())           return null;
+          Double max_x=rs.getDouble(3);
+          if (rs.wasNull())           return null;
+          Double max_y=rs.getDouble(4);
+          if (rs.wasNull())           return null;
+          Geometry geometry=new GeometryFactory().createPolygon(new Coordinate[]{new Coordinate(min_x,min_y),new Coordinate(min_x,max_y),new Coordinate(max_x,max_y),new Coordinate(max_x,min_y),new Coordinate(min_x,min_y)});
+          ReferencedEnvelope env=JTS.bounds(geometry,((GeometryDescriptor)att).getCoordinateReferenceSystem());
+          if (env != null && !env.isNull())           result.add(env);
+        }
+      }
     }
   }
  catch (  SQLException e) {
