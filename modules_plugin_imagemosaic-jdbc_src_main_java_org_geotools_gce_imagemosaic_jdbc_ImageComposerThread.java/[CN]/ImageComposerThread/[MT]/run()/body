@@ -1,16 +1,14 @@
 {
   BufferedImage image=null;
-  Graphics2D g2D=null;
   TileQueueElement queueObject=null;
   try {
     while ((queueObject=tileQueue.take()).isEndElement() == false) {
       if (image == null) {
         image=getStartImage(queueObject.getTileImage());
-        g2D=(Graphics2D)image.getGraphics();
       }
       int posx=(int)((queueObject.getEnvelope().getMinimum(0) - requestEnvelope.getMinimum(0)) / levelInfo.getResX());
       int posy=(int)((requestEnvelope.getMaximum(1) - queueObject.getEnvelope().getMaximum(1)) / levelInfo.getResY());
-      g2D.drawImage(queueObject.getTileImage(),AffineTransform.getTranslateInstance(posx,posy),null);
+      image.getRaster().setRect(posx,posy,queueObject.getTileImage().getRaster());
     }
   }
  catch (  InterruptedException e) {
