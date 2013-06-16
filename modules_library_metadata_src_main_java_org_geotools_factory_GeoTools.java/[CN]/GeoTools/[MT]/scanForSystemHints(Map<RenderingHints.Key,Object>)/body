@@ -1,0 +1,45 @@
+{
+  boolean changed=false;
+synchronized (BINDINGS) {
+    for (    final Map.Entry<String,RenderingHints.Key> entry : BINDINGS.entrySet()) {
+      final String propertyKey=entry.getKey();
+      final String property;
+      try {
+        property=System.getProperty(propertyKey);
+      }
+ catch (      SecurityException e) {
+        unexpectedException(e);
+        continue;
+      }
+      if (property != null) {
+        Object value=property;
+        final RenderingHints.Key hintKey=entry.getValue();
+        if (hintKey.getClass().equals(Hints.Key.class)) {
+          final Class<?> type=((Hints.Key)hintKey).getValueClass();
+          if (type.equals(Boolean.class)) {
+            value=Boolean.valueOf(property);
+          }
+ else           if (Number.class.isAssignableFrom(type))           try {
+            value=Classes.valueOf(type,property);
+          }
+ catch (          NumberFormatException e) {
+            unexpectedException(e);
+            continue;
+          }
+        }
+        final Object old;
+        try {
+          old=hints.put(hintKey,value);
+        }
+ catch (        IllegalArgumentException e) {
+          unexpectedException(e);
+          continue;
+        }
+        if (!changed && !Utilities.equals(old,value)) {
+          changed=true;
+        }
+      }
+    }
+  }
+  return changed;
+}
