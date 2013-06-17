@@ -31,34 +31,40 @@
   }
  else {
     if (LOGGER.isLoggable(Level.WARNING)) {
-      LOGGER.warning("we really don't know how to convert the thing:" + source != null ? source.toString() : "null");
+      LOGGER.warning("we really don't know how to convert the thing: " + source != null ? source.toString() : "null");
     }
     return null;
   }
-  if (LOGGER.isLoggable(Level.INFO)) {
+  if (LOGGER.isLoggable(Level.FINE)) {
     if (sourceFile != null) {
       final String message=fileStatus(sourceFile);
-      LOGGER.info(message);
+      LOGGER.fine(message);
     }
   }
-  if (sourceFile == null || !sourceFile.exists())   return sourceURL;
-  if (!sourceFile.isDirectory())   return sourceURL;
+  if (sourceFile == null || !sourceFile.exists()) {
+    return sourceURL;
+  }
+  if (!sourceFile.isDirectory()) {
+    return sourceURL;
+  }
   File directory=sourceFile;
   sourceFile=new File(directory,directory.getName() + ".properties");
-  if (LOGGER.isLoggable(Level.INFO)) {
+  if (LOGGER.isLoggable(Level.FINE)) {
     if (sourceFile != null) {
       final String message=fileStatus(sourceFile);
-      LOGGER.info(message);
+      LOGGER.fine(message);
     }
   }
-  if (sourceFile.exists())   return DataUtilities.fileToURL(sourceFile);
+  if (sourceFile.exists()) {
+    return DataUtilities.fileToURL(sourceFile);
+  }
   File zeroLevelDirectory=new File(directory,"0");
   IOFileFilter directoryFilter=FileFilterUtils.directoryFileFilter();
   File[] numericDirectories=directory.listFiles(new NumericDirectoryFilter());
   File[] directories=directory.listFiles((FileFilter)directoryFilter);
-  if (directories.length == 0) {
+  if (numericDirectories.length == 0) {
     if (LOGGER.isLoggable(Level.INFO)) {
-      LOGGER.info("I was unable to determine a structure similar to the GDAL Retile one!!");
+      LOGGER.info("I was unable to determine a structure similar to the GDAL Retile one for the provided path: " + directory);
     }
     return null;
   }
@@ -102,7 +108,9 @@
       }
     }
   }
-  if (mosaics.size() == 0)   return null;
+  if (mosaics.size() == 0) {
+    return null;
+  }
   Collections.sort(mosaics);
   for (int i=1; i < mosaics.size(); i++) {
     double[] resprev=mosaics.get(i - 1).getResolutions();

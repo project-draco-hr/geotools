@@ -7,7 +7,12 @@
       LOGGER.fine("Accepts method of ImagePyramid with source" + source);
     }
     URL sourceURL=Utils.checkSource(source,hints);
-    if (sourceURL == null)     return false;
+    if (sourceURL == null) {
+      return false;
+    }
+ else {
+      LOGGER.fine("accepts: " + sourceURL);
+    }
     try {
       sourceURL.openStream().close();
     }
@@ -32,21 +37,30 @@
     }
     final Properties properties=new Properties();
     BufferedInputStream propertyStream=null;
-    if (!sourceURL.getPath().endsWith(".properties"))     return false;
+    if (!sourceURL.getPath().endsWith(".properties")) {
+      return false;
+    }
+    LOGGER.fine("loading properties from: " + sourceURL);
     final InputStream openStream=sourceURL.openStream();
     try {
       propertyStream=new BufferedInputStream(openStream);
       properties.load(propertyStream);
     }
  catch (    Throwable e) {
-      if (propertyStream != null)       propertyStream.close();
+      if (propertyStream != null) {
+        propertyStream.close();
+      }
       return false;
     }
  finally {
-      if (openStream != null)       openStream.close();
+      if (openStream != null) {
+        openStream.close();
+      }
     }
     final String envelope=properties.getProperty("Envelope2D");
-    if (envelope == null)     return false;
+    if (envelope == null) {
+      return false;
+    }
     String[] pairs=envelope.split(" ");
     final double cornersV[][]=new double[2][2];
     String pair[];
@@ -68,14 +82,12 @@
       overViewResolutions[i - 1][0]=Double.parseDouble(pair[0]);
       overViewResolutions[i - 1][1]=Double.parseDouble(pair[1]);
     }
-    if (properties.getProperty("Name") == null)     return false;
+    if (properties.getProperty("Name") == null) {
+      return false;
+    }
     return true;
   }
- catch (  IOException e) {
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
-    return false;
-  }
-catch (  NumberFormatException e) {
+ catch (  Exception e) {
     if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
     return false;
   }
