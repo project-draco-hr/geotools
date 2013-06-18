@@ -1,0 +1,47 @@
+{
+  AttributeTypeBuilder ab=new AttributeTypeBuilder();
+  ExpressionTypeEvaluator typeEvaluator=new ExpressionTypeEvaluator(originalSchema);
+  if (binding != null) {
+    ab.setBinding(binding);
+    ab.setName(name);
+    if (crs != null) {
+      ab.setCRS(crs);
+    }
+ else {
+      expression.accept(typeEvaluator,null);
+      ab.setCRS(typeEvaluator.getCoordinateReferenceSystem());
+    }
+    return ab.buildDescriptor(name);
+  }
+ else {
+    Class computedBinding=Object.class;
+    if (expression instanceof PropertyName) {
+      PropertyName pn=(PropertyName)expression;
+      AttributeDescriptor descriptor=originalSchema.getDescriptor(pn.getPropertyName());
+      if (descriptor == null) {
+        throw new IllegalArgumentException("Original feature type does not have a property named " + name);
+      }
+ else {
+        ab.init(descriptor);
+        ab.setName(name);
+        return ab.buildDescriptor(name);
+      }
+    }
+ else {
+      computedBinding=(Class)expression.accept(typeEvaluator,null);
+      if (computedBinding == null) {
+        return null;
+      }
+      CoordinateReferenceSystem computedCRS=crs;
+      if (Geometry.class.isAssignableFrom(computedBinding) && computedCRS == null) {
+        computedCRS=evaluateCRS(originalSchema);
+      }
+      ab.setBinding(computedBinding);
+      ab.setName(name);
+      if (computedCRS != null) {
+        ab.setCRS(computedCRS);
+      }
+      return ab.buildDescriptor(name);
+    }
+  }
+}
