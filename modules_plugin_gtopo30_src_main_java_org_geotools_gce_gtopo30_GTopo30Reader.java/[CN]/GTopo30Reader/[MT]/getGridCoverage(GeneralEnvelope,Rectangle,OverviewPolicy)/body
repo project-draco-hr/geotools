@@ -19,12 +19,10 @@
  else {
     iis.setByteOrder(ByteOrder.LITTLE_ENDIAN);
   }
-  final ColorModel cm=new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_GRAY),false,false,Transparency.OPAQUE,DataBuffer.TYPE_SHORT);
-  final SampleModel sm=cm.createCompatibleSampleModel(hrWidth,hrHeight);
-  final ImageTypeSpecifier its=new ImageTypeSpecifier(cm,sm);
+  final ImageLayout layout=getImageLayout();
+  final ImageTypeSpecifier its=new ImageTypeSpecifier(layout.getColorModel(null),layout.getSampleModel(null));
   final RawImageInputStream raw=new RawImageInputStream(iis,its,new long[]{0},new Dimension[]{new Dimension(hrWidth,hrHeight)});
-  final Dimension tileSize=ImageUtilities.toTileSize(new Dimension(hrWidth,hrHeight));
-  final ImageLayout il=new ImageLayout(0,0,hrWidth / readP.getSourceXSubsampling(),hrHeight / readP.getSourceYSubsampling(),0,0,(int)tileSize.getWidth(),(int)tileSize.getHeight(),sm,cm);
+  final ImageLayout il=new ImageLayout(0,0,hrWidth / readP.getSourceXSubsampling(),hrHeight / readP.getSourceYSubsampling(),0,0,layout.getTileWidth(null),layout.getTileHeight(null),layout.getSampleModel(null),layout.getColorModel(null));
   final RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,il);
   final ParameterBlock pbjImageRead=new ParameterBlock();
   pbjImageRead.add(raw);

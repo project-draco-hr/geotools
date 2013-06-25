@@ -1,16 +1,20 @@
 {
   URL statURL=TestData.url(this,(new StringBuffer(this.fileName).append(".DEM").toString()));
   AbstractGridFormat format=(AbstractGridFormat)new GTopo30FormatFactory().createFormat();
-  final JAI jaiDef=JAI.getDefaultInstance();
-  final TileCache cache=jaiDef.getTileCache();
-  cache.setMemoryCapacity(64 * 1024 * 1024);
-  cache.setMemoryThreshold(1.0f);
-  jaiDef.setRenderingHint(JAI.KEY_CACHED_TILE_RECYCLING_ENABLED,Boolean.TRUE);
-  final RecyclingTileFactory recyclingFactory=new RecyclingTileFactory();
-  jaiDef.setRenderingHint(JAI.KEY_TILE_FACTORY,recyclingFactory);
-  jaiDef.setRenderingHint(JAI.KEY_TILE_RECYCLER,recyclingFactory);
   if (format.accepts(statURL)) {
-    GridCoverageReader reader=format.getReader(statURL);
+    GridCoverage2DReader reader=format.getReader(statURL);
+    final ImageLayout layout=reader.getImageLayout();
+    assertNotNull(layout);
+    assertNotNull(layout.getColorModel(null));
+    assertNotNull(layout.getSampleModel(null));
+    assertEquals(0,layout.getMinX(null));
+    assertEquals(0,layout.getMinY(null));
+    assertTrue(layout.getWidth(null) > 0);
+    assertTrue(layout.getHeight(null) > 0);
+    assertEquals(0,layout.getTileGridXOffset(null));
+    assertEquals(0,layout.getTileGridYOffset(null));
+    assertTrue(layout.getTileHeight(null) > 0);
+    assertTrue(layout.getTileWidth(null) > 0);
     gc=((GridCoverage2D)reader.read(null));
     assertTrue(CoverageUtilities.hasRenderingCategories(gc));
     if (TestData.isInteractiveTest())     gc.show();
