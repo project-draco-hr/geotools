@@ -8,22 +8,19 @@
       this.crs=(CoordinateReferenceSystem)tempCRS;
       LOGGER.log(Level.WARNING,"Using default coordinate reference system ");
     }
- else     getCoordinateReferenceSystem();
+ else {
+      initCoordinateReferenceSystem();
+    }
     final ImageReader reader=readerSPI.createReaderInstance();
     reader.setInput(inStream);
-    final Object metadata=reader.getImageMetadata(0);
-    if (!(metadata instanceof AsciiGridsImageMetadata))     throw new DataSourceException("Unexpected error! Metadata are not of the expected class.");
-    final AsciiGridsImageMetadata gridMetadata=(AsciiGridsImageMetadata)metadata;
-    parseMetadata(gridMetadata);
+    parseMetadata(reader);
     getResolutionInfo(reader);
     finalStreamPreparation();
   }
- catch (  IOException e) {
-    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
-    throw new DataSourceException(e);
-  }
-catch (  TransformException e) {
-    if (LOGGER.isLoggable(Level.SEVERE))     LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+ catch (  Exception e) {
+    if (LOGGER.isLoggable(Level.SEVERE)) {
+      LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+    }
     throw new DataSourceException(e);
   }
 }
