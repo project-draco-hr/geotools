@@ -1,0 +1,72 @@
+{
+  name=name.toLowerCase();
+  if (domain instanceof VerticalDomain) {
+    VerticalDomain verticalDomain=(VerticalDomain)domain;
+    if (name.endsWith("domain")) {
+      SortedSet<? extends NumberRange<Double>> verticalElements=verticalDomain.getVerticalElements(true,null);
+      return buildVerticalList(verticalElements);
+    }
+ else     if (name.endsWith(DATATYPE_SUFFIX)) {
+      return NumberRange.class.getName();
+    }
+ else {
+      SortedSet<? extends NumberRange<Double>> verticalElements=verticalDomain.getVerticalElements(false,null);
+      NumberRange<Double> overall=verticalElements.iterator().next();
+      if (name.endsWith("maximum")) {
+        return Double.toString(overall.getMaximum());
+      }
+ else       if (name.endsWith("minimum")) {
+        return Double.toString(overall.getMinimum());
+      }
+ else {
+        throw new IllegalArgumentException("Unsupported metadata name");
+      }
+    }
+  }
+ else   if (domain instanceof TemporalDomain) {
+    TemporalDomain temporalDomain=(TemporalDomain)domain;
+    if (name.endsWith("domain")) {
+      SortedSet<? extends DateRange> temporalElements=temporalDomain.getTemporalElements(true,null);
+      return buildTemporalList(temporalElements);
+    }
+ else     if (name.endsWith(DATATYPE_SUFFIX)) {
+      return DateRange.class.getName();
+    }
+ else {
+      SortedSet<? extends DateRange> temporalElements=temporalDomain.getTemporalElements(false,null);
+      DateRange overall=temporalElements.iterator().next();
+      if (name.endsWith("maximum")) {
+        return ConvertersHack.convert(overall.getMaxValue(),String.class);
+      }
+ else       if (name.endsWith("minimum")) {
+        return ConvertersHack.convert(overall.getMinValue(),String.class);
+      }
+ else {
+        throw new IllegalArgumentException("Unsupported metadata name");
+      }
+    }
+  }
+ else   if (domain instanceof AdditionalDomain) {
+    AdditionalDomain additionalDomain=(AdditionalDomain)domain;
+    if (name.endsWith("domain")) {
+      Set<Object> elements=additionalDomain.getElements(false,null);
+      return buildElementsList(elements);
+    }
+ else {
+      Set<Object> elements=additionalDomain.getElements(true,null);
+      NumberRange<Double> range=(NumberRange<Double>)elements.iterator().next();
+      if (name.endsWith("maximum")) {
+        return Double.toString(range.getMaximum());
+      }
+ else       if (name.endsWith("minimum")) {
+        return Double.toString(range.getMinimum());
+      }
+ else {
+        throw new IllegalArgumentException("Unsupported metadata name");
+      }
+    }
+  }
+ else {
+    throw new IllegalArgumentException("Unsupported domain ");
+  }
+}

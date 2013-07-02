@@ -1,0 +1,68 @@
+{
+  try {
+    final int numAttributes=reader.getNumGlobalAttributes();
+    final int nStdFileAttribMap=HDF4APSProperties.STD_FA_ATTRIB.length;
+    final int nStdTimeAttribMap=HDF4APSProperties.STD_TA_ATTRIB.length;
+    final int nStdSensorAttribMap=HDF4APSProperties.STD_SA_ATTRIB.length;
+    final int nFileInputParamAttribMap=HDF4APSProperties.PFA_IPA_ATTRIB.length;
+    final int nFileNavAttribMap=HDF4APSProperties.PFA_NA_ATTRIB.length;
+    final int nFileInGeoCovAttribMap=HDF4APSProperties.PFA_IGCA_ATTRIB.length;
+    for (int i=0; i < numAttributes; i++) {
+      final KeyValuePair keyValuePair=reader.getGlobalAttribute(i);
+      final String attribName=keyValuePair.getKey();
+      final String attribValue=keyValuePair.getValue();
+      boolean found=false;
+      for (int k=0; k < nStdFileAttribMap && !found; k++) {
+        if (attribName.equals(HDF4APSProperties.STD_FA_ATTRIB[k])) {
+          stdFileAttribMap.put(attribName,attribValue);
+          found=true;
+        }
+      }
+      for (int k=0; k < nStdTimeAttribMap && !found; k++) {
+        if (attribName.equals(HDF4APSProperties.STD_TA_ATTRIB[k])) {
+          stdTimeAttribMap.put(attribName,attribValue);
+          found=true;
+        }
+      }
+      for (int k=0; k < nStdSensorAttribMap && !found; k++) {
+        if (attribName.equals(HDF4APSProperties.STD_SA_ATTRIB[k])) {
+          stdSensorAttribMap.put(attribName,attribValue);
+          found=true;
+        }
+      }
+      for (int k=0; k < nFileInputParamAttribMap && !found; k++) {
+        if (attribName.equals(HDF4APSProperties.PFA_IPA_ATTRIB[k])) {
+          fileInputParamAttribMap.put(attribName,attribValue);
+          if (attribName.equals(HDF4APSProperties.PFA_IPA_PRODLIST)) {
+            String products[]=attribValue.split(",");
+            prodList=HDF4APSProperties.refineProductList(products);
+          }
+          found=true;
+        }
+      }
+      for (int k=0; k < nFileNavAttribMap && !found; k++) {
+        if (attribName.equals(HDF4APSProperties.PFA_NA_ATTRIB[k])) {
+          fileNavAttribMap.put(attribName,attribValue);
+          if (attribName.equals(HDF4APSProperties.PFA_NA_MAPPROJECTION))           projectionDatasetName=attribValue;
+          found=true;
+        }
+      }
+      for (int k=0; k < nFileInGeoCovAttribMap && !found; k++) {
+        if (attribName.equals(HDF4APSProperties.PFA_IGCA_ATTRIB[k])) {
+          fileInGeoCovAttribMap.put(attribName,attribValue);
+          found=true;
+        }
+      }
+      if (!found)       genericAttribMap.put(attribName,attribValue);
+    }
+    Map<String,String> originalMap=reader.projectionMap;
+    projectionMap=new LinkedHashMap<String,String>(originalMap.size());
+    for (    String key : originalMap.keySet()) {
+      String value=originalMap.get(key);
+      projectionMap.put(key,value);
+    }
+  }
+ catch (  IOException e) {
+    throw new IllegalArgumentException("Errors while getting access" + " to HDF during StreamMetadata setting",e);
+  }
+}

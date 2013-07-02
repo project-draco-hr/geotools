@@ -1,0 +1,44 @@
+{
+  if (cropBBox == null) {
+    destinationRasterArea=null;
+    return;
+  }
+  MathTransform2D requestedWorldToGrid;
+  try {
+    requestedWorldToGrid=(MathTransform2D)PixelTranslation.translate(ProjectiveTransform.create(requestedGridToWorld),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER).inverse();
+  }
+ catch (  NoninvertibleTransformException e) {
+    throw new DataSourceException(e);
+  }
+  if (destinationToSourceTransform == null || destinationToSourceTransform.isIdentity()) {
+    try {
+      destinationRasterArea=new GeneralGridEnvelope(CRS.transform(requestedWorldToGrid,new GeneralEnvelope(cropBBox)),PixelInCell.CELL_CORNER,false).toRectangle();
+    }
+ catch (    IllegalStateException e) {
+      throw new DataSourceException(e);
+    }
+catch (    TransformException e) {
+      throw new DataSourceException(e);
+    }
+  }
+ else {
+    try {
+      final GeneralEnvelope cropBBOXInRequestCRS=CRS.transform(destinationToSourceTransform.inverse(),cropBBox);
+      cropBBOXInRequestCRS.setCoordinateReferenceSystem(requestedBBox.getCoordinateReferenceSystem());
+      cropBBOXInRequestCRS.intersect(requestedBBox);
+      destinationRasterArea=new GeneralGridEnvelope(CRS.transform(requestedWorldToGrid,cropBBOXInRequestCRS),PixelInCell.CELL_CORNER,false).toRectangle();
+      XRectangle2D.intersect(destinationRasterArea,requestedRasterArea,destinationRasterArea);
+    }
+ catch (    NoninvertibleTransformException e) {
+      throw new DataSourceException(e);
+    }
+catch (    TransformException e) {
+      throw new DataSourceException(e);
+    }
+  }
+  if (destinationRasterArea.isEmpty()) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,"Requested envelope too small resulting in empty cropped raster region. cropBbox:" + cropBBox);
+    empty=true;
+    return;
+  }
+}

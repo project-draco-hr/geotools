@@ -1,0 +1,35 @@
+{
+  final IIOMetadataNode root=new IIOMetadataNode(GRIB1ImageMetadata.nativeMetadataFormatName);
+  IIOMetadataNode gdsNode=new IIOMetadataNode(GDS);
+  GRIB1ImageReader directReader=(GRIB1ImageReader)imageReader;
+  final int imageIndex=getImageIndex();
+  final GribVariableWrapper wrapper=(GribVariableWrapper)directReader.getVariableWrapper(imageIndex);
+  List<KeyValuePair> coordsAttribute=directReader.getCoordinateAttributes();
+  for (  KeyValuePair pair : coordsAttribute) {
+    gdsNode.setAttribute(pair.getKey(),pair.getValue());
+  }
+  root.appendChild(gdsNode);
+  IIOMetadataNode pdsNode=new IIOMetadataNode(PDS);
+  pdsNode.setAttribute(PROD_DEFINITION_TYPE,wrapper.getProductDefinitionType());
+  pdsNode.setAttribute(PROD_TIME_NAME,wrapper.getTimeName());
+  pdsNode.setAttribute(PROD_TIME_UNITS,wrapper.getTimeUnits());
+  pdsNode.setAttribute(PROD_TIME_VALUES,wrapper.getTimeValues(imageIndex));
+  pdsNode.setAttribute(PROD_PARAMETER_NAME,wrapper.getParameterName());
+  pdsNode.setAttribute(PROD_PARAMTABLE_CENTERID,Integer.toString(wrapper.getParameterCenterID()));
+  pdsNode.setAttribute(PROD_PARAMTABLE_TABLEVERSION,Integer.toString(wrapper.getParameterTableVersion()));
+  pdsNode.setAttribute(PROD_PARAMTABLE_PARAMETERNUMBER,Integer.toString(wrapper.getParameterNumber()));
+  pdsNode.setAttribute(PROD_PARAMETER_UNIT,wrapper.getParameterUnit());
+  root.appendChild(pdsNode);
+  IIOMetadataNode pdsLevelNode=new IIOMetadataNode(PDS_LEVEL);
+  VerticalLevel level=wrapper.getVerticalLevel();
+  pdsLevelNode.setAttribute(PDSL_ID,Integer.toString(level.getLevelType()));
+  pdsLevelNode.setAttribute(PDSL_NAME,level.getLevelName());
+  pdsLevelNode.setAttribute(PDSL_DESCRIPTION,level.getLevelDescription());
+  pdsLevelNode.setAttribute(PDSL_UNITS,level.getLevelUnits());
+  pdsLevelNode.setAttribute(PDSL_ISNUMERIC,Boolean.toString(level.isHasExplicitVerticalAxis()));
+  pdsLevelNode.setAttribute(PDSL_VALUES,wrapper.getLevelValues(imageIndex));
+  pdsLevelNode.setAttribute(PDSL_POSITIVE,level.getPositive());
+  pdsLevelNode.setAttribute(PDSL_AXISTYPE,level.getAxisType());
+  root.appendChild(pdsLevelNode);
+  return root;
+}

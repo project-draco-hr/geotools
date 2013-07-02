@@ -1,10 +1,17 @@
 {
-  if (listener == null)   listener=new NullProgressListener();
+  if (listener == null) {
+    listener=new NullProgressListener();
+  }
   listener.started();
   try {
-    return new NetCDFSource(this,name);
+    return new NetCDFSource((NetCDFImageReader)reader,name);
   }
-  finally {
+ catch (  Throwable e) {
+    LOGGER.log(Level.SEVERE,"Failed to access the NetCDF source",e);
+    listener.exceptionOccurred(e);
+    return null;
+  }
+ finally {
     listener.complete();
   }
 }

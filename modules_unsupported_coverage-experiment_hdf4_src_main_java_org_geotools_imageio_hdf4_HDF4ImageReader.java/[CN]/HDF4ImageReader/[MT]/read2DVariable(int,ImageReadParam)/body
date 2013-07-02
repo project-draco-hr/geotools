@@ -1,0 +1,84 @@
+{
+  BufferedImage image=null;
+  final HDF4DatasetWrapper wrapper=getDatasetWrapper(imageIndex);
+  final Variable variable=wrapper.getVariable();
+  final int strideX, strideY;
+  if (param != null) {
+    strideX=param.getSourceXSubsampling();
+    strideY=param.getSourceYSubsampling();
+  }
+ else {
+    strideX=1;
+    strideY=1;
+  }
+  final int rank=variable.getRank();
+  final int width=wrapper.getWidth();
+  final int height=wrapper.getHeight();
+  final int numBands=wrapper.getNumBands();
+  final Rectangle srcRegion=new Rectangle();
+  final Rectangle destRegion=new Rectangle();
+  computeRegions(param,width,height,null,srcRegion,destRegion);
+  int destWidth=destRegion.x + destRegion.width;
+  int destHeight=destRegion.y + destRegion.height;
+  final List<Range> ranges=new LinkedList<Range>();
+  for (int i=0; i < rank; i++) {
+    final int first, length, stride;
+switch (i) {
+case 1:
+{
+        first=srcRegion.x;
+        length=srcRegion.width;
+        stride=strideX;
+        break;
+      }
+case 0:
+{
+      first=srcRegion.y;
+      length=srcRegion.height;
+      stride=strideY;
+      break;
+    }
+default :
+{
+    first=0;
+    length=numBands;
+    stride=1;
+    break;
+  }
+}
+try {
+ranges.add(new Range(first,first + length - 1,stride));
+}
+ catch (InvalidRangeException e) {
+}
+}
+final Section sections=new Section(ranges);
+final SampleModel sampleModel=wrapper.getSampleModel().createCompatibleSampleModel(destWidth,destHeight);
+final ColorModel colorModel=ImageIOUtilities.createColorModel(sampleModel);
+final int size=destHeight * destWidth * numBands;
+Array array=null;
+try {
+array=variable.read(sections);
+DataBuffer dataBuffer=null;
+if (array instanceof ArrayByte) {
+dataBuffer=new DataBufferByte((byte[])array.get1DJavaArray(byte.class),size);
+}
+ else if (array instanceof ArrayShort) {
+dataBuffer=new DataBufferShort((short[])array.get1DJavaArray(short.class),size);
+}
+ else if (array instanceof ArrayInt) {
+dataBuffer=new DataBufferInt((int[])array.get1DJavaArray(int.class),size);
+}
+ else if (array instanceof ArrayFloat) {
+dataBuffer=new DataBufferFloat((float[])array.get1DJavaArray(float.class),size);
+}
+ else if (array instanceof ArrayDouble) {
+dataBuffer=new DataBufferDouble((double[])array.get1DJavaArray(double.class),size);
+}
+WritableRaster raster=Raster.createWritableRaster(sampleModel,dataBuffer,new Point(0,0));
+image=new BufferedImage(colorModel,raster,colorModel.isAlphaPremultiplied(),null);
+}
+ catch (InvalidRangeException e) {
+}
+return image;
+}

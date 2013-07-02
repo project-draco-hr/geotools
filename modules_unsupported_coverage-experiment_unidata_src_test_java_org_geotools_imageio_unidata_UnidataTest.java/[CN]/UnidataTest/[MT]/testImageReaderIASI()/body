@@ -1,0 +1,45 @@
+{
+  final File file=TestData.file(this,"IASI_C_EUMP_20121120062959_31590_eps_o_l2.nc");
+  final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  DummyUnidataImageReader reader=null;
+  try {
+    reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    int numImages=reader.getNumImages(true);
+    for (int i=0; i < numImages; i++) {
+      UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      String variableName=sliceIndex.getVariableName();
+      StringBuilder sb=new StringBuilder();
+      sb.append("\n").append("\n").append("\n");
+      sb.append("IMAGE: ").append(i).append("\n");
+      sb.append(" Variable Name = ").append(variableName);
+      sb.append(" ( Z = ");
+      sb.append(sliceIndex.getZIndex());
+      sb.append("; T = ");
+      sb.append(sliceIndex.getTIndex());
+      sb.append(")");
+      LOGGER.info(sb.toString());
+    }
+    CoverageSourceDescriptor cd=reader.getCoverageDescriptor(new NameImpl("cloud_phase"));
+    final List<AdditionalDomain> additionalDomains=cd.getAdditionalDomains();
+    assertTrue(!additionalDomains.isEmpty());
+    final AdditionalDomain ad=additionalDomains.get(0);
+    assertTrue(ad.getType().equals(DomainType.NUMBER));
+    assertEquals("cloud_phase",ad.getName());
+  }
+ catch (  Throwable t) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,t.getLocalizedMessage(),t);
+    }
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

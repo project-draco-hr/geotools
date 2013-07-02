@@ -1,0 +1,28 @@
+{
+  final Map<Name,String> mapping=reader.ancillaryFileManager.variablesMap;
+  final Set<Name> keys=mapping.keySet();
+  final String varName=getName();
+  for (  Name key : keys) {
+    final String origName=mapping.get(key);
+    if (origName.equalsIgnoreCase(varName)) {
+      final String coverageName=key.getLocalPart();
+      final Coverage coverage=reader.ancillaryFileManager.coveragesMapping.get(coverageName);
+      if (coverage.getSchema() != null) {
+        final CoverageSlicesCatalog catalog=reader.getCatalog();
+        if (catalog != null) {
+          final String[] typeNames=catalog.getTypeNames();
+          for (          String typeName : typeNames) {
+            if (typeName.equalsIgnoreCase(coverageName)) {
+              final SimpleFeatureType schemaType=catalog.getSchema(coverageName);
+              if (schemaType != null) {
+                updateMapping(schemaType,dimensionDescriptors);
+              }
+              break;
+            }
+          }
+        }
+      }
+      break;
+    }
+  }
+}

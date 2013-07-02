@@ -1,0 +1,47 @@
+{
+  int numImages=0;
+  indexMap=new HashMap<Range,GribVariableWrapper>();
+  try {
+    if (dataset != null) {
+      final List<Variable> variables=dataset.getVariables();
+      if (variables != null) {
+        for (        final Variable variable : variables) {
+          if (variable != null && variable instanceof VariableDS) {
+            if (!NetCDFUtilities.isVariableAccepted(variable,CheckType.NONE)) {
+              if (variable.getName().equalsIgnoreCase(NetCDFUtilities.COORDSYS)) {
+                horizontalGrid=variable;
+              }
+              continue;
+            }
+            int[] shape=variable.getShape();
+            Range wrapperRange=null;
+switch (shape.length) {
+case 2:
+              wrapperRange=new Range(numImages,numImages + 1);
+            indexMap.put(wrapperRange,new GribVariableWrapper(variable,wrapperRange));
+          numImages++;
+        break;
+case 3:
+      wrapperRange=new Range(numImages,numImages + shape[0]);
+    indexMap.put(wrapperRange,new GribVariableWrapper(variable,wrapperRange));
+  numImages+=shape[0];
+break;
+case 4:
+wrapperRange=new Range(numImages,numImages + shape[0] * shape[1]);
+indexMap.put(wrapperRange,new GribVariableWrapper(variable,wrapperRange));
+numImages+=shape[0] * shape[1];
+break;
+}
+}
+}
+}
+}
+}
+ catch (InvalidRangeException e) {
+throw new IllegalArgumentException("Error occurred during NetCDF file parsing",e);
+}
+setNumImages(numImages);
+numGlobalAttributes=0;
+final List<Attribute> globalAttributes=dataset.getGlobalAttributes();
+if (globalAttributes != null && !globalAttributes.isEmpty()) numGlobalAttributes=globalAttributes.size();
+}

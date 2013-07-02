@@ -1,0 +1,42 @@
+{
+  NetcdfDataset dataset=null;
+  if (input instanceof File) {
+    final File file=(File)input;
+    if (!file.isDirectory())     dataset=NetcdfDataset.openDataset(file.getPath());
+ else     throw new IllegalArgumentException("Error occurred during NetCDF file reading: The input file is a Directory.");
+  }
+ else   if (input instanceof String) {
+    File file=new File((String)input);
+    if (!file.isDirectory())     dataset=NetcdfDataset.openDataset(file.getPath());
+ else     throw new IllegalArgumentException("Error occurred during NetCDF file reading: The input file is a Directory.");
+  }
+ else   if (input instanceof URL) {
+    final URL tempURL=(URL)input;
+    String protocol=tempURL.getProtocol();
+    if (protocol.equalsIgnoreCase("file")) {
+      File file=ImageIOUtilities.urlToFile(tempURL);
+      if (!file.isDirectory()) {
+        dataset=NetcdfDataset.openDataset(file.getPath());
+      }
+ else       throw new IllegalArgumentException("Error occurred during NetCDF file reading: The input file is a Directory.");
+    }
+ else     if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("dods")) {
+      dataset=NetcdfDataset.openDataset(tempURL.toExternalForm());
+    }
+  }
+ else   if (input instanceof URIImageInputStream) {
+    final URIImageInputStream uriInStream=(URIImageInputStream)input;
+    dataset=NetcdfDataset.openDataset(uriInStream.getUri().toString());
+  }
+ else   if (input instanceof AccessibleStream) {
+    final AccessibleStream<?> stream=(AccessibleStream<?>)input;
+    if (stream.getBinding().isAssignableFrom(File.class)) {
+      final File file=((AccessibleStream<File>)input).getTarget();
+      if (!file.isDirectory())       dataset=NetcdfDataset.openDataset(file.getPath());
+    }
+ else {
+      throw new IllegalArgumentException("Error occurred during NetCDF file reading: The input file is a Directory.");
+    }
+  }
+  return dataset;
+}

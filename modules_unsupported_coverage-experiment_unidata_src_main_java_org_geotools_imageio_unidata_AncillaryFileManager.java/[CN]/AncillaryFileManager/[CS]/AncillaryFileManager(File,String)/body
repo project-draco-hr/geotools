@@ -1,0 +1,39 @@
+{
+  org.geotools.util.Utilities.ensureNonNull("file",netcdfFile);
+  if (!netcdfFile.exists()) {
+    throw new IllegalArgumentException("The specified file doesn't exist: " + netcdfFile);
+  }
+  ncFile=netcdfFile;
+  parentDirectory=new File(ncFile.getParent());
+  final String baseFolder=UnidataUtilities.EXTERNAL_DATA_DIR;
+  File baseDir=null;
+  if (baseFolder != null) {
+    baseDir=new File(baseFolder);
+    baseDir=UnidataUtilities.isValid(baseDir) ? baseDir : null;
+  }
+  String mainFilePath=ncFile.getCanonicalPath();
+  String baseName=FilenameUtils.removeExtension(FilenameUtils.getName(mainFilePath));
+  String outputLocalFolder="." + baseName;
+  destinationDir=new File(parentDirectory,outputLocalFolder);
+  if (baseDir != null) {
+    destinationDir=new File(baseDir,outputLocalFolder);
+  }
+  boolean createdDir=false;
+  if (!destinationDir.exists()) {
+    createdDir=destinationDir.mkdirs();
+  }
+  slicesIndexFile=new File(destinationDir,baseName + ".idx");
+  if (indexFilePath != null) {
+    indexerFile=new File(indexFilePath);
+    if (!indexerFile.exists() || !indexerFile.canRead()) {
+      indexerFile=null;
+    }
+  }
+  if (indexerFile == null) {
+    indexerFile=new File(destinationDir,baseName + INDEX_SUFFIX);
+  }
+  if (!createdDir) {
+    checkReset(ncFile,slicesIndexFile,destinationDir);
+  }
+  initIndexer();
+}

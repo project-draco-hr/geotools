@@ -1,0 +1,48 @@
+{
+  if (dataset == null) {
+    throw new IOException("Unable to initialize profile due to a null dataset");
+  }
+  final List<Variable> variables=dataset.getVariables();
+  final List<Attribute> attributes=dataset.getGlobalAttributes();
+  final int numVars=variables.size();
+  numGlobalAttributes=attributes.size();
+  final String navAttrib=NetCDFUtilities.getGlobalAttributeAsString(dataset,HDF4APSProperties.PFA_NA_MAPPROJECTION);
+  if (navAttrib != null && navAttrib.length() > 0) {
+    projectionDatasetName=navAttrib;
+  }
+  final String prodAttrib=NetCDFUtilities.getGlobalAttributeAsString(dataset,HDF4APSProperties.PRODLIST);
+  int numImages=0;
+  if (prodAttrib != null && prodAttrib.length() > 0) {
+    String products[]=prodAttrib.split(",");
+    productList=HDF4APSProperties.refineProductList(products);
+    numImages=productList.length;
+  }
+ else {
+    numImages=numVars;
+  }
+  setNumImages(numImages);
+  indexMap=new HashMap<Range,APSDatasetWrapper>(numImages);
+  Variable varProjection;
+  varProjection=dataset.findVariable(projectionDatasetName);
+  if (varProjection != null && varProjection.getName().equalsIgnoreCase(projectionDatasetName)) {
+    Array data=varProjection.read();
+    final int datatype=NetCDFUtilities.getRawDataType(varProjection);
+    if (projectionMap == null) {
+      projectionMap=buildProjectionAttributesMap(data,datatype);
+    }
+  }
+  try {
+    for (    Variable var : variables) {
+      final String name=var.getName();
+      for (int j=0; j < numImages; j++) {
+        if (name.equals(productList[j])) {
+          indexMap.put(new Range(j,j + 1),new APSDatasetWrapper(var));
+          break;
+        }
+      }
+    }
+  }
+ catch (  InvalidRangeException e) {
+    throw new IllegalArgumentException("Error occurred during NetCDF file parsing",e);
+  }
+}

@@ -1,0 +1,74 @@
+{
+  if (name.equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
+    final Object value=param.getValue();
+    if (value == null)     return;
+    final GridGeometry2D gg=(GridGeometry2D)value;
+    request.setDomainSubset(gg.getGridRange2D(),gg.getGridToCRS2D(),gg.getCoordinateReferenceSystem());
+    return;
+  }
+  if (name.equals(ImageMosaicFormat.TIME.getName())) {
+    final Object value=param.getValue();
+    if (value == null) {
+      return;
+    }
+    final List<?> dates=(List<?>)value;
+    if (dates != null && !dates.isEmpty()) {
+      SortedSet<DateRange> requestedTemporalSubset=new DateRangeTreeSet();
+      for (      Object val : dates) {
+        if (val instanceof Date) {
+          requestedTemporalSubset.add(new DateRange((Date)val,(Date)val));
+        }
+ else         if (val instanceof DateRange) {
+          requestedTemporalSubset.add((DateRange)val);
+        }
+      }
+      request.setTemporalSubset(requestedTemporalSubset);
+    }
+    return;
+  }
+  if (name.equals(ImageMosaicFormat.ELEVATION.getName())) {
+    final Object value=param.getValue();
+    if (value == null)     return;
+    List<?> values=(List<?>)value;
+    if (values != null && !values.isEmpty()) {
+      Set<NumberRange<Double>> verticalSubset=new DoubleRangeTreeSet();
+      for (      Object val : values) {
+        if (val instanceof Number) {
+          verticalSubset.add(new NumberRange<Double>(Double.class,((Number)val).doubleValue(),((Number)val).doubleValue()));
+        }
+ else         if (val instanceof NumberRange) {
+          verticalSubset.add((NumberRange<Double>)val);
+        }
+      }
+      request.setVerticalSubset(verticalSubset);
+    }
+    return;
+  }
+  if (name.equals(ImageMosaicFormat.FILTER.getName())) {
+    final Object value=param.getValue();
+    if (value == null)     return;
+    request.setFilter((Filter)value);
+    return;
+  }
+  String paramName=name.getCode();
+  if (((NetCDFSource)gridSource).isParameterSupported(name)) {
+    final Object value=param.getValue();
+    if (value == null) {
+      return;
+    }
+    final Set values=new HashSet();
+    if (value instanceof Collection) {
+      values.addAll((Collection)value);
+    }
+ else {
+      values.add(value);
+    }
+    Map<String,Set<?>> domainsSubset=request.getAdditionalDomainsSubset();
+    if (domainsSubset == null) {
+      domainsSubset=new HashMap<String,Set<?>>();
+      request.setAdditionalDomainsSubset(domainsSubset);
+    }
+    domainsSubset.put(paramName,values);
+    return;
+  }
+}

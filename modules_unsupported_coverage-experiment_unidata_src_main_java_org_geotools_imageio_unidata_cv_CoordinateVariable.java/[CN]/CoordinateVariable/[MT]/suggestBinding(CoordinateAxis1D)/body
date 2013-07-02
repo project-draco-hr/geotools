@@ -1,0 +1,41 @@
+{
+  Utilities.ensureNonNull("coordinateAxis",coordinateAxis);
+  final AxisType axisType=coordinateAxis.getAxisType();
+switch (axisType) {
+case GeoX:
+case GeoY:
+case GeoZ:
+case Height:
+case Lat:
+case Lon:
+case Pressure:
+case Spectral:
+    @SuppressWarnings("deprecation") final DataType dataType=coordinateAxis.getDataType();
+  Attribute scaleFactor=coordinateAxis.findAttribute("scale_factor");
+Attribute offsetFactor=coordinateAxis.findAttribute("offset");
+if (scaleFactor != null || offsetFactor != null) {
+return Double.class;
+}
+switch (dataType) {
+case DOUBLE:
+return Double.class;
+case BYTE:
+return Byte.class;
+case FLOAT:
+return Float.class;
+case INT:
+return Integer.class;
+case LONG:
+return Long.class;
+case SHORT:
+return Short.class;
+}
+break;
+case Time:
+case RunTime:
+LOGGER.log(Level.FINE,"Date mapping for axis:" + coordinateAxis.toString());
+return java.util.Date.class;
+}
+LOGGER.log(Level.FINE,"Unable to find mapping for axis:" + coordinateAxis.toString());
+return null;
+}

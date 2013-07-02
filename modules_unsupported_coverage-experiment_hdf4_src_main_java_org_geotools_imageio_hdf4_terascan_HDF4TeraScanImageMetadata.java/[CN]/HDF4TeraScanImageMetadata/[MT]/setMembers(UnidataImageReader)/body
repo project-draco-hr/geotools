@@ -1,0 +1,35 @@
+{
+  super.setMembers(imageReader);
+  final int imageIndex=getImageIndex();
+  if (imageReader instanceof HDF4TeraScanImageReader) {
+    final HDF4TeraScanImageReader reader=(HDF4TeraScanImageReader)imageReader;
+    setDriverDescription(driverDescription);
+    setDriverName(driverName);
+    final double scale=reader.getScale(imageIndex);
+    if (!Double.isNaN(scale))     setScales(new Double[]{Double.valueOf(scale)});
+    final double offset=reader.getOffset(imageIndex);
+    if (!Double.isNaN(offset))     setOffsets(new Double[]{Double.valueOf(offset)});
+    String name=reader.getLongName(imageIndex);
+    if (name != null && name.trim().length() > 0) {
+      setDatasetName(name);
+    }
+    final double noData=reader.getFillValue(imageIndex);
+    if (!Double.isNaN(noData)) {
+      setNoDataValues(new Double[]{Double.valueOf(noData)});
+    }
+    final double[] validRange=reader.getValidRange(imageIndex);
+    if (validRange != null && validRange.length == 2 && !Double.isNaN(validRange[0]) && !Double.isNaN(validRange[1])) {
+      setMinimums(new Double[]{Double.valueOf(validRange[0])});
+      setMaximums(new Double[]{Double.valueOf(validRange[1])});
+    }
+    setNumOverviews(new int[]{0});
+    final int numAttributes=reader.getNumAttributes(imageIndex);
+    this.additionalMetadata=new HashMap<String,String>(numAttributes);
+    for (int i=0; i < numAttributes; i++) {
+      final KeyValuePair attributePair=reader.getAttribute(imageIndex,i);
+      final String attributeName=attributePair.getKey();
+      final String attributeValue=attributePair.getValue();
+      additionalMetadata.put(attributeName,attributeValue);
+    }
+  }
+}
