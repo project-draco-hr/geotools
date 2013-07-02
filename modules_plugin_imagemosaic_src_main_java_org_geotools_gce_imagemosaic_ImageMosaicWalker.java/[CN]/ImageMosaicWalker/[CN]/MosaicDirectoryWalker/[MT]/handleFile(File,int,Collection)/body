@@ -1,0 +1,186 @@
+{
+  fileIndex++;
+  if (!checkFile(fileBeingProcessed))   return;
+  String validFileName;
+  SimpleFeatureType indexSchema=null;
+  try {
+    validFileName=fileBeingProcessed.getCanonicalPath();
+    validFileName=FilenameUtils.normalize(validFileName);
+  }
+ catch (  IOException e) {
+    fireFileEvent(Level.FINER,fileBeingProcessed,false,"Exception occurred while processing file " + fileBeingProcessed + ": "+ e.getMessage(),((fileIndex * 100.0) / numFiles));
+    fireException(e);
+    return;
+  }
+  validFileName=FilenameUtils.getName(validFileName);
+  fireEvent(Level.INFO,"Now indexing file " + validFileName,((fileIndex * 100.0) / numFiles));
+  GridCoverage2DReader coverageReader=null;
+  try {
+    final AbstractGridFormat format;
+    final Hints configurationHints=runConfiguration.getHints();
+    String indexName=runConfiguration.getParameter(Prop.INDEX_NAME);
+    final Indexer indexer=runConfiguration.getIndexer();
+    if (cachedFormat == null) {
+      format=(AbstractGridFormat)GridFormatFinder.findFormat(fileBeingProcessed,excludeMosaicHints);
+    }
+ else {
+      if (cachedFormat.accepts(fileBeingProcessed)) {
+        format=cachedFormat;
+      }
+ else {
+        format=new UnknownFormat();
+      }
+    }
+    if ((format instanceof UnknownFormat) || format == null) {
+      fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipped file " + fileBeingProcessed + ": File format is not supported.",((fileIndex * 99.0) / numFiles));
+      return;
+    }
+    cachedFormat=format;
+    coverageReader=(GridCoverage2DReader)format.getReader(fileBeingProcessed,configurationHints);
+    String[] coverageNames=coverageReader.getGridCoverageNames();
+    CatalogBuilderConfiguration catalogConfig;
+    for (    String cvName : coverageNames) {
+      final String inputCoverageName=cvName;
+      String coverageName=coverageReader instanceof StructuredGridCoverage2DReader ? inputCoverageName : indexName;
+      final boolean coverageExists=coverageExists(coverageName);
+      MosaicConfigurationBean mosaicConfiguration=null;
+      MosaicConfigurationBean currentConfigurationBean=null;
+      RasterManager rasterManager=null;
+      if (coverageExists) {
+        rasterManager=parentReader.getRasterManager(coverageName);
+        mosaicConfiguration=rasterManager.getConfiguration();
+      }
+      final MosaicBeanBuilder configBuilder=new MosaicBeanBuilder();
+      final GeneralEnvelope envelope=(GeneralEnvelope)coverageReader.getOriginalEnvelope(cvName);
+      final CoordinateReferenceSystem actualCRS=coverageReader.getCoordinateReferenceSystem(cvName);
+      SampleModel sm=null;
+      ColorModel cm=null;
+      int numberOfLevels=1;
+      double[][] resolutionLevels=null;
+      if (mosaicConfiguration == null) {
+        catalogConfig=runConfiguration;
+        ImageLayout layout=coverageReader.getImageLayout(inputCoverageName);
+        cm=layout.getColorModel(null);
+        sm=layout.getSampleModel(null);
+        numberOfLevels=coverageReader.getNumOverviews(inputCoverageName) + 1;
+        resolutionLevels=coverageReader.getResolutionLevels(inputCoverageName);
+        configBuilder.setSampleModel(sm);
+        configBuilder.setColorModel(cm);
+        ColorModel defaultCM=cm;
+        if (defaultCM instanceof IndexColorModel) {
+          IndexColorModel icm=(IndexColorModel)defaultCM;
+          int numBands=defaultCM.getNumColorComponents();
+          byte[][] defaultPalette=new byte[3][icm.getMapSize()];
+          icm.getReds(defaultPalette[0]);
+          icm.getGreens(defaultPalette[0]);
+          icm.getBlues(defaultPalette[0]);
+          if (numBands == 4) {
+            icm.getAlphas(defaultPalette[0]);
+          }
+          configBuilder.setPalette(defaultPalette);
+        }
+        configBuilder.setCrs(actualCRS);
+        configBuilder.setLevels(resolutionLevels);
+        configBuilder.setLevelsNum(numberOfLevels);
+        configBuilder.setName(coverageName);
+        configBuilder.setTimeAttribute(IndexerUtils.getAttribute(coverageName,Utils.TIME_DOMAIN,indexer));
+        configBuilder.setElevationAttribute(IndexerUtils.getAttribute(coverageName,Utils.ELEVATION_DOMAIN,indexer));
+        configBuilder.setAdditionalDomainAttributes(IndexerUtils.getAttribute(coverageName,Utils.ADDITIONAL_DOMAIN,indexer));
+        final Hints runHints=runConfiguration.getHints();
+        if (runHints != null && runHints.containsKey(Utils.AUXILIARY_FILES_PATH)) {
+          String auxiliaryFilePath=(String)runHints.get(Utils.AUXILIARY_FILES_PATH);
+          if (auxiliaryFilePath != null && auxiliaryFilePath.trim().length() > 0) {
+            configBuilder.setAuxiliaryFilePath(auxiliaryFilePath);
+          }
+        }
+        final CatalogConfigurationBean catalogConfigurationBean=new CatalogConfigurationBean();
+        catalogConfigurationBean.setCaching(IndexerUtils.getParameterAsBoolean(Prop.CACHING,indexer));
+        catalogConfigurationBean.setAbsolutePath(IndexerUtils.getParameterAsBoolean(Prop.ABSOLUTE_PATH,indexer));
+        catalogConfigurationBean.setLocationAttribute(IndexerUtils.getParameter(Prop.LOCATION_ATTRIBUTE,indexer));
+        configBuilder.setCatalogConfigurationBean(catalogConfigurationBean);
+        currentConfigurationBean=configBuilder.getMosaicConfigurationBean();
+        indexSchema=CatalogManager.createSchema(runConfiguration,currentConfigurationBean.getName(),actualCRS);
+        rasterManager=parentReader.addRasterManager(currentConfigurationBean,false);
+        parentReader.createCoverage(coverageName,indexSchema);
+        configurations.put(currentConfigurationBean.getName(),currentConfigurationBean);
+      }
+ else {
+        catalogConfig=new CatalogBuilderConfiguration();
+        CatalogConfigurationBean bean=mosaicConfiguration.getCatalogConfigurationBean();
+        catalogConfig.setParameter(Prop.LOCATION_ATTRIBUTE,(bean.getLocationAttribute()));
+        catalogConfig.setParameter(Prop.ABSOLUTE_PATH,Boolean.toString(bean.isAbsolutePath()));
+        catalogConfig.setParameter(Prop.ROOT_MOSAIC_DIR,runConfiguration.getParameter(Prop.ROOT_MOSAIC_DIR));
+        CatalogConfigurationBean catalogConfigurationBean=bean;
+        if (!catalogConfigurationBean.isHeterogeneous()) {
+          numberOfLevels=coverageReader.getNumOverviews(inputCoverageName) + 1;
+          boolean needUpdate=false;
+          if (numberOfLevels != mosaicConfiguration.getLevelsNum()) {
+            catalogConfigurationBean.setHeterogeneous(true);
+            if (numberOfLevels > mosaicConfiguration.getLevelsNum()) {
+              resolutionLevels=coverageReader.getResolutionLevels(inputCoverageName);
+              mosaicConfiguration.setLevels(resolutionLevels);
+              mosaicConfiguration.setLevelsNum(numberOfLevels);
+              needUpdate=true;
+            }
+          }
+ else {
+            final double[][] mosaicLevels=mosaicConfiguration.getLevels();
+            resolutionLevels=coverageReader.getResolutionLevels(inputCoverageName);
+            final boolean homogeneousLevels=Utils.homogeneousCheck(numberOfLevels,resolutionLevels,mosaicLevels);
+            if (!homogeneousLevels) {
+              catalogConfigurationBean.setHeterogeneous(true);
+              needUpdate=true;
+            }
+          }
+          if (needUpdate) {
+            configurations.put(mosaicConfiguration.getName(),mosaicConfiguration);
+          }
+        }
+        ImageLayout layout=coverageReader.getImageLayout(inputCoverageName);
+        cm=layout.getColorModel(null);
+        sm=layout.getSampleModel(null);
+        ColorModel actualCM=cm;
+        CoordinateReferenceSystem expectedCRS;
+        if (mosaicConfiguration.getCrs() != null) {
+          expectedCRS=mosaicConfiguration.getCrs();
+        }
+ else {
+          expectedCRS=rasterManager.spatialDomainManager.coverageCRS;
+        }
+        if (!(CRS.equalsIgnoreMetadata(expectedCRS,actualCRS))) {
+          fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipping image " + fileBeingProcessed + " because CRSs do not match.",(((fileIndex + 1) * 99.0) / numFiles));
+          return;
+        }
+        byte[][] palette=mosaicConfiguration.getPalette();
+        ColorModel colorModel=mosaicConfiguration.getColorModel();
+        if (colorModel == null) {
+          palette=rasterManager.getConfiguration().getPalette();
+          colorModel=rasterManager.defaultCM;
+        }
+        if (checkColorModels(colorModel,palette,mosaicConfiguration,actualCM)) {
+          fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipping image " + fileBeingProcessed + " because color models do not match.",(((fileIndex + 1) * 99.0) / numFiles));
+          return;
+        }
+      }
+      CatalogManager.updateCatalog(coverageName,fileBeingProcessed,coverageReader,parentReader,catalogConfig,envelope,transaction,propertiesCollectors);
+      fireFileEvent(Level.FINE,fileBeingProcessed,true,"Done with file " + fileBeingProcessed,(((fileIndex + 1) * 99.0) / numFiles));
+    }
+  }
+ catch (  IOException e) {
+    fireException(e);
+    return;
+  }
+catch (  ArrayIndexOutOfBoundsException e) {
+    fireException(e);
+    return;
+  }
+ finally {
+    try {
+      if (coverageReader != null)       coverageReader.dispose();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+  }
+  super.handleFile(fileBeingProcessed,depth,results);
+}

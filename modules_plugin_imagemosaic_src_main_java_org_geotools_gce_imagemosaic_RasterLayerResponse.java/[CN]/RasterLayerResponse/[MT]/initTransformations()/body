@@ -1,26 +1,19 @@
 {
-  if (!request.isHeterogeneousGranules()) {
-    final OverviewLevel baseLevel=rasterManager.overviewsController.resolutionsLevels.get(0);
-    final OverviewLevel selectedLevel=rasterManager.overviewsController.resolutionsLevels.get(imageChoice);
-    final double resX=baseLevel.resolutionX;
-    final double resY=baseLevel.resolutionY;
-    final double[] requestRes=request.getRequestedResolution();
-    final AffineTransform g2w=new AffineTransform((AffineTransform)baseGridToWorld);
-    g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
-    if ((requestRes[0] < resX || requestRes[1] < resY)) {
-      oversampledRequest=true;
-    }
- else {
-      g2w.concatenate(AffineTransform.getScaleInstance(selectedLevel.scaleFactor,selectedLevel.scaleFactor));
-      g2w.concatenate(AffineTransform.getScaleInstance(baseReadParameters.getSourceXSubsampling(),baseReadParameters.getSourceYSubsampling()));
-    }
-    finalGridToWorldCorner=new AffineTransform2D(g2w);
-    finalWorldToGridCorner=finalGridToWorldCorner.inverse();
+  final AffineTransform g2w;
+  final OverviewLevel baseLevel=rasterManager.overviewsController.resolutionsLevels.get(0);
+  final OverviewLevel selectedLevel=rasterManager.overviewsController.resolutionsLevels.get(imageChoice);
+  final double resX=baseLevel.resolutionX;
+  final double resY=baseLevel.resolutionY;
+  final double[] requestRes=request.spatialRequestHelper.getRequestedResolution();
+  g2w=new AffineTransform((AffineTransform)baseGridToWorld);
+  g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+  if ((requestRes[0] < resX || requestRes[1] < resY)) {
+    oversampledRequest=true;
   }
  else {
-    final AffineTransform g2w=new AffineTransform(request.getRequestedGridToWorld());
-    g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
-    finalGridToWorldCorner=new AffineTransform2D(g2w);
-    finalWorldToGridCorner=finalGridToWorldCorner.inverse();
+    g2w.concatenate(AffineTransform.getScaleInstance(selectedLevel.scaleFactor,selectedLevel.scaleFactor));
+    g2w.concatenate(AffineTransform.getScaleInstance(baseReadParameters.getSourceXSubsampling(),baseReadParameters.getSourceYSubsampling()));
   }
+  finalGridToWorldCorner=new AffineTransform2D(g2w);
+  finalWorldToGridCorner=finalGridToWorldCorner.inverse();
 }

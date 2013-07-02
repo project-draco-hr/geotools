@@ -1,60 +1,59 @@
 {
   this.sourceURL=Utils.checkSource(source,hints);
-  if (this.sourceURL == null)   throw new DataSourceException("This plugin accepts File, URL or String. The string may describe a File or an URL");
-  MosaicConfigurationBean configuration=Utils.loadMosaicProperties(sourceURL,this.locationAttributeName);
-  if (configuration == null) {
-    final File parent=DataUtilities.urlToFile(sourceURL).getParentFile();
-    final File[] properties=parent.listFiles((FilenameFilter)FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("indexer.properties")),FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("datastore.properties")),FileFilterUtils.makeFileOnly(FileFilterUtils.suffixFileFilter(".properties")))));
-    for (    File propFile : properties)     if (Utils.checkFileReadable(propFile) && Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),"") != null) {
-      configuration=Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),this.locationAttributeName);
-    }
+  if (this.sourceURL == null) {
+    throw new DataSourceException("This plugin accepts File, URL or String. The string may describe a File or an URL");
   }
-  if (configuration == null)   throw new DataSourceException("Unable to create reader for this mosaic since we could not parse the configuration.");
-  extractProperties(configuration);
-  if (this.hints.containsKey(Hints.MOSAIC_LOCATION_ATTRIBUTE)) {
-    this.locationAttributeName=((String)this.hints.get(Hints.MOSAIC_LOCATION_ATTRIBUTE));
-  }
+  MosaicConfigurationBean configuration=null;
   try {
-    catalog=GranuleCatalogFactory.createGranuleCatalog(sourceURL,configuration);
-    if (catalog == null) {
-      throw new DataSourceException("Unable to create index for this URL " + sourceURL);
-    }
-    final SimpleFeatureType type=catalog.getType();
-    if (type == null) {
-      throw new IllegalArgumentException("Problems when opening the index, no typenames for the schema are defined");
-    }
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Connected mosaic reader to its index " + sourceURL.toString());
-    setGridGeometry(configuration.getEnvelope());
-    final Object tempCRS=this.hints.get(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM);
-    if (tempCRS != null) {
-      this.crs=(CoordinateReferenceSystem)tempCRS;
-      LOGGER.log(Level.WARNING,"Using forced coordinate reference system ");
-    }
- else {
-      final CoordinateReferenceSystem tempcrs=type.getGeometryDescriptor().getCoordinateReferenceSystem();
-      if (tempcrs == null) {
-        crs=AbstractGridFormat.getDefaultCRS();
-        LOGGER.log(Level.WARNING,"Unable to find a CRS for this coverage, using a default one");
+    if (sourceURL.getProtocol().equals("file")) {
+      final File sourceFile=DataUtilities.urlToFile(sourceURL);
+      if (!sourceFile.exists()) {
+        throw new DataSourceException("The specified sourceURL doesn't refer to an existing file");
       }
- else       crs=tempcrs;
     }
-    if (this.locationAttributeName == null) {
-      throw new DataSourceException("The provided name for the location attribute is invalid.");
-    }
- else {
-      if (type.getDescriptor(this.locationAttributeName) == null) {
-        this.locationAttributeName=this.locationAttributeName.toUpperCase();
-        if (type.getDescriptor(this.locationAttributeName) == null) {
-          throw new DataSourceException("The provided name for the location attribute is invalid.");
+    configuration=Utils.loadMosaicProperties(sourceURL,this.locationAttributeName);
+    if (configuration == null) {
+      final File parent=DataUtilities.urlToFile(sourceURL).getParentFile();
+      final File[] properties=parent.listFiles((FilenameFilter)FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("indexer.properties")),FileFilterUtils.and(FileFilterUtils.notFileFilter(FileFilterUtils.nameFileFilter("datastore.properties")),FileFilterUtils.makeFileOnly(FileFilterUtils.suffixFileFilter(".properties")))));
+      final File datastoreProperties=new File(parent,"datastore.properties");
+      List<MosaicConfigurationBean> beans=new ArrayList<MosaicConfigurationBean>();
+      for (      File propFile : properties) {
+        if (Utils.checkFileReadable(propFile) && Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),"") != null) {
+          configuration=Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),this.locationAttributeName);
+          if (configuration != null) {
+            beans.add(configuration);
+          }
         }
       }
+      if (beans.isEmpty() && !datastoreProperties.exists()) {
+        throw new DataSourceException("No mosaic properties file or datastore properties file have been found");
+      }
+      GranuleCatalog catalog=null;
+      final Properties props=CatalogManager.createGranuleCatalogProperties(datastoreProperties);
+      final String SPIClass=props.getProperty("SPI");
+      final DataStoreFactorySpi spi=(DataStoreFactorySpi)Class.forName(SPIClass).newInstance();
+      final Map<String,Serializable> params=Utils.createDataStoreParamsFromPropertiesFile(props,spi);
+      params.put(Utils.SCAN_FOR_TYPENAMES,Boolean.valueOf(true));
+      catalog=GranuleCatalogFactory.createGranuleCatalog(sourceURL,beans.get(0).getCatalogConfigurationBean(),params);
+      if (granuleCatalog == null) {
+        granuleCatalog=catalog;
+      }
+      if (granuleCatalog == null) {
+        throw new DataSourceException("Unable to create index for this URL " + sourceURL);
+      }
+      for (      MosaicConfigurationBean bean : beans) {
+        addRasterManager(bean,true);
+      }
     }
-    rasterManager=new RasterManager(this,configuration);
+ else {
+      granuleCatalog=CatalogManager.createCatalog(sourceURL,configuration,this.hints);
+      addRasterManager(configuration,true);
+    }
   }
  catch (  Throwable e) {
     try {
-      if (catalog != null) {
-        catalog.dispose();
+      if (granuleCatalog != null) {
+        granuleCatalog.dispose();
       }
     }
  catch (    Throwable e1) {
@@ -63,16 +62,18 @@
       }
     }
  finally {
-      catalog=null;
+      granuleCatalog=null;
     }
     try {
-      if (rasterManager != null)       rasterManager.dispose();
+      disposeManagers();
     }
  catch (    Throwable e1) {
-      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e1.getLocalizedMessage(),e1);
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.log(Level.FINEST,e1.getLocalizedMessage(),e1);
+      }
     }
  finally {
-      rasterManager=null;
+      rasterManagers=null;
     }
     throw new DataSourceException(e);
   }

@@ -1,10 +1,11 @@
 {
   Utilities.ensureNonNull("query",q);
+  String typeName=q.getTypeName();
   final Lock lock=rwLock.readLock();
   try {
     lock.lock();
     checkStore();
-    final SimpleFeatureSource featureSource=tileIndexStore.getFeatureSource(this.typeName);
+    final SimpleFeatureSource featureSource=tileIndexStore.getFeatureSource(typeName);
     if (featureSource == null) {
       throw new NullPointerException("The provided SimpleFeatureSource is null, it's impossible to create an index!");
     }
@@ -28,13 +29,13 @@
           final SimpleFeature sf=(SimpleFeature)feature;
           final GranuleDescriptor granule;
 synchronized (granuleDescriptorsCache) {
-            String granuleLocation=(String)sf.getAttribute(locationAttribute);
-            if (granuleDescriptorsCache.containsKey(granuleLocation)) {
-              granule=granuleDescriptorsCache.get(granuleLocation);
+            String featureId=sf.getID();
+            if (granuleDescriptorsCache.containsKey(featureId)) {
+              granule=granuleDescriptorsCache.get(featureId);
             }
  else {
-              granule=new GranuleDescriptor(sf,suggestedRasterSPI,pathType,locationAttribute,parentLocation,heterogeneous);
-              granuleDescriptorsCache.put(granuleLocation,granule);
+              granule=new GranuleDescriptor(sf,suggestedRasterSPI,pathType,locationAttribute,parentLocation,heterogeneous,q.getHints());
+              granuleDescriptorsCache.put(featureId,granule);
             }
           }
           visitor.visit(granule,null);

@@ -1,0 +1,87 @@
+{
+  final Collectors collectors=Utils.OBJECT_FACTORY.createIndexerCollectors();
+  indexer.setCollectors(collectors);
+  final List<Collector> collectorList=collectors.getCollector();
+  propertyCollectors=propertyCollectors.trim();
+  if (propertyCollectors != null && propertyCollectors.length() > 0) {
+    final String[] propColls=propertyCollectors.split(",");
+    for (    String pcDef : propColls) {
+      final int squareLPos=pcDef.indexOf("[");
+      final int squareRPos=pcDef.indexOf("]");
+      final int squareRPosLast=pcDef.lastIndexOf("]");
+      final int roundLPos=pcDef.indexOf("(");
+      final int roundRPos=pcDef.indexOf(")");
+      final int roundRPosLast=pcDef.lastIndexOf(")");
+      if (squareRPos != squareRPosLast) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (squareLPos == -1 || squareRPos == -1) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (squareLPos == 0) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (roundRPos != roundRPosLast) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (roundLPos == -1 || roundRPos == -1) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (roundLPos == 0) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (roundLPos != squareRPos + 1) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      if (roundRPos != (pcDef.length() - 1)) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
+        }
+        continue;
+      }
+      final String spi=pcDef.substring(0,squareLPos);
+      final String config=squareLPos < squareRPos ? pcDef.substring(squareLPos + 1,squareRPos) : "";
+      String value=null;
+      final File configFile=new File(getParameter(Utils.Prop.ROOT_MOSAIC_DIR,indexer),config + ".properties");
+      if (!Utils.checkFileReadable(configFile)) {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Unable to access the file for this PropertyCollector: " + configFile.getAbsolutePath());
+        }
+        continue;
+      }
+ else {
+        final Properties properties=Utils.loadPropertiesFromURL(DataUtilities.fileToURL(configFile));
+        if (properties.containsKey("regex")) {
+          value=properties.getProperty("regex");
+        }
+      }
+      final String propertyNames[]=pcDef.substring(roundLPos + 1,roundRPos).split(",");
+      Collector collector=Utils.OBJECT_FACTORY.createIndexerCollectorsCollector();
+      collector.setSpi(spi);
+      collector.setMapped(propertyNames[0]);
+      collector.setValue(value);
+      collectorList.add(collector);
+    }
+  }
+}

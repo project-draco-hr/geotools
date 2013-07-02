@@ -1,0 +1,40 @@
+{
+  File sourceFile=null;
+  URL sourceURL=null;
+  if (source instanceof File) {
+    sourceFile=(File)source;
+  }
+ else   if (source instanceof URL) {
+    sourceURL=(URL)source;
+    if (sourceURL.getProtocol().equals("file")) {
+      sourceFile=DataUtilities.urlToFile(sourceURL);
+    }
+  }
+ else   if (source instanceof String) {
+    final String tempSource=(String)source;
+    File tempFile=new File(tempSource);
+    if (!tempFile.exists()) {
+      try {
+        sourceURL=new URL(tempSource);
+        source=DataUtilities.urlToFile(sourceURL);
+      }
+ catch (      MalformedURLException e) {
+        sourceURL=null;
+        source=null;
+      }
+    }
+ else {
+      sourceURL=DataUtilities.fileToURL(tempFile);
+      sourceFile=tempFile;
+    }
+  }
+  final File indexerProperties=new File(sourceFile,Utils.INDEXER_PROPERTIES);
+  if (Utils.checkFileReadable(indexerProperties)) {
+    return true;
+  }
+  final File indexerXML=new File(sourceFile,Utils.INDEXER_XML);
+  if (Utils.checkFileReadable(indexerXML)) {
+    return true;
+  }
+  return false;
+}

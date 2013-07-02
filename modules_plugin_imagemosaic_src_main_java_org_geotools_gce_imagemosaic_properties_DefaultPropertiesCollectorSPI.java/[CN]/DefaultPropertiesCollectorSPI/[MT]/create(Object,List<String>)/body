@@ -1,24 +1,37 @@
 {
   URL source=null;
+  String property=null;
   if (o instanceof URL) {
     source=(URL)o;
   }
  else   if (o instanceof File) {
     source=DataUtilities.fileToURL((File)o);
   }
- else   if (o instanceof String)   try {
-    source=new URL((String)o);
+ else   if (o instanceof String) {
+    try {
+      source=new URL((String)o);
+    }
+ catch (    MalformedURLException e) {
+      String value=(String)o;
+      if (value.startsWith(REGEX_PREFIX)) {
+        property=value.substring(REGEX_PREFIX.length());
+      }
+ else {
+        return null;
+      }
+    }
   }
- catch (  MalformedURLException e) {
+ else {
     return null;
   }
- else   return null;
-  final Properties properties=Utils.loadPropertiesFromURL(source);
-  if (properties.containsKey("regex")) {
-    final String property=properties.getProperty("regex");
-    if (property != null) {
-      return createInternal(this,propertyNames,property.trim());
+  if (source != null) {
+    final Properties properties=Utils.loadPropertiesFromURL(source);
+    if (properties.containsKey("regex")) {
+      property=properties.getProperty("regex");
     }
+  }
+  if (property != null) {
+    return createInternal(this,propertyNames,property.trim());
   }
   return null;
 }

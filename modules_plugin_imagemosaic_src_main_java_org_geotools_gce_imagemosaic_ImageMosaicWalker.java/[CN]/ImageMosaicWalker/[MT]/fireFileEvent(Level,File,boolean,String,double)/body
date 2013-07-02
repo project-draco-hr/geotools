@@ -1,0 +1,15 @@
+{
+  if (LOGGER.isLoggable(level)) {
+    LOGGER.log(level,inMessage);
+  }
+synchronized (notificationListeners) {
+    final String newLine=System.getProperty("line.separator");
+    final StringBuilder message=new StringBuilder("Thread Name ");
+    message.append(Thread.currentThread().getName()).append(newLine);
+    message.append(this.getClass().toString()).append(newLine).append(inMessage);
+    final FileProcessingEvent evt=new FileProcessingEvent(this,file,ingested,message.toString(),percentage);
+    ProgressEventDispatchThreadEventLauncher eventLauncher=new ProgressEventDispatchThreadEventLauncher();
+    eventLauncher.setEvent(evt,this.notificationListeners.toArray());
+    sendEvent(eventLauncher);
+  }
+}

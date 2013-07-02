@@ -1,0 +1,53 @@
+{
+  File file=null;
+  if (source instanceof File) {
+    file=(File)source;
+  }
+  if (source instanceof String) {
+    file=new File((String)source);
+  }
+  final List<HarvestedSource> result=new ArrayList<HarvestedSource>();
+  if (file == null) {
+    result.add(new DefaultHarvestedSource(source,false,"Unrecognized source type"));
+    return result;
+  }
+ else   if (!file.exists()) {
+    result.add(new DefaultHarvestedSource(source,false,"Specified file path does not exist"));
+    return result;
+  }
+  IOFileFilter filter=null;
+  File directory=file;
+  if (!file.isDirectory()) {
+    directory=file.getParentFile();
+    filter=FileFilterUtils.nameFileFilter(file.getName());
+  }
+  CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
+  configuration.setParameter(Prop.ABSOLUTE_PATH,Boolean.toString(Utils.DEFAULT_PATH_BEHAVIOR));
+  String indexingPath=directory.getAbsolutePath();
+  configuration.setParameter(Prop.HARVEST_DIRECTORY,indexingPath);
+  if (defaultCoverage == null) {
+    defaultCoverage=getGridCoverageNames()[0];
+  }
+  configuration.setParameter(Prop.INDEX_NAME,defaultCoverage);
+  configuration.setHints(new Hints(Utils.MOSAIC_READER,this));
+  File mosaicSource=DataUtilities.urlToFile(sourceURL);
+  if (!mosaicSource.isDirectory()) {
+    mosaicSource=mosaicSource.getParentFile();
+  }
+  configuration.setParameter(Prop.ROOT_MOSAIC_DIR,mosaicSource.getAbsolutePath());
+  ImageMosaicWalker walker=new ImageMosaicWalker(configuration);
+  walker.setFileFilter(filter);
+  walker.addProcessingEventListener(new ImageMosaicWalker.ProcessingEventListener(){
+    @Override public void getNotification(    ProcessingEvent event){
+      if (event instanceof FileProcessingEvent) {
+        FileProcessingEvent fileEvent=(FileProcessingEvent)event;
+        result.add(new DefaultHarvestedSource(fileEvent.getFile(),fileEvent.isIngested(),fileEvent.getMessage()));
+      }
+    }
+    @Override public void exceptionOccurred(    ExceptionEvent event){
+    }
+  }
+);
+  walker.run();
+  return result;
+}

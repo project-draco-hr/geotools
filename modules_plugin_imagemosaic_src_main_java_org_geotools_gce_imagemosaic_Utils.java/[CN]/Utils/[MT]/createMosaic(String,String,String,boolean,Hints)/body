@@ -1,14 +1,16 @@
 {
   final CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
-  configuration.setAbsolute(absolutePath);
+  List<Parameter> parameterList=configuration.getIndexer().getParameters().getParameter();
+  IndexerUtils.setParam(parameterList,Prop.ABSOLUTE_PATH,Boolean.toString(absolutePath));
+  IndexerUtils.setParam(parameterList,Prop.ROOT_MOSAIC_DIR,location);
+  IndexerUtils.setParam(parameterList,Prop.INDEX_NAME,indexName);
+  IndexerUtils.setParam(parameterList,Prop.WILDCARD,wildcard);
+  IndexerUtils.setParam(parameterList,Prop.INDEXING_DIRECTORIES,location);
   configuration.setHints(hints);
-  configuration.setRootMosaicDirectory(location);
-  configuration.setIndexingDirectories(Arrays.asList(location));
-  configuration.setIndexName(indexName);
-  final CatalogBuilder catalogBuilder=new CatalogBuilder(configuration);
+  final ImageMosaicWalker catalogBuilder=new ImageMosaicWalker(configuration);
   final Queue<Throwable> exceptions=new LinkedList<Throwable>();
   try {
-    final CatalogBuilder.ProcessingEventListener listener=new CatalogBuilder.ProcessingEventListener(){
+    final ImageMosaicWalker.ProcessingEventListener listener=new ImageMosaicWalker.ProcessingEventListener(){
       @Override public void exceptionOccurred(      ExceptionEvent event){
         final Throwable t=event.getException();
         exceptions.add(t);

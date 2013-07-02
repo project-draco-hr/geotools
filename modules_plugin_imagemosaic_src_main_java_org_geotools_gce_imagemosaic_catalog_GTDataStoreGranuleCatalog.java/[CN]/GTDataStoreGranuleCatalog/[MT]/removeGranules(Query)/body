@@ -4,12 +4,13 @@
   try {
     lock.lock();
     checkStore();
+    String typeName=query.getTypeName();
     SimpleFeatureStore fs=null;
     try {
       fs=(SimpleFeatureStore)tileIndexStore.getFeatureSource(typeName);
       final int retVal=fs.getCount(query);
       fs.removeFeatures(query.getFilter());
-      bounds=tileIndexStore.getFeatureSource(typeName).getBounds();
+      bounds.put(typeName,tileIndexStore.getFeatureSource(typeName).getBounds());
       return retVal;
     }
  catch (    Throwable e) {
@@ -18,6 +19,7 @@
     }
   }
   finally {
+    granuleDescriptorsCache.clear();
     lock.unlock();
   }
 }

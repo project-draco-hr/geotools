@@ -1,0 +1,23 @@
+{
+  final Lock lock=rwLock.readLock();
+  ReferencedEnvelope bound=null;
+  try {
+    lock.lock();
+    checkStore();
+    if (bounds.containsKey(typeName)) {
+      bound=bounds.get(typeName);
+    }
+ else {
+      bound=this.tileIndexStore.getFeatureSource(typeName).getBounds();
+      bounds.put(typeName,bound);
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.FINER,e.getMessage(),e);
+    bounds.remove(typeName);
+  }
+ finally {
+    lock.unlock();
+  }
+  return bound;
+}
