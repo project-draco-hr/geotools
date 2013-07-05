@@ -1,0 +1,22 @@
+{
+  final double[] requestedResolution=request.spatialRequestHelper.getRequestedResolution();
+  final Rectangle coverageRasterArea=request.spatialRequestHelper.getCoverageProperties().getRasterArea();
+  final double[] fullResolution=request.spatialRequestHelper.getCoverageProperties().getFullResolution();
+  Utilities.ensureNonNull("readParameters",readParameters);
+  if (requestedResolution == null) {
+    readParameters.setSourceSubsampling(1,1,0,0);
+    return;
+  }
+  final int rasterWidth, rasterHeight;
+  rasterWidth=coverageRasterArea.width;
+  rasterHeight=coverageRasterArea.height;
+  int subSamplingFactorX=(int)Math.floor(requestedResolution[0] / fullResolution[0]);
+  subSamplingFactorX=subSamplingFactorX == 0 ? 1 : subSamplingFactorX;
+  while (rasterWidth / subSamplingFactorX <= 0 && subSamplingFactorX >= 0)   subSamplingFactorX--;
+  subSamplingFactorX=subSamplingFactorX <= 0 ? 1 : subSamplingFactorX;
+  int subSamplingFactorY=(int)Math.floor(requestedResolution[1] / fullResolution[1]);
+  subSamplingFactorY=subSamplingFactorY == 0 ? 1 : subSamplingFactorY;
+  while (rasterHeight / subSamplingFactorY <= 0 && subSamplingFactorY >= 0)   subSamplingFactorY--;
+  subSamplingFactorY=subSamplingFactorY <= 0 ? 1 : subSamplingFactorY;
+  readParameters.setSourceSubsampling(subSamplingFactorX,subSamplingFactorY,0,0);
+}

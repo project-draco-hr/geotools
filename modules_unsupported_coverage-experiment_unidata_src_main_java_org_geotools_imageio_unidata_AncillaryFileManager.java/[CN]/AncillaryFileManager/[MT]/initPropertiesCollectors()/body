@@ -1,0 +1,33 @@
+{
+  final Collectors collectors=indexer.getCollectors();
+  if (collectors != null) {
+    List<Collector> collectorList=collectors.getCollector();
+    if (collectorList != null) {
+      this.collectors=new HashMap<String,PropertiesCollector>();
+      for (      Collector collector : collectorList) {
+        final String collectorName=collector.getName();
+        final String spiName=collector.getSpi();
+        final String value=collector.getValue();
+        final String mapped=collector.getMapped();
+        PropertiesCollectorSPI selectedSPI=null;
+        for (        PropertiesCollectorSPI spi : pcSPIs) {
+          if (spi.isAvailable() && spi.getName().equalsIgnoreCase(spiName)) {
+            selectedSPI=spi;
+            break;
+          }
+        }
+        if (selectedSPI == null) {
+          if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.info("Unable to find a PropertyCollector for this INTERNAL_STORE_SPI: " + spiName);
+          }
+          continue;
+        }
+        final String propertyNames[]=new String[]{mapped != null ? mapped : COVERAGE_NAME};
+        final PropertiesCollector pc=selectedSPI.create(DefaultPropertiesCollectorSPI.REGEX_PREFIX + value,Arrays.asList(propertyNames));
+        if (pc != null) {
+          this.collectors.put(collectorName,pc);
+        }
+      }
+    }
+  }
+}

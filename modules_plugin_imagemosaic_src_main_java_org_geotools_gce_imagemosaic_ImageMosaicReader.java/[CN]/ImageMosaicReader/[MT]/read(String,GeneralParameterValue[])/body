@@ -1,0 +1,51 @@
+{
+  if (rasterManagers == null) {
+    throw new IOException("Looks like this reader has been already disposed or it has not been properly initialized.");
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    if (sourceURL != null) {
+      LOGGER.fine("Reading mosaic from " + sourceURL.toString());
+    }
+ else {
+      LOGGER.fine("Reading mosaic");
+    }
+    final double[][] levels=getResolutionLevels(coverageName);
+    if (levels != null) {
+      final double[] highRes=levels[0];
+      LOGGER.fine("Highest res " + highRes[0] + " "+ highRes[1]);
+    }
+  }
+  if (this.maxAllowedTiles != ImageMosaicFormat.MAX_ALLOWED_TILES.getDefaultValue()) {
+    if (params != null) {
+      boolean found=false;
+      for (      GeneralParameterValue pv : params) {
+        if (pv.getDescriptor().getName().equals(ImageMosaicFormat.MAX_ALLOWED_TILES.getName())) {
+          found=true;
+          break;
+        }
+      }
+      if (!found) {
+        final GeneralParameterValue[] temp=new GeneralParameterValue[params.length + 1];
+        System.arraycopy(params,0,temp,0,params.length);
+        ParameterValue<Integer> tempVal=ImageMosaicFormat.MAX_ALLOWED_TILES.createValue();
+        tempVal.setValue(this.maxAllowedTiles);
+        temp[params.length]=tempVal;
+      }
+    }
+ else {
+      ParameterValue<Integer> tempVal=ImageMosaicFormat.MAX_ALLOWED_TILES.createValue();
+      tempVal.setValue(this.maxAllowedTiles);
+      params=new GeneralParameterValue[]{tempVal};
+    }
+  }
+  final Collection<GridCoverage2D> response=read(params,coverageName);
+  if (response.isEmpty()) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("The response is empty. ==> returning a null GridCoverage");
+    }
+    return null;
+  }
+ else {
+    return response.iterator().next();
+  }
+}

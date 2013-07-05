@@ -1,42 +1,63 @@
 {
-  Utilities.ensureNonNull("ImageMosaicReader",reader);
-  this.parent=reader;
-  this.expandMe=parent.expandMe;
-  this.heterogeneousGranules=parent.heterogeneousGranules;
-  granuleCatalog=parent.catalog;
-  parent.catalog=null;
-  coverageIdentifier=reader.getName();
-  hints=reader.getHints();
-  this.coverageIdentifier=reader.getName();
-  this.coverageFactory=reader.getGridCoverageFactory();
-  this.pathType=parent.pathType;
-  overviewsController=new OverviewsController(reader.getHighestRes(),reader.getNumberOfOvervies(),reader.getOverviewsResolution());
-  try {
-    spatialDomainManager=new SpatialDomainManager(reader.getOriginalEnvelope(),(GridEnvelope2D)reader.getOriginalGridRange(),reader.getCrs(),reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),overviewsController);
+  Utilities.ensureNonNull("ImageMosaicReader",parentReader);
+  this.parentReader=parentReader;
+  this.expandMe=parentReader.expandMe;
+  this.heterogeneousGranules=parentReader.heterogeneousGranules;
+  this.configuration=configuration;
+  hints=parentReader.getHints();
+  if (configuration != null && configuration.getAuxiliaryFilePath() != null) {
+    hints.add(new RenderingHints(Utils.AUXILIARY_FILES_PATH,configuration.getAuxiliaryFilePath()));
   }
- catch (  TransformException e) {
-    throw new DataSourceException(e);
-  }
-catch (  FactoryException e) {
-    throw new DataSourceException(e);
-  }
+  granuleCatalog=new HintedGranuleCatalog(parentReader.granuleCatalog,hints);
+  this.coverageFactory=parentReader.getGridCoverageFactory();
+  this.coverageIdentifier=configuration != null ? configuration.getName() : ImageMosaicReader.UNSPECIFIED;
+  this.pathType=parentReader.pathType;
   extractOverviewPolicy();
   extractDecimationPolicy();
-  loadSampleImage();
+  loadSampleImage(configuration);
   if (configuration != null) {
-    final SimpleFeatureType schema=granuleCatalog.getType();
-    if (configuration.getAdditionalDomainAttributes() != null) {
-      domainsManager=new DomainManager(configuration.getAdditionalDomainAttributes(),schema);
+    CatalogConfigurationBean catalogBean=configuration.getCatalogConfigurationBean();
+    typeName=catalogBean != null ? catalogBean.getTypeName() : null;
+    if (typeName != null) {
+      final SimpleFeatureType schema=granuleCatalog.getType(typeName);
+      if (configuration.getAdditionalDomainAttributes() != null) {
+        domainsManager=new DomainManager(configuration.getAdditionalDomainAttributes(),schema);
+        dimensionDescriptors.addAll(domainsManager.dimensions);
+      }
+      if (configuration.getTimeAttribute() != null) {
+        final HashMap<String,String> init=new HashMap<String,String>();
+        init.put(Utils.TIME_DOMAIN,configuration.getTimeAttribute());
+        timeDomainManager=new DomainManager(init,schema);
+        dimensionDescriptors.addAll(timeDomainManager.dimensions);
+      }
+      if (configuration.getElevationAttribute() != null) {
+        final HashMap<String,String> init=new HashMap<String,String>();
+        init.put(Utils.ELEVATION_DOMAIN,configuration.getElevationAttribute());
+        elevationDomainManager=new DomainManager(init,schema);
+        dimensionDescriptors.addAll(elevationDomainManager.dimensions);
+      }
     }
-    if (configuration.getTimeAttribute() != null) {
-      final HashMap<String,String> init=new HashMap<String,String>();
-      init.put(DomainDescriptor.TIME_DOMAIN,configuration.getTimeAttribute());
-      timeDomainManager=new DomainManager(init,schema);
+    if (defaultSM == null) {
+      defaultSM=configuration.getSampleModel();
     }
-    if (configuration.getElevationAttribute() != null) {
-      final HashMap<String,String> init=new HashMap<String,String>();
-      init.put(DomainDescriptor.ELEVATION_DOMAIN,configuration.getElevationAttribute());
-      elevationDomainManager=new DomainManager(init,schema);
+    if (defaultCM == null) {
+      defaultCM=configuration.getColorModel();
     }
+    if (defaultSM != null && defaultCM != null && defaultImageLayout == null) {
+      defaultImageLayout=new ImageLayout().setColorModel(defaultCM).setSampleModel(defaultSM);
+    }
+    levels=configuration.getLevels();
+    final double[] highRes=levels[0];
+    final int numOverviews=configuration.getLevelsNum() - 1;
+    double[][] overviews=null;
+    if (numOverviews > 0) {
+      overviews=new double[numOverviews][2];
+      for (int i=0; i < numOverviews; i++) {
+        overviews[i][0]=levels[i + 1][0];
+        overviews[i][1]=levels[i + 1][1];
+      }
+    }
+    overviewsController=new OverviewsController(highRes,numOverviews,overviews);
+    imposedEnvelope=configuration.getEnvelope();
   }
 }

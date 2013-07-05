@@ -1,0 +1,45 @@
+{
+  double[] lon=new double[2];
+  double[] lat=new double[2];
+  byte set=0;
+  for (  CoordinateVariable<?> cv : coordinatesVariables.values()) {
+    if (cv.isNumeric()) {
+      AxisType type=cv.getAxisType();
+switch (type) {
+case GeoY:
+case Lat:
+        if (cv.isRegular()) {
+          lat[0]=cv.getStart();
+          lat[1]=lat[0] + cv.getIncrement() * (cv.getSize() - 1);
+        }
+ else {
+          lat[0]=((Number)cv.getMinimum()).doubleValue();
+          lat[1]=((Number)cv.getMaximum()).doubleValue();
+        }
+      set++;
+    break;
+case GeoX:
+case Lon:
+  if (cv.isRegular()) {
+    lon[0]=cv.getStart();
+    lon[1]=lon[0] + cv.getIncrement() * (cv.getSize() - 1);
+  }
+ else {
+    lon[0]=((Number)cv.getMinimum()).doubleValue();
+    lon[1]=((Number)cv.getMaximum()).doubleValue();
+  }
+set++;
+break;
+default :
+break;
+}
+}
+if (set == 2) {
+break;
+}
+}
+if (set != 2) {
+throw new IllegalStateException("Unable to create envelope for this dataset");
+}
+boundingBox=new ReferencedEnvelope(lon[0],lon[1],lat[0],lat[1],UnidataCRSUtilities.WGS84);
+}

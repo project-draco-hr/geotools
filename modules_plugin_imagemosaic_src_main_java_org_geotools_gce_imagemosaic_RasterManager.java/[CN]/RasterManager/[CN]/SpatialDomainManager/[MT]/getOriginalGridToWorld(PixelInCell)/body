@@ -1,0 +1,21 @@
+{
+synchronized (this) {
+    if (coverageGridToWorld2D == null) {
+      final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(gridEnvelope,coverageEnvelope);
+      geMapper.setPixelAnchor(PixelInCell.CELL_CENTER);
+      coverageGridToWorld2D=(MathTransform2D)geMapper.createTransform();
+    }
+  }
+  if (pixInCell == PixelInCell.CELL_CENTER)   return coverageGridToWorld2D;
+  if (coverageGridToWorld2D instanceof AffineTransform) {
+    final AffineTransform tr=new AffineTransform((AffineTransform)coverageGridToWorld2D);
+    tr.concatenate(AffineTransform.getTranslateInstance(-0.5,-0.5));
+    return ProjectiveTransform.create(tr);
+  }
+  if (coverageGridToWorld2D instanceof IdentityTransform) {
+    final AffineTransform tr=new AffineTransform(1,0,0,1,0,0);
+    tr.concatenate(AffineTransform.getTranslateInstance(-0.5,-0.5));
+    return ProjectiveTransform.create(tr);
+  }
+  throw new IllegalStateException("This reader's grid to world transform is invalud!");
+}

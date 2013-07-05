@@ -1,0 +1,39 @@
+{
+  final File file=TestData.file(this,"O3-NO2.nc");
+  final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  DummyUnidataImageReader reader=null;
+  try {
+    reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    int numImages=reader.getNumImages(true);
+    for (int i=0; i < numImages; i++) {
+      UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      String variableName=sliceIndex.getVariableName();
+      StringBuilder sb=new StringBuilder();
+      sb.append("\n").append("\n").append("\n");
+      sb.append("IMAGE: ").append(i).append("\n");
+      sb.append(" Variable Name = ").append(variableName);
+      sb.append(" ( Z = ");
+      sb.append(sliceIndex.getZIndex());
+      sb.append("; T = ");
+      sb.append(sliceIndex.getTIndex());
+      sb.append(")");
+      LOGGER.info(sb.toString());
+    }
+  }
+ catch (  Throwable t) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,t.getLocalizedMessage(),t);
+    }
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

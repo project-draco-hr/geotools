@@ -1,0 +1,36 @@
+{
+  this.coordinateSystem=UnidataCRSUtilities.getCoordinateSystem(variableDS);
+  if (coordinateSystem == null) {
+    throw new IllegalArgumentException("Provided CoordinateSystem is null");
+  }
+  coordinateReferenceSystem=UnidataCRSUtilities.WGS84;
+  final List<CoordinateVariable<?>> otherAxes=new ArrayList<CoordinateVariable<?>>();
+  for (  CoordinateAxis axis : coordinateSystem.getCoordinateAxes()) {
+    CoordinateVariable<?> cv=reader.coordinatesVariables.get(axis.getShortName());
+switch (cv.getAxisType()) {
+case Time:
+case RunTime:
+      initTemporalDomain(cv,dimensions);
+    continue;
+case GeoZ:
+case Height:
+case Pressure:
+  String axisName=cv.getName();
+if (UnidataCRSUtilities.VERTICAL_AXIS_NAMES.contains(axisName)) {
+  initVerticalDomain(cv,dimensions);
+}
+ else {
+  otherAxes.add(cv);
+}
+continue;
+case GeoX:
+case GeoY:
+case Lat:
+case Lon:
+continue;
+default :
+otherAxes.add(cv);
+}
+}
+return otherAxes;
+}

@@ -1,0 +1,62 @@
+{
+  if (!type.equals(AxisType.Time)) {
+    return NumberFormat.getNumberInstance(Locale.CANADA);
+  }
+  char dateSeparator='-';
+  boolean yearLast=false;
+  boolean namedMonth=false;
+  boolean addT=false;
+  boolean appendZ=false;
+  int dateLength=0;
+  if (prototype != null) {
+    int field=1;
+    int digitCount=0;
+    final int length=prototype.length();
+    for (int i=0; i < length; i++) {
+      final char c=prototype.charAt(i);
+      if (Character.isWhitespace(c)) {
+        break;
+      }
+      if (Character.isDigit(c)) {
+        digitCount++;
+        dateLength++;
+        continue;
+      }
+      if (field == 2 && Character.isLetter(c)) {
+        namedMonth=true;
+        continue;
+      }
+      if (field == 1) {
+        dateSeparator=c;
+        dateLength++;
+      }
+      if (c == 'T')       addT=true;
+      if (c == 'Z' && i == length - 1)       appendZ=true;
+      digitCount=0;
+      field++;
+    }
+    if (digitCount >= 4) {
+      yearLast=true;
+    }
+  }
+  String pattern=null;
+  if (yearLast) {
+    pattern=namedMonth ? "dd-MMM-yyyy" : "dd-MM-yyyy";
+  }
+ else {
+    pattern=namedMonth ? "yyyy-MMM-dd" : "yyyy-MM-dd";
+    if (dateLength < 10) {
+      pattern=pattern.substring(0,dateLength);
+    }
+  }
+  pattern=pattern.replace('-',dateSeparator);
+  int lastColon=prototype.lastIndexOf(":");
+  if (lastColon != -1) {
+    pattern+=addT ? "'T'" : " ";
+    pattern+=prototype != null && lastColon >= 16 ? "HH:mm:ss" : "HH:mm";
+  }
+  pattern+=appendZ ? "'Z'" : "";
+  final DateFormat format=new SimpleDateFormat(pattern,Locale.CANADA);
+  format.setTimeZone(TimeZone.getTimeZone("UTC"));
+  return format;
+}

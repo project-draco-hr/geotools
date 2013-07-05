@@ -1,0 +1,58 @@
+{
+  final GranuleStore store=(GranuleStore)mosaicReader.getGranules(coverageName,false);
+  if (store == null) {
+    throw new IllegalArgumentException("No valid granule store has been found for: " + coverageName);
+  }
+  final SimpleFeatureType indexSchema=store.getSchema();
+  final SimpleFeature feature=new ShapefileCompatibleFeature(DataUtilities.template(indexSchema));
+  store.setTransaction(transaction);
+  final ListFeatureCollection collection=new ListFeatureCollection(indexSchema);
+  final String fileLocation=prepareLocation(configuration,fileBeingProcessed);
+  final String locationAttribute=configuration.getParameter(Prop.LOCATION_ATTRIBUTE);
+  if (inputReader instanceof StructuredGridCoverage2DReader) {
+    final GranuleSource source=((StructuredGridCoverage2DReader)inputReader).getGranules(coverageName,true);
+    final SimpleFeatureCollection originCollection=source.getGranules(null);
+    final DefaultProgressListener listener=new DefaultProgressListener();
+    final Collection<Property> destProps=feature.getProperties();
+    final Set<Name> destAttributes=new HashSet<Name>();
+    for (    Property prop : destProps) {
+      destAttributes.add(prop.getName());
+    }
+    originCollection.accepts(new AbstractFeatureVisitor(){
+      public void visit(      Feature feature){
+        if (feature instanceof SimpleFeature) {
+          final SimpleFeature sourceFeature=(SimpleFeature)feature;
+          final SimpleFeature destFeature=DataUtilities.template(indexSchema);
+          Collection<Property> props=sourceFeature.getProperties();
+          Name propName=null;
+          Object propValue=null;
+          for (          Property prop : props) {
+            propName=prop.getName();
+            propValue=prop.getValue();
+            if (destAttributes.contains(propName)) {
+              destFeature.setAttribute(propName,propValue);
+            }
+          }
+          destFeature.setAttribute(locationAttribute,fileLocation);
+          updateAttributesFromCollectors(destFeature,fileBeingProcessed,inputReader,propertiesCollectors);
+          collection.add(destFeature);
+          if (listener.isCanceled() || listener.hasExceptions()) {
+            if (listener.hasExceptions())             throw new RuntimeException(listener.getExceptions().peek());
+ else             throw new IllegalStateException("Feature visitor has been canceled");
+          }
+        }
+      }
+    }
+,listener);
+  }
+ else {
+    feature.setAttribute(indexSchema.getGeometryDescriptor().getLocalName(),GEOM_FACTORY.toGeometry(new ReferencedEnvelope((Envelope)envelope)));
+    feature.setAttribute(locationAttribute,fileLocation);
+    updateAttributesFromCollectors(feature,fileBeingProcessed,inputReader,propertiesCollectors);
+    collection.add(feature);
+  }
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  Filter filter=ff.equal(ff.property(locationAttribute),ff.literal(fileLocation),!isCaseSensitiveFileSystem(fileBeingProcessed));
+  store.removeGranules(filter);
+  store.addGranules(collection);
+}

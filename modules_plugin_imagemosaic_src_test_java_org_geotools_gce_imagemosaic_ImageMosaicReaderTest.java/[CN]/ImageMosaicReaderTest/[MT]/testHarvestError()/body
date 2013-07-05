@@ -1,0 +1,33 @@
+{
+  File source=DataUtilities.urlToFile(timeURL);
+  File directory=new File("./target/harvest-error");
+  if (directory.exists()) {
+    FileUtils.deleteDirectory(directory);
+  }
+  FileUtils.copyDirectory(source,directory);
+  for (  File file : FileUtils.listFiles(directory,new RegexFileFilter("world\\.20040[^2].*\\.tiff"),null)) {
+    assertTrue(file.delete());
+  }
+  for (  File file : FileUtils.listFiles(directory,new RegexFileFilter("time_geotiff.*"),null)) {
+    assertTrue(file.delete());
+  }
+  URL harvestSingleURL=DataUtilities.fileToURL(directory);
+  final AbstractGridFormat format=TestUtils.getFormat(harvestSingleURL);
+  ImageMosaicReader reader=TestUtils.getReader(harvestSingleURL,format);
+  try {
+    String[] metadataNames=reader.getMetadataNames();
+    assertNotNull(metadataNames);
+    assertEquals("true",reader.getMetadataValue("HAS_TIME_DOMAIN"));
+    assertEquals("2004-02-01T00:00:00.000Z",reader.getMetadataValue(metadataNames[0]));
+    File bogus=new File(directory,"test.tiff");
+    assertTrue(bogus.createNewFile());
+    List<HarvestedSource> summary=reader.harvest(null,bogus,null);
+    assertEquals(1,summary.size());
+    HarvestedSource hf=summary.get(0);
+    assertFalse(hf.success());
+    assertEquals("test.tiff",((File)hf.getSource()).getName());
+  }
+  finally {
+    reader.dispose();
+  }
+}

@@ -1,0 +1,18 @@
+{
+  final Number levelNum=NetCDFUtilities.getAttributesAsNumber(getVariable(),GRIB1Utilities.GRIB_LEVEL_TYPE);
+  int levelType=levelNum != null ? levelNum.intValue() : GRIB1Utilities.UNDEFINED_NUMBER;
+  String levelName=GribPDSLevel.getNameShort(levelType);
+  String levelUnits=GribPDSLevel.getUnits(levelType);
+  String levelDescription=GribPDSLevel.getLevelDescription(levelType);
+  boolean hasExplicitVerticalAxis=!GRIB1Utilities.isVerticalLevelSymbolic(levelType);
+  String axisType="";
+  String positive="";
+  if (hasExplicitVerticalAxis) {
+    final Variable verticalAxis=getVerticalAxis();
+    if (verticalAxis != null) {
+      axisType=NetCDFUtilities.getAttributesAsString(verticalAxis,NetCDFUtilities.COORDINATE_AXIS_TYPE);
+      positive=NetCDFUtilities.getAttributesAsString(verticalAxis,NetCDFUtilities.POSITIVE);
+    }
+  }
+  verticalLevel=new VerticalLevel(levelType,levelName,levelDescription,levelUnits,hasExplicitVerticalAxis,axisType,positive);
+}

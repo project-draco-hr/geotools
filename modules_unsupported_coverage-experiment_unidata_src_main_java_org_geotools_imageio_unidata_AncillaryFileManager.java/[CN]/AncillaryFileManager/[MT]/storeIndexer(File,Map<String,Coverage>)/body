@@ -1,0 +1,22 @@
+{
+  if (coveragesMapping == null || coveragesMapping.isEmpty()) {
+    throw new IllegalArgumentException("No valid coverages name to be written");
+  }
+  final Indexer indexer=OBJECT_FACTORY.createIndexer();
+  Coverages coverages=OBJECT_FACTORY.createIndexerCoverages();
+  indexer.setCoverages(coverages);
+  final List<Coverage> coveragesList=coverages.getCoverage();
+  final Collection<Coverage> inputCoverages=coveragesMapping.values();
+  for (  Coverage cov : inputCoverages) {
+    final Coverage coverage=OBJECT_FACTORY.createIndexerCoveragesCoverage();
+    coverage.setName(cov.getName());
+    coverage.setOrigName(cov.getOrigName());
+    coveragesList.add(coverage);
+    final SchemaType schema=OBJECT_FACTORY.createSchemaType();
+    coverage.setSchema(schema);
+    final SchemaType inputSchema=cov.getSchema();
+    schema.setAttributes(inputSchema.getAttributes());
+    schema.setName(inputSchema.getName());
+  }
+  MARSHALLER.marshal(indexer,indexerFile);
+}

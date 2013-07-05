@@ -1,0 +1,21 @@
+{
+  Utilities.ensureNonNull("granuleMetadata",granules);
+  final Lock lock=rwLock.writeLock();
+  try {
+    lock.lock();
+    checkStore();
+    SimpleFeatureStore store=(SimpleFeatureStore)tileIndexStore.getFeatureSource(typeName);
+    store.setTransaction(transaction);
+    ListFeatureCollection featureCollection=new ListFeatureCollection(tileIndexStore.getSchema(typeName));
+    for (    SimpleFeature f : granules) {
+      featureCollection.add(f);
+    }
+    store.addFeatures(featureCollection);
+    if (bounds.containsKey(typeName)) {
+      bounds.remove(typeName);
+    }
+  }
+  finally {
+    lock.unlock();
+  }
+}

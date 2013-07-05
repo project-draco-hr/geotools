@@ -1,0 +1,18 @@
+{
+  final SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName(mappedName);
+  final List<AttributeDescriptor> descriptors=wrappedFeatureType.getAttributeDescriptors();
+  for (  AttributeDescriptor descriptor : descriptors) {
+    Name name=descriptor.getName();
+    Definition definition=definitionsMapping.get(name);
+    AttributeType type=descriptor.getType();
+    if (type instanceof GeometryType) {
+      coordinateReferenceSystem=((GeometryType)type).getCoordinateReferenceSystem();
+      tb.add(definition.getExpression().toString(),definition.getBinding(),coordinateReferenceSystem);
+    }
+ else {
+      tb.add(definition.getExpression().toString(),definition.getBinding());
+    }
+  }
+  oracleFeatureType=tb.buildFeatureType();
+}

@@ -1,0 +1,106 @@
+{
+  if (LOGGER.isLoggable(java.util.logging.Level.FINER)) {
+    final String name=Thread.currentThread().getName();
+    LOGGER.finer("Thread:" + name + " Loading raster data for granuleDescriptor "+ this.toString());
+  }
+  ImageReadParam readParameters=null;
+  int imageIndex;
+  final ReferencedEnvelope bbox=request.spatialRequestHelper.getCoverageProperties().getBbox();
+  final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
+  if (intersection.isEmpty()) {
+    if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+      LOGGER.fine(new StringBuilder("Got empty intersection for granule ").append(this.toString()).append(" with request ").append(request.toString()).append(" Resulting in no granule loaded: Empty result").toString());
+    }
+    return null;
+  }
+  try {
+    imageIndex=index;
+    readParameters=imageReadParameters;
+    final AffineTransform gridToWorldTransform_=new AffineTransform();
+    gridToWorldTransform_.preConcatenate(CoverageUtilities.CENTER_TO_CORNER);
+    gridToWorldTransform_.preConcatenate(baseGridToWorld);
+    AffineTransform2D cropWorldToGrid=new AffineTransform2D(gridToWorldTransform_);
+    cropWorldToGrid=(AffineTransform2D)cropWorldToGrid.inverse();
+    final Rectangle sourceArea=CRS.transform(cropWorldToGrid,intersection).toRectangle2D().getBounds();
+    if (sourceArea.isEmpty()) {
+      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+        LOGGER.fine("Got empty area for granuleDescriptor " + this.toString() + " with request "+ request.toString()+ " Resulting in no granule loaded: Empty result");
+      }
+      return null;
+    }
+ else     if (LOGGER.isLoggable(java.util.logging.Level.FINER)) {
+      LOGGER.finer("Loading level " + imageIndex + " with source region: "+ sourceArea+ " subsampling: "+ readParameters.getSourceXSubsampling()+ ","+ readParameters.getSourceYSubsampling()+ " for granule:"+ datasetURL);
+    }
+    readParameters.setSourceRegion(sourceArea);
+    final RenderedImage raster;
+    try {
+      raster=request.readType.read(readParameters,imageIndex,datasetURL,request.spatialRequestHelper.getCoverageProperties().getRasterArea(),request.source.reader,hints,false);
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+        LOGGER.log(java.util.logging.Level.FINE,"Unable to load raster for granuleDescriptor " + this.toString() + " with request "+ request.toString()+ " Resulting in no granule loaded: Empty result",e);
+      }
+      return null;
+    }
+    sourceArea.setRect(readParameters.getSourceRegion());
+    double decimationScaleX=((1.0 * sourceArea.width) / raster.getWidth());
+    double decimationScaleY=((1.0 * sourceArea.height) / raster.getHeight());
+    final AffineTransform decimationScaleTranform=XAffineTransform.getScaleInstance(decimationScaleX,decimationScaleY);
+    final AffineTransform afterDecimationTranslateTranform=XAffineTransform.getTranslateInstance(sourceArea.x,sourceArea.y);
+    final AffineTransform finalRaster2Model=new AffineTransform(baseGridToWorld);
+    finalRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+    if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,EPS))     finalRaster2Model.concatenate(afterDecimationTranslateTranform);
+    if (!XAffineTransform.isIdentity(decimationScaleTranform,EPS))     finalRaster2Model.concatenate(decimationScaleTranform);
+    finalRaster2Model.preConcatenate((AffineTransform)mosaicWorldToGrid);
+    final Interpolation interpolation=request.getInterpolation();
+    Rectangle2D finalLayout=ImageUtilities.layoutHelper(raster,(float)finalRaster2Model.getScaleX(),(float)finalRaster2Model.getScaleY(),(float)finalRaster2Model.getTranslateX(),(float)finalRaster2Model.getTranslateY(),interpolation);
+    if (finalLayout.isEmpty()) {
+      if (LOGGER.isLoggable(java.util.logging.Level.INFO))       LOGGER.info("Unable to create a granuleDescriptor " + this.toString() + " due to jai scale bug creating a null source area");
+      return null;
+    }
+    final RenderingHints localHints=new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,interpolation instanceof InterpolationNearest ? Boolean.FALSE : Boolean.TRUE);
+    if (hints != null && hints.containsKey(JAI.KEY_TILE_CACHE)) {
+      final Object cache=hints.get(JAI.KEY_TILE_CACHE);
+      if (cache != null && cache instanceof TileCache)       localHints.add(new RenderingHints(JAI.KEY_TILE_CACHE,(TileCache)cache));
+    }
+    if (hints != null && hints.containsKey(JAI.KEY_TILE_SCHEDULER)) {
+      final Object scheduler=hints.get(JAI.KEY_TILE_SCHEDULER);
+      if (scheduler != null && scheduler instanceof TileScheduler)       localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,(TileScheduler)scheduler));
+    }
+    boolean addBorderExtender=true;
+    if (hints != null && hints.containsKey(JAI.KEY_BORDER_EXTENDER)) {
+      final Object extender=hints.get(JAI.KEY_BORDER_EXTENDER);
+      if (extender != null && extender instanceof BorderExtender) {
+        localHints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,(BorderExtender)extender));
+        addBorderExtender=false;
+      }
+    }
+    if (addBorderExtender) {
+      localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
+    }
+    ImageWorker iw=new ImageWorker(raster);
+    iw.setRenderingHints(localHints);
+    iw.affine(finalRaster2Model,interpolation,DEFAULT_BACKGROUND_VALUES);
+    return iw.getRenderedImage();
+  }
+ catch (  IllegalStateException e) {
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,new StringBuilder("Unable to load raster for granuleDescriptor ").append(this.toString()).append(" with request ").append(request.toString()).append(" Resulting in no granule loaded: Empty result").toString(),e);
+    }
+    return null;
+  }
+catch (  org.opengis.referencing.operation.NoninvertibleTransformException e) {
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,new StringBuilder("Unable to load raster for granuleDescriptor ").append(this.toString()).append(" with request ").append(request.toString()).append(" Resulting in no granule loaded: Empty result").toString(),e);
+    }
+    return null;
+  }
+catch (  TransformException e) {
+    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+      LOGGER.log(java.util.logging.Level.WARNING,new StringBuilder("Unable to load raster for granuleDescriptor ").append(this.toString()).append(" with request ").append(request.toString()).append(" Resulting in no granule loaded: Empty result").toString(),e);
+    }
+    return null;
+  }
+ finally {
+  }
+}

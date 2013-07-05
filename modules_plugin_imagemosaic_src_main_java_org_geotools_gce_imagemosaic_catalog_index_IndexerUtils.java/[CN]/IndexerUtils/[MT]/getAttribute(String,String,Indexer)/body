@@ -1,0 +1,51 @@
+{
+  if (indexer != null) {
+    final Coverages coverages=indexer.getCoverages();
+    final DomainsType refDomains=indexer.getDomains();
+    if (coverages != null) {
+      final List<Coverage> coverageList=coverages.getCoverage();
+      if (coverageList != null && !coverageList.isEmpty()) {
+        for (        Coverage coverage : coverageList) {
+          final String currentCoverageName=coverage.getName();
+          if (currentCoverageName == null || currentCoverageName.equalsIgnoreCase(coverageName)) {
+            final DomainsType domains=coverage.getDomains();
+            if (domains != null) {
+              final List<DomainType> domainList=domains.getDomain();
+              if (domainList != null) {
+                if (!domainName.equalsIgnoreCase(Utils.ADDITIONAL_DOMAIN)) {
+                  for (                  DomainType domain : domainList) {
+                    DomainType currentDomain=getDomain(domain,refDomains);
+                    String currentDomainName=currentDomain.getName();
+                    if (currentDomainName != null && currentDomainName.equalsIgnoreCase(domainName)) {
+                      return getAttributesAsString(currentDomain,false);
+                    }
+                  }
+                }
+ else {
+                  StringBuilder additionalDomainAttributes=new StringBuilder();
+                  for (                  DomainType domain : domainList) {
+                    DomainType currentDomain=getDomain(domain,refDomains);
+                    String domName=currentDomain.getName();
+                    if (!domName.equalsIgnoreCase(Utils.TIME_DOMAIN) && !domName.equalsIgnoreCase(Utils.ELEVATION_DOMAIN)) {
+                      additionalDomainAttributes.append(getAttributesAsString(currentDomain,true));
+                      additionalDomainAttributes.append(",");
+                    }
+                  }
+                  String attribs=additionalDomainAttributes.toString();
+                  if (attribs != null && attribs.length() > 0) {
+                    attribs=attribs.substring(0,attribs.length() - 1);
+                  }
+                  if (attribs.length() > 0) {
+                    return attribs;
+                  }
+                  return null;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return null;
+}

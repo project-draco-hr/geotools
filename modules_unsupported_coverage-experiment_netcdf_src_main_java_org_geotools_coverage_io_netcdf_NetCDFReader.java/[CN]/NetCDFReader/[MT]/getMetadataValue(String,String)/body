@@ -1,0 +1,61 @@
+{
+  String value=null;
+  NetCDFSource source=null;
+  try {
+    source=(NetCDFSource)getGridCoverageSource(coverageName);
+    final TemporalDomain timeDomain=source.getTemporalDomain();
+    final VerticalDomain verticalDomain=source.getVerticalDomain();
+    final List<AdditionalDomain> additionalDomains=source.getAdditionalDomains();
+    final boolean hasAdditionalDomains=additionalDomains != null && !additionalDomains.isEmpty();
+    final boolean hasTimeDomain=timeDomain != null;
+    final boolean hasElevationDomain=verticalDomain != null;
+    if (name.equalsIgnoreCase(GridCoverage2DReader.HAS_ELEVATION_DOMAIN))     return String.valueOf(hasElevationDomain);
+    if (name.equalsIgnoreCase(GridCoverage2DReader.HAS_TIME_DOMAIN)) {
+      return String.valueOf(hasTimeDomain);
+    }
+    if (name.equalsIgnoreCase(GridCoverage2DReader.TIME_DOMAIN_RESOLUTION)) {
+      return null;
+    }
+    if (name.equalsIgnoreCase(GridCoverage2DReader.ELEVATION_DOMAIN_RESOLUTION)) {
+      return null;
+    }
+    if (hasTimeDomain) {
+      if (name.equalsIgnoreCase("time_domain")) {
+        return parseDomain(name,timeDomain);
+      }
+      if ((name.equalsIgnoreCase("time_domain_minimum") || name.equalsIgnoreCase("time_domain_maximum"))) {
+        return parseDomain(name,timeDomain);
+      }
+    }
+    if (hasElevationDomain) {
+      if (name.equalsIgnoreCase("elevation_domain")) {
+        return parseDomain(name,verticalDomain);
+      }
+      if (name.equalsIgnoreCase("elevation_domain_minimum") || name.equalsIgnoreCase("elevation_domain_maximum")) {
+        return parseDomain(name,verticalDomain);
+      }
+    }
+    if (hasAdditionalDomains) {
+      if (name.startsWith(HAS_PREFIX)) {
+        final String substring=name.substring(HAS_PREFIX.length(),name.length() - DOMAIN_SUFFIX.length());
+        for (        AdditionalDomain additionalDomain : additionalDomains) {
+          if (additionalDomain.getName().toUpperCase().contains(substring)) {
+            return "true";
+          }
+        }
+        return "false";
+      }
+ else       if (name.contains(DOMAIN_SUFFIX)) {
+        for (        AdditionalDomain additionalDomain : additionalDomains) {
+          if (name.toUpperCase().startsWith(additionalDomain.getName().toUpperCase() + "_DOMAIN")) {
+            return parseDomain(name,additionalDomain);
+          }
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  return value;
+}

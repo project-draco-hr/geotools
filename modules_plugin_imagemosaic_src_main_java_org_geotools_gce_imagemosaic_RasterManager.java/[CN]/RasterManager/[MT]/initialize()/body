@@ -1,0 +1,28 @@
+{
+  final BoundingBox bounds=granuleCatalog.getBounds(typeName);
+  if (bounds.isEmpty()) {
+    throw new IllegalArgumentException("Cannot create a mosaic out of an empty index");
+  }
+  CoordinateReferenceSystem crs=bounds.getCoordinateReferenceSystem();
+  GeneralEnvelope originalEnvelope=null;
+  if (imposedEnvelope == null) {
+    originalEnvelope=new GeneralEnvelope(bounds);
+  }
+ else {
+    originalEnvelope=new GeneralEnvelope(imposedEnvelope);
+    originalEnvelope.setCoordinateReferenceSystem(crs);
+  }
+  OverviewLevel highResOvLevel=overviewsController.resolutionsLevels.get(0);
+  final double highestRes[]=new double[]{highResOvLevel.resolutionX,highResOvLevel.resolutionY};
+  GridEnvelope2D originalGridRange=new GridEnvelope2D(new Rectangle((int)(originalEnvelope.getSpan(0) / highestRes[0]),(int)(originalEnvelope.getSpan(1) / highestRes[1])));
+  AffineTransform2D raster2Model=new AffineTransform2D(highestRes[0],0,0,-highestRes[1],originalEnvelope.getLowerCorner().getOrdinate(0) + 0.5 * highestRes[0],originalEnvelope.getUpperCorner().getOrdinate(1) - 0.5 * highestRes[1]);
+  try {
+    spatialDomainManager=new SpatialDomainManager(originalEnvelope,(GridEnvelope2D)originalGridRange,crs,raster2Model,overviewsController);
+  }
+ catch (  TransformException e) {
+    throw new IOException("Exception occurred while initializing the SpatialDomainManager",e);
+  }
+catch (  FactoryException e) {
+    throw new IOException("Exception occurred while initializing the SpatialDomainManager",e);
+  }
+}

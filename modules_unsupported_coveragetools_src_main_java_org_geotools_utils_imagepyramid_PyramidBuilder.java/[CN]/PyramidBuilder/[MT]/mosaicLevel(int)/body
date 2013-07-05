@@ -1,19 +1,20 @@
 {
   final CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
-  configuration.setRootMosaicDirectory(new File(outputLocation,String.valueOf(level)).getAbsolutePath());
-  configuration.setIndexName(name);
-  configuration.setIndexingDirectories(Arrays.asList(configuration.getRootMosaicDirectory()));
-  final CatalogBuilder builder=new CatalogBuilder(configuration);
+  configuration.setParameter(Prop.ROOT_MOSAIC_DIR,new File(outputLocation,String.valueOf(level)).getAbsolutePath());
+  configuration.setParameter(Prop.INDEX_NAME,name);
+  configuration.setParameter(Prop.INDEXING_DIRECTORIES,configuration.getParameter(Prop.ROOT_MOSAIC_DIR));
+  final ImageMosaicWalker builder=new ImageMosaicWalker(configuration);
   builder.run();
-  builder.addProcessingEventListener(new CatalogBuilder.ProcessingEventListener(){
-    @Override public void getNotification(    org.geotools.gce.imagemosaic.catalogbuilder.CatalogBuilder.ProcessingEvent event){
+  builder.addProcessingEventListener(new ImageMosaicWalker.ProcessingEventListener(){
+    @Override public void getNotification(    ImageMosaicWalker.ProcessingEvent event){
       slaveToolsListener.getNotification(new ProcessingEvent(event.getSource(),event.getMessage(),event.getPercentage()));
     }
-    @Override public void exceptionOccurred(    org.geotools.gce.imagemosaic.catalogbuilder.CatalogBuilder.ExceptionEvent event){
+    @Override public void exceptionOccurred(    ImageMosaicWalker.ExceptionEvent event){
       slaveToolsListener.exceptionOccurred(new ExceptionEvent(event.getSource(),event.getMessage(),event.getPercentage(),event.getException()));
     }
   }
 );
   builder.removeAllProcessingEventListeners();
-  return new double[]{builder.getMosaicConfiguration().getLevels()[0][0],builder.getMosaicConfiguration().getLevels()[0][1]};
+  MosaicConfigurationBean bean=builder.getConfigurations().values().iterator().next();
+  return new double[]{bean.getLevels()[0][0],bean.getLevels()[0][1]};
 }

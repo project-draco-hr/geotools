@@ -1,0 +1,79 @@
+{
+  if (request.spatialRequestHelper.isEmpty()) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Request is empty: " + request.toString());
+    }
+    return;
+  }
+  prepareParams();
+  String timeFilterAttribute=null;
+  String elevationFilterAttribute=null;
+  CoverageReadRequest readRequest=(CoverageReadRequest)getRequest();
+  RangeType rangeType=request.source.getRangeType(null);
+  List<DimensionDescriptor> dimensionDescriptors=request.source.getDimensionDescriptors();
+  for (  DimensionDescriptor dimensionDescriptor : dimensionDescriptors) {
+    if (dimensionDescriptor.getName().equalsIgnoreCase(UnidataUtilities.ELEVATION_DIM)) {
+      elevationFilterAttribute=dimensionDescriptor.getStartAttribute();
+    }
+ else     if (dimensionDescriptor.getName().equalsIgnoreCase(UnidataUtilities.TIME_DIM)) {
+      timeFilterAttribute=dimensionDescriptor.getStartAttribute();
+    }
+  }
+  Set<DateRange> temporalSubset=readRequest.getTemporalSubset();
+  Set<NumberRange<Double>> verticalSubset=readRequest.getVerticalSubset();
+  RangeType requestedRange=readRequest.getRangeSubset();
+  Set<FieldType> fieldTypes=requestedRange.getFieldTypes();
+  Set<SampleDimension> sampleDims=null;
+  for (  FieldType fieldType : fieldTypes) {
+    final Name name=fieldType.getName();
+    sampleDims=fieldType.getSampleDimensions();
+    if (rangeType != null) {
+      final FieldType ft=rangeType.getFieldType(name.getLocalPart());
+      if (ft != null)       sampleDims=ft.getSampleDimensions();
+    }
+  }
+  final GridSampleDimension[] sampleDimensions=sampleDims.toArray(new GridSampleDimension[sampleDims.size()]);
+  Set<DateRange> tempSubset=null;
+  if (!temporalSubset.isEmpty()) {
+    tempSubset=temporalSubset;
+  }
+ else {
+    tempSubset=new HashSet<DateRange>();
+    tempSubset.add(null);
+  }
+  Set<NumberRange<Double>> vertSubset=null;
+  if (!verticalSubset.isEmpty()) {
+    vertSubset=verticalSubset;
+  }
+ else {
+    vertSubset=new HashSet<NumberRange<Double>>();
+    vertSubset.add(null);
+  }
+  Map<String,Set<?>> domainsSubset=readRequest.getAdditionalDomainsSubset();
+  Filter requestFilter=request.originalRequest.getFilter();
+  for (  DateRange timeRange : tempSubset) {
+    for (    NumberRange<Double> elevation : vertSubset) {
+      Query query=new Query();
+      createTimeElevationQuery(timeRange,elevation,query,requestFilter,timeFilterAttribute,elevationFilterAttribute);
+      additionalParamsManagement(query,domainsSubset,dimensionDescriptors);
+      query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(query.getFilter(),FeatureUtilities.DEFAULT_FILTER_FACTORY.bbox(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("the_geom"),targetBBox)));
+      query.setTypeName(request.source.reader.getTypeName(request.name));
+      List<Integer> indexes=request.source.reader.getImageIndex(query);
+      if (indexes == null || indexes.isEmpty()) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine(" No indexes found for this query: " + query.toString());
+        }
+        continue;
+      }
+      int imageIndex=indexes.get(0);
+      final RenderedImage image=loadRaster(baseReadParameters,imageIndex,targetBBox,finalWorldToGridCorner,hints);
+      RenderedImage finalRaster=postProcessRaster(image);
+      GridCoverage2D gridCoverage=prepareCoverage(finalRaster,sampleDimensions);
+      if (gridCoverage != null) {
+        GridCoverage gcResponse=new DefaultGridCoverageResponse(gridCoverage,timeRange,elevation);
+        addResult(gcResponse);
+      }
+    }
+  }
+  setStatus(Status.SUCCESS);
+}

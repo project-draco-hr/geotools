@@ -27,19 +27,37 @@
         tileIndexStore=spi.createDataStore(params);
       }
     }
+    if (spi instanceof OracleNGOCIDataStoreFactory || spi instanceof OracleNGJNDIDataStoreFactory || spi instanceof OracleNGDataStoreFactory) {
+      tileIndexStore=new OracleDatastoreWrapper(tileIndexStore,FilenameUtils.getFullPath(parentLocation));
+    }
     if (create) {
       return;
     }
+    String typeName=null;
+    boolean scanForTypeNames=false;
     if (params.containsKey("TypeName")) {
-      this.typeName=(String)params.get("TypeName");
-      if (spi instanceof OracleNGOCIDataStoreFactory || spi instanceof OracleNGJNDIDataStoreFactory || spi instanceof OracleNGDataStoreFactory) {
-        this.typeName=typeName.toUpperCase();
-        if (locationAttribute != null) {
-          this.locationAttribute=this.locationAttribute.toUpperCase();
+      typeName=(String)params.get("TypeName");
+    }
+    if (params.containsKey(Utils.SCAN_FOR_TYPENAMES)) {
+      scanForTypeNames=(Boolean)params.get(Utils.SCAN_FOR_TYPENAMES);
+    }
+    if (scanForTypeNames) {
+      String[] typeNames=tileIndexStore.getTypeNames();
+      if (typeNames != null) {
+        for (        String tn : typeNames) {
+          this.typeNames.add(tn);
         }
       }
     }
-    extractBasicProperties();
+ else     if (typeName != null) {
+      addTypeName(typeName,false);
+    }
+    if (this.typeNames.size() > 0) {
+      extractBasicProperties(typeNames.iterator().next());
+    }
+ else {
+      extractBasicProperties(typeName);
+    }
   }
  catch (  Throwable e) {
     try {

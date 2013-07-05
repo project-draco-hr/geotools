@@ -1,10 +1,14 @@
 {
   Utilities.ensureNonNull("granuleDescriptor",granuleDescriptor);
   if (granuleFilter.evaluate(granuleDescriptor.originator)) {
+    Object imageIndex=granuleDescriptor.originator.getAttribute("imageindex");
+    if (imageIndex != null && imageIndex instanceof Integer) {
+      imageChoice=((Integer)imageIndex).intValue();
+    }
     final GranuleLoader loader=new GranuleLoader(baseReadParameters,imageChoice,mosaicBBox,finalWorldToGridCorner,granuleDescriptor,request,hints);
     if (!dryRun) {
-      if (multithreadingAllowed && rasterManager.parent.multiThreadedLoader != null) {
-        granulesFutures.add(rasterManager.parent.multiThreadedLoader.submit(loader));
+      if (multithreadingAllowed && rasterManager.parentReader.multiThreadedLoader != null) {
+        granulesFutures.add(rasterManager.parentReader.multiThreadedLoader.submit(loader));
       }
  else {
         final FutureTask<GranuleLoadingResult> task=new FutureTask<GranuleLoadingResult>(loader);

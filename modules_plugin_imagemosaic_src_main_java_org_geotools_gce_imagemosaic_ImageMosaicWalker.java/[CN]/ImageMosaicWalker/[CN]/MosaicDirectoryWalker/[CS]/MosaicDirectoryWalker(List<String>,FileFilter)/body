@@ -1,0 +1,39 @@
+{
+  super(filter,Integer.MAX_VALUE);
+  this.transaction=new DefaultTransaction("MosaicCreationTransaction" + System.nanoTime());
+  indexingPreamble();
+  try {
+    for (    String indexingDirectory : indexingDirectories) {
+      walk(new File(indexingDirectory),null);
+      if (canceled)       break;
+    }
+    if (canceled)     transaction.rollback();
+ else     transaction.commit();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.WARNING,"Failure occurred while collecting the granules",e);
+    transaction.rollback();
+  }
+ finally {
+    try {
+      indexingPostamble(!canceled);
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      fireException(e);
+    }
+    try {
+      transaction.close();
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      fireException(e);
+    }
+  }
+}

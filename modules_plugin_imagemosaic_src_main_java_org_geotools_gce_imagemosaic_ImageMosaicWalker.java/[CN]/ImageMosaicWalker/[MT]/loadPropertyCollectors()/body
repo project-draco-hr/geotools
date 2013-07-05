@@ -1,0 +1,40 @@
+{
+  Indexer indexer=runConfiguration.getIndexer();
+  Collectors collectors=indexer.getCollectors();
+  if (collectors == null) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("No properties collector have been found");
+    }
+    return;
+  }
+  List<Collector> collectorList=collectors.getCollector();
+  final Set<PropertiesCollectorSPI> pcSPIs=PropertiesCollectorFinder.getPropertiesCollectorSPI();
+  final List<PropertiesCollector> pcs=new ArrayList<PropertiesCollector>();
+  for (  Collector collector : collectorList) {
+    PropertiesCollectorSPI selectedSPI=null;
+    final String spiName=collector.getSpi();
+    for (    PropertiesCollectorSPI spi : pcSPIs) {
+      if (spi.isAvailable() && spi.getName().equalsIgnoreCase(spiName)) {
+        selectedSPI=spi;
+        break;
+      }
+    }
+    if (selectedSPI == null) {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("Unable to find a PropertyCollector for this definition: " + spiName);
+      }
+      continue;
+    }
+    final String regex=DefaultPropertiesCollectorSPI.REGEX_PREFIX + collector.getValue();
+    final PropertiesCollector pc=selectedSPI.create(regex,Arrays.asList(collector.getMapped()));
+    if (pc != null) {
+      pcs.add(pc);
+    }
+ else {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("Unable to create PropertyCollector");
+      }
+    }
+  }
+  this.propertiesCollectors=pcs;
+}

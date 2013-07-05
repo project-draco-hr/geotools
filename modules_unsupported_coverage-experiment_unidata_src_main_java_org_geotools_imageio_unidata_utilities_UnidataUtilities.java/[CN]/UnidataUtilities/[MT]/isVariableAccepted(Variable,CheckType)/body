@@ -1,0 +1,43 @@
+{
+  if (var instanceof CoordinateAxis1D) {
+    return false;
+  }
+ else   if (checkType == CheckType.NOSCALARS) {
+    List<Dimension> dimensions=var.getDimensions();
+    if (dimensions.size() < 2) {
+      return false;
+    }
+    DataType dataType=var.getDataType();
+    if (dataType == DataType.CHAR) {
+      return false;
+    }
+    return isVariableAccepted(var.getFullName(),CheckType.NONE);
+  }
+ else   if (checkType == CheckType.ONLYGEOGRIDS) {
+    List<Dimension> dimensions=var.getDimensions();
+    if (dimensions.size() < 2) {
+      return false;
+    }
+    for (    Dimension dimension : dimensions) {
+      String dimName=dimension.getFullName();
+      Group group=dimension.getGroup();
+      Variable dimVariable=group.findVariable(dimName);
+      if (dimVariable == null) {
+        return false;
+      }
+      if (dimVariable instanceof CoordinateAxis1D) {
+        CoordinateAxis1D axis=(CoordinateAxis1D)dimVariable;
+        AxisType axisType=axis.getAxisType();
+        if (axisType == null) {
+          return false;
+        }
+      }
+    }
+    DataType dataType=var.getDataType();
+    if (dataType == DataType.CHAR) {
+      return false;
+    }
+    return isVariableAccepted(var.getFullName(),CheckType.NONE);
+  }
+ else   return isVariableAccepted(var.getFullName(),checkType);
+}

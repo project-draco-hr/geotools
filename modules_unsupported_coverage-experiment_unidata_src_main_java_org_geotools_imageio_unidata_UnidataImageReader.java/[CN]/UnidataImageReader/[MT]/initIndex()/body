@@ -1,0 +1,94 @@
+{
+  DefaultTransaction transaction=new DefaultTransaction("indexTransaction" + System.nanoTime());
+  int numImages=0;
+  try {
+    final File sliceIndexFile=ancillaryFileManager.getSlicesIndexFile();
+    initCatalog(sliceIndexFile.getParentFile(),FilenameUtils.removeExtension(FilenameUtils.getName(sliceIndexFile.getCanonicalPath())).replace(".",""));
+    final List<Variable> variables=dataset.getVariables();
+    if (variables != null) {
+      for (      final Variable var_ : variables) {
+        if (var_ != null && var_ instanceof VariableDS) {
+          final VariableDS variable=(VariableDS)var_;
+          String varName=variable.getFullName();
+          if (!ancillaryFileManager.acceptsVariable(varName)) {
+            continue;
+          }
+          if (!UnidataUtilities.isVariableAccepted(variable,checkType)) {
+            continue;
+          }
+          final Name coverageName=getCoverageName(varName);
+          CoordinateSystem cs=UnidataCRSUtilities.getCoordinateSystem(variable);
+          final SimpleFeatureType indexSchema=getIndexSchema(coverageName,cs);
+          if (indexSchema == null) {
+            throw new IllegalStateException("Unable to created index schema for coverage:" + coverageName);
+          }
+          checkSchema(indexSchema);
+          final UnidataVariableAdapter vaAdapter=getCoverageDescriptor(coverageName);
+          final int variableImageStartIndex=numImages;
+          final int numberOfSlices=vaAdapter.getNumberOfSlices();
+          final int variableImageNum=variableImageStartIndex + numberOfSlices;
+          final int rank=variable.getRank();
+          numImages+=numberOfSlices;
+          final boolean hasVerticalAxis=cs.hasVerticalAxis();
+          final int bandDimension=rank - UnidataUtilities.Z_DIMENSION;
+          final ListFeatureCollection collection=new ListFeatureCollection(indexSchema);
+          int features=0;
+          for (int imageIndex=variableImageStartIndex; imageIndex < variableImageNum; imageIndex++) {
+            int zIndex=-1;
+            int tIndex=-1;
+            for (int i=0; i < rank; i++) {
+switch (rank - i) {
+case UnidataUtilities.X_DIMENSION:
+case UnidataUtilities.Y_DIMENSION:
+                break;
+default :
+{
+                if (i == bandDimension && hasVerticalAxis) {
+                  zIndex=vaAdapter.getZIndex(imageIndex - variableImageStartIndex);
+                }
+ else {
+                  tIndex=vaAdapter.getTIndex(imageIndex - variableImageStartIndex);
+                }
+                break;
+              }
+          }
+        }
+        final UnidataSlice2DIndex variableIndex=new UnidataSlice2DIndex(tIndex,zIndex,varName);
+        ancillaryFileManager.addSlice(variableIndex);
+        final SimpleFeature feature=createFeature(variable,coverageName.toString(),tIndex,zIndex,cs,imageIndex,indexSchema);
+        collection.add(feature);
+        features++;
+        if (features % INTERNAL_INDEX_CREATION_PAGE_SIZE == 0) {
+          getCatalog().addGranules(indexSchema.getTypeName(),collection,transaction);
+          collection.clear();
+        }
+      }
+      if (collection.size() > 0) {
+        getCatalog().addGranules(indexSchema.getTypeName(),collection,transaction);
+        collection.clear();
+      }
+    }
+  }
+}
+ancillaryFileManager.writeToDisk();
+if (LOGGER.isLoggable(Level.FINE)) {
+  LOGGER.fine("Committing changes to the DB");
+}
+transaction.commit();
+}
+ catch (Throwable e) {
+if (LOGGER.isLoggable(Level.FINE)) {
+  LOGGER.fine("Rollback");
+}
+transaction.rollback();
+throw new IOException(e);
+}
+ finally {
+try {
+  transaction.close();
+}
+ catch (Throwable t) {
+}
+}
+return numImages;
+}

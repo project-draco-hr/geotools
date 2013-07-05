@@ -1,0 +1,20 @@
+{
+  String schemaAttributes=CoverageSlice.Attributes.BASE_SCHEMA;
+  for (  CoordinateAxis axis : cs.getCoordinateAxes()) {
+    final CoordinateVariable<?> cv=this.coordinatesVariables.get(axis.getFullName());
+    final String name=cv.getName();
+switch (cv.getAxisType()) {
+case GeoX:
+case GeoY:
+case Lat:
+case Lon:
+      continue;
+  }
+  schemaAttributes+=("," + name + ":"+ cv.getType().getName());
+}
+final SchemaType schema=coverage.getSchema();
+schema.setAttributes(schemaAttributes);
+final CoordinateReferenceSystem actualCRS=UnidataCRSUtilities.WGS84;
+SimpleFeatureType indexSchema=DataUtilities.createType(schema.getName(),schemaAttributes);
+return DataUtilities.createSubType(indexSchema,DataUtilities.attributeNames(indexSchema),actualCRS);
+}

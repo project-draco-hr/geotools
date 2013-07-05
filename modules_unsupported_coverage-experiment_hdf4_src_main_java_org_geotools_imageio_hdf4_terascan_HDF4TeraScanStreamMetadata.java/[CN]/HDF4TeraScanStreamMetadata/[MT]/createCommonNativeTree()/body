@@ -1,0 +1,22 @@
+{
+  final IIOMetadataNode root=new IIOMetadataNode(nativeMetadataFormatName);
+  final IIOMetadataNode node=new IIOMetadataNode(GLOBAL_ATTRIBUTES);
+  if (imageReader instanceof HDF4TeraScanImageReader) {
+    final HDF4TeraScanImageReader reader=(HDF4TeraScanImageReader)imageReader;
+    final int numAttributes=reader.getNumGlobalAttributes();
+    try {
+      for (int i=0; i < numAttributes; i++) {
+        final KeyValuePair keyValuePair=reader.getGlobalAttribute(i);
+        String attribName=keyValuePair.getKey();
+        final String attribValue=keyValuePair.getValue();
+        if (attribName.contains("\\"))         attribName=Utilities.adjustAttributeName(attribName);
+        node.setAttribute(attribName,attribValue);
+      }
+    }
+ catch (    IOException e) {
+      throw new IllegalArgumentException("Unable to parse attribute",e);
+    }
+    root.appendChild(node);
+  }
+  return root;
+}

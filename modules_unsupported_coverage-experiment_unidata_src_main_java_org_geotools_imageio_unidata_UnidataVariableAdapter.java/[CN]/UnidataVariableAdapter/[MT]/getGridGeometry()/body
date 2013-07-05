@@ -1,0 +1,90 @@
+{
+  int[] low=new int[2];
+  int[] high=new int[2];
+  double[] origin=new double[2];
+  double scaleX=Double.POSITIVE_INFINITY, scaleY=Double.POSITIVE_INFINITY;
+  for (  CoordinateVariable<?> cv : reader.coordinatesVariables.values()) {
+    if (!cv.isNumeric()) {
+      continue;
+    }
+    final AxisType axisType=cv.getAxisType();
+switch (axisType) {
+case Lon:
+case GeoX:
+      low[0]=0;
+    high[0]=(int)cv.getSize();
+  if (cv.isRegular()) {
+    origin[0]=cv.getStart();
+    scaleX=cv.getIncrement();
+  }
+ else {
+    final int valuesLength=(int)cv.getSize();
+    double min=((Number)cv.getMinimum()).doubleValue();
+    double max=((Number)cv.getMaximum()).doubleValue();
+    if (!Double.isNaN(min) && !Double.isNaN(max)) {
+      origin[0]=min;
+      scaleX=(max - min) / valuesLength;
+    }
+ else {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,"Axis values contains NaN; finding first valid values");
+      }
+      for (int j=0; j < valuesLength; j++) {
+        double v=((Number)cv.read(j)).doubleValue();
+        if (!Double.isNaN(v)) {
+          for (int k=valuesLength; k > j; k--) {
+            double vv=((Number)cv.read(k)).doubleValue();
+            if (!Double.isNaN(vv)) {
+              origin[0]=v;
+              scaleX=(vv - v) / valuesLength;
+            }
+          }
+        }
+      }
+    }
+  }
+break;
+case Lat:
+case GeoY:
+low[1]=0;
+high[1]=(int)cv.getSize();
+if (cv.isRegular()) {
+scaleY=-cv.getIncrement();
+origin[1]=cv.getStart() - scaleY * high[1];
+}
+ else {
+final int valuesLength=(int)cv.getSize();
+double min=((Number)cv.getMinimum()).doubleValue();
+double max=((Number)cv.getMaximum()).doubleValue();
+if (!Double.isNaN(min) && !Double.isNaN(max)) {
+scaleY=-(max - min) / valuesLength;
+origin[1]=max;
+}
+ else {
+if (LOGGER.isLoggable(Level.FINE)) {
+LOGGER.log(Level.FINE,"Axis values contains NaN; finding first valid values");
+}
+for (int j=0; j < valuesLength; j++) {
+double v=((Number)cv.read(j)).doubleValue();
+if (!Double.isNaN(v)) {
+  for (int k=valuesLength; k > j; k--) {
+    double vv=((Number)cv.read(k)).doubleValue();
+    if (!Double.isNaN(vv)) {
+      origin[1]=v;
+      scaleY=-(vv - v) / valuesLength;
+    }
+  }
+}
+}
+}
+}
+break;
+default :
+break;
+}
+}
+final AffineTransform at=new AffineTransform(scaleX,0,0,scaleY,origin[0],origin[1]);
+final GridEnvelope gridRange=new GridEnvelope2D(low[0],low[1],high[0] - low[0],high[1] - low[1]);
+final MathTransform raster2Model=ProjectiveTransform.create(at);
+return new GridGeometry2D(gridRange,PixelInCell.CELL_CORNER,raster2Model,coordinateReferenceSystem,GeoTools.getDefaultHints());
+}

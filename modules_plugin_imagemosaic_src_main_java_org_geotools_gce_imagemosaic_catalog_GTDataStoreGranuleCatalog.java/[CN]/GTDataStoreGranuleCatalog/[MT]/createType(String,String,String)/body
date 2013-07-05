@@ -2,18 +2,17 @@
   Utilities.ensureNonNull("typeName",typeName);
   Utilities.ensureNonNull("typeSpec",typeSpec);
   final Lock lock=rwLock.writeLock();
+  String type=null;
   try {
     lock.lock();
     checkStore();
     final SimpleFeatureType featureType=DataUtilities.createType(namespace,typeName,typeSpec);
     tileIndexStore.createSchema(featureType);
-    if (spi instanceof OracleNGOCIDataStoreFactory || spi instanceof OracleNGJNDIDataStoreFactory || spi instanceof OracleNGDataStoreFactory) {
-      this.typeName=this.typeName.toUpperCase();
-      if (locationAttribute != null) {
-        this.locationAttribute=this.locationAttribute.toUpperCase();
-      }
+    type=featureType.getTypeName();
+    if (typeName != null) {
+      addTypeName(typeName,true);
     }
-    extractBasicProperties();
+    extractBasicProperties(type);
   }
   finally {
     lock.unlock();

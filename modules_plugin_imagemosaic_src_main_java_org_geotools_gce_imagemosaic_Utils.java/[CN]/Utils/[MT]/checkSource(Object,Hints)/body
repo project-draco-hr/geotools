@@ -42,7 +42,7 @@
         datastoreFound=true;
         boolean found=false;
         for (        File propFile : properties)         if (Utils.checkFileReadable(propFile)) {
-          if (null != Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),"location")) {
+          if (null != Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),Utils.DEFAULT_LOCATION_ATTRIBUTE)) {
             found=true;
             break;
           }
@@ -76,8 +76,11 @@
         createMosaic(locationPath,defaultIndexName,DEFAULT_WILCARD,DEFAULT_PATH_BEHAVIOR,hints);
         final File propertiesFile=new File(locationPath,defaultIndexName + ".properties");
         if (!Utils.checkFileReadable(propertiesFile)) {
-          sourceURL=null;
-          return sourceURL;
+          final File mosaicFile=new File(locationPath,defaultIndexName + ".xml");
+          if (!Utils.checkFileReadable(mosaicFile)) {
+            sourceURL=null;
+            return sourceURL;
+          }
         }
         if (!datastoreFound) {
           shapeFile=new File(locationPath,defaultIndexName + ".shp");

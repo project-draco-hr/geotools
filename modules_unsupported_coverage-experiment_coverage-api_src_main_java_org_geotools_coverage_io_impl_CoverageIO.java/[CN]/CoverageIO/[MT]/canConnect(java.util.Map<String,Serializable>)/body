@@ -1,0 +1,31 @@
+{
+  for (  Driver driver : getAvailableDrivers()) {
+    boolean canProcess=false;
+    try {
+      canProcess=driver.canAccess(DriverCapabilities.CONNECT,params);
+    }
+ catch (    Throwable t) {
+      LOGGER.log(Level.WARNING,"Error asking " + driver.getTitle() + " if it can process request",t);
+      continue;
+    }
+    if (canProcess) {
+      boolean isAvailable=false;
+      try {
+        isAvailable=driver.isAvailable();
+      }
+ catch (      Throwable t) {
+        LOGGER.log(Level.WARNING,"Error when checking if " + driver.getTitle() + " is available",t);
+        continue;
+      }
+      if (isAvailable) {
+        try {
+          if (driver.canAccess(DriverCapabilities.CONNECT,params))           return true;
+        }
+ catch (        Exception couldNotConnect) {
+          LOGGER.log(Level.WARNING,driver.getTitle() + " could not connect",couldNotConnect);
+        }
+      }
+    }
+  }
+  return false;
+}

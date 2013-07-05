@@ -1,0 +1,31 @@
+{
+  File guessedFile=null;
+  if (input instanceof File) {
+    guessedFile=(File)input;
+  }
+ else   if (input instanceof String) {
+    guessedFile=new File((String)input);
+  }
+ else   if (input instanceof URL) {
+    final URL tempURL=(URL)input;
+    String protocol=tempURL.getProtocol();
+    if (protocol.equalsIgnoreCase("file")) {
+      guessedFile=ImageIOUtilities.urlToFile(tempURL);
+    }
+  }
+ else   if (input instanceof URIImageInputStream) {
+    final URIImageInputStream uriInStream=(URIImageInputStream)input;
+    String uri=uriInStream.getUri().toString();
+    guessedFile=new File(uri);
+  }
+ else   if (input instanceof AccessibleStream) {
+    final AccessibleStream<?> stream=(AccessibleStream<?>)input;
+    if (stream.getBinding().isAssignableFrom(File.class)) {
+      guessedFile=((AccessibleStream<File>)input).getTarget();
+    }
+  }
+  if (guessedFile.exists() && !guessedFile.isDirectory()) {
+    return guessedFile;
+  }
+  return null;
+}

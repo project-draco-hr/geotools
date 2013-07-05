@@ -1,0 +1,37 @@
+{
+  final Coverages coverages=indexer.getCoverages();
+  if (coverages != null) {
+    final List<Coverage> coverageElements=coverages.getCoverage();
+    for (    Coverage coverageElement : coverageElements) {
+      String coverageName=coverageElement.getName();
+      if (coverageName == null) {
+        coverageName=getCoverageNameFromCollector(coverageElement.getNameCollector());
+      }
+      String origName=coverageElement.getOrigName();
+      if (origName != null && !origName.isEmpty()) {
+        origName=origName.trim();
+      }
+ else {
+        origName=coverageName;
+      }
+      final SchemaType coverageSchema=coverageElement.getSchema();
+      String coverageSchemaRef=null;
+      String schemaAttributes=null;
+      if (coverageSchema != null) {
+        hasImposedSchema=true;
+        schemaAttributes=coverageSchema.getAttributes();
+        coverageSchemaRef=coverageSchema.getRef();
+      }
+      String schemaName=coverageName;
+      if (coverageSchemaRef == null || coverageSchemaRef.trim().length() == 0) {
+        schemaMapping.put(coverageName,schemaAttributes);
+      }
+ else {
+        schemaName=coverageSchemaRef;
+        schemaAttributes=schemaMapping.get(schemaName);
+      }
+      final Coverage coverage=createCoverate(coverageName,origName,schemaAttributes,schemaName);
+      addCoverage(coverage);
+    }
+  }
+}

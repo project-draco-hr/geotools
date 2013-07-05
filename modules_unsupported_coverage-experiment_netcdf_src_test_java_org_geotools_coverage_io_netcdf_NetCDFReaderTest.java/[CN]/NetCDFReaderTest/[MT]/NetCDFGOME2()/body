@@ -1,0 +1,34 @@
+{
+  final URL testURL=TestData.url(this,"DUMMY.GOME2.NO2.PGL.nc");
+  final Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,CRS.decode("EPSG:4326",true));
+  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(testURL,hints);
+  final NetCDFReader reader=(NetCDFReader)format.getReader(testURL,hints);
+  assertNotNull(format);
+  try {
+    String[] names=reader.getGridCoverageNames();
+    names=new String[]{names[0]};
+    for (    String coverageName : names) {
+      final String[] metadataNames=reader.getMetadataNames(coverageName);
+      assertNotNull(metadataNames);
+      assertEquals(metadataNames.length,12);
+      assertEquals("false",reader.getMetadataValue(coverageName,"HAS_TIME_DOMAIN"));
+      final String timeMetadata=reader.getMetadataValue(coverageName,"TIME_DOMAIN");
+      assertNull(timeMetadata);
+      assertEquals("false",reader.getMetadataValue(coverageName,"HAS_ELEVATION_DOMAIN"));
+      final String elevationMetadata=reader.getMetadataValue(coverageName,"ELEVATION_DOMAIN");
+      assertNull(elevationMetadata);
+    }
+  }
+ catch (  Throwable t) {
+    throw new RuntimeException(t);
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

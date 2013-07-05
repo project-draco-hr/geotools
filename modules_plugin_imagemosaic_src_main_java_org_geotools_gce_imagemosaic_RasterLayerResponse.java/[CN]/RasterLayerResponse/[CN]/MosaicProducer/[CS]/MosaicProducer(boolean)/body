@@ -4,14 +4,30 @@
     final Map<String,List> requestedAdditionalDomains=request.getRequestedAdditionalDomains();
     if (!requestedAdditionalDomains.isEmpty()) {
       Set<Entry<String,List>> entries=requestedAdditionalDomains.entrySet();
-      if (entries.size() > 1) {
-        throw new IllegalStateException("Unable to handle dimensions stacking for more than 1 dimension");
+      checkMultipleSelection(entries);
+      Entry<String,List> multipleSelectionEntry=null;
+      final List<Filter> filters=new ArrayList<Filter>(entries.size());
+      for (      Entry<String,List> entry : entries) {
+        if (entry.getValue().size() > 1) {
+          multipleSelectionEntry=entry;
+        }
+ else {
+          String domainName=entry.getKey() + DomainDescriptor.DOMAIN_SUFFIX;
+          filters.add(rasterManager.domainsManager.createFilter(domainName,Arrays.asList(entry.getValue())));
+        }
       }
-      final Entry<String,List> element=entries.iterator().next();
-      final String domainName=element.getKey() + DomainDescriptor.DOMAIN_SUFFIX;
-      final List values=(List)element.getValue();
-      for (      Object o : values) {
-        granuleCollectors.add(new GranuleCollector(rasterManager.domainsManager.createFilter(domainName,Arrays.asList(o)),dryRun));
+      Filter andFilter=filters.size() > 0 ? FF.and(filters) : null;
+      if (multipleSelectionEntry == null) {
+        granuleCollectors.add(new GranuleCollector(andFilter,dryRun));
+      }
+ else {
+        final String domainName=multipleSelectionEntry.getKey() + DomainDescriptor.DOMAIN_SUFFIX;
+        final List values=(List)multipleSelectionEntry.getValue();
+        for (        Object o : values) {
+          Filter valueFilter=rasterManager.domainsManager.createFilter(domainName,Arrays.asList(o));
+          Filter combinedFilter=andFilter == null ? valueFilter : FF.and(andFilter,valueFilter);
+          granuleCollectors.add(new GranuleCollector(combinedFilter,dryRun));
+        }
       }
     }
   }

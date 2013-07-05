@@ -1,5 +1,17 @@
 {
   try {
+    if (hints != null && hints.containsKey(Utils.EXCLUDE_MOSAIC) && ((Boolean)hints.get(Utils.EXCLUDE_MOSAIC) == true)) {
+      return false;
+    }
+    boolean indexerFound=Utils.minimalIndexCheck(source);
+    if (indexerFound) {
+      return true;
+    }
+    ImageMosaicReader reader=getReader(source,hints);
+    if (reader != null) {
+      reader.dispose();
+      return true;
+    }
     URL sourceURL=Utils.checkSource(source,hints);
     if (sourceURL == null) {
       return false;
@@ -67,7 +79,8 @@
       }
       final MosaicConfigurationBean configuration=Utils.loadMosaicProperties(propsUrl,Utils.DEFAULT_LOCATION_ATTRIBUTE);
       if (configuration == null)       return false;
-      String typeName=configuration.getTypeName();
+      CatalogConfigurationBean catalogBean=configuration.getCatalogConfigurationBean();
+      String typeName=catalogBean.getTypeName();
       if (typeName == null) {
         final String[] typeNames=tileIndexStore.getTypeNames();
         if (typeNames.length <= 0)         return false;
@@ -88,7 +101,7 @@
       if (schema == null)       return false;
       crs=featureSource.getSchema().getGeometryDescriptor().getCoordinateReferenceSystem();
       if (crs == null)       return false;
-      final String locationAttributeName=configuration.getLocationAttribute();
+      final String locationAttributeName=catalogBean.getLocationAttribute();
       if (schema.getDescriptor(locationAttributeName) == null && schema.getDescriptor(locationAttributeName.toUpperCase()) == null)       return false;
       return true;
     }
