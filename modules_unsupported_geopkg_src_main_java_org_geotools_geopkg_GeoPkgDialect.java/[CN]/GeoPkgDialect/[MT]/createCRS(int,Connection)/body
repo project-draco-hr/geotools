@@ -1,0 +1,28 @@
+{
+  try {
+    return CRS.decode("EPSG:" + srid);
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.FINE,"Unable to create CRS from epsg code " + srid,e);
+    String sql=String.format("SELECT srtext FROM %s WHERE auth_srid = %d",SPATIAL_REF_SYS,srid);
+    LOGGER.fine(sql);
+    Statement st=cx.createStatement();
+    ResultSet rs=st.executeQuery(sql);
+    try {
+      if (rs.next()) {
+        String wkt=rs.getString(1);
+        try {
+          return CRS.parseWKT(wkt);
+        }
+ catch (        Exception e2) {
+          LOGGER.log(Level.FINE,"Unable to create CRS from wkt: " + wkt,e2);
+        }
+      }
+    }
+  finally {
+      dataStore.closeSafe(rs);
+      dataStore.closeSafe(st);
+    }
+  }
+  return super.createCRS(srid,cx);
+}

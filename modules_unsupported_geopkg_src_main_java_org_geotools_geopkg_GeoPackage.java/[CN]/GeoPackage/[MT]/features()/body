@@ -1,0 +1,24 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      String sql=format("SELECT a.*, b.f_geometry_column, b.geometry_type, b.coord_dimension, c.auth_srid, c.srtext" + " FROM %s a, %s b, %s c" + " WHERE a.table_name = b.f_table_name"+ " AND a.srid = c.srid"+ " AND a.data_type = ?",GEOPACKAGE_CONTENTS,GEOMETRY_COLUMNS,SPATIAL_REF_SYS);
+      PreparedStatement ps=cx.prepareStatement(sql);
+      ps.setString(1,DataType.Feature.value());
+      ResultSet rs=ps.executeQuery();
+      List<FeatureEntry> entries=new ArrayList();
+      while (rs.next()) {
+        entries.add(createFeatureEntry(rs));
+      }
+      rs.close();
+      ps.close();
+      return entries;
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}

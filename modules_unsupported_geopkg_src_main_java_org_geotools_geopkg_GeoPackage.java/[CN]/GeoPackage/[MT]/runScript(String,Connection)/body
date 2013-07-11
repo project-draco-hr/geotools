@@ -1,0 +1,46 @@
+{
+  InputStream stream=getClass().getResourceAsStream(filename);
+  List<String> lines;
+  try {
+    lines=IOUtils.readLines(stream);
+  }
+ catch (  IOException e) {
+    throw new SQLException(e);
+  }
+ finally {
+    try {
+      stream.close();
+    }
+ catch (    IOException e) {
+      LOGGER.log(Level.FINER,e.getMessage(),e);
+    }
+  }
+  Statement st=cx.createStatement();
+  try {
+    StringBuilder buf=new StringBuilder();
+    for (    String sql : lines) {
+      sql=sql.trim();
+      if (sql.isEmpty()) {
+        continue;
+      }
+      if (sql.startsWith("--")) {
+        continue;
+      }
+      buf.append(sql).append(" ");
+      if (sql.endsWith(";")) {
+        String stmt=buf.toString();
+        boolean skipError=stmt.startsWith("?");
+        if (skipError) {
+          stmt=stmt.replaceAll("^\\? *","");
+        }
+        LOGGER.fine(stmt);
+        st.addBatch(stmt);
+        buf.setLength(0);
+      }
+    }
+    st.executeBatch();
+  }
+  finally {
+    close(st);
+  }
+}

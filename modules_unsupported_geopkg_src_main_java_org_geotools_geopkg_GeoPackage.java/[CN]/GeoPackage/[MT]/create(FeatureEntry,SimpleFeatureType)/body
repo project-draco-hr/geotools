@@ -1,0 +1,44 @@
+{
+  FeatureEntry e=new FeatureEntry();
+  e.init(entry);
+  e.setTableName(schema.getTypeName());
+  if (e.getGeometryColumn() != null) {
+    if (schema.getDescriptor(e.getGeometryColumn()) == null) {
+      throw new IllegalArgumentException(format("Geometry column %s does not exist in schema",e.getGeometryColumn()));
+    }
+  }
+ else {
+    e.setGeometryColumn(findGeometryColumn(schema));
+  }
+  if (e.getIdentifier() == null) {
+    e.setIdentifier(schema.getTypeName());
+  }
+  if (e.getDescription() == null) {
+    e.setDescription(e.getIdentifier());
+  }
+  if (e.getBounds() == null) {
+    throw new IllegalArgumentException("Entry must have bounds");
+  }
+  if (e.getSrid() == null) {
+    try {
+      e.setSrid(findSRID(schema));
+    }
+ catch (    Exception ex) {
+      throw new IllegalArgumentException(ex);
+    }
+  }
+  if (e.getSrid() == null) {
+    throw new IllegalArgumentException("Entry must have srid");
+  }
+  if (e.getCoordDimension() == null) {
+    e.setCoordDimension(2);
+  }
+  if (e.getGeometryType() == null) {
+    e.setGeometryType(findGeometryType(schema));
+  }
+  e.setLastChange(new Date());
+  schema.getUserData().put(FeatureEntry.class,e);
+  JDBCDataStore dataStore=dataStore();
+  dataStore.createSchema(schema);
+  entry.init(e);
+}

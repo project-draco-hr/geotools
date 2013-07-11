@@ -1,0 +1,37 @@
+{
+  FeatureEntry e=new FeatureEntry();
+  e.init(entry);
+  if (e.getBounds() == null) {
+    e.setBounds(source.getBounds());
+  }
+  create(e,source.getSchema());
+  if (filter == null) {
+    filter=Filter.INCLUDE;
+  }
+  Transaction tx=new DefaultTransaction();
+  SimpleFeatureWriter w=writer(e,true,null,tx);
+  SimpleFeatureIterator it=source.getFeatures(filter).features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      SimpleFeature g=w.next();
+      for (      PropertyDescriptor pd : source.getSchema().getDescriptors()) {
+        String name=pd.getName().getLocalPart();
+        g.setAttribute(name,f.getAttribute(name));
+      }
+      g.setDefaultGeometry(f.getDefaultGeometry());
+      w.write();
+    }
+    tx.commit();
+  }
+ catch (  Exception ex) {
+    tx.rollback();
+    throw new IOException(ex);
+  }
+ finally {
+    w.close();
+    it.close();
+    tx.close();
+  }
+  entry.init(e);
+}

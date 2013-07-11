@@ -1,0 +1,25 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      String sql=format("SELECT a.*, b.is_times_two_zoom, c.auth_srid, c.srtext" + " FROM %s a, %s b, %s c" + " WHERE a.table_name = b.t_table_name"+ " AND a.srid = c.srid"+ " AND a.data_type = ?",GEOPACKAGE_CONTENTS,TILE_TABLE_METADATA,SPATIAL_REF_SYS);
+      LOGGER.fine(sql);
+      PreparedStatement ps=cx.prepareStatement(sql);
+      ps.setString(1,DataType.Tile.value());
+      ResultSet rs=ps.executeQuery();
+      List<TileEntry> entries=new ArrayList();
+      while (rs.next()) {
+        entries.add(createTileEntry(rs,cx));
+      }
+      rs.close();
+      ps.close();
+      return entries;
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}
