@@ -12,18 +12,45 @@
       rescaleToBytes();
     }
   }
-  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Encoded input image for png writer");
-  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Getting a writer");
-  final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("PNG");
-  if (!it.hasNext()) {
-    throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("Encoded input image for png writer");
   }
-  ImageWriter writer=it.next();
-  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Setting write parameters for this writer");
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("Getting a writer");
+  }
+  ImageWriter writer=null;
+  if (nativeAcc) {
+    if (IMAGEIO_PNG_IMAGE_WRITER_SPI != null) {
+      writer=IMAGEIO_PNG_IMAGE_WRITER_SPI.createWriterInstance();
+    }
+ else {
+      LOGGER.finer("Unable to find ImageIO PNG writer");
+    }
+  }
+  if (!nativeAcc || writer == null) {
+    final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("PNG");
+    if (!it.hasNext()) {
+      throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+    }
+    writer=it.next();
+    if (writer.getOriginatingProvider().getClass().equals(IMAGEIO_PNG_IMAGE_WRITER_SPI)) {
+      if (it.hasNext()) {
+        writer=it.next();
+      }
+ else {
+        LOGGER.finer("Unable to use PNG writer different than ImageIO one");
+      }
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("Setting write parameters for this writer");
+  }
   ImageWriteParam iwp=null;
   final ImageOutputStream memOutStream=ImageIOExt.createImageOutputStream(image,destination);
-  if (memOutStream == null)   throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
-  if (nativeAcc && writer.getClass().getName().equals("com.sun.media.imageioimpl.plugins.png.CLibPNGImageWriter")) {
+  if (memOutStream == null) {
+    throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
+  }
+  if (nativeAcc && writer.getOriginatingProvider().getClass().equals(IMAGEIO_PNG_IMAGE_WRITER_SPI)) {
     if (LOGGER.isLoggable(Level.FINER))     LOGGER.finer("Writer is native");
     iwp=writer.getDefaultWriteParam();
     iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
@@ -32,10 +59,9 @@
     iwp.setDestinationType(new ImageTypeSpecifier(image.getColorModel(),image.getSampleModel()));
   }
  else {
-    if (!nativeAcc && it.hasNext() && writer.getClass().getName().equals("com.sun.media.imageioimpl.plugins.png.CLibPNGImageWriter")) {
-      writer=it.next();
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("Writer is NOT native");
     }
-    if (LOGGER.isLoggable(Level.FINER))     LOGGER.finer("Writer is NOT native");
     iwp=new PNGImageWriteParam();
     iwp.setCompressionMode(ImageWriteParam.MODE_DEFAULT);
   }

@@ -16,7 +16,7 @@
     LOGGER.fine("Getting a JPEG writer and configuring it.");
   }
   ImageWriter writer=null;
-  if (nativeAcc && CODEC_LIB_AVAILABLE) {
+  if (nativeAcc && CODEC_LIB_AVAILABLE && IMAGEIO_JPEG_IMAGE_WRITER_SPI != null) {
     try {
       writer=IMAGEIO_JPEG_IMAGE_WRITER_SPI.createWriterInstance();
     }
@@ -28,10 +28,10 @@
     }
   }
   if (writer == null) {
+    if (JDK_JPEG_IMAGE_WRITER_SPI == null) {
+      throw new IllegalStateException(Errors.format(ErrorKeys.ILLEGAL_CLASS_$2,"Unable to find JDK JPEG Writer"));
+    }
     writer=JDK_JPEG_IMAGE_WRITER_SPI.createWriterInstance();
-  }
-  if ((!CODEC_LIB_AVAILABLE || !(writer.getOriginatingProvider() instanceof CLibJPEGImageWriterSpi)) && compression.equals("JPEG-LS")) {
-    throw new IOException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"compression","JPEG-LS"));
   }
   final ImageWriteParam iwp=writer.getDefaultWriteParam();
   final ImageOutputStream outStream=ImageIOExt.createImageOutputStream(image,destination);
