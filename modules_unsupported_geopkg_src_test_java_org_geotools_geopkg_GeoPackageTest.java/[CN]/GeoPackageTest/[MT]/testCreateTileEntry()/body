@@ -1,0 +1,20 @@
+{
+  TileEntry e=new TileEntry();
+  e.setTableName("foo");
+  e.setBounds(new ReferencedEnvelope(-180,180,-90,90,DefaultGeographicCRS.WGS84));
+  e.getTileMatricies().add(new TileMatrix(0,1,1,256,256,0.1,0.1));
+  e.getTileMatricies().add(new TileMatrix(1,2,2,256,256,0.1,0.1));
+  geopkg.create(e);
+  assertTileEntry(e);
+  List<Tile> tiles=new ArrayList();
+  tiles.add(new Tile(0,0,0,new byte[]{0}));
+  tiles.add(new Tile(1,0,0,new byte[]{1}));
+  tiles.add(new Tile(1,0,1,new byte[]{2}));
+  tiles.add(new Tile(1,1,0,new byte[]{3}));
+  tiles.add(new Tile(1,1,1,new byte[]{4}));
+  for (  Tile t : tiles) {
+    geopkg.add(e,t);
+  }
+  TileReader r=geopkg.reader(e,null,null,null,null,null,null);
+  assertTiles(tiles,r);
+}

@@ -1,0 +1,77 @@
+{
+  RasterEntry e=new RasterEntry();
+  e.init(entry);
+  if (e.getTableName() == null) {
+    if (raster.getName() == null) {
+      throw new IllegalArgumentException("No table name specified for raster");
+    }
+    e.setTableName(raster.getName().toString());
+  }
+  if (e.getRasterColumn() == null) {
+    e.setRasterColumn("raster");
+  }
+  if (e.getSrid() == null) {
+    try {
+      e.setSrid(findSRID(raster));
+    }
+ catch (    Exception ex) {
+      throw new IOException(ex);
+    }
+  }
+  if (e.getSrid() == null) {
+    throw new IllegalArgumentException("Entry must have srid");
+  }
+  if (e.getBounds() == null) {
+    e.setBounds(findBounds(raster));
+  }
+  if (e.getBounds() == null) {
+    throw new IllegalArgumentException("Entry must have bounds");
+  }
+  if (e.getIdentifier() == null) {
+    e.setIdentifier(raster.getName().toString());
+  }
+  if (e.getDescription() == null) {
+    e.setDescription(e.getIdentifier());
+  }
+  e.setCompressionQualityFactor(1.0);
+  e.setGeoRectification(Rectification.Geo);
+  e.setLastChange(new Date());
+  File tmpFile=File.createTempFile(e.getTableName(),"raster");
+  GridCoverageWriter writer=format.getWriter(tmpFile);
+  writer.write(raster,null);
+  writer.dispose();
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      Statement st=cx.createStatement();
+      try {
+        String sql=format("CREATE TABLE %s (id INTEGER PRIMARY KEY AUTOINCREMENT, %s BLOB NOT NULL)",e.getTableName(),e.getRasterColumn());
+        LOGGER.fine(sql);
+        st.execute(sql);
+      }
+  finally {
+        close(st);
+      }
+      BufferedInputStream bin=new BufferedInputStream(new FileInputStream(tmpFile));
+      byte[] blob=IOUtils.toByteArray(bin);
+      try {
+        PreparedStatement ps=prepare(cx,format("INSERT INTO %s (%s) VALUES (?)",e.getTableName(),e.getRasterColumn())).set(blob).log(Level.FINE).statement();
+        ps.execute();
+        ps.close();
+      }
+  finally {
+        bin.close();
+      }
+    }
+  finally {
+      close(cx);
+    }
+  }
+ catch (  SQLException ex) {
+    throw new IOException(ex);
+  }
+  tmpFile.delete();
+  addGeoPackageContentsEntry(e);
+  addRasterColumnsEntry(e);
+  entry.init(e);
+}

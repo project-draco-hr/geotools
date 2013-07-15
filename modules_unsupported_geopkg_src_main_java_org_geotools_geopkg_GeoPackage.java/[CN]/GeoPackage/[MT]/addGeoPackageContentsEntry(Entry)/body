@@ -1,0 +1,51 @@
+{
+  addCRS(e.getSrid());
+  StringBuilder sb=new StringBuilder();
+  StringBuilder vals=new StringBuilder();
+  sb.append(format("INSERT INTO %s (table_name, data_type, identifier",GEOPACKAGE_CONTENTS));
+  vals.append("VALUES (?,?,?");
+  if (e.getDescription() != null) {
+    sb.append(", description");
+    vals.append(",?");
+  }
+  if (e.getLastChange() != null) {
+    sb.append(", last_change");
+    vals.append(",?");
+  }
+  if (e.getBounds() != null) {
+    sb.append(", min_x, min_y, max_x, max_y");
+    vals.append(",?,?,?,?");
+  }
+  if (e.getSrid() != null) {
+    sb.append(", srid");
+    vals.append(",?");
+  }
+  sb.append(") ").append(vals.append(")").toString());
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatementBuilder psb=prepare(cx,sb.toString()).set(e.getTableName()).set(e.getDataType().value()).set(e.getIdentifier());
+      if (e.getDescription() != null) {
+        psb.set(e.getDescription());
+      }
+      if (e.getLastChange() != null) {
+        psb.set(DATE_FORMAT.format(e.getLastChange()));
+      }
+      if (e.getBounds() != null) {
+        psb.set(e.getBounds().getMinX()).set(e.getBounds().getMinY()).set(e.getBounds().getMaxX()).set(e.getBounds().getMaxY());
+      }
+      if (e.getSrid() != null) {
+        psb.set(e.getSrid());
+      }
+      PreparedStatement ps=psb.log(Level.FINE).statement();
+      ps.execute();
+      ps.close();
+    }
+  finally {
+      close(cx);
+    }
+  }
+ catch (  SQLException ex) {
+    throw new IOException(ex);
+  }
+}

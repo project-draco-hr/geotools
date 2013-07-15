@@ -1,0 +1,15 @@
+{
+  ShapefileDataStore shp=new ShapefileDataStore(setUpShapefile());
+  FeatureEntry entry=new FeatureEntry();
+  geopkg.add(entry,shp.getFeatureSource(),null);
+  assertTableExists("bugsites");
+  assertFeatureEntry(entry);
+  SimpleFeatureReader re=Features.simple(shp.getFeatureReader());
+  SimpleFeatureReader ra=geopkg.reader(entry,null,null);
+  while (re.hasNext()) {
+    assertTrue(ra.hasNext());
+    assertSimilar(re.next(),ra.next());
+  }
+  re.close();
+  ra.close();
+}

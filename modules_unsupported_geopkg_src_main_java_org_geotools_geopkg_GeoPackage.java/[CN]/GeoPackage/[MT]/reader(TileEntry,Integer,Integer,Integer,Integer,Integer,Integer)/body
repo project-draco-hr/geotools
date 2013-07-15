@@ -1,0 +1,38 @@
+{
+  try {
+    List<String> q=new ArrayList();
+    if (lowZoom != null) {
+      q.add("zoom_level > " + lowZoom);
+    }
+    if (highZoom != null) {
+      q.add("zoom_level < " + lowZoom);
+    }
+    if (lowCol != null) {
+      q.add("tile_column < " + lowCol);
+    }
+    if (highCol != null) {
+      q.add("tile_column < " + highCol);
+    }
+    if (lowRow != null) {
+      q.add("tile_row < " + lowRow);
+    }
+    if (highRow != null) {
+      q.add("tile_row < " + highRow);
+    }
+    StringBuffer sql=new StringBuffer("SELECT * FROM ").append(entry.getTableName());
+    if (!q.isEmpty()) {
+      sql.append(" WHERE ");
+      for (      String s : q) {
+        sql.append(s).append(" AND ");
+      }
+      sql.setLength(sql.length() - 5);
+    }
+    Connection cx=connPool.getConnection();
+    Statement st=cx.createStatement();
+    ResultSet rs=st.executeQuery(sql.toString());
+    return new TileReader(rs,cx);
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}

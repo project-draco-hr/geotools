@@ -1,0 +1,26 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      Statement st=cx.createStatement();
+      try {
+        ResultSet rs=st.executeQuery(format("SELECT %s FROM %s;",entry.getRasterColumn(),entry.getTableName()));
+        if (rs.next()) {
+          byte[] blob=rs.getBytes(1);
+          Hints hints=new Hints();
+          return format.getReader(blob,hints);
+        }
+      }
+  finally {
+        close(st);
+      }
+    }
+  finally {
+      close(cx);
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+  return null;
+}

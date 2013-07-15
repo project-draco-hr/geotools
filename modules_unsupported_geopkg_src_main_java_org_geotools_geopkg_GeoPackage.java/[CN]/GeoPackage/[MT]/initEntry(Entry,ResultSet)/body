@@ -1,0 +1,26 @@
+{
+  e.setIdentifier(rs.getString("identifier"));
+  e.setDescription(rs.getString("description"));
+  e.setTableName(rs.getString("table_name"));
+  try {
+    e.setLastChange(DATE_FORMAT.parse(rs.getString("last_change")));
+  }
+ catch (  ParseException ex) {
+    throw new IOException(ex);
+  }
+  int srid=rs.getInt("auth_srid");
+  e.setSrid(srid);
+  CoordinateReferenceSystem crs;
+  try {
+    crs=CRS.decode("EPSG:" + srid);
+  }
+ catch (  Exception ex) {
+    try {
+      crs=CRS.parseWKT(rs.getString("srtext"));
+    }
+ catch (    Exception e2) {
+      throw new IOException(ex);
+    }
+  }
+  e.setBounds(new ReferencedEnvelope(rs.getDouble("min_x"),rs.getDouble("max_x"),rs.getDouble("min_y"),rs.getDouble("max_y"),crs));
+}

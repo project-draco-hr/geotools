@@ -1,0 +1,31 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps=cx.prepareStatement(String.format("SELECT srid FROM %s WHERE srid = ? AND auth_name = ?",SPATIAL_REF_SYS));
+      try {
+        ResultSet rs=prepare(ps).set(srid).set(auth).log(Level.FINE).statement().executeQuery();
+        if (rs.next()) {
+          return;
+        }
+      }
+  finally {
+        ps.close();
+      }
+      ps=cx.prepareStatement(String.format("INSERT INTO %s (srid, auth_name, auth_srid, srtext) VALUES (?,?,?,?)",SPATIAL_REF_SYS));
+      try {
+        prepare(ps).set(srid).set(auth).set(srid).set(crs.toWKT()).log(Level.FINE).statement().execute();
+        ps.close();
+      }
+  finally {
+        ps.close();
+      }
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}

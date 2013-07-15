@@ -1,0 +1,21 @@
+{
+  Connection cx=geopkg.getDataSource().getConnection();
+  try {
+    PreparedStatement ps=cx.prepareStatement("SELECT * FROM geopackage_contents WHERE table_name = ?");
+    ps.setString(1,entry.getTableName());
+    ResultSet rs=ps.executeQuery();
+    assertTrue(rs.next());
+    assertEquals(entry.getIdentifier(),rs.getString("identifier"));
+    assertEquals(entry.getDescription(),rs.getString("description"));
+    assertEquals(entry.getSrid().intValue(),rs.getInt("srid"));
+    assertEquals(entry.getBounds().getMinX(),rs.getDouble("min_x"),0.1);
+    assertEquals(entry.getBounds().getMinY(),rs.getDouble("min_y"),0.1);
+    assertEquals(entry.getBounds().getMaxX(),rs.getDouble("max_x"),0.1);
+    assertEquals(entry.getBounds().getMaxY(),rs.getDouble("max_y"),0.1);
+    rs.close();
+    ps.close();
+  }
+  finally {
+    cx.close();
+  }
+}
