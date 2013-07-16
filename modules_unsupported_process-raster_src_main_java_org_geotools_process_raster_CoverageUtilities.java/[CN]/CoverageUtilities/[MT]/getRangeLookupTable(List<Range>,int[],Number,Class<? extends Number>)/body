@@ -1,0 +1,17 @@
+{
+  final RangeLookupTable.Builder rltBuilder=new RangeLookupTable.Builder();
+  final int size=classificationRanges.size();
+  final boolean useCustomOutputPixelValues=outputPixelValues != null && outputPixelValues.length == size;
+  Class<? extends Number> widestClass=noDataValue.getClass();
+  for (int i=0; i < size; i++) {
+    final Range range=classificationRanges.get(i);
+    final Class<? extends Number> rangeClass=range.getMin().getClass();
+    if (widestClass != rangeClass) {
+      widestClass=ClassChanger.getWidestClass(widestClass,rangeClass);
+    }
+    final int reference=useCustomOutputPixelValues ? outputPixelValues[i] : i + 1;
+    rltBuilder.add(range,convert(reference,noDataValue.getClass()));
+  }
+  rltBuilder.add(new Range(getClassMinimum(widestClass),true,getClassMaximum(widestClass),true),noDataValue);
+  return rltBuilder.build();
+}
