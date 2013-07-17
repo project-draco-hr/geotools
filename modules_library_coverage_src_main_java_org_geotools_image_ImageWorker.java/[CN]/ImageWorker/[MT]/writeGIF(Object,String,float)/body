@@ -1,29 +1,11 @@
 {
   forceIndexColorModelForGIF(true);
-  final IIORegistry registry=IIORegistry.getDefaultInstance();
-  Iterator<ImageWriterSpi> it=registry.getServiceProviders(ImageWriterSpi.class,true);
-  ImageWriterSpi spi=null;
-  while (it.hasNext()) {
-    final ImageWriterSpi candidate=it.next();
-    if (containsFormatName(candidate.getFormatNames(),"gif")) {
-      if (spi == null) {
-        spi=candidate;
-      }
- else {
-        final String name=candidate.getClass().getName();
-        if (name.equals("com.sun.media.imageioimpl.plugins.gif.GIFImageWriterSpi")) {
-          spi=candidate;
-          break;
-        }
-      }
-    }
-  }
-  if (spi == null) {
+  if (IMAGEIO_GIF_IMAGE_WRITER_SPI == null) {
     throw new IIOException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
   }
   final ImageOutputStream stream=ImageIOExt.createImageOutputStream(image,destination);
   if (stream == null)   throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
-  final ImageWriter writer=spi.createWriterInstance();
+  final ImageWriter writer=IMAGEIO_GIF_IMAGE_WRITER_SPI.createWriterInstance();
   final ImageWriteParam param=writer.getDefaultWriteParam();
   param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
   param.setCompressionType(compression);
