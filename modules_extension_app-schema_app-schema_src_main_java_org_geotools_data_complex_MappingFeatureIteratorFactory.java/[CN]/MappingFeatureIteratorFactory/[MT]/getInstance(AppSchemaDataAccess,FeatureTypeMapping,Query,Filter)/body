@@ -3,6 +3,7 @@
     return new XmlMappingFeatureIterator(store,mapping,query);
   }
   boolean isJoining=AppSchemaDataAccessConfigurator.isJoining();
+  boolean removeQueryLimitIfDenormalised=false;
   FeatureSource mappedSource=mapping.getSource();
   if (isJoining && !(mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore)) {
     if (AppSchemaDataAccessConfigurator.isJoiningSet()) {
@@ -51,7 +52,7 @@
       int maxFeatures=Query.DEFAULT_MAX;
       if (filter != null && filter != Filter.INCLUDE) {
         maxFeatures=query.getMaxFeatures();
-        query.setMaxFeatures(Query.DEFAULT_MAX);
+        removeQueryLimitIfDenormalised=true;
       }
       if (isJoining && isListFilter != null) {
         ((JoiningQuery)query).setSubset(true);
@@ -60,7 +61,7 @@
         }
       }
       boolean isFiltered=!isJoining && preFilter != null && preFilter != Filter.INCLUDE;
-      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered);
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered,removeQueryLimitIfDenormalised);
       if (isListFilter == null) {
         if (filter != null && filter != Filter.INCLUDE) {
           iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
