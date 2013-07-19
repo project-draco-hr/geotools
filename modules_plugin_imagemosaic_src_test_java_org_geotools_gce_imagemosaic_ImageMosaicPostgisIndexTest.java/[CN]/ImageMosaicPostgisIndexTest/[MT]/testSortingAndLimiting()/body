@@ -31,16 +31,22 @@
   assertEquals("true",reader.getMetadataValue("HAS_ELEVATION_DOMAIN"));
   reader.dispose();
   final MyImageMosaicReader reader1=new MyImageMosaicReader(timeElevURL);
-  final RasterManager rm=reader1.getRasterManager(reader1.getGridCoverageNames()[0]);
-  final SimpleFeatureType type=rm.granuleCatalog.getType("waterTempPG2");
+  final RasterManager rasterManager=reader1.getRasterManager(reader1.getGridCoverageNames()[0]);
+  final SimpleFeatureType type=rasterManager.granuleCatalog.getType("waterTempPG2");
   Query query=null;
   if (type != null) {
-    query=new Query(rm.granuleCatalog.getType("waterTempPG2").getTypeName());
+    query=new Query(type.getTypeName());
     query.setMaxFeatures(1);
     final SortBy[] clauses=new SortBy[]{new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("ingestion"),SortOrder.DESCENDING),new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("elevation"),SortOrder.ASCENDING)};
     query.setSortBy(clauses);
   }
-  Collection<GranuleDescriptor> features=rm.getGranules(query);
+  final Collection<GranuleDescriptor> features=new ArrayList<GranuleDescriptor>();
+  rasterManager.getGranuleDescriptors(query,new GranuleCatalogVisitor(){
+    @Override public void visit(    GranuleDescriptor granule,    Object o){
+      features.add(granule);
+    }
+  }
+);
   assertEquals(features.size(),1);
   GranuleDescriptor granule=features.iterator().next();
   SimpleFeature sf=granule.getOriginator();
@@ -55,7 +61,13 @@
   assertEquals(((Integer)elevation).intValue(),0);
   final SortBy[] clauses=new SortBy[]{new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("ingestion"),SortOrder.ASCENDING),new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property("elevation"),SortOrder.DESCENDING)};
   query.setSortBy(clauses);
-  features=rm.getGranules(query);
+  features.clear();
+  rasterManager.getGranuleDescriptors(query,new GranuleCatalogVisitor(){
+    @Override public void visit(    GranuleDescriptor granule,    Object o){
+      features.add(granule);
+    }
+  }
+);
   assertEquals(features.size(),1);
   granule=features.iterator().next();
   sf=granule.getOriginator();
