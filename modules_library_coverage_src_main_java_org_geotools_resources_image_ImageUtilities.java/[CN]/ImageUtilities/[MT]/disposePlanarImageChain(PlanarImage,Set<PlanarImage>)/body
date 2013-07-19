@@ -1,0 +1,35 @@
+{
+  List<?> sinks=pi.getSinks();
+  if (sinks != null) {
+    for (    Object sink : sinks) {
+      if (sink instanceof PlanarImage && !visited.contains(sink))       disposePlanarImageChain((PlanarImage)sink,visited);
+ else       if (sink instanceof BufferedImage) {
+        ((BufferedImage)sink).flush();
+      }
+    }
+  }
+  pi.dispose();
+  visited.add(pi);
+  List<?> sources=pi.getSources();
+  if (sources != null) {
+    for (    Object child : sources) {
+      if (child instanceof PlanarImage && !visited.contains(child))       disposePlanarImageChain((PlanarImage)child,visited);
+ else       if (child instanceof BufferedImage) {
+        ((BufferedImage)child).flush();
+      }
+    }
+  }
+  if (pi instanceof RenderedOp) {
+    RenderedOp op=(RenderedOp)pi;
+    for (    Object param : op.getParameterBlock().getParameters()) {
+      if (param instanceof ImageInputStream) {
+        ImageInputStream iis=(ImageInputStream)param;
+        try {
+          iis.close();
+        }
+ catch (        IOException e) {
+        }
+      }
+    }
+  }
+}

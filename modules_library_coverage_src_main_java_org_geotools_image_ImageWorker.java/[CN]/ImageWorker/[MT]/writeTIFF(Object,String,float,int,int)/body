@@ -1,14 +1,26 @@
 {
   if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Encoding input image to write out as TIFF.");
   if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Getting a TIFF writer and configuring it.");
-  final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("TIFF");
-  if (!it.hasNext()) {
-    throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+  ImageWriter writer=null;
+  if (IMAGEIO_EXT_TIFF_IMAGE_WRITER_SPI == null) {
+    LOGGER.finer("Unable to find ImageIO-Ext Tiff Writer, looking for another one");
+    final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("TIFF");
+    if (!it.hasNext()) {
+      throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
+    }
+    writer=it.next();
   }
-  ImageWriter writer=it.next();
+ else {
+    writer=IMAGEIO_EXT_TIFF_IMAGE_WRITER_SPI.createWriterInstance();
+  }
+  if (writer == null) {
+    throw new IllegalStateException("Unable to find Tiff ImageWriter!");
+  }
   final ImageWriteParam iwp=writer.getDefaultWriteParam();
   final ImageOutputStream outStream=ImageIOExt.createImageOutputStream(image,destination);
-  if (outStream == null)   throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
+  if (outStream == null) {
+    throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
+  }
   if (compression != null) {
     iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
     iwp.setCompressionType(compression);
@@ -21,7 +33,9 @@
     iwp.setTilingMode(ImageWriteParam.MODE_EXPLICIT);
     iwp.setTiling(tileSizeX,tileSizeY,0,0);
   }
-  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("Writing out...");
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("Writing out...");
+  }
   try {
     writer.setOutput(outStream);
     writer.write(null,new IIOImage(image,null,null),iwp);
