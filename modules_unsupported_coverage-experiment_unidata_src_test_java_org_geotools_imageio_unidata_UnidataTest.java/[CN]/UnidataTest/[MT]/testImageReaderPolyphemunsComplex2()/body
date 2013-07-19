@@ -1,0 +1,77 @@
+{
+  File file=null;
+  try {
+    file=TestData.file(this,"polyphemus_20130301.nc");
+  }
+ catch (  IOException e) {
+    LOGGER.warning("Unable to find file polyphemus_20130301.nc");
+    return;
+  }
+  if (!file.exists()) {
+    LOGGER.warning("Unable to find file polyphemus_20130301.nc");
+    return;
+  }
+  FileUtils.copyFile(file,new File(TestData.file(this,null),"polyphemus.nc"));
+  file=TestData.file(this,"polyphemus.nc");
+  final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  DummyUnidataImageReader reader=null;
+  try {
+    reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    int numImages=reader.getNumImages(true);
+    assertEquals(1008,numImages);
+    for (int i=0; i < numImages; i++) {
+      UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    CoverageSourceDescriptor cd=reader.getCoverageDescriptor(new NameImpl("NO2"));
+    final List<AdditionalDomain> additionalDomains=cd.getAdditionalDomains();
+    assertNull(additionalDomains);
+    final List<DimensionDescriptor> dimensions=cd.getDimensionDescriptors();
+    assertNotNull(dimensions);
+    assertTrue(!dimensions.isEmpty());
+    assertEquals("wrong dimensions",2,dimensions.size());
+    DimensionDescriptor dim=dimensions.get(0);
+    assertTrue(dim.getName().equals("TIME"));
+    assertTrue(dim.getStartAttribute().equals("time"));
+    dim=dimensions.get(1);
+    assertTrue(dim.getName().equals("ELEVATION"));
+    assertTrue(dim.getStartAttribute().equals("z"));
+    final List<Name> names=reader.getCoveragesNames();
+    assertNotNull(names);
+    assertTrue(!names.isEmpty());
+    assertTrue(3 == names.size());
+    assertTrue(names.contains(new NameImpl("NO2")));
+    assertTrue(names.contains(new NameImpl("O3")));
+    assertTrue(names.contains(new NameImpl("V")));
+    final CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    final String[] typeNames=cs.getTypeNames();
+    for (    String typeName : typeNames) {
+      final List<CoverageSlice> granules=cs.getGranules(new Query(typeName,Filter.INCLUDE));
+      assertNotNull(granules);
+      assertFalse(granules.isEmpty());
+      for (      CoverageSlice slice : granules) {
+        final SimpleFeature sf=slice.getOriginator();
+        if (TestData.isInteractiveTest()) {
+          LOGGER.info(DataUtilities.encodeFeature(sf));
+        }
+        for (        Property p : sf.getProperties()) {
+          assertNotNull("Property " + p.getName() + " had a null value!",p.getValue());
+        }
+      }
+    }
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    FileUtils.deleteDirectory(TestData.file(this,".polyphemus"));
+  }
+}

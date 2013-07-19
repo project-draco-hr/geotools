@@ -1,19 +1,19 @@
 {
-  File nc1=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/20130101.METOPA.GOME2.NO2.DUMMY.nc");
-  File mosaic=new File("./target/nc_harvest");
+  File nc1=TestData.file(this,"20130101.METOPA.GOME2.NO2.DUMMY.nc");
+  File mosaic=new File(TestData.file(this,"."),"nc_harvest");
   if (mosaic.exists()) {
     FileUtils.deleteDirectory(mosaic);
   }
   assertTrue(mosaic.mkdirs());
   FileUtils.copyFileToDirectory(nc1,mosaic);
-  File xml=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/.DUMMY.GOME2.NO2.PGL/GOME2.NO2.xml");
+  File xml=TestData.file(this,".DUMMY.GOME2.NO2.PGL/GOME2.NO2.xml");
   FileUtils.copyFileToDirectory(xml,mosaic);
   String indexer="TimeAttribute=time\n" + "Schema=the_geom:Polygon,location:String,imageindex:Integer,time:java.util.Date\n" + "PropertyCollectors=TimestampFileNameExtractorSPI[timeregex](time)\n";
   indexer+=Prop.AUXILIARY_FILE + "=" + "GOME2.NO2.xml";
   FileUtils.writeStringToFile(new File(mosaic,"indexer.properties"),indexer);
   String timeregex="regex=[0-9]{8}";
   FileUtils.writeStringToFile(new File(mosaic,"timeregex.properties"),timeregex);
-  File dsp=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/datastore.properties");
+  File dsp=TestData.file(this,"datastore.properties");
   FileUtils.copyFileToDirectory(dsp,mosaic);
   ImageMosaicFormat format=new ImageMosaicFormat();
   ImageMosaicReader reader=format.getReader(mosaic);
@@ -36,7 +36,7 @@
     assertEquals(0,f.getAttribute("imageindex"));
     assertEquals("2013-01-01T00:00:00.000Z",ConvertersHack.convert(f.getAttribute("time"),String.class));
     it.close();
-    File nc2=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/20130116.METOPA.GOME2.NO2.DUMMY.nc");
+    File nc2=TestData.file(this,"20130116.METOPA.GOME2.NO2.DUMMY.nc");
     FileUtils.copyFileToDirectory(nc2,mosaic);
     File fileToHarvest=new File(mosaic,"20130116.METOPA.GOME2.NO2.DUMMY.nc");
     List<HarvestedSource> harvestSummary=reader.harvest("NO2",fileToHarvest,null);
@@ -47,7 +47,7 @@
     assertEquals("20130116.METOPA.GOME2.NO2.DUMMY.nc",((File)hf.getSource()).getName());
     assertTrue(hf.success());
     assertEquals(1,reader.getGridCoverageNames().length);
-    File nc3=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/20130108.METOPA.GOME2.NO2.DUMMY.nc");
+    File nc3=TestData.file(this,"20130108.METOPA.GOME2.NO2.DUMMY.nc");
     FileUtils.copyFileToDirectory(nc3,mosaic);
     fileToHarvest=new File(mosaic,"20130108.METOPA.GOME2.NO2.DUMMY.nc");
     harvestSummary=reader.harvest("NO2",fileToHarvest,null);

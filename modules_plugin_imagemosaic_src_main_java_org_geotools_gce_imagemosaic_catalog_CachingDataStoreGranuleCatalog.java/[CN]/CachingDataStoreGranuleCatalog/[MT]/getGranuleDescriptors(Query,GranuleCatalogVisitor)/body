@@ -1,0 +1,32 @@
+{
+  final SimpleFeatureCollection features=adaptee.getGranules(q);
+  if (features == null)   throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Index Loaded");
+  final DefaultProgressListener listener=new DefaultProgressListener();
+  features.accepts(new AbstractFeatureVisitor(){
+    public void visit(    Feature feature){
+      if (feature instanceof SimpleFeature) {
+        final SimpleFeature sf=(SimpleFeature)feature;
+        final GranuleDescriptor granule;
+        String featureId=sf.getID();
+        if (descriptorsCache.containsKey(featureId)) {
+          granule=descriptorsCache.get(featureId);
+        }
+ else {
+          granule=new GranuleDescriptor(sf,adaptee.suggestedRasterSPI,adaptee.pathType,adaptee.locationAttribute,adaptee.parentLocation,adaptee.heterogeneous,adaptee.hints);
+          descriptorsCache.put(featureId,granule);
+        }
+        visitor.visit(granule,null);
+        if (listener.isCanceled() || listener.hasExceptions()) {
+          if (listener.hasExceptions()) {
+            throw new RuntimeException(listener.getExceptions().peek());
+          }
+ else {
+            throw new IllegalStateException("Feature visitor for query " + q + " has been canceled");
+          }
+        }
+      }
+    }
+  }
+,listener);
+}

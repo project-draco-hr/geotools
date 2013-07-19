@@ -1,0 +1,44 @@
+{
+  Utilities.ensureNonNull("query",query);
+  final Query q=mergeHints(query);
+  String typeName=q.getTypeName();
+  final Lock lock=rwLock.readLock();
+  try {
+    lock.lock();
+    checkStore();
+    final SimpleFeatureSource featureSource=tileIndexStore.getFeatureSource(typeName);
+    if (featureSource == null) {
+      throw new NullPointerException("The provided SimpleFeatureSource is null, it's impossible to create an index!");
+    }
+    final SimpleFeatureCollection features=featureSource.getFeatures(q);
+    if (features == null)     throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Index Loaded");
+    final DefaultProgressListener listener=new DefaultProgressListener();
+    features.accepts(new AbstractFeatureVisitor(){
+      public void visit(      Feature feature){
+        if (feature instanceof SimpleFeature) {
+          final SimpleFeature sf=(SimpleFeature)feature;
+          final GranuleDescriptor granule=new GranuleDescriptor(sf,suggestedRasterSPI,pathType,locationAttribute,parentLocation,heterogeneous,q.getHints());
+          visitor.visit(granule,null);
+          if (listener.isCanceled() || listener.hasExceptions()) {
+            if (listener.hasExceptions()) {
+              throw new RuntimeException(listener.getExceptions().peek());
+            }
+ else {
+              throw new IllegalStateException("Feature visitor for query " + q + " has been canceled");
+            }
+          }
+        }
+      }
+    }
+,listener);
+  }
+ catch (  Throwable e) {
+    final IOException ioe=new IOException();
+    ioe.initCause(e);
+    throw ioe;
+  }
+ finally {
+    lock.unlock();
+  }
+}
