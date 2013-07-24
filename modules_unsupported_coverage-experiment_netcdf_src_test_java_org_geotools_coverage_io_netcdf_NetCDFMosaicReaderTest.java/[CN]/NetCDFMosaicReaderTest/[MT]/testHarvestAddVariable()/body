@@ -1,6 +1,6 @@
 {
-  File nc1=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/polyphemus_20130301_test.nc");
-  File mosaic=new File("./target/nc_harvest");
+  File nc1=TestData.file(this,"polyphemus_20130301_test.nc");
+  File mosaic=new File(TestData.file(this,"."),"nc_harvest");
   if (mosaic.exists()) {
     FileUtils.deleteDirectory(mosaic);
   }
@@ -8,7 +8,7 @@
   FileUtils.copyFileToDirectory(nc1,mosaic);
   String indexer="TimeAttribute=time\n" + "Schema=the_geom:Polygon,location:String,imageindex:Integer,time:java.util.Date\n";
   FileUtils.writeStringToFile(new File(mosaic,"indexer.properties"),indexer);
-  File dsp=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/datastore.properties");
+  File dsp=TestData.file(this,"datastore.properties");
   FileUtils.copyFileToDirectory(dsp,mosaic);
   ImageMosaicFormat format=new ImageMosaicFormat();
   ImageMosaicReader reader=format.getReader(mosaic);
@@ -36,7 +36,7 @@
     assertEquals(1,f.getAttribute("imageindex"));
     assertEquals("2013-03-01T01:00:00.000Z",ConvertersHack.convert(f.getAttribute("time"),String.class));
     it.close();
-    File nc2=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/polyphemus_20130301_NO2.nc");
+    File nc2=TestData.file(this,"polyphemus_20130301_NO2.nc");
     FileUtils.copyFileToDirectory(nc2,mosaic);
     File fileToHarvest=new File(mosaic,"polyphemus_20130301_NO2.nc");
     List<HarvestedSource> harvestSummary=reader.harvest(null,fileToHarvest,null);

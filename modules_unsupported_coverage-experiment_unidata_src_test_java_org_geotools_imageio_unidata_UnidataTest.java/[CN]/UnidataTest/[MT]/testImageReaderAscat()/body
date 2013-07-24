@@ -1,5 +1,16 @@
 {
-  final File file=TestData.file(this,"20130101.METOPA.GOME2.NO2.DUMMY.nc");
+  File file=null;
+  try {
+    file=TestData.file(this,"ascatl1.nc");
+  }
+ catch (  IOException e) {
+    LOGGER.warning("Unable to find file ascatl1.nc");
+    return;
+  }
+  if (!file.exists()) {
+    LOGGER.warning("Unable to find file ascatl1.nc");
+    return;
+  }
   final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
   assertTrue(unidataImageReaderSpi.canDecodeInput(file));
   DummyUnidataImageReader reader=null;
@@ -7,8 +18,6 @@
     reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
     reader.setInput(file);
     int numImages=reader.getNumImages(true);
-    assertEquals(1,numImages);
-    LOGGER.info("Found " + numImages + " images.");
     for (int i=0; i < numImages; i++) {
       UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
       assertNotNull(sliceIndex);
@@ -17,8 +26,9 @@
     final List<Name> names=reader.getCoveragesNames();
     assertNotNull(names);
     assertTrue(!names.isEmpty());
-    assertTrue(1 == names.size());
-    assertEquals("NO2",names.get(0).toString());
+    assertTrue(2 == names.size());
+    assertEquals("cell_index",names.get(0).toString());
+    assertEquals("f_land",names.get(1).toString());
     final CoverageSlicesCatalog cs=reader.getCatalog();
     assertNotNull(cs);
     final String[] typeNames=cs.getTypeNames();

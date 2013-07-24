@@ -1,5 +1,16 @@
 {
-  final File file=TestData.file(this,"20130101.METOPA.GOME2.NO2.DUMMY.nc");
+  File file=null;
+  try {
+    file=TestData.file(this,"polyphemus_20130301.nc");
+  }
+ catch (  IOException e) {
+    LOGGER.warning("Unable to find file polyphemus_20130301.nc");
+    return;
+  }
+  if (!file.exists()) {
+    LOGGER.warning("Unable to find file polyphemus_20130301.nc");
+    return;
+  }
   final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
   assertTrue(unidataImageReaderSpi.canDecodeInput(file));
   DummyUnidataImageReader reader=null;
@@ -7,8 +18,7 @@
     reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
     reader.setInput(file);
     int numImages=reader.getNumImages(true);
-    assertEquals(1,numImages);
-    LOGGER.info("Found " + numImages + " images.");
+    assertEquals(1008,numImages);
     for (int i=0; i < numImages; i++) {
       UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
       assertNotNull(sliceIndex);
@@ -17,8 +27,10 @@
     final List<Name> names=reader.getCoveragesNames();
     assertNotNull(names);
     assertTrue(!names.isEmpty());
-    assertTrue(1 == names.size());
-    assertEquals("NO2",names.get(0).toString());
+    assertTrue(3 == names.size());
+    assertTrue(names.contains(new NameImpl("NO2")));
+    assertTrue(names.contains(new NameImpl("O3")));
+    assertTrue(names.contains(new NameImpl("V")));
     final CoverageSlicesCatalog cs=reader.getCatalog();
     assertNotNull(cs);
     final String[] typeNames=cs.getTypeNames();
@@ -32,13 +44,7 @@
           LOGGER.info(DataUtilities.encodeFeature(sf));
         }
         for (        Property p : sf.getProperties()) {
-          final String pName=p.getName().toString();
-          if (!pName.equalsIgnoreCase("time") && !pName.equalsIgnoreCase("elevation")) {
-            assertNotNull("Property " + p.getName() + " had a null value!",p.getValue());
-          }
- else {
-            assertNull("Property " + p.getName() + " did not have a null value!",p.getValue());
-          }
+          assertNotNull("Property " + p.getName() + " had a null value!",p.getValue());
         }
       }
     }

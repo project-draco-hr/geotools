@@ -1,20 +1,14 @@
 {
-  SimpleFeatureType indexSchema=null;
-  final String coverageName=name.toString();
-  Coverage coverage=ancillaryFileManager.coveragesMapping.get(coverageName);
+  final String variableName=name.toString();
+  final Coverage coverage=ancillaryFileManager.coveragesMapping.get(variableName);
   SchemaType schema=coverage.getSchema();
-  String schemaName=null;
-  if (schema != null) {
-    schemaName=schema.getName();
+  String schemaDef=schema != null ? schema.getAttributes() : null;
+  if (schema == null || schema.getAttributes() == null) {
+    schemaDef=suggestSchemaFromCoordinateSystem(coverage,cs);
+    ancillaryFileManager.setSchema(coverage,coverage.getName(),schemaDef);
+    schema=coverage.getSchema();
   }
-  if (schemaName == null) {
-    ancillaryFileManager.setSchemaName(coverage,coverageName);
-  }
- else {
-    indexSchema=ancillaryFileManager.suggestSchema(coverage);
-  }
-  if (indexSchema == null) {
-    indexSchema=createSchema(coverage,cs);
-  }
+  final SimpleFeatureType indexSchema=UnidataUtilities.createFeatureType(coverage.getName(),schemaDef,UnidataCRSUtilities.WGS84);
+  forceSchemaCreation(indexSchema);
   return indexSchema;
 }
