@@ -1,17 +1,32 @@
 {
   buffer.delete(0,buffer.length());
   if (n != null) {
-    numFormat.setMaximumFractionDigits(decimalPlaces);
-    numFormat.setMinimumFractionDigits(decimalPlaces);
-    numFormat.format(n,buffer,new FieldPosition(NumberFormat.INTEGER_FIELD));
-  }
-  int diff=size - buffer.length();
-  if (diff >= 0) {
-    while (diff-- > 0) {
-      buffer.insert(0,' ');
+    double dval=n.doubleValue();
+    if (Double.isNaN(dval) || Double.isInfinite(dval)) {
+      buffer.append(n.toString());
+    }
+ else {
+      numFormat.setMaximumFractionDigits(decimalPlaces);
+      numFormat.setMinimumFractionDigits(decimalPlaces);
+      FieldPosition fp=new FieldPosition(NumberFormat.FRACTION_FIELD);
+      numFormat.format(n,buffer,fp);
+      if (fp.getBeginIndex() >= size) {
+        buffer.delete(0,buffer.length());
+        buffer.append(n.toString());
+        if (buffer.length() > size) {
+          logger.logp(Level.WARNING,this.getClass().getName(),"getFieldString","Writing DBF data, value {0} cannot be represented in size {1,number}",new Object[]{n,size});
+          if (!swallowFieldSizeErrors) {
+            throw new IllegalArgumentException("Value " + n + " cannot be represented in size "+ size);
+          }
+        }
+      }
     }
   }
- else {
+  int diff=size - buffer.length();
+  if (diff > 0) {
+    buffer.insert(0,emptyString.substring(0,diff));
+  }
+ else   if (diff < 0) {
     buffer.setLength(size);
   }
   return buffer.toString();
