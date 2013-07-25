@@ -1,10 +1,18 @@
 {
-  final URL testURL=TestData.url(this,"O3NO2-noZ.nc");
+  File mosaic=new File(TestData.file(this,"."),"NetCDFTestOn4DcoveragesWithImposedSchemas");
+  if (mosaic.exists()) {
+    FileUtils.deleteDirectory(mosaic);
+  }
+  assertTrue(mosaic.mkdirs());
+  File file=TestData.file(this,"O3NO2-noZ.nc");
+  File auxFile=TestData.file(this,"O3NO2-noZ.xml");
+  FileUtils.copyFileToDirectory(file,mosaic);
+  FileUtils.copyFileToDirectory(auxFile,mosaic);
+  file=new File(mosaic,"O3NO2-noZ.nc");
   final Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,CRS.decode("EPSG:4326",true));
-  File auxFile=new File("./src/test/resources/org/geotools/coverage/io/netcdf/test-data/O3NO2-noZ.xml");
-  hints.put(Utils.AUXILIARY_FILES_PATH,auxFile.getAbsolutePath());
-  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(testURL,hints);
-  final NetCDFReader reader=(NetCDFReader)format.getReader(testURL,hints);
+  hints.put(Utils.AUXILIARY_FILES_PATH,new File(mosaic,"O3NO2-noZ.xml").getAbsolutePath());
+  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(file.toURI().toURL(),hints);
+  final NetCDFReader reader=(NetCDFReader)format.getReader(file.toURI().toURL(),hints);
   assertNotNull(format);
   try {
     String[] names=reader.getGridCoverageNames();
