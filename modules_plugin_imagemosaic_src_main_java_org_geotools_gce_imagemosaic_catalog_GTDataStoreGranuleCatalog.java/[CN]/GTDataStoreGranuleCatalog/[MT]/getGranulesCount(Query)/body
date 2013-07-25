@@ -1,0 +1,27 @@
+{
+  Utilities.ensureNonNull("query",q);
+  q=mergeHints(q);
+  String typeName=q.getTypeName();
+  final Lock lock=rwLock.readLock();
+  try {
+    lock.lock();
+    checkStore();
+    final SimpleFeatureSource featureSource=tileIndexStore.getFeatureSource(typeName);
+    if (featureSource == null) {
+      throw new NullPointerException("The provided SimpleFeatureSource is null, it's impossible to create an index!");
+    }
+    int count=featureSource.getCount(q);
+    if (count == -1) {
+      return featureSource.getFeatures(q).size();
+    }
+    return count;
+  }
+ catch (  Throwable e) {
+    final IOException ioe=new IOException();
+    ioe.initCause(e);
+    throw ioe;
+  }
+ finally {
+    lock.unlock();
+  }
+}
