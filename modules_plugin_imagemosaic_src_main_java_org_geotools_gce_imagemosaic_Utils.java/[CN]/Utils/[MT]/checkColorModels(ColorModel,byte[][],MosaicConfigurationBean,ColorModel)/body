@@ -1,18 +1,16 @@
 {
   if (defaultCM instanceof ComponentColorModel && actualCM instanceof ComponentColorModel) {
     final ComponentColorModel defCCM=(ComponentColorModel)defaultCM, actualCCM=(ComponentColorModel)actualCM;
-    final ColorSpace defCS=defCCM.getColorSpace();
-    final ColorSpace actualCS=actualCCM.getColorSpace();
-    final boolean isBogusDef=defCS instanceof BogusColorSpace;
-    final boolean isBogusActual=actualCS instanceof BogusColorSpace;
-    final boolean colorSpaceIsOk;
-    if (isBogusDef && isBogusActual) {
-      final BogusColorSpace def=(BogusColorSpace)defCS;
-      final BogusColorSpace act=(BogusColorSpace)actualCS;
-      colorSpaceIsOk=def.getNumComponents() == act.getNumComponents() && def.isCS_sRGB() == act.isCS_sRGB() && def.getType() == act.getType();
+    final int numColorComponents=defCCM.getNumColorComponents();
+    if (numColorComponents != actualCCM.getNumColorComponents()) {
+      return false;
     }
- else     colorSpaceIsOk=defCS.equals(actualCS);
-    return !(defCCM.getNumColorComponents() == actualCCM.getNumColorComponents() && defCCM.hasAlpha() == actualCCM.hasAlpha() && colorSpaceIsOk && defCCM.getTransparency() == actualCCM.getTransparency() && defCCM.getTransferType() == actualCCM.getTransferType());
+    for (int i=0; i < numColorComponents; i++) {
+      if (defaultCM.getComponentSize(i) != defaultCM.getComponentSize(i)) {
+        return false;
+      }
+    }
+    return !(defCCM.hasAlpha() == actualCCM.hasAlpha() && defCCM.isAlphaPremultiplied() == actualCCM.isAlphaPremultiplied() && defCCM.getTransparency() == actualCCM.getTransparency() && defCCM.getTransferType() == actualCCM.getTransferType() && defCCM.getPixelSize() == actualCCM.getPixelSize());
   }
   if (defaultCM instanceof IndexColorModel && actualCM instanceof IndexColorModel) {
     final IndexColorModel defICM=(IndexColorModel)defaultCM, actualICM=(IndexColorModel)actualCM;
