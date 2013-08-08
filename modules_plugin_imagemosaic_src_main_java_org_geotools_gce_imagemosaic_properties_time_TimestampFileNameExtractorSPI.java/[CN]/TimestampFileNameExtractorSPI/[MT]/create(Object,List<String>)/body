@@ -1,0 +1,54 @@
+{
+  URL source=null;
+  String regex=null;
+  String format=null;
+  if (o instanceof URL) {
+    source=(URL)o;
+  }
+ else   if (o instanceof File) {
+    source=DataUtilities.fileToURL((File)o);
+  }
+ else   if (o instanceof String) {
+    try {
+      source=new URL((String)o);
+    }
+ catch (    MalformedURLException e) {
+      String value=(String)o;
+      if (value.startsWith(FORMAT_PREFIX)) {
+        String tmp=value.substring(FORMAT_PREFIX.length());
+        if (tmp.contains("," + REGEX_PREFIX)) {
+          int idx=tmp.indexOf("," + REGEX_PREFIX);
+          format=tmp.substring(0,idx);
+          value=tmp.substring(idx + 1);
+        }
+ else {
+          format=tmp;
+        }
+      }
+      if (value.startsWith(REGEX_PREFIX)) {
+        regex=value.substring(REGEX_PREFIX.length());
+      }
+ else {
+        return null;
+      }
+    }
+  }
+ else {
+    return null;
+  }
+  if (source != null) {
+    final Properties properties=Utils.loadPropertiesFromURL(source);
+    regex=properties.getProperty(REGEX);
+    format=properties.getProperty(FORMAT);
+  }
+  if (regex != null) {
+    regex=regex.trim();
+  }
+  if (format != null) {
+    format=format.trim();
+  }
+  if (regex != null) {
+    return new TimestampFileNameExtractor(this,propertyNames,regex,format);
+  }
+  return null;
+}
