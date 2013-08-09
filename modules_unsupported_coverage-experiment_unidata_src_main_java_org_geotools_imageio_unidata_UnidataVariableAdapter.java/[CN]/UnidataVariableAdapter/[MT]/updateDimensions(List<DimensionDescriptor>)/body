@@ -7,19 +7,25 @@
     if (origName.equalsIgnoreCase(varName)) {
       final String coverageName=key.getLocalPart();
       final Coverage coverage=reader.ancillaryFileManager.coveragesMapping.get(coverageName);
-      if (coverage.getSchema() != null) {
+      final SchemaType schema=coverage.getSchema();
+      if (schema != null) {
+        String schName=schema.getName();
         final CoverageSlicesCatalog catalog=reader.getCatalog();
         if (catalog != null) {
-          final String[] typeNames=catalog.getTypeNames();
-          for (          String typeName : typeNames) {
-            if (typeName.equalsIgnoreCase(coverageName)) {
-              final SimpleFeatureType schemaType=catalog.getSchema(coverageName);
-              if (schemaType != null) {
-                updateMapping(schemaType,dimensionDescriptors);
-              }
-              break;
+          SimpleFeatureType schemaType=null;
+          try {
+            if (schName != null) {
+              schemaType=catalog.getSchema(schName);
             }
           }
+ catch (          IOException e) {
+            schemaType=catalog.getSchema(coverageName);
+          }
+          if (schemaType != null) {
+            updateMapping(schemaType,dimensionDescriptors);
+            break;
+          }
+          throw new IllegalStateException("Unable to find the table for this coverage: " + coverageName);
         }
       }
       break;

@@ -1,4 +1,5 @@
 {
+  q=mergeHints(q);
   Utilities.ensureNonNull("q",q);
   final Lock lock=rwLock.readLock();
   try {
@@ -8,14 +9,13 @@
     ReferencedEnvelope requestedBBox=extractAndCombineBBox(filter);
     checkIndex(lock);
     final List<GranuleDescriptor> features=index.query(requestedBBox);
-    if (q.equals(Query.ALL))     return features;
-    final List<GranuleDescriptor> retVal=new ArrayList<GranuleDescriptor>();
+    final ListFeatureCollection retVal=new ListFeatureCollection(wrappedCatalogue.getType(typeName));
     final int maxGranules=q.getMaxFeatures();
     int numGranules=0;
     for (    GranuleDescriptor g : features) {
       if (maxGranules > 0 && numGranules >= maxGranules)       break;
       final SimpleFeature originator=g.getOriginator();
-      if (originator != null && filter.evaluate(originator))       retVal.add(g);
+      if (originator != null && filter.evaluate(originator))       retVal.add(originator);
     }
     return retVal;
   }

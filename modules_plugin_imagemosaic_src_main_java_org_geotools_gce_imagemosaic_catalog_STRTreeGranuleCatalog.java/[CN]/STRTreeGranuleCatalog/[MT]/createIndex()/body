@@ -1,8 +1,13 @@
 {
   Iterator<GranuleDescriptor> it=null;
-  Collection<GranuleDescriptor> features=null;
+  final Collection<GranuleDescriptor> features=new ArrayList<GranuleDescriptor>();
   try {
-    features=wrappedCatalogue.getGranules(typeName);
+    wrappedCatalogue.getGranuleDescriptors(new Query(typeName),new GranuleCatalogVisitor(){
+      @Override public void visit(      GranuleDescriptor granule,      Object o){
+        features.add(granule);
+      }
+    }
+);
     if (features == null)     throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
     if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Index Loaded");
     it=features.iterator();

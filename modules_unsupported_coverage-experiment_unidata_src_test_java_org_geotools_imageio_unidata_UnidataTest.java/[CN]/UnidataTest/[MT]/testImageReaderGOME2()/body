@@ -1,5 +1,5 @@
 {
-  final File file=TestData.file(this,"O3-NO2.nc");
+  final File file=TestData.file(this,"20130101.METOPA.GOME2.NO2.DUMMY.nc");
   final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
   assertTrue(unidataImageReaderSpi.canDecodeInput(file));
   DummyUnidataImageReader reader=null;
@@ -7,27 +7,43 @@
     reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
     reader.setInput(file);
     int numImages=reader.getNumImages(true);
+    assertEquals(1,numImages);
+    LOGGER.info("Found " + numImages + " images.");
     for (int i=0; i < numImages; i++) {
       UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
-      String variableName=sliceIndex.getVariableName();
-      StringBuilder sb=new StringBuilder();
-      sb.append("\n").append("\n").append("\n");
-      sb.append("IMAGE: ").append(i).append("\n");
-      sb.append(" Variable Name = ").append(variableName);
-      sb.append(" ( Z = ");
-      sb.append(sliceIndex.getZIndex());
-      sb.append("; T = ");
-      sb.append(sliceIndex.getTIndex());
-      sb.append(")");
-      LOGGER.info(sb.toString());
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    final List<Name> names=reader.getCoveragesNames();
+    assertNotNull(names);
+    assertTrue(!names.isEmpty());
+    assertTrue(1 == names.size());
+    assertEquals("NO2",names.get(0).toString());
+    final CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    final String[] typeNames=cs.getTypeNames();
+    for (    String typeName : typeNames) {
+      final List<CoverageSlice> granules=cs.getGranules(new Query(typeName,Filter.INCLUDE));
+      assertNotNull(granules);
+      assertFalse(granules.isEmpty());
+      for (      CoverageSlice slice : granules) {
+        final SimpleFeature sf=slice.getOriginator();
+        if (TestData.isInteractiveTest()) {
+          LOGGER.info(DataUtilities.encodeFeature(sf));
+        }
+        for (        Property p : sf.getProperties()) {
+          final String pName=p.getName().toString();
+          if (!pName.equalsIgnoreCase("time") && !pName.equalsIgnoreCase("elevation")) {
+            assertNotNull("Property " + p.getName() + " had a null value!",p.getValue());
+          }
+ else {
+            assertNull("Property " + p.getName() + " did not have a null value!",p.getValue());
+          }
+        }
+      }
     }
   }
- catch (  Throwable t) {
-    if (LOGGER.isLoggable(Level.WARNING)) {
-      LOGGER.log(Level.WARNING,t.getLocalizedMessage(),t);
-    }
-  }
- finally {
+  finally {
     if (reader != null) {
       try {
         reader.dispose();

@@ -1,0 +1,35 @@
+{
+  if (defaultCM instanceof ComponentColorModel && actualCM instanceof ComponentColorModel) {
+    final ComponentColorModel defCCM=(ComponentColorModel)defaultCM, actualCCM=(ComponentColorModel)actualCM;
+    final int numColorComponents=defCCM.getNumColorComponents();
+    if (numColorComponents != actualCCM.getNumColorComponents()) {
+      return false;
+    }
+    for (int i=0; i < numColorComponents; i++) {
+      if (defaultCM.getComponentSize(i) != defaultCM.getComponentSize(i)) {
+        return false;
+      }
+    }
+    return !(defCCM.hasAlpha() == actualCCM.hasAlpha() && defCCM.isAlphaPremultiplied() == actualCCM.isAlphaPremultiplied() && defCCM.getTransparency() == actualCCM.getTransparency() && defCCM.getTransferType() == actualCCM.getTransferType() && defCCM.getPixelSize() == actualCCM.getPixelSize());
+  }
+  if (defaultCM instanceof IndexColorModel && actualCM instanceof IndexColorModel) {
+    final IndexColorModel defICM=(IndexColorModel)defaultCM, actualICM=(IndexColorModel)actualCM;
+    if (defICM.getNumColorComponents() != actualICM.getNumColorComponents() || defICM.hasAlpha() != actualICM.hasAlpha() || !defICM.getColorSpace().equals(actualICM.getColorSpace()) || defICM.getTransferType() != actualICM.getTransferType())     return true;
+    if (defICM.getMapSize() != actualICM.getMapSize() || defICM.getTransparency() != actualICM.getTransparency() || defICM.getTransferType() != actualICM.getTransferType() || defICM.getTransparentPixel() != actualICM.getTransparentPixel()) {
+      configuration.setExpandToRGB(true);
+      return false;
+    }
+    int numBands=actualICM.getNumColorComponents();
+    byte[][] actualPalette=new byte[3][actualICM.getMapSize()];
+    actualICM.getReds(actualPalette[0]);
+    actualICM.getGreens(actualPalette[0]);
+    actualICM.getBlues(actualPalette[0]);
+    if (numBands == 4)     actualICM.getAlphas(defaultPalette[0]);
+    for (int i=0; i < defICM.getMapSize(); i++)     for (int j=0; j < numBands; j++)     if (actualPalette[j][i] != defaultPalette[j][i]) {
+      configuration.setExpandToRGB(true);
+      break;
+    }
+    return false;
+  }
+  return true;
+}

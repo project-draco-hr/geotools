@@ -1,8 +1,15 @@
 {
-  final URL testURL=TestData.url(this,"DUMMY.GOME2.NO2.PGL.nc");
+  File mosaic=new File(TestData.file(this,"."),"NetCDFGOME2");
+  if (mosaic.exists()) {
+    FileUtils.deleteDirectory(mosaic);
+  }
+  assertTrue(mosaic.mkdirs());
+  File file=TestData.file(this,"DUMMY.GOME2.NO2.PGL.nc");
+  FileUtils.copyFileToDirectory(file,mosaic);
+  file=new File(mosaic,"DUMMY.GOME2.NO2.PGL.nc");
   final Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,CRS.decode("EPSG:4326",true));
-  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(testURL,hints);
-  final NetCDFReader reader=(NetCDFReader)format.getReader(testURL,hints);
+  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(file.toURI().toURL(),hints);
+  final NetCDFReader reader=(NetCDFReader)format.getReader(file.toURI().toURL(),hints);
   assertNotNull(format);
   try {
     String[] names=reader.getGridCoverageNames();

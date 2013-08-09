@@ -1,0 +1,43 @@
+{
+  final File file=TestData.file(this,"O3-NO2.nc");
+  final DummyUnidataImageReaderSpi unidataImageReaderSpi=new DummyUnidataImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  DummyUnidataImageReader reader=null;
+  try {
+    reader=(DummyUnidataImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    int numImages=reader.getNumImages(true);
+    LOGGER.info("Found " + numImages + " images.");
+    for (int i=0; i < numImages; i++) {
+      UnidataSlice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    final CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    final String[] typeNames=cs.getTypeNames();
+    for (    String typeName : typeNames) {
+      final List<CoverageSlice> granules=cs.getGranules(new Query(typeName,Filter.INCLUDE));
+      assertNotNull(granules);
+      assertFalse(granules.isEmpty());
+      for (      CoverageSlice slice : granules) {
+        final SimpleFeature sf=slice.getOriginator();
+        if (TestData.isInteractiveTest()) {
+          LOGGER.info(DataUtilities.encodeFeature(sf));
+        }
+        for (        Property p : sf.getProperties()) {
+          assertNotNull("Property " + p.getName() + " had a null value!",p.getValue());
+        }
+      }
+    }
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
