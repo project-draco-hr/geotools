@@ -1,0 +1,39 @@
+{
+  final boolean hasVerticalAxis=coordinateSystem.hasVerticalAxis();
+  final SimpleFeatureType indexSchema=collection.getSchema();
+  final int bandDimension=rank - UnidataUtilities.Z_DIMENSION;
+  final int slicesNum=getNumberOfSlices();
+  if (startIndex > slicesNum) {
+    throw new IllegalArgumentException("The paging start index can't be higher than the number of available slices");
+  }
+  int lastIndex=startIndex + limit;
+  if (lastIndex > slicesNum) {
+    lastIndex=slicesNum;
+  }
+  final String varName=variableDS.getFullName();
+  for (int imageIndex=startIndex; imageIndex < lastIndex; imageIndex++) {
+    int zIndex=-1;
+    int tIndex=-1;
+    for (int i=0; i < rank; i++) {
+switch (rank - i) {
+case UnidataUtilities.X_DIMENSION:
+case UnidataUtilities.Y_DIMENSION:
+        break;
+default :
+{
+        if (i == bandDimension && hasVerticalAxis) {
+          zIndex=getZIndex(imageIndex);
+        }
+ else {
+          tIndex=getTIndex(imageIndex);
+        }
+        break;
+      }
+  }
+}
+final UnidataSlice2DIndex variableIndex=new UnidataSlice2DIndex(tIndex,zIndex,varName);
+reader.ancillaryFileManager.addSlice(variableIndex);
+final SimpleFeature feature=createFeature(variableDS,coverageName.toString(),tIndex,zIndex,coordinateSystem,imageIndex,indexSchema);
+collection.add(feature);
+}
+}
