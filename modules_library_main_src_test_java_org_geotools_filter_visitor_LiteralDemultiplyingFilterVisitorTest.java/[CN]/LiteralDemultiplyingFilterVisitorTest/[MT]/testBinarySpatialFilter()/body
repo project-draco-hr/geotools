@@ -1,0 +1,28 @@
+{
+  GeometryBuilder builder=new GeometryBuilder();
+  LiteralDemultiplyingFilterVisitor visitor=new LiteralDemultiplyingFilterVisitor();
+  Object object1=builder.point(1,2);
+  Object object2=builder.point(3,4);
+  Object object3=builder.point(5,6);
+  List values=new ArrayList();
+  values.add(object1);
+  values.add(object2);
+  values.add(object3);
+  PropertyName property=fac.property("property");
+  Literal literal=fac.literal(values);
+  Literal literal1=fac.literal(object1);
+  Literal literal2=fac.literal(object2);
+  Literal literal3=fac.literal(object3);
+  Filter filter=fac.beyond(property,literal,5,"x",MatchAction.ANY);
+  Filter expected=fac.or(new ArrayList<Filter>(Arrays.asList(fac.beyond(property,literal1,5,"x",MatchAction.ANY),fac.beyond(property,literal2,5,"x",MatchAction.ANY),fac.beyond(property,literal3,5,"x",MatchAction.ANY))));
+  Filter demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+  filter=fac.beyond(property,literal,5,"x",MatchAction.ALL);
+  expected=fac.and(new ArrayList<Filter>(Arrays.asList(fac.beyond(property,literal1,5,"x",MatchAction.ANY),fac.beyond(property,literal2,5,"x",MatchAction.ANY),fac.beyond(property,literal3,5,"x",MatchAction.ANY))));
+  demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+  filter=fac.beyond(property,literal,5,"x",MatchAction.ONE);
+  expected=fac.or(new ArrayList<Filter>(Arrays.asList(fac.and(new ArrayList<Filter>(Arrays.asList(fac.beyond(property,literal1,5,"x",MatchAction.ONE),fac.not(fac.beyond(property,literal2,5,"x",MatchAction.ONE)),fac.not(fac.beyond(property,literal3,5,"x",MatchAction.ONE))))),fac.and(new ArrayList<Filter>(Arrays.asList(fac.not(fac.beyond(property,literal1,5,"x",MatchAction.ONE)),fac.beyond(property,literal2,5,"x",MatchAction.ONE),fac.not(fac.beyond(property,literal3,5,"x",MatchAction.ONE))))),fac.and(new ArrayList<Filter>(Arrays.asList(fac.not(fac.beyond(property,literal1,5,"x",MatchAction.ONE)),fac.not((fac.beyond(property,literal2,5,"x",MatchAction.ONE))),fac.beyond(property,literal3,5,"x",MatchAction.ONE)))))));
+  demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+}

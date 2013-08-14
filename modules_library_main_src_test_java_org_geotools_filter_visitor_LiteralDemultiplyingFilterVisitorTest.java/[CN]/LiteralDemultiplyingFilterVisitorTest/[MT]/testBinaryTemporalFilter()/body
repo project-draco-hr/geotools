@@ -1,0 +1,27 @@
+{
+  LiteralDemultiplyingFilterVisitor visitor=new LiteralDemultiplyingFilterVisitor();
+  Object object1="2014-01-01";
+  Object object2="2014-02-02";
+  Object object3="2014-03-03";
+  List values=new ArrayList();
+  values.add(object1);
+  values.add(object2);
+  values.add(object3);
+  PropertyName property=fac.property("property");
+  Literal literal=fac.literal(values);
+  Literal literal1=fac.literal(object1);
+  Literal literal2=fac.literal(object2);
+  Literal literal3=fac.literal(object3);
+  Filter filter=fac.after(property,literal,MatchAction.ANY);
+  Filter expected=fac.or(new ArrayList<Filter>(Arrays.asList(fac.after(property,literal1,MatchAction.ANY),fac.after(property,literal2,MatchAction.ANY),fac.after(property,literal3,MatchAction.ANY))));
+  Filter demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+  filter=fac.after(property,literal,MatchAction.ALL);
+  expected=fac.and(new ArrayList<Filter>(Arrays.asList(fac.after(property,literal1,MatchAction.ALL),fac.after(property,literal2,MatchAction.ALL),fac.after(property,literal3,MatchAction.ALL))));
+  demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+  filter=fac.after(property,literal,MatchAction.ONE);
+  expected=fac.or(new ArrayList<Filter>(Arrays.asList(fac.and(new ArrayList<Filter>(Arrays.asList(fac.after(property,literal1,MatchAction.ONE),fac.not(fac.after(property,literal2,MatchAction.ONE)),fac.not(fac.after(property,literal3,MatchAction.ONE))))),fac.and(new ArrayList<Filter>(Arrays.asList(fac.not(fac.after(property,literal1,MatchAction.ONE)),fac.after(property,literal2,MatchAction.ONE),fac.not(fac.after(property,literal3,MatchAction.ONE))))),fac.and(new ArrayList<Filter>(Arrays.asList(fac.not(fac.after(property,literal1,MatchAction.ONE)),fac.not((fac.after(property,literal2,MatchAction.ONE))),fac.after(property,literal3,MatchAction.ONE)))))));
+  demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+}

@@ -1,0 +1,27 @@
+{
+  LiteralDemultiplyingFilterVisitor visitor=new LiteralDemultiplyingFilterVisitor();
+  Object object1=1;
+  Object object2=2;
+  Object object3=3;
+  List values=new ArrayList();
+  values.add(object1);
+  values.add(object2);
+  values.add(object3);
+  PropertyName property=fac.property("property");
+  Literal literal=fac.literal(values);
+  Literal literal1=fac.literal(object1);
+  Literal literal2=fac.literal(object2);
+  Literal literal3=fac.literal(object3);
+  Filter filter=fac.greater(property,literal,true,MatchAction.ANY);
+  Filter expected=fac.or(new ArrayList<Filter>(Arrays.asList(fac.greater(property,literal1,true,MatchAction.ANY),fac.greater(property,literal2,true,MatchAction.ANY),fac.greater(property,literal3,true,MatchAction.ANY))));
+  Filter demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+  filter=fac.greater(property,literal,true,MatchAction.ALL);
+  expected=fac.and(new ArrayList<Filter>(Arrays.asList(fac.greater(property,literal1,true,MatchAction.ALL),fac.greater(property,literal2,true,MatchAction.ALL),fac.greater(property,literal3,true,MatchAction.ALL))));
+  demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+  filter=fac.greater(property,literal,true,MatchAction.ONE);
+  expected=fac.or(new ArrayList<Filter>(Arrays.asList(fac.and(new ArrayList<Filter>(Arrays.asList(fac.greater(property,literal1,true,MatchAction.ONE),fac.not(fac.greater(property,literal2,true,MatchAction.ONE)),fac.not(fac.greater(property,literal3,true,MatchAction.ONE))))),fac.and(new ArrayList<Filter>(Arrays.asList(fac.not(fac.greater(property,literal1,true,MatchAction.ONE)),fac.greater(property,literal2,true,MatchAction.ONE),fac.not(fac.greater(property,literal3,true,MatchAction.ONE))))),fac.and(new ArrayList<Filter>(Arrays.asList(fac.not(fac.greater(property,literal1,true,MatchAction.ONE)),fac.not((fac.greater(property,literal2,true,MatchAction.ONE))),fac.greater(property,literal3,true,MatchAction.ONE)))))));
+  demultiplied=(Filter)filter.accept(visitor,null);
+  assertEquals(demultiplied,expected);
+}
