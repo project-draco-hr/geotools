@@ -5,12 +5,16 @@
     hints.put(DocumentHandler.DEFAULT_NAMESPACE_HINT_KEY,WMSSchema.getInstance());
     hints.put(DocumentFactory.VALIDATION_HINT,Boolean.FALSE);
     Object object;
+    InputStream inputStream=null;
     try {
-      InputStream inputStream=response.getResponseStream();
+      inputStream=response.getResponseStream();
       object=DocumentFactory.getInstance(inputStream,hints,Level.WARNING);
     }
  catch (    SAXException e) {
       throw (ServiceException)new ServiceException("Error while parsing XML.").initCause(e);
+    }
+ finally {
+      IOUtils.closeQuietly(inputStream);
     }
     if (object instanceof ServiceException) {
       throw (ServiceException)object;
