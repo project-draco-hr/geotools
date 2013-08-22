@@ -1,9 +1,25 @@
 {
-  if (parameters.size() != 2 || parameters.get(0) == null || parameters.get(1) == null) {
+  if (parameters.size() != 3 || parameters.get(0) == null || parameters.get(1) == null || parameters.get(2) == null) {
     throw new IllegalArgumentException("Invalid parameters for toLineString function: " + parameters.toString() + ". "+ USAGE);
   }
-  Object pointOne=parameters.get(0).evaluate(object,String.class);
-  Object pointTwo=parameters.get(1).evaluate(object,String.class);
+  Object srs=parameters.get(0).evaluate(object,String.class);
+  String srsName=String.valueOf(srs);
+  CoordinateReferenceSystem crs=null;
+  try {
+    crs=CRS.decode(srsName);
+  }
+ catch (  NoSuchAuthorityCodeException e) {
+    crs=new DefaultVerticalCRS(srsName,DefaultVerticalDatum.GEOIDAL,DefaultVerticalCS.DEPTH);
+  }
+catch (  FactoryException e) {
+    crs=new DefaultVerticalCRS(srsName,DefaultVerticalDatum.GEOIDAL,DefaultVerticalCS.DEPTH);
+  }
+  if (crs == null) {
+    crs=new DefaultVerticalCRS(srsName,DefaultVerticalDatum.GEOIDAL,DefaultVerticalCS.DEPTH);
+  }
+  LineString linestring=null;
+  Object pointOne=parameters.get(1).evaluate(object,String.class);
+  Object pointTwo=parameters.get(2).evaluate(object,String.class);
   String stringOne=String.valueOf(pointOne);
   String stringTwo=String.valueOf(pointTwo);
   try {
@@ -13,9 +29,11 @@
     Coordinate[] points=new Coordinate[2];
     points[0]=new Coordinate(dblOne,Coordinate.NULL_ORDINATE,Coordinate.NULL_ORDINATE);
     points[1]=new Coordinate(dblTwo,Coordinate.NULL_ORDINATE,Coordinate.NULL_ORDINATE);
-    return (T)geomFactory.createLineString(points);
+    linestring=geomFactory.createLineString(points);
+    linestring.setUserData(crs);
   }
  catch (  NumberFormatException e) {
     throw new IllegalArgumentException("Error converting the parameters for toLineString function: " + parameters.toString() + ". "+ USAGE,e);
   }
+  return (T)linestring;
 }
