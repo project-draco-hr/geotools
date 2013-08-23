@@ -1,0 +1,62 @@
+{
+  double graphicSize=evalToDouble(gr.getSize(),feature,-1);
+  Icon icon=null;
+  Mark mark=null;
+  Shape shape=null;
+  for (  GraphicalSymbol symbol : gr.graphicalSymbols()) {
+    if (symbol instanceof ExternalGraphic) {
+      ExternalGraphic eg=(ExternalGraphic)symbol;
+      icon=getIcon(eg,feature,graphicSize);
+      if (icon != null) {
+        break;
+      }
+    }
+ else     if (symbol instanceof Mark) {
+      mark=(Mark)symbol;
+      shape=getShape(mark,feature);
+      if (shape != null) {
+        break;
+      }
+    }
+  }
+  boolean random=voParser.getBooleanOption(symbolizer,"random",false);
+  BufferedImage image;
+  if (random) {
+    image=randomFillBuilder.buildRandomTilableImage(symbolizer,gr,icon,mark,shape,graphicSize,feature);
+  }
+ else {
+    int[] margin=voParser.getGraphicMargin(symbolizer,"graphic-margin");
+    GraphicStyle2D gs=getGraphicStyle(icon,1);
+    if (gs != null) {
+      image=gs.getImage();
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("got an image in graphic fill");
+      }
+    }
+ else {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("going for the mark from graphic fill");
+      }
+      image=markToTilableImage(gr,feature,mark,shape);
+    }
+    if (margin != null) {
+      int extraY=margin[0] + margin[2];
+      int extraX=margin[1] + margin[3];
+      int type=image.getType() == 0 ? BufferedImage.TYPE_4BYTE_ABGR : image.getType();
+      BufferedImage imageWithMargin=new BufferedImage(image.getWidth() + extraY,image.getHeight() + extraX,type);
+      int tx=margin[3];
+      int ty=margin[0];
+      AffineTransform at=AffineTransform.getTranslateInstance(tx,ty);
+      Graphics2D graphics=imageWithMargin.createGraphics();
+      graphics.drawRenderedImage(image,at);
+      graphics.dispose();
+      image=imageWithMargin;
+    }
+  }
+  Rectangle2D.Double rect=new Rectangle2D.Double(0.0,0.0,image.getWidth(),image.getHeight());
+  TexturePaint imagePaint=new TexturePaint(image,rect);
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("applied TexturePaint " + imagePaint);
+  }
+  return imagePaint;
+}

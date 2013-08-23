@@ -1,0 +1,23 @@
+{
+  Geometry bounds;
+  if (icon != null) {
+    bounds=new GeometryBuilder().box(0,0,icon.getIconWidth(),icon.getIconHeight());
+  }
+ else {
+    AffineTransform at=AffineTransform.getScaleInstance(markSize,-markSize);
+    Shape ts=at.createTransformedShape(shape);
+    Geometry shapeGeometry=JTS.toGeometry(ts);
+    bounds=new MinimumDiameter(shapeGeometry).getMinimumRectangle();
+  }
+  if (icon == null && mark != null) {
+    Stroke stroke=factory.getStroke(mark.getStroke(),feature);
+    if (stroke instanceof BasicStroke) {
+      float width=((BasicStroke)stroke).getLineWidth() / 2 + 1;
+      if (width > 0) {
+        Geometry buffered=bounds.buffer(width);
+        bounds=new MinimumDiameter(buffered).getMinimumRectangle();
+      }
+    }
+  }
+  return bounds;
+}
