@@ -1,57 +1,90 @@
 {
-  if (paletted && !(image.getColorModel() instanceof IndexColorModel)) {
+  final boolean hasPalette=image.getColorModel() instanceof IndexColorModel;
+  final boolean hasColorModel=hasPalette ? false : image.getColorModel() instanceof ComponentColorModel;
+  if (paletted && !hasPalette) {
     forceIndexColorModelForGIF(true);
   }
- else   if (!(image.getColorModel() instanceof ComponentColorModel) && !(image.getColorModel() instanceof IndexColorModel)) {
-    forceComponentColorModel();
+ else {
+    if (!hasColorModel && !hasPalette) {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.fine("Forcing input image to be compatible with PNG: No palette, no component color model");
+      }
+      forceComponentColorModel();
+    }
   }
-  if (image.getColorModel() instanceof IndexColorModel) {
+  if (hasPalette) {
     IndexColorModel icm=(IndexColorModel)image.getColorModel();
     if (icm.getMapSize() > 256) {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.fine("Forcing input image to be compatible with PNG: Palette with > 256 color is not supported.");
+      }
       forceComponentColorModel(true,true);
       rescaleToBytes();
     }
   }
-  if (LOGGER.isLoggable(Level.FINER)) {
-    LOGGER.finer("Encoded input image for png writer");
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Encoded input image for png writer");
   }
-  if (LOGGER.isLoggable(Level.FINER)) {
-    LOGGER.finer("Getting a writer");
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Getting a writer");
   }
   ImageWriter writer=null;
+  ImageWriterSpi originatingProvider=null;
   if (nativeAcc) {
-    if (IMAGEIO_PNG_IMAGE_WRITER_SPI != null) {
-      writer=IMAGEIO_PNG_IMAGE_WRITER_SPI.createWriterInstance();
+    if (CLIB_PNG_IMAGE_WRITER_SPI != null) {
+      if (CLIB_PNG_IMAGE_WRITER_SPI.canEncodeImage(new ImageTypeSpecifier(image))) {
+        writer=CLIB_PNG_IMAGE_WRITER_SPI.createWriterInstance();
+        originatingProvider=CLIB_PNG_IMAGE_WRITER_SPI;
+      }
+ else {
+        LOGGER.fine("The ImageIO PNG native encode cannot encode this image!");
+        writer=null;
+        originatingProvider=null;
+      }
     }
  else {
-      LOGGER.finer("Unable to find ImageIO PNG writer");
+      LOGGER.fine("Unable to use Native ImageIO PNG writer.");
     }
   }
   if (!nativeAcc || writer == null) {
-    final Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("PNG");
+    final Iterator<ImageWriter> it=ImageIO.getImageWriters(new ImageTypeSpecifier(image),"PNG");
     if (!it.hasNext()) {
       throw new IllegalStateException(Errors.format(ErrorKeys.NO_IMAGE_WRITER));
     }
-    writer=it.next();
-    if (writer.getOriginatingProvider().getClass().equals(IMAGEIO_PNG_IMAGE_WRITER_SPI)) {
-      if (it.hasNext()) {
-        writer=it.next();
-      }
+    while (it.hasNext()) {
+      writer=it.next();
+      originatingProvider=writer.getOriginatingProvider();
+      if (CLIB_PNG_IMAGE_WRITER_SPI != null && originatingProvider.getClass().equals(CLIB_PNG_IMAGE_WRITER_SPI.getClass())) {
+        if (it.hasNext()) {
+          writer=it.next();
+          originatingProvider=writer.getOriginatingProvider();
+        }
  else {
-        LOGGER.finer("Unable to use PNG writer different than ImageIO one");
+          LOGGER.fine("Unable to use PNG writer different than ImageIO CLib one");
+        }
+      }
+      if (!originatingProvider.canEncodeImage(new ImageTypeSpecifier(image))) {
+        LOGGER.fine("The following encoder cannot encode this image: " + originatingProvider.getClass().getCanonicalName());
+        forceComponentColorModel(true,true);
+        rescaleToBytes();
+        if (!originatingProvider.canEncodeImage(image)) {
+          LOGGER.severe("Unable to find a valid PNG Encoder!");
+        }
       }
     }
   }
-  if (LOGGER.isLoggable(Level.FINER)) {
-    LOGGER.finer("Setting write parameters for this writer");
+  if (writer == null) {
+    throw new IllegalStateException("Unable to find a valid PNG Encoder!");
   }
+  LOGGER.fine("Using ImageIO Writer with SPI: " + originatingProvider.getClass().getCanonicalName());
+  LOGGER.fine("Setting write parameters for this writer");
   ImageWriteParam iwp=null;
   final ImageOutputStream memOutStream=ImageIOExt.createImageOutputStream(image,destination);
   if (memOutStream == null) {
     throw new IIOException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"stream"));
   }
-  if (nativeAcc && writer.getOriginatingProvider().getClass().equals(IMAGEIO_PNG_IMAGE_WRITER_SPI)) {
-    if (LOGGER.isLoggable(Level.FINER))     LOGGER.finer("Writer is native");
+  if (CLIB_PNG_IMAGE_WRITER_SPI != null && originatingProvider.getClass().equals(CLIB_PNG_IMAGE_WRITER_SPI.getClass())) {
+    LOGGER.fine("Writer is native");
     iwp=writer.getDefaultWriteParam();
     iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
     iwp.setCompressionType(compression);
@@ -59,13 +92,11 @@
     iwp.setDestinationType(new ImageTypeSpecifier(image.getColorModel(),image.getSampleModel()));
   }
  else {
-    if (LOGGER.isLoggable(Level.FINER)) {
-      LOGGER.finer("Writer is NOT native");
-    }
+    LOGGER.fine("Writer is NOT native");
     iwp=new PNGImageWriteParam();
     iwp.setCompressionMode(ImageWriteParam.MODE_DEFAULT);
   }
-  if (LOGGER.isLoggable(Level.FINER))   LOGGER.finer("About to write png image");
+  LOGGER.fine("About to write png image");
   try {
     writer.setOutput(memOutStream);
     writer.write(null,new IIOImage(image,null,null),iwp);
