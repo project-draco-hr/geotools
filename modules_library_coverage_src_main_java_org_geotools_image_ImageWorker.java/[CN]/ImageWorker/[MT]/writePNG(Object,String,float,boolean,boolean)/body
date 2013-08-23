@@ -63,14 +63,24 @@
           LOGGER.fine("Unable to use PNG writer different than ImageIO CLib one");
         }
       }
-      if (!originatingProvider.canEncodeImage(new ImageTypeSpecifier(image))) {
-        LOGGER.fine("The following encoder cannot encode this image: " + originatingProvider.getClass().getCanonicalName());
-        forceComponentColorModel(true,true);
-        rescaleToBytes();
-        if (!originatingProvider.canEncodeImage(image)) {
-          LOGGER.severe("Unable to find a valid PNG Encoder!");
-        }
+      if (originatingProvider.canEncodeImage(new ImageTypeSpecifier(image))) {
+        break;
       }
+      writer=null;
+      originatingProvider=null;
+    }
+  }
+  if (writer == null) {
+    List providers=com.sun.media.imageioimpl.common.ImageUtil.getJDKImageReaderWriterSPI(IIORegistry.getDefaultInstance(),"PNG",false);
+    if (providers == null || providers.isEmpty()) {
+      throw new IllegalStateException("Unable to find JDK Png encoder!");
+    }
+    originatingProvider=(ImageWriterSpi)providers.get(0);
+    writer=originatingProvider.createWriterInstance();
+    forceComponentColorModel(true,true);
+    rescaleToBytes();
+    if (!originatingProvider.canEncodeImage(image)) {
+      throw new IllegalArgumentException("Unable to find a valid PNG Encoder! And believe me, we tried hard!");
     }
   }
   if (writer == null) {
