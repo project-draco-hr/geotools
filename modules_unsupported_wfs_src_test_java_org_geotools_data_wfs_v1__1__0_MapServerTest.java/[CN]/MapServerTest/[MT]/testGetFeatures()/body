@@ -1,0 +1,34 @@
+{
+  WFSDataStore wfs=getWFSDataStore(new MockHttpClient(){
+    @Override public HTTPResponse get(    URL url) throws IOException {
+      if (url.getQuery().contains("REQUEST=GetCapabilities")) {
+        return new MockHttpResponse(TestData.getResource(this,"MapServer/GetCapabilities_1_1_0.xml"),"text/xml");
+      }
+ else {
+        return new MockHttpResponse(TestData.getResource(this,"MapServer/GetFeature_GovernmentalUnitCE.xml"),"text/xml");
+      }
+    }
+    @Override public HTTPResponse post(    URL url,    InputStream postContent,    String postContentType) throws IOException {
+      return new MockHttpResponse(TestData.getResource(this,"MapServer/GetFeature_GovernmentalUnitCE.xml"),"text/xml");
+    }
+  }
+);
+  ((WFS_1_1_0_DataStore)wfs).setMappedURIs(new MapServerStrategy().getNamespaceURIMappings());
+  SimpleFeatureSource source=wfs.getFeatureSource(MAPSRV_GOVUNITCE.FEATURETYPENAME);
+  SimpleFeatureCollection features=source.getFeatures();
+  SimpleFeatureIterator reader=features.features();
+  SimpleFeature sf=null;
+  try {
+    if (reader.hasNext()) {
+      sf=reader.next();
+      assertNotNull(sf);
+      assertTrue(sf.getAttribute("typeAbbreviation") instanceof String);
+      assertTrue(sf.getAttribute("number") instanceof BigInteger);
+      assertTrue(sf.getAttribute("doubleNumber") instanceof Double);
+    }
+    assertNotNull(sf);
+  }
+  finally {
+    reader.close();
+  }
+}

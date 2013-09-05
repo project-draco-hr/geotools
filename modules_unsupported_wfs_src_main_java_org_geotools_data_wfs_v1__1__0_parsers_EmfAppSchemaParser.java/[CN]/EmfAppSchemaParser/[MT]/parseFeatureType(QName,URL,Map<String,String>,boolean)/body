@@ -1,0 +1,26 @@
+{
+  ApplicationSchemaConfiguration configuration;
+{
+    String namespaceURI=featureTypeName.getNamespaceURI();
+    if (mappedURIs.containsKey(namespaceURI)) {
+      namespaceURI=mappedURIs.get(namespaceURI);
+      featureTypeName=new QName(namespaceURI,featureTypeName.getLocalPart());
+    }
+    String uri=schemaLocation.toExternalForm();
+    configuration=new ApplicationSchemaConfiguration(namespaceURI,uri);
+  }
+  SchemaIndex schemaIndex;
+  try {
+    schemaIndex=Schemas.findSchemas(configuration);
+  }
+ catch (  RuntimeException e) {
+    throw new DataSourceException("Error parsing feature type for " + featureTypeName,e);
+  }
+  XSDElementDeclaration elementDeclaration;
+  elementDeclaration=schemaIndex.getElementDeclaration(featureTypeName);
+  schemaIndex.destroy();
+  if (elementDeclaration == null && !ignoreMissingElementDeclaration) {
+    throw new DataSourceException("No XSDElementDeclaration found for " + featureTypeName);
+  }
+  return elementDeclaration;
+}
