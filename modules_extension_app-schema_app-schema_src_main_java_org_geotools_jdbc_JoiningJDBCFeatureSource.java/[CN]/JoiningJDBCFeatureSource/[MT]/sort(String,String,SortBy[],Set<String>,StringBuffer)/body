@@ -1,0 +1,54 @@
+{
+  for (int i=0; i < sort.length; i++) {
+    if (SortBy.NATURAL_ORDER.equals(sort[i]) || SortBy.REVERSE_ORDER.equals(sort[i])) {
+      throw new IOException("Cannot do natural order in joining queries");
+    }
+ else {
+      StringBuffer mySql=new StringBuffer();
+      if (alias != null) {
+        encodeColumnName2(sort[i].getPropertyName().getPropertyName(),alias,mySql,null);
+      }
+ else {
+        encodeColumnName(sort[i].getPropertyName().getPropertyName(),typeName,mySql,null);
+      }
+      if (!mySql.toString().isEmpty() && orderByFields.add(mySql.toString())) {
+        if (orderByFields.size() > 1) {
+          sql.append(", ");
+        }
+        sql.append(mySql);
+        if (sort[i].getSortOrder() == SortOrder.DESCENDING) {
+          sql.append(" DESC");
+        }
+ else {
+          sql.append(" ASC");
+        }
+      }
+    }
+  }
+  if (sort.length == 0) {
+    PrimaryKey joinKey=null;
+    SimpleFeatureType joinFeatureType=getDataStore().getSchema(typeName);
+    try {
+      joinKey=getDataStore().getPrimaryKey(joinFeatureType);
+    }
+ catch (    IOException e) {
+      throw new RuntimeException(e);
+    }
+    for (    PrimaryKeyColumn col : joinKey.getColumns()) {
+      StringBuffer mySql=new StringBuffer();
+      if (alias != null) {
+        encodeColumnName2(col.getName(),alias,mySql,null);
+      }
+ else {
+        encodeColumnName(col.getName(),typeName,mySql,null);
+      }
+      if (!mySql.toString().isEmpty() && orderByFields.add(mySql.toString())) {
+        if (orderByFields.size() > 1) {
+          sql.append(", ");
+        }
+        sql.append(mySql);
+        sql.append(" ASC");
+      }
+    }
+  }
+}

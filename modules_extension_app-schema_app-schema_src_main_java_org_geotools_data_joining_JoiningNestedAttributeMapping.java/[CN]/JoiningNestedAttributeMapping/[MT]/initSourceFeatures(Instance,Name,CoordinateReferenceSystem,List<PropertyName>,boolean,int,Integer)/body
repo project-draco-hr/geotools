@@ -57,8 +57,15 @@
   DataAccessMappingFeatureIterator daFeatureIterator=(DataAccessMappingFeatureIterator)featureIterator;
   List<Expression> foreignIds=new ArrayList<Expression>();
   for (int i=0; i < query.getQueryJoins().size(); i++) {
-    for (int j=0; j < query.getQueryJoins().get(i).getIds().size(); j++) {
-      foreignIds.add(filterFac.property(JoiningJDBCFeatureSource.FOREIGN_ID + "_" + i+ "_"+ j));
+    if (query.getQueryJoins().get(i).getIds().isEmpty()) {
+      String joinTypeName=query.getQueryJoins().get(i).getJoiningTypeName();
+      Expression idValue=filterFac.property(JoiningJDBCFeatureSource.FOREIGN_ID + "_" + i+ "_"+ 0);
+      foreignIds.add(filterFac.function("strConcat",filterFac.literal(joinTypeName + "."),idValue));
+    }
+ else {
+      for (int j=0; j < query.getQueryJoins().get(i).getIds().size(); j++) {
+        foreignIds.add(filterFac.property(JoiningJDBCFeatureSource.FOREIGN_ID + "_" + i+ "_"+ j));
+      }
     }
   }
   daFeatureIterator.setForeignIds(foreignIds);

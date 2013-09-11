@@ -58,6 +58,7 @@
     sql.append(",");
     pkColumnNames.add(colName);
   }
+  Set<String> lastPkColumnNames=pkColumnNames;
   for (  AttributeDescriptor att : featureType.getAttributeDescriptors()) {
     String columnName=att.getLocalName();
     if (pkColumnNames.contains(columnName))     continue;
@@ -72,7 +73,8 @@
   }
   if (query.getQueryJoins() != null && query.getQueryJoins().size() > 0) {
     for (int i=0; i < query.getQueryJoins().size(); i++) {
-      for (int j=0; j < query.getQueryJoins().get(i).getIds().size(); j++) {
+      List<String> ids=query.getQueryJoins().get(i).getIds();
+      for (int j=0; j < ids.size(); j++) {
         if (aliases[i] != null) {
           getDataStore().dialect.encodeColumnName(aliases[i],query.getQueryJoins().get(i).getIds().get(j),sql);
         }
@@ -80,6 +82,32 @@
           encodeColumnName(query.getQueryJoins().get(i).getIds().get(j),query.getQueryJoins().get(i).getJoiningTypeName(),sql,query.getHints());
         }
         sql.append(" ").append(FOREIGN_ID + "_" + i+ "_"+ j).append(",");
+      }
+      if (ids.isEmpty()) {
+        PrimaryKey joinKey=null;
+        String joinTypeName=query.getQueryJoins().get(i).getJoiningTypeName();
+        SimpleFeatureType joinFeatureType=getDataStore().getSchema(joinTypeName);
+        try {
+          joinKey=getDataStore().getPrimaryKey(joinFeatureType);
+        }
+ catch (        IOException e) {
+          throw new RuntimeException(e);
+        }
+        if (!joinKey.getColumns().isEmpty()) {
+          lastPkColumnNames.clear();
+        }
+        int j=0;
+        for (        PrimaryKeyColumn col : joinKey.getColumns()) {
+          if (aliases[i] != null) {
+            getDataStore().dialect.encodeColumnName(aliases[i],col.getName(),sql);
+          }
+ else {
+            encodeColumnName(col.getName(),joinTypeName,sql,query.getHints());
+          }
+          sql.append(" ").append(FOREIGN_ID + "_" + i+ "_"+ j).append(",");
+          j++;
+          lastPkColumnNames.add(col.getName());
+        }
       }
     }
   }
@@ -97,11 +125,19 @@
       String lastTableName=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getJoiningTypeName();
       String lastTableAlias=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : aliases[query.getQueryJoins().size() - 1] == null ? lastTableName : aliases[query.getQueryJoins().size() - 1];
       toSQL=createFilterToSQL(getDataStore().getSchema(lastTableName));
-      if (lastSortBy != null && lastSortBy.length > 0) {
+      if (lastSortBy != null && (lastSortBy.length > 0 || !lastPkColumnNames.isEmpty())) {
         sql.append(" INNER JOIN ( SELECT DISTINCT ");
         for (int i=0; i < lastSortBy.length; i++) {
           getDataStore().dialect.encodeColumnName(null,lastSortBy[i].getPropertyName().getPropertyName(),sql);
           if (i < lastSortBy.length - 1)           sql.append(",");
+        }
+        if (lastSortBy.length == 0) {
+          int i=0;
+          for (          String pk : lastPkColumnNames) {
+            getDataStore().dialect.encodeColumnName(null,pk,sql);
+            if (i < lastPkColumnNames.size() - 1)             sql.append(",");
+            i++;
+          }
         }
         sql.append(" FROM ");
         getDataStore().encodeTableName(lastTableName,sql,query.getHints());
@@ -114,6 +150,16 @@
           sql.append(" = ");
           encodeColumnName2(lastSortBy[i].getPropertyName().getPropertyName(),TEMP_FILTER_ALIAS,sql,null);
           if (i < lastSortBy.length - 1)           sql.append(" AND ");
+        }
+        if (lastSortBy.length == 0) {
+          int i=0;
+          for (          String pk : lastPkColumnNames) {
+            encodeColumnName2(pk,lastTableAlias,sql,null);
+            sql.append(" = ");
+            encodeColumnName2(pk,TEMP_FILTER_ALIAS,sql,null);
+            if (i < lastPkColumnNames.size() - 1)             sql.append(" AND ");
+            i++;
+          }
         }
         sql.append(" ) ");
       }
