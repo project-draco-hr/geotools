@@ -11,7 +11,7 @@
   String fcsFileName=directoryName + File.separator + TABLE_FCS;
   try {
     VPFFile fcsFile=(VPFFile)VPFFileFactory.getInstance().getFile(fcsFileName);
-    Iterator iter=fcsFile.readAllRows().iterator();
+    Iterator<SimpleFeature> iter=fcsFile.readAllRows().iterator();
     while (iter.hasNext()) {
       SimpleFeature feature=(SimpleFeature)iter.next();
       String featureClassName=feature.getAttribute("feature_class").toString().trim();
@@ -19,18 +19,14 @@
         addFCS(feature);
       }
     }
-    iter=columns.iterator();
-    GeometryDescriptor gat=null;
+    Iterator<VPFColumn> iter2=columns.iterator();
+    VPFColumn column;
+    String geometryName=null;
     AttributeDescriptor geometryColumn=null;
-    while (iter.hasNext()) {
-      geometryColumn=(AttributeDescriptor)iter.next();
-      if (Geometry.class.isAssignableFrom(geometryColumn.getType().getBinding())) {
-        if (geometryColumn instanceof GeometryDescriptor) {
-          gat=(GeometryDescriptor)geometryColumn;
-        }
- else         if (geometryColumn instanceof VPFColumn) {
-          gat=((VPFColumn)geometryColumn).getGeometryAttributeType();
-        }
+    while (iter2.hasNext()) {
+      column=(VPFColumn)iter.next();
+      if (column.isGeometry()) {
+        geometryName=column.getName();
         break;
       }
     }
@@ -42,8 +38,10 @@
     b.setName(cName);
     b.setNamespaceURI(namespace);
     b.setSuperType(superType);
-    b.addAll(columns);
-    b.setDefaultGeometry(gat.getLocalName());
+    for (    VPFColumn col : columns) {
+      b.add(col.getDescriptor());
+    }
+    b.setDefaultGeometry(geometryName);
     featureType=b.buildFeatureType();
   }
  catch (  IOException exp) {
