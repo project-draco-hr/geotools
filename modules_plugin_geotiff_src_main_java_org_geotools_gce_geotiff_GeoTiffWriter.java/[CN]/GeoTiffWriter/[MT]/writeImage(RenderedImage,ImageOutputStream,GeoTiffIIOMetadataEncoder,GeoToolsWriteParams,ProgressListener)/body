@@ -7,7 +7,7 @@
     TIFFImageWriteParam param=(TIFFImageWriteParam)params;
     param.setForceToBigTIFF(((GeoTiffWriteParams)gtParams).isForceToBigTIFF());
   }
-  final ImageWriter writer=tiffWriterFactory.createWriterInstance();
+  final TIFFImageWriter writer=(TIFFImageWriter)GeoTiffFormat.IMAGEIO_WRITER_FACTORY.createWriterInstance();
   final IIOMetadata metadata=createGeoTiffIIOMetadata(writer,ImageTypeSpecifier.createFromRenderedImage(image),geoTIFFMetadata,params);
   try {
     writer.setOutput(outputStream);
@@ -17,9 +17,7 @@
       writer.addIIOWriteWarningListener(progressAdapter);
     }
     writer.write(writer.getDefaultStreamMetadata(params),new IIOImage(image,null,metadata),params);
-    if (outputStream != null) {
-      outputStream.flush();
-    }
+    outputStream.flush();
   }
   finally {
     try {
