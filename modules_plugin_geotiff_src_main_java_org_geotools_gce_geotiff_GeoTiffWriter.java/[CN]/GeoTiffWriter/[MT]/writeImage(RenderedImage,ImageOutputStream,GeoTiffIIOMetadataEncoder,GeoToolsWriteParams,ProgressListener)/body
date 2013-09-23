@@ -7,7 +7,7 @@
     TIFFImageWriteParam param=(TIFFImageWriteParam)params;
     param.setForceToBigTIFF(((GeoTiffWriteParams)gtParams).isForceToBigTIFF());
   }
-  final TIFFImageWriter writer=(TIFFImageWriter)GeoTiffFormat.IMAGEIO_WRITER_FACTORY.createWriterInstance();
+  final ImageWriter writer=tiffWriterFactory.createWriterInstance();
   final IIOMetadata metadata=createGeoTiffIIOMetadata(writer,ImageTypeSpecifier.createFromRenderedImage(image),geoTIFFMetadata,params);
   try {
     writer.setOutput(outputStream);
@@ -17,22 +17,26 @@
       writer.addIIOWriteWarningListener(progressAdapter);
     }
     writer.write(writer.getDefaultStreamMetadata(params),new IIOImage(image,null,metadata),params);
+    if (outputStream != null) {
+      outputStream.flush();
+    }
   }
   finally {
-    try {
-      if (outputStream != null)       outputStream.flush();
-    }
- catch (    Throwable e) {
-    }
     try {
       if (!(destination instanceof ImageOutputStream) && outputStream != null)       outputStream.close();
     }
  catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
     }
     try {
       if (writer != null)       writer.dispose();
     }
  catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+      }
     }
   }
   return true;
