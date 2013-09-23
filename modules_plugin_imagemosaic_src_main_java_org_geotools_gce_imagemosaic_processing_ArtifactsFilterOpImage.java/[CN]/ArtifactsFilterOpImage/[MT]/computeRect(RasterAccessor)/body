@@ -15,6 +15,7 @@
   int dstScanlineOffset[]=new int[dnumBands];
   int val[]=new int[dnumBands];
   int valueCount=0;
+  boolean readOriginalValues=false;
   for (int k=0; k < dnumBands; k++) {
     dstScanlineOffset[k]=dstBandOffsets[k];
   }
@@ -24,16 +25,27 @@
     }
     for (int i=0; i < dwidth; i++) {
       valueCount=0;
+      readOriginalValues=false;
       for (int k=0; k < dnumBands; k++) {
         val[k]=Integer.MIN_VALUE;
       }
-      boolean outsideRoi=!contains(roiAccessor,x + i,y + j);
-      if (!outsideRoi) {
-        boolean isBorder=isBorder(roiAccessor,x + i,y + j);
-        if (isBorder) {
-          if (!contains(thresholdRoiAccessor,x + i,y + j)) {
-            for (int u=min; u <= max; u++) {
-              for (int v=min; v <= max; v++) {
+      boolean insideRoi=contains(roiAccessor,x + i,y + j);
+      if (insideRoi) {
+        if (!contains(thresholdRoiAccessor,x + i,y + j)) {
+          for (int u=min; u <= max; u++) {
+            for (int v=min; v <= max; v++) {
+              boolean set=false;
+              if (contains(thresholdRoiAccessor,x + i + v,y + j + u)) {
+                set=true;
+              }
+              if (set) {
+                iter.getPixel(x + i + v,y + j + u,valuess[valueCount++]);
+              }
+            }
+          }
+          if (valueCount == 0) {
+            for (int u=min - 1; u <= max + 1; u+=(filterSize + 1)) {
+              for (int v=min - 1; v <= max + 1; v+=(filterSize + 1)) {
                 boolean set=false;
                 if (contains(thresholdRoiAccessor,x + i + v,y + j + u)) {
                   set=true;
@@ -43,46 +55,27 @@
                 }
               }
             }
-            if (valueCount == 0) {
-              for (int u=min - 1; u <= max + 1; u+=(filterSize + 1)) {
-                for (int v=min - 1; v <= max + 1; v+=(filterSize + 1)) {
-                  boolean set=false;
-                  if (contains(thresholdRoiAccessor,x + i + v,y + j + u)) {
-                    set=true;
-                  }
-                  if (set) {
-                    iter.getPixel(x + i + v,y + j + u,valuess[valueCount++]);
-                  }
-                }
-              }
-            }
-            if (valueCount > 0) {
-              computeValueAtOnce(valuess,valueCount,val);
-            }
+          }
+          if (valueCount > 0) {
+            computeValueAtOnce(valuess,valueCount,val);
+          }
+ else {
+            readOriginalValues=true;
           }
         }
  else {
-          if (!contains(zeroRoiAccessor,x + i,y + j)) {
-            for (int k=0; k < dnumBands; k++) {
-              val[k]=FILL_VALUE;
-            }
-          }
-        }
-        int zeros=0;
-        for (int k=0; k < dnumBands; k++) {
-          if (val[k] == Integer.MIN_VALUE) {
-            val[k]=(int)iter.getSample(x + i,y + j,k) & 0xff;
-          }
-          if (val[k] == 0) {
-            zeros++;
-          }
-        }
-        if (zeros == dnumBands) {
-          for (int k=0; k < dnumBands; k++) {
-            val[k]=FILL_VALUE;
-          }
+          readOriginalValues=true;
         }
         for (int k=0; k < dnumBands; k++) {
+          dstDataArrays[k][dstPixelOffset[k]]=(byte)val[k];
+        }
+      }
+ else {
+        readOriginalValues=true;
+      }
+      if (readOriginalValues) {
+        for (int k=0; k < dnumBands; k++) {
+          val[k]=(int)iter.getSample(x + i,y + j,k) & 0xff;
           dstDataArrays[k][dstPixelOffset[k]]=(byte)val[k];
         }
       }
