@@ -1,0 +1,22 @@
+{
+  if (g == null) {
+    throw new NullPointerException("The provided Geometry is null");
+  }
+  if (g instanceof LineString) {
+    return removeCollinearVertices((LineString)g);
+  }
+ else   if (g instanceof Polygon) {
+    return removeCollinearVertices((Polygon)g);
+  }
+ else   if (g instanceof MultiPolygon) {
+    MultiPolygon mp=(MultiPolygon)g;
+    Polygon[] parts=new Polygon[mp.getNumGeometries()];
+    for (int i=0; i < mp.getNumGeometries(); i++) {
+      Polygon part=(Polygon)mp.getGeometryN(i);
+      part=removeCollinearVertices(part);
+      parts[i]=part;
+    }
+    return g.getFactory().createMultiPolygon(parts);
+  }
+  throw new IllegalArgumentException("This method can work on LineString, Polygon and Multipolygon: " + g.getClass());
+}

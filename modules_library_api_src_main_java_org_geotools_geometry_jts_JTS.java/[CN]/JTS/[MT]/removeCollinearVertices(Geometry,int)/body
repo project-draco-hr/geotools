@@ -1,0 +1,23 @@
+{
+  ensureNonNull("geometry",geometry);
+  if ((minPoints <= 0) || (geometry.getNumPoints() < minPoints)) {
+    return geometry;
+  }
+  if (geometry instanceof LineString) {
+    return removeCollinearVertices((LineString)geometry);
+  }
+ else   if (geometry instanceof Polygon) {
+    return removeCollinearVertices((Polygon)geometry);
+  }
+ else   if (geometry instanceof MultiPolygon) {
+    MultiPolygon mp=(MultiPolygon)geometry;
+    Polygon[] parts=new Polygon[mp.getNumGeometries()];
+    for (int i=0; i < mp.getNumGeometries(); i++) {
+      Polygon part=(Polygon)mp.getGeometryN(i);
+      part=removeCollinearVertices(part);
+      parts[i]=part;
+    }
+    return geometry.getFactory().createMultiPolygon(parts);
+  }
+  throw new IllegalArgumentException("This method can work on LineString, Polygon and Multipolygon: " + geometry.getClass());
+}

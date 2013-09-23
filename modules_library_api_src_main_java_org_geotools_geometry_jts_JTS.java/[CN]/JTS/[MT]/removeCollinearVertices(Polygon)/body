@@ -1,0 +1,21 @@
+{
+  if (polygon == null) {
+    throw new NullPointerException("The provided Polygon is null");
+  }
+  final GeometryFactory gf=polygon.getFactory();
+  LineString exterior=polygon.getExteriorRing();
+  LineString shell=removeCollinearVertices(exterior);
+  if ((shell == null) || shell.isEmpty()) {
+    return null;
+  }
+  List<LineString> holes=new ArrayList<LineString>();
+  final int size=polygon.getNumInteriorRing();
+  for (int i=0; i < size; i++) {
+    LineString hole=polygon.getInteriorRingN(i);
+    hole=removeCollinearVertices(hole);
+    if ((hole != null) && !hole.isEmpty()) {
+      holes.add(hole);
+    }
+  }
+  return gf.createPolygon((LinearRing)shell,holes.toArray(new LinearRing[holes.size()]));
+}

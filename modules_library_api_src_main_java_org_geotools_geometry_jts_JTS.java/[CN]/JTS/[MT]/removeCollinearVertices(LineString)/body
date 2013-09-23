@@ -1,0 +1,32 @@
+{
+  if (ls == null) {
+    throw new NullPointerException("The provided linestring is null");
+  }
+  final int N=ls.getNumPoints();
+  final boolean isLinearRing=ls instanceof LinearRing;
+  List<Coordinate> retain=new ArrayList<Coordinate>();
+  retain.add(ls.getCoordinateN(0));
+  int i0=0, i1=1, i2=2;
+  Coordinate firstCoord=ls.getCoordinateN(i0);
+  Coordinate midCoord;
+  Coordinate lastCoord;
+  while (i2 < N) {
+    midCoord=ls.getCoordinateN(i1);
+    lastCoord=ls.getCoordinateN(i2);
+    final int orientation=CGAlgorithms.computeOrientation(firstCoord,midCoord,lastCoord);
+    if (orientation != CGAlgorithms.COLLINEAR) {
+      retain.add(midCoord);
+      i0=i1;
+      firstCoord=ls.getCoordinateN(i0);
+    }
+    i1++;
+    i2++;
+  }
+  retain.add(ls.getCoordinateN(N - 1));
+  final int size=retain.size();
+  if (size == N) {
+    retain.clear();
+    return ls;
+  }
+  return isLinearRing ? ls.getFactory().createLinearRing(retain.toArray(new Coordinate[size])) : ls.getFactory().createLineString(retain.toArray(new Coordinate[size]));
+}
