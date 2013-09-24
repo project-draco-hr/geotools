@@ -1,0 +1,50 @@
+{
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  final GridCoverage2D source=coverage.view(ViewType.NATIVE);
+  final Envelope oldEnvelope=source.getEnvelope();
+  final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{oldEnvelope.getMinimum(0),oldEnvelope.getMinimum(1)},new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0),oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1)});
+  cropEnvelope.setCoordinateReferenceSystem(oldEnvelope.getCoordinateReferenceSystem());
+  GeometryFactory geometryFactory=JTSFactoryFinder.getGeometryFactory(JTSFactoryFinder.EMPTY_HINTS);
+  double min0=cropEnvelope.getMinimum(0);
+  double min1=cropEnvelope.getMinimum(1);
+  double max0=cropEnvelope.getMaximum(0);
+  double max1=cropEnvelope.getMaximum(1);
+  double mid0_E=min0 + cropEnvelope.getSpan(0) / 16;
+  double mid1_D=max1 - cropEnvelope.getSpan(1) / 16;
+  CoordinateSequence cs1=new CoordinateArraySequence(6);
+  cs1.setOrdinate(0,0,max0);
+  cs1.setOrdinate(0,1,max1);
+  cs1.setOrdinate(1,0,max0);
+  cs1.setOrdinate(1,1,min1);
+  cs1.setOrdinate(2,0,min0);
+  cs1.setOrdinate(2,1,min1);
+  cs1.setOrdinate(3,0,min0);
+  cs1.setOrdinate(3,1,mid1_D);
+  cs1.setOrdinate(4,0,mid0_E);
+  cs1.setOrdinate(4,1,max1);
+  cs1.setOrdinate(5,0,max0);
+  cs1.setOrdinate(5,1,max1);
+  LinearRing shape1=geometryFactory.createLinearRing(cs1);
+  com.vividsolutions.jts.geom.Polygon mask=geometryFactory.createPolygon(shape1,null);
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(source);
+  param.parameter("Envelope").setValue(cropEnvelope);
+  param.parameter("ROI").setValue(mask);
+  GridCoverage2D cropped=(GridCoverage2D)processor.doOperation(param);
+  if (SHOW) {
+    Viewer.show(coverage,"Original");
+    Viewer.show(cropped,"Cropped");
+    Thread.sleep(10000);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(cropped.getRenderedImage()).getTiles());
+  }
+  RenderedImage raster=cropped.getRenderedImage();
+  assertEquals(240,raster.getTile(0,0).getSample(0,0,0));
+  assertTrue(cropEnvelope.equals(cropped.getEnvelope()));
+  param.parameter("ForceMosaic").setValue(true);
+  cropped=(GridCoverage2D)processor.doOperation(param);
+  raster=cropped.getRenderedImage();
+  assertEquals(0,raster.getTile(0,0).getSample(0,0,0));
+  assertTrue(cropEnvelope.equals(cropped.getEnvelope()));
+}

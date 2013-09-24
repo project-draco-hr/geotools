@@ -38,7 +38,7 @@
       final List<Point2D> points=new ArrayList<Point2D>(5);
       rasterSpaceROI=FeatureUtilities.convertPolygonToPointArray(modelSpaceROI,ProjectiveTransform.create(sourceWorldToGridTransform),points);
       if (rasterSpaceROI == null || rasterSpaceROI.getBounds().isEmpty())       if (finalRasterArea.isEmpty())       throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
-      final boolean doMosaic=decideJAIOperation(roiTolerance,rasterSpaceROI.getBounds2D(),points);
+      final boolean doMosaic=forceMosaic ? true : decideJAIOperation(roiTolerance,rasterSpaceROI.getBounds2D(),points);
       if (doMosaic || cropROI != null) {
         final ROI[] roiarr;
         try {
@@ -63,7 +63,7 @@
         final Rectangle bounds=rasterSpaceROI.getBounds2D().getBounds();
         Rectangle.intersect(bounds,sourceGridRange,bounds);
         if (bounds.isEmpty())         throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
-        if (bounds.getBounds().equals(sourceGridRange) && isSimpleTransform)         return sourceCoverage;
+        if (!doMosaic && bounds.getBounds().equals(sourceGridRange) && isSimpleTransform)         return sourceCoverage;
         final Rectangle boundsInt=bounds.getBounds();
         layout.setMinX(boundsInt.x);
         layout.setWidth(boundsInt.width);
