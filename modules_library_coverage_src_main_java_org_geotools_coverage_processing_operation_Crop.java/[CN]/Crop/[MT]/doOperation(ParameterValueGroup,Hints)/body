@@ -3,6 +3,7 @@
   GeneralEnvelope cropEnvelope=null;
   final GridCoverage2D source;
   final double roiTolerance=parameters.parameter(Crop.PARAMNAME_ROITOLERANCE).doubleValue();
+  final boolean forceMosaic=parameters.parameter(Crop.PARAMNAME_FORCEMOSAIC).booleanValue();
   final ParameterValue sourceParameter=parameters.parameter("Source");
   if (sourceParameter == null || !(sourceParameter.getValue() instanceof GridCoverage2D)) {
     throw new CannotCropException(Errors.format(ErrorKeys.NULL_PARAMETER_$2,"Source",GridCoverage2D.class.toString()));
@@ -50,14 +51,14 @@
   intersectionEnvelope.intersect(sourceEnvelope);
   if (intersectionEnvelope.isEmpty())   throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
   if (cropRoi != null) {
-    final Geometry jis=JTS.shapeToGeometry(intersectionEnvelope.toRectangle2D(),cropRoi.getFactory());
+    final Geometry jis=JTS.toGeometry((com.vividsolutions.jts.geom.Envelope)new ReferencedEnvelope(intersectionEnvelope));
     if (!IntersectUtils.intersects(cropRoi,jis))     throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
   }
   final AffineTransform sourceCornerGridToWorld=(AffineTransform)((GridGeometry2D)source.getGridGeometry()).getGridToCRS(PixelInCell.CELL_CORNER);
   final double tolerance=XAffineTransform.getScale(sourceCornerGridToWorld);
   if (cropRoi != null || !intersectionEnvelope.equals(sourceEnvelope,tolerance / 2.0,false)) {
     cropEnvelope=intersectionEnvelope.clone();
-    return buildResult(cropEnvelope,cropRoi,roiTolerance,(hints instanceof Hints) ? (Hints)hints : new Hints(hints),source,sourceCornerGridToWorld);
+    return buildResult(cropEnvelope,cropRoi,roiTolerance,forceMosaic,(hints instanceof Hints) ? (Hints)hints : new Hints(hints),source,sourceCornerGridToWorld);
   }
  else {
     return source;
