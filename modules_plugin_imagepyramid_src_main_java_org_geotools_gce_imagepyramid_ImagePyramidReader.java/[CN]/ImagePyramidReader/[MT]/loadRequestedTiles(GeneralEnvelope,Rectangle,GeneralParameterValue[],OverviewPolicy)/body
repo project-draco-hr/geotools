@@ -5,27 +5,7 @@
   if (readers == null) {
     throw new IllegalStateException("This ImagePyramidReader has already been disposed");
   }
-  ImageMosaicReader reader=readers.get(imageChoice);
-  if (reader == null) {
-    final String levelDirName=levelsDirs[imageChoice.intValue()];
-    final URL parentUrl=DataUtilities.getParentUrl(sourceURL);
-    final String extension=new StringBuilder(levelDirName).append("/").append(coverageName).append(".shp").toString();
-    final URL shpFileUrl=DataUtilities.extendURL(parentUrl,extension);
-    if (shpFileUrl.getProtocol() != null && shpFileUrl.getProtocol().equalsIgnoreCase("file") && !DataUtilities.urlToFile(shpFileUrl).exists())     reader=new ImageMosaicReader(DataUtilities.extendURL(parentUrl,levelDirName),hints);
- else     reader=new ImageMosaicReader(shpFileUrl,hints);
-    final ImageMosaicReader putByOtherThreadJustNow=readers.putIfAbsent(imageChoice,reader);
-    if (putByOtherThreadJustNow != null) {
-      try {
-        reader.dispose();
-      }
- catch (      Exception e) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-          LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
-        }
-      }
-      reader=putByOtherThreadJustNow;
-    }
-  }
+  ImageMosaicReader reader=getImageMosaicReaderForLevel(imageChoice);
   GridCoverage2D mosaicCoverage=reader.read(params);
   if (mosaicCoverage != null) {
     return new GridCoverage2D(coverageName,mosaicCoverage);
