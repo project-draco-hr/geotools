@@ -12,11 +12,8 @@
     if (heterogen != null) {
       this.heterogeneous=((Boolean)heterogen).booleanValue();
     }
-    if (spi instanceof H2DataStoreFactory || spi instanceof H2JNDIDataStoreFactory) {
-      if (params.containsKey(H2DataStoreFactory.DATABASE.key)) {
-        String dbname=(String)params.get(H2DataStoreFactory.DATABASE.key);
-        params.put(H2DataStoreFactory.DATABASE.key,"file:" + (new File(DataUtilities.urlToFile(new URL(parentLocation)),dbname)).getPath());
-      }
+    if (Utils.isH2Store(spi)) {
+      Utils.fixH2DatabaseLocation(params,parentLocation);
     }
     if (!create)     tileIndexStore=spi.createDataStore(params);
  else {
@@ -27,7 +24,7 @@
         tileIndexStore=spi.createDataStore(params);
       }
     }
-    if (spi instanceof OracleNGOCIDataStoreFactory || spi instanceof OracleNGJNDIDataStoreFactory || spi instanceof OracleNGDataStoreFactory) {
+    if (Utils.isOracleStore(spi)) {
       tileIndexStore=new OracleDatastoreWrapper(tileIndexStore,FilenameUtils.getFullPath(parentLocation));
     }
     if (create) {
