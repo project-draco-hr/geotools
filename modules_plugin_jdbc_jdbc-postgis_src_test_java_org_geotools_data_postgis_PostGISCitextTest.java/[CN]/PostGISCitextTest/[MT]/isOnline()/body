@@ -1,0 +1,35 @@
+{
+  if (!super.isOnline()) {
+    return false;
+  }
+  JDBCTestSetup setup=createTestSetup();
+  setup.setFixture(fixture);
+  Connection cx=null;
+  Statement st=null;
+  try {
+    DataSource dataSource=setup.getDataSource();
+    cx=dataSource.getConnection();
+    st=cx.createStatement();
+    st.execute("create extension if not exists citext");
+    st.close();
+    cx.close();
+    return true;
+  }
+ catch (  Throwable t) {
+    throw new RuntimeException(t);
+  }
+ finally {
+    if (st != null) {
+      st.close();
+    }
+    if (cx != null) {
+      cx.close();
+    }
+    try {
+      setup.tearDown();
+    }
+ catch (    Exception e) {
+      System.out.println("Error occurred tearing down the test setup");
+    }
+  }
+}
