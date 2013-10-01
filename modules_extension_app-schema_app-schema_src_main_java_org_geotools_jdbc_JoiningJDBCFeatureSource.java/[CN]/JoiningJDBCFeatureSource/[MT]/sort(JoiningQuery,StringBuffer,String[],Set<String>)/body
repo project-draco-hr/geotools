@@ -1,25 +1,28 @@
 {
-  boolean orderby=false;
   Set<String> orderByFields=new LinkedHashSet<String>();
+  StringBuffer joinOrders=new StringBuffer();
   for (int j=query.getQueryJoins() == null ? -1 : query.getQueryJoins().size() - 1; j >= -1; j--) {
     JoiningQuery.QueryJoin join=j < 0 ? null : query.getQueryJoins().get(j);
     SortBy[] sort=j < 0 ? query.getSortBy() : join.getSortBy();
-    if ((sort != null)) {
-      if (!orderby) {
-        orderby=true;
-        sql.append(" ORDER BY ");
-      }
+    if (sort != null) {
       if (j < 0) {
-        sort(query.getTypeName(),null,sort,orderByFields,sql);
+        sort(query.getTypeName(),null,sort,orderByFields,joinOrders);
         if (query.getQueryJoins() != null && query.getQueryJoins().size() > 0) {
-          addMultiValuedSort(query.getTypeName(),orderByFields,query.getQueryJoins().get(0),sql);
+          addMultiValuedSort(query.getTypeName(),orderByFields,query.getQueryJoins().get(0),joinOrders);
+        }
+        if (joinOrders.length() > 0) {
+          sql.append(" ORDER BY ");
+          sql.append(joinOrders);
         }
         if (!pkColumnNames.isEmpty()) {
           for (          String pk : pkColumnNames) {
             StringBuffer pkSql=new StringBuffer();
             encodeColumnName(pk,query.getTypeName(),pkSql,null);
             if (!pkSql.toString().isEmpty() && orderByFields.add(pkSql.toString())) {
-              if (orderByFields.size() > 1) {
+              if (joinOrders.length() == 0) {
+                sql.append(" ORDER BY ");
+              }
+ else {
                 sql.append(", ");
               }
               sql.append(pkSql);
@@ -29,13 +32,13 @@
       }
  else {
         if (aliases != null && aliases[j] != null) {
-          sort(join.getJoiningTypeName(),aliases[j],sort,orderByFields,sql);
+          sort(join.getJoiningTypeName(),aliases[j],sort,orderByFields,joinOrders);
         }
  else {
-          sort(join.getJoiningTypeName(),null,sort,orderByFields,sql);
+          sort(join.getJoiningTypeName(),null,sort,orderByFields,joinOrders);
         }
         if (query.getQueryJoins().size() > j + 1) {
-          addMultiValuedSort(join.getJoiningTypeName(),orderByFields,query.getQueryJoins().get(j + 1),sql);
+          addMultiValuedSort(join.getJoiningTypeName(),orderByFields,query.getQueryJoins().get(j + 1),joinOrders);
         }
       }
     }
