@@ -1,0 +1,31 @@
+{
+  File lht=new File(vmap,"lht");
+  VPFDataStoreFactory factory=new VPFDataStoreFactory();
+  URL url=DataUtilities.fileToURL(vmap);
+  Map<String,Object> params=new KVP("url",url);
+  DataStore store=factory.createDataStore(params);
+  List<Name> names=store.getNames();
+  Name name=names.get(0);
+  SimpleFeatureSource source=store.getFeatureSource(name);
+  ReferencedEnvelope extent=source.getBounds();
+  System.out.println("extent:" + extent);
+  SimpleFeatureCollection features=source.getFeatures();
+  SimpleFeatureIterator iterator=null;
+  int count=0;
+  ReferencedEnvelope bounds=new ReferencedEnvelope(DefaultGeographicCRS.WGS84);
+  try {
+    iterator=features.features();
+    while (iterator.hasNext()) {
+      SimpleFeature feature=iterator.next();
+      count++;
+      bounds.include(feature.getBounds());
+    }
+  }
+  finally {
+    if (iterator != null) {
+      iterator.close();
+    }
+  }
+  System.out.println("count:" + count);
+  System.out.println("bounds:" + bounds);
+}
