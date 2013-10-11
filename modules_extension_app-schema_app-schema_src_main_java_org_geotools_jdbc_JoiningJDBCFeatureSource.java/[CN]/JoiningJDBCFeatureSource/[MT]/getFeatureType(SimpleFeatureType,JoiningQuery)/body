@@ -2,16 +2,45 @@
   SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
   builder.init(origType);
   AttributeTypeBuilder ab=new AttributeTypeBuilder();
-  for (int i=0; i < query.getQueryJoins().size(); i++) {
-    if (query.getQueryJoins().get(i).getIds().isEmpty()) {
-      ab.setBinding(String.class);
-      builder.add(ab.buildDescriptor(new NameImpl(FOREIGN_ID) + "_" + i+ "_"+ 0,ab.buildType()));
-    }
- else {
-      for (int j=0; j < query.getQueryJoins().get(i).getIds().size(); j++) {
-        ab.setBinding(String.class);
-        builder.add(ab.buildDescriptor(new NameImpl(FOREIGN_ID) + "_" + i+ "_"+ j,ab.buildType()));
+  if (query.getQueryJoins() != null) {
+    for (int i=0; i < query.getQueryJoins().size(); i++) {
+      if (query.getQueryJoins().get(i).getIds().isEmpty()) {
+        PrimaryKey joinKey=null;
+        String joinTypeName=query.getQueryJoins().get(i).getJoiningTypeName();
+        SimpleFeatureType joinFeatureType=getDataStore().getSchema(joinTypeName);
+        try {
+          joinKey=getDataStore().getPrimaryKey(joinFeatureType);
+        }
+ catch (        IOException e) {
+          throw new RuntimeException(e);
+        }
+        int j=0;
+        for (        PrimaryKeyColumn col : joinKey.getColumns()) {
+          query.getQueryJoins().get(i).addId(col.getName());
+          ab.setBinding(String.class);
+          builder.add(ab.buildDescriptor(new NameImpl(FOREIGN_ID) + "_" + i+ "_"+ j,ab.buildType()));
+          j++;
+        }
       }
+ else {
+        for (int j=0; j < query.getQueryJoins().get(i).getIds().size(); j++) {
+          ab.setBinding(String.class);
+          builder.add(ab.buildDescriptor(new NameImpl(FOREIGN_ID) + "_" + i+ "_"+ 0,ab.buildType()));
+        }
+      }
+    }
+  }
+  if (!query.hasIdColumn()) {
+    PrimaryKey key=null;
+    try {
+      key=getDataStore().getPrimaryKey(origType);
+    }
+ catch (    IOException e) {
+      throw new RuntimeException(e);
+    }
+    for (int j=0; j < key.getColumns().size(); j++) {
+      ab.setBinding(String.class);
+      builder.add(ab.buildDescriptor(PRIMARY_KEY + "_" + j,ab.buildType()));
     }
   }
   return builder.buildFeatureType();

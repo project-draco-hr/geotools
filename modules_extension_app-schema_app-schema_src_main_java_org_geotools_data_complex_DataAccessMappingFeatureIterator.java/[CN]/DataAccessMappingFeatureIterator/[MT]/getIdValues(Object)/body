@@ -1,11 +1,18 @@
 {
   List<Object> ids=new ArrayList<Object>();
-  if (Expression.NIL.equals(mapping.getFeatureIdExpression())) {
-    ids.add(peekValue(source,namespaceAwareFilterFactory.property("@id")));
+  Expression idExpression=mapping.getFeatureIdExpression();
+  if (Expression.NIL.equals(idExpression) || idExpression instanceof Literal) {
+    if (source instanceof Feature) {
+      for (      Property p : ((Feature)source).getProperties()) {
+        if (p.getName().getLocalPart().startsWith(JoiningJDBCFeatureSource.PRIMARY_KEY)) {
+          ids.add(p.getValue());
+        }
+      }
+    }
   }
  else {
     FilterAttributeExtractor extractor=new FilterAttributeExtractor();
-    mapping.getFeatureIdExpression().accept(extractor,null);
+    idExpression.accept(extractor,null);
     for (    String att : extractor.getAttributeNameSet()) {
       ids.add(peekValue(source,namespaceAwareFilterFactory.property(att)));
     }

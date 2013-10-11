@@ -104,11 +104,20 @@
  else {
             encodeColumnName(col.getName(),joinTypeName,sql,query.getHints());
           }
+          query.getQueryJoins().get(i).addId(col.getName());
           sql.append(" ").append(FOREIGN_ID + "_" + i+ "_"+ j).append(",");
           j++;
           lastPkColumnNames.add(col.getName());
         }
       }
+    }
+  }
+  if (!query.hasIdColumn() && !pkColumnNames.isEmpty()) {
+    int pkIndex=0;
+    for (    String pk : pkColumnNames) {
+      encodeColumnName(pk,featureType.getTypeName(),sql,query.getHints());
+      sql.append(" ").append(PRIMARY_KEY).append("_").append(pkIndex).append(",");
+      pkIndex++;
     }
   }
   sql.setLength(sql.length() - 1);
