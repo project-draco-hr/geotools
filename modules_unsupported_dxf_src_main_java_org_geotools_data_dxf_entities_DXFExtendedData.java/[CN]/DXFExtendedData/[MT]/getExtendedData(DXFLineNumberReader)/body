@@ -1,0 +1,107 @@
+{
+  DXFExtendedData data=null;
+  String appName=null, layerName=null;
+  List<Object> attributes=new LinkedList<Object>();
+  Double[] wsDisplacement=new Double[3], wsPostion=new Double[3], reals=new Double[3], wDirection=new Double[3];
+  Double distance=null, scaleFactor=null;
+  DXFCodeValuePair cvp=null;
+  DXFGroupCode gc=null;
+  int sln=lnr.getLineNumber();
+  log.debug(">>Enter at line: " + sln);
+  boolean attribute=false;
+  boolean loop=true;
+  while (loop) {
+    cvp=new DXFCodeValuePair();
+    try {
+      lnr.mark();
+      gc=cvp.read(lnr);
+    }
+ catch (    DXFParseException ex) {
+      throw new IOException("DXF Extended Data parse error" + ex.getLocalizedMessage());
+    }
+catch (    EOFException e) {
+      loop=false;
+      break;
+    }
+switch (gc) {
+case XDATA_APPLICATION_NAME:
+      appName=cvp.getStringValue();
+    break;
+case XDATA_LAYER_NAME:
+  appName=cvp.getStringValue();
+break;
+case XDATA_CONTROL_STRING:
+attribute=!attribute;
+break;
+case XDATA_ASCII_STRING:
+if (attribute) attributes.add(cvp.getStringValue());
+break;
+case XDATA_CHUNK_OF_BYTES:
+if (attribute) attributes.add(cvp.getBinHexValue());
+break;
+case XDATA_DOUBLE:
+if (attribute) attributes.add(cvp.getDoubleValue());
+break;
+case XDATA_INT16:
+if (attribute) attributes.add(cvp.getShortValue());
+break;
+case XDATA_INT32:
+if (attribute) attributes.add(cvp.getIntValue());
+break;
+case XDATA_DISTANCE:
+distance=cvp.getDoubleValue();
+break;
+case XDATA_SCALE_FACTOR:
+scaleFactor=cvp.getDoubleValue();
+break;
+case XDATA_X_1:
+reals[0]=cvp.getDoubleValue();
+break;
+case XDATA_Y_1:
+reals[1]=cvp.getDoubleValue();
+break;
+case XDATA_Z_1:
+reals[2]=cvp.getDoubleValue();
+break;
+case XDATA_X_2:
+wsPostion[0]=cvp.getDoubleValue();
+break;
+case XDATA_Y_2:
+wsPostion[1]=cvp.getDoubleValue();
+break;
+case XDATA_Z_2:
+wsPostion[2]=cvp.getDoubleValue();
+break;
+case XDATA_X_3:
+wsDisplacement[0]=cvp.getDoubleValue();
+break;
+case XDATA_Y_3:
+wsDisplacement[1]=cvp.getDoubleValue();
+break;
+case XDATA_Z_3:
+wsDisplacement[2]=cvp.getDoubleValue();
+break;
+case XDATA_X_4:
+wDirection[0]=cvp.getDoubleValue();
+break;
+case XDATA_Y_4:
+wDirection[1]=cvp.getDoubleValue();
+break;
+case XDATA_Z_4:
+wDirection[2]=cvp.getDoubleValue();
+break;
+default :
+lnr.reset();
+int lineNumber=lnr.getLineNumber();
+data=new DXFExtendedData(appName,layerName,attributes,distance,scaleFactor);
+log.debug("Extended data -> " + data.toString());
+log.debug(">>Exit at line: " + lineNumber);
+return data;
+}
+}
+lnr.reset();
+data=new DXFExtendedData(appName,layerName,attributes,distance,scaleFactor);
+log.debug("Extended data -> " + data.toString());
+log.debug(">>Exit at line: " + lnr.getLineNumber());
+return data;
+}
