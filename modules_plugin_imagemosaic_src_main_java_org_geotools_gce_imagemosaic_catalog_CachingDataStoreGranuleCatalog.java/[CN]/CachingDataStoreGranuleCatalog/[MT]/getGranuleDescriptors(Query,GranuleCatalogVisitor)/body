@@ -1,22 +1,43 @@
 {
   final SimpleFeatureCollection features=adaptee.getGranules(q);
-  if (features == null)   throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
-  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("Index Loaded");
+  if (features == null) {
+    throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Index Loaded");
+  }
+  final Utils.BBOXFilterExtractor bboxExtractor=new Utils.BBOXFilterExtractor();
+  q.getFilter().accept(bboxExtractor,null);
+  ReferencedEnvelope requestedBBox=bboxExtractor.getBBox();
+  final Geometry intersectionGeometry=requestedBBox != null ? JTS.toGeometry(requestedBBox) : null;
   final DefaultProgressListener listener=new DefaultProgressListener();
   features.accepts(new AbstractFeatureVisitor(){
     public void visit(    Feature feature){
       if (feature instanceof SimpleFeature) {
         final SimpleFeature sf=(SimpleFeature)feature;
-        final GranuleDescriptor granule;
+        GranuleDescriptor granule=null;
         String featureId=sf.getID();
         if (descriptorsCache.containsKey(featureId)) {
           granule=descriptorsCache.get(featureId);
         }
  else {
-          granule=new GranuleDescriptor(sf,adaptee.suggestedRasterSPI,adaptee.pathType,adaptee.locationAttribute,adaptee.parentLocation,adaptee.heterogeneous,adaptee.hints);
-          descriptorsCache.put(featureId,granule);
+          MultiLevelROI footprint=getGranuleFootprint(sf);
+          if (footprint == null || !footprint.isEmpty()) {
+            granule=new GranuleDescriptor(sf,adaptee.suggestedRasterSPI,adaptee.pathType,adaptee.locationAttribute,adaptee.parentLocation,footprint,adaptee.heterogeneous,adaptee.hints);
+            descriptorsCache.put(featureId,granule);
+          }
         }
-        visitor.visit(granule,null);
+        if (granule != null) {
+          final Geometry footprint=granule.getFootprint();
+          if (intersectionGeometry == null || footprint == null || footprint.intersects(intersectionGeometry)) {
+            visitor.visit(granule,null);
+          }
+ else {
+            if (LOGGER.isLoggable(Level.FINE)) {
+              LOGGER.fine("Skipping granule " + granule + "\n since its ROI does not intersect the requested area");
+            }
+          }
+        }
         if (listener.isCanceled() || listener.hasExceptions()) {
           if (listener.hasExceptions()) {
             throw new RuntimeException(listener.getExceptions().peek());

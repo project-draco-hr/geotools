@@ -18,8 +18,11 @@
       public void visit(      Feature feature){
         if (feature instanceof SimpleFeature) {
           final SimpleFeature sf=(SimpleFeature)feature;
-          final GranuleDescriptor granule=new GranuleDescriptor(sf,suggestedRasterSPI,pathType,locationAttribute,parentLocation,heterogeneous,q.getHints());
-          visitor.visit(granule,null);
+          MultiLevelROI footprint=getGranuleFootprint(sf);
+          if (footprint == null || !footprint.isEmpty()) {
+            final GranuleDescriptor granule=new GranuleDescriptor(sf,suggestedRasterSPI,pathType,locationAttribute,parentLocation,footprint,heterogeneous,q.getHints());
+            visitor.visit(granule,null);
+          }
           if (listener.isCanceled() || listener.hasExceptions()) {
             if (listener.hasExceptions()) {
               throw new RuntimeException(listener.getExceptions().peek());

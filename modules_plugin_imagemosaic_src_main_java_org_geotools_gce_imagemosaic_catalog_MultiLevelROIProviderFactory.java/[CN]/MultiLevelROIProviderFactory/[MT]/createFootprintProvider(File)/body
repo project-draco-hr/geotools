@@ -1,0 +1,33 @@
+{
+  File configFile=new File(mosaicFolder,"footprints.properties");
+  final Properties properties;
+  if (configFile.exists()) {
+    properties=Utils.loadPropertiesFromURL(DataUtilities.fileToURL(configFile));
+  }
+ else {
+    properties=new Properties();
+  }
+  String source=(String)properties.get(SOURCE_PROPERTY);
+  FootprintGeometryProvider provider;
+  if (source == null) {
+    File defaultShapefileFootprint=new File(mosaicFolder,"footprints.shp");
+    if (defaultShapefileFootprint.exists()) {
+      provider=buildShapefileSource(mosaicFolder,defaultShapefileFootprint.getName(),properties);
+    }
+ else {
+      provider=new SidecarFootprintProvider(mosaicFolder);
+    }
+  }
+ else   if (TYPE_SIDECAR.equals(source)) {
+    provider=new SidecarFootprintProvider(mosaicFolder);
+  }
+ else   if (source.toLowerCase().endsWith(".shp")) {
+    provider=buildShapefileSource(mosaicFolder,source,properties);
+  }
+ else {
+    throw new IllegalArgumentException("Invalid source type, it should be a reference " + "to a shapefile or 'sidecar', but was '" + source + "' instead");
+  }
+  double inset=getInset(properties);
+  FootprintInsetPolicy insetPolicy=getInsetPolicy(properties);
+  return new MultiLevelROIProvider(provider,inset,insetPolicy);
+}

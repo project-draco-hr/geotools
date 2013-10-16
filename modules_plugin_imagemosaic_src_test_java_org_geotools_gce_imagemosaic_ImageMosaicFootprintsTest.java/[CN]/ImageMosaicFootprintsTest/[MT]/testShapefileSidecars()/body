@@ -1,0 +1,33 @@
+{
+  ShapefileDataStore ds=new ShapefileDataStore(DataUtilities.fileToURL(new File(footprintsSource,"footprints.shp")));
+  ds.getFeatureSource().getFeatures().accepts(new FeatureVisitor(){
+    @Override public void visit(    Feature feature){
+      try {
+        SimpleFeature sf=(SimpleFeature)feature;
+        String fileName=(String)sf.getAttribute("location");
+        int idx=fileName.lastIndexOf(".");
+        Geometry g=(Geometry)sf.getDefaultGeometry();
+        String filename=fileName.substring(0,idx);
+        File shpFile=new File(testMosaic,filename + ".shp");
+        ShapefileDataStore sds=new ShapefileDataStore(DataUtilities.fileToURL(shpFile));
+        SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+        tb.setName(filename);
+        GeometryDescriptor gd=sf.getFeatureType().getGeometryDescriptor();
+        tb.add("the_geom",gd.getType().getBinding(),gd.getCoordinateReferenceSystem());
+        SimpleFeatureType sft=tb.buildFeatureType();
+        sds.createSchema(sft);
+        SimpleFeatureBuilder fb=new SimpleFeatureBuilder(sft);
+        fb.add(g);
+        SimpleFeature footprintFeature=fb.buildFeature(null);
+        SimpleFeatureStore fs=(SimpleFeatureStore)sds.getFeatureSource();
+        fs.addFeatures(DataUtilities.collection(footprintFeature));
+        sds.dispose();
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+,null);
+  assertItalyFootprints();
+}

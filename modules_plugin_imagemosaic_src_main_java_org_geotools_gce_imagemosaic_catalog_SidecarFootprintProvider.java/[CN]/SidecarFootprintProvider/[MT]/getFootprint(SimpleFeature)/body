@@ -1,0 +1,34 @@
+{
+  Object value=feature.getAttribute("location");
+  if (value != null && value instanceof String) {
+    String strValue=(String)value;
+    String path=getFullPath(strValue);
+    String noExtension=getNoExtensionPath(path);
+    FootprintLoader loader=lastLoader;
+    Geometry result=null;
+    try {
+      if (loader != null) {
+        result=loader.loadFootprint(noExtension);
+      }
+      if (result == null) {
+        for (        FootprintLoader test : LOADERS) {
+          result=test.loadFootprint(noExtension);
+          if (result != null) {
+            lastLoader=test;
+            break;
+          }
+        }
+      }
+    }
+ catch (    Exception e) {
+      throw new IOException("Failed to load the footprint for granule " + strValue,e);
+    }
+    return result;
+  }
+ else {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Could not use the location attribute value to search for " + "a sidecar file, the value was: " + value);
+    }
+    return null;
+  }
+}

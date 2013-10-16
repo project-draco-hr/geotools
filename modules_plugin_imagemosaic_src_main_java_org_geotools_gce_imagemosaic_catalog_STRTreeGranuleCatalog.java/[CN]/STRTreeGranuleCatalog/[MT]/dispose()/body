@@ -2,15 +2,21 @@
   final Lock l=rwLock.writeLock();
   try {
     l.lock();
-    if (wrappedCatalogue != null)     try {
-      wrappedCatalogue.dispose();
+    if (wrappedCatalogue != null) {
+      try {
+        wrappedCatalogue.dispose();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
     }
- catch (    Exception e) {
-      if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    if (multiScaleROIProvider != null) {
+      multiScaleROIProvider.dispose();
     }
   }
   finally {
     index=null;
+    multiScaleROIProvider=null;
     l.unlock();
   }
 }

@@ -1,0 +1,25 @@
+{
+  Filter localFilter=(Filter)filter.accept(new GranuleFilterVisitor(feature),null);
+  SimpleFeatureCollection fc=featureSource.getFeatures(localFilter);
+  SimpleFeatureIterator fi=null;
+  try {
+    fi=fc.features();
+    Geometry result=null;
+    if (fi.hasNext()) {
+      SimpleFeature sf=fi.next();
+      result=(Geometry)sf.getDefaultGeometry();
+      if (fi.hasNext()) {
+        throw new IOException("The filter " + localFilter + " matched more than one footprint record, in particular, it matched "+ fc.size()+ ", the first match is: "+ sf);
+      }
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Returning footprint " + result + " for granule "+ feature);
+    }
+    return result;
+  }
+  finally {
+    if (fi != null) {
+      fi.close();
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  if (empty) {
+    return null;
+  }
+  if (at == null) {
+    at=new AffineTransform();
+  }
+  ROIGeometry roiGeometry=roiCache.get(at);
+  if (roiGeometry == null) {
+    Geometry rescaled;
+    if (inset > 0) {
+      double scale=Math.min(at.getScaleX(),at.getScaleY());
+      double rescaledInset=scale * inset;
+      if (rescaledInset < 1) {
+        Geometry cloned=(Geometry)originalFootprint.clone();
+        cloned.apply(new AffineTransformation(at.getScaleX(),at.getShearX(),at.getTranslateX(),at.getShearY(),at.getScaleY(),at.getTranslateY()));
+        rescaled=insetPolicy.applyInset(cloned,granuleBounds,1.5);
+      }
+ else {
+        rescaled=(Geometry)insetFootprint.clone();
+        rescaled.apply(new AffineTransformation(at.getScaleX(),at.getShearX(),at.getTranslateX(),at.getShearY(),at.getScaleY(),at.getTranslateY()));
+      }
+    }
+ else {
+      rescaled=(Geometry)originalFootprint.clone();
+      rescaled.apply(new AffineTransformation(at.getScaleX(),at.getShearX(),at.getTranslateX(),at.getShearY(),at.getScaleY(),at.getTranslateY()));
+    }
+    roiGeometry=new ROIGeometry(rescaled);
+    roiCache.put(at,roiGeometry);
+  }
+  return roiGeometry;
+}

@@ -1,0 +1,28 @@
+{
+  File file=new File(pathNoExtension + ".shp");
+  if (file.exists()) {
+    ShapefileDataStore ds=new ShapefileDataStore(DataUtilities.fileToURL(file));
+    SimpleFeatureIterator fi=null;
+    try {
+      fi=ds.getFeatureSource().getFeatures().features();
+      if (!fi.hasNext()) {
+        return null;
+      }
+ else {
+        SimpleFeature sf=fi.next();
+        Geometry result=(Geometry)sf.getDefaultGeometry();
+        if (fi.hasNext()) {
+          throw new IOException("Found more than one footprint record in the shapefile " + file.getCanonicalPath());
+        }
+        return result;
+      }
+    }
+  finally {
+      if (fi != null) {
+        fi.close();
+      }
+      ds.dispose();
+    }
+  }
+  return null;
+}
