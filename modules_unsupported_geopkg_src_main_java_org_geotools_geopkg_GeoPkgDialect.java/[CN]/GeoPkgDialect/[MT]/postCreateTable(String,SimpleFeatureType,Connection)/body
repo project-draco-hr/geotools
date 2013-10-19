@@ -30,6 +30,18 @@
   try {
     geopkg.addGeoPackageContentsEntry(fe);
     geopkg.addGeometryColumnsEntry(fe);
+    for (    PropertyDescriptor descr : featureType.getDescriptors()) {
+      if (descr instanceof GeometryDescriptor) {
+        GeometryDescriptor gd1=(GeometryDescriptor)descr;
+        if (gd1.getLocalName() != fe.getGeometryColumn()) {
+          FeatureEntry fe1=new FeatureEntry();
+          fe1.init(fe);
+          fe1.setGeometryColumn(gd1.getLocalName());
+          fe1.setGeometryType(Geometries.getForBinding((Class)gd1.getType().getBinding()));
+          geopkg.addGeometryColumnsEntry(fe1);
+        }
+      }
+    }
   }
  catch (  IOException e) {
     throw new SQLException(e);
