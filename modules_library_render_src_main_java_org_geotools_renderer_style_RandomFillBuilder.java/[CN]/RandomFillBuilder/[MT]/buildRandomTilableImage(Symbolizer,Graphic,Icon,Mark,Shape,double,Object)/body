@@ -1,10 +1,11 @@
 {
+  PositionRandomizer randomizer=(PositionRandomizer)voParser.getEnumOption(symbolizer,"random",PositionRandomizer.NONE);
   int seed=voParser.getIntOption(symbolizer,"random-seed",0);
   int tileSize=voParser.getIntOption(symbolizer,"random-tile-size",256);
   int count=voParser.getIntOption(symbolizer,"random-symbol-count",16);
   int spaceAround=voParser.getIntOption(symbolizer,"random-space-around",0);
-  boolean randomRotation=voParser.getBooleanOption(symbolizer,"random-rotation",false);
-  boolean useGrid=voParser.getBooleanOption(symbolizer,"random-grid",true);
+  RotationRandomizer rotation=(RotationRandomizer)voParser.getEnumOption(symbolizer,"random-rotation",RotationRandomizer.NONE);
+  boolean randomRotation=rotation == RotationRandomizer.FREE;
   if (tileSize <= 0) {
     throw new IllegalArgumentException("The random-tile-size parameter must be positive");
   }
@@ -23,11 +24,7 @@
   Rectangle targetArea=new Rectangle(0,0,tileSize,tileSize);
   Random random=new Random(seed);
   PositionSequence ps;
-  Envelope conflictSymbolSize=new Envelope();
-  if (conflictBounds != null) {
-    conflictSymbolSize=conflictBounds.getEnvelopeInternal();
-  }
-  if (useGrid) {
+  if (randomizer == PositionRandomizer.GRID) {
     ps=new GridBasedPositionGenerator(random,rac,count,targetArea,randomRotation);
   }
  else {
