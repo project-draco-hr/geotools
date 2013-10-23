@@ -2,13 +2,13 @@
   pathName=cPathName;
   inputStream=new RandomAccessFile(cPathName,ACCESS_MODE);
   readHeader();
-  GeometryDescriptor gat=null;
-  VPFColumn geometryColumn=null;
-  Iterator iter=columns.iterator();
+  VPFColumn column=null;
+  String geometryName=null;
+  Iterator<VPFColumn> iter=columns.iterator();
   while (iter.hasNext()) {
-    geometryColumn=(VPFColumn)iter.next();
-    if (geometryColumn.isGeometry()) {
-      gat=geometryColumn.getGeometryAttributeType();
+    column=(VPFColumn)iter.next();
+    if (column.isGeometry()) {
+      geometryName=column.getName();
       break;
     }
   }
@@ -18,9 +18,15 @@
   }
   SimpleFeatureTypeBuilder b=new SimpleFeatureTypeBuilder();
   b.setName(cPathName);
+  b.setDescription(Text.text(description));
   b.setNamespaceURI("VPF");
   b.setSuperType(superType);
-  b.addAll(columns);
-  b.setDefaultGeometry(gat.getLocalName());
+  if (columns != null) {
+    for (    VPFColumn ad : columns) {
+      b.add(ad.getDescriptor());
+    }
+  }
+  b.setDefaultGeometry(geometryName);
   featureType=b.buildFeatureType();
+  featureType.getUserData().put(VPFFile.class,this);
 }
