@@ -36,9 +36,10 @@
     mosaicSource=mosaicSource.getParentFile();
   }
   configuration.setParameter(Prop.ROOT_MOSAIC_DIR,mosaicSource.getAbsolutePath());
-  ImageMosaicWalker walker=new ImageMosaicWalker(configuration);
-  walker.setFileFilter(filter);
-  walker.addProcessingEventListener(new ImageMosaicWalker.ProcessingEventListener(){
+  ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+  final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(configuration,eventHandler);
+  ImageMosaicDirectoryWalker walker=new ImageMosaicDirectoryWalker(catalogHandler,eventHandler,filter);
+  eventHandler.addProcessingEventListener(new ImageMosaicEventHandlers.ProcessingEventListener(){
     @Override public void getNotification(    ProcessingEvent event){
       if (event instanceof FileProcessingEvent) {
         FileProcessingEvent fileEvent=(FileProcessingEvent)event;

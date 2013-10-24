@@ -1,0 +1,55 @@
+{
+  fileIndex++;
+  if (!checkFile(fileBeingProcessed))   return;
+  String validFileName;
+  try {
+    validFileName=fileBeingProcessed.getCanonicalPath();
+    validFileName=FilenameUtils.normalize(validFileName);
+  }
+ catch (  IOException e) {
+    eventHandler.fireFileEvent(Level.FINER,fileBeingProcessed,false,"Exception occurred while processing file " + fileBeingProcessed + ": "+ e.getMessage(),((fileIndex * 100.0) / numFiles));
+    eventHandler.fireException(e);
+    return;
+  }
+  validFileName=FilenameUtils.getName(validFileName);
+  eventHandler.fireEvent(Level.INFO,"Now indexing file " + validFileName,((fileIndex * 100.0) / numFiles));
+  GridCoverage2DReader coverageReader=null;
+  try {
+    final AbstractGridFormat format;
+    if (cachedFormat == null) {
+      format=(AbstractGridFormat)GridFormatFinder.findFormat(fileBeingProcessed,excludeMosaicHints);
+    }
+ else {
+      if (cachedFormat.accepts(fileBeingProcessed)) {
+        format=cachedFormat;
+      }
+ else {
+        format=new UnknownFormat();
+      }
+    }
+    if ((format instanceof UnknownFormat) || format == null) {
+      eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipped file " + fileBeingProcessed + ": File format is not supported.",((fileIndex * 99.0) / numFiles));
+      return;
+    }
+    cachedFormat=format;
+    final Hints configurationHints=configHandler.getRunConfiguration().getHints();
+    coverageReader=(GridCoverage2DReader)format.getReader(fileBeingProcessed,configurationHints);
+    String[] coverageNames=coverageReader.getGridCoverageNames();
+    for (    String cvName : coverageNames) {
+      configHandler.updateConfiguration(coverageReader,cvName,fileBeingProcessed,fileIndex,numFiles,transaction);
+      eventHandler.fireFileEvent(Level.FINE,fileBeingProcessed,true,"Done with file " + fileBeingProcessed,(((fileIndex + 1) * 99.0) / numFiles));
+    }
+  }
+ catch (  Exception e) {
+    eventHandler.fireException(e);
+    return;
+  }
+ finally {
+    try {
+      if (coverageReader != null)       coverageReader.dispose();
+    }
+ catch (    Throwable e) {
+      if (LOGGER.isLoggable(Level.FINEST))       LOGGER.log(Level.FINEST,e.getLocalizedMessage(),e);
+    }
+  }
+}

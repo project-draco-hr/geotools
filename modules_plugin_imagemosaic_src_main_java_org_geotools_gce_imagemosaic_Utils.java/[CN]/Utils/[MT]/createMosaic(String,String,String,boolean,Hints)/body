@@ -7,29 +7,37 @@
   IndexerUtils.setParam(parameterList,Prop.INDEX_NAME,indexName);
   IndexerUtils.setParam(parameterList,Prop.WILDCARD,wildcard);
   IndexerUtils.setParam(parameterList,Prop.INDEXING_DIRECTORIES,location);
-  final ImageMosaicWalker catalogBuilder=new ImageMosaicWalker(configuration);
+  final ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+  final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(configuration,eventHandler);
+  final ImageMosaicWalker walker;
+  if (catalogHandler.isUseExistingSchema()) {
+    walker=new ImageMosaicDatastoreWalker(catalogHandler,eventHandler);
+  }
+ else {
+    walker=new ImageMosaicDirectoryWalker(catalogHandler,eventHandler);
+  }
   final Queue<Throwable> exceptions=new LinkedList<Throwable>();
   try {
-    final ImageMosaicWalker.ProcessingEventListener listener=new ImageMosaicWalker.ProcessingEventListener(){
-      @Override public void exceptionOccurred(      ExceptionEvent event){
+    final ImageMosaicEventHandlers.ProcessingEventListener listener=new ImageMosaicEventHandlers.ProcessingEventListener(){
+      @Override public void exceptionOccurred(      ImageMosaicEventHandlers.ExceptionEvent event){
         final Throwable t=event.getException();
         exceptions.add(t);
         if (LOGGER.isLoggable(Level.SEVERE))         LOGGER.log(Level.SEVERE,t.getLocalizedMessage(),t);
       }
-      @Override public void getNotification(      ProcessingEvent event){
+      @Override public void getNotification(      ImageMosaicEventHandlers.ProcessingEvent event){
         if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine(event.getMessage());
       }
     }
 ;
-    catalogBuilder.addProcessingEventListener(listener);
-    catalogBuilder.run();
+    eventHandler.addProcessingEventListener(listener);
+    walker.run();
   }
  catch (  Throwable e) {
     LOGGER.log(Level.SEVERE,"Unable to build mosaic",e);
     return false;
   }
  finally {
-    catalogBuilder.dispose();
+    catalogHandler.dispose();
   }
   if (exceptions.size() > 0)   return false;
   return true;

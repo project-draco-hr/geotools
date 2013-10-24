@@ -1,0 +1,81 @@
+{
+  Indexer indexer=Utils.OBJECT_FACTORY.createIndexer();
+  indexer.setParameters(params != null ? params : Utils.OBJECT_FACTORY.createParametersType());
+  Coverages coverages=Utils.OBJECT_FACTORY.createIndexerCoverages();
+  indexer.setCoverages(coverages);
+  List<Coverage> coverageList=coverages.getCoverage();
+  Coverage coverage=Utils.OBJECT_FACTORY.createIndexerCoveragesCoverage();
+  coverageList.add(coverage);
+  indexer.setParameters(params);
+  List<Parameter> parameters=params.getParameter();
+  if (props.containsKey(Prop.NAME)) {
+    IndexerUtils.setParam(parameters,props,Prop.NAME);
+    coverage.setName(props.getProperty(Prop.NAME));
+  }
+  if (props.containsKey(Prop.ABSOLUTE_PATH))   IndexerUtils.setParam(parameters,props,Prop.ABSOLUTE_PATH);
+  if (props.containsKey(Prop.RECURSIVE))   IndexerUtils.setParam(parameters,props,Prop.RECURSIVE);
+  if (props.containsKey(Prop.WILDCARD))   IndexerUtils.setParam(parameters,props,Prop.WILDCARD);
+  if (props.containsKey(Prop.SCHEMA)) {
+    SchemasType schemas=Utils.OBJECT_FACTORY.createSchemasType();
+    SchemaType schema=Utils.OBJECT_FACTORY.createSchemaType();
+    indexer.setSchemas(schemas);
+    schemas.getSchema().add(schema);
+    schema.setAttributes(props.getProperty(Prop.SCHEMA));
+    schema.setName(IndexerUtils.getParameter(Prop.INDEX_NAME,indexer));
+  }
+  DomainsType domains=coverage.getDomains();
+  List<DomainType> domainList=null;
+  if (props.containsKey(Prop.TIME_ATTRIBUTE)) {
+    if (domains == null) {
+      domains=Utils.OBJECT_FACTORY.createDomainsType();
+      coverage.setDomains(domains);
+      domainList=domains.getDomain();
+    }
+    DomainType domain=Utils.OBJECT_FACTORY.createDomainType();
+    domain.setName(Utils.TIME_DOMAIN.toLowerCase());
+    IndexerUtils.setAttributes(domain,props.getProperty(Prop.TIME_ATTRIBUTE));
+    domainList.add(domain);
+  }
+  if (props.containsKey(Prop.ELEVATION_ATTRIBUTE)) {
+    if (domains == null) {
+      domains=Utils.OBJECT_FACTORY.createDomainsType();
+      coverage.setDomains(domains);
+      domainList=domains.getDomain();
+    }
+    DomainType domain=Utils.OBJECT_FACTORY.createDomainType();
+    domain.setName(Utils.ELEVATION_DOMAIN.toLowerCase());
+    IndexerUtils.setAttributes(domain,props.getProperty(Prop.ELEVATION_ATTRIBUTE));
+    domainList.add(domain);
+  }
+  if (props.containsKey(Prop.ADDITIONAL_DOMAIN_ATTRIBUTES)) {
+    if (domains == null) {
+      domains=Utils.OBJECT_FACTORY.createDomainsType();
+      coverage.setDomains(domains);
+      domainList=domains.getDomain();
+    }
+    String attributes=props.getProperty(Prop.ADDITIONAL_DOMAIN_ATTRIBUTES);
+    IndexerUtils.parseAdditionalDomains(attributes,domainList);
+  }
+  if (props.containsKey(Prop.ENVELOPE2D))   IndexerUtils.setParam(parameters,props,Prop.ENVELOPE2D);
+  if (props.containsKey(Prop.RESOLUTION_LEVELS))   IndexerUtils.setParam(parameters,props,Prop.RESOLUTION_LEVELS);
+  if (props.containsKey(Prop.PROPERTY_COLLECTORS)) {
+    IndexerUtils.setPropertyCollectors(indexer,props.getProperty(Prop.PROPERTY_COLLECTORS));
+  }
+  if (props.containsKey(Prop.CACHING))   IndexerUtils.setParam(parameters,props,Prop.CACHING);
+  if (props.containsKey(Prop.ROOT_MOSAIC_DIR)) {
+    IndexerUtils.setParam(parameters,props,Prop.ROOT_MOSAIC_DIR);
+  }
+  if (props.containsKey(Prop.INDEXING_DIRECTORIES)) {
+    IndexerUtils.setParam(params.getParameter(),props,Prop.INDEXING_DIRECTORIES);
+  }
+  if (props.containsKey(Prop.AUXILIARY_FILE)) {
+    IndexerUtils.setParam(params.getParameter(),props,Prop.AUXILIARY_FILE);
+  }
+  if (props.containsKey(Prop.CAN_BE_EMPTY)) {
+    IndexerUtils.setParam(params.getParameter(),props,Prop.CAN_BE_EMPTY);
+  }
+  if (props.containsKey(Prop.USE_EXISTING_SCHEMA)) {
+    IndexerUtils.setParam(params.getParameter(),props,Prop.USE_EXISTING_SCHEMA);
+  }
+  return indexer;
+}
