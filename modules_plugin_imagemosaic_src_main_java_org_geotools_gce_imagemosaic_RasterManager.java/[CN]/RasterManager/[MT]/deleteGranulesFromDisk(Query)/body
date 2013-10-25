@@ -1,0 +1,17 @@
+{
+  final SimpleFeatureCollection collection=granuleCatalog.getGranules(query);
+  collection.accepts(new AbstractFeatureVisitor(){
+    public void visit(    Feature feature){
+      if (feature instanceof SimpleFeature) {
+        final SimpleFeature sf=(SimpleFeature)feature;
+        final String location=(String)sf.getAttribute(parentReader.locationAttributeName);
+        URL rasterPath=pathType.resolvePath(DataUtilities.fileToURL(parentReader.parentDirectory).toString(),location);
+        boolean removed=FileUtils.deleteQuietly(DataUtilities.urlToFile(rasterPath));
+        if (removed && LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("File: " + rasterPath + " has been removed:");
+        }
+      }
+    }
+  }
+,null);
+}
