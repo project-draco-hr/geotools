@@ -2,13 +2,15 @@
   FeatureCollectionType fc=WfsFactory.eINSTANCE.createFeatureCollectionType();
   FeatureCollection features=store.getFeatureSource("feature").getFeatures();
   fc.getFeature().add(features);
-  Encoder e=encoder();
+  Configuration wfsConfiguration=new org.geotools.wfs.v2_0.WFSConfiguration();
+  wfsConfiguration.getProperties().add(GMLConfiguration.NO_FEATURE_BOUNDS);
+  Encoder e=encoder(wfsConfiguration);
   e.getNamespaces().declarePrefix("geotools","http://geotools.org");
   e.setIndenting(true);
   Document d=e.encodeAsDOM(fc,WFS.FeatureCollection);
   TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d),new StreamResult(System.out));
-  assertEquals(1,d.getElementsByTagName("wfs:boundedBy").getLength());
-  assertEquals(2,d.getElementsByTagName("gml:boundedBy").getLength());
+  assertEquals(0,d.getElementsByTagName("wfs:boundedBy").getLength());
+  assertEquals(0,d.getElementsByTagName("gml:boundedBy").getLength());
   assertEquals(2,d.getElementsByTagName("wfs:member").getLength());
   assertEquals(2,d.getElementsByTagName("gml:Point").getLength());
   assertEquals(2,d.getElementsByTagName("gml:pos").getLength());
