@@ -1,0 +1,23 @@
+{
+  Utilities.ensureNonNull("colorValues",colorValues);
+  if (colorValues.startsWith(RGB_INLINEVALUE_MARKER) || colorValues.startsWith(HEX_INLINEVALUE_MARKER)) {
+    String rampType="ramp";
+    if (colorValues.contains(":")) {
+      final int rampTypeIndex=colorValues.indexOf(":");
+      rampType=colorValues.substring(rampTypeIndex + 1);
+      colorValues=colorValues.substring(0,rampTypeIndex);
+    }
+    String colors[]=colorValues.split(";");
+    final int numEntries=colors.length;
+    LinearGradientEntry[] entries=new LinearGradientEntry[numEntries];
+    final double step=1d / (numEntries - 1);
+    for (int i=0; i < numEntries; i++) {
+      entries[i]=new LinearGradientEntry(step * i,createColor(colors[i]),1);
+    }
+    GradientColorMapGenerator generator=new GradientColorMapGenerator(entries);
+    return generator;
+  }
+ else {
+    throw new IOException("Unable to parse the specified colors: " + colorValues);
+  }
+}

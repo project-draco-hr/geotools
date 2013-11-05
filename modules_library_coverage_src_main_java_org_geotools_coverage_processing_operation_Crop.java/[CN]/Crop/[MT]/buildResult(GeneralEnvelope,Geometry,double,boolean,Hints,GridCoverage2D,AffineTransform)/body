@@ -85,7 +85,20 @@
  else {
       croppedImage=processor.createNS(operatioName,pbj,targetHints);
     }
-    return new GridCoverageFactory(hints).create(sourceCoverage.getName(),croppedImage,new GridGeometry2D(new GridEnvelope2D(croppedImage.getBounds()),sourceGridGeometry.getGridToCRS2D(PixelOrientation.CENTER),sourceCoverage.getCoordinateReferenceSystem()),(GridSampleDimension[])(actionTaken == 1 ? null : sourceCoverage.getSampleDimensions().clone()),new GridCoverage[]{sourceCoverage},rasterSpaceROI != null ? Collections.singletonMap("GC_ROI",rasterSpaceROI) : null);
+    Map sourceProperties=sourceCoverage.getProperties();
+    Map properties=null;
+    if (sourceProperties != null && !sourceProperties.isEmpty()) {
+      properties=new HashMap(sourceProperties);
+    }
+    if (rasterSpaceROI != null) {
+      if (properties != null) {
+        properties.put("GC_ROI",rasterSpaceROI);
+      }
+ else {
+        properties=Collections.singletonMap("GC_ROI",rasterSpaceROI);
+      }
+    }
+    return new GridCoverageFactory(hints).create(sourceCoverage.getName(),croppedImage,new GridGeometry2D(new GridEnvelope2D(croppedImage.getBounds()),sourceGridGeometry.getGridToCRS2D(PixelOrientation.CENTER),sourceCoverage.getCoordinateReferenceSystem()),(GridSampleDimension[])(actionTaken == 1 ? null : sourceCoverage.getSampleDimensions().clone()),new GridCoverage[]{sourceCoverage},properties);
   }
  catch (  TransformException e) {
     throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP),e);
