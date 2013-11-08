@@ -1,20 +1,18 @@
 {
-  Feature result=null;
   for (  Entry<Name,FeatureTypeMapping> mapping : mappings.entrySet()) {
+    if (Thread.currentThread().isInterrupted()) {
+      return null;
+    }
     Filter filter=filterFac.id(id);
     FeatureCollection<FeatureType,Feature> fCollection=new MappingFeatureSource(this,mapping.getValue()).getFeatures(filter,hints);
     FeatureIterator<Feature> iterator=fCollection.features();
-    if (iterator.hasNext()) {
-      result=iterator.next();
-    }
-    iterator.close();
-    if (result != null) {
-      return result;
-    }
-synchronized (stopFlag) {
-      if (stopFlag.get()) {
-        return null;
+    try {
+      if (iterator.hasNext()) {
+        return iterator.next();
       }
+    }
+  finally {
+      iterator.close();
     }
   }
   return null;

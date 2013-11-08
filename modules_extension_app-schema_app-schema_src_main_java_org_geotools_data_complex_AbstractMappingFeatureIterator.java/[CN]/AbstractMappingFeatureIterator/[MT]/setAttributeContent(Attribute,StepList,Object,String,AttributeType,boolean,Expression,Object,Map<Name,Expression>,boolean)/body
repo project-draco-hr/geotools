@@ -17,21 +17,24 @@
         hints.put(Hints.RESOLVE,ResolveValueType.NONE);
       }
       FeatureFinder finder=new FeatureFinder(refid,hints);
+      Feature foundFeature=null;
       Thread thread=new Thread(finder);
-      long currentTime=System.currentTimeMillis();
+      long startTime=System.currentTimeMillis();
       thread.start();
-      while (thread.isAlive() && (System.currentTimeMillis() - currentTime) / 1000 < resolveTimeOut) {
-        try {
-          Thread.sleep(500);
+      try {
+        while (thread.isAlive() && (System.currentTimeMillis() - startTime) / 1000 < resolveTimeOut) {
+          Thread.sleep(RESOLVE_TIMEOUT_POLL_INTERVAL);
         }
- catch (        InterruptedException t) {
-        }
+        thread.interrupt();
+        thread.join();
+        foundFeature=finder.getFeature();
       }
-synchronized (finder.stopFlag) {
-        finder.stopFlag.set(true);
+ catch (      InterruptedException e) {
+        thread.interrupt();
+        throw new RuntimeException("Interrupted while resolving resource " + refid);
       }
-      if (finder.getFeature() != null) {
-        instance=xpathAttributeBuilder.set(target,xpath,Collections.singletonList(finder.getFeature()),id,targetNodeType,false,sourceExpression);
+      if (foundFeature != null) {
+        instance=xpathAttributeBuilder.set(target,xpath,Collections.singletonList(foundFeature),id,targetNodeType,false,sourceExpression);
         properties.remove(XLINK_HREF_NAME);
       }
     }
