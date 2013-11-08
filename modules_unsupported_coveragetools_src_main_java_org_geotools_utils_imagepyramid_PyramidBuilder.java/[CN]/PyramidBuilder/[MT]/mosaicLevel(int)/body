@@ -3,18 +3,20 @@
   configuration.setParameter(Prop.ROOT_MOSAIC_DIR,new File(outputLocation,String.valueOf(level)).getAbsolutePath());
   configuration.setParameter(Prop.INDEX_NAME,name);
   configuration.setParameter(Prop.INDEXING_DIRECTORIES,configuration.getParameter(Prop.ROOT_MOSAIC_DIR));
-  final ImageMosaicWalker builder=new ImageMosaicWalker(configuration);
+  ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+  final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(configuration,eventHandler);
+  final ImageMosaicDirectoryWalker builder=new ImageMosaicDirectoryWalker(catalogHandler,eventHandler);
   builder.run();
-  builder.addProcessingEventListener(new ImageMosaicWalker.ProcessingEventListener(){
-    @Override public void getNotification(    ImageMosaicWalker.ProcessingEvent event){
+  eventHandler.addProcessingEventListener(new ImageMosaicEventHandlers.ProcessingEventListener(){
+    @Override public void getNotification(    ImageMosaicEventHandlers.ProcessingEvent event){
       slaveToolsListener.getNotification(new ProcessingEvent(event.getSource(),event.getMessage(),event.getPercentage()));
     }
-    @Override public void exceptionOccurred(    ImageMosaicWalker.ExceptionEvent event){
+    @Override public void exceptionOccurred(    ImageMosaicEventHandlers.ExceptionEvent event){
       slaveToolsListener.exceptionOccurred(new ExceptionEvent(event.getSource(),event.getMessage(),event.getPercentage(),event.getException()));
     }
   }
 );
-  builder.removeAllProcessingEventListeners();
-  MosaicConfigurationBean bean=builder.getConfigurations().values().iterator().next();
+  eventHandler.removeAllProcessingEventListeners();
+  MosaicConfigurationBean bean=catalogHandler.getConfigurations().values().iterator().next();
   return new double[]{bean.getLevels()[0][0],bean.getLevels()[0][1]};
 }

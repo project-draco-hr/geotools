@@ -1,0 +1,39 @@
+{
+  final String folder="mosaictemp";
+  final String zipFile="mosaictemp.zip";
+  final File workDir=new File(TestData.file(this,"."),folder);
+  if (!workDir.mkdir()) {
+    FileUtils.deleteDirectory(workDir);
+    assertTrue("Unable to create workdir:" + workDir,workDir.mkdir());
+  }
+  FileUtils.copyFile(TestData.file(this,zipFile),new File(workDir,zipFile));
+  TestData.unzipFile(this,folder + File.separatorChar + zipFile);
+  final URL timeElevURL=DataUtilities.fileToURL(workDir);
+  AbstractGridFormat format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  ImageMosaicReader reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  reader.dispose();
+  FileWriter out=null;
+  try {
+    out=new FileWriter(new File(TestData.file(this,"."),folder + File.separatorChar + "indexer.properties"),true);
+    out.write("UseExistingSchema=true\n");
+    out.flush();
+  }
+  finally {
+    if (out != null) {
+      IOUtils.closeQuietly(out);
+    }
+  }
+  File sampleImage=new File(TestData.file(this,"."),folder + File.separatorChar + "sample_image");
+  File mosaicProperties=new File(TestData.file(this,"."),folder + File.separatorChar + folder+ ".properties");
+  format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  assertTrue(sampleImage.exists());
+  assertTrue(mosaicProperties.exists());
+  if (!INTERACTIVE) {
+    FileUtils.deleteDirectory(TestData.file(this,folder));
+  }
+}

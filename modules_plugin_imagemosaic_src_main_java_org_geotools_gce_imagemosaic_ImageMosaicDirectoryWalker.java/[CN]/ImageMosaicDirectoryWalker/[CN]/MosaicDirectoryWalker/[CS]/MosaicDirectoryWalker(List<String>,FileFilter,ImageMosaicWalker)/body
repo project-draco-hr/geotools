@@ -1,0 +1,46 @@
+{
+  super(filter,Integer.MAX_VALUE);
+  this.walker=walker;
+  startTransaction();
+  configHandler.indexingPreamble();
+  try {
+    for (    String indexingDirectory : indexingDirectories) {
+      walk(new File(indexingDirectory),null);
+      if (getStop()) {
+        break;
+      }
+    }
+    if (getStop()) {
+      rollbackTransaction();
+    }
+ else {
+      commitTransaction();
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.WARNING,"Failure occurred while collecting the granules",e);
+    rollbackTransaction();
+  }
+ finally {
+    try {
+      configHandler.indexingPostamble(!getStop());
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      eventHandler.fireException(e);
+    }
+    try {
+      closeTransaction();
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      eventHandler.fireException(e);
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  SimpleFeatureIterator it=null;
+  try {
+    configHandler.indexingPreamble();
+    startTransaction();
+    final GranuleCatalog catalog=configHandler.getCatalog();
+    for (    String typeName : catalog.getTypeNames()) {
+      final Query query=new Query(typeName);
+      int numFiles=catalog.getGranulesCount(query);
+      if (numFiles <= 0) {
+        LOGGER.log(Level.FINE,"No rows in the typeName: " + typeName);
+        continue;
+      }
+      setNumFiles(numFiles);
+      final SimpleFeatureCollection coll=catalog.getGranules(query);
+      it=coll.features();
+      while (it.hasNext()) {
+        final SimpleFeature feature=it.next();
+        String locationAttrName=configHandler.getRunConfiguration().getParameter(Prop.LOCATION_ATTRIBUTE);
+        Object locationAttrObj=feature.getAttribute(locationAttrName);
+        File file=null;
+        if (locationAttrObj instanceof String) {
+          final String path=(String)locationAttrObj;
+          if (Boolean.getBoolean(configHandler.getRunConfiguration().getParameter(Prop.ABSOLUTE_PATH))) {
+            file=new File(path);
+            if (!checkFile(file)) {
+              file=null;
+            }
+          }
+          if (file == null) {
+            file=new File(configHandler.getRunConfiguration().getParameter(Prop.ROOT_MOSAIC_DIR),path);
+            if (!(file.exists() && file.canRead() && file.isFile())) {
+              file=new File(path);
+              if (!(checkFile(file))) {
+                file=null;
+              }
+            }
+          }
+          if (file == null) {
+            super.skipFile(path);
+            continue;
+          }
+        }
+ else         if (locationAttrObj instanceof File) {
+          file=(File)locationAttrObj;
+        }
+ else {
+          eventHandler.fireException(new IOException("Location attribute type not recognized for column name: " + locationAttrName));
+          stop();
+          break;
+        }
+        handleFile(file);
+      }
+    }
+    if (getStop()) {
+      rollbackTransaction();
+    }
+ else {
+      commitTransaction();
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.WARNING,"Failure occurred while collecting the granules",e);
+    try {
+      rollbackTransaction();
+    }
+ catch (    IOException e1) {
+      throw new IllegalStateException(e1);
+    }
+  }
+ finally {
+    if (it != null) {
+      try {
+        it.close();
+      }
+ catch (      Exception e) {
+        LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+    try {
+      closeTransaction();
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      eventHandler.fireException(e);
+    }
+    try {
+      configHandler.indexingPostamble(!getStop());
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      eventHandler.fireException(e);
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   if (hostnameDefined) {
-    ImageMosaicWalker builder=null;
+    ImageMosaicDirectoryWalker builder=null;
     ImageMosaicReader reader=null;
     ParameterValue<GridGeometry2D> gg=null;
     GeneralEnvelope envelope=null;
@@ -19,8 +19,10 @@
     c1.setParameter(Prop.ROOT_MOSAIC_DIR,TestData.file(this,"/overview/0").toString());
     c1.setParameter(Prop.INDEXING_DIRECTORIES,TestData.file(this,"/overview/0").toString());
     assertNotNull(c1.toString());
-    builder=new ImageMosaicWalker(c1);
-    builder.addProcessingEventListener(new CatalogBuilderListener());
+    ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+    final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(c1,eventHandler);
+    builder=new ImageMosaicDirectoryWalker(catalogHandler,eventHandler);
+    eventHandler.addProcessingEventListener(new CatalogBuilderListener());
     builder.run();
     final File relativeMosaic=TestData.file(this,"/overview/" + c1.getIndexName() + ".shp");
     assertTrue(relativeMosaic.exists());
@@ -61,8 +63,10 @@
     c2.setParameter(Prop.ROOT_MOSAIC_DIR,TestData.file(this,"/overview").toString());
     c2.setParameter(Prop.INDEXING_DIRECTORIES,TestData.file(this,"/overview").toString());
     assertNotNull(c2.toString());
-    builder=new ImageMosaicWalker(c2);
-    builder.addProcessingEventListener(new CatalogBuilderListener());
+    ImageMosaicEventHandlers eventHandler2=new ImageMosaicEventHandlers();
+    final ImageMosaicConfigHandler catalogHandler2=new ImageMosaicConfigHandler(c2,eventHandler);
+    builder=new ImageMosaicDirectoryWalker(catalogHandler2,eventHandler);
+    eventHandler2.addProcessingEventListener(new CatalogBuilderListener());
     builder.run();
     final File absoluteMosaic=TestData.file(this,"/overview/" + c2.getIndexName() + ".shp");
     assertTrue(absoluteMosaic.exists());

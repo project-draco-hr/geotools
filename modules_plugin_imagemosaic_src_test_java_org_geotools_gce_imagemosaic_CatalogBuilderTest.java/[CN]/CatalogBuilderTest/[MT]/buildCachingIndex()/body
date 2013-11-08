@@ -1,6 +1,6 @@
 {
   if (hostnameDefined) {
-    ImageMosaicWalker builder=null;
+    ImageMosaicDirectoryWalker builder=null;
     ImageMosaicReader reader=null;
     FileInputStream inStream=null;
     CatalogBuilderConfiguration c1=new CatalogBuilderConfiguration();
@@ -12,8 +12,10 @@
     Properties prop=new Properties();
     try {
       c1.setParameter(Prop.CACHING,"false");
-      builder=new ImageMosaicWalker(c1);
-      builder.addProcessingEventListener(new CatalogBuilderListener());
+      ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+      final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(c1,eventHandler);
+      builder=new ImageMosaicDirectoryWalker(catalogHandler,eventHandler);
+      eventHandler.addProcessingEventListener(new CatalogBuilderListener());
       builder.run();
       final File relativeMosaic=TestData.file(this,"/caching/" + c1.getIndexName() + ".shp");
       final File propertiesFile=TestData.file(this,"/caching/" + c1.getIndexName() + ".properties");
@@ -42,8 +44,10 @@
     }
     try {
       c1.setParameter(Prop.CACHING,"true");
-      builder=new ImageMosaicWalker(c1);
-      builder.addProcessingEventListener(new CatalogBuilderListener());
+      ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+      final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(c1,eventHandler);
+      builder=new ImageMosaicDirectoryWalker(catalogHandler,eventHandler);
+      eventHandler.addProcessingEventListener(new CatalogBuilderListener());
       builder.run();
       final File relativeMosaic=TestData.file(this,"/caching/" + c1.getIndexName() + ".shp");
       final File propertiesFile=TestData.file(this,"/caching/" + c1.getIndexName() + ".properties");

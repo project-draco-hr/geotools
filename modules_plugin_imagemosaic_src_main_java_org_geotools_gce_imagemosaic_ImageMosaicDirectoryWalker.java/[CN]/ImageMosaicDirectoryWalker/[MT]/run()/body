@@ -1,0 +1,29 @@
+{
+  try {
+    final IOFileFilter finalFilter=createDefaultGranuleExclusionFilter();
+    int numFiles=0;
+    String harvestDirectory=configHandler.getRunConfiguration().getParameter(Prop.HARVEST_DIRECTORY);
+    String indexDirs=configHandler.getRunConfiguration().getParameter(Prop.INDEXING_DIRECTORIES);
+    if (harvestDirectory != null) {
+      indexDirs=harvestDirectory;
+    }
+    String[] indexDirectories=indexDirs.split("\\s*,\\s*");
+    for (    String indexingDirectory : indexDirectories) {
+      indexingDirectory=Utils.checkDirectory(indexingDirectory,false);
+      final File directoryToScan=new File(indexingDirectory);
+      final Collection files=FileUtils.listFiles(directoryToScan,finalFilter,Boolean.parseBoolean(configHandler.getRunConfiguration().getParameter(Prop.RECURSIVE)) ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE);
+      numFiles+=files.size();
+    }
+    if (numFiles > 0) {
+      setNumFiles(numFiles);
+      final List<String> indexingDirectories=new ArrayList<String>(Arrays.asList(indexDirectories));
+      new MosaicDirectoryWalker(indexingDirectories,finalFilter,this);
+    }
+ else {
+      LOGGER.log(Level.INFO,"No files to process!");
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
+  }
+}

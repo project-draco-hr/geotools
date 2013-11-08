@@ -1,0 +1,50 @@
+{
+  Utilities.ensureNonNull("runConfiguration",configuration);
+  Utilities.ensureNonNull("eventHandler",eventHandler);
+  this.eventHandler=eventHandler;
+  Indexer defaultIndexer=configuration.getIndexer();
+  ParametersType params=null;
+  String rootMosaicDir=null;
+  if (defaultIndexer != null) {
+    params=defaultIndexer.getParameters();
+    rootMosaicDir=IndexerUtils.getParam(params,Prop.ROOT_MOSAIC_DIR);
+    IndexerUtils.getParameterAsBoolean(Prop.USE_EXISTING_SCHEMA,defaultIndexer);
+  }
+  Utilities.ensureNonNull("root location",rootMosaicDir);
+  parent=new File(rootMosaicDir);
+  indexerFile=new File(parent,Utils.INDEXER_XML);
+  Indexer indexer=null;
+  Hints hints=configuration.getHints();
+  String ancillaryFile=null;
+  if (Utils.checkFileReadable(indexerFile)) {
+    try {
+      indexer=(Indexer)Utils.unmarshal(indexerFile);
+      if (indexer != null) {
+        copyDefaultParams(params,indexer);
+      }
+    }
+ catch (    JAXBException e) {
+      LOGGER.log(Level.WARNING,e.getMessage(),e);
+    }
+  }
+ else {
+    indexerFile=new File(parent,Utils.INDEXER_PROPERTIES);
+    if (Utils.checkFileReadable(indexerFile)) {
+      final Properties props=Utils.loadPropertiesFromURL(DataUtilities.fileToURL(indexerFile));
+      indexer=createIndexer(props,params);
+    }
+  }
+  if (indexer != null) {
+    configuration.setIndexer(indexer);
+    String param=IndexerUtils.getParameter(Utils.Prop.AUXILIARY_FILE,indexer);
+    if (param != null) {
+      ancillaryFile=param;
+    }
+    if (IndexerUtils.getParameterAsBoolean(Utils.Prop.USE_EXISTING_SCHEMA,indexer)) {
+      this.useExistingSchema=true;
+    }
+  }
+  updateConfigurationHints(configuration,hints,ancillaryFile,IndexerUtils.getParam(params,Prop.ROOT_MOSAIC_DIR));
+  configuration.check();
+  this.runConfiguration=new CatalogBuilderConfiguration(configuration);
+}
