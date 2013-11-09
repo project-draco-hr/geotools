@@ -1,39 +1,21 @@
 {
-  StyledShapePainter painter=new StyledShapePainter();
-  GraphicImpl legend=new GraphicImpl(CommonFactoryFinder.getFilterFactory(GeoTools.getDefaultHints()));
-  legend.setRotation(0);
-  legend.setOpacity(1);
-  Style pStyle=RendererBaseTest.loadStyle(this,"externalGraphic.sld");
-  URL url=StreamingRenderer.class.getResource("test-data/");
-  StyleFactory sf=CommonFactoryFinder.getStyleFactory(null);
-  ExternalGraphic eg=sf.createExternalGraphic(url + "icon64.png","image/png");
-  legend.addExternalGraphic(eg);
-  BufferedImage image=new BufferedImage(100,100,BufferedImage.TYPE_INT_ARGB);
-  Graphics2D g2=(Graphics2D)image.getGraphics();
-  MathTransform transform=ProjectiveTransform.create(new AffineTransform());
-  Decimator decimator=new Decimator(transform);
-  Point point=new GeometryFactory().createPoint(new Coordinate(10,10));
-  LiteShape2 pointShape=new LiteShape2(point,transform,decimator,false);
-  painter.paint(g2,pointShape,legend,1,false);
-  assertEquals(0,image.getRaster().getSample(0,0,0));
-  assertEquals(64,image.getRaster().getSample(0,0,1));
-  assertEquals(128,image.getRaster().getSample(0,0,2));
-  assertEquals(255,image.getRaster().getSample(30,30,0));
-  assertEquals(255,image.getRaster().getSample(30,30,1));
-  assertEquals(255,image.getRaster().getSample(30,30,2));
-  assertEquals(0,image.getRaster().getSample(90,30,0));
-  assertEquals(0,image.getRaster().getSample(90,30,1));
-  assertEquals(0,image.getRaster().getSample(90,30,2));
-  image=new BufferedImage(100,100,BufferedImage.TYPE_INT_ARGB);
-  g2=(Graphics2D)image.getGraphics();
-  painter.paint(g2,pointShape,legend,2,false);
-  assertEquals(255,image.getRaster().getSample(0,0,0));
-  assertEquals(255,image.getRaster().getSample(0,0,1));
-  assertEquals(192,image.getRaster().getSample(0,0,2));
-  assertEquals(0,image.getRaster().getSample(30,30,0));
-  assertEquals(0,image.getRaster().getSample(30,30,1));
-  assertEquals(0,image.getRaster().getSample(30,30,2));
-  assertEquals(0,image.getRaster().getSample(90,30,0));
-  assertEquals(0,image.getRaster().getSample(90,30,1));
-  assertEquals(0,image.getRaster().getSample(90,30,2));
+  final URL imageURL=TestData.getResource(this,"icon64.png");
+  final BufferedImage testImage=ImageIO.read(imageURL);
+  final int width=testImage.getWidth();
+  final int height=testImage.getHeight();
+  final Style style=RendererBaseTest.loadStyle(this,"testGraphicLegend.sld");
+  final Rule rule=style.featureTypeStyles().get(0).rules().get(0);
+  final GraphicLegend legend=(GraphicLegend)rule.getLegend();
+  final Point point=new GeometryFactory().createPoint(new Coordinate(width / 2,height / 2));
+  final LiteShape2 shape=new LiteShape2(point,null,null,false);
+  int imageType=testImage.getType();
+  if (imageType == BufferedImage.TYPE_CUSTOM) {
+    imageType=BufferedImage.TYPE_INT_RGB;
+  }
+  final BufferedImage paintedImage=new BufferedImage(width,height,imageType);
+  final Graphics2D graphics=paintedImage.createGraphics();
+  final StyledShapePainter painter=new StyledShapePainter();
+  painter.paint(graphics,shape,legend,1,false);
+  graphics.dispose();
+  Assert.assertTrue(imagesIdentical(paintedImage,testImage));
 }
