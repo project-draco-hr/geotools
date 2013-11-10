@@ -13,24 +13,26 @@
   encodeTableName(featureType.getTypeName(),sql,null);
   sql.append(" SET ");
   for (int i=0; i < attributes.length; i++) {
-    String attName=attributes[i].getLocalName();
+    AttributeDescriptor att=attributes[i];
+    String attName=att.getLocalName();
     if (pkColumnNames.contains(attName)) {
       continue;
     }
     dialect.encodeColumnName(attName,sql);
     sql.append(" = ");
-    if (Geometry.class.isAssignableFrom(attributes[i].getType().getBinding())) {
+    if (Geometry.class.isAssignableFrom(att.getType().getBinding())) {
       try {
         Geometry g=(Geometry)values[i];
-        int srid=getGeometrySRID(g,attributes[i]);
-        dialect.encodeGeometryValue(g,srid,sql);
+        int srid=getGeometrySRID(g,att);
+        int dimension=getGeometryDimension(g,att);
+        dialect.encodeGeometryValue(g,dimension,srid,sql);
       }
  catch (      IOException e) {
         throw new RuntimeException(e);
       }
     }
  else {
-      dialect.encodeValue(values[i],attributes[i].getType().getBinding(),sql);
+      dialect.encodeValue(values[i],att.getType().getBinding(),sql);
     }
     sql.append(",");
   }
