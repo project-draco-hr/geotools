@@ -3,7 +3,8 @@
   if (file == null) {
     return;
   }
-  final SimpleFeatureType TYPE=DataUtilities.createType("Location","location:Point:srid=4326," + "name:String," + "number:Integer");
+  final SimpleFeatureType TYPE=DataUtilities.createType("Location","the_geom:Point:srid=4326," + "name:String," + "number:Integer");
+  System.out.println("TYPE:" + TYPE);
   List<SimpleFeature> features=new ArrayList<SimpleFeature>();
   GeometryFactory geometryFactory=JTSFactoryFinder.getGeometryFactory();
   SimpleFeatureBuilder featureBuilder=new SimpleFeatureBuilder(TYPE);
@@ -37,10 +38,11 @@
   params.put("create spatial index",Boolean.TRUE);
   ShapefileDataStore newDataStore=(ShapefileDataStore)dataStoreFactory.createNewDataStore(params);
   newDataStore.createSchema(TYPE);
-  newDataStore.forceSchemaCRS(DefaultGeographicCRS.WGS84);
   Transaction transaction=new DefaultTransaction("create");
   String typeName=newDataStore.getTypeNames()[0];
   SimpleFeatureSource featureSource=newDataStore.getFeatureSource(typeName);
+  SimpleFeatureType SHAPE_TYPE=featureSource.getSchema();
+  System.out.println("SHAPE:" + SHAPE_TYPE);
   if (featureSource instanceof SimpleFeatureStore) {
     SimpleFeatureStore featureStore=(SimpleFeatureStore)featureSource;
     SimpleFeatureCollection collection=new ListFeatureCollection(TYPE,features);
