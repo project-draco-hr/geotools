@@ -1,0 +1,33 @@
+{
+  if (entry(typeName) == null) {
+    String msg="Schema '" + typeName + "' does not exist";
+    throw new IllegalArgumentException(msg);
+  }
+  if (virtualTables.containsKey(typeName.getLocalPart())) {
+    removeVirtualTable(typeName.getLocalPart());
+    return;
+  }
+  SimpleFeatureType featureType=getSchema(typeName);
+  Connection cx=createConnection();
+  try {
+    dialect.preDropTable(databaseSchema,featureType,cx);
+    String sql=dropTableSQL(featureType,cx);
+    LOGGER.log(Level.FINE,"Drop schema: {0}",sql);
+    Statement st=cx.createStatement();
+    try {
+      st.execute(sql);
+    }
+  finally {
+      closeSafe(st);
+    }
+    dialect.postDropTable(databaseSchema,featureType,cx);
+    removeEntry(typeName);
+  }
+ catch (  Exception e) {
+    String msg="Error occurred dropping table";
+    throw (IOException)new IOException(msg).initCause(e);
+  }
+ finally {
+    closeSafe(cx);
+  }
+}

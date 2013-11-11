@@ -1,0 +1,36 @@
+{
+  String tableName=featureType.getTypeName();
+  Statement st=cx.createStatement();
+  try {
+    StringBuffer sql=new StringBuffer();
+    sql.append("CALL DropSpatialIndex(");
+    if (schemaName == null) {
+      sql.append("NULL");
+    }
+ else {
+      sql.append("'").append(schemaName).append("'");
+    }
+    sql.append(",'").append(tableName).append("')");
+    LOGGER.fine(sql.toString());
+    try {
+      st.execute(sql.toString());
+    }
+ catch (    SQLException e) {
+      LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+    }
+    sql=new StringBuffer();
+    sql.append("CALL DropGeometryColumns(");
+    if (schemaName == null) {
+      sql.append("NULL");
+    }
+ else {
+      sql.append("'").append(schemaName).append("'");
+    }
+    sql.append(",'").append(tableName).append("')");
+    LOGGER.fine(sql.toString());
+    st.execute(sql.toString());
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}
