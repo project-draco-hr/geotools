@@ -1,0 +1,35 @@
+{
+  if (unscaled == null || unscaled.equals(Expression.NIL))   return unscaled;
+  if (unscaled instanceof Literal) {
+    String value=unscaled.evaluate(null,String.class);
+    if (value == null) {
+      throw new IllegalArgumentException("Invalid empty measure '', " + "was expecting a number, eventually followed by px, m or ft");
+    }
+    if (value.endsWith("px")) {
+      value=value.substring(0,value.length() - 2);
+      return ff.literal(Converters.convert(value,Double.class));
+    }
+ else {
+      if (value.endsWith("ft")) {
+        value=value.substring(0,value.length() - 2);
+        uom=NonSI.FOOT;
+      }
+ else       if (value.endsWith("m")) {
+        value=value.substring(0,value.length() - 1);
+        uom=SI.METER;
+      }
+      Double measure=Converters.convert(value,Double.class);
+      if (measure != null) {
+        double rescaled=rescale(measure,uom);
+        return ff.literal(rescaled);
+      }
+ else {
+        throw new IllegalArgumentException("Invalid measure '" + value + "', was expecting a number, eventually followed by px, m or ft");
+      }
+    }
+  }
+ else {
+    double rescaleMultiplier=computeRescaleMultiplier(uom);
+    return ff.multiply(unscaled,ff.literal(rescaleMultiplier));
+  }
+}

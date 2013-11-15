@@ -1,0 +1,15 @@
+{
+  UomRescaleStyleVisitor visitor=null;
+  double size=100;
+  double scaleMetersToPixel=10;
+  double expectedRescaledSize=computeExpectedRescaleSize(size,scaleMetersToPixel,SI.METER);
+  StyleBuilder styleBuilder=new StyleBuilder();
+  LineSymbolizerImpl lineSymb=(LineSymbolizerImpl)styleBuilder.createLineSymbolizer();
+  lineSymb.getStroke().setWidth(ff.literal(size + "m"));
+  visitor=new UomRescaleStyleVisitor(scaleMetersToPixel);
+  lineSymb.accept(visitor);
+  LineSymbolizer rescaledLineSymb=(LineSymbolizer)visitor.getCopy();
+  double rescaledSize=rescaledLineSymb.getStroke().getWidth().evaluate(null,Double.class);
+  assertEquals(Math.round(expectedRescaledSize),Math.round(rescaledSize));
+  assertNotSame(rescaledLineSymb,lineSymb);
+}
