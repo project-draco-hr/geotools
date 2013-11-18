@@ -10,7 +10,7 @@
       final Hints hints=new Hints();
       if (resolveDepth > 1) {
         hints.put(Hints.RESOLVE,ResolveValueType.ALL);
-        hints.put(Hints.RESOLVE_TIMEOUT,resolveTimeOut);
+        hints.put(Hints.RESOLVE_TIMEOUT,Integer.MAX_VALUE);
         hints.put(Hints.ASSOCIATION_TRAVERSAL_DEPTH,resolveDepth - 1);
       }
  else {
@@ -18,20 +18,26 @@
       }
       FeatureFinder finder=new FeatureFinder(refid,hints);
       Feature foundFeature=null;
-      Thread thread=new Thread(finder);
-      long startTime=System.currentTimeMillis();
-      thread.start();
-      try {
-        while (thread.isAlive() && (System.currentTimeMillis() - startTime) / 1000 < resolveTimeOut) {
-          Thread.sleep(RESOLVE_TIMEOUT_POLL_INTERVAL);
-        }
-        thread.interrupt();
-        thread.join();
+      if (resolveTimeOut == Integer.MAX_VALUE) {
+        finder.run();
         foundFeature=finder.getFeature();
       }
- catch (      InterruptedException e) {
-        thread.interrupt();
-        throw new RuntimeException("Interrupted while resolving resource " + refid);
+ else {
+        Thread thread=new Thread(finder);
+        long startTime=System.currentTimeMillis();
+        thread.start();
+        try {
+          while (thread.isAlive() && (System.currentTimeMillis() - startTime) / 1000 < resolveTimeOut) {
+            Thread.sleep(RESOLVE_TIMEOUT_POLL_INTERVAL);
+          }
+          thread.interrupt();
+          thread.join();
+          foundFeature=finder.getFeature();
+        }
+ catch (        InterruptedException e) {
+          thread.interrupt();
+          throw new RuntimeException("Interrupted while resolving resource " + refid);
+        }
       }
       if (foundFeature != null) {
         instance=xpathAttributeBuilder.set(target,xpath,Collections.singletonList(foundFeature),id,targetNodeType,false,sourceExpression);
