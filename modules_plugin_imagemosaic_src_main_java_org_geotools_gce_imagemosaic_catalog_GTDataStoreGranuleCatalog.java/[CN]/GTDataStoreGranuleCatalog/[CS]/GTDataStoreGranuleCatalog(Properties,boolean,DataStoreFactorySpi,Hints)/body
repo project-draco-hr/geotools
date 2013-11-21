@@ -8,20 +8,22 @@
     final String temp=(String)params.get("SuggestedSPI");
     this.suggestedRasterSPI=temp != null ? (ImageReaderSpi)Class.forName(temp).newInstance() : null;
     this.parentLocation=(String)params.get("ParentLocation");
-    Object heterogen=params.get("Heterogeneous");
-    if (heterogen != null) {
-      this.heterogeneous=((Boolean)heterogen).booleanValue();
+    if (params.containsKey("Heterogeneous")) {
+      this.heterogeneous=Boolean.valueOf(params.getProperty("Heterogeneous"));
     }
+    Map<String,Serializable> dastastoreParams=Utils.filterDataStoreParams(params,spi);
     if (Utils.isH2Store(spi)) {
-      Utils.fixH2DatabaseLocation(params,parentLocation);
+      Utils.fixH2DatabaseLocation(dastastoreParams,parentLocation);
     }
-    if (!create)     tileIndexStore=spi.createDataStore(params);
+    if (!create) {
+      tileIndexStore=spi.createDataStore(dastastoreParams);
+    }
  else {
       try {
-        tileIndexStore=spi.createNewDataStore(params);
+        tileIndexStore=spi.createNewDataStore(dastastoreParams);
       }
  catch (      UnsupportedOperationException e) {
-        tileIndexStore=spi.createDataStore(params);
+        tileIndexStore=spi.createDataStore(dastastoreParams);
       }
     }
     if (Utils.isOracleStore(spi)) {
@@ -36,7 +38,7 @@
       typeName=(String)params.get("TypeName");
     }
     if (params.containsKey(Utils.SCAN_FOR_TYPENAMES)) {
-      scanForTypeNames=(Boolean)params.get(Utils.SCAN_FOR_TYPENAMES);
+      scanForTypeNames=Boolean.valueOf(params.get(Utils.SCAN_FOR_TYPENAMES).toString());
     }
     if (scanForTypeNames) {
       String[] typeNames=tileIndexStore.getTypeNames();
