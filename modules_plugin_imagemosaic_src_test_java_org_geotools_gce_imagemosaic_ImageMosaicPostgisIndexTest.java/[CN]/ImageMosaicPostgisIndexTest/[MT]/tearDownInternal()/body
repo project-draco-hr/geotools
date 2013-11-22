@@ -1,31 +1,5 @@
 {
-  Class.forName("org.postgresql.Driver");
-  Connection connection=null;
-  Statement st=null;
-  try {
-    connection=DriverManager.getConnection("jdbc:postgresql://" + fixture.getProperty("host") + ":"+ fixture.getProperty("port")+ "/"+ fixture.getProperty("database"),fixture.getProperty("user"),fixture.getProperty("passwd"));
-    st=connection.createStatement();
-    st.execute("DROP TABLE IF EXISTS \"" + tempFolderName1 + "\"");
-    st.execute("DROP TABLE IF EXISTS \"" + tempFolderName2 + "\"");
-  }
-  finally {
-    if (st != null) {
-      try {
-        st.close();
-      }
- catch (      Exception e) {
-        LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
-      }
-    }
-    if (connection != null) {
-      try {
-        connection.close();
-      }
- catch (      Exception e) {
-        LOGGER.log(Level.SEVERE,e.getLocalizedMessage(),e);
-      }
-    }
-  }
+  dropTables(new String[]{tempFolderName1,tempFolderName2,noGeomLast,noGeomFirst,tempFolderName3});
   System.clearProperty("org.geotools.referencing.forceXY");
   if (!ImageMosaicReaderTest.INTERACTIVE) {
     File parent=TestData.file(this,".");
@@ -34,6 +8,10 @@
       FileUtils.deleteDirectory(directory);
     }
     directory=new File(parent,tempFolderName2);
+    if (directory.isDirectory() && directory.exists()) {
+      FileUtils.deleteDirectory(directory);
+    }
+    directory=new File(parent,tempFolderName3);
     if (directory.isDirectory() && directory.exists()) {
       FileUtils.deleteDirectory(directory);
     }
