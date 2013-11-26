@@ -1,0 +1,28 @@
+{
+  Utilities.ensureNonNull("xmlFile",xmlFile);
+  final DocumentBuilderFactory dbFactory=DocumentBuilderFactory.newInstance();
+  final DocumentBuilder dBuilder=dbFactory.newDocumentBuilder();
+  final Document doc=dBuilder.parse(xmlFile);
+  doc.getDocumentElement().normalize();
+  final NodeList nList=doc.getElementsByTagName("stop");
+  final int numEntries=nList.getLength();
+  double percentage;
+  double opacity;
+  Color color;
+  LinearGradientEntry[] gradientEntries=new LinearGradientEntry[numEntries];
+  for (int i=0; i < numEntries; i++) {
+    Node node=nList.item(i);
+    if (node.getNodeType() == Node.ELEMENT_NODE) {
+      Element element=(Element)node;
+      String offset=element.getAttribute("offset");
+      String stopColor=element.getAttribute("stop-color");
+      String stopOpacity=element.getAttribute("stop-opacity");
+      percentage=Double.parseDouble(offset.substring(0,offset.length() - 1)) / 100d;
+      opacity=Double.parseDouble(stopOpacity);
+      color=createColor(stopColor);
+      gradientEntries[i]=new LinearGradientEntry(percentage,color,opacity);
+    }
+  }
+  GradientColorMapGenerator generator=new GradientColorMapGenerator(gradientEntries);
+  return generator;
+}

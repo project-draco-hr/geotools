@@ -1,0 +1,34 @@
+{
+  final int numEntries=entries.length;
+  final double range=max - min;
+  boolean intervals=false;
+  for (int i=0; i < numEntries - 2; i+=2) {
+    if (Double.compare(entries[i + 1].percentage,entries[i + 2].percentage) == 0) {
+      intervals=true;
+    }
+ else {
+      intervals=false;
+    }
+  }
+  ColorMap colorMap=new ColorMapImpl();
+  ColorMapEntry entry=entries[0].getColorMapEntry(min - 10E-2);
+  entry.setOpacity(filterFactory.literal(0));
+  colorMap.addColorMapEntry(entry);
+  if (intervals) {
+    colorMap.setType(ColorMap.TYPE_INTERVALS);
+    for (int i=1; i < numEntries - 1; i+=2) {
+      colorMap.addColorMapEntry(entries[i].getColorMapEntry(min,range));
+    }
+  }
+ else {
+    colorMap.setType(ColorMap.TYPE_RAMP);
+    for (int i=0; i < numEntries - 1; i++) {
+      colorMap.addColorMapEntry(entries[i].getColorMapEntry(min,range));
+    }
+  }
+  colorMap.addColorMapEntry(entries[numEntries - 1].getColorMapEntry(max));
+  ColorMapEntry entryEnd=entries[numEntries - 1].getColorMapEntry(max + 10E-2);
+  entryEnd.setOpacity(filterFactory.literal(0));
+  colorMap.addColorMapEntry(entryEnd);
+  return colorMap;
+}
