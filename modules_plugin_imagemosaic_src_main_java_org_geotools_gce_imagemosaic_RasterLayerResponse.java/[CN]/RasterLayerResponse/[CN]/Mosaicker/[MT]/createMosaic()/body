@@ -12,6 +12,7 @@
     if (in == null) {
       throw new NullPointerException("The list of MosaicElements contains one element but it's null");
     }
+    PAMDataset pamDataset=in.pamDataset;
     ROI roi=in.roi;
     if (roi != null) {
       Rectangle bounds=Utils.toRectangle(roi.getAsShape());
@@ -38,7 +39,7 @@
               rop.setProperty("ROI",in.roi);
             }
           }
-          return new MosaicElement(in.alphaChannel,roi,mosaic);
+          return new MosaicElement(in.alphaChannel,roi,mosaic,pamDataset);
         }
       }
     }
@@ -46,6 +47,7 @@
   final RenderedImage[] sources=new RenderedImage[size];
   final PlanarImage[] alphas=new PlanarImage[size];
   ROI[] rois=new ROI[size];
+  final PAMDataset[] pams=new PAMDataset[size];
   ROI overallROI=null;
   int realROIs=0;
   for (int i=0; i < size; i++) {
@@ -53,6 +55,7 @@
     sources[i]=mosaicElement.source;
     alphas[i]=mosaicElement.alphaChannel;
     rois[i]=mosaicElement.roi;
+    pams[i]=mosaicElement.pamDataset;
     if (mosaicElement.roi != null) {
       realROIs++;
       if (overallROI == null) {
@@ -73,9 +76,9 @@
   }
   final RenderedImage postProcessed=footprintBehavior.postProcessMosaic(mosaic,overallROI,localHints);
   if (hasAlpha || doInputTransparency) {
-    return new MosaicElement(new ImageWorker(postProcessed).retainLastBand().getPlanarImage(),overallROI,postProcessed);
+    return new MosaicElement(new ImageWorker(postProcessed).retainLastBand().getPlanarImage(),overallROI,postProcessed,Utils.mergePamDatasets(pams));
   }
  else {
-    return new MosaicElement(null,overallROI,postProcessed);
+    return new MosaicElement(null,overallROI,postProcessed,Utils.mergePamDatasets(pams));
   }
 }
