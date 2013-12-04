@@ -1,0 +1,37 @@
+{
+  MapContent mc=new MapContent();
+  mc.addLayer(new FeatureLayer(createLineCollection(),createLineStyle()));
+  ReferencedEnvelope reWgs=new ReferencedEnvelope(new Envelope(-180,-170,20,40),DefaultGeographicCRS.WGS84);
+  CoordinateReferenceSystem utm1N=CRS.decode("EPSG:32601");
+  ReferencedEnvelope reUtm=reWgs.transform(utm1N,true);
+  BufferedImage image=new BufferedImage(200,200,BufferedImage.TYPE_4BYTE_ABGR);
+  final AtomicInteger commandsCount=new AtomicInteger(0);
+  final BlockingQueue<RenderingRequest> queue=new ArrayBlockingQueue<RenderingRequest>(10){
+    @Override public void put(    RenderingRequest e) throws InterruptedException {
+      commandsCount.incrementAndGet();
+      super.put(e);
+    }
+  }
+;
+  StreamingRenderer sr=new StreamingRenderer(){
+    @Override protected BlockingQueue<RenderingRequest> getRequestsQueue(){
+      return queue;
+    }
+  }
+;
+  sr.setMapContent(mc);
+  sr.addRenderListener(new RenderListener(){
+    public void featureRenderer(    SimpleFeature feature){
+      assertTrue(commandsCount.get() > 0);
+      features++;
+    }
+    public void errorOccurred(    Exception e){
+      errors++;
+    }
+  }
+);
+  errors=0;
+  features=0;
+  sr.paint((Graphics2D)image.getGraphics(),new Rectangle(200,200),reUtm);
+  assertTrue(features > 0);
+}
