@@ -1,0 +1,32 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps;
+      ps=prepare(cx,format("SELECT grid FROM %s WHERE zoom_level=? AND tile_column=? AND tile_row=?",TABLE_GRIDS)).set(entry.getZoomLevel()).set(entry.getTileColumn()).set(entry.getTileRow()).log(Level.FINE).statement();
+      ResultSet rs=ps.executeQuery();
+      if (rs.next()) {
+        entry.setGrid(rs.getBytes(1));
+      }
+ else {
+        entry.setGrid(null);
+      }
+      rs.close();
+      ps.close();
+      ps=prepare(cx,format("SELECT key_name, key_json FROM %s WHERE zoom_level=? AND tile_column=? AND tile_row=?",TABLE_GRID_DATA)).set(entry.getZoomLevel()).set(entry.getTileColumn()).set(entry.getTileRow()).log(Level.FINE).statement();
+      rs=ps.executeQuery();
+      while (rs.next()) {
+        entry.setGridDataKey(rs.getString(1),rs.getString(2));
+      }
+      rs.close();
+      ps.close();
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+  return entry;
+}
