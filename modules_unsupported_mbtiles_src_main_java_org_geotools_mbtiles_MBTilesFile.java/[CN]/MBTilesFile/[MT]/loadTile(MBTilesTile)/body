@@ -1,0 +1,25 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps;
+      ps=prepare(cx,format("SELECT tile_data FROM %s WHERE zoom_level=? AND tile_column=? AND tile_row=?",TABLE_TILES)).set(entry.getZoomLevel()).set(entry.getTileColumn()).set(entry.getTileRow()).log(Level.FINE).statement();
+      ResultSet rs=ps.executeQuery();
+      if (rs.next()) {
+        entry.setData(rs.getBytes(1));
+      }
+ else {
+        entry.setData(null);
+      }
+      rs.close();
+      ps.close();
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+  return entry;
+}
