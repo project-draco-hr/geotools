@@ -1,0 +1,20 @@
+{
+  SimpleFeatureType t=featureStore.getSchema();
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equal(ff.property(aname("stringProperty")),ff.literal("zero"),false);
+  featureStore.modifyFeatures(new AttributeDescriptor[]{t.getDescriptor(aname("stringProperty")),t.getDescriptor(aname("id"))},new Object[]{"foo",123},filter);
+  PropertyIsEqualTo idFilter=ff.equal(ff.property(aname("id")),ff.literal(0),false);
+  SimpleFeatureCollection features=featureStore.getFeatures(idFilter);
+  SimpleFeatureIterator i=features.features();
+  try {
+    assertTrue(i.hasNext());
+    while (i.hasNext()) {
+      SimpleFeature feature=(SimpleFeature)i.next();
+      assertEquals("foo",feature.getAttribute(aname("stringProperty")));
+      assertEquals(0,feature.getAttribute(aname("id")));
+    }
+  }
+  finally {
+    i.close();
+  }
+}
