@@ -49,8 +49,14 @@ case GeoY:
 low[1]=0;
 high[1]=(int)cv.getSize();
 if (cv.isRegular()) {
+if (cv.getIncrement() > 0) {
 scaleY=-cv.getIncrement();
-origin[1]=cv.getStart() - scaleY * high[1];
+origin[1]=cv.getStart() - scaleY * (high[1] - 1);
+}
+ else {
+scaleY=cv.getIncrement();
+origin[1]=cv.getStart();
+}
 }
  else {
 final int valuesLength=(int)cv.getSize();
@@ -86,5 +92,5 @@ break;
 final AffineTransform at=new AffineTransform(scaleX,0,0,scaleY,origin[0],origin[1]);
 final GridEnvelope gridRange=new GridEnvelope2D(low[0],low[1],high[0] - low[0],high[1] - low[1]);
 final MathTransform raster2Model=ProjectiveTransform.create(at);
-return new GridGeometry2D(gridRange,PixelInCell.CELL_CORNER,raster2Model,coordinateReferenceSystem,GeoTools.getDefaultHints());
+return new GridGeometry2D(gridRange,PixelInCell.CELL_CENTER,raster2Model,coordinateReferenceSystem,GeoTools.getDefaultHints());
 }
