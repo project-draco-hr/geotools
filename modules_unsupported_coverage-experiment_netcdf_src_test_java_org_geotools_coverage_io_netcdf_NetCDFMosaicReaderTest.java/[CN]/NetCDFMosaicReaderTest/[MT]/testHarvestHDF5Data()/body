@@ -1,0 +1,21 @@
+{
+  File nc1=TestData.file(this,"2DLatLonCoverage.nc");
+  File nc2=TestData.file(this,"2DLatLonCoverage2.nc");
+  File mosaic=new File(TestData.file(this,"."),"simpleMosaic");
+  if (mosaic.exists()) {
+    FileUtils.deleteDirectory(mosaic);
+  }
+  assertTrue(mosaic.mkdirs());
+  FileUtils.copyFileToDirectory(nc1,mosaic);
+  FileUtils.copyFileToDirectory(nc2,mosaic);
+  File dsp=TestData.file(this,"datastore.properties");
+  FileUtils.copyFileToDirectory(dsp,mosaic);
+  File xml=TestData.file(this,"hdf5Coverage2D.xml");
+  FileUtils.copyFileToDirectory(xml,mosaic);
+  String indexer="TimeAttribute=time\n" + "Schema=the_geom:Polygon,location:String,imageindex:Integer,time:java.util.Date\n";
+  indexer+=Prop.AUXILIARY_FILE + "=" + "hdf5Coverage2D.xml";
+  FileUtils.writeStringToFile(new File(mosaic,"indexer.properties"),indexer);
+  ImageMosaicFormat format=new ImageMosaicFormat();
+  ImageMosaicReader reader=format.getReader(mosaic);
+  reader.read("L1_V2",null);
+}

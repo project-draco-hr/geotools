@@ -1,0 +1,27 @@
+{
+  final File testURL=TestData.file(this,"2DLatLonCoverage.nc");
+  GridFormatFinder.findFormat(testURL.toURI().toURL(),null);
+  final NetCDFReader reader=new NetCDFReader(testURL,null);
+  assertNotNull(reader);
+  try {
+    String[] names=reader.getGridCoverageNames();
+    assertNotNull(names);
+    assertEquals(2,names.length);
+    assertEquals("ROOT/LEVEL1/V2",names[0]);
+    GridCoverage2D grid=reader.read("ROOT/LAI",null);
+    assertNotNull(grid);
+    byte[] byteValue=grid.evaluate(new DirectPosition2D(DefaultGeographicCRS.WGS84,12,70),new byte[1]);
+    assertEquals(20,byteValue[0]);
+    byteValue=grid.evaluate(new DirectPosition2D(DefaultGeographicCRS.WGS84,23,40),new byte[1]);
+    assertEquals(90,byteValue[0]);
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

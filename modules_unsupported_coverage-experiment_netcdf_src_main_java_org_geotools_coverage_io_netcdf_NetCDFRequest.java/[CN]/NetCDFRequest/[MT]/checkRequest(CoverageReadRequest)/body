@@ -5,13 +5,31 @@
   UnidataVariableAdapter.UnidataTemporalDomain temporalDomain=(UnidataVariableAdapter.UnidataTemporalDomain)source.getTemporalDomain();
   UnidataVariableAdapter.UnidataVerticalDomain verticalDomain=(UnidataVariableAdapter.UnidataVerticalDomain)source.getVerticalDomain();
   if (requestedRasterArea == null || requestedBoundingBox == null) {
+    boolean bothNull=true;
     if (requestedRasterArea == null) {
       requestedRasterArea=horizontalDomain.getGridGeometry().getGridRange2D().getBounds();
+    }
+ else {
+      bothNull=false;
     }
     if (requestedBoundingBox == null) {
       requestedBoundingBox=horizontalDomain.getReferencedEnvelope();
     }
-    request.setDomainSubset(requestedRasterArea,ReferencedEnvelope.reference(requestedBoundingBox));
+ else {
+      bothNull=false;
+    }
+    if (bothNull) {
+      try {
+        request.setDomainSubset(requestedRasterArea,horizontalDomain.getGridGeometry().getGridToCRS2D(),horizontalDomain.getCoordinateReferenceSystem2D());
+      }
+ catch (      TransformException e) {
+        request.setDomainSubset(requestedRasterArea,ReferencedEnvelope.reference(requestedBoundingBox));
+        LOGGER.log(Level.SEVERE,"Transform exception while setting the domain subset to: " + requestedRasterArea,e);
+      }
+    }
+ else {
+      request.setDomainSubset(requestedRasterArea,ReferencedEnvelope.reference(requestedBoundingBox));
+    }
   }
   SortedSet<DateRange> temporalSubset=request.getTemporalSubset();
   if (temporalDomain != null) {
