@@ -4,6 +4,17 @@
     return (OracleConnection)cx;
   }
   try {
+    if (cx instanceof Wrapper) {
+      try {
+        Wrapper w=cx;
+        if (w.isWrapperFor(OracleConnection.class)) {
+          return w.unwrap(OracleConnection.class);
+        }
+      }
+ catch (      Throwable t) {
+        LOGGER.log(Level.FINE,"Failed to unwrap connection using java 6 facilities",t);
+      }
+    }
     if (uw == null)     uw=DataSourceFinder.getUnWrapper(cx);
     if (uw != null) {
       Connection uwcx=uw.unwrap(cx);
