@@ -1,0 +1,27 @@
+{
+  if (!ogrSupports("GPX")) {
+    System.out.println("Skipping GPX writing test as OGR was not built to support it");
+  }
+  SimpleFeatureCollection features=createFeatureCollection();
+  File tmpFile=getTempFile("test-gpx",".gpx");
+  tmpFile.delete();
+  OGRDataStore s=new OGRDataStore(tmpFile.getAbsolutePath(),"GPX",null,ogr);
+  s.createSchema(features,true,new String[]{"GPX_USE_EXTENSIONS=YES"});
+  assertEquals(5,s.getTypeNames().length);
+  SimpleFeatureCollection fc=s.getFeatureSource("waypoints").getFeatures();
+  assertEquals(features.size(),fc.size());
+  int c=0;
+  SimpleFeatureIterator it=fc.features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      assertNotNull(f);
+      assertNotNull(f.getDefaultGeometry());
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  assertEquals(fc.size(),c);
+}
