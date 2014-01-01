@@ -37,15 +37,43 @@
       }
     }
     if (layer == null) {
-      String sql=getLayerSql(querySchema == sourceSchema ? null : querySchema,filterTx.getAttributeFilter(),query.getSortBy());
-      Object spatialFilterPtr=null;
-      Geometry spatialFilter=filterTx.getSpatialFilter();
-      if (spatialFilter != null) {
-        spatialFilterPtr=new GeometryMapper.WKB(new GeometryFactory(),ogr).parseGTGeometry(spatialFilter);
+      if (query.getSortBy() == null || query.getSortBy().length == 0) {
+        layer=ogr.DataSourceGetLayerByName(dataSource,getSchema().getTypeName());
+        setLayerFilters(layer,filterTx);
       }
-      layer=ogr.DataSourceExecuteSQL(dataSource,sql,spatialFilterPtr);
-      if (layer == null) {
-        throw new IOException("Failed to query the source layer with SQL: " + sql);
+ else {
+        Object driver=ogr.DataSourceGetDriver(dataSource);
+        String driverName=ogr.DriverGetName(driver);
+        ogr.DriverRelease(driver);
+        boolean isNonOgrSql=doesDriverUseNonOgrSql(driverName);
+        String fidColumnName="FID";
+        if (isNonOgrSql) {
+          boolean needsFid=false;
+          for (          SortBy sort : query.getSortBy()) {
+            if (SortBy.NATURAL_ORDER.equals(sort) || SortBy.REVERSE_ORDER.equals(sort)) {
+              needsFid=true;
+              break;
+            }
+          }
+          if (needsFid) {
+            layer=ogr.DataSourceGetLayerByName(dataSource,getSchema().getTypeName());
+            fidColumnName=ogr.LayerGetFIDColumnName(layer);
+            ogr.LayerRelease(layer);
+            if (fidColumnName == null) {
+              throw new IOException("Cannot do natural order without an FID column!");
+            }
+          }
+        }
+        String sql=getLayerSql(querySchema == sourceSchema ? null : querySchema,filterTx.getAttributeFilter(),query.getSortBy(),isNonOgrSql,fidColumnName);
+        Object spatialFilterPtr=null;
+        Geometry spatialFilter=filterTx.getSpatialFilter();
+        if (spatialFilter != null) {
+          spatialFilterPtr=new GeometryMapper.WKB(new GeometryFactory(),ogr).parseGTGeometry(spatialFilter);
+        }
+        layer=ogr.DataSourceExecuteSQL(dataSource,sql,spatialFilterPtr);
+        if (layer == null) {
+          throw new IOException("Failed to query the source layer with SQL: " + sql);
+        }
       }
     }
  else {
