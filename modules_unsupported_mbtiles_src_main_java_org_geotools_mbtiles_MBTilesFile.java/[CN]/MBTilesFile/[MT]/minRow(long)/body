@@ -1,0 +1,18 @@
+{
+  long size=0;
+  Connection cx=connPool.getConnection();
+  try {
+    PreparedStatement ps=prepare(cx,format("SELECT MIN(tile_row) FROM %s WHERE zoom_level=?",TABLE_TILES)).set(zoomLevel).statement();
+    ResultSet rs=ps.executeQuery();
+    rs.next();
+    if (rs.next()) {
+      size=rs.getLong(1);
+    }
+    rs.close();
+    ps.close();
+  }
+  finally {
+    cx.close();
+  }
+  return size;
+}
