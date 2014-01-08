@@ -1,0 +1,32 @@
+{
+  StringBuffer sql=new StringBuffer();
+  String escape=getNameEscape();
+  sql.append("CREATE ");
+  if (index.isUnique()) {
+    sql.append("UNIQUE ");
+  }
+  sql.append("INDEX ");
+  sql.append(escape).append(index.getIndexName()).append(escape);
+  sql.append(" ON ");
+  if (databaseSchema != null) {
+    encodeSchemaName(databaseSchema,sql);
+    sql.append(".");
+  }
+  sql.append(escape).append(index.getTypeName()).append(escape).append("(");
+  for (  String attribute : index.getAttributes()) {
+    sql.append(escape).append(attribute).append(escape).append(", ");
+  }
+  sql.setLength(sql.length() - 2);
+  sql.append(")");
+  Statement st=null;
+  try {
+    st=cx.createStatement();
+    st.execute(sql.toString());
+    if (!cx.getAutoCommit()) {
+      cx.commit();
+    }
+  }
+  finally {
+    dataStore.closeSafe(cx);
+  }
+}
