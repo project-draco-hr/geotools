@@ -1,0 +1,31 @@
+{
+  SimpleFeatureType ft=dataStore.getSchema(tname("ft1"));
+  assertNotNull(ft);
+  String ft1TypeName=ft.getTypeName();
+  List<Index> indexes=dataStore.getIndexes(ft1TypeName);
+  assertNotNull(indexes);
+  final int initialSize=indexes.size();
+  String indexName="ft1_str_index";
+  Index stringIndex=new Index(ft1TypeName,indexName,false,aname("stringProperty"),aname("intProperty"));
+  dataStore.createIndex(stringIndex);
+  indexes=dataStore.getIndexes(ft1TypeName);
+  assertEquals(initialSize + 1,indexes.size());
+  for (  Index index : indexes) {
+    assertEquals(ft1TypeName,index.getTypeName());
+    if (index.getIndexName().equals(indexName)) {
+      List<String> attributes=index.getAttributes();
+      assertEquals(2,attributes.size());
+      assertEquals(aname("stringProperty"),attributes.get(0));
+      assertEquals(aname("intProperty"),attributes.get(1));
+    }
+  }
+  dataStore.dropIndex(ft1TypeName,indexName);
+  indexes=dataStore.getIndexes(ft1TypeName);
+  assertEquals(initialSize,indexes.size());
+  for (  Index index : indexes) {
+    assertEquals(ft1TypeName,index.getTypeName());
+    if (index.getIndexName().equals(indexName)) {
+      fail("the index has not been removed");
+    }
+  }
+}

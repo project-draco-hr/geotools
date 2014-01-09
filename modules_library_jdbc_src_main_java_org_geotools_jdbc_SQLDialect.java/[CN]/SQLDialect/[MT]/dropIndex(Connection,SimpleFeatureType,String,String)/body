@@ -1,0 +1,21 @@
+{
+  StringBuffer sql=new StringBuffer();
+  String escape=getNameEscape();
+  sql.append("DROP INDEX ");
+  if (databaseSchema != null) {
+    encodeSchemaName(databaseSchema,sql);
+    sql.append(".");
+  }
+  sql.append(escape).append(indexName).append(escape);
+  Statement st=null;
+  try {
+    st=cx.createStatement();
+    st.execute(sql.toString());
+    if (!cx.getAutoCommit()) {
+      cx.commit();
+    }
+  }
+  finally {
+    dataStore.closeSafe(cx);
+  }
+}
