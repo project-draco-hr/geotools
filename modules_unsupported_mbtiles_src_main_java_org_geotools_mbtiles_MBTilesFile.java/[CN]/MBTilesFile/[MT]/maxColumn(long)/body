@@ -1,0 +1,17 @@
+{
+  long size=Long.MAX_VALUE;
+  Connection cx=connPool.getConnection();
+  try {
+    PreparedStatement ps=prepare(cx,format("SELECT MAX(tile_column) FROM %s WHERE zoom_level=?",TABLE_TILES)).set(zoomLevel).statement();
+    ResultSet rs=ps.executeQuery();
+    if (rs.next()) {
+      size=rs.getLong(1);
+    }
+    rs.close();
+    ps.close();
+  }
+  finally {
+    cx.close();
+  }
+  return size;
+}

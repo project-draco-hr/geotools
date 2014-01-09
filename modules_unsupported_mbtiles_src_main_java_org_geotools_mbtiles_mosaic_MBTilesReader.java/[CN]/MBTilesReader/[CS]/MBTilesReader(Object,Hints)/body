@@ -1,0 +1,24 @@
+{
+  sourceFile=MBTilesFormat.getFileFromSource(source);
+  MBTilesFile file=new MBTilesFile(sourceFile);
+  metadata=file.loadMetaData();
+  try {
+    bounds=ReferencedEnvelope.create(metadata.getBounds(),WGS_84).transform(SPHERICAL_MERCATOR,true);
+  }
+ catch (  Exception e) {
+    bounds=null;
+  }
+  originalEnvelope=new GeneralEnvelope(bounds == null ? WORLD_ENVELOPE : bounds);
+  long maxZoom;
+  try {
+    maxZoom=file.maxZoom();
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+  long size=Math.round(Math.pow(ZOOM_LEVEL_BASE,maxZoom)) * DEFAULT_TILE_SIZE;
+  highestRes=new double[]{WORLD_ENVELOPE.getSpan(0) / size,WORLD_ENVELOPE.getSpan(1) / size};
+  originalGridRange=new GridEnvelope2D(new Rectangle((int)size,(int)size));
+  coverageFactory=CoverageFactoryFinder.getGridCoverageFactory(this.hints);
+  crs=SPHERICAL_MERCATOR;
+}

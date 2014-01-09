@@ -1,0 +1,17 @@
+{
+  long zoom=0;
+  Connection cx=connPool.getConnection();
+  try {
+    PreparedStatement ps=prepare(cx,format("SELECT zoom_level FROM %s ORDER BY abs(zoom_level - ?)",TABLE_TILES)).set(zoomLevel).statement();
+    ResultSet rs=ps.executeQuery();
+    if (rs.next()) {
+      zoom=rs.getLong(1);
+    }
+    rs.close();
+    ps.close();
+  }
+  finally {
+    cx.close();
+  }
+  return zoom;
+}

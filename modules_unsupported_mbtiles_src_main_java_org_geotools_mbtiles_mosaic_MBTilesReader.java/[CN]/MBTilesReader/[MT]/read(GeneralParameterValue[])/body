@@ -1,0 +1,85 @@
+{
+  MBTilesFile file=new MBTilesFile(sourceFile);
+  ReferencedEnvelope requestedEnvelope=null;
+  Rectangle dim=null;
+  if (parameters != null) {
+    for (int i=0; i < parameters.length; i++) {
+      final ParameterValue param=(ParameterValue)parameters[i];
+      final ReferenceIdentifier name=param.getDescriptor().getName();
+      if (name.equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
+        final GridGeometry2D gg=(GridGeometry2D)param.getValue();
+        try {
+          requestedEnvelope=ReferencedEnvelope.create(gg.getEnvelope(),gg.getCoordinateReferenceSystem()).transform(SPHERICAL_MERCATOR,true);
+          ;
+        }
+ catch (        Exception e) {
+          requestedEnvelope=null;
+        }
+        dim=gg.getGridRange2D().getBounds();
+        continue;
+      }
+    }
+  }
+  if (requestedEnvelope == null) {
+    requestedEnvelope=bounds;
+  }
+  long zoomLevel=0;
+  long leftTile, topTile, rightTile, bottomTile;
+  if (requestedEnvelope != null && dim != null) {
+    double ratioWidth=requestedEnvelope.getSpan(0) / WORLD_ENVELOPE.getSpan(0);
+    double propWidth=dim.getWidth() / ratioWidth;
+    zoomLevel=Math.round(Math.log(propWidth / DEFAULT_TILE_SIZE) / Math.log(ZOOM_LEVEL_BASE));
+  }
+  try {
+    zoomLevel=file.closestZoom(zoomLevel);
+  }
+ catch (  SQLException e1) {
+    throw new IOException(e1);
+  }
+  long numberOfTiles=Math.round(Math.pow(ZOOM_LEVEL_BASE,zoomLevel));
+  double resX=WORLD_ENVELOPE.getSpan(0) / numberOfTiles;
+  double resY=WORLD_ENVELOPE.getSpan(1) / numberOfTiles;
+  double offsetX=WORLD_ENVELOPE.getMinimum(0);
+  double offsetY=WORLD_ENVELOPE.getMinimum(1);
+  try {
+    leftTile=file.minColumn(zoomLevel);
+    rightTile=file.maxColumn(zoomLevel);
+    bottomTile=file.minRow(zoomLevel);
+    topTile=file.maxRow(zoomLevel);
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+  if (requestedEnvelope != null) {
+    leftTile=Math.max(leftTile,Math.round(Math.floor((requestedEnvelope.getMinimum(0) - offsetX) / resX)));
+    bottomTile=Math.max(bottomTile,Math.round(Math.floor((requestedEnvelope.getMinimum(1) - offsetY) / resY)));
+    rightTile=Math.max(leftTile,Math.min(rightTile,Math.round(Math.floor((requestedEnvelope.getMaximum(0) - offsetX) / resX))));
+    topTile=Math.max(bottomTile,Math.min(topTile,Math.round(Math.floor((requestedEnvelope.getMaximum(1) - offsetY) / resY))));
+  }
+  int width=(int)(rightTile - leftTile + 1) * DEFAULT_TILE_SIZE;
+  int height=(int)(topTile - bottomTile + 1) * DEFAULT_TILE_SIZE;
+  ReferencedEnvelope resultEnvelope=new ReferencedEnvelope(offsetX + leftTile * resX,offsetX + (rightTile + 1) * resX,offsetY + bottomTile * resY,offsetY + (topTile + 1) * resY,SPHERICAL_MERCATOR);
+  BufferedImage image=null;
+  MBTilesFile.TileIterator it;
+  try {
+    it=file.tiles(zoomLevel,leftTile,bottomTile,rightTile,topTile);
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+  while (it.hasNext()) {
+    MBTilesTile tile=it.next();
+    BufferedImage tileImage=readImage(tile.getData(),metadata.getFormatStr() == null ? "png" : metadata.getFormatStr());
+    if (image == null) {
+      image=getStartImage(tileImage,width,height);
+    }
+    int posx=(int)(tile.getTileColumn() - leftTile) * DEFAULT_TILE_SIZE;
+    int posy=(int)(topTile - tile.getTileRow()) * DEFAULT_TILE_SIZE;
+    image.getRaster().setRect(posx,posy,tileImage.getData());
+  }
+  it.close();
+  if (image == null) {
+    image=getStartImage(width,height);
+  }
+  return coverageFactory.create(metadata.getName() == null ? "nameless mbtiles" : metadata.getName(),image,resultEnvelope);
+}
