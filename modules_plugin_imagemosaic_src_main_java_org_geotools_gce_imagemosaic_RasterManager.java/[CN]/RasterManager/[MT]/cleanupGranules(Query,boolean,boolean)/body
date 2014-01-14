@@ -1,0 +1,42 @@
+{
+  final SimpleFeatureCollection collection=granuleCatalog.getGranules(query);
+  UniqueVisitor visitor=new UniqueVisitor(parentReader.locationAttributeName);
+  collection.accepts(visitor,null);
+  Set<String> features=visitor.getUnique();
+  final String coverageName=query.getTypeName();
+  for (  String feature : features) {
+    final URL rasterPath=pathType.resolvePath(DataUtilities.fileToURL(parentReader.parentDirectory).toString(),feature);
+    boolean delete=true;
+    if (checkForReferences) {
+      delete=!checkForReferences(coverageName);
+    }
+    AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(rasterPath,excludeMosaicHints);
+    if (format != null) {
+      GridCoverage2DReader coverageReader=null;
+      try {
+        coverageReader=(GridCoverage2DReader)format.getReader(rasterPath,hints);
+        if (coverageReader instanceof StructuredGridCoverage2DReader) {
+          StructuredGridCoverage2DReader reader=(StructuredGridCoverage2DReader)coverageReader;
+          if (delete) {
+            reader.delete(deleteData);
+          }
+ else {
+            reader.removeCoverage(coverageName,false);
+          }
+        }
+ else         if (deleteData) {
+          final boolean removed=FileUtils.deleteQuietly(DataUtilities.urlToFile(rasterPath));
+        }
+      }
+  finally {
+        if (coverageReader != null) {
+          try {
+            coverageReader.dispose();
+          }
+ catch (          Throwable t) {
+          }
+        }
+      }
+    }
+  }
+}
