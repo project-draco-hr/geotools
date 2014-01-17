@@ -1,0 +1,20 @@
+{
+  StyleBuilder sb=new StyleBuilder();
+  Mark mark=sb.createMark("square");
+  mark.setStroke(null);
+  Graphic graphic=sb.createGraphic(null,mark,null);
+  FilterFactory2 ff=sb.getFilterFactory();
+  graphic.setSize(ff.function("env",ff.literal("test")));
+  PointSymbolizer ps=sb.createPointSymbolizer(graphic);
+  Style style=sb.createStyle(ps);
+  try {
+    EnvFunction.setGlobalValue("test",10);
+    MetaBufferEstimator estimator=new MetaBufferEstimator();
+    style.accept(estimator);
+    assertTrue(estimator.isEstimateAccurate());
+    assertEquals(10,estimator.getBuffer());
+  }
+  finally {
+    EnvFunction.clearGlobalValues();
+  }
+}
