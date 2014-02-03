@@ -2,11 +2,34 @@
   List<Filter> newChildren=new ArrayList<Filter>(filter.getChildren().size());
   for (  Filter child : filter.getChildren()) {
     Filter cloned=(Filter)child.accept(this,extraData);
-    if (cloned == Filter.INCLUDE)     return Filter.INCLUDE;
-    if (cloned == Filter.EXCLUDE)     continue;
-    newChildren.add(cloned);
+    if (cloned == Filter.INCLUDE) {
+      return Filter.INCLUDE;
+    }
+    if (cloned == Filter.EXCLUDE) {
+      continue;
+    }
+    if (cloned instanceof Or) {
+      Or or=(Or)cloned;
+      newChildren.addAll(or.getChildren());
+    }
+ else {
+      newChildren.add(cloned);
+    }
   }
-  if (newChildren.size() == 0)   return Filter.EXCLUDE;
-  if (newChildren.size() == 1)   return newChildren.get(0);
+  if (newChildren.size() == 0) {
+    return Filter.EXCLUDE;
+  }
+  if (newChildren.size() == 1) {
+    return newChildren.get(0);
+  }
+  for (int i=0; i < newChildren.size(); i++) {
+    for (int j=i + 1; j < newChildren.size(); j++) {
+      Filter f1=newChildren.get(i);
+      Filter f2=newChildren.get(j);
+      if (unionIsInclude(f1,f2)) {
+        return Filter.INCLUDE;
+      }
+    }
+  }
   return getFactory(extraData).or(newChildren);
 }
