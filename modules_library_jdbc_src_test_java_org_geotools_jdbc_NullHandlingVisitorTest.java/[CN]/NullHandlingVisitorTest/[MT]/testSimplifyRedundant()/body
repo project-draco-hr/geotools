@@ -1,0 +1,12 @@
+{
+  PropertyIsBetween between=ff.between(ff.property("a"),ff.property("b"),ff.property("c"));
+  PropertyIsEqualTo equal=ff.equal(ff.property("a"),ff.property("b"),false);
+  And and=ff.and(between,equal);
+  NullHandlingVisitor nh=new NullHandlingVisitor();
+  Filter nhResult=(Filter)and.accept(nh,null);
+  SimplifyingFilterVisitor simplifier=new SimplifyingFilterVisitor();
+  Filter simplified=(Filter)nhResult.accept(simplifier,null);
+  assertTrue(simplified instanceof And);
+  Filter expected=ff.and(Arrays.asList(between,equal,propertyNotNull("a"),propertyNotNull("b"),propertyNotNull("c")));
+  assertEquals(expected,simplified);
+}
