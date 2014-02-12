@@ -48,7 +48,6 @@
   final PlanarImage[] alphas=new PlanarImage[size];
   ROI[] rois=new ROI[size];
   final PAMDataset[] pams=new PAMDataset[size];
-  ROI overallROI=null;
   int realROIs=0;
   for (int i=0; i < size; i++) {
     final MosaicElement mosaicElement=inputs.get(i);
@@ -58,18 +57,13 @@
     pams[i]=mosaicElement.pamDataset;
     if (mosaicElement.roi != null) {
       realROIs++;
-      if (overallROI == null) {
-        overallROI=new ROIGeometry(((ROIGeometry)mosaicElement.roi).getAsGeometry());
-      }
- else {
-        overallROI=overallROI.add(mosaicElement.roi);
-      }
     }
   }
   if (realROIs == 0) {
     rois=null;
   }
   final RenderedImage mosaic=mergeBehavior.process(sources,backgroundValues,sourceThreshold,(hasAlpha || doInputTransparency) ? alphas : null,rois,request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,localHints);
+  ROI overallROI=mosaicROIs(rois);
   if (footprintBehavior != FootprintBehavior.None) {
     RenderedOp rop=(RenderedOp)mosaic;
     rop.setProperty("ROI",overallROI);
