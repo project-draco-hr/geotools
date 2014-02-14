@@ -4,21 +4,25 @@
     try {
       String sql=format("SELECT a.*, b.column_name, b.geometry_type_name, b.m, b.z, c.organization_coordsys_id, c.definition" + " FROM %s a, %s b, %s c" + " WHERE a.table_name = b.table_name "+ " AND a.srs_id = c.srs_id "+ " AND a.table_name = ?"+ " AND a.data_type = ?",GEOPACKAGE_CONTENTS,GEOMETRY_COLUMNS,SPATIAL_REF_SYS);
       PreparedStatement ps=cx.prepareStatement(sql);
-      ps.setString(1,name);
-      ps.setString(2,DataType.Feature.value());
-      ResultSet rs=ps.executeQuery();
       try {
-        if (rs.next()) {
-          return createFeatureEntry(rs);
+        ps.setString(1,name);
+        ps.setString(2,DataType.Feature.value());
+        ResultSet rs=ps.executeQuery();
+        try {
+          if (rs.next()) {
+            return createFeatureEntry(rs);
+          }
+        }
+  finally {
+          close(rs);
         }
       }
   finally {
-        rs.close();
-        ps.close();
+        close(ps);
       }
     }
   finally {
-      cx.close();
+      close(cx);
     }
   }
  catch (  SQLException e) {
