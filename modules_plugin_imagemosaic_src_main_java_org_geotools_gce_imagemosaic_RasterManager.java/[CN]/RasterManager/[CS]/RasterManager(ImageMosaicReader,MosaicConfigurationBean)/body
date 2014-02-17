@@ -2,16 +2,20 @@
   Utilities.ensureNonNull("ImageMosaicReader",parentReader);
   this.parentReader=parentReader;
   this.expandMe=parentReader.expandMe;
+  boolean checkAuxiliaryMetadata=configuration.isCheckAuxiliaryMetadata();
   this.heterogeneousGranules=parentReader.heterogeneousGranules;
   this.configuration=configuration;
   hints=parentReader.getHints();
   if (configuration != null && configuration.getAuxiliaryFilePath() != null) {
     hints.add(new RenderingHints(Utils.AUXILIARY_FILES_PATH,configuration.getAuxiliaryFilePath()));
   }
+  if (checkAuxiliaryMetadata) {
+    hints.add(new RenderingHints(Utils.CHECK_AUXILIARY_METADATA,checkAuxiliaryMetadata));
+  }
   granuleCatalog=parentReader.granuleCatalog;
   this.coverageFactory=parentReader.getGridCoverageFactory();
   this.coverageIdentifier=configuration != null ? configuration.getName() : ImageMosaicReader.UNSPECIFIED;
-  this.pathType=parentReader.pathType;
+  this.pathType=configuration.getCatalogConfigurationBean().isAbsolutePath() ? PathType.ABSOLUTE : PathType.RELATIVE;
   extractOverviewPolicy();
   extractDecimationPolicy();
   loadSampleImage(configuration);

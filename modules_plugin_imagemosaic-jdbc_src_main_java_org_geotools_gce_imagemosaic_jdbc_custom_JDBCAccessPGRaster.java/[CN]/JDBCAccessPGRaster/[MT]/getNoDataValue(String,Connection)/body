@@ -1,0 +1,28 @@
+{
+  PreparedStatement s=null;
+  ResultSet res=null;
+  try {
+    String stmt="select ST_BandNoDataValue(rast) from " + coverageTableName + " limit 1";
+    s=con.prepareStatement(stmt);
+    res=s.executeQuery();
+    if (res.next()) {
+      ResultSetMetaData resultMetadata=res.getMetaData();
+      String colType=resultMetadata.getColumnTypeName(1);
+      if (colType != null && colType.toLowerCase().startsWith("float")) {
+        return res.getFloat(1);
+      }
+ else {
+        return res.getInt(1);
+      }
+    }
+    return null;
+  }
+  finally {
+    if (res != null) {
+      res.close();
+    }
+    if (s != null) {
+      s.close();
+    }
+  }
+}

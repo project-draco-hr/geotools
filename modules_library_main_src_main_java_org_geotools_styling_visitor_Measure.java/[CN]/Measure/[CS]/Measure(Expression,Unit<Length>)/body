@@ -1,0 +1,27 @@
+{
+  this.expression=unscaled;
+  setDefaultUnit(defaultUnit);
+  this.uom=defaultUnit;
+  if (unscaled instanceof Literal) {
+    processLiteralExpression((Literal)unscaled,defaultUnit);
+  }
+ else {
+    PropertyIsNull test=ff.isNull(unscaled);
+    Filter simplified=(Filter)test.accept(new SimplifyingFilterVisitor(),null);
+    if (simplified == Filter.INCLUDE) {
+      this.expression=NilExpression.NIL;
+      this.uom=defaultUnit;
+    }
+ else     if (simplified instanceof PropertyIsNull) {
+      PropertyIsNull pin=(PropertyIsNull)simplified;
+      Expression se=pin.getExpression();
+      if (se instanceof Literal) {
+        processLiteralExpression((Literal)se,defaultUnit);
+      }
+ else {
+        this.expression=se;
+        this.uom=defaultUnit;
+      }
+    }
+  }
+}

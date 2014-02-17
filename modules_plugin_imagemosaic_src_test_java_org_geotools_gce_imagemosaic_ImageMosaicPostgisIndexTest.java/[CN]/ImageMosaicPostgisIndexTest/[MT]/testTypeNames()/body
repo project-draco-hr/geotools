@@ -1,0 +1,63 @@
+{
+  final File workDir=new File(TestData.file(this,"."),tempFolderName3);
+  assertTrue(workDir.mkdir());
+  FileUtils.copyFile(TestData.file(this,"watertemp.zip"),new File(workDir,"watertemp.zip"));
+  TestData.unzipFile(this,tempFolderName3 + "/watertemp.zip");
+  final URL timeElevURL=TestData.url(this,tempFolderName3);
+  final File datastoreProperties=new File(TestData.file(this,"."),tempFolderName3 + "/datastore.properties");
+  final Map<String,String> params=new HashMap<String,String>();
+  final Properties p=new Properties();
+  FileWriter out=null;
+  try {
+    out=new FileWriter(datastoreProperties);
+    final Set<Object> keyset=fixture.keySet();
+    for (    Object key : keyset) {
+      final String key_=(String)key;
+      final String value=fixture.getProperty(key_);
+      if (!key_.equalsIgnoreCase(Utils.SCAN_FOR_TYPENAMES)) {
+        params.put(key_,value);
+        p.put(key_,value);
+      }
+    }
+    p.store(out,"");
+  }
+  finally {
+    IOUtils.closeQuietly(out);
+  }
+  DataStore ds=null;
+  try {
+    ds=new PostgisNGDataStoreFactory().createDataStore(params);
+    final List<AttributeDescriptor> schema=new ArrayList<AttributeDescriptor>();
+    schema.add(new AttributeDescriptorImpl(new AttributeTypeImpl(new NameImpl("name"),String.class,false,false,null,null,null),new NameImpl("name"),0,0,true,""));
+    SimpleFeatureType featureType=new SimpleFeatureTypeImpl(new NameImpl(noGeomFirst),schema,null,false,null,null,null);
+    ds.createSchema(featureType);
+    featureType=new SimpleFeatureTypeImpl(new NameImpl(noGeomLast),schema,null,false,null,null,null);
+    ds.createSchema(featureType);
+  }
+  finally {
+    if (ds != null) {
+      ds.dispose();
+    }
+  }
+  AbstractGridFormat format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  ImageMosaicReader reader=TestUtils.getReader(timeElevURL,format,null,false);
+  assertNull(reader);
+  format=null;
+  dropTables(new String[]{tempFolderName3});
+  assertTrue(new File(timeElevURL.getFile(),"sample_image").delete());
+  assertTrue(new File(timeElevURL.getFile(),tempFolderName3 + ".properties").delete());
+  try {
+    out=new FileWriter(datastoreProperties);
+    p.put(Utils.SCAN_FOR_TYPENAMES,"false");
+    p.store(out,"");
+  }
+  finally {
+    IOUtils.closeQuietly(out);
+  }
+  format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  reader.dispose();
+}

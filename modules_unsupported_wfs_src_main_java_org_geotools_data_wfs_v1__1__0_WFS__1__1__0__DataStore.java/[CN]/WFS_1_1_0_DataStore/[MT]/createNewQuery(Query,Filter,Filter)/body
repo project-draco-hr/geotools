@@ -1,0 +1,16 @@
+{
+  Query query=new Query(model);
+  query.setFilter(filter);
+  query.setMaxFeatures(getMaxFeatures(query));
+  if (postFilter != Filter.INCLUDE && query.getPropertyNames() != Query.ALL_NAMES) {
+    FilterAttributeExtractor fae=new FilterAttributeExtractor();
+    postFilter.accept(fae,null);
+    String[] attributeNames=fae.getAttributeNames();
+    String[] queryProperties=query.getPropertyNames();
+    LinkedHashSet<String> atts=new LinkedHashSet<String>();
+    atts.addAll(Arrays.asList(queryProperties));
+    atts.addAll(Arrays.asList(attributeNames));
+    query.setPropertyNames((String[])atts.toArray(new String[atts.size()]));
+  }
+  return query;
+}

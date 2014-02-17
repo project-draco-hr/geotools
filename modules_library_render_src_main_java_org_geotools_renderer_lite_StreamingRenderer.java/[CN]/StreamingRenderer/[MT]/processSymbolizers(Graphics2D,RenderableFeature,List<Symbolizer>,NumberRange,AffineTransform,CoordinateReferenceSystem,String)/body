@@ -1,4 +1,5 @@
 {
+  int paintCommands=0;
   for (  Symbolizer symbolizer : symbolizers) {
     if (symbolizer instanceof RasterSymbolizer) {
       GridCoverage2D coverage=null;
@@ -10,8 +11,9 @@
         }
  else         if (grid instanceof GridCoverage2DReader) {
           final Object params=paramsPropertyName.evaluate(drawMe.content);
-          GridGeometry2D readGG=new GridGeometry2D(new GridEnvelope2D(screenSize),mapExtent);
           GridCoverage2DReader reader=(GridCoverage2DReader)grid;
+          CoordinateReferenceSystem sourceCRS=reader.getCoordinateReferenceSystem();
+          GridGeometry2D readGG=getRasterGridGeometry(destinationCrs,sourceCRS);
           coverage=readCoverage(reader,params,readGG);
           disposeCoverage=true;
         }
@@ -26,6 +28,7 @@ catch (      IOException e) {
       }
       if (coverage != null) {
         requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,(RasterSymbolizer)symbolizer,destinationCrs,at));
+        paintCommands++;
       }
     }
  else {
@@ -35,6 +38,7 @@ catch (      IOException e) {
       }
       if (symbolizer instanceof TextSymbolizer && drawMe.content instanceof Feature) {
         labelCache.put(layerId,(TextSymbolizer)symbolizer,(Feature)drawMe.content,shape,scaleRange);
+        paintCommands++;
       }
  else {
         Style2D style=styleFactory.createStyle(drawMe.content,symbolizer,scaleRange);
@@ -44,7 +48,9 @@ catch (      IOException e) {
         env.expandBy(clipBuffer);
         final GeometryClipper clipper=new GeometryClipper(env);
         Geometry g=clipper.clip(shape.getGeometry(),false);
-        if (g == null)         continue;
+        if (g == null) {
+          continue;
+        }
         if (g != shape.getGeometry()) {
           shape=new LiteShape2(g,null,null,false);
         }
@@ -53,8 +59,11 @@ catch (      IOException e) {
           paintShapeRequest.setLabelObstacle(true);
         }
         requests.put(paintShapeRequest);
+        paintCommands++;
       }
     }
   }
-  fireFeatureRenderedEvent(drawMe.content);
+  if (paintCommands > 0) {
+    requests.put(new FeatureRenderedRequest(drawMe.content));
+  }
 }

@@ -1,36 +1,42 @@
 {
-  super.visit(text);
-  TextSymbolizer copy=(TextSymbolizer)pages.peek();
-  Font[] fonts=copy.getFonts();
-  for (  Font font : fonts) {
-    font.setSize(rescale(font.getSize()));
-  }
-  copy.setFonts(fonts);
-  LabelPlacement placement=copy.getLabelPlacement();
-  if (placement instanceof PointPlacement) {
-    PointPlacement pointPlacement=(PointPlacement)placement;
-    Displacement disp=pointPlacement.getDisplacement();
-    if (disp != null) {
-      disp.setDisplacementX(rescale(disp.getDisplacementX()));
-      disp.setDisplacementY(rescale(disp.getDisplacementY()));
-      pointPlacement.setDisplacement(disp);
+  this.defaultUnit=text.getUnitOfMeasure();
+  try {
+    super.visit(text);
+    TextSymbolizer copy=(TextSymbolizer)pages.peek();
+    Font[] fonts=copy.getFonts();
+    for (    Font font : fonts) {
+      font.setSize(rescale(font.getSize()));
     }
+    copy.setFonts(fonts);
+    LabelPlacement placement=copy.getLabelPlacement();
+    if (placement instanceof PointPlacement) {
+      PointPlacement pointPlacement=(PointPlacement)placement;
+      Displacement disp=pointPlacement.getDisplacement();
+      if (disp != null) {
+        disp.setDisplacementX(rescale(disp.getDisplacementX()));
+        disp.setDisplacementY(rescale(disp.getDisplacementY()));
+        pointPlacement.setDisplacement(disp);
+      }
+    }
+ else     if (placement instanceof LinePlacement) {
+      LinePlacement linePlacement=(LinePlacement)placement;
+      linePlacement.setGap(rescale(linePlacement.getGap()));
+      linePlacement.setInitialGap(rescale(linePlacement.getInitialGap()));
+      linePlacement.setPerpendicularOffset(rescale(linePlacement.getPerpendicularOffset()));
+    }
+    copy.setLabelPlacement(placement);
+    if (copy.getHalo() != null) {
+      copy.getHalo().setRadius(rescale(copy.getHalo().getRadius()));
+    }
+    Map<String,String> options=copy.getOptions();
+    rescaleOption(options,SPACE_AROUND_KEY,DEFAULT_SPACE_AROUND);
+    rescaleOption(options,MAX_DISPLACEMENT_KEY,DEFAULT_MAX_DISPLACEMENT);
+    rescaleOption(options,MIN_GROUP_DISTANCE_KEY,DEFAULT_MIN_GROUP_DISTANCE);
+    rescaleOption(options,LABEL_REPEAT_KEY,DEFAULT_LABEL_REPEAT);
+    rescaleOption(options,AUTO_WRAP_KEY,DEFAULT_AUTO_WRAP);
+    rescaleArrayOption(options,GRAPHIC_MARGIN_KEY,0);
   }
- else   if (placement instanceof LinePlacement) {
-    LinePlacement linePlacement=(LinePlacement)placement;
-    linePlacement.setGap(rescale(linePlacement.getGap()));
-    linePlacement.setInitialGap(rescale(linePlacement.getInitialGap()));
-    linePlacement.setPerpendicularOffset(rescale(linePlacement.getPerpendicularOffset()));
+  finally {
+    this.defaultUnit=null;
   }
-  copy.setLabelPlacement(placement);
-  if (copy.getHalo() != null) {
-    copy.getHalo().setRadius(rescale(copy.getHalo().getRadius()));
-  }
-  Map<String,String> options=copy.getOptions();
-  rescaleOption(options,SPACE_AROUND_KEY,DEFAULT_SPACE_AROUND);
-  rescaleOption(options,MAX_DISPLACEMENT_KEY,DEFAULT_MAX_DISPLACEMENT);
-  rescaleOption(options,MIN_GROUP_DISTANCE_KEY,DEFAULT_MIN_GROUP_DISTANCE);
-  rescaleOption(options,LABEL_REPEAT_KEY,DEFAULT_LABEL_REPEAT);
-  rescaleOption(options,AUTO_WRAP_KEY,DEFAULT_AUTO_WRAP);
-  rescaleArrayOption(options,GRAPHIC_MARGIN_KEY,0);
 }

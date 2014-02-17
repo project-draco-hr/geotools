@@ -1,0 +1,22 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps;
+      if (entry.getData() != null) {
+        ps=prepare(cx,format("INSERT OR REPLACE INTO %s VALUES (?,?,?,?)",TABLE_TILES)).set(entry.getZoomLevel()).set(entry.getTileColumn()).set(entry.getTileRow()).set(entry.getData()).log(Level.FINE).statement();
+      }
+ else {
+        ps=prepare(cx,format("DELETE FROM %s WHERE zoom_level=? AND tile_column=? AND tile_row=?",TABLE_TILES)).set(entry.getZoomLevel()).set(entry.getTileColumn()).set(entry.getTileRow()).log(Level.FINE).statement();
+      }
+      ps.execute();
+      ps.close();
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}

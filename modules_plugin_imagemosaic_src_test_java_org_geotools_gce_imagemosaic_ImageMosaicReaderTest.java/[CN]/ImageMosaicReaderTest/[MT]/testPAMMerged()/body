@@ -1,0 +1,20 @@
+{
+  final URL timePamURL=TestData.url(this,"pam");
+  final AbstractGridFormat format=TestUtils.getFormat(timePamURL);
+  assertNotNull(format);
+  ImageMosaicReader reader=TestUtils.getReader(timePamURL,format);
+  assertNotNull(format);
+  final String[] metadataNames=reader.getMetadataNames();
+  assertNotNull(metadataNames);
+  GridCoverage2D coverage=reader.read(null);
+  Object object=coverage.getProperty(Utils.PAM_DATASET);
+  assertNotNull(object);
+  assertTrue(object instanceof PAMDataset);
+  PAMDataset dataset=(PAMDataset)object;
+  PAMRasterBand band=dataset.getPAMRasterBand().get(0);
+  PAMParser parser=PAMParser.getInstance();
+  assertEquals(0,Double.parseDouble(parser.getMetadataValue(band,"STATISTICS_MINIMUM")),DELTA);
+  assertEquals(255.0,Double.parseDouble(parser.getMetadataValue(band,"STATISTICS_MAXIMUM")),DELTA);
+  assertEquals(72.6912,Double.parseDouble(parser.getMetadataValue(band,"STATISTICS_MEAN")),DELTA);
+  assertEquals(83.2542,Double.parseDouble(parser.getMetadataValue(band,"STATISTICS_STDDEV")),DELTA);
+}

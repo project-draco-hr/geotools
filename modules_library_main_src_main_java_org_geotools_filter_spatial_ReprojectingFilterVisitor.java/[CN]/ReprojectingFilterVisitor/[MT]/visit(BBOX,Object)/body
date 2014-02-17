@@ -2,7 +2,13 @@
   BoundingBox boundaries=filter.getBounds();
   CoordinateReferenceSystem crs=boundaries.getCoordinateReferenceSystem();
   if (crs == null)   return super.visit(filter,extraData);
-  PropertyName propertyName=ff.property(filter.getPropertyName());
+  PropertyName propertyName=null;
+  if (filter.getExpression1() instanceof PropertyName) {
+    propertyName=(PropertyName)filter.getExpression1();
+  }
+ else   if (filter.getExpression2() instanceof PropertyName) {
+    propertyName=(PropertyName)filter.getExpression2();
+  }
   CoordinateReferenceSystem targetCrs=findPropertyCRS(propertyName);
   if (crs != null && targetCrs != null && !CRS.equalsIgnoreMetadata(crs,targetCrs)) {
     ReferencedEnvelope envelope=ReferencedEnvelope.reference(boundaries);

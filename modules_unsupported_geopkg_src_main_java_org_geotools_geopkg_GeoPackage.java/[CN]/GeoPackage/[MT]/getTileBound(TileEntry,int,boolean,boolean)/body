@@ -1,0 +1,33 @@
+{
+  try {
+    int tileBounds=-1;
+    StringBuffer sql=new StringBuffer("SELECT " + (isMax ? "MAX" : "MIN") + "( "+ (isRow ? "tile_row" : "tile_column")+ ") FROM ");
+    sql.append(entry.getTableName());
+    sql.append(" WHERE zoom_level == ");
+    sql.append(zoom);
+    Connection cx=connPool.getConnection();
+    try {
+      Statement st=cx.createStatement();
+      try {
+        ResultSet rs=st.executeQuery(sql.toString());
+        try {
+          rs.next();
+          tileBounds=rs.getInt(1);
+        }
+  finally {
+          close(rs);
+        }
+      }
+  finally {
+        close(st);
+      }
+    }
+  finally {
+      close(cx);
+    }
+    return tileBounds;
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}

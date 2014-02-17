@@ -29,11 +29,14 @@
         throw new DataSourceException("No mosaic properties file or datastore properties file have been found");
       }
       GranuleCatalog catalog=null;
-      final Properties props=CatalogManager.createGranuleCatalogProperties(datastoreProperties);
-      final String SPIClass=props.getProperty("SPI");
-      final DataStoreFactorySpi spi=(DataStoreFactorySpi)Class.forName(SPIClass).newInstance();
-      final Map<String,Serializable> params=Utils.createDataStoreParamsFromPropertiesFile(props,spi);
-      params.put(Utils.SCAN_FOR_TYPENAMES,Boolean.valueOf(true));
+      final Properties params=CatalogManager.createGranuleCatalogProperties(datastoreProperties);
+      final Object typeNames=params.get(Utils.SCAN_FOR_TYPENAMES);
+      if (typeNames != null) {
+        params.put(Utils.SCAN_FOR_TYPENAMES,Boolean.valueOf(typeNames.toString()));
+      }
+ else {
+        params.put(Utils.SCAN_FOR_TYPENAMES,Boolean.TRUE);
+      }
       if (beans.size() > 0) {
         catalog=GranuleCatalogFactory.createGranuleCatalog(sourceURL,beans.get(0).getCatalogConfigurationBean(),params,getHints());
       }
@@ -42,9 +45,10 @@
       }
       MultiLevelROIProvider rois=MultiLevelROIProviderFactory.createFootprintProvider(parent);
       catalog.setMultiScaleROIProvider(rois);
-      if (granuleCatalog == null) {
-        granuleCatalog=catalog;
+      if (granuleCatalog != null) {
+        granuleCatalog.dispose();
       }
+      granuleCatalog=catalog;
       if (granuleCatalog == null) {
         throw new DataSourceException("Unable to create index for this URL " + sourceURL);
       }
@@ -58,6 +62,12 @@
       MultiLevelROIProvider rois=MultiLevelROIProviderFactory.createFootprintProvider(parent);
       granuleCatalog.setMultiScaleROIProvider(rois);
       addRasterManager(configuration,true);
+    }
+    if (sourceURL != null) {
+      parentDirectory=DataUtilities.urlToFile(sourceURL);
+      if (!parentDirectory.isDirectory()) {
+        parentDirectory=parentDirectory.getParentFile();
+      }
     }
   }
  catch (  Throwable e) {

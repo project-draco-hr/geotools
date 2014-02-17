@@ -1,0 +1,28 @@
+{
+  BufferedImage bi=new BufferedImage(100,100,BufferedImage.TYPE_BYTE_GRAY);
+  Graphics2D graphics=bi.createGraphics();
+  graphics.setColor(Color.DARK_GRAY);
+  graphics.fillRect(0,0,bi.getWidth(),bi.getHeight());
+  graphics.dispose();
+  double baseX=529687;
+  double baseY=3374773;
+  CoordinateReferenceSystem nativeCrs=CRS.decode("EPSG:26915",true);
+  GridCoverage2D coverage=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",bi,new ReferencedEnvelope(baseX,baseX + bi.getWidth(),baseY,baseY + bi.getHeight(),nativeCrs));
+  File testFile=new File("./target/testReprojection.tiff");
+  GeoTiffWriter writer=new GeoTiffWriter(testFile);
+  writer.write(coverage,null);
+  MathTransform r2m=coverage.getGridGeometry().getGridToCRS();
+  Envelope env=new Envelope(25,75,25,75);
+  ReferencedEnvelope read26915=new ReferencedEnvelope(JTS.transform(env,r2m),nativeCrs);
+  CoordinateReferenceSystem mapCRS=CRS.decode("EPSG:3857",true);
+  ReferencedEnvelope read3857=read26915.transform(mapCRS,true);
+  StyleBuilder sb=new StyleBuilder();
+  Layer layer=new GridReaderLayer(new GeoTiffReader(testFile),sb.createStyle(sb.createRasterSymbolizer()));
+  MapContent mc=new MapContent();
+  mc.getViewport().setBounds(read3857);
+  mc.addLayer(layer);
+  StreamingRenderer sr=new StreamingRenderer();
+  sr.setMapContent(mc);
+  BufferedImage result=RendererBaseTest.showRender("testGridCoverageBoundsReprojection",sr,1000,read3857);
+  ImageAssert.assertEquals(new File("src/test/resources/org/geotools/renderer/lite/reprojectBuffer.png"),result,0);
+}

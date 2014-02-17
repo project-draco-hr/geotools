@@ -2,9 +2,11 @@
   fileIndex++;
   if (!checkFile(fileBeingProcessed))   return;
   String validFileName;
+  String extension;
   try {
     validFileName=fileBeingProcessed.getCanonicalPath();
     validFileName=FilenameUtils.normalize(validFileName);
+    extension=FilenameUtils.getExtension(validFileName);
   }
  catch (  IOException e) {
     eventHandler.fireFileEvent(Level.FINER,fileBeingProcessed,false,"Exception occurred while processing file " + fileBeingProcessed + ": "+ e.getMessage(),((fileIndex * 100.0) / numFiles));
@@ -28,7 +30,9 @@
       }
     }
     if ((format instanceof UnknownFormat) || format == null) {
-      eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipped file " + fileBeingProcessed + ": File format is not supported.",((fileIndex * 99.0) / numFiles));
+      if (!logExcludes.contains(extension)) {
+        eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipped file " + fileBeingProcessed + ": File format is not supported.",((fileIndex * 99.0) / numFiles));
+      }
       return;
     }
     cachedFormat=format;

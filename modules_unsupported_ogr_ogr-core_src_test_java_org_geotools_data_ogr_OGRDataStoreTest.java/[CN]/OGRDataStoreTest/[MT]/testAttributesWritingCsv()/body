@@ -1,0 +1,28 @@
+{
+  if (!ogrSupports("CSV")) {
+    System.out.println("Skipping CSV writing test as OGR was not built to support it");
+  }
+  SimpleFeatureCollection features=createFeatureCollection();
+  File tmpFile=getTempFile("test-csv",".csv");
+  tmpFile.delete();
+  OGRDataStore s=new OGRDataStore(tmpFile.getAbsolutePath(),"CSV",null,ogr);
+  s.createSchema(features,true,new String[]{"GEOMETRY=AS_WKT"});
+  assertEquals(1,s.getTypeNames().length);
+  String typeName=tmpFile.getName().substring(0,tmpFile.getName().lastIndexOf(".csv"));
+  SimpleFeatureCollection fc=s.getFeatureSource(typeName).getFeatures();
+  assertEquals(features.size(),fc.size());
+  int c=0;
+  SimpleFeatureIterator it=fc.features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      assertNotNull(f);
+      assertNotNull(f.getDefaultGeometry());
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  assertEquals(fc.size(),c);
+}

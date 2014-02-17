@@ -1,0 +1,28 @@
+{
+  if (!ogrSupports("GMT")) {
+    System.out.println("Skipping GMT writing test as OGR was not built to support it");
+  }
+  SimpleFeatureCollection features=createFeatureCollection();
+  File tmpFile=getTempFile("test-gmt",".gmt");
+  tmpFile.delete();
+  OGRDataStore s=new OGRDataStore(tmpFile.getAbsolutePath(),"GMT",null,ogr);
+  s.createSchema(features,true,null);
+  assertEquals(1,s.getTypeNames().length);
+  String typeName=tmpFile.getName().substring(0,tmpFile.getName().lastIndexOf(".gmt"));
+  SimpleFeatureCollection fc=s.getFeatureSource(typeName).getFeatures();
+  assertEquals(features.size(),fc.size());
+  int c=0;
+  SimpleFeatureIterator it=fc.features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      assertNotNull(f);
+      assertNotNull(f.getDefaultGeometry());
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  assertEquals(fc.size(),c);
+}

@@ -1,0 +1,27 @@
+{
+  PostgisNGDataStoreFactory factory=new PostgisNGDataStoreFactory();
+  Properties db=fixture;
+  Map<String,Object> params=new HashMap<String,Object>();
+  params.put(HOST.key,db.getProperty(HOST.key));
+  params.put(DATABASE.key,CREATE_DROP_TESTDB);
+  params.put(PORT.key,db.getProperty(PORT.key));
+  params.put(USER.key,db.getProperty(USER.key));
+  params.put(PASSWD.key,db.getProperty(PASSWD.key));
+  params.put(DBTYPE.key,"postgis");
+  params.put(PostgisNGDataStoreFactory.CREATE_DB_IF_MISSING.key,true);
+  assertTrue(factory.canProcess(params));
+  JDBCDataStore store=factory.createDataStore(params);
+  assertNotNull(store);
+  store.createSchema(DataUtilities.createType("test","id:String,polygonProperty:Polygon:srid=32615"));
+  store.getSchema("test");
+  store.dispose();
+  factory.dropDatabase(params);
+  params.remove(PostgisNGDataStoreFactory.CREATE_DB_IF_MISSING.key);
+  try {
+    store=factory.createDataStore(params);
+    store.getTypeNames();
+    fail("This one should have failed, the database has just been dropped");
+  }
+ catch (  Exception e) {
+  }
+}

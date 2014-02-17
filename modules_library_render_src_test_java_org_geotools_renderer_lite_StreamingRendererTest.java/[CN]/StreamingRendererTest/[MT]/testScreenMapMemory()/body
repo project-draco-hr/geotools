@@ -1,0 +1,35 @@
+{
+  LiteCoordinateSequence cs=new LiteCoordinateSequence(new double[]{0,0,1,1,2,0,3,1,4,0});
+  SimpleFeature zigzag1=SimpleFeatureBuilder.build(testLineFeatureType,new Object[]{gf.createLineString(cs)},"zz1");
+  SimpleFeature zigzag2=SimpleFeatureBuilder.build(testLineFeatureType,new Object[]{gf.createLineString(cs)},"zz2");
+  DefaultFeatureCollection fc=new DefaultFeatureCollection();
+  fc.add(zigzag1);
+  fc.add(zigzag2);
+  SimpleFeatureSource zzSource=new CollectionFeatureSource(fc);
+  MapContent mc=new MapContent();
+  StyleBuilder sb=new StyleBuilder();
+  mc.addLayer(new FeatureLayer(zzSource,sb.createStyle(sb.createLineSymbolizer())));
+  StreamingRenderer sr=new StreamingRenderer();
+  sr.setMapContent(mc);
+  final List<SimpleFeature> features=new ArrayList<SimpleFeature>();
+  RenderListener renderedFeaturesCollector=new RenderListener(){
+    @Override public void featureRenderer(    SimpleFeature feature){
+      features.add(feature);
+    }
+    @Override public void errorOccurred(    Exception e){
+    }
+  }
+;
+  sr.addRenderListener(renderedFeaturesCollector);
+  BufferedImage bi=new BufferedImage(1,1,BufferedImage.TYPE_3BYTE_BGR);
+  Graphics2D graphics=bi.createGraphics();
+  sr.paint(graphics,new Rectangle(0,0,1,1),new ReferencedEnvelope(0,8,0,8,DefaultGeographicCRS.WGS84));
+  assertEquals(1,features.size());
+  assertEquals("zz1",features.get(0).getID());
+  features.clear();
+  sr.paint(graphics,new Rectangle(0,0,1,1),new ReferencedEnvelope(0,1,0,1,DefaultGeographicCRS.WGS84));
+  assertEquals(2,features.size());
+  assertEquals("zz1",features.get(0).getID());
+  assertEquals("zz2",features.get(1).getID());
+  graphics.dispose();
+}

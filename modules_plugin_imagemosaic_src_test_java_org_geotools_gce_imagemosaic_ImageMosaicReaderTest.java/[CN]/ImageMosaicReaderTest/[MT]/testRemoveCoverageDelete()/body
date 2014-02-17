@@ -1,0 +1,41 @@
+{
+  final String referenceDir="testRemove2";
+  final File workDir=new File(TestData.file(this,"."),referenceDir);
+  if (!workDir.mkdir()) {
+    FileUtils.deleteDirectory(workDir);
+    assertTrue("Unable to create workdir:" + workDir,workDir.mkdir());
+  }
+  final File zipFile=new File(workDir,"watertemp.zip");
+  FileUtils.copyFile(TestData.file(this,"watertemp.zip"),zipFile);
+  TestData.unzipFile(this,referenceDir + "/watertemp.zip");
+  final URL timeElevURL=TestData.url(this,referenceDir);
+  FileWriter out=null;
+  try {
+    out=new FileWriter(new File(TestData.file(this,"."),referenceDir + "/datastore.properties"));
+    out.write("database=imagemosaicremove2\n");
+    out.write(H2_SAMPLE_PROPERTIES);
+    out.flush();
+  }
+  finally {
+    if (out != null) {
+      IOUtils.closeQuietly(out);
+    }
+  }
+  final AbstractGridFormat format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  ImageMosaicReader reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  try {
+    assertEquals(1,reader.getGridCoverageNames().length);
+    File[] files=workDir.listFiles();
+    assertNotNull(files);
+    assertEquals(16,files.length);
+    reader.removeCoverage(reader.getGridCoverageNames()[0],true);
+    assertEquals(0,reader.getGridCoverageNames().length);
+    files=workDir.listFiles();
+    assertEquals(12,files.length);
+  }
+  finally {
+    reader.dispose();
+  }
+}

@@ -1,0 +1,24 @@
+{
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  GeometryFactory gf=JTSFactoryFinder.getGeometryFactory();
+  final URL imageURL=TestData.getResource(this,"icon64.png");
+  final BufferedImage testImage=ImageIO.read(imageURL);
+  final int width=testImage.getWidth();
+  final int height=testImage.getHeight();
+  final Style style=RendererBaseTest.loadStyle(this,"testGraphicLegend.sld");
+  final Rule rule=style.featureTypeStyles().get(0).rules().get(0);
+  final GraphicLegend legend=(GraphicLegend)rule.getLegend();
+  legend.setRotation(ff.literal(45.0));
+  final Point point=gf.createPoint(new Coordinate(width / 2,height / 2));
+  final LiteShape2 shape=new LiteShape2(point,null,null,false);
+  int imageType=testImage.getType();
+  if (imageType == BufferedImage.TYPE_CUSTOM) {
+    imageType=BufferedImage.TYPE_INT_RGB;
+  }
+  final BufferedImage paintedImage=new BufferedImage(width,height,imageType);
+  final Graphics2D graphics=paintedImage.createGraphics();
+  final StyledShapePainter painter=new StyledShapePainter();
+  painter.paint(graphics,shape,legend,1,false);
+  graphics.dispose();
+  Assert.assertFalse(imagesIdentical(paintedImage,testImage));
+}

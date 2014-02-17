@@ -1,0 +1,18 @@
+{
+  statementMap=new HashMap<ImageLevelInfo,String>();
+  for (  ImageLevelInfo li : getLevelInfos()) {
+    if (li.getCoverageName().equals(coverageName) == false) {
+      continue;
+    }
+    String select="select (ST_BandMetaData(" + getConfig().getBlobAttributeNameInTileTable() + ")).isoutdb "+ " from "+ li.getTileTableName()+ " LIMIT 1";
+    PreparedStatement ps=con.prepareStatement(select);
+    ResultSet rs=ps.executeQuery();
+    if (rs.next()) {
+      Boolean isOut=(Boolean)rs.getObject("isoutdb");
+      String gridStatement=isOut ? "SELECT st_asbinary(st_envelope (" + getConfig().getBlobAttributeNameInTileTable() + ")),"+ getConfig().getBlobAttributeNameInTileTable()+ " from "+ li.getTileTableName()+ " where st_intersects("+ getConfig().getBlobAttributeNameInTileTable()+ " ,ST_GeomFromWKB(?,?))" : "SELECT st_asbinary(st_envelope (" + getConfig().getBlobAttributeNameInTileTable() + ")),st_astiff("+ getConfig().getBlobAttributeNameInTileTable()+ ") "+ " from "+ li.getTileTableName()+ " where st_intersects("+ getConfig().getBlobAttributeNameInTileTable()+ " ,ST_GeomFromWKB(?,?))";
+      statementMap.put(li,gridStatement);
+    }
+    rs.close();
+    ps.close();
+  }
+}

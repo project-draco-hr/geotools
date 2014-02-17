@@ -2,27 +2,31 @@
   try {
     Connection cx=connPool.getConnection();
     try {
-      PreparedStatement ps=cx.prepareStatement(String.format("SELECT srid FROM %s WHERE srid = ? AND auth_name = ?",SPATIAL_REF_SYS));
+      PreparedStatement ps=cx.prepareStatement(String.format("SELECT srs_id FROM %s WHERE srs_id = ?",SPATIAL_REF_SYS));
       try {
-        ResultSet rs=prepare(ps).set(srid).set(auth).log(Level.FINE).statement().executeQuery();
-        if (rs.next()) {
-          return;
+        ResultSet rs=prepare(ps).set(srid).log(Level.FINE).statement().executeQuery();
+        try {
+          if (rs.next()) {
+            return;
+          }
+        }
+  finally {
+          close(rs);
         }
       }
   finally {
-        ps.close();
+        close(ps);
       }
-      ps=cx.prepareStatement(String.format("INSERT INTO %s (srid, auth_name, auth_srid, srtext) VALUES (?,?,?,?)",SPATIAL_REF_SYS));
+      ps=cx.prepareStatement(String.format("INSERT INTO %s (srs_id, srs_name, organization, organization_coordsys_id, definition) VALUES (?,?,?,?,?)",SPATIAL_REF_SYS));
       try {
-        prepare(ps).set(srid).set(auth).set(srid).set(crs.toWKT()).log(Level.FINE).statement().execute();
-        ps.close();
+        prepare(ps).set(srid).set(crs.getName().toString()).set(auth).set(srid).set(crs.toWKT()).log(Level.FINE).statement().execute();
       }
   finally {
-        ps.close();
+        close(ps);
       }
     }
   finally {
-      cx.close();
+      close(cx);
     }
   }
  catch (  SQLException e) {

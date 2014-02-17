@@ -5,10 +5,15 @@
       Statement st=cx.createStatement();
       try {
         ResultSet rs=st.executeQuery(format("SELECT %s FROM %s;",entry.getRasterColumn(),entry.getTableName()));
-        if (rs.next()) {
-          byte[] blob=rs.getBytes(1);
-          Hints hints=new Hints();
-          return format.getReader(blob,hints);
+        try {
+          if (rs.next()) {
+            byte[] blob=rs.getBytes(1);
+            Hints hints=new Hints();
+            return format.getReader(blob,hints);
+          }
+        }
+  finally {
+          close(rs);
         }
       }
   finally {

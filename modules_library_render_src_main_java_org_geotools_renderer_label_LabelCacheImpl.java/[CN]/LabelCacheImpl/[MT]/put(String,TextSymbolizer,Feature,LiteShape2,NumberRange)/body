@@ -11,19 +11,22 @@
     }
     double priorityValue=getPriority(symbolizer,feature);
     boolean group=voParser.getBooleanOption(symbolizer,TextSymbolizer.GROUP_KEY,false);
+    LabelCacheItem item=buildLabelCacheItem(layerId,symbolizer,feature,shape,scaleRange,label,priorityValue);
     if (!(group)) {
-      LabelCacheItem item=buildLabelCacheItem(layerId,symbolizer,feature,shape,scaleRange,label,priorityValue);
-      labelCacheNonGrouped.add(item);
+      labelCache.add(item);
     }
  else {
-      LabelCacheItem lci=(LabelCacheItem)labelCache.get(label);
-      if (lci == null) {
-        lci=buildLabelCacheItem(layerId,symbolizer,feature,shape,scaleRange,label,priorityValue);
-        labelCache.put(label,lci);
+      LabelCacheItem groupItem=groupedLabelsLookup.get(item);
+      if (groupItem == null) {
+        labelCache.add(item);
+        groupedLabelsLookup.put(item,item);
       }
  else {
-        if ((symbolizer.getPriority() != null) && (!(symbolizer.getPriority() instanceof Literal)))         lci.setPriority(lci.getPriority() + priorityValue);
-        lci.getGeoms().add(shape.getGeometry());
+        Expression priority=symbolizer.getPriority();
+        if ((priority != null) && (!(priority instanceof Literal))) {
+          groupItem.setPriority(groupItem.getPriority() + priorityValue);
+        }
+        groupItem.getGeoms().add(shape.getGeometry());
       }
     }
   }

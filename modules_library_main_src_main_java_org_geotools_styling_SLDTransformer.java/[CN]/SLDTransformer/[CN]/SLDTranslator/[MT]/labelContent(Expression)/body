@@ -1,0 +1,23 @@
+{
+  if (expr instanceof Literal) {
+    Literal literalLabel=((Literal)expr);
+    String label=literalLabel.evaluate(null,String.class);
+    if (label != null) {
+      if (label.matches("^\\s+.*$|^.*\\s+$|^.*\\s{2,}.*$")) {
+        cdata(label);
+      }
+ else {
+        chars(label);
+      }
+    }
+  }
+ else   if (expr instanceof Function && ("strConcat".equals(((Function)expr).getName()) || "concat".equals(((Function)expr).getName()))) {
+    List<Expression> parameters=((Function)expr).getParameters();
+    for (    Expression parameter : parameters) {
+      labelContent(parameter);
+    }
+  }
+ else {
+    filterTranslator.encode(expr);
+  }
+}

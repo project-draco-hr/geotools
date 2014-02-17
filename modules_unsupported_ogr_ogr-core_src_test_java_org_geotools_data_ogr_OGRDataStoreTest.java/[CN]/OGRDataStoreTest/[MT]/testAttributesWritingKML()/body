@@ -8,5 +8,20 @@
   OGRDataStore s=new OGRDataStore(tmpFile.getAbsolutePath(),"KML",null,ogr);
   s.createSchema(features,true,null);
   assertEquals(1,s.getTypeNames().length);
-  assertEquals(features.size(),s.getFeatureSource("junk").getFeatures().size());
+  SimpleFeatureCollection fc=s.getFeatureSource("junk").getFeatures();
+  assertEquals(features.size(),fc.size());
+  int c=0;
+  SimpleFeatureIterator it=fc.features();
+  try {
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      assertNotNull(f);
+      assertNotNull(f.getDefaultGeometry());
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  assertEquals(fc.size(),c);
 }

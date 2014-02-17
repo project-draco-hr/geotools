@@ -1,0 +1,46 @@
+{
+  StringBuilder sb=new StringBuilder();
+  sb.append("SELECT ");
+  if (!isNonOgrSql) {
+    sb.append("FID, ");
+  }
+  if (targetSchema == null) {
+    sb.append("* ");
+  }
+ else {
+    for (    AttributeDescriptor attribute : targetSchema.getAttributeDescriptors()) {
+      if (attribute instanceof GeometryDescriptor) {
+        continue;
+      }
+ else {
+        sb.append(attribute.getLocalName()).append(", ");
+      }
+    }
+    sb.setLength(sb.length() - 2);
+    sb.append(" ");
+  }
+  sb.append("FROM ").append("'").append(getSchema().getTypeName()).append("' ");
+  if (attributeFilter != null) {
+    sb.append("WHERE ").append(attributeFilter);
+  }
+  if (sortBy != null && sortBy.length > 0) {
+    sb.append("ORDER BY ");
+    for (    SortBy sort : sortBy) {
+      if (sort == SortBy.NATURAL_ORDER) {
+        sb.append(fidColumnName).append(", ");
+      }
+ else       if (sort == SortBy.REVERSE_ORDER) {
+        sb.append(fidColumnName).append(" DESC, ");
+      }
+ else {
+        sb.append(sort.getPropertyName().getPropertyName());
+        if (sort.getSortOrder() == SortOrder.DESCENDING) {
+          sb.append(" DESC");
+        }
+        sb.append(", ");
+      }
+    }
+    sb.setLength(sb.length() - 2);
+  }
+  return sb.toString();
+}

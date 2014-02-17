@@ -1,0 +1,24 @@
+{
+  JDBCDataStore closer=new JDBCDataStore();
+  String host=(String)HOST.lookUp(params);
+  int port=(Integer)PORT.lookUp(params);
+  String db=(String)DATABASE.lookUp(params);
+  String user=(String)USER.lookUp(params);
+  String password=(String)PASSWD.lookUp(params);
+  Connection cx=null;
+  Statement st=null;
+  try {
+    String url="jdbc:postgresql" + "://" + host + ":"+ port+ "/template1";
+    cx=getConnection(user,password,url);
+    String sql="DROP DATABASE \"" + db + "\"";
+    st=cx.createStatement();
+    st.execute(sql);
+  }
+ catch (  SQLException e) {
+    throw new IOException("Failed to drop the target database",e);
+  }
+ finally {
+    closer.closeSafe(st);
+    closer.closeSafe(cx);
+  }
+}

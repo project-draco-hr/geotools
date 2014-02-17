@@ -2,18 +2,21 @@
   assertContentEntry(entry);
   Connection cx=geopkg.getDataSource().getConnection();
   try {
-    PreparedStatement ps=cx.prepareStatement("SELECT * FROM tile_table_metadata WHERE t_table_name = ?");
+    PreparedStatement ps=cx.prepareStatement("SELECT count(*) from gpkg_tile_matrix WHERE table_name = ?");
     ps.setString(1,entry.getTableName());
     ResultSet rs=ps.executeQuery();
-    assertTrue(rs.next());
-    assertEquals(entry.isTimesTwoZoom(),rs.getBoolean("is_times_two_zoom"));
-    rs.close();
-    ps.close();
-    ps=cx.prepareStatement("SELECT count(*) from tile_matrix_metadata WHERE t_table_name = ?");
+    rs.next();
+    assertEquals(rs.getInt(1),entry.getTileMatricies().size());
+    ps=cx.prepareStatement("SELECT * from gpkg_tile_matrix_set WHERE table_name = ?");
     ps.setString(1,entry.getTableName());
     rs=ps.executeQuery();
     rs.next();
-    assertEquals(rs.getInt(1),entry.getTileMatricies().size());
+    assertEquals(rs.getInt(2),entry.getSrid().intValue());
+    assertEquals(rs.getDouble(3),entry.getBounds().getMinX(),0.01);
+    assertEquals(rs.getDouble(4),entry.getBounds().getMinY(),0.01);
+    assertEquals(rs.getDouble(5),entry.getBounds().getMaxX(),0.01);
+    assertEquals(rs.getDouble(6),entry.getBounds().getMaxY(),0.01);
+    assertFalse(rs.next());
     rs.close();
     ps.close();
   }

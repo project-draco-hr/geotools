@@ -2,7 +2,6 @@
   PreparedStatement stmt=null;
   stmt=con.prepareStatement(getConfig().getSqlUpdateResStatement());
   List<ImageLevelInfo> toBeRemoved=new ArrayList<ImageLevelInfo>();
-  statementMap=new HashMap<ImageLevelInfo,String>();
   for (  ImageLevelInfo li : getLevelInfos()) {
     if (li.getCoverageName().equals(coverageName) == false) {
       continue;
@@ -32,16 +31,6 @@
     li.setResX(resolutions[0]);
     li.setResY(resolutions[1]);
     if (LOGGER.isLoggable(Level.INFO))     LOGGER.info("ResX: " + li.getResX() + " ResY: "+ li.getResY());
-    select="select (ST_BandMetaData(" + getConfig().getBlobAttributeNameInTileTable() + ")).isoutdb "+ " from "+ li.getTileTableName()+ " LIMIT 1";
-    ps=con.prepareStatement(select);
-    rs=ps.executeQuery();
-    if (rs.next()) {
-      Boolean isOut=(Boolean)rs.getObject("isoutdb");
-      String gridStatement=isOut ? "SELECT st_asbinary(st_envelope (" + getConfig().getBlobAttributeNameInTileTable() + ")),"+ getConfig().getBlobAttributeNameInTileTable()+ " from "+ li.getTileTableName()+ " where st_intersects("+ getConfig().getBlobAttributeNameInTileTable()+ " ,ST_GeomFromWKB(?,?))" : "SELECT st_asbinary(st_envelope (" + getConfig().getBlobAttributeNameInTileTable() + ")),st_astiff("+ getConfig().getBlobAttributeNameInTileTable()+ ") "+ " from "+ li.getTileTableName()+ " where st_intersects("+ getConfig().getBlobAttributeNameInTileTable()+ " ,ST_GeomFromWKB(?,?))";
-      statementMap.put(li,gridStatement);
-    }
-    rs.close();
-    ps.close();
     stmt.setDouble(1,li.getResX().doubleValue());
     stmt.setDouble(2,li.getResY().doubleValue());
     stmt.setString(3,li.getCoverageName());

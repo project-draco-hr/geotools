@@ -1,0 +1,32 @@
+{
+  Integer dimension=getGeometryDimensionFromMetadataTable(schemaName,tableName,columnName,cx);
+  if (dimension != null) {
+    return dimension;
+  }
+  StringBuffer sql=new StringBuffer("SELECT TOP 1 ");
+  encodeColumnName(null,columnName,sql);
+  sql.append(".STPointN(1).Z");
+  sql.append(" FROM ");
+  encodeTableName(schemaName,tableName,sql,true);
+  sql.append(" WHERE ");
+  encodeColumnName(null,columnName,sql);
+  sql.append(" IS NOT NULL");
+  dataStore.getLogger().fine(sql.toString());
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery(sql.toString());
+    try {
+      if (rs.next()) {
+        Object z=rs.getObject(1);
+        return z == null ? 2 : 3;
+      }
+      return 2;
+    }
+  finally {
+      dataStore.closeSafe(rs);
+    }
+  }
+  finally {
+    dataStore.closeSafe(st);
+  }
+}

@@ -1,0 +1,62 @@
+{
+  DataSource ds=super.createDataSource(params,dialect);
+  JDBCDataStore closer=new JDBCDataStore();
+  if (Boolean.TRUE.equals(CREATE_DB_IF_MISSING.lookUp(params))) {
+    Connection cx=null;
+    boolean canConnect=true;
+    try {
+      cx=ds.getConnection();
+    }
+ catch (    SQLException e) {
+      canConnect=false;
+    }
+ finally {
+      closer.closeSafe(cx);
+    }
+    if (!canConnect) {
+      String host=(String)HOST.lookUp(params);
+      int port=(Integer)PORT.lookUp(params);
+      String db=(String)DATABASE.lookUp(params);
+      String user=(String)USER.lookUp(params);
+      String password=(String)PASSWD.lookUp(params);
+      Statement st=null;
+      try {
+        String url="jdbc:postgresql" + "://" + host + ":"+ port+ "/template1";
+        cx=getConnection(user,password,url);
+        String createParams=(String)CREATE_PARAMS.lookUp(params);
+        String sql="CREATE DATABASE \"" + db + "\" "+ (createParams == null ? "" : createParams);
+        st=cx.createStatement();
+        st.execute(sql);
+      }
+ catch (      SQLException e) {
+        throw new IOException("Failed to create the target database",e);
+      }
+ finally {
+        closer.closeSafe(st);
+        closer.closeSafe(cx);
+      }
+      ResultSet rs=null;
+      try {
+        String url="jdbc:postgresql" + "://" + host + ":"+ port+ "/"+ db;
+        cx=DriverManager.getConnection(url,user,password);
+        st=cx.createStatement();
+        try {
+          rs=st.executeQuery("select PostGIS_version()");
+          rs.close();
+        }
+ catch (        SQLException e) {
+          st.execute("create extension postgis");
+        }
+      }
+ catch (      SQLException e) {
+        throw new IOException("Failed to create the target database",e);
+      }
+ finally {
+        closer.closeSafe(st);
+        closer.closeSafe(cx);
+      }
+      ds=super.createDataSource(params,dialect);
+    }
+  }
+  return ds;
+}

@@ -1,0 +1,28 @@
+{
+  DatabaseMetaData md=cx.getMetaData();
+  ResultSet indexInfo=null;
+  try {
+    indexInfo=md.getIndexInfo(cx.getCatalog(),databaseSchema,typeName,false,true);
+    Map<String,Index> indexes=new LinkedHashMap<String,Index>();
+    while (indexInfo.next()) {
+      short type=indexInfo.getShort("TYPE");
+      if (type != DatabaseMetaData.tableIndexStatistic) {
+        String indexName=indexInfo.getString("INDEX_NAME");
+        String columnName=indexInfo.getString("COLUMN_NAME");
+        Index index=indexes.get(indexName);
+        if (index != null) {
+          index.attributes.add(columnName);
+        }
+ else {
+          boolean unique=!indexInfo.getBoolean("NON_UNIQUE");
+          index=new Index(typeName,indexName,unique,columnName);
+          indexes.put(indexName,index);
+        }
+      }
+    }
+    return new ArrayList<Index>(indexes.values());
+  }
+  finally {
+    dataStore.closeSafe(indexInfo);
+  }
+}

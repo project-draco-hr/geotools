@@ -1,0 +1,55 @@
+{
+  Statement statement=null;
+  ResultSet result=null;
+  Integer dimension=null;
+  try {
+    if (schemaName == null)     schemaName="public";
+    if (supportsGeography(cx)) {
+      try {
+        String sqlStatement="SELECT COORD_DIMENSION FROM GEOGRAPHY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOGRAPHY_COLUMN = '"+ columnName+ "'";
+        LOGGER.log(Level.FINE,"Geography srid check; {0} ",sqlStatement);
+        statement=cx.createStatement();
+        result=statement.executeQuery(sqlStatement);
+        if (result.next()) {
+          return result.getInt(1);
+        }
+      }
+ catch (      SQLException e) {
+        LOGGER.log(Level.WARNING,"Failed to retrieve information about " + schemaName + "."+ tableName+ "."+ columnName+ " from the geometry_columns table, checking geometry_columns instead",e);
+      }
+ finally {
+        dataStore.closeSafe(result);
+      }
+    }
+    try {
+      String sqlStatement="SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " + "F_TABLE_SCHEMA = '" + schemaName + "' "+ "AND F_TABLE_NAME = '"+ tableName+ "' "+ "AND F_GEOMETRY_COLUMN = '"+ columnName+ "'";
+      LOGGER.log(Level.FINE,"Geometry srid check; {0} ",sqlStatement);
+      statement=cx.createStatement();
+      result=statement.executeQuery(sqlStatement);
+      if (result.next()) {
+        dimension=result.getInt(1);
+      }
+    }
+ catch (    SQLException e) {
+      LOGGER.log(Level.WARNING,"Failed to retrieve information about " + schemaName + "."+ tableName+ "."+ columnName+ " from the geometry_columns table, checking the first geometry instead",e);
+    }
+ finally {
+      dataStore.closeSafe(result);
+    }
+    if (dimension == null) {
+      String sqlStatement="SELECT DIMENSION(\"" + columnName + "\") "+ "FROM \""+ schemaName+ "\".\""+ tableName+ "\" "+ "WHERE "+ columnName+ " IS NOT NULL "+ "LIMIT 1";
+      result=statement.executeQuery(sqlStatement);
+      if (result.next()) {
+        dimension=result.getInt(1);
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(result);
+    dataStore.closeSafe(statement);
+  }
+  if (dimension == null) {
+    dimension=2;
+  }
+  return dimension;
+}

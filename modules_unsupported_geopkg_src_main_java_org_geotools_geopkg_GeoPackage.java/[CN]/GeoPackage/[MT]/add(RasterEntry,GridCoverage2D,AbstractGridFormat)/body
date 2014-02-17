@@ -33,8 +33,6 @@
   if (e.getDescription() == null) {
     e.setDescription(e.getIdentifier());
   }
-  e.setCompressionQualityFactor(1.0);
-  e.setGeoRectification(Rectification.Geo);
   e.setLastChange(new Date());
   File tmpFile=File.createTempFile(e.getTableName(),"raster");
   GridCoverageWriter writer=format.getWriter(tmpFile);
@@ -56,8 +54,12 @@
       byte[] blob=IOUtils.toByteArray(bin);
       try {
         PreparedStatement ps=prepare(cx,format("INSERT INTO %s (%s) VALUES (?)",e.getTableName(),e.getRasterColumn())).set(blob).log(Level.FINE).statement();
-        ps.execute();
-        ps.close();
+        try {
+          ps.execute();
+        }
+  finally {
+          close(ps);
+        }
       }
   finally {
         bin.close();

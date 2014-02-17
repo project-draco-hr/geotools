@@ -21,27 +21,37 @@
       throw new IOException(ex);
     }
   }
-  if (e.isTimesTwoZoom() == null) {
-    e.setTimesTwoZoom(true);
-  }
   e.setLastChange(new Date());
   try {
     Connection cx=connPool.getConnection();
     try {
-      PreparedStatement st=prepare(cx,format("INSERT INTO %s VALUES (?,?)",TILE_TABLE_METADATA)).set(e.getTableName()).set(e.isTimesTwoZoom()).log(Level.FINE).statement();
-      st.execute();
-      st.close();
-      st=prepare(cx,format("INSERT INTO %s VALUES (?,?,?,?,?,?,?,?)",TILE_MATRIX_METADATA)).statement();
-      for (      TileMatrix m : e.getTileMatricies()) {
-        prepare(st).set(e.getTableName()).set(m.getZoomLevel()).set(m.getMatrixWidth()).set(m.getMatrixHeight()).set(m.getTileWidth()).set(m.getTileHeight()).set(m.getXPixelSize()).set(m.getYPixelSize()).statement().execute();
+      PreparedStatement st;
+      st=prepare(cx,format("INSERT INTO %s VALUES (?,?,?,?,?,?)",TILE_MATRIX_SET)).set(e.getTableName()).set(e.getSrid()).set(e.getBounds().getMinX()).set(e.getBounds().getMinY()).set(e.getBounds().getMaxX()).set(e.getBounds().getMaxY()).statement();
+      try {
+        st.execute();
       }
-      st.close();
+  finally {
+        close(st);
+      }
+      st=prepare(cx,format("INSERT INTO %s VALUES (?,?,?,?,?,?,?,?)",TILE_MATRIX_METADATA)).statement();
+      try {
+        for (        TileMatrix m : e.getTileMatricies()) {
+          prepare(st).set(e.getTableName()).set(m.getZoomLevel()).set(m.getMatrixWidth()).set(m.getMatrixHeight()).set(m.getTileWidth()).set(m.getTileHeight()).set(m.getXPixelSize()).set(m.getYPixelSize()).statement().execute();
+        }
+      }
+  finally {
+        close(st);
+      }
       st=cx.prepareStatement(format("CREATE TABLE %s (" + "id INTEGER PRIMARY KEY AUTOINCREMENT," + "zoom_level INTEGER NOT NULL DEFAULT 0,"+ "tile_column INTEGER NOT NULL DEFAULT 0,"+ "tile_row INTEGER NOT NULL DEFAULT 0,"+ "tile_data BLOB NOT NULL DEFAULT (zeroblob(4)))",e.getTableName()));
-      st.execute();
-      st.close();
+      try {
+        st.execute();
+      }
+  finally {
+        close(st);
+      }
     }
   finally {
-      cx.close();
+      close(cx);
     }
   }
  catch (  SQLException ex) {

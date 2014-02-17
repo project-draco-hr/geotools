@@ -1,22 +1,29 @@
 {
   TileEntry e=new TileEntry();
   initEntry(e,rs);
-  e.setTimesTwoZoom(rs.getBoolean("is_times_two_zoom"));
-  PreparedStatement psm=cx.prepareStatement(format("SELECT * FROM %s" + " WHERE t_table_name = ?",TILE_MATRIX_METADATA));
-  psm.setString(1,e.getTableName());
-  ResultSet rsm=psm.executeQuery();
-  while (rsm.next()) {
-    TileMatrix m=new TileMatrix();
-    m.setZoomLevel(rsm.getInt("zoom_level"));
-    m.setMatrixWidth(rsm.getInt("matrix_width"));
-    m.setMatrixHeight(rsm.getInt("matrix_height"));
-    m.setTileWidth(rsm.getInt("tile_width"));
-    m.setTileHeight(rsm.getInt("tile_height"));
-    m.setXPixelSize(rsm.getDouble("pixel_x_size"));
-    m.setYPixelSize(rsm.getDouble("pixel_y_size"));
-    e.getTileMatricies().add(m);
+  PreparedStatement psm=cx.prepareStatement(format("SELECT * FROM %s" + " WHERE table_name = ?" + " ORDER BY zoom_level ASC",TILE_MATRIX_METADATA));
+  try {
+    psm.setString(1,e.getTableName());
+    ResultSet rsm=psm.executeQuery();
+    try {
+      while (rsm.next()) {
+        TileMatrix m=new TileMatrix();
+        m.setZoomLevel(rsm.getInt("zoom_level"));
+        m.setMatrixWidth(rsm.getInt("matrix_width"));
+        m.setMatrixHeight(rsm.getInt("matrix_height"));
+        m.setTileWidth(rsm.getInt("tile_width"));
+        m.setTileHeight(rsm.getInt("tile_height"));
+        m.setXPixelSize(rsm.getDouble("pixel_x_size"));
+        m.setYPixelSize(rsm.getDouble("pixel_y_size"));
+        e.getTileMatricies().add(m);
+      }
+    }
+  finally {
+      close(rsm);
+    }
   }
-  rsm.close();
-  psm.close();
+  finally {
+    close(psm);
+  }
   return e;
 }

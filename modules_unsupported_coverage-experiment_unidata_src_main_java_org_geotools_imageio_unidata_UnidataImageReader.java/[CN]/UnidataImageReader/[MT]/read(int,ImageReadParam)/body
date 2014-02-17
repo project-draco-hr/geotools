@@ -52,6 +52,19 @@
   final ColorModel colorModel=ImageIOUtilities.createColorModel(sampleModel);
   final WritableRaster raster=Raster.createWritableRaster(sampleModel,new Point(0,0));
   final BufferedImage image=new BufferedImage(colorModel,raster,colorModel.isAlphaPremultiplied(),null);
+  CoordinateAxis axis=wrapper.variableDS.getCoordinateSystems().get(0).getLatAxis();
+  boolean flipYAxis=false;
+  try {
+    Array yAxisStart=axis.read(new Section().appendRange(2));
+    float y1=yAxisStart.getFloat(0);
+    float y2=yAxisStart.getFloat(1);
+    if (y2 > y1) {
+      flipYAxis=true;
+    }
+  }
+ catch (  InvalidRangeException e) {
+    throw new RuntimeException(e);
+  }
   processImageStarted(imageIndex);
   final int numDstBands=1;
   final float toPercent=100f / numDstBands;
@@ -69,31 +82,70 @@
  catch (    InvalidRangeException e) {
       throw netcdfFailure(e);
     }
-    final IndexIterator it=array.getIndexIterator();
-    for (int y=ymax; --y >= ymin; ) {
-      for (int x=xmin; x < xmax; x++) {
+    if (flipYAxis) {
+      final IndexIterator it=array.getIndexIterator();
+      for (int y=ymax; --y >= ymin; ) {
+        for (int x=xmin; x < xmax; x++) {
 switch (type) {
 case DataBuffer.TYPE_DOUBLE:
 {
-            raster.setSample(x,y,dstBand,it.getDoubleNext());
-            break;
-          }
+              raster.setSample(x,y,dstBand,it.getDoubleNext());
+              break;
+            }
 case DataBuffer.TYPE_FLOAT:
 {
-          raster.setSample(x,y,dstBand,it.getFloatNext());
-          break;
-        }
+            raster.setSample(x,y,dstBand,it.getFloatNext());
+            break;
+          }
 case DataBuffer.TYPE_BYTE:
 {
-        byte b=it.getByteNext();
-        raster.setSample(x,y,dstBand,b);
-        break;
-      }
+          byte b=it.getByteNext();
+          raster.setSample(x,y,dstBand,b);
+          break;
+        }
 default :
 {
-      raster.setSample(x,y,dstBand,it.getIntNext());
-      break;
-    }
+        raster.setSample(x,y,dstBand,it.getIntNext());
+        break;
+      }
+  }
+}
+}
+}
+ else {
+switch (type) {
+case DataBuffer.TYPE_DOUBLE:
+{
+  DoubleBuffer doubleBuffer=array.getDataAsByteBuffer().asDoubleBuffer();
+  double[] samples=new double[destRegion.width * destRegion.height];
+  doubleBuffer.get(samples);
+  raster.setSamples(xmin,ymin,destRegion.width,destRegion.height,dstBand,samples);
+  break;
+}
+case DataBuffer.TYPE_FLOAT:
+float[] samples=new float[destRegion.width * destRegion.height];
+FloatBuffer floatBuffer=array.getDataAsByteBuffer().asFloatBuffer();
+floatBuffer.get(samples);
+raster.setSamples(xmin,ymin,destRegion.width,destRegion.height,dstBand,samples);
+break;
+case DataBuffer.TYPE_BYTE:
+raster.setDataElements(xmin,ymin,destRegion.width,destRegion.height,array.getDataAsByteBuffer().array());
+break;
+case DataBuffer.TYPE_INT:
+IntBuffer intBuffer=array.getDataAsByteBuffer().asIntBuffer();
+int[] intSamples=new int[destRegion.width * destRegion.height];
+intBuffer.get(intSamples);
+raster.setSamples(xmin,ymin,destRegion.width,destRegion.height,dstBand,intSamples);
+break;
+default :
+{
+final IndexIterator it=array.getIndexIterator();
+for (int y=ymin; y < ymax; y++) {
+for (int x=xmin; x < xmax; x++) {
+raster.setSample(x,y,dstBand,it.getIntNext());
+}
+}
+break;
 }
 }
 }

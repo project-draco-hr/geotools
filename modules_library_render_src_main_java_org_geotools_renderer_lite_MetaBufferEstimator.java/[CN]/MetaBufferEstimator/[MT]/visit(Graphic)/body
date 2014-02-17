@@ -2,14 +2,17 @@
   try {
     Expression grSize=gr.getSize();
     int imageSize=-1;
-    boolean isSizeLiteral=false;
-    if (grSize instanceof Literal) {
-      isSizeLiteral=true;
-      imageSize=(int)Math.ceil(grSize.evaluate(null,Double.class));
-    }
- else     if (!(grSize == null || grSize instanceof NilExpression)) {
-      estimateAccurate=false;
-      return;
+    boolean isSizeNull=isNull(grSize);
+    boolean isSizeConstant=false;
+    if (!isSizeNull) {
+      isSizeConstant=isConstant(grSize);
+      if (isSizeConstant) {
+        imageSize=(int)Math.ceil(grSize.evaluate(null,Double.class));
+      }
+ else {
+        estimateAccurate=false;
+        return;
+      }
     }
     for (    GraphicalSymbol gs : gr.graphicalSymbols()) {
       if (gs instanceof ExternalGraphic) {
@@ -26,9 +29,10 @@
             return;
           }
           Iterator<ExternalGraphicFactory> it=DynamicSymbolFactoryFinder.getExternalGraphicFactories();
-          while (it.hasNext()) {
+          while (it.hasNext() && icon == null) {
             try {
-              icon=it.next().getIcon(null,expanded,eg.getFormat(),imageSize);
+              ExternalGraphicFactory factory=it.next();
+              icon=factory.getIcon(null,expanded,eg.getFormat(),imageSize);
             }
  catch (            Exception e) {
               LOGGER.log(Level.FINE,"Error occurred evaluating external graphic",e);
@@ -46,16 +50,27 @@
         }
       }
  else       if (gs instanceof Mark) {
-        if (isSizeLiteral) {
-          if (imageSize > buffer) {
-            buffer=imageSize;
-          }
-          return;
+        Mark mark=(Mark)gs;
+        int markSize;
+        if (isSizeConstant) {
+          markSize=imageSize;
         }
  else {
-          estimateAccurate=false;
-          return;
+          markSize=SLDStyleFactory.DEFAULT_MARK_SIZE;
         }
+        if (mark.getStroke() != null) {
+          int strokeWidth=getPositiveValue(mark.getStroke().getWidth());
+          if (strokeWidth < 0) {
+            estimateAccurate=false;
+          }
+ else {
+            markSize+=strokeWidth;
+          }
+        }
+        if (markSize > buffer) {
+          this.buffer=markSize;
+        }
+        return;
       }
       estimateAccurate=false;
     }
