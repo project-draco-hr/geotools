@@ -2,11 +2,26 @@
   if ("boundedBy".equals(name.getLocalPart()) && !generateBounds) {
     return null;
   }
+  Object result=null;
   if (!WFSParsingUtils.features((EObject)object).isEmpty()) {
-    Object val=WFSParsingUtils.FeatureCollectionType_getProperty((EObject)object,name);
-    if (val != null) {
-      return val;
+    result=WFSParsingUtils.FeatureCollectionType_getProperty((EObject)object,name);
+  }
+  if (result == null) {
+    result=super.getProperty(object,name);
+  }
+  if ("numberMatched".equals(name.getLocalPart())) {
+    if (result == null || !(result instanceof Number)) {
+      return UNKNOWN;
+    }
+ else     if (result instanceof Number) {
+      long numberMatched=((Number)result).longValue();
+      if (numberMatched < 0) {
+        return UNKNOWN;
+      }
+ else {
+        return numberMatched;
+      }
     }
   }
-  return super.getProperty(object,name);
+  return result;
 }
