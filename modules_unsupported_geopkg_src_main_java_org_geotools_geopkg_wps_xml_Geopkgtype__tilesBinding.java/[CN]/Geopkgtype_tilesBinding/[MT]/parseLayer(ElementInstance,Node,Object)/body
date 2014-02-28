@@ -1,0 +1,37 @@
+{
+  XSQNameBinding nameBinding=new XSQNameBinding(namespaceContext);
+  GeoPackageProcessRequest.TilesLayer layer=new GeoPackageProcessRequest.TilesLayer();
+  List<QName> layers=new ArrayList<QName>();
+  for (  String layerName : Arrays.asList(((String)node.getChildValue("layers")).split(","))) {
+    layers.add((QName)nameBinding.parse(null,layerName.trim()));
+  }
+  layer.setLayers(layers);
+  String styleNames=(String)node.getChildValue("styles");
+  if (styleNames != null) {
+    List<String> styles=new ArrayList<String>();
+    for (    String styleName : Arrays.asList(styleNames.split(","))) {
+      styles.add(styleName.trim());
+    }
+    layer.setStyles(styles);
+  }
+  layer.setSld((URI)node.getChildValue("sld"));
+  layer.setSldBody((String)node.getChildValue("sldBody"));
+  layer.setFormat((String)node.getChildValue("format"));
+  String bgColor=(String)node.getChildValue("bgcolor");
+  if (bgColor != null) {
+    layer.setBgColor(Color.decode("#" + bgColor));
+  }
+  Boolean transparent=(Boolean)node.getChildValue("transparent");
+  if (transparent != null) {
+    layer.setTransparent(transparent);
+  }
+  layer.setCoverage((GeoPackageProcessRequest.TilesLayer.TilesCoverage)node.getChildValue("coverage"));
+  Object gridSet=node.getChildValue("gridset");
+  if (gridSet instanceof String) {
+    layer.setGridSetName((String)gridSet);
+  }
+ else   if (gridSet instanceof List<?>) {
+    layer.setGrids((List<TileMatrix>)gridSet);
+  }
+  return layer;
+}
