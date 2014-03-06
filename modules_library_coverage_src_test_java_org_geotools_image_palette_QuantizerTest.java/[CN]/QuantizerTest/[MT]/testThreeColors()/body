@@ -1,0 +1,19 @@
+{
+  BufferedImage bi=new BufferedImage(4,4,BufferedImage.TYPE_3BYTE_BGR);
+  Graphics2D gr=bi.createGraphics();
+  gr.setColor(Color.RED);
+  gr.fillRect(0,0,2,2);
+  gr.setColor(Color.GREEN);
+  gr.fillRect(2,0,2,2);
+  gr.setColor(Color.BLUE);
+  gr.fillRect(0,2,4,2);
+  gr.dispose();
+  ColorIndexer indexer=new Quantizer(256).buildColorIndexer(bi);
+  IndexColorModel icm=indexer.toIndexColorModel();
+  assertEquals(Transparency.OPAQUE,icm.getTransparency());
+  assertEquals(3,icm.getNumComponents());
+  RenderedImage indexed=ColorIndexerDescriptor.create(bi,indexer,null);
+  IndexColorModel icm2=(IndexColorModel)indexed.getColorModel();
+  assertEquals(icm,icm2);
+  assertImagesSimilar(bi,indexed,0);
+}
