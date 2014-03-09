@@ -1,0 +1,40 @@
+{
+  NearestVisitor nearest=(NearestVisitor)visitor;
+  Object targetValue=nearest.getValueToMatch();
+  Expression expr=nearest.getExpression();
+  String attribute=null;
+  if (expr != null && expr instanceof PropertyName) {
+    attribute=((PropertyName)expr).getPropertyName();
+  }
+  if (attribute == null) {
+    return false;
+  }
+  AttributeDescriptor descriptor=getSchema().getDescriptor(attribute);
+  if (descriptor == null) {
+    return false;
+  }
+  Class binding=descriptor.getType().getBinding();
+  if (Geometry.class.isAssignableFrom(binding) || !(Comparable.class.isAssignableFrom(binding))) {
+    return false;
+  }
+  FilterFactory ff=getDataStore().getFilterFactory();
+  Query qBelow=new Query(query);
+  Filter lessFilter=ff.lessOrEqual(ff.property(attribute),ff.literal(targetValue));
+  qBelow.setFilter(ff.and(query.getFilter(),lessFilter));
+  MaxVisitor max=new MaxVisitor(attribute);
+  handleVisitor(qBelow,max);
+  Comparable maxBelow=(Comparable)max.getResult().getValue();
+  if (maxBelow != null && maxBelow.equals(targetValue)) {
+    nearest.setValue(maxBelow,null);
+  }
+ else {
+    Query qAbove=new Query(query);
+    Filter aboveFilter=ff.greater(ff.property(attribute),ff.literal(targetValue));
+    qAbove.setFilter(ff.and(query.getFilter(),aboveFilter));
+    MinVisitor min=new MinVisitor(attribute);
+    handleVisitor(qAbove,min);
+    Comparable minAbove=(Comparable)min.getResult().getValue();
+    nearest.setValue(maxBelow,minAbove);
+  }
+  return true;
+}

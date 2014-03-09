@@ -1,0 +1,28 @@
+{
+  if (collection == null) {
+    Literal value=getFallbackValue();
+    return value == null ? null : value.getValue();
+  }
+  Expression expr=getParameters().get(0);
+  Literal value=(Literal)getParameters().get(1);
+  SimpleFeatureCollection featureCollection=(SimpleFeatureCollection)collection;
+synchronized (featureCollection) {
+    if (featureCollection != previousFeatureCollection) {
+      previousFeatureCollection=featureCollection;
+      match=null;
+      try {
+        Object result=near(featureCollection,expr,value.getValue());
+        if (result != null) {
+          match=result;
+        }
+      }
+ catch (      IllegalFilterException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+catch (      IOException e) {
+        LOGGER.log(Level.FINER,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  return match;
+}

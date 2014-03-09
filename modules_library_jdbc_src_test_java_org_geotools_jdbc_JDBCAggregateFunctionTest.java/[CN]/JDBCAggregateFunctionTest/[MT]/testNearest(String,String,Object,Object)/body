@@ -1,0 +1,18 @@
+{
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+  PropertyName expr=ff.property(aname(attributeName));
+  MyNearestVisitor v=new MyNearestVisitor(expr,target);
+  dataStore.getFeatureSource(tname(typeName)).accepts(Query.ALL,v,null);
+  assertFalse(visited);
+  Object nearestMatch=v.getNearestMatch();
+  if (validResults.length == 0) {
+    assertNull(nearestMatch);
+  }
+ else {
+    boolean found=false;
+    for (    Object object : validResults) {
+      found|=object != null ? (object.equals(nearestMatch)) : nearestMatch == null;
+    }
+    assertTrue("Could not match nearest " + nearestMatch + " among valid values "+ Arrays.asList(validResults),found);
+  }
+}

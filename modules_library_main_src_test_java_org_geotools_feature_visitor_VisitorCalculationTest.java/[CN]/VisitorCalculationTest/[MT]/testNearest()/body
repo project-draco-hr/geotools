@@ -1,0 +1,29 @@
+{
+  SimpleFeatureType type=DataUtilities.createType("nearestTest","name:String,size:int,flow:double,event:java.util.Date,data:java.io.File");
+  ListFeatureCollection fc=new ListFeatureCollection(type);
+  SimpleDateFormat df=new SimpleDateFormat("yyyy-mm-dd",Locale.ENGLISH);
+  df.setTimeZone(TimeZone.getTimeZone("GMT"));
+  fc.add(SimpleFeatureBuilder.build(type,new Object[]{"abc",10,10.5,df.parse("2014-12-10"),new File("/tmp/test.txt")},null));
+  fc.add(SimpleFeatureBuilder.build(type,new Object[]{"ade",5,3.5,df.parse("2012-11-10"),new File("/tmp/abc.txt")},null));
+  fc.add(SimpleFeatureBuilder.build(type,new Object[]{"zaa",2,50.4,df.parse("2010-11-10"),new File("/tmp/zaa.txt")},null));
+  testNearest(fc,"size",5,5);
+  testNearest(fc,"size",1,2);
+  testNearest(fc,"size",3,2);
+  testNearest(fc,"size",15,10);
+  testNearest(fc,"flow",3.5,3.5);
+  testNearest(fc,"flow",1d,3.5);
+  testNearest(fc,"flow",10d,10.5);
+  testNearest(fc,"flow",100d,50.4);
+  testNearest(fc,"event",df.parse("2014-12-10"),df.parse("2014-12-10"));
+  testNearest(fc,"event",df.parse("2009-11-10"),df.parse("2010-11-10"));
+  testNearest(fc,"event",df.parse("2010-11-11"),df.parse("2010-11-10"));
+  testNearest(fc,"event",df.parse("2015-12-10"),df.parse("2014-12-10"));
+  testNearest(fc,"name","ade","ade");
+  testNearest(fc,"name","aaa","abc");
+  testNearest(fc,"name","mfc","ade","zaa");
+  testNearest(fc,"name","zzz","zaa");
+  testNearest(fc,"data",new File("/tmp/test.txt"),new File("/tmp/test.txt"));
+  testNearest(fc,"data",new File("/tmp/aaa.txt"),new File("/tmp/abc.txt"));
+  testNearest(fc,"data",new File("/tmp/mfc.txt"),new File("/tmp/abc.txt"),new File("/tmp/test.txt"));
+  testNearest(fc,"data",new File("/tmp/zzz.txt"),new File("/tmp/zaa.txt"));
+}
