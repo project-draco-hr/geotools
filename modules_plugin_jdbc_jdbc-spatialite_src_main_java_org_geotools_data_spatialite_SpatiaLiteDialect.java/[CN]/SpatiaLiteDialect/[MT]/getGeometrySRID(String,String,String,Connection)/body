@@ -12,6 +12,22 @@
   finally {
       dataStore.closeSafe(rs);
     }
+    sql="SELECT srid FROM views_geometry_columns a, geometry_columns b " + "WHERE a.f_table_name = b.f_table_name " + "AND a.f_geometry_column = b.f_geometry_column "+ "AND a.view_name = '" + tableName + "' "+ "AND a.view_geometry = '"+ columnName+ "'";
+    LOGGER.fine(sql);
+    try {
+      rs=st.executeQuery(sql);
+      try {
+        if (rs.next()) {
+          return Integer.valueOf(rs.getInt(1));
+        }
+      }
+  finally {
+        dataStore.closeSafe(rs);
+      }
+    }
+ catch (    SQLException e) {
+      LOGGER.log(Level.FINEST,"error querying views_geometry_columns",e);
+    }
   }
   finally {
     dataStore.closeSafe(st);

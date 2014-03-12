@@ -15,6 +15,23 @@
   finally {
       dataStore.closeSafe(rs);
     }
+    sql="SELECT b.type FROM views_geometry_columns a, geometry_columns b " + "WHERE a.f_table_name = b.f_table_name " + "AND a.f_geometry_column = b.f_geometry_column "+ "AND a.view_name = '" + tbl + "' "+ "AND a.view_geometry = '"+ col+ "'";
+    LOGGER.fine(sql);
+    try {
+      rs=st.executeQuery(sql);
+      try {
+        if (rs.next()) {
+          String type=rs.getString("type");
+          return Geometries.getForName(type).getBinding();
+        }
+      }
+  finally {
+        dataStore.closeSafe(rs);
+      }
+    }
+ catch (    SQLException e) {
+      LOGGER.log(Level.FINEST,"error querying views_geometry_columns",e);
+    }
   }
   finally {
     dataStore.closeSafe(st);
