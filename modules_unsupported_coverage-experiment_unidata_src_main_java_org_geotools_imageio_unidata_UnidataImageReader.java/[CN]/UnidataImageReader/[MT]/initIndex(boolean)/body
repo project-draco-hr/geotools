@@ -1,9 +1,11 @@
 {
-  DefaultTransaction transaction=new DefaultTransaction("indexTransaction" + System.nanoTime());
+  DefaultTransaction transaction=lazyInitialization ? null : new DefaultTransaction("indexTransaction" + System.nanoTime());
   int numImages=0;
   try {
     final File sliceIndexFile=ancillaryFileManager.getSlicesIndexFile();
-    initCatalog(sliceIndexFile.getParentFile(),FilenameUtils.removeExtension(FilenameUtils.getName(sliceIndexFile.getCanonicalPath())).replace(".",""));
+    if (!lazyInitialization) {
+      initCatalog(sliceIndexFile.getParentFile(),FilenameUtils.removeExtension(FilenameUtils.getName(sliceIndexFile.getCanonicalPath())).replace(".",""));
+    }
     final List<Variable> variables=dataset.getVariables();
     if (variables != null) {
       for (      final Variable var_ : variables) {
@@ -17,6 +19,9 @@
             continue;
           }
           final Name coverageName=getCoverageName(varName);
+          if (lazyInitialization) {
+            continue;
+          }
           final CoordinateSystem cs=UnidataCRSUtilities.getCoordinateSystem(variable);
           final SimpleFeatureType indexSchema=getIndexSchema(coverageName,cs);
           final UnidataVariableAdapter vaAdapter=getCoverageDescriptor(coverageName);
@@ -46,22 +51,28 @@
         }
       }
     }
-    ancillaryFileManager.writeToDisk();
-    if (LOGGER.isLoggable(Level.FINE)) {
-      LOGGER.fine("Committing changes to the DB");
+    if (!lazyInitialization) {
+      ancillaryFileManager.writeToDisk();
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Committing changes to the DB");
+      }
+      transaction.commit();
     }
-    transaction.commit();
   }
  catch (  Throwable e) {
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.fine("Rollback");
     }
-    transaction.rollback();
+    if (transaction != null) {
+      transaction.rollback();
+    }
     throw new IOException(e);
   }
  finally {
     try {
-      transaction.close();
+      if (transaction != null) {
+        transaction.close();
+      }
     }
  catch (    Throwable t) {
     }
