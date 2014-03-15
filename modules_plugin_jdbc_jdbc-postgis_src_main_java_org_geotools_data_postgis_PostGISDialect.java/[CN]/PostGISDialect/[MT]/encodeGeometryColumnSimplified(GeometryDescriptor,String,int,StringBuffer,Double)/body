@@ -1,13 +1,18 @@
 {
-  boolean geography="geography".equals(gatt.getUserData().get(JDBCDataStore.JDBC_NATIVE_TYPENAME));
-  if (geography) {
-    sql.append("encode(ST_AsBinary(");
-    encodeColumnName(prefix,gatt.getLocalName(),sql);
-    sql.append("),'base64')");
+  if (!isSimplifyEnabled()) {
+    super.encodeGeometryColumnSimplified(gatt,prefix,srid,sql,distance);
   }
  else {
-    sql.append("encode(ST_AsBinary(ST_Simplify(ST_Force_2D(");
-    encodeColumnName(prefix,gatt.getLocalName(),sql);
-    sql.append("), " + distance + ")),'base64')");
+    boolean geography="geography".equals(gatt.getUserData().get(JDBCDataStore.JDBC_NATIVE_TYPENAME));
+    if (geography) {
+      sql.append("encode(ST_AsBinary(");
+      encodeColumnName(prefix,gatt.getLocalName(),sql);
+      sql.append("),'base64')");
+    }
+ else {
+      sql.append("encode(ST_AsBinary(ST_Simplify(ST_Force_2D(");
+      encodeColumnName(prefix,gatt.getLocalName(),sql);
+      sql.append("), " + distance + ")),'base64')");
+    }
   }
 }

@@ -1,4 +1,5 @@
 {
+  PostgisNGDataStoreFactory factory=new PostgisNGDataStoreFactory();
   Properties db=fixture;
   Map<String,Object> params=new HashMap<String,Object>();
   params.put(HOST.key,db.getProperty(HOST.key));
@@ -7,13 +8,14 @@
   params.put(USER.key,db.getProperty(USER.key));
   params.put(PASSWD.key,db.getProperty(PASSWD.key));
   params.put(PostgisNGDataStoreFactory.SIMPLIFY.key,false);
-  params.put(DBTYPE.key,dbtype);
-  assertTrue(factory.canProcess(params));
   JDBCDataStore store=factory.createDataStore(params);
   assertNotNull(store);
   try {
-    assertTrue(store.getSQLDialect() instanceof PostGISDialect);
-    assertNotNull(store.getSchema(tname("ft1")));
+    PostGISDialect dialect=(PostGISDialect)store.getSQLDialect();
+    assertFalse(dialect.isSimplifyEnabled());
+    Set<Hints.Key> baseHints=new HashSet<Key>();
+    dialect.addSupportedHints(baseHints);
+    assertTrue(baseHints.isEmpty());
   }
   finally {
     store.dispose();
