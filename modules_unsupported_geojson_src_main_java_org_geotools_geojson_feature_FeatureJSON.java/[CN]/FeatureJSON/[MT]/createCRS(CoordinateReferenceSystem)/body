@@ -2,11 +2,17 @@
   Map<String,Object> obj=new LinkedHashMap<String,Object>();
   obj.put("type","name");
   Map<String,Object> props=new LinkedHashMap<String,Object>();
-  try {
-    props.put("name",CRS.lookupIdentifier(crs,true));
+  if (crs == null) {
+    props.put("name","EPSG:4326");
   }
- catch (  FactoryException e) {
-    throw (IOException)new IOException("Error looking up crs identifier").initCause(e);
+ else {
+    try {
+      String identifier=CRS.lookupIdentifier(crs,true);
+      props.put("name",identifier);
+    }
+ catch (    FactoryException e) {
+      throw (IOException)new IOException("Error looking up crs identifier").initCause(e);
+    }
   }
   obj.put("properties",props);
   return obj;
