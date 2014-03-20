@@ -1,5 +1,8 @@
 {
   Stack encoded=null;
+  if (namespaces.getPrefix(XS.NAMESPACE) == null) {
+    namespaces.declarePrefix("xs",XS.NAMESPACE);
+  }
   try {
     serializer=handler;
     if (!inline) {
@@ -68,9 +71,6 @@
           Iterator itr=(Iterator)child[1];
           if (itr.hasNext()) {
             Object next=itr.next();
-            if (next == null) {
-              logger.warning("Iterator returned null for " + element.getName());
-            }
             if (next instanceof EncoderDelegate) {
               try {
                 ((EncoderDelegate)next).encode(handler);
@@ -250,11 +250,12 @@
               Object obj=tuple[1];
               if (obj == null) {
                 if (particle.getMinOccurs() == 0) {
+                  continue;
                 }
- else {
+ else                 if (!child.isNillable()) {
                   logger.fine("Property " + ns + ":"+ local+ " not found but minoccurs > 0 ");
+                  continue;
                 }
-                continue;
               }
               int maxOccurs=1;
               if (particle.isSetMaxOccurs()) {
@@ -276,7 +277,7 @@
                 if (obj instanceof Iterator) {
                   iterator=(Iterator)obj;
                 }
- else                 if (obj.getClass().isArray()) {
+ else                 if (obj != null && obj.getClass().isArray()) {
                   Object[] array=(Object[])obj;
                   iterator=Arrays.asList(array).iterator();
                 }
