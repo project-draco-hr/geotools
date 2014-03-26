@@ -3,9 +3,26 @@
     LOGGER.warning("Update called with no attributes, doing nothing.");
     return;
   }
+  PrimaryKey key=null;
+  try {
+    key=getPrimaryKey(featureType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  Set<String> pkColumnNames=getColumnNames(key);
+  boolean nonPkeyColumn=false;
+  for (  AttributeDescriptor att : attributes) {
+    if (!pkColumnNames.contains(att.getLocalName())) {
+      nonPkeyColumn=true;
+    }
+  }
+  if (!nonPkeyColumn) {
+    throw new IllegalArgumentException("Illegal update, must include at least one non primary key column, " + "all primary key columns are ignored.");
+  }
   if (dialect instanceof PreparedStatementSQLDialect) {
     try {
-      PreparedStatement ps=updateSQLPS(featureType,attributes,values,filter,cx);
+      PreparedStatement ps=updateSQLPS(featureType,attributes,values,filter,pkColumnNames,cx);
       try {
         ((PreparedStatementSQLDialect)dialect).onUpdate(ps,cx,featureType);
         ps.execute();
@@ -19,7 +36,7 @@
     }
   }
  else {
-    String sql=updateSQL(featureType,attributes,values,filter);
+    String sql=updateSQL(featureType,attributes,values,filter,pkColumnNames);
     try {
       Statement st=cx.createStatement();
       try {
