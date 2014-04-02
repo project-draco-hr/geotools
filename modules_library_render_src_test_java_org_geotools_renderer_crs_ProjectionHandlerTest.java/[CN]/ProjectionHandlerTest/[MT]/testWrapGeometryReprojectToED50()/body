@@ -1,0 +1,15 @@
+{
+  ReferencedEnvelope world=new ReferencedEnvelope(-80,80,-180,180,ED50);
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(world,WGS84,true);
+  String wkt="POLYGON((178 -80, 178 80, 182 80, 182 80, 178 -80))";
+  Geometry g=new WKTReader().read(wkt);
+  Geometry original=new WKTReader().read(wkt);
+  MathTransform mt=CRS.findMathTransform(WGS84,ED50);
+  mt=handler.getRenderingTransform(mt);
+  Geometry reprojected=JTS.transform(original,mt);
+  assertTrue(handler.requiresProcessing(g));
+  Geometry preProcessed=handler.preProcess(g);
+  assertEquals(original,preProcessed);
+  Geometry postProcessed=handler.postProcess(mt,reprojected);
+  assertTrue(postProcessed instanceof MultiPolygon);
+}

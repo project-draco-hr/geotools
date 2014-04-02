@@ -1,0 +1,48 @@
+{
+  CoordinateReferenceSystem renderingCRS=renderingEnvelope.getCoordinateReferenceSystem();
+  if (renderingCRS instanceof GeographicCRS && !CRS.equalsIgnoreMetadata(renderingCRS,WGS84)) {
+    ReferencedEnvelope re=renderingEnvelope;
+    List<ReferencedEnvelope> envelopes=new ArrayList<ReferencedEnvelope>();
+    envelopes.add(re);
+    if (CRS.getAxisOrder(renderingCRS) == CRS.AxisOrder.NORTH_EAST) {
+      if (re.getMinY() >= -180.0 && re.getMaxY() <= 180) {
+        return Collections.singletonList(renderingEnvelope.transform(sourceCRS,true,10));
+      }
+      if (re.getMinY() < -180) {
+        envelopes.add(new ReferencedEnvelope(re.getMinY() + 360,180,re.getMinX(),re.getMaxX(),re.getCoordinateReferenceSystem()));
+      }
+      if (re.getMaxY() > 180) {
+        envelopes.add(new ReferencedEnvelope(-180,re.getMaxY() - 360,re.getMinX(),re.getMaxX(),re.getCoordinateReferenceSystem()));
+      }
+    }
+ else {
+      if (re.getMinX() >= -180.0 && re.getMaxX() <= 180) {
+        return Collections.singletonList(renderingEnvelope.transform(sourceCRS,true,10));
+      }
+      if (re.getMinX() < -180) {
+        envelopes.add(new ReferencedEnvelope(re.getMinX() + 360,180,re.getMinY(),re.getMaxY(),re.getCoordinateReferenceSystem()));
+      }
+      if (re.getMaxX() > 180) {
+        envelopes.add(new ReferencedEnvelope(-180,re.getMaxX() - 360,re.getMinY(),re.getMaxY(),re.getCoordinateReferenceSystem()));
+      }
+    }
+    mergeEnvelopes(envelopes);
+    reprojectEnvelopes(sourceCRS,envelopes);
+    return envelopes;
+  }
+ else {
+    ReferencedEnvelope re=renderingEnvelope.transform(WGS84,true,10);
+    if (re.getMinX() >= -180.0 && re.getMaxX() <= 180)     return Collections.singletonList(renderingEnvelope.transform(sourceCRS,true,10));
+    List<ReferencedEnvelope> envelopes=new ArrayList<ReferencedEnvelope>();
+    envelopes.add(re);
+    if (re.getMinX() < -180) {
+      envelopes.add(new ReferencedEnvelope(re.getMinX() + 360,180,re.getMinY(),re.getMaxY(),re.getCoordinateReferenceSystem()));
+    }
+    if (re.getMaxX() > 180) {
+      envelopes.add(new ReferencedEnvelope(-180,re.getMaxX() - 360,re.getMinY(),re.getMaxY(),re.getCoordinateReferenceSystem()));
+    }
+    mergeEnvelopes(envelopes);
+    reprojectEnvelopes(sourceCRS,envelopes);
+    return envelopes;
+  }
+}

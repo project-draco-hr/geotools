@@ -1,7 +1,18 @@
 {
   ProjectedCRS projectedCRS=CRS.getProjectedCRS(crs);
   if (projectedCRS == null)   return null;
-  MathTransform mt=projectedCRS.getConversionFromBase().getMathTransform();
-  if (mt instanceof MapProjection)   return (MapProjection)mt;
+  Projection conversion=projectedCRS.getConversionFromBase();
+  MathTransform mt=conversion.getMathTransform();
+  if (mt instanceof MapProjection) {
+    return (MapProjection)mt;
+  }
+ else   if (mt instanceof ConcatenatedTransform) {
+    ConcatenatedTransform ct=(ConcatenatedTransform)mt;
+    MathTransform mt1=ct.transform1;
+    MathTransform mt2=ct.transform2;
+    if (mt2 instanceof MapProjection && mt1 instanceof AffineTransform2D) {
+      return (MapProjection)mt2;
+    }
+  }
   return null;
 }

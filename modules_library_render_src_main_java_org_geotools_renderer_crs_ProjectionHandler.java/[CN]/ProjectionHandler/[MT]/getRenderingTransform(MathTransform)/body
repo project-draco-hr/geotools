@@ -1,0 +1,35 @@
+{
+  List<MathTransform> elements=new ArrayList<MathTransform>();
+  accumulateTransforms(mt,elements);
+  List<MathTransform> wrapped=new ArrayList<MathTransform>();
+  List<MathTransform> datumShiftChain=null;
+  boolean datumShiftDetected=false;
+  for (  MathTransform element : elements) {
+    if (datumShiftChain != null) {
+      datumShiftChain.add(element);
+      if (element.getClass().getName().equals(GeocentricTransform.class.getName() + "$Inverse")) {
+        datumShiftDetected=true;
+        MathTransform combined=concatenateTransforms(datumShiftChain);
+        GeographicOffsetWrapper wrapper=new GeographicOffsetWrapper(combined);
+        wrapped.add(wrapper);
+        datumShiftChain=null;
+      }
+    }
+ else     if (element instanceof GeocentricTransform) {
+      datumShiftChain=new ArrayList<MathTransform>();
+      datumShiftChain.add(element);
+    }
+ else {
+      wrapped.add(element);
+    }
+  }
+  if (datumShiftDetected) {
+    if (datumShiftChain != null) {
+      wrapped.addAll(datumShiftChain);
+    }
+    return concatenateTransforms(wrapped);
+  }
+ else {
+    return mt;
+  }
+}

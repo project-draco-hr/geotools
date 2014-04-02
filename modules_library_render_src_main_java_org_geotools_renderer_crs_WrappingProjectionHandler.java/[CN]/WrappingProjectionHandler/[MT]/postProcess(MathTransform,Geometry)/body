@@ -1,37 +1,56 @@
 {
   Envelope env=geometry.getEnvelopeInternal();
-  if (env.getWidth() < radius && renderingEnvelope.contains(env) && renderingEnvelope.getWidth() <= radius * 2) {
+  final double width;
+  final double reWidth;
+  final boolean northEast=CRS.getAxisOrder(targetCRS) == CRS.AxisOrder.NORTH_EAST;
+  if (northEast) {
+    width=env.getHeight();
+    reWidth=renderingEnvelope.getHeight();
+  }
+ else {
+    width=env.getWidth();
+    reWidth=renderingEnvelope.getWidth();
+  }
+  if (width < radius && renderingEnvelope.contains(env) && reWidth <= radius * 2) {
     return geometry;
   }
-  if (env.getWidth() > radius && env.getWidth() < radius * 2) {
-    geometry.apply(new WrappingCoordinateFilter(radius,radius * 2,mt));
+  if (width > radius && width < radius * 2) {
+    geometry.apply(new WrappingCoordinateFilter(radius,radius * 2,mt,northEast));
     geometry.geometryChanged();
     env=geometry.getEnvelopeInternal();
   }
   List<Geometry> geoms=new ArrayList<Geometry>();
   Class geomType=null;
-  double min=env.getMinX();
-  double max=env.getMaxX();
-  double lowLimit=Math.max(renderingEnvelope.getMinX(),renderingEnvelope.getMedian(0) - maxWraps * radius * 2);
-  double highLimit=Math.min(renderingEnvelope.getMaxX(),renderingEnvelope.getMedian(0) + maxWraps * radius * 2);
-  while (min > lowLimit) {
-    min-=radius * 2;
+  double base, curr, lowLimit, highLimit;
+  if (northEast) {
+    base=env.getMinY();
+    curr=env.getMinY();
+    lowLimit=Math.max(renderingEnvelope.getMinY(),renderingEnvelope.getMedian(1) - maxWraps * radius * 2);
+    highLimit=Math.min(renderingEnvelope.getMaxY(),renderingEnvelope.getMedian(1) + maxWraps * radius * 2);
   }
-  while (max < highLimit) {
-    max+=radius * 2;
+ else {
+    base=env.getMinX();
+    curr=env.getMinX();
+    lowLimit=Math.max(renderingEnvelope.getMinX(),renderingEnvelope.getMedian(0) - maxWraps * radius * 2);
+    highLimit=Math.min(renderingEnvelope.getMaxX(),renderingEnvelope.getMedian(0) + maxWraps * radius * 2);
+  }
+  while (curr > lowLimit) {
+    curr-=radius * 2;
   }
   geomType=accumulate(geoms,geometry,geomType);
-  while (min <= highLimit) {
-    double offset=min - env.getMinX();
+  while (curr <= highLimit) {
+    double offset=curr - base;
     if (Math.abs(offset) < radius) {
     }
  else {
       Geometry offseted=(Geometry)geometry.clone();
-      offseted.apply(new OffsetOrdinateFilter(0,offset));
+      offseted.apply(new OffsetOrdinateFilter(northEast ? 1 : 0,offset));
       offseted.geometryChanged();
-      geomType=accumulate(geoms,offseted,geomType);
+      if (offseted.getEnvelopeInternal().intersects(renderingEnvelope)) {
+        geomType=accumulate(geoms,offseted,geomType);
+      }
     }
-    min+=radius * 2;
+    curr+=radius * 2;
   }
   if (geomType == null) {
     return null;

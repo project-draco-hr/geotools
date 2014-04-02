@@ -1,0 +1,23 @@
+{
+  CoordinateReferenceSystem crs=renderingEnvelope.getCoordinateReferenceSystem();
+  if (renderingEnvelope != null && crs instanceof GeographicCRS) {
+    GeographicCRS geogCrs=(GeographicCRS)crs;
+    ReferencedEnvelope validArea=null;
+    if (sourceCrs instanceof GeographicCRS && !CRS.equalsIgnoreMetadata(sourceCrs,geogCrs)) {
+      if (CRS.getAxisOrder(sourceCrs) == AxisOrder.NORTH_EAST) {
+        validArea=new ReferencedEnvelope(MIN_LATITUDE,MAX_LATITUDE,Float.MAX_VALUE,-Float.MAX_VALUE,sourceCrs);
+      }
+ else {
+        validArea=new ReferencedEnvelope(Float.MAX_VALUE,-Float.MAX_VALUE,MIN_LATITUDE,MAX_LATITUDE,sourceCrs);
+      }
+    }
+    if (wrap && maxWraps > 0) {
+      double centralMeridian=geogCrs.getDatum().getPrimeMeridian().getGreenwichLongitude();
+      return new WrappingProjectionHandler(renderingEnvelope,validArea,sourceCrs,centralMeridian,maxWraps);
+    }
+ else {
+      return new ProjectionHandler(sourceCrs,validArea,renderingEnvelope);
+    }
+  }
+  return null;
+}

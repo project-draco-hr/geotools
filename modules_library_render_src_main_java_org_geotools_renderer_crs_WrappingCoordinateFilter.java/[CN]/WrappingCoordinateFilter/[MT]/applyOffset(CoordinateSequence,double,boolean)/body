@@ -1,21 +1,27 @@
 {
   final double maxWrap=wrapLimit * 1.9;
-  double lastX=cs.getX(0);
+  double lastOrdinate=cs.getOrdinate(0,ordinateIdx);
   int last=ring ? cs.size() - 1 : cs.size();
   for (int i=0; i < last; i++) {
-    final double x=cs.getX(i);
-    final double distance=Math.abs(x - lastX);
+    final double ordinate=cs.getOrdinate(i,ordinateIdx);
+    final double distance=Math.abs(ordinate - lastOrdinate);
     if (distance > wrapLimit) {
       boolean wraps=distance < maxWrap;
       if (!wraps && mt != null) {
-        double[] src=new double[]{lastX,cs.getY(i - 1),x,cs.getY(i)};
+        double[] src;
+        if (ordinateIdx == 0) {
+          src=new double[]{lastOrdinate,cs.getY(i - 1),ordinate,cs.getY(i)};
+        }
+ else {
+          src=new double[]{cs.getX(i - i),lastOrdinate,cs.getX(i),ordinate};
+        }
         double[] dest=new double[4];
         try {
           mt.transform(src,0,dest,0,2);
           src[0]=Math.min(dest[0],dest[2]) + Math.abs(dest[2] - dest[0]) / 2;
           src[1]=Math.min(dest[1],dest[3]) + Math.abs(dest[3] - dest[1]) / 2;
           mt.inverse().transform(src,0,dest,0,1);
-          wraps=!(dest[0] > Math.min(lastX,x) && dest[0] < Math.max(lastX,x));
+          wraps=!(dest[ordinateIdx] > Math.min(lastOrdinate,ordinate) && dest[ordinateIdx] < Math.max(lastOrdinate,ordinate));
         }
  catch (        TransformException ex) {
           Logging.getLogger("org.geotools.rendering").log(Level.WARNING,"Unable to perform transform to detect dateline wrapping",ex);
@@ -30,10 +36,10 @@
         }
       }
     }
-    if (offset != 0)     cs.setOrdinate(i,0,x + offset);
-    lastX=x;
+    if (offset != 0)     cs.setOrdinate(i,ordinateIdx,ordinate + offset);
+    lastOrdinate=ordinate;
   }
   if (ring) {
-    cs.setOrdinate(last,0,cs.getOrdinate(0,0));
+    cs.setOrdinate(last,ordinateIdx,cs.getOrdinate(0,ordinateIdx));
   }
 }

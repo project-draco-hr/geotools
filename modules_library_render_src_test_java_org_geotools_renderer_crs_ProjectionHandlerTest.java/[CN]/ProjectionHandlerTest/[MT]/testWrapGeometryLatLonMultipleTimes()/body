@@ -1,0 +1,12 @@
+{
+  ReferencedEnvelope renderingEnvelope=new ReferencedEnvelope(-90,90,-580,540,ED50_LATLON);
+  Geometry g=new WKTReader().read("POLYGON((-74 -33, -29 -33, -29 5, -74 5, -74 -33))");
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(renderingEnvelope,WGS84,true);
+  assertTrue(handler.requiresProcessing(g));
+  Geometry preProcessed=handler.preProcess(g);
+  MathTransform mt=handler.getRenderingTransform(CRS.findMathTransform(WGS84,ED50_LATLON));
+  Geometry transformed=JTS.transform(preProcessed,mt);
+  Geometry postProcessed=handler.postProcess(mt,transformed);
+  assertTrue(postProcessed.isValid());
+  assertEquals(3,postProcessed.getNumGeometries());
+}

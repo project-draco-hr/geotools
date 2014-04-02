@@ -1,0 +1,31 @@
+{
+  double[] source=srcPts;
+  if (srcPts == dstPts) {
+    source=new double[srcPts.length];
+    System.arraycopy(srcPts,0,source,0,srcPts.length);
+  }
+  delegate.transform(srcPts,srcOff,dstPts,dstOff,numPts);
+  final int srcDimension=delegate.getSourceDimensions();
+  final int dstDimension=delegate.getTargetDimensions();
+  double lastSrcLon=source[srcOff];
+  double lastDstLon=dstPts[dstOff];
+  double offset=0;
+  for (int i=srcOff + srcDimension, j=dstOff + dstDimension, ptCount=1; ptCount < numPts; i+=srcDimension, j+=dstDimension, ptCount++) {
+    double srcLon=source[i];
+    double dstLon=dstPts[j];
+    double srcDelta=srcLon - lastSrcLon;
+    double dstDelta=dstLon - lastDstLon;
+    double difference=srcDelta - dstDelta;
+    if (difference > 180) {
+      offset+=360;
+    }
+ else     if (difference < -180) {
+      offset-=360;
+    }
+    if (offset != 0) {
+      dstPts[j]+=offset;
+    }
+    lastDstLon=dstLon;
+    lastSrcLon=srcLon;
+  }
+}
