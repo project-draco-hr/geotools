@@ -1,16 +1,17 @@
 {
-  if (CRS.equalsIgnoreMetadata(sourceCRS,renderingEnvelope.getCoordinateReferenceSystem())) {
+  if (validArea == null)   return geometry;
+  CoordinateReferenceSystem geometryCRS=CRS.getHorizontalCRS(sourceCRS);
+  if (geometryCRS == null || CRS.equalsIgnoreMetadata(geometryCRS,renderingEnvelope.getCoordinateReferenceSystem())) {
     return geometry;
   }
-  if (validArea == null)   return geometry;
-  ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),sourceCRS);
+  ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
   ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
   if (validArea.contains((Envelope)geWGS84)) {
     return geometry;
   }
   ReferencedEnvelope envIntWgs84=new ReferencedEnvelope(validArea.intersection(geWGS84),WGS84);
   if (envIntWgs84.isEmpty())   return null;
-  ReferencedEnvelope envInt=envIntWgs84.transform(sourceCRS,true);
+  ReferencedEnvelope envInt=envIntWgs84.transform(geometryCRS,true);
   Polygon envelopeGeometry=JTS.toGeometry((Envelope)envInt);
   Geometry result;
   try {

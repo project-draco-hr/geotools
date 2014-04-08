@@ -24,12 +24,14 @@
   }
   ReferencedEnvelope envelope=new ReferencedEnvelope(mapArea,mapCRS);
   try {
-    List<ReferencedEnvelope> envelopes;
+    List<ReferencedEnvelope> envelopes=null;
     if (isAdvancedProjectionHandlingEnabled()) {
-      projectionHandler=ProjectionHandlerFinder.getHandler(envelope,featCrs,isMapWrappingEnabled());
-      envelopes=projectionHandler.getQueryEnvelopes();
+      projectionHandler=ProjectionHandlerFinder.getHandler(mapExtent,featCrs,isMapWrappingEnabled());
+      if (projectionHandler != null) {
+        envelopes=projectionHandler.getQueryEnvelopes();
+      }
     }
- else {
+    if (envelopes == null) {
       if (mapCRS != null && featCrs != null && !CRS.equalsIgnoreMetadata(featCrs,mapCRS)) {
         envelopes=Collections.singletonList(envelope.transform(featCrs,true,10));
       }
