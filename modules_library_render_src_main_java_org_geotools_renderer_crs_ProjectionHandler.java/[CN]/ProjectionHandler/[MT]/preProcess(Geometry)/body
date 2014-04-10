@@ -1,30 +1,36 @@
 {
-  if (validArea == null)   return geometry;
+  if (validAreaBounds == null)   return geometry;
   CoordinateReferenceSystem geometryCRS=CRS.getHorizontalCRS(sourceCRS);
   if (geometryCRS == null || CRS.equalsIgnoreMetadata(geometryCRS,renderingEnvelope.getCoordinateReferenceSystem())) {
     return geometry;
   }
-  ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
-  ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
-  if (validArea.contains((Envelope)geWGS84)) {
-    return geometry;
-  }
-  ReferencedEnvelope envIntWgs84=new ReferencedEnvelope(validArea.intersection(geWGS84),WGS84);
-  if (envIntWgs84.isEmpty())   return null;
-  ReferencedEnvelope envInt=envIntWgs84.transform(geometryCRS,true);
-  Polygon envelopeGeometry=JTS.toGeometry((Envelope)envInt);
-  Geometry result;
-  try {
-    result=geometry.intersection(envelopeGeometry);
-  }
- catch (  Exception e1) {
-    try {
-      result=EnhancedPrecisionOp.intersection(geometry,envelopeGeometry);
+  Geometry mask;
+  if (validArea == null) {
+    ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
+    ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
+    if (validAreaBounds.contains((Envelope)geWGS84)) {
+      return geometry;
     }
- catch (    Exception e2) {
-      result=geometry;
+    ReferencedEnvelope envIntWgs84=new ReferencedEnvelope(validAreaBounds.intersection(geWGS84),WGS84);
+    if (envIntWgs84.isEmpty()) {
+      return null;
     }
+    ReferencedEnvelope envInt=envIntWgs84.transform(geometryCRS,true);
+    mask=JTS.toGeometry((Envelope)envInt);
   }
-  if (result instanceof GeometryCollection && ((GeometryCollection)result).isEmpty())   return null;
- else   return result;
+ else {
+    ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
+    ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
+    ReferencedEnvelope envIntWgs84=new ReferencedEnvelope(validAreaBounds.intersection(geWGS84),WGS84);
+    if (envIntWgs84.isEmpty()) {
+      return null;
+    }
+    Polygon polyIntWgs84=JTS.toGeometry(envIntWgs84);
+    Geometry maskWgs84=intersect(validArea,polyIntWgs84);
+    if (maskWgs84 == null || maskWgs84.isEmpty()) {
+      return null;
+    }
+    mask=JTS.transform(maskWgs84,CRS.findMathTransform(WGS84,geometryCRS));
+  }
+  return intersect(geometry,mask);
 }
