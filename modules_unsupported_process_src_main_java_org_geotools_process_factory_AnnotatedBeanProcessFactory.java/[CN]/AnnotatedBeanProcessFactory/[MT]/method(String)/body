@@ -1,10 +1,28 @@
 {
   Class<?> c=classMap.get(className);
   if (c != null) {
+    List<Method> candidates=new ArrayList<Method>();
     for (    Method m : c.getMethods()) {
       if ("execute".equals(m.getName())) {
-        return m;
+        candidates.add(m);
       }
+    }
+    if (candidates.size() == 1) {
+      return candidates.get(0);
+    }
+ else     if (candidates.size() > 1) {
+      Method selection=null;
+      for (      Method m : candidates) {
+        if (hasProcessAnnotations(m)) {
+          if (selection != null) {
+            throw new IllegalArgumentException("Invalid process bean " + className + ", has two annotated execute methods");
+          }
+ else {
+            selection=m;
+          }
+        }
+      }
+      return selection;
     }
   }
   return null;
