@@ -1,2 +1,21 @@
 {
+  if (disposed) {
+    error=new CoverageProcessingException("Trying to process a disposed CoverageProcessingNode.");
+    return;
+  }
+  if (!executed) {
+    try {
+      output=null;
+      final GridCoverage result=execute();
+      if (result == null)       error=new CoverageProcessingException("Something bad occurred while trying to execute this node.");
+      if (!(result instanceof GridCoverage2D))       error=new CoverageProcessingException("Something bad occurred while trying to execute this node.");
+      if (error == null)       output=(GridCoverage2D)result;
+    }
+ catch (    Throwable t) {
+      output=null;
+      error=t;
+    }
+    executed=true;
+  }
+  assert executed;
 }

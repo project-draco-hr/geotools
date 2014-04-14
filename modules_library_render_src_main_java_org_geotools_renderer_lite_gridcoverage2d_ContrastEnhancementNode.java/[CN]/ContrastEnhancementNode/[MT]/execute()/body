@@ -1,2 +1,83 @@
 {
+  final Hints hints=getHints();
+  final List<CoverageProcessingNode> sources=this.getSources();
+  if (sources != null && !sources.isEmpty()) {
+    final GridCoverage2D source=(GridCoverage2D)getSource(0).getOutput();
+    ensureSourceNotNull(source,this.getName().toString());
+    GridCoverage2D output;
+    if ((!Double.isNaN(gammaValue) && !Double.isInfinite(gammaValue) && !(Math.abs(gammaValue - 1) < 1E-6)) || (type != null && type.length() > 0)) {
+      final RenderedImage sourceImage=source.getRenderedImage();
+      RenderedImage initialImage;
+      if (type != null && type.equalsIgnoreCase("HISTOGRAM")) {
+        initialImage=new ImageWorker(sourceImage).setRenderingHints(hints).forceComponentColorModel().rescaleToBytes().getRenderedImage();
+      }
+ else {
+        initialImage=new ImageWorker(sourceImage).setRenderingHints(hints).forceComponentColorModel().getRenderedImage();
+      }
+      final int numbands=initialImage.getSampleModel().getNumBands();
+      RenderedImage alphaBand=null;
+      if (numbands % 2 == 0) {
+        alphaBand=new ImageWorker(initialImage).setRenderingHints(hints).retainLastBand().getRenderedImage();
+        initialImage=new ImageWorker(initialImage).setRenderingHints(hints).retainBands(numbands - 1).getRenderedImage();
+      }
+      RenderedImage intensityImage=null;
+      RenderedImage hChannel=null;
+      RenderedImage sChannel=null;
+      final boolean intensity;
+      RenderedImage IHS=null;
+      if (numbands > 1) {
+        IHS=new ImageWorker(initialImage).setRenderingHints(hints).forceColorSpaceIHS().getRenderedImage();
+        intensityImage=new ImageWorker(IHS).setRenderingHints(hints).retainFirstBand().getRenderedImage();
+        sChannel=new ImageWorker(IHS).setRenderingHints(hints).retainLastBand().getRenderedImage();
+        hChannel=new ImageWorker(IHS).setRenderingHints(hints).retainBands(new int[]{1}).getRenderedImage();
+        intensity=true;
+      }
+ else {
+        intensityImage=initialImage;
+        intensity=false;
+      }
+      final RenderedImage heImage=performContrastEnhancement(intensityImage,hints);
+      RenderedImage finalImage=performGammaCorrection(heImage,hints);
+      if (intensity) {
+        final ImageLayout imageLayout=new ImageLayout();
+        imageLayout.setColorModel(IHS.getColorModel());
+        imageLayout.setSampleModel(IHS.getSampleModel());
+        final RenderingHints rendHints=new RenderingHints(Collections.EMPTY_MAP);
+        rendHints.add(hints);
+        rendHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,imageLayout));
+        final ParameterBlock pb=new ParameterBlock();
+        pb.addSource(finalImage);
+        pb.addSource(hChannel);
+        pb.addSource(sChannel);
+        finalImage=JAI.create("bandmerge",pb,rendHints);
+        finalImage=new ImageWorker(finalImage).setRenderingHints(hints).forceColorSpaceRGB().getRenderedImage();
+      }
+      if (alphaBand != null) {
+        final ColorModel cm=new ComponentColorModel(numbands >= 3 ? ColorSpace.getInstance(ColorSpace.CS_sRGB) : ColorSpace.getInstance(ColorSpace.CS_GRAY),numbands >= 3 ? new int[]{8,8,8,8} : new int[]{8,8},true,false,Transparency.TRANSLUCENT,DataBuffer.TYPE_BYTE);
+        final ImageLayout imageLayout=new ImageLayout();
+        imageLayout.setColorModel(cm);
+        imageLayout.setSampleModel(cm.createCompatibleSampleModel(finalImage.getWidth(),finalImage.getHeight()));
+        finalImage=new ImageWorker(finalImage).setRenderingHints(hints).setRenderingHint(JAI.KEY_IMAGE_LAYOUT,imageLayout).addBand(alphaBand,false).getRenderedOperation();
+      }
+      final int numSourceBands=source.getNumSampleDimensions();
+      final int numActualBands=finalImage.getSampleModel().getNumBands();
+      final GridCoverageFactory factory=getCoverageFactory();
+      final HashMap<Object,Object> props=new HashMap<Object,Object>();
+      if (source.getProperties() != null) {
+        props.putAll(source.getProperties());
+      }
+      if (numActualBands == numSourceBands) {
+        final String name="ce_coverage" + source.getName();
+        output=factory.create(name,finalImage,(GridGeometry2D)source.getGridGeometry(),source.getSampleDimensions(),new GridCoverage[]{source},props);
+      }
+ else {
+        final GridSampleDimension sd[]=new GridSampleDimension[numActualBands];
+        for (int i=0; i < numActualBands; i++)         sd[i]=(GridSampleDimension)source.getSampleDimension(0);
+        output=factory.create("ce_coverage" + source.getName().toString(),finalImage,(GridGeometry2D)source.getGridGeometry(),sd,new GridCoverage[]{source},props);
+      }
+    }
+ else     output=source;
+    return output;
+  }
+  throw new IllegalStateException(Errors.format(ErrorKeys.SOURCE_CANT_BE_NULL_$1,this.getName().toString()));
 }
