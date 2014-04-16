@@ -15,8 +15,8 @@
       FeatureCollection<?,?> sample=featureSource.getFeatures();
       Feature gridWrapper=DataUtilities.first(sample);
       if (FeatureUtilities.isWrappedCoverageReader(simpleSchema)) {
-        final Object params=paramsPropertyName.evaluate(gridWrapper);
-        final GridCoverage2DReader reader=(GridCoverage2DReader)gridPropertyName.evaluate(gridWrapper);
+        final Object params=PARAMS_PROPERTY_NAME.evaluate(gridWrapper);
+        final GridCoverage2DReader reader=(GridCoverage2DReader)GRID_PROPERTY_NAME.evaluate(gridWrapper);
         if (CRS.equalsIgnoreMetadata(reader.getCoordinateReferenceSystem(),gridGeometry.getCoordinateReferenceSystem())) {
           MathTransform g2w=reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER);
           if (g2w instanceof AffineTransform2D && readGG.getGridToCRS2D() instanceof AffineTransform2D) {
@@ -38,7 +38,7 @@
         coverage=readCoverage(reader,params,readGG);
       }
  else {
-        coverage=(GridCoverage2D)gridPropertyName.evaluate(gridWrapper);
+        coverage=(GridCoverage2D)GRID_PROPERTY_NAME.evaluate(gridWrapper);
       }
       if (coverage != null) {
         if (readGG != null) {
@@ -68,7 +68,7 @@
                 param.parameter("Source").setValue(coverage);
                 param.parameter("xScale").setValue(ratioX);
                 param.parameter("yScale").setValue(ratioY);
-                final Interpolation interpolation=(Interpolation)java2dHints.get(JAI.KEY_INTERPOLATION);
+                final Interpolation interpolation=(Interpolation)hints.get(JAI.KEY_INTERPOLATION);
                 if (interpolation != null) {
                   param.parameter("Interpolation").setValue(interpolation);
                 }
@@ -101,22 +101,8 @@
     }
     Query mixedQuery=DataUtilities.mixQueries(layerQuery,optimizedQuery,null);
     originalFeatures=featureSource.getFeatures(mixedQuery);
-    prepFeatureCollection(originalFeatures,sourceCrs);
+    originalFeatures=RendererUtilities.fixFeatureCollectionReferencing(originalFeatures,sourceCrs);
     result=transformation.evaluate(originalFeatures);
   }
-  if (result == null) {
-    return null;
-  }
-  if (result instanceof FeatureCollection) {
-    return (FeatureCollection)result;
-  }
- else   if (result instanceof GridCoverage2D) {
-    return FeatureUtilities.wrapGridCoverage((GridCoverage2D)result);
-  }
- else   if (result instanceof GridCoverage2DReader) {
-    return FeatureUtilities.wrapGridCoverageReader((GridCoverage2DReader)result,null);
-  }
- else {
-    throw new IllegalArgumentException("Don't know how to handle the results of the transformation, " + "the supported result types are FeatureCollection, GridCoverage2D " + "and GridCoverage2DReader, but we got: "+ result.getClass());
-  }
+  return result;
 }
