@@ -1,18 +1,24 @@
 {
   final AffineTransform g2w;
-  final OverviewLevel baseLevel=rasterManager.overviewsController.resolutionsLevels.get(0);
-  final OverviewLevel selectedLevel=rasterManager.overviewsController.resolutionsLevels.get(imageChoice);
-  final double resX=baseLevel.resolutionX;
-  final double resY=baseLevel.resolutionY;
-  final double[] requestRes=request.spatialRequestHelper.getRequestedResolution();
-  g2w=new AffineTransform((AffineTransform)baseGridToWorld);
-  g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
-  if ((requestRes[0] < resX || requestRes[1] < resY)) {
-    oversampledRequest=true;
+  if (!request.isHeterogeneousGranules()) {
+    final OverviewLevel baseLevel=rasterManager.overviewsController.resolutionsLevels.get(0);
+    final OverviewLevel selectedLevel=rasterManager.overviewsController.resolutionsLevels.get(imageChoice);
+    final double resX=baseLevel.resolutionX;
+    final double resY=baseLevel.resolutionY;
+    final double[] requestRes=request.spatialRequestHelper.getRequestedResolution();
+    g2w=new AffineTransform((AffineTransform)baseGridToWorld);
+    g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+    if ((requestRes[0] < resX || requestRes[1] < resY)) {
+      oversampledRequest=true;
+    }
+ else {
+      g2w.concatenate(AffineTransform.getScaleInstance(selectedLevel.scaleFactor,selectedLevel.scaleFactor));
+      g2w.concatenate(AffineTransform.getScaleInstance(baseReadParameters.getSourceXSubsampling(),baseReadParameters.getSourceYSubsampling()));
+    }
   }
  else {
-    g2w.concatenate(AffineTransform.getScaleInstance(selectedLevel.scaleFactor,selectedLevel.scaleFactor));
-    g2w.concatenate(AffineTransform.getScaleInstance(baseReadParameters.getSourceXSubsampling(),baseReadParameters.getSourceYSubsampling()));
+    g2w=new AffineTransform(request.spatialRequestHelper.getRequestedGridToWorld());
+    g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
   }
   finalGridToWorldCorner=new AffineTransform2D(g2w);
   finalWorldToGridCorner=finalGridToWorldCorner.inverse();
