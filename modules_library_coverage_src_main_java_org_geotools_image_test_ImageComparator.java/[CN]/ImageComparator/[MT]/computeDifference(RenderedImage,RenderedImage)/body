@@ -1,0 +1,44 @@
+{
+  int[] components=new int[bands];
+  Pixel px1=new Pixel();
+  Pixel px2=new Pixel();
+  final int width=image1.getWidth();
+  final int height=image1.getHeight();
+  RandomIter it1=RandomIterFactory.create(image1,null);
+  RandomIter it2=RandomIterFactory.create(image2,null);
+  Pixel cursor=new Pixel();
+  try {
+    for (int r=0; r < height; r++) {
+      for (int c=0; c < width; c++) {
+        it1.getPixel(c,r,components);
+        px1.init(components);
+        it2.getPixel(c,r,components);
+        px2.init(components);
+        if (mode == Mode.IgnoreColors) {
+          if (!px1.isBrightnessSimilar(px2)) {
+            mismatchCount++;
+          }
+        }
+ else         if (!px1.isSimilar(px2)) {
+          if (mode == Mode.IgnoreAntialiasing) {
+            if (isAntialised(px1,it1,r,c,width,height,components,cursor) || isAntialised(px2,it2,r,c,width,height,components,cursor)) {
+              if (!px1.isBrightnessSimilar(px2)) {
+                mismatchCount++;
+              }
+            }
+ else {
+              mismatchCount++;
+            }
+          }
+ else {
+            mismatchCount++;
+          }
+        }
+      }
+    }
+  }
+  finally {
+    it1.done();
+    it2.done();
+  }
+}

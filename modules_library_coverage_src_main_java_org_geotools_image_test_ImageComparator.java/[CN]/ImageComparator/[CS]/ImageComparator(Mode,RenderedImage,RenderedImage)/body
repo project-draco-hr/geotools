@@ -1,0 +1,40 @@
+{
+  int height=image1.getHeight();
+  int width=image1.getWidth();
+  if (width != image2.getWidth() || height != image2.getHeight()) {
+    throw new IllegalArgumentException("The two input images have different size, they cannot be compared");
+  }
+  image1=normalizeImage(image1);
+  image2=normalizeImage(image2);
+  this.bands=image1.getSampleModel().getNumBands();
+  final boolean hasAlpha=image1.getColorModel().hasAlpha();
+  if (bands > 4 || (bands == 2 && !hasAlpha) || (bands == 3 && hasAlpha)) {
+    throw new IllegalArgumentException("Images have the wrong type, this code only supports gray, gray/alpha, " + "RGB, RGBA images, or images that can be transformed in those models");
+  }
+  this.mode=mode;
+switch (mode) {
+case IgnoreNothing:
+    tolerance[RED]=16;
+  tolerance[GREEN]=16;
+tolerance[BLUE]=16;
+tolerance[ALPHA]=16;
+tolerance[MIN_BRIGHTNESS]=16;
+tolerance[MAX_BRIGHTNESS]=240;
+break;
+case IgnoreAntialiasing:
+tolerance[RED]=32;
+tolerance[GREEN]=32;
+tolerance[BLUE]=32;
+tolerance[ALPHA]=128;
+tolerance[MIN_BRIGHTNESS]=64;
+tolerance[MAX_BRIGHTNESS]=98;
+break;
+case IgnoreColors:
+tolerance[ALPHA]=16;
+tolerance[MIN_BRIGHTNESS]=16;
+tolerance[MAX_BRIGHTNESS]=240;
+break;
+}
+computeDifference(image1,image2);
+mismatchPercent=mismatchCount * 1d / (width * image2.getHeight());
+}

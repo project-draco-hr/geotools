@@ -1,0 +1,35 @@
+{
+  if (!expectedFile.exists()) {
+    boolean useAsReference=actualReferenceFile && INTERACTIVE && ReferenceImageDialog.show(realignImage(actualImage));
+    if (useAsReference) {
+      try {
+        new ImageWorker(actualImage).writePNG(expectedFile,"FILTERED",0.9f,false,false);
+      }
+ catch (      IOException e) {
+        throw (Error)new AssertionError("Failed to write the image to disk").initCause(e);
+      }
+    }
+ else {
+      throw new AssertionError("Reference image is missing: " + expectedFile);
+    }
+  }
+ else {
+    RenderedImage expectedImage=ImageIO.read(expectedFile);
+    ImageComparator comparator=new ImageComparator(mode,expectedImage,actualImage);
+    if (comparator.getMismatchCount() > threshold) {
+      boolean overwrite=false;
+      if (INTERACTIVE) {
+        overwrite=CompareImageDialog.show(realignImage(expectedImage),realignImage(actualImage),actualReferenceFile);
+      }
+      if (overwrite) {
+        ImageIO.write(actualImage,"PNG",expectedFile);
+      }
+ else {
+        throw new AssertionError("Images are visibly different, found " + comparator.getMismatchCount() + " different pixels, against a threshold of "+ threshold);
+      }
+    }
+ else {
+      LOGGER.info("Images are not visibly different, found " + comparator.getMismatchCount() + " different pixels, against a threshold of "+ threshold);
+    }
+  }
+}
