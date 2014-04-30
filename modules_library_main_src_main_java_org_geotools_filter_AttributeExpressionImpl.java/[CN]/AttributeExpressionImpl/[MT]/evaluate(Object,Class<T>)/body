@@ -1,0 +1,30 @@
+{
+  PropertyAccessor accessor=getLastPropertyAccessor();
+  AtomicReference<Object> value=new AtomicReference<Object>();
+  AtomicReference<Exception> e=new AtomicReference<Exception>();
+  if (accessor == null || !accessor.canHandle(obj,attPath,target) || !tryAccessor(accessor,obj,target,value,e)) {
+    boolean success=false;
+    if (namespaceSupport != null && hints == null) {
+      hints=new Hints(PropertyAccessorFactory.NAMESPACE_CONTEXT,namespaceSupport);
+    }
+    List<PropertyAccessor> accessors=PropertyAccessors.findPropertyAccessors(obj,attPath,target,hints);
+    if (accessors != null) {
+      Iterator<PropertyAccessor> it=accessors.iterator();
+      while (!success && it.hasNext()) {
+        accessor=it.next();
+        success=tryAccessor(accessor,obj,target,value,e);
+      }
+    }
+    if (!success) {
+      if (lenient)       return null;
+ else       throw new IllegalArgumentException("Could not find working property accessor for attribute (" + attPath + ") in object ("+ obj+ ")",e.get());
+    }
+ else {
+      setLastPropertyAccessor(accessor);
+    }
+  }
+  if (target == null) {
+    return (T)value.get();
+  }
+  return Converters.convert(value.get(),target);
+}

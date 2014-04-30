@@ -1,25 +1,28 @@
 {
-  Filter orFilter=likeFilter.or(btwnFilter);
-  Filter andFilter=orFilter.and(compFilter);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  Or orFilter=ff.or(likeFilter,btwnFilter);
+  And andFilter=ff.and(orFilter,compFilter);
   unpacker.unPackAND(andFilter);
   assertEquals(orFilter,unpacker.getUnSupported());
   assertEquals(compFilter,unpacker.getSupported());
-  Filter bigOrFilter=(andFilter.or(compFilter)).or(nullFilter);
-  Filter biggerOrFilter=bigOrFilter.or(nullFilter);
+  Or bigOrFilter=ff.or(ff.or(andFilter,compFilter),nullFilter);
+  Or biggerOrFilter=ff.or(bigOrFilter,nullFilter);
   unpacker.unPackAND(biggerOrFilter);
   assertEquals(biggerOrFilter,unpacker.getUnSupported());
   assertNull(unpacker.getSupported());
-  Filter bigAndFilter=(geomFilter.and(compFilter)).and(orFilter);
+  And bigAndFilter=ff.and(ff.and(geomFilter,compFilter),orFilter);
   unpacker.unPackAND(bigAndFilter);
-  assertEquals((orFilter.and(geomFilter)),unpacker.getUnSupported());
+  assertEquals(ff.and(orFilter,geomFilter),unpacker.getUnSupported());
   assertEquals(compFilter,unpacker.getSupported());
   unpacker.unPackOR(bigAndFilter);
   assertEquals(bigAndFilter,unpacker.getUnSupported());
   assertNull(unpacker.getSupported());
-  Filter hugeAndFilter=(bigAndFilter.and(andFilter)).and(bigOrFilter);
+  And hugeAndFilter=ff.and(ff.and(bigAndFilter,andFilter),bigOrFilter);
   unpacker.unPackAND(hugeAndFilter);
-  assertEquals((compFilter.and(compFilter)),unpacker.getSupported());
-  Filter expected=(((geomFilter.and(orFilter)).and(orFilter)).and(bigOrFilter));
+  assertEquals(ff.and(compFilter,compFilter),unpacker.getSupported());
+  List<org.opengis.filter.Filter> combine=Arrays.asList(new org.opengis.filter.Filter[]{geomFilter,orFilter,orFilter,bigOrFilter});
+  And expected=ff.and(combine);
   org.opengis.filter.Filter unsupported=unpacker.getUnSupported();
+  assertEquals(expected.toString(),unsupported.toString());
   assertEquals(expected,unsupported);
 }

@@ -4,30 +4,53 @@
   LOGGER.finer("current state: " + currentState);
   if (expFactory == null) {
     this.declaredType=declaredType;
-    if (DefaultExpression.isFunctionExpression(convertType(declaredType))) {
+    short convertType=convertType(declaredType);
+    if (DefaultExpression.isFunctionExpression(convertType)) {
       expFactory=new ExpressionSAXParser(schema);
-      curExprssn=ff.createFunctionExpression(getFunctionName(atts));
+      String name=getFunctionName(atts);
+      Function function=functionFinder.findFunction(name);
+      if (function != null && function instanceof FunctionExpression) {
+        curExprssn=(FunctionExpression)function;
+      }
+ else {
+        throw new IllegalFilterException(name + " not availabel as FunctionExpressio:" + function);
+      }
       LOGGER.finer("is <function> expression");
     }
-    if (DefaultExpression.isMathExpression(convertType(declaredType))) {
+    if (DefaultExpression.isMathExpression(convertType)) {
       expFactory=new ExpressionSAXParser(schema);
-      curExprssn=ff.createMathExpression(convertType(declaredType));
-      LOGGER.finer("is math expression");
-    }
- else     if (DefaultExpression.isLiteralExpression(convertType(declaredType))) {
-      curExprssn=ff.createLiteralExpression();
-      readChars=true;
-      LOGGER.finer("is literal expression");
-    }
- else     if (DefaultExpression.isAttributeExpression(convertType(declaredType))) {
-      curExprssn=ff.createAttributeExpression(schema);
-      readChars=true;
-      LOGGER.finer("is attribute expression");
-    }
-    currentState=setInitialState(curExprssn);
-    readyFlag=false;
-  }
+switch (convertType) {
+case ExpressionType.MATH_ADD:
+        curExprssn=new AddImpl(null,null);
+      break;
+case ExpressionType.MATH_SUBTRACT:
+    curExprssn=new SubtractImpl(null,null);
+  break;
+case ExpressionType.MATH_MULTIPLY:
+curExprssn=new MultiplyImpl(null,null);
+break;
+case ExpressionType.MATH_DIVIDE:
+curExprssn=new DivideImpl(null,null);
+break;
+default :
+throw new IllegalFilterException("Unsupported math expression");
+}
+LOGGER.finer("is math expression");
+}
+ else if (DefaultExpression.isLiteralExpression(convertType)) {
+curExprssn=new LiteralExpressionImpl();
+readChars=true;
+LOGGER.finer("is literal expression");
+}
+ else if (DefaultExpression.isAttributeExpression(convertType)) {
+curExprssn=new AttributeExpressionImpl(schema);
+readChars=true;
+LOGGER.finer("is attribute expression");
+}
+currentState=setInitialState(curExprssn);
+readyFlag=false;
+}
  else {
-    expFactory.start(declaredType,atts);
-  }
+expFactory.start(declaredType,atts);
+}
 }

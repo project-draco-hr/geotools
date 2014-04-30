@@ -1,0 +1,40 @@
+{
+  final String functionClass=function.getClass().getName();
+  int argCount=function.getArgCount();
+  if (argCount < 0) {
+    argCount=5;
+  }
+  final List<Expression> expected=new ArrayList<Expression>();
+  for (int i=0; i < argCount; i++) {
+    AttributeExpressionImpl ex=new AttributeExpressionImpl("attName");
+    expected.add(ex);
+  }
+  try {
+    function.setParameters(expected);
+  }
+ catch (  Exception e) {
+    addExceptionError(errors,functionClass,"setArgs",e);
+  }
+  List<Expression> returnedParams=function.getParameters();
+  if (returnedParams == null) {
+    errors.add(functionClass + ".getParameters() returned null when parameters were set through setArgs(Expression[])");
+  }
+ else   if (!expected.equals(returnedParams)) {
+    errors.add(functionClass + ".getParameters() returned a wrong result when parameters were set through setArgs(Expression[])");
+  }
+  function=(FunctionExpression)function.getClass().newInstance();
+  function.setParameters(expected);
+  List<Expression> returnedArgs=function.getParameters();
+  if (returnedArgs == null) {
+    errors.add(functionClass + ".getParameters() returns null then arguments set through setParameters()");
+  }
+ else {
+    returnedParams=new ArrayList<Expression>(expected);
+    if (!expected.equals(returnedParams)) {
+      errors.add(functionClass + ".getParameters() incompatible with getParameters()");
+    }
+  }
+  if (ExpressionType.FUNCTION != Filters.getExpressionType(function)) {
+    errors.add(functionClass + ".getType != " + ExpressionType.FUNCTION);
+  }
+}

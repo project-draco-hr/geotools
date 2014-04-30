@@ -2,19 +2,19 @@
   if (!canEncode(element,value,hints)) {
     return;
   }
-  GeometryDistanceFilter distanceFilter=(GeometryDistanceFilter)value;
+  DistanceBufferOperator distanceFilter=(DistanceBufferOperator)value;
   AttributesImpl ai=new AttributesImpl();
   String name=attrs[0].getName();
   String uri=getNamespace().toString();
-  if (distanceFilter.getLeftGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
-    Geometry geometry=(Geometry)distanceFilter.getLeftGeometry().getValue(null);
+  if (Filters.getExpressionType(distanceFilter.getExpression1()) == ExpressionType.LITERAL_GEOMETRY) {
+    Geometry geometry=distanceFilter.getExpression1().evaluate(null,Geometry.class);
     if (geometry.getUserData() != null) {
       String srsName=String.valueOf(geometry.getUserData());
       ai.addAttribute(uri,name,null,"string",srsName);
     }
   }
  else {
-    Geometry geometry=(Geometry)distanceFilter.getRightGeometry().getValue(null);
+    Geometry geometry=distanceFilter.getExpression2().evaluate(null,Geometry.class);
     if (geometry.getUserData() != null) {
       String srsName=String.valueOf(geometry.getUserData());
       ai.addAttribute(uri,name,null,"string",srsName);

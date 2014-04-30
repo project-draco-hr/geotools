@@ -2,29 +2,31 @@
   if (!canEncode(element,value,hints)) {
     return;
   }
-  GeometryFilter lf=(GeometryFilter)value;
+  BinarySpatialOperator lf=(BinarySpatialOperator)value;
   output.startElement(element.getNamespace(),element.getName(),null);
-  if ((lf.getLeftGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_STRING) || (lf.getLeftGeometry().getType() == org.geotools.filter.ExpressionType.ATTRIBUTE_STRING) || (lf.getLeftGeometry().getType() == org.geotools.filter.ExpressionType.ATTRIBUTE)) {
-    elems[0].getType().encode(elems[0],lf.getLeftGeometry(),output,hints);
-    if (lf.getRightGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
-      elems[1].getType().encode(elems[1],((LiteralExpression)lf.getRightGeometry()).getLiteral(),output,hints);
+  short type1=Filters.getExpressionType(lf.getExpression1());
+  short type2=Filters.getExpressionType(lf.getExpression2());
+  if ((type1 == org.geotools.filter.ExpressionType.LITERAL_STRING) || (type1 == org.geotools.filter.ExpressionType.ATTRIBUTE_STRING) || (type1 == org.geotools.filter.ExpressionType.ATTRIBUTE)) {
+    elems[0].getType().encode(elems[0],lf.getExpression1(),output,hints);
+    if (type2 == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
+      elems[1].getType().encode(elems[1],((Literal)lf.getExpression2()).getValue(),output,hints);
     }
  else {
-      elems[2].getType().encode(elems[2],((LiteralExpression)lf.getRightGeometry()).getLiteral(),output,hints);
+      elems[2].getType().encode(elems[2],((Literal)lf.getExpression2()).getValue(),output,hints);
     }
   }
  else {
-    if ((lf.getRightGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_STRING) || (lf.getRightGeometry().getType() == org.geotools.filter.ExpressionType.ATTRIBUTE_STRING) || (lf.getRightGeometry().getType() == org.geotools.filter.ExpressionType.ATTRIBUTE)) {
-      elems[0].getType().encode(elems[0],lf.getRightGeometry(),output,hints);
-      if (lf.getLeftGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
-        elems[1].getType().encode(elems[1],((LiteralExpression)lf.getLeftGeometry()).getLiteral(),output,hints);
+    if ((type2 == org.geotools.filter.ExpressionType.LITERAL_STRING) || (type2 == org.geotools.filter.ExpressionType.ATTRIBUTE_STRING) || (type2 == org.geotools.filter.ExpressionType.ATTRIBUTE)) {
+      elems[0].getType().encode(elems[0],lf.getExpression2(),output,hints);
+      if (type1 == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
+        elems[1].getType().encode(elems[1],((Literal)lf.getExpression1()).getValue(),output,hints);
       }
  else {
-        elems[2].getType().encode(elems[2],((LiteralExpression)lf.getLeftGeometry()).getLiteral(),output,hints);
+        elems[2].getType().encode(elems[2],((Literal)lf.getExpression1()).getValue(),output,hints);
       }
     }
  else {
-      throw new OperationNotSupportedException("Either the left or right expr must be a literal for the property name l=" + lf.getLeftGeometry().getType() + " r="+ lf.getRightGeometry().getType());
+      throw new OperationNotSupportedException("Either the left or right expr must be a literal for the property name l=" + type1 + " r="+ type2);
     }
   }
   output.endElement(element.getNamespace(),element.getName());
