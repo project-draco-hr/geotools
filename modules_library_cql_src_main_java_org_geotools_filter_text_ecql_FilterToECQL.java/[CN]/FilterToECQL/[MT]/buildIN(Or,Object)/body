@@ -1,0 +1,18 @@
+{
+  StringBuilder output=FilterToTextUtil.asStringBuilder(extraData);
+  List<Filter> children=filter.getChildren();
+  PropertyIsEqualTo first=(PropertyIsEqualTo)filter.getChildren().get(0);
+  Expression left=first.getExpression1();
+  left.accept(expressionVisitor,output);
+  output.append(" IN (");
+  for (Iterator<Filter> i=children.iterator(); i.hasNext(); ) {
+    PropertyIsEqualTo child=(PropertyIsEqualTo)i.next();
+    Expression right=child.getExpression2();
+    right.accept(expressionVisitor,output);
+    if (i.hasNext()) {
+      output.append(",");
+    }
+  }
+  output.append(")");
+  return output;
+}
