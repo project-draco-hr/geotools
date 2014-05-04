@@ -2,15 +2,17 @@
   final GridCoverage2D output=(GridCoverage2D)super.execute();
   RenderedImage outputImage=output.getRenderedImage();
   final SampleModel outputImageSampleModel=outputImage.getSampleModel();
-  final int numBands=outputImageSampleModel.getNumBands();
+  int numBands=outputImageSampleModel.getNumBands();
   final int dataType=outputImageSampleModel.getDataType();
-  final GridSampleDimension sd[];
+  GridSampleDimension sd[];
   if (numBands > 4) {
     final int visibleBand=CoverageUtilities.getVisibleBand(outputImage);
     outputImage=new ImageWorker(outputImage).setRenderingHints(this.getHints()).retainBands(new int[]{visibleBand}).getRenderedImage();
     sd=new GridSampleDimension[]{(GridSampleDimension)output.getSampleDimension(visibleBand)};
   }
- else   sd=output.getSampleDimensions();
+ else {
+    sd=output.getSampleDimensions();
+  }
 switch (dataType) {
 case DataBuffer.TYPE_USHORT:
     if (outputImage.getColorModel() instanceof IndexColorModel) {
@@ -21,6 +23,17 @@ case DataBuffer.TYPE_FLOAT:
 case DataBuffer.TYPE_INT:
 case DataBuffer.TYPE_SHORT:
   outputImage=new ImageWorker(outputImage).setRenderingHints(this.getHints()).rescaleToBytes().getRenderedImage();
+}
+final RenderedImage finalImage;
+if (opacity < 1) {
+ImageWorker ow=new ImageWorker(outputImage);
+finalImage=ow.applyOpacity(opacity).getRenderedImage();
+numBands=finalImage.getSampleModel().getNumBands();
+sd=new GridSampleDimension[numBands];
+for (int i=0; i < numBands; i++) {
+  sd[i]=new GridSampleDimension(TypeMap.getColorInterpretation(finalImage.getColorModel(),i).name());
+}
+return this.getCoverageFactory().create(output.getName(),finalImage,(GridGeometry2D)output.getGridGeometry(),sd,new GridCoverage[]{output},output.getProperties());
 }
 return this.getCoverageFactory().create(output.getName(),outputImage,(GridGeometry2D)output.getGridGeometry(),sd,new GridCoverage[]{output},output.getProperties());
 }

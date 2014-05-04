@@ -1,0 +1,14 @@
+{
+  GridCoverageRendererUtilities.ensureNotNull(inputEnvelope,"destinationEnvelope");
+  GridCoverageRendererUtilities.ensureNotNull(targetCRS,"coverageCRS");
+  final CoordinateReferenceSystem destinationCRS=inputEnvelope.getCoordinateReferenceSystem();
+  try {
+    GeneralEnvelope output=CRS.transform(CRS.findMathTransform(destinationCRS,targetCRS,true),inputEnvelope);
+    output.setCoordinateReferenceSystem(targetCRS);
+    return output;
+  }
+ catch (  TransformException te) {
+    final GeneralEnvelope destinationEnvelopeWGS84=GridCoverageRendererUtilities.reprojectEnvelope(inputEnvelope,DefaultGeographicCRS.WGS84);
+    return GridCoverageRendererUtilities.reprojectEnvelope(destinationEnvelopeWGS84,targetCRS);
+  }
+}

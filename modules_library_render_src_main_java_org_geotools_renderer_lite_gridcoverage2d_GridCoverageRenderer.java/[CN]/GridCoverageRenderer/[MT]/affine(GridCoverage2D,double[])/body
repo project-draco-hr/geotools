@@ -1,0 +1,34 @@
+{
+  final RenderedImage finalImage=input.getRenderedImage();
+  final GridGeometry2D preSymbolizerGridGeometry=((GridGeometry2D)input.getGridGeometry());
+  final MathTransform2D finalGCTransform=preSymbolizerGridGeometry.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  if (!(finalGCTransform instanceof AffineTransform)) {
+    throw new UnsupportedOperationException("Non-affine transformations not yet implemented");
+  }
+  final AffineTransform finalGCgridToWorld=new AffineTransform((AffineTransform)finalGCTransform);
+  final AffineTransform finalRasterTransformation=(AffineTransform)finalWorldToGrid.clone();
+  finalRasterTransformation.concatenate(finalGCgridToWorld);
+  Rectangle2D finalLayout=GridCoverageRendererUtilities.layoutHelper(finalImage,(float)finalRasterTransformation.getScaleX(),(float)finalRasterTransformation.getScaleY(),(float)finalRasterTransformation.getTranslateX(),(float)finalRasterTransformation.getTranslateY(),interpolation);
+  if (finalLayout.isEmpty()) {
+    if (LOGGER.isLoggable(java.util.logging.Level.FINE))     LOGGER.fine("Unable to create a granuleDescriptor " + this.toString() + " due to jai scale bug");
+    return null;
+  }
+  RenderedImage im=null;
+  try {
+    ImageWorker iw=new ImageWorker(finalImage);
+    iw.setRenderingHints(hints);
+    iw.affine(finalRasterTransformation,interpolation,bkgValues);
+    im=iw.getRenderedImage();
+  }
+  finally {
+    if (DEBUG) {
+      writeRenderedImage(im,"postAffine");
+    }
+  }
+  int numBands=im.getSampleModel().getNumBands();
+  GridSampleDimension[] sd=new GridSampleDimension[numBands];
+  for (int i=0; i < numBands; i++) {
+    sd[i]=new GridSampleDimension(TypeMap.getColorInterpretation(im.getColorModel(),i).name());
+  }
+  return this.gridCoverageFactory.create(input.getName(),im,new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(im).getBounds()),input.getEnvelope()),sd,new GridCoverage[]{input},input.getProperties());
+}

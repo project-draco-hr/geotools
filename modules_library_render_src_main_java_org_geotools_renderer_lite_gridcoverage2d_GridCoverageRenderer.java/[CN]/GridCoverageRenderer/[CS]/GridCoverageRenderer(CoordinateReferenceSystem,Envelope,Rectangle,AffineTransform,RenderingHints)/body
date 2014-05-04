@@ -1,8 +1,10 @@
 {
   this.destinationSize=screenSize;
-  this.destinationCRS=CRS.getHorizontalCRS(destinationCRS);
-  if (this.destinationCRS == null)   throw new TransformException(Errors.format(ErrorKeys.CANT_SEPARATE_CRS_$1,destinationCRS));
-  destinationEnvelope=new GeneralEnvelope(new ReferencedEnvelope(envelope,destinationCRS));
+  this.destinationCRS=destinationCRS;
+  if (this.destinationCRS == null) {
+    throw new TransformException(Errors.format(ErrorKeys.CANT_SEPARATE_CRS_$1,this.destinationCRS));
+  }
+  destinationEnvelope=new GeneralEnvelope(new ReferencedEnvelope(envelope,this.destinationCRS));
   if (worldToScreen != null && XAffineTransform.getRotation(worldToScreen) != 0.0) {
     finalWorldToGrid=new AffineTransform(worldToScreen);
     finalGridToWorld=finalWorldToGrid.createInverse();
@@ -15,7 +17,26 @@
     finalGridToWorld=new AffineTransform(gridToEnvelopeMapper.createAffineTransform());
     finalWorldToGrid=finalGridToWorld.createInverse();
   }
-  if (hints != null)   this.hints.add(hints);
+  if (newHints != null) {
+    this.hints.add(newHints);
+  }
+  this.gridCoverageFactory=CoverageFactoryFinder.getGridCoverageFactory(this.hints);
+  if (hints.containsKey(JAI.KEY_INTERPOLATION)) {
+    interpolation=(Interpolation)newHints.get(JAI.KEY_INTERPOLATION);
+  }
+ else {
+    hints.add(new RenderingHints(JAI.KEY_INTERPOLATION,interpolation));
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Rendering using interpolation " + interpolation);
+  }
+  setInterpolationHints();
+  if (hints.containsKey(JAI.KEY_IMAGE_LAYOUT)) {
+    final ImageLayout layout=(ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT);
+    layout.unsetImageBounds();
+    layout.unsetValid(ImageLayout.COLOR_MODEL_MASK & ImageLayout.SAMPLE_MODEL_MASK);
+  }
   this.hints.put(Hints.LENIENT_DATUM_SHIFT,Boolean.TRUE);
   this.hints.put(Hints.COVERAGE_PROCESSING_VIEW,ViewType.SAME);
+  this.hints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,BorderExtender.createInstance(BorderExtender.BORDER_COPY)));
 }
