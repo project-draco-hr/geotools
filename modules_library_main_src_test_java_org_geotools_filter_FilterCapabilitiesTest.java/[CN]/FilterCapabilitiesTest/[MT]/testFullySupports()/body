@@ -1,14 +1,15 @@
 {
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
   try {
-    logFilter=(org.geotools.filter.Filter)gFilter.and(compFilter);
+    logFilter=ff.and(gFilter,compFilter);
     assertTrue(capabilities.fullySupports(compFilter));
     assertTrue(!(capabilities.fullySupports(gFilter)));
     assertTrue(!(capabilities.fullySupports(logFilter)));
-    logFilter=(org.geotools.filter.Filter)compFilter.and(fact.createBetweenFilter());
+    logFilter=ff.and(compFilter,ff.between(ff.property("sample"),ff.literal(1),ff.literal(2)));
     assertTrue(capabilities.fullySupports(logFilter));
-    logFilter=(org.geotools.filter.Filter)logFilter.or(fact.createBetweenFilter());
+    logFilter=ff.or(logFilter,ff.between(ff.property("sample"),ff.literal(1),ff.literal(2)));
     assertTrue(capabilities.fullySupports(logFilter));
-    logFilter=(org.geotools.filter.Filter)logFilter.and(gFilter);
+    logFilter=ff.and(logFilter,gFilter);
     assertTrue(!(capabilities.fullySupports(logFilter)));
   }
  catch (  IllegalFilterException e) {

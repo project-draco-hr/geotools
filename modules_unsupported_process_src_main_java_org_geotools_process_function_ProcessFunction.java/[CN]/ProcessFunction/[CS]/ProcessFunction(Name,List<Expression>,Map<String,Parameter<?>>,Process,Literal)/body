@@ -8,10 +8,18 @@
   this.process=process;
   this.fallbackValue=fallbackValue;
   List<org.opengis.parameter.Parameter<?>> inputParams=new ArrayList<org.opengis.parameter.Parameter<?>>();
-  Set<String> paramNames=Processors.getParameterInfo(processName).keySet();
-  for (  String pn : paramNames) {
-    org.opengis.parameter.Parameter param=FunctionNameImpl.parameter(pn,Object.class,0,1);
-    inputParams.add(param);
+  Map<String,Parameter<?>> parameterInfo=Processors.getParameterInfo(processName);
+  if (parameterInfo instanceof LinkedHashMap) {
+    for (    Parameter<?> param : parameterInfo.values()) {
+      inputParams.add(param);
+    }
+  }
+ else {
+    Set<String> paramNames=parameterInfo.keySet();
+    for (    String pn : paramNames) {
+      org.opengis.parameter.Parameter param=FunctionNameImpl.parameter(pn,Object.class,0,1);
+      inputParams.add(param);
+    }
   }
   Map<String,Parameter<?>> resultParams=Processors.getResultInfo(processName,null);
   org.opengis.parameter.Parameter result=resultParams.values().iterator().next();

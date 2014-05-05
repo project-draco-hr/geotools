@@ -2,17 +2,19 @@
   if (!canEncode(element,value,hints)) {
     return;
   }
-  GeometryFilter lf=(GeometryFilter)value;
+  BinarySpatialOperator lf=(BinarySpatialOperator)value;
   output.startElement(element.getNamespace(),element.getName(),null);
-  if (lf.getLeftGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
-    elems[0].getType().encode(elems[0],lf.getRightGeometry(),output,hints);
-    Geometry g=((Geometry)((LiteralExpression)lf.getLeftGeometry()).getLiteral()).getEnvelope();
+  short TYPE1=Filters.getExpressionType(lf.getExpression1());
+  short TYPE2=Filters.getExpressionType(lf.getExpression2());
+  if (TYPE1 == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
+    elems[0].getType().encode(elems[0],lf.getExpression2(),output,hints);
+    Geometry g=((Geometry)((Literal)lf.getExpression1()).getValue()).getEnvelope();
     elems[1].getType().encode(elems[1],g,output,hints);
   }
  else {
-    if (lf.getRightGeometry().getType() == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
-      elems[0].getType().encode(elems[0],lf.getLeftGeometry(),output,hints);
-      Geometry g=((Geometry)((LiteralExpression)lf.getRightGeometry()).getLiteral()).getEnvelope();
+    if (TYPE2 == org.geotools.filter.ExpressionType.LITERAL_GEOMETRY) {
+      elems[0].getType().encode(elems[0],lf.getExpression1(),output,hints);
+      Geometry g=((Geometry)((Literal)lf.getExpression2()).getValue()).getEnvelope();
       elems[1].getType().encode(elems[1],g,output,hints);
     }
  else {

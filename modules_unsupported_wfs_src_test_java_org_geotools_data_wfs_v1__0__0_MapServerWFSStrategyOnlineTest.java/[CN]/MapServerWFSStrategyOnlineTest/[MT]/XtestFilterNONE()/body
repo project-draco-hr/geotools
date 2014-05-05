@@ -12,11 +12,10 @@
   params.put(WFSDataStoreFactory.LENIENT.key,Boolean.TRUE);
   ds=(WFS_1_0_0_DataStore)dsfac.createDataStore(params);
   assertTrue(ds.strategy instanceof MapServerWFSStrategy);
-  FilterFactory fac=FilterFactoryFinder.createFilterFactory();
-  GeometryFilter filter=fac.createGeometryFilter(FilterType.GEOMETRY_BBOX);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
   String attName=ds.getSchema(TYPE_NAME).getGeometryDescriptor().getLocalName();
-  filter.addLeftGeometry(fac.createAttributeExpression(attName));
-  filter.addRightGeometry(fac.createBBoxExpression(ds.getBounds(new Query(TYPE_NAME))));
+  ReferencedEnvelope bounds=ds.getBounds(new Query(TYPE_NAME));
+  BBOX filter=ff.bbox(ff.property(attName),bounds);
   Query query=new Query(TYPE_NAME,filter);
   SimpleFeatureCollection features=ds.getFeatureSource(TYPE_NAME).getFeatures(query);
   SimpleFeatureIterator iter=features.features();
@@ -34,8 +33,8 @@
   SimpleFeatureSource source=ds.getFeatureSource(TYPE_NAME);
   SimpleFeatureCollection reader=source.getFeatures(Query.ALL);
   assertCorrectSize(reader,totalFeatures);
-  reader=source.getFeatures(Filter.NONE);
+  reader=source.getFeatures(Filter.INCLUDE);
   assertCorrectSize(reader,totalFeatures);
-  reader=source.getFeatures(new Query(TYPE_NAME,Filter.NONE));
+  reader=source.getFeatures(new Query(TYPE_NAME,Filter.INCLUDE));
   assertCorrectSize(reader,totalFeatures);
 }

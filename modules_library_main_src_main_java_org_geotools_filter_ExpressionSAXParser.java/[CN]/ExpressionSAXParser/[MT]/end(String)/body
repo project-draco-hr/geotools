@@ -7,13 +7,13 @@
     expFactory.end(message);
     if (expFactory.isReady()) {
       if (currentState.equals("leftValue")) {
-        ((MathExpression)curExprssn).addLeftValue(expFactory.create());
+        ((MathExpressionImpl)curExprssn).setExpression1(expFactory.create());
         currentState="rightValue";
         expFactory=new ExpressionSAXParser(schema);
         LOGGER.finer("just added left value: " + currentState);
       }
  else       if (currentState.equals("rightValue")) {
-        ((MathExpression)curExprssn).addRightValue(expFactory.create());
+        ((MathExpressionImpl)curExprssn).setExpression2(expFactory.create());
         currentState="complete";
         expFactory=null;
         LOGGER.finer("just added right value: " + currentState);
@@ -22,9 +22,9 @@
         accumalationOfExpressions.add(expFactory.create());
         expFactory=null;
         LOGGER.finer("just added a parameter for a function: " + currentState);
-        if (((FunctionExpression)curExprssn).getArgCount() == accumalationOfExpressions.size()) {
+        if (((FunctionExpression)curExprssn).getFunctionName().getArgumentCount() == accumalationOfExpressions.size()) {
           currentState="complete";
-          ((FunctionExpression)curExprssn).setArgs((Expression[])accumalationOfExpressions.toArray(new Expression[0]));
+          ((FunctionExpression)curExprssn).setParameters(accumalationOfExpressions);
         }
  else {
           expFactory=new ExpressionSAXParser(schema);

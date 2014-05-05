@@ -2,30 +2,99 @@
   LOGGER.finest("starting filter type " + filterType);
   if ((filterType == AbstractFilter.FID) && !curState.equals("fid")) {
     LOGGER.finer("creating the FID filter");
-    curFilter=ff.createFidFilter();
+    curFilter=new FidFilterImpl();
   }
  else   if (AbstractFilter.isGeometryDistanceFilter(filterType)) {
-    curFilter=ff.createGeometryDistanceFilter(filterType);
-  }
- else   if (AbstractFilter.isGeometryFilter(filterType)) {
-    curFilter=ff.createGeometryFilter(filterType);
-  }
- else   if (filterType == AbstractFilter.BETWEEN) {
-    curFilter=ff.createBetweenFilter();
-  }
- else   if (filterType == AbstractFilter.NULL) {
-    curFilter=ff.createNullFilter();
-  }
- else   if (filterType == AbstractFilter.LIKE) {
-    curFilter=ff.createLikeFilter();
-  }
- else   if (AbstractFilter.isCompareFilter(filterType)) {
-    curFilter=ff.createCompareFilter(filterType);
-  }
+switch (filterType) {
+case FilterType.GEOMETRY_BEYOND:
+      curFilter=new BeyondImpl(null,null);
+    break;
+case FilterType.GEOMETRY_DWITHIN:
+  curFilter=new DWithinImpl(null,null);
+break;
+default :
+throw new IllegalFilterException("Not one of the accepted spatial filter types.");
+}
+}
+ else if (AbstractFilter.isGeometryFilter(filterType)) {
+switch (filterType) {
+case FilterType.GEOMETRY_EQUALS:
+curFilter=new EqualsImpl(null,null);
+break;
+case FilterType.GEOMETRY_DISJOINT:
+curFilter=new DisjointImpl(null,null);
+break;
+case FilterType.GEOMETRY_DWITHIN:
+curFilter=new DWithinImpl(null,null);
+break;
+case FilterType.GEOMETRY_INTERSECTS:
+curFilter=new IntersectsImpl(null,null);
+break;
+case FilterType.GEOMETRY_CROSSES:
+curFilter=new CrossesImpl(null,null);
+break;
+case FilterType.GEOMETRY_WITHIN:
+curFilter=new WithinImpl(null,null);
+break;
+case FilterType.GEOMETRY_CONTAINS:
+curFilter=new ContainsImpl(null,null);
+break;
+case FilterType.GEOMETRY_OVERLAPS:
+curFilter=new OverlapsImpl(null,null);
+break;
+case FilterType.GEOMETRY_BEYOND:
+curFilter=new BeyondImpl(null,null);
+break;
+case FilterType.GEOMETRY_BBOX:
+curFilter=new BBOXImpl(null,null);
+break;
+case FilterType.GEOMETRY_TOUCHES:
+curFilter=new TouchesImpl(null,null);
+break;
+default :
+throw new IllegalFilterException("Not one of the accepted spatial filter types.");
+}
+}
+ else if (filterType == AbstractFilter.BETWEEN) {
+curFilter=new BetweenFilterImpl();
+}
+ else if (filterType == AbstractFilter.NULL) {
+curFilter=new NullFilterImpl();
+}
+ else if (filterType == AbstractFilter.LIKE) {
+curFilter=new LikeFilterImpl();
+}
+ else if (AbstractFilter.isCompareFilter(filterType)) {
+switch (filterType) {
+case FilterType.COMPARE_EQUALS:
+curFilter=new IsEqualsToImpl();
+break;
+case FilterType.COMPARE_NOT_EQUALS:
+curFilter=new IsNotEqualToImpl();
+break;
+case FilterType.COMPARE_GREATER_THAN:
+curFilter=new IsGreaterThanImpl();
+break;
+case FilterType.COMPARE_GREATER_THAN_EQUAL:
+curFilter=new IsGreaterThanOrEqualToImpl();
+break;
+case FilterType.COMPARE_LESS_THAN:
+curFilter=new IsLessThenImpl();
+break;
+case FilterType.COMPARE_LESS_THAN_EQUAL:
+curFilter=new IsLessThenOrEqualToImpl();
+break;
+case FilterType.BETWEEN:
+curFilter=new BetweenFilterImpl();
+break;
+default :
+throw new IllegalFilterException("Must be one of <,<=,==,>,>=,<>");
+}
+}
  else {
-    throw new IllegalFilterException("Attempted to start a new filter with invalid type: " + filterType);
-  }
-  curState=setInitialState(filterType);
-  this.filterType=filterType;
-  attributes=new HashMap();
+throw new IllegalFilterException("Filter start with invalid type: " + filterType);
+}
+curState=setInitialState(filterType);
+this.filterType=filterType;
+attributes=new HashMap();
 }

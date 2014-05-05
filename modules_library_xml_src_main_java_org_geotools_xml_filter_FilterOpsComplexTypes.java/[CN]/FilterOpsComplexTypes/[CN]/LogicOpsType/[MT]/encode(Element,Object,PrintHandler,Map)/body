@@ -2,17 +2,21 @@
   if (!canEncode(element,value,hints)) {
     return;
   }
-  LogicFilter lf=(LogicFilter)value;
-switch (lf.getFilterType()) {
+  if (value instanceof BinaryLogicOperator) {
+    BinaryLogicOperator lf=(BinaryLogicOperator)value;
+switch (Filters.getFilterType(lf)) {
 case LOGIC_AND:
-    BinaryLogicOpType.getInstance().encode(new FilterElement("And",BinaryLogicOpType.getInstance(),element),value,output,hints);
-  return;
+      BinaryLogicOpType.getInstance().encode(new FilterElement("And",BinaryLogicOpType.getInstance(),element),value,output,hints);
+    return;
 case LOGIC_OR:
-BinaryLogicOpType.getInstance().encode(new FilterElement("Or",BinaryLogicOpType.getInstance(),element),value,output,hints);
+  BinaryLogicOpType.getInstance().encode(new FilterElement("Or",BinaryLogicOpType.getInstance(),element),value,output,hints);
 return;
-case LOGIC_NOT:
+}
+}
+ else if (value instanceof Not) {
+Not lf=(Not)value;
 UnaryLogicOpType.getInstance().encode(new FilterElement("Not",UnaryLogicOpType.getInstance(),element),value,output,hints);
 return;
 }
-throw new OperationNotSupportedException("Unknown filter type in LogicFilter: " + lf.getClass().getName());
+throw new OperationNotSupportedException("Unknown filter type in LogicFilter: " + value.getClass().getName());
 }

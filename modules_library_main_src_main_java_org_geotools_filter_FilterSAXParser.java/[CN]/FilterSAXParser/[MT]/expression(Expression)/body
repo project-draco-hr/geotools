@@ -1,15 +1,15 @@
 {
-  if (filterType == AbstractFilter.BETWEEN) {
+  if (filterType == FilterType.BETWEEN) {
     if (curState.equals("attribute")) {
-      ((BetweenFilter)curFilter).addMiddleValue(expression);
+      ((BetweenFilterImpl)curFilter).setExpression(expression);
       curState="LowerBoundary";
     }
  else     if (curState.equals("LowerBoundary")) {
-      ((BetweenFilter)curFilter).addLeftValue(expression);
+      ((BinaryComparisonAbstract)curFilter).setExpression1(expression);
       curState="UpperBoundary";
     }
  else     if (curState.equals("UpperBoundary")) {
-      ((BetweenFilter)curFilter).addRightValue(expression);
+      ((BinaryComparisonAbstract)curFilter).setExpression2(expression);
       curState="complete";
     }
  else {
@@ -18,20 +18,20 @@
   }
  else   if (AbstractFilter.isCompareFilter(filterType)) {
     if (curState.equals("leftValue")) {
-      ((CompareFilter)curFilter).addLeftValue(expression);
+      ((BinaryComparisonAbstract)curFilter).setExpression1(expression);
       curState="rightValue";
     }
  else     if (curState.equals("rightValue")) {
-      ((CompareFilter)curFilter).addRightValue(expression);
+      ((BinaryComparisonAbstract)curFilter).setExpression2(expression);
       curState="complete";
     }
  else {
       throw new IllegalFilterException("Got expression for Compare Filter in illegal state: " + curState);
     }
   }
- else   if (filterType == AbstractFilter.NULL) {
+ else   if (filterType == FilterType.NULL) {
     if (curState.equals("attribute")) {
-      ((NullFilter)curFilter).nullCheckValue(expression);
+      ((NullFilterImpl)curFilter).setExpression(expression);
       curState="complete";
     }
  else {
@@ -40,11 +40,11 @@
   }
  else   if (AbstractFilter.isGeometryFilter(filterType)) {
     if (curState.equals("leftValue")) {
-      ((GeometryFilter)curFilter).addLeftGeometry(expression);
+      ((BinaryComparisonAbstract)curFilter).setExpression1(expression);
       curState="rightValue";
     }
  else     if (curState.equals("rightValue")) {
-      ((GeometryFilter)curFilter).addRightGeometry(expression);
+      ((BinaryComparisonAbstract)curFilter).setExpression2(expression);
       if (AbstractFilter.isGeometryDistanceFilter(filterType)) {
         curState="distance";
       }
@@ -59,7 +59,7 @@
   }
  else   if (filterType == AbstractFilter.LIKE) {
     if (curState.equals("attribute")) {
-      ((LikeFilter)curFilter).setValue(expression);
+      ((LikeFilterImpl)curFilter).setExpression(expression);
       curState="pattern";
     }
  else     if (curState.equals("pattern")) {
@@ -80,7 +80,7 @@
         throw new IllegalFilterException("like filter -- required attribute 'escape' missing  or not exactly 1 char long.  Capitalization?");
       }
       LOGGER.fine("escape char is " + escapeChar);
-      ((LikeFilter)curFilter).setPattern(expression,wildcard,singleChar,escapeChar);
+      ((LikeFilterImpl)curFilter).setPattern(expression,wildcard,singleChar,escapeChar);
       curState="complete";
     }
  else {
