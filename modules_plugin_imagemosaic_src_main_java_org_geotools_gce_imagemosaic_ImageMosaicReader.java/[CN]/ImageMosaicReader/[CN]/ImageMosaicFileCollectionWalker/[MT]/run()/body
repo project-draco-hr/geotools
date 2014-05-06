@@ -1,0 +1,57 @@
+{
+  try {
+    configHandler.indexingPreamble();
+    startTransaction();
+    setNumFiles(files.size());
+    Iterator<File> it=files.iterator();
+    while (it.hasNext()) {
+      File file=it.next();
+      if (getStop()) {
+        break;
+      }
+      if (checkFile(file)) {
+        handleFile(file);
+      }
+ else {
+        skipFile(file.getAbsolutePath());
+      }
+    }
+    if (getStop()) {
+      rollbackTransaction();
+    }
+ else {
+      commitTransaction();
+    }
+  }
+ catch (  IOException e) {
+    LOGGER.log(Level.WARNING,e.getMessage(),e);
+    try {
+      rollbackTransaction();
+    }
+ catch (    IOException e1) {
+      throw new IllegalStateException(e);
+    }
+  }
+ finally {
+    try {
+      closeTransaction();
+    }
+ catch (    Exception e) {
+      final String message="Unable to close transaction" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      eventHandler.fireException(e);
+    }
+    try {
+      configHandler.indexingPostamble(!getStop());
+    }
+ catch (    Exception e) {
+      final String message="Unable to close indexing" + e.getLocalizedMessage();
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,message,e);
+      }
+      eventHandler.fireException(e);
+    }
+  }
+}
