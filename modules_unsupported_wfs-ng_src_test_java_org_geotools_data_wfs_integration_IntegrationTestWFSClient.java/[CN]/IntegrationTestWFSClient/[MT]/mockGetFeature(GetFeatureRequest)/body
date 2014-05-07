@@ -1,7 +1,6 @@
 {
   final QName typeName=request.getTypeName();
-  String simpleName=typeName.getPrefix() + "_" + typeName.getLocalPart();
-  String resource="GetFeature_" + simpleName + ".xml";
+  String resource="GetFeature_" + typeName.getLocalPart() + ".xml";
   URL contentUrl=new URL(baseDirectory,resource);
   String outputFormat=request.getOutputFormat();
   HTTPResponse httpResponse=new TestHttpResponse(outputFormat,"UTF-8",contentUrl);
@@ -26,10 +25,12 @@
       it.remove();
     }
   }
-  FeatureReader<SimpleFeatureType,SimpleFeature> allFeaturesReader;
-  allFeaturesReader=DataUtilities.reader(originalFeatures);
+  FeatureReader<SimpleFeatureType,SimpleFeature> allFeaturesReader=null;
+  if (originalFeatures.size() > 0) {
+    allFeaturesReader=DataUtilities.reader(originalFeatures);
+  }
   final DiffFeatureReader<SimpleFeatureType,SimpleFeature> serverFilteredReader;
-  serverFilteredReader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(allFeaturesReader,diff);
+  serverFilteredReader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(allFeaturesReader,diff,serverFiler);
   final GetFeatureParser filteredParser=new GetFeatureParser(){
     @Override public void setGeometryFactory(    GeometryFactory geometryFactory){
     }
@@ -41,9 +42,11 @@
     }
     @Override public int getNumberOfFeatures(){
       if (-1 != allFeatures.getNumberOfFeatures()) {
-        FeatureReader<SimpleFeatureType,SimpleFeature> all;
+        FeatureReader<SimpleFeatureType,SimpleFeature> all=null;
         try {
-          all=DataUtilities.reader(originalFeatures);
+          if (originalFeatures.size() > 0) {
+            all=DataUtilities.reader(originalFeatures);
+          }
           final DiffFeatureReader<SimpleFeatureType,SimpleFeature> serverFiltered;
           serverFiltered=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(all,diff);
           int count=0;
