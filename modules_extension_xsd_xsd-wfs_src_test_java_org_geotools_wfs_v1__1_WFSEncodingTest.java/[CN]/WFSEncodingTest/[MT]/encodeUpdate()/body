@@ -1,0 +1,29 @@
+{
+  WfsFactory wfsfac=WfsFactory.eINSTANCE;
+  FilterFactory2 filterfac=CommonFactoryFinder.getFilterFactory2();
+  GeometryFactory geomfac=new GeometryFactory(new PrecisionModel(10));
+  UpdateElementType update=wfsfac.createUpdateElementType();
+  PropertyType propertyType=wfsfac.createPropertyType();
+  propertyType.setName(new QName("http://my.namespace","myproperty","mn"));
+  update.getProperty().add(propertyType);
+  update.setTypeName(new QName("http://my.namespace","mytypename","mn"));
+  update.setFilter(filterfac.id(filterfac.featureId("someid")));
+  propertyType.setValue("myvalue");
+  Encoder encoder=new Encoder(new WFSConfiguration());
+  Document doc=encoder.encodeAsDOM(update,WFS.Update);
+  XMLAssert.assertXpathEvaluatesTo("mn:mytypename","//wfs:Update/@typeName",doc);
+  XMLAssert.assertXpathEvaluatesTo("mn:myproperty","//wfs:Update/wfs:Property/wfs:Name",doc);
+  XMLAssert.assertXpathEvaluatesTo("myvalue","//wfs:Update/wfs:Property/wfs:Value",doc);
+  XMLAssert.assertXpathEvaluatesTo("someid","//wfs:Update/ogc:Filter/ogc:FeatureId/@fid",doc);
+  propertyType.setValue(100.25);
+  encoder=new Encoder(new WFSConfiguration());
+  doc=encoder.encodeAsDOM(update,WFS.Update);
+  XMLAssert.assertXpathEvaluatesTo("100.25","//wfs:Update/wfs:Property/wfs:Value",doc);
+  Coordinate insideCoord=new Coordinate(5.2,7.5);
+  Point myPoint=geomfac.createPoint(insideCoord);
+  propertyType.setValue(myPoint);
+  encoder=new Encoder(new WFSConfiguration());
+  doc=encoder.encodeAsDOM(update,WFS.Update);
+  XMLAssert.assertXpathEvaluatesTo("5.2","//wfs:Update/wfs:Property/wfs:Value/gml:Point/gml:coord/gml:X",doc);
+  XMLAssert.assertXpathEvaluatesTo("7.5","//wfs:Update/wfs:Property/wfs:Value/gml:Point/gml:coord/gml:Y",doc);
+}
