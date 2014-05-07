@@ -1,0 +1,23 @@
+{
+  final String queryXml="<wfs:Query srsName=\"urn:ogc:def:crs:EPSG::3857\" typeName=\"comuni:comuni11\"/>";
+  WFSContentDataStore wfs=getWFSDataStore(new TinyOwsMockHttpClient(){
+    @Override public HTTPResponse post(    URL url,    InputStream postContent,    String postContentType) throws IOException {
+      String request=new String(IOUtils.toByteArray(postContent),"UTF-8");
+      if (stringContains(request,"<wfs:GetFeature","maxFeatures=\"20\"","resultType=\"hits\"",queryXml)) {
+        assertXMLEqual("tinyows/CountFirstFeaturesRequest.xml",request);
+        return new TestHttpResponse(TestData.getResource(this,"tinyows/CountFirstFeatures.xml"),"text/xml");
+      }
+ else       if (stringContains(request,"<wfs:GetFeature","maxFeatures=\"20\"","resultType=\"results\"",queryXml)) {
+        assertXMLEqual("tinyows/GetFirstFeaturesRequest.xml",request);
+        return new TestHttpResponse(TestData.getResource(this,"tinyows/GetFirstFeatures.xml"),"text/xml");
+      }
+ else {
+        return super.post(url,new ByteArrayInputStream(request.getBytes("UTF-8")),postContentType);
+      }
+    }
+  }
+);
+  SimpleFeatureSource source=wfs.getFeatureSource(typeName);
+  Query query=new Query(typeName,Filter.INCLUDE,20,Query.ALL_NAMES,"my query");
+  iterate(source.getFeatures(query),20,true);
+}
