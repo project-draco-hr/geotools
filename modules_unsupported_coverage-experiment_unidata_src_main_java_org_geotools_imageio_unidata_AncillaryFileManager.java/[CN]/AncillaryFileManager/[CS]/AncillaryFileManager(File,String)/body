@@ -13,10 +13,13 @@
     baseDir=UnidataUtilities.isValid(baseDir) ? baseDir : null;
   }
   String mainFilePath=ncFile.getCanonicalPath();
+  MessageDigest md=MessageDigest.getInstance("SHA-1");
+  md.update(mainFilePath.getBytes());
+  String hashCode=convertToHex(md.digest());
   String mainName=FilenameUtils.getName(mainFilePath);
   String extension=FilenameUtils.getExtension(mainName);
   String baseName=cutExtension(extension) ? FilenameUtils.removeExtension(mainName) : mainName;
-  String outputLocalFolder="." + baseName;
+  String outputLocalFolder="." + baseName + "_"+ hashCode;
   destinationDir=new File(parentDirectory,outputLocalFolder);
   if (baseDir != null) {
     destinationDir=new File(baseDir,outputLocalFolder);
@@ -24,12 +27,25 @@
   boolean createdDir=false;
   if (!destinationDir.exists()) {
     createdDir=destinationDir.mkdirs();
+    File origin=new File(destinationDir,"origin.txt");
+    FileUtils.write(origin,ncFile.getAbsolutePath());
   }
   slicesIndexFile=new File(destinationDir,baseName + ".idx");
   if (indexFilePath != null) {
     indexerFile=new File(indexFilePath);
     if (!indexerFile.exists() || !indexerFile.canRead()) {
       indexerFile=null;
+    }
+  }
+ else {
+    String optionalAuxiliaryPath=parentDirectory.getAbsolutePath() + File.separator + baseName+ INDEX_SUFFIX;
+    indexerFile=new File(optionalAuxiliaryPath);
+    if (!indexerFile.exists() || !indexerFile.canRead()) {
+      optionalAuxiliaryPath=parentDirectory.getAbsolutePath() + File.separator + "."+ baseName+ File.separator+ baseName+ INDEX_SUFFIX;
+      indexerFile=new File(optionalAuxiliaryPath);
+      if (!indexerFile.exists() || !indexerFile.canRead()) {
+        indexerFile=null;
+      }
     }
   }
   if (indexerFile == null) {
