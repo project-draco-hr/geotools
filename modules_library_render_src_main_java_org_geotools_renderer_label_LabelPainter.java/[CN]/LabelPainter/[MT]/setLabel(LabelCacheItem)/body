@@ -17,6 +17,7 @@
   lines=new ArrayList<LineInfo>();
   if (labelItem.getAutoWrap() <= 0) {
     for (    String line : splitted) {
+      line=checkForEmptyLine(line);
       FontRenderContext frc=graphics.getFontRenderContext();
       TextLayout layout=new TextLayout(line,labelItem.getTextStyle().getFont(),frc);
       LineInfo info=new LineInfo(line,layoutSentence(line,labelItem),layout);
@@ -27,7 +28,7 @@
     Map<TextAttribute,Object> map=new HashMap<TextAttribute,Object>();
     map.put(TextAttribute.FONT,labelItem.getTextStyle().getFont());
     for (int i=0; i < splitted.length; i++) {
-      String line=splitted[i];
+      String line=checkForEmptyLine(splitted[i]);
       AttributedString attributed=new AttributedString(line,map);
       AttributedCharacterIterator iter=attributed.getIterator();
       LineBreakMeasurer lineMeasurer=new LineBreakMeasurer(iter,BreakIterator.getWordInstance(),graphics.getFontRenderContext());
@@ -53,10 +54,8 @@
           lineMeasurer.setPosition(newPosition);
         }
         String extracted=line.substring(prevPosition,newPosition).trim();
-        if (!"".equals(extracted)) {
-          LineInfo info=new LineInfo(extracted,layoutSentence(extracted,labelItem),layout);
-          lines.add(info);
-        }
+        LineInfo info=new LineInfo(extracted,layoutSentence(extracted,labelItem),layout);
+        lines.add(info);
         prevPosition=newPosition;
       }
     }
