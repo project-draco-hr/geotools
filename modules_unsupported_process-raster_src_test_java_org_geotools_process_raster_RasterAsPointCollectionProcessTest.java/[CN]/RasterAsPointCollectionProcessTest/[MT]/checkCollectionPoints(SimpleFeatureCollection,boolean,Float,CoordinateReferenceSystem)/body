@@ -1,0 +1,32 @@
+{
+  MathTransform2D w2g=coverage.getGridGeometry().getCRSToGrid2D(PixelOrientation.UPPER_LEFT);
+  SimpleFeatureIterator it=collection.features();
+  RandomIter imageIterator=RandomIterFactory.create(coverage.getRenderedImage(),null);
+  boolean crsExists=targetCRS != null;
+  try {
+    while (it.hasNext()) {
+      SimpleFeature ft=it.next();
+      if (scaleFactor == null) {
+        Point point=(Point)ft.getDefaultGeometry();
+        Point rasterPoint=(Point)JTS.transform(point,w2g);
+        int x=(int)(rasterPoint.getX());
+        int y=(int)(rasterPoint.getY());
+        int sampleIMG=imageIterator.getSample(x,y,0);
+        int sampleColl=(Short)ft.getAttribute(bandName);
+        Assert.assertEquals(sampleIMG,sampleColl);
+      }
+      if (hemisphere) {
+        Assert.assertEquals(NORTH,ft.getAttribute("emisphere"));
+      }
+      if (crsExists) {
+        double angle=(double)ft.getAttribute("gridConvergenceAngleCorrection");
+        Assert.assertTrue(angle != 0);
+      }
+    }
+  }
+  finally {
+    if (it != null) {
+      it.close();
+    }
+  }
+}
