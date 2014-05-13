@@ -10,32 +10,20 @@
   GeneralEnvelope destinationEnvelopeInSourceCRS;
   if (doReprojection) {
     try {
-      destinationEnvelopeInSourceCRS=CRS.transform(destinationCRSToSourceCRSTransformation,destinationEnvelope);
+      destinationEnvelopeInSourceCRS=new GeneralEnvelope(CRS.transform(destinationEnvelope,sourceCoverageCRS));
     }
  catch (    TransformException te) {
       final GeneralEnvelope destinationEnvelopeWGS84;
       if (!CRS.equalsIgnoreMetadata(destinationCRS,DefaultGeographicCRS.WGS84)) {
-        final MathTransform destinationCRSToWGS84transformation=CRS.findMathTransform(destinationCRS,DefaultGeographicCRS.WGS84,true);
-        if (!destinationCRSToWGS84transformation.isIdentity()) {
-          destinationEnvelopeWGS84=CRS.transform(destinationCRSToWGS84transformation,destinationEnvelope);
-          destinationEnvelopeWGS84.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
-        }
- else {
-          destinationEnvelopeWGS84=new GeneralEnvelope(destinationEnvelope);
-        }
+        destinationEnvelopeWGS84=CRS.transform(destinationEnvelope,DefaultGeographicCRS.WGS84);
+        destinationEnvelopeWGS84.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
       }
  else {
         destinationEnvelopeWGS84=new GeneralEnvelope(destinationEnvelope);
       }
       if (!CRS.equalsIgnoreMetadata(sourceCoverageCRS,DefaultGeographicCRS.WGS84)) {
-        final MathTransform WGS84ToSourceCoverageCRSTransformation=CRS.findMathTransform(DefaultGeographicCRS.WGS84,sourceCoverageCRS,true);
-        if (!WGS84ToSourceCoverageCRSTransformation.isIdentity()) {
-          destinationEnvelopeInSourceCRS=CRS.transform(WGS84ToSourceCoverageCRSTransformation,destinationEnvelopeWGS84);
-          destinationEnvelopeInSourceCRS.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
-        }
- else {
-          destinationEnvelopeInSourceCRS=new GeneralEnvelope(destinationEnvelopeWGS84);
-        }
+        destinationEnvelopeInSourceCRS=CRS.transform(destinationEnvelopeWGS84,DefaultGeographicCRS.WGS84);
+        destinationEnvelopeInSourceCRS.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
       }
  else {
         destinationEnvelopeInSourceCRS=new GeneralEnvelope(destinationEnvelopeWGS84);

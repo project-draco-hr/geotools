@@ -1,10 +1,8 @@
 {
   final CoordinateReferenceSystem requestedBBoxCRS2D=requestedBBox.getCoordinateReferenceSystem();
   try {
-    MathTransform destinationToSourceTransform=null;
-    if (!CRS.equalsIgnoreMetadata(requestedBBoxCRS2D,coverageCRS2D))     destinationToSourceTransform=CRS.findMathTransform(requestedBBoxCRS2D,coverageCRS2D,true);
-    if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
-      final GeneralEnvelope temp=CRS.transform(destinationToSourceTransform,requestedBBox);
+    if (!CRS.equalsIgnoreMetadata(requestedBBoxCRS2D,coverageCRS2D)) {
+      final GeneralEnvelope temp=CRS.transform(requestedBBox,coverageCRS2D);
       temp.setCoordinateReferenceSystem(coverageCRS2D);
       requestedBBox=new ReferencedEnvelope(temp);
     }
@@ -21,9 +19,6 @@
  catch (  TransformException te) {
     if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,te.getLocalizedMessage(),te);
   }
-catch (  FactoryException fe) {
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,fe.getLocalizedMessage(),fe);
-  }
   final GeographicBoundingBoxImpl geographicRequestedBBox=new GeographicBoundingBoxImpl(requestedBBox);
   ReferencedEnvelope approximateWGS84requestedBBox=GridCoverageUtilities.getReferencedEnvelopeFromGeographicBoundingBox(geographicRequestedBBox);
   if (!approximateWGS84requestedBBox.intersects((BoundingBox)coverageGeographicBBox)) {
@@ -33,8 +28,7 @@ catch (  FactoryException fe) {
   final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(requestedRasterArea),approximateWGS84requestedBBox);
   approximateWGS84RequestedResolution=CoverageUtilities.getResolution(geMapper.createAffineTransform());
   approximateWGS84requestedBBox=new ReferencedEnvelope(approximateWGS84requestedBBox.intersection(coverageGeographicBBox),DefaultGeographicCRS.WGS84);
-  final MathTransform transform=CRS.findMathTransform(DefaultGeographicCRS.WGS84,coverageCRS2D,true);
-  final GeneralEnvelope approximateRequestedBBoInNativeCRS=CRS.transform(transform,approximateWGS84requestedBBox);
+  final GeneralEnvelope approximateRequestedBBoInNativeCRS=CRS.transform(approximateWGS84requestedBBox,coverageCRS2D);
   approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(coverageCRS2D);
   requestedBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
 }

@@ -1,0 +1,41 @@
+{
+  try {
+    return envelope.transform(targetCRS,true,10);
+  }
+ catch (  Exception e) {
+    LOGGER.fine("Failed to reproject the envelope " + envelope + " to "+ targetCRS+ " trying an area restriction");
+    ReferencedEnvelope envWGS84=envelope.transform(DefaultGeographicCRS.WGS84,true);
+    ProjectionHandler handler=ProjectionHandlerFinder.getHandler(envelope,envelope.getCoordinateReferenceSystem(),false);
+    if (handler != null && handler.validAreaBounds != null) {
+      Envelope intersection=envWGS84.intersection(validAreaBounds);
+      if (intersection.isNull()) {
+        return null;
+      }
+ else {
+        try {
+          return ReferencedEnvelope.reference(intersection).transform(targetCRS,true);
+        }
+ catch (        Exception e2) {
+          LOGGER.fine("Failed to reproject the restricted envelope " + intersection + " to "+ targetCRS);
+        }
+      }
+    }
+    GeographicBoundingBox bbox=CRS.getGeographicBoundingBox(targetCRS);
+    if (bbox != null) {
+      ReferencedEnvelope restriction=new ReferencedEnvelope(bbox.getEastBoundLongitude(),bbox.getWestBoundLongitude(),bbox.getSouthBoundLatitude(),bbox.getNorthBoundLatitude(),DefaultGeographicCRS.WGS84);
+      Envelope intersection=envWGS84.intersection(restriction);
+      if (intersection.isNull()) {
+        return null;
+      }
+ else {
+        try {
+          return ReferencedEnvelope.reference(intersection).transform(targetCRS,true);
+        }
+ catch (        Exception e2) {
+          LOGGER.fine("Failed to reproject the restricted envelope " + intersection + " to "+ targetCRS);
+        }
+      }
+    }
+    throw new TransformException("All attemptsto reproject the envelope " + envelope + " to "+ targetCRS+ " failed");
+  }
+}
