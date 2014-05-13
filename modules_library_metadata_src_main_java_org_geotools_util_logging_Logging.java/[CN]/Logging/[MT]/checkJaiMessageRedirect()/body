@@ -1,0 +1,24 @@
+{
+  if (jaiMessageRedirect) {
+    return;
+  }
+  JAI jai=null;
+  try {
+    jai=JAI.getDefaultInstance();
+  }
+ catch (  Throwable t) {
+    System.out.println("Logging JAI messages: unavailable:" + t);
+  }
+  if (jai == null) {
+    return;
+  }
+  ImagingListener imagingListener=jai.getImagingListener();
+  if (imagingListener == null || imagingListener.getClass().getName().contains("ImagingListenerImpl")) {
+    jai.setImagingListener(new LoggingImagingListener());
+    System.out.println("Logging JAI messages: redirected to javax.media.jai logger");
+  }
+ else {
+    System.out.println("Logging JAI messages: ImagingListener already in use: " + imagingListener);
+  }
+  jaiMessageRedirect=true;
+}
