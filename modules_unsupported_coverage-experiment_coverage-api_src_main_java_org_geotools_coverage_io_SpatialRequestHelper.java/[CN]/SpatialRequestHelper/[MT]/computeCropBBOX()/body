@@ -2,7 +2,7 @@
   if (requestCRS == null)   requestCRS=CRS.getHorizontalCRS(requestedBBox.getCoordinateReferenceSystem());
   try {
     if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
-      final GeneralEnvelope temp=CRS.transform(destinationToSourceTransform,requestedBBox);
+      final GeneralEnvelope temp=new GeneralEnvelope(CRS.transform(requestedBBox,coverageProperties.crs2D));
       temp.setCoordinateReferenceSystem(coverageProperties.crs2D);
       cropBBox=new ReferencedEnvelope(temp);
       needsReprojection=true;
@@ -29,7 +29,7 @@
       if (!CRS.equalsIgnoreMetadata(coverageProperties.geographicCRS2D,requestCRS)) {
         requestCRSToCoverageGeographicCRS2D=CRS.findMathTransform(requestCRS,coverageProperties.geographicCRS2D,true);
         if (!requestCRSToCoverageGeographicCRS2D.isIdentity()) {
-          requestedBBOXInCoverageGeographicCRS=CRS.transform(requestCRSToCoverageGeographicCRS2D,requestedBBox);
+          requestedBBOXInCoverageGeographicCRS=CRS.transform(requestedBBox,coverageProperties.geographicCRS2D);
           requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS2D);
         }
       }
@@ -43,8 +43,7 @@
       }
       requestedBBOXInCoverageGeographicCRS.intersect(coverageProperties.geographicBBox);
       requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS2D);
-      final MathTransform transform=CRS.findMathTransform(requestedBBOXInCoverageGeographicCRS.getCoordinateReferenceSystem(),coverageProperties.crs2D,true);
-      approximateRequestedBBoInNativeCRS=CRS.transform(transform,requestedBBOXInCoverageGeographicCRS);
+      approximateRequestedBBoInNativeCRS=CRS.transform(requestedBBOXInCoverageGeographicCRS,coverageProperties.crs2D);
       approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(coverageProperties.crs2D);
       cropBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
       return;
