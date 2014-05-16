@@ -2,13 +2,12 @@
   double[] requestedRes=null;
   try {
     if (dim != null && envelope != null && crs != null) {
-      final CoordinateReferenceSystem crs2D=CRS.getHorizontalCRS(envelope.getCoordinateReferenceSystem());
-      if (crs2D != null && !CRS.equalsIgnoreMetadata(crs,crs2D)) {
-        final MathTransform tr=CRS.findMathTransform(crs2D,crs,true);
-        if (!tr.isIdentity()) {
-          envelope=CRS.transform(tr,envelope);
-          envelope.setCoordinateReferenceSystem(crs);
-        }
+      final CoordinateReferenceSystem envelopeCrs2D=CRS.getHorizontalCRS(envelope.getCoordinateReferenceSystem());
+      if (envelopeCrs2D != null && !CRS.equalsIgnoreMetadata(crs,envelopeCrs2D)) {
+        CoordinateOperationFactory operationFactory=CRS.getCoordinateOperationFactory(true);
+        CoordinateOperation op=operationFactory.createOperation(envelopeCrs2D,crs);
+        envelope=CRS.transform(op,envelope);
+        envelope.setCoordinateReferenceSystem(crs);
       }
       requestedRes=new double[2];
       requestedRes[0]=envelope.getSpan(0) / dim.getWidth();

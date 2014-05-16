@@ -27,11 +27,9 @@
   try {
     if (coverageProperties.geographicCRS2D != null && coverageProperties.geographicBBox != null) {
       if (!CRS.equalsIgnoreMetadata(coverageProperties.geographicCRS2D,requestCRS)) {
-        requestCRSToCoverageGeographicCRS2D=CRS.findMathTransform(requestCRS,coverageProperties.geographicCRS2D,true);
-        if (!requestCRSToCoverageGeographicCRS2D.isIdentity()) {
-          requestedBBOXInCoverageGeographicCRS=CRS.transform(requestCRSToCoverageGeographicCRS2D,requestedBBox);
-          requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS2D);
-        }
+        CoordinateOperation operation=CRS.getCoordinateOperationFactory(true).createOperation(requestCRS,coverageProperties.geographicCRS2D);
+        requestedBBOXInCoverageGeographicCRS=CRS.transform(operation,requestedBBox);
+        requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS2D);
       }
       if (requestedBBOXInCoverageGeographicCRS == null) {
         requestedBBOXInCoverageGeographicCRS=new GeneralEnvelope(requestCRS);
