@@ -1,0 +1,24 @@
+{
+  Utilities.ensureNonNull("parameters",parameters);
+  Utilities.ensureNonNull("sources",sources);
+  Object srcCoverages=parameters.parameter("sources").getValue();
+  if (!(srcCoverages instanceof Collection) || ((Collection)srcCoverages).isEmpty() || !(((Collection)srcCoverages).iterator().next() instanceof GridCoverage2D)) {
+    throw new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$1,"sources"),"sources",srcCoverages);
+  }
+  Collection<GridCoverage2D> sourceCoverages=(Collection<GridCoverage2D>)srcCoverages;
+  ViewType type=null;
+  final boolean computeOnGeophysicsValues=computeOnGeophysicsValues(parameters);
+  int i=0;
+  for (  GridCoverage2D source : sourceCoverages) {
+    if (computeOnGeophysicsValues) {
+      final GridCoverage2D old=source;
+      source=source.view(ViewType.GEOPHYSICS);
+      if (i == PRIMARY_SOURCE_INDEX) {
+        type=(old == source) ? ViewType.GEOPHYSICS : ViewType.PACKED;
+      }
+    }
+    sources.add(source);
+    i++;
+  }
+  return type;
+}

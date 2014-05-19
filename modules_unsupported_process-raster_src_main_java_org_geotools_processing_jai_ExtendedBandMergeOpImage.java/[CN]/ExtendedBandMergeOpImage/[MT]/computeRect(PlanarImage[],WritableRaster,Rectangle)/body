@@ -1,0 +1,35 @@
+{
+  int destType=dest.getTransferType();
+  ROI roiTile=null;
+  if (hasROI) {
+    Rectangle rect=new Rectangle(destRect);
+    rect.grow(TILE_EXTENDER,TILE_EXTENDER);
+    roiTile=roi.intersect(new ROIShape(rect));
+  }
+  if (!hasROI || !roiTile.getBounds().isEmpty()) {
+switch (destType) {
+case DataBuffer.TYPE_BYTE:
+      byteLoop(sources,dest,destRect,roiTile);
+    break;
+case DataBuffer.TYPE_SHORT:
+  ushortLoop(sources,dest,destRect,roiTile);
+case DataBuffer.TYPE_USHORT:
+shortLoop(sources,dest,destRect,roiTile);
+break;
+case DataBuffer.TYPE_INT:
+intLoop(sources,dest,destRect,roiTile);
+break;
+case DataBuffer.TYPE_FLOAT:
+floatLoop(sources,dest,destRect,roiTile);
+break;
+case DataBuffer.TYPE_DOUBLE:
+doubleLoop(sources,dest,destRect,roiTile);
+break;
+default :
+throw new RuntimeException("Wrong image data type");
+}
+}
+ else {
+ImageUtil.fillBackground(dest,destRect,backgroundValues);
+}
+}

@@ -1,0 +1,220 @@
+{
+  int nSrcs=sources.length;
+  int[] snbands=new int[nSrcs];
+  for (int i=0; i < nSrcs; i++) {
+    if (colorModels[i] instanceof IndexColorModel) {
+      snbands[i]=colorModels[i].getNumComponents();
+    }
+ else {
+      snbands[i]=sources[i].getNumBands();
+    }
+  }
+  int dnbands=dest.getNumBands();
+  int destType=dest.getTransferType();
+  PixelAccessor d=new PixelAccessor(dest.getSampleModel(),null);
+  UnpackedImageData dimd=d.getPixels(dest,destRect,destType,true);
+  short[][] dstdata=(short[][])dimd.data;
+  int dstPixelStride=dimd.pixelStride;
+  int dstLineStride=dimd.lineStride;
+  RandomIter iter;
+  Point2D ptSrc=new Point2D.Double(0,0);
+  Point2D ptDst=new Point2D.Double(0,0);
+  final int minX=destRect.x;
+  final int minY=destRect.y;
+  int db=0;
+  if (caseA) {
+    for (int sindex=0; sindex < nSrcs; sindex++) {
+      iter=RandomIterFactory.create(sources[sindex],sources[sindex].getBounds());
+      AffineTransform trans=transforms.get(sindex);
+      TRANSFORM transObj=transformObj.get(sindex);
+      final int srcMinX=sources[sindex].getMinX();
+      final int srcMinY=sources[sindex].getMinY();
+      final int srcMaxX=sources[sindex].getMaxX();
+      final int srcMaxY=sources[sindex].getMaxY();
+      int dstLineOffset=0;
+      int dstPixelOffset=0;
+      for (int y=0; y < destRect.height; y++) {
+        dstPixelOffset=dstLineOffset;
+        for (int x=0; x < destRect.width; x++) {
+          ptDst.setLocation(x + minX,y + minY);
+          transObj.transform(trans,ptDst,ptSrc);
+          int srcX=round(ptSrc.getX());
+          int srcY=round(ptSrc.getY());
+          if (srcX < srcMinX || srcX >= srcMaxX || srcY < srcMinY || srcY >= srcMaxY) {
+            for (int sb=0; sb < snbands[sindex]; sb++) {
+              if (db >= dnbands) {
+                break;
+              }
+              dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+            }
+          }
+ else {
+            for (int sb=0; sb < snbands[sindex]; sb++) {
+              if (db >= dnbands) {
+                break;
+              }
+              dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=(short)(iter.getSample(srcX,srcY,sb));
+            }
+          }
+          dstPixelOffset+=dstPixelStride;
+        }
+        dstLineOffset+=dstLineStride;
+      }
+      db+=snbands[sindex];
+    }
+  }
+ else   if (caseB) {
+    for (int sindex=0; sindex < nSrcs; sindex++) {
+      iter=RandomIterFactory.create(sources[sindex],sources[sindex].getBounds());
+      AffineTransform trans=transforms.get(sindex);
+      TRANSFORM transObj=transformObj.get(sindex);
+      final int srcMinX=sources[sindex].getMinX();
+      final int srcMinY=sources[sindex].getMinY();
+      final int srcMaxX=sources[sindex].getMaxX();
+      final int srcMaxY=sources[sindex].getMaxY();
+      int dstLineOffset=0;
+      int dstPixelOffset=0;
+      for (int y=0; y < destRect.height; y++) {
+        dstPixelOffset=dstLineOffset;
+        for (int x=0; x < destRect.width; x++) {
+          int dstX=x + minX;
+          int dstY=y + minY;
+          if (roiTile.contains(dstX,dstY)) {
+            ptDst.setLocation(dstX,dstY);
+            transObj.transform(trans,ptDst,ptSrc);
+            int srcX=round(ptSrc.getX());
+            int srcY=round(ptSrc.getY());
+            if (srcX < srcMinX || srcX >= srcMaxX || srcY < srcMinY || srcY >= srcMaxY) {
+              for (int sb=0; sb < snbands[sindex]; sb++) {
+                if (db >= dnbands) {
+                  break;
+                }
+                dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+              }
+            }
+ else {
+              for (int sb=0; sb < snbands[sindex]; sb++) {
+                if (db >= dnbands) {
+                  break;
+                }
+                dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=(short)(iter.getSample(srcX,srcY,sb));
+              }
+            }
+          }
+ else {
+            for (int sb=0; sb < snbands[sindex]; sb++) {
+              dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+            }
+          }
+          dstPixelOffset+=dstPixelStride;
+        }
+        dstLineOffset+=dstLineStride;
+      }
+      db+=snbands[sindex];
+    }
+  }
+ else   if (caseC) {
+    for (int sindex=0; sindex < nSrcs; sindex++) {
+      iter=RandomIterFactory.create(sources[sindex],sources[sindex].getBounds());
+      AffineTransform trans=transforms.get(sindex);
+      TRANSFORM transObj=transformObj.get(sindex);
+      final int srcMinX=sources[sindex].getMinX();
+      final int srcMinY=sources[sindex].getMinY();
+      final int srcMaxX=sources[sindex].getMaxX();
+      final int srcMaxY=sources[sindex].getMaxY();
+      int dstLineOffset=0;
+      int dstPixelOffset=0;
+      for (int y=0; y < destRect.height; y++) {
+        dstPixelOffset=dstLineOffset;
+        for (int x=0; x < destRect.width; x++) {
+          ptDst.setLocation(x + minX,y + minY);
+          transObj.transform(trans,ptDst,ptSrc);
+          int srcX=round(ptSrc.getX());
+          int srcY=round(ptSrc.getY());
+          if (srcX < srcMinX || srcX >= srcMaxX || srcY < srcMinY || srcY >= srcMaxY) {
+            for (int sb=0; sb < snbands[sindex]; sb++) {
+              if (db >= dnbands) {
+                break;
+              }
+              dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+            }
+          }
+ else {
+            for (int sb=0; sb < snbands[sindex]; sb++) {
+              if (db >= dnbands) {
+                break;
+              }
+              short pixelValue=(short)(iter.getSample(srcX,srcY,sb));
+              if (noData[sindex].contains(pixelValue)) {
+                dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+              }
+ else {
+                dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=pixelValue;
+              }
+            }
+          }
+          dstPixelOffset+=dstPixelStride;
+        }
+        dstLineOffset+=dstLineStride;
+      }
+      db+=snbands[sindex];
+    }
+  }
+ else {
+    for (int sindex=0; sindex < nSrcs; sindex++) {
+      iter=RandomIterFactory.create(sources[sindex],sources[sindex].getBounds());
+      AffineTransform trans=transforms.get(sindex);
+      TRANSFORM transObj=transformObj.get(sindex);
+      final int srcMinX=sources[sindex].getMinX();
+      final int srcMinY=sources[sindex].getMinY();
+      final int srcMaxX=sources[sindex].getMaxX();
+      final int srcMaxY=sources[sindex].getMaxY();
+      int dstLineOffset=0;
+      int dstPixelOffset=0;
+      for (int y=0; y < destRect.height; y++) {
+        dstPixelOffset=dstLineOffset;
+        for (int x=0; x < destRect.width; x++) {
+          int dstX=x + minX;
+          int dstY=y + minY;
+          if (roiTile.contains(dstX,dstY)) {
+            ptDst.setLocation(dstX,dstY);
+            transObj.transform(trans,ptDst,ptSrc);
+            int srcX=round(ptSrc.getX());
+            int srcY=round(ptSrc.getY());
+            if (srcX < srcMinX || srcX >= srcMaxX || srcY < srcMinY || srcY >= srcMaxY) {
+              for (int sb=0; sb < snbands[sindex]; sb++) {
+                if (db >= dnbands) {
+                  break;
+                }
+                dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+              }
+            }
+ else {
+              for (int sb=0; sb < snbands[sindex]; sb++) {
+                if (db >= dnbands) {
+                  break;
+                }
+                short pixelValue=(short)(iter.getSample(srcX,srcY,sb));
+                if (noData[sindex].contains(pixelValue)) {
+                  dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+                }
+ else {
+                  dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=pixelValue;
+                }
+              }
+            }
+          }
+ else {
+            for (int sb=0; sb < snbands[sindex]; sb++) {
+              dstdata[db + sb][dstPixelOffset + dimd.getOffset(db + sb)]=destNoDataShort;
+            }
+          }
+          dstPixelOffset+=dstPixelStride;
+        }
+        dstLineOffset+=dstLineStride;
+      }
+      db+=snbands[sindex];
+    }
+  }
+  d.setPixels(dimd);
+}
