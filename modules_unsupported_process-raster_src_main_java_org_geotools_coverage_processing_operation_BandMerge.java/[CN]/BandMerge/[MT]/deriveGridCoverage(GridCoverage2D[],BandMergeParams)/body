@@ -1,0 +1,50 @@
+{
+  GridCoverage2D primarySource=sources[PRIMARY_SOURCE_INDEX];
+  final GridSampleDimension[][] list=new GridSampleDimension[sources.length][];
+  for (int i=0; i < list.length; i++) {
+    if (sources[i] == null) {
+      continue;
+    }
+    list[i]=sources[i].getSampleDimensions();
+  }
+  final GridSampleDimension[] sampleDims=deriveSampleDimension(list,null);
+  int primarySourceIndex=PRIMARY_SOURCE_INDEX;
+  RenderingHints hints=ImageUtilities.getRenderingHints(parameters.getSource());
+  ImageLayout layout=(hints != null) ? (ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT) : null;
+  Envelope2D bbox=parameters.bbox;
+  if (layout != null) {
+    if (bbox != null) {
+      updateLayout(parameters,layout,bbox);
+    }
+    if (hints == null) {
+      hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+ else {
+      hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+  }
+ else   if (bbox != null) {
+    layout=new ImageLayout2();
+    updateLayout(parameters,layout,bbox);
+    if (hints == null) {
+      hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+ else {
+      hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+    }
+  }
+  if (parameters.hints != null) {
+    if (hints != null) {
+      hints.add(parameters.hints);
+    }
+ else {
+      hints=parameters.hints;
+    }
+  }
+  final InternationalString name=deriveName(sources,primarySourceIndex,null);
+  final CoordinateReferenceSystem crs=primarySource.getCoordinateReferenceSystem();
+  final MathTransform toCRS=parameters.gridToCRS;
+  final RenderedImage data=createRenderedImage(parameters.parameters,hints);
+  final Map properties=getProperties(data,crs,name,toCRS,sources,null);
+  return getFactory(parameters.hints).create(name,data,crs,toCRS,sampleDims,sources,properties);
+}
