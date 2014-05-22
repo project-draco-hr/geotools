@@ -1,5 +1,4 @@
 {
-  SQLServerDialect dialect=(SQLServerDialect)dataStore.getSQLDialect();
   StringBuffer sql=new StringBuffer("SELECT \"fid\",\"id\",\"geom\".STAsBinary() as \"geom\",\"name\" " + "FROM \"road\" " + "WHERE  \"geom\".Filter(geometry::STGeomFromText('POLYGON ((2 -1, 2 5, 4 5, 4 -1, 2 -1))', 4326)) = 1 "+ "AND geometry::STGeomFromText('POLYGON ((2 -1, 2 5, 4 5, 4 -1, 2 -1))', 4326).STContains(\"geom\") = 1");
   FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
   GeometryFactory gf=new GeometryFactory();
@@ -9,5 +8,5 @@
   Contains cs=ff.contains(ff.literal(polygon),ff.property(aname("geom")));
   SimpleFeatureType roadSchema=dataStore.getSchema("road");
   dialect.handleSelectHints(sql,roadSchema,new Query("road",cs));
-  assertTrue(sql.toString().contains("FROM \"road\" WITH( INDEX(\"_road_geometry_index\"))"));
+  return sql;
 }

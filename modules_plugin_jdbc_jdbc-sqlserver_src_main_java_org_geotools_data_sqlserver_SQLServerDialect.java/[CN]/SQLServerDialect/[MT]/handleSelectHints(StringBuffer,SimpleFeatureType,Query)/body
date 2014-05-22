@@ -1,43 +1,31 @@
 {
-  if (!forceSpatialIndexes) {
-    return;
-  }
-  Filter filter=query.getFilter();
-  if (filter == Filter.INCLUDE) {
-    return;
-  }
-  SpatialIndexAttributeExtractor attributesExtractor=new SpatialIndexAttributeExtractor();
-  filter.accept(attributesExtractor,null);
-  Map<String,Integer> attributes=attributesExtractor.getSpatialProperties();
-  if (attributes.isEmpty() || attributes.size() > 1) {
-    return;
-  }
-  Set<String> indexes=new HashSet<String>();
-  for (  Map.Entry<String,Integer> attribute : attributes.entrySet()) {
-    if (attribute.getValue() > 1) {
-      continue;
-    }
-    AttributeDescriptor descriptor=featureType.getDescriptor(attribute.getKey());
-    if (descriptor instanceof GeometryDescriptor) {
-      String indexName=(String)descriptor.getUserData().get(SPATIAL_INDEX_KEY);
-      if (indexName != null) {
-        indexes.add(indexName);
-      }
-    }
-  }
-  if (indexes.isEmpty()) {
+  if (!forceSpatialIndexes && tableHints == null) {
     return;
   }
   String fromStatement="FROM \"" + featureType.getTypeName() + "\"";
   int idx=sql.indexOf(fromStatement);
   if (idx > 0) {
     int base=idx + fromStatement.length();
-    StringBuilder sb=new StringBuilder(" WITH( INDEX(");
-    for (    String indexName : indexes) {
-      sb.append("\"").append(indexName).append("\"").append(",");
+    StringBuilder sb=new StringBuilder(" WITH(");
+    Set<String> indexes=getSpatialIndexes(featureType,query);
+    if (!indexes.isEmpty()) {
+      sb.append("INDEX(");
+      for (      String indexName : indexes) {
+        sb.append("\"").append(indexName).append("\"").append(",");
+      }
+      sb.setLength(sb.length() - 1);
+      sb.append(")");
     }
-    sb.setLength(sb.length() - 1);
-    sb.append("))");
+ else     if (tableHints == null) {
+      return;
+    }
+    if (!indexes.isEmpty() && tableHints != null) {
+      sb.append(", ");
+    }
+    if (tableHints != null) {
+      sb.append(tableHints);
+    }
+    sb.append(")");
     String tableHint=sb.toString();
     sql.insert(base,tableHint);
   }
