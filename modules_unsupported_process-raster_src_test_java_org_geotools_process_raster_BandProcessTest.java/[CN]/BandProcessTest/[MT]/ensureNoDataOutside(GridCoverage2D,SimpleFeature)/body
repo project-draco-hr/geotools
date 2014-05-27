@@ -1,0 +1,28 @@
+{
+  MathTransform w2g=coverage.getGridGeometry().getCRSToGrid2D(PixelOrientation.UPPER_LEFT);
+  ROI roi=new ROIGeometry(JTS.transform((Geometry)feature.getDefaultGeometry(),w2g));
+  Rectangle rect=roi.getBounds();
+  rect.grow(1,1);
+  double nodata=CoverageUtilities.getBackgroundValues(coverage)[0];
+  RenderedImage img=coverage.getRenderedImage();
+  int minTileX=img.getMinTileX();
+  int minTileY=img.getMinTileY();
+  int maxTileX=minTileX + img.getNumXTiles();
+  int maxTileY=minTileY + img.getNumYTiles();
+  for (int tx=minTileX; tx < maxTileX; tx++) {
+    for (int ty=minTileY; ty < maxTileY; ty++) {
+      Raster tile=img.getTile(tx,ty);
+      int minx=tile.getMinX();
+      int miny=tile.getMinY();
+      int maxx=minx + tile.getWidth();
+      int maxy=miny + tile.getHeight();
+      for (int x=minx; x < maxx; x++) {
+        for (int y=miny; y < maxy; y++) {
+          if (!rect.contains(x,y)) {
+            assertEquals(nodata,tile.getSampleDouble(x,y,0),TOLERANCE);
+          }
+        }
+      }
+    }
+  }
+}
