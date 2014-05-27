@@ -38,6 +38,30 @@
     cachedFormat=format;
     final Hints configurationHints=configHandler.getRunConfiguration().getHints();
     coverageReader=(GridCoverage2DReader)format.getReader(fileBeingProcessed,configurationHints);
+    if (configHandler.getCachedReaderSPI() == null) {
+      URL granuleUrl=DataUtilities.fileToURL(fileBeingProcessed);
+      ImageInputStreamSpi inStreamSpi=Utils.getInputStreamSPIFromURL(granuleUrl);
+      if (inStreamSpi == null) {
+        throw new IllegalArgumentException("no inputStreamSPI available!");
+      }
+      ImageInputStream inStream=null;
+      try {
+        inStream=inStreamSpi.createInputStreamInstance(granuleUrl,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+        if (inStream == null) {
+          if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.log(Level.WARNING,Utils.getFileInfo(fileBeingProcessed));
+          }
+          throw new IllegalArgumentException("Unable to get an input stream for the provided file " + granuleUrl.toString());
+        }
+        ImageReaderSpi spi=Utils.getReaderSpiFromStream(null,inStream);
+        configHandler.setCachedReaderSPI(spi);
+      }
+  finally {
+        if (inStream != null) {
+          inStream.close();
+        }
+      }
+    }
     String[] coverageNames=coverageReader.getGridCoverageNames();
     for (    String cvName : coverageNames) {
       configHandler.updateConfiguration(coverageReader,cvName,fileBeingProcessed,fileIndex,numFiles,transaction);
