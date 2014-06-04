@@ -19,6 +19,10 @@
   if (att == null && !(visitor instanceof CountVisitor)) {
     return null;
   }
+  LimitingVisitor limitingVisitor=null;
+  if (visitor instanceof LimitingVisitor) {
+    limitingVisitor=(LimitingVisitor)visitor;
+  }
   try {
     Object result=null;
     List results=new ArrayList();
@@ -26,11 +30,11 @@
     ResultSet rs=null;
     try {
       if (dialect instanceof PreparedStatementSQLDialect) {
-        st=selectAggregateSQLPS(function,att,featureType,query,cx);
+        st=selectAggregateSQLPS(function,att,featureType,query,limitingVisitor,cx);
         rs=((PreparedStatement)st).executeQuery();
       }
  else {
-        String sql=selectAggregateSQL(function,att,featureType,query);
+        String sql=selectAggregateSQL(function,att,featureType,query,limitingVisitor);
         LOGGER.fine(sql);
         st=cx.createStatement();
         st.setFetchSize(fetchSize);

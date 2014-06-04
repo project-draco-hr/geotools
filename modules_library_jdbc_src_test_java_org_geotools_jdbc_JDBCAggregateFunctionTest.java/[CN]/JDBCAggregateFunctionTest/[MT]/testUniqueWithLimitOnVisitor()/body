@@ -1,0 +1,18 @@
+{
+  if (!dataStore.getSQLDialect().isLimitOffsetSupported()) {
+    return;
+  }
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyName p=ff.property(aname("stringProperty"));
+  UniqueVisitor v=new MyUniqueVisitor(p);
+  v.setPreserveOrder(true);
+  v.setStartIndex(0);
+  v.setMaxFeatures(2);
+  Query q=new Query(tname("ft1"));
+  q.setSortBy(new SortBy[]{new SortByImpl(p,SortOrder.ASCENDING)});
+  dataStore.getFeatureSource(tname("ft1")).accepts(q,v,null);
+  assertFalse(visited);
+  Set result=v.getResult().toSet();
+  assertEquals(2,result.size());
+  assertEquals("one",result.iterator().next());
+}
