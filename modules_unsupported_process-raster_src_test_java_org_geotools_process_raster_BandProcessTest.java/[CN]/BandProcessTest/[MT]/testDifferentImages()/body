@@ -1,0 +1,30 @@
+{
+  List<GridCoverage2D> coverages=new ArrayList<GridCoverage2D>();
+  coverages.add(coverage1);
+  coverages.add(coverage3);
+  BandMergeProcess bandmerge=new BandMergeProcess();
+  GridCoverage2D merged=bandmerge.execute(coverages,null,null,null);
+  Assert.assertEquals(2,merged.getNumSampleDimensions());
+  Envelope2D cov1Env=coverage1.getEnvelope2D();
+  Envelope2D cov3Env=coverage3.getEnvelope2D();
+  Envelope2D globalEnv=new Envelope2D(cov1Env);
+  globalEnv.include(cov3Env);
+  assertEqualBBOX(globalEnv,merged.getEnvelope2D());
+  BandSelectProcess bandselect=new BandSelectProcess();
+  GridCoverage2D selected1=bandselect.execute(merged,new int[]{0},null);
+  GridCoverage2D selected2=bandselect.execute(merged,new int[]{1},null);
+  assertEquals(1,selected1.getNumSampleDimensions());
+  assertEquals(1,selected2.getNumSampleDimensions());
+  assertEqualBBOX(globalEnv,selected1.getEnvelope2D());
+  assertEqualBBOX(globalEnv,selected2.getEnvelope2D());
+  RenderedImage srcImg=coverage1.getRenderedImage();
+  RenderedImage sel1=selected1.getRenderedImage();
+  RenderedImage sel2=selected2.getRenderedImage();
+  RenderedOp crop1=CropDescriptor.create(sel1,0f,0f,(float)srcImg.getWidth(),(float)srcImg.getHeight(),null);
+  float minX=sel1.getWidth() - srcImg.getWidth();
+  float minY=sel2.getHeight() - srcImg.getHeight();
+  RenderedOp crop2=CropDescriptor.create(sel2,minX,minY,(float)srcImg.getWidth(),(float)srcImg.getHeight(),null);
+  crop2=TranslateDescriptor.create(crop2,-minX,-minY,null,null);
+  ensureEqualImages(srcImg,crop1);
+  ensureEqualImages(srcImg,crop2);
+}

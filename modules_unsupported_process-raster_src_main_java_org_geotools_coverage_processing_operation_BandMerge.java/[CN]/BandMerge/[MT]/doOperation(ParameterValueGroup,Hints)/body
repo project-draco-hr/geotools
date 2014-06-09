@@ -1,0 +1,45 @@
+{
+  final Collection<GridCoverage2D> sourceCollection=new ArrayList<GridCoverage2D>();
+  ViewType primarySourceType=extractSources(parameters,sourceCollection);
+  GridCoverage2D coverage=sourceCollection.iterator().next();
+  final CoordinateReferenceSystem crs=coverage.getCoordinateReferenceSystem2D();
+  Envelope2D globalBbox=new Envelope2D();
+  String transChoice=(String)parameters.parameter(TRANSFORM_CHOICE).getValue();
+  TransformList choice=TransformList.FIRST;
+  if (transChoice != null && !transChoice.isEmpty()) {
+    choice=TransformList.getTransformList(transChoice);
+  }
+  int size=sourceCollection.size();
+  List<GridGeometry2D> gg2D=new ArrayList<GridGeometry2D>(size);
+  for (  GridCoverage2D source : sourceCollection) {
+    if (source == null) {
+      size--;
+      continue;
+    }
+    globalBbox.include(source.getEnvelope2D());
+    gg2D.add(source.getGridGeometry());
+  }
+  List<AffineTransform> tr=choice.getTransformationList(gg2D,getIndex(parameters));
+  AffineTransform2D gridToCRS=new AffineTransform2D(choice.getGridToCRS2D(gg2D,getIndex(parameters)));
+  AffineTransform2D crsToGrid=new AffineTransform2D(choice.getCRStoGrid2D(gg2D,getIndex(parameters)));
+  GridCoverage2D[] sources=new GridCoverage2D[size];
+  sourceCollection.toArray(sources);
+  ParameterBlockJAI block;
+  try {
+    block=prepareParameters(parameters,sources,tr,crsToGrid);
+  }
+ catch (  MismatchedDimensionException e) {
+    throw new CoverageProcessingException(e);
+  }
+catch (  ParameterNotFoundException e) {
+    throw new CoverageProcessingException(e);
+  }
+catch (  TransformException e) {
+    throw new CoverageProcessingException(e);
+  }
+  coverage=deriveGridCoverage(sources,new BandMergeParams(crs,gridToCRS,globalBbox,block,hints));
+  if (primarySourceType != null) {
+    coverage=coverage.view(primarySourceType);
+  }
+  return coverage;
+}

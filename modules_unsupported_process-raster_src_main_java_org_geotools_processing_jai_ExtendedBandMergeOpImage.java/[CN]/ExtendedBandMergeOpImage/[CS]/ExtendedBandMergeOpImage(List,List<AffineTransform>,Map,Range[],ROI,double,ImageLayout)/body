@@ -1,0 +1,63 @@
+{
+  super(vectorize(sources),layoutHelper(sources,layout),config,false,null,null,new double[]{destinationNoData});
+  if (transforms != null) {
+    if (transforms.size() != sources.size()) {
+      throw new IllegalArgumentException("Wrong Transformations number");
+    }
+    this.transforms=transforms;
+    this.transformObj=optimize(transforms);
+  }
+ else {
+    throw new IllegalArgumentException("No Transformation has been set");
+  }
+  int numSrcs=sources.size();
+  colorModels=new ColorModel[numSrcs];
+  for (int i=0; i < numSrcs; i++) {
+    colorModels[i]=((RenderedImage)sources.get(i)).getColorModel();
+  }
+  int dataType=getSampleModel().getDataType();
+  if (noData != null) {
+    if (noData.length != numSrcs) {
+      Range firstNoData=noData[0];
+      this.noData=new Range[numSrcs];
+      for (int i=0; i < numSrcs; i++) {
+        this.noData[i]=firstNoData;
+      }
+    }
+ else {
+      this.noData=noData;
+    }
+    this.hasNoData=true;
+  }
+ else {
+    this.noData=null;
+    this.hasNoData=false;
+  }
+  this.roi=roi;
+  hasROI=roi != null;
+  caseA=!hasROI && !hasNoData;
+  caseB=hasROI && !hasNoData;
+  caseC=!hasROI && hasNoData;
+switch (dataType) {
+case DataBuffer.TYPE_BYTE:
+    this.destNoDataByte=ImageUtil.clampRoundByte(destinationNoData);
+  break;
+case DataBuffer.TYPE_USHORT:
+this.destNoDataShort=ImageUtil.clampRoundUShort(destinationNoData);
+break;
+case DataBuffer.TYPE_SHORT:
+this.destNoDataShort=ImageUtil.clampRoundShort(destinationNoData);
+break;
+case DataBuffer.TYPE_INT:
+this.destNoDataInt=ImageUtil.clampRoundInt(destinationNoData);
+break;
+case DataBuffer.TYPE_FLOAT:
+this.destNoDataFloat=ImageUtil.clampFloat(destinationNoData);
+break;
+case DataBuffer.TYPE_DOUBLE:
+this.destNoDataDouble=destinationNoData;
+break;
+default :
+throw new IllegalArgumentException("Wrong image data type");
+}
+}

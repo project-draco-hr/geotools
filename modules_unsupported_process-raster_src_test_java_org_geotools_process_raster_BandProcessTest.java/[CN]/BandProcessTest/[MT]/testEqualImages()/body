@@ -1,0 +1,27 @@
+{
+  List<GridCoverage2D> coverages=new ArrayList<GridCoverage2D>();
+  coverages.add(coverage1);
+  coverages.add(coverage2);
+  BandMergeProcess bandmerge=new BandMergeProcess();
+  GridCoverage2D merged=bandmerge.execute(coverages,null,"last",null);
+  Assert.assertEquals(2,merged.getNumSampleDimensions());
+  Envelope2D sourceEnv=coverage1.getEnvelope2D();
+  Envelope2D mergedEnv=merged.getEnvelope2D();
+  assertEqualBBOX(sourceEnv,mergedEnv);
+  RenderedImage mergedImg=merged.getRenderedImage();
+  RenderedImage srcImg1=coverage1.getRenderedImage();
+  RenderedImage srcImg2=coverage2.getRenderedImage();
+  assertEqualImageDim(mergedImg,srcImg1);
+  assertEqualImageDim(mergedImg,srcImg2);
+  BandSelectProcess bandselect=new BandSelectProcess();
+  GridCoverage2D selected1=bandselect.execute(merged,new int[]{0},null);
+  GridCoverage2D selected2=bandselect.execute(merged,new int[]{1},null);
+  assertEquals(1,selected1.getNumSampleDimensions());
+  assertEquals(1,selected2.getNumSampleDimensions());
+  assertEqualBBOX(mergedEnv,selected1.getEnvelope2D());
+  assertEqualBBOX(mergedEnv,selected2.getEnvelope2D());
+  assertEqualImageDim(mergedImg,selected1.getRenderedImage());
+  assertEqualImageDim(mergedImg,selected2.getRenderedImage());
+  ensureEqualImages(srcImg1,selected1.getRenderedImage());
+  ensureEqualImages(srcImg2,selected2.getRenderedImage());
+}
