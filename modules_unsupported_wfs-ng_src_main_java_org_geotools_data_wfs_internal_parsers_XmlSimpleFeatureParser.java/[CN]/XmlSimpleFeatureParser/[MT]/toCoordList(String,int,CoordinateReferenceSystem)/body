@@ -1,0 +1,40 @@
+{
+  rawTextValue=rawTextValue.trim();
+  rawTextValue=rawTextValue.replaceAll("\n"," ");
+  rawTextValue=rawTextValue.replaceAll("\r"," ");
+  String[] split=rawTextValue.trim().split(" +");
+  final int ordinatesLength=split.length;
+  if (ordinatesLength % dimension != 0) {
+    throw new IllegalArgumentException("Number of ordinates (" + ordinatesLength + ") does not match crs dimension: "+ dimension);
+  }
+  boolean invertXY=WFSConfig.invertAxisNeeded(axisOrder,crs);
+  final int nCoords=ordinatesLength / dimension;
+  Coordinate[] coords=new Coordinate[nCoords];
+  Coordinate coord;
+  int currCoordIdx=0;
+  double x, y, z;
+  for (int i=0; i < ordinatesLength; i+=dimension) {
+    x=Double.valueOf(split[i]);
+    y=Double.valueOf(split[i + 1]);
+    if (dimension > 2) {
+      z=Double.valueOf(split[i + 2]);
+      if (invertXY) {
+        coord=new Coordinate(y,x,z);
+      }
+ else {
+        coord=new Coordinate(x,y,z);
+      }
+    }
+ else {
+      if (invertXY) {
+        coord=new Coordinate(y,x);
+      }
+ else {
+        coord=new Coordinate(x,y);
+      }
+    }
+    coords[currCoordIdx]=coord;
+    currCoordIdx++;
+  }
+  return coords;
+}

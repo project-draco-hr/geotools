@@ -1,0 +1,50 @@
+{
+  if (geom instanceof Point) {
+    Point point=(Point)geom;
+    Coordinate inverted=invertCoordinate(point.getCoordinate());
+    return geometryFactory.createPoint(inverted);
+  }
+ else   if (geom instanceof LineString) {
+    Coordinate[] inverted=invertCoordinates(geom.getCoordinates());
+    return geometryFactory.createLineString(inverted);
+  }
+ else   if (geom instanceof Polygon) {
+    Polygon polygon=(Polygon)geom;
+    Coordinate[] shellCoordinates=polygon.getExteriorRing().getCoordinates();
+    LinearRing invertedShell=geometryFactory.createLinearRing(invertCoordinates(shellCoordinates));
+    LinearRing[] invertedHoles=new LinearRing[polygon.getNumInteriorRing()];
+    for (int count=0; count < polygon.getNumInteriorRing(); count++) {
+      Coordinate[] holeCoordinates=polygon.getInteriorRingN(count).getCoordinates();
+      invertedHoles[count]=geometryFactory.createLinearRing(invertCoordinates(holeCoordinates));
+    }
+    return geometryFactory.createPolygon(invertedShell,invertedHoles);
+  }
+ else   if (geom instanceof MultiPoint) {
+    return geometryFactory.createMultiPoint(invertCoordinates(geom.getCoordinates()));
+  }
+ else   if (geom instanceof MultiLineString) {
+    MultiLineString multiLineString=(MultiLineString)geom;
+    LineString[] inverted=new LineString[multiLineString.getNumGeometries()];
+    for (int count=0; count < multiLineString.getNumGeometries(); count++) {
+      inverted[count]=(LineString)invertGeometryCoordinates(multiLineString.getGeometryN(count));
+    }
+    return geometryFactory.createMultiLineString(inverted);
+  }
+ else   if (geom instanceof MultiPolygon) {
+    MultiPolygon multiPolygon=(MultiPolygon)geom;
+    Polygon[] inverted=new Polygon[multiPolygon.getNumGeometries()];
+    for (int count=0; count < multiPolygon.getNumGeometries(); count++) {
+      inverted[count]=(Polygon)invertGeometryCoordinates(multiPolygon.getGeometryN(count));
+    }
+    return geometryFactory.createMultiPolygon(inverted);
+  }
+ else   if (geom instanceof GeometryCollection) {
+    GeometryCollection collection=(GeometryCollection)geom;
+    Geometry[] inverted=new Geometry[collection.getNumGeometries()];
+    for (int count=0; count < collection.getNumGeometries(); count++) {
+      inverted[count]=invertGeometryCoordinates(collection.getGeometryN(count));
+    }
+    return geometryFactory.createGeometryCollection(inverted);
+  }
+  throw new IllegalArgumentException("Unknown geometry type: " + geom.getGeometryType());
+}

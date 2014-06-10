@@ -1,0 +1,15 @@
+{
+  if (filter.getExpression2() instanceof Literal) {
+    Literal bboxLiteral=(Literal)filter.getExpression2();
+    if (bboxLiteral.getValue() instanceof BoundingBox) {
+      BoundingBox bounds=(BoundingBox)bboxLiteral.getValue();
+      return ff.bbox(filter.getExpression1(),new ReferencedEnvelope(bounds.getMinY(),bounds.getMaxY(),bounds.getMinX(),bounds.getMaxX(),bounds.getCoordinateReferenceSystem()));
+    }
+ else     if (bboxLiteral.getValue() instanceof Geometry) {
+      Geometry geom=(Geometry)bboxLiteral.getValue();
+      Envelope geomEnvelope=geom.getEnvelopeInternal();
+      return ff.bbox(filter.getExpression1(),new ReferencedEnvelope(geomEnvelope.getMinY(),geomEnvelope.getMaxY(),geomEnvelope.getMinX(),geomEnvelope.getMaxX(),null));
+    }
+  }
+  return filter;
+}
