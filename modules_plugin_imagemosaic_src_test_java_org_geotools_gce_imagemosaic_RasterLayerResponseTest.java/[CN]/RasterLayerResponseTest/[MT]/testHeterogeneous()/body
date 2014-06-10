@@ -1,0 +1,37 @@
+{
+  final URL testMosaic=TestData.url(this,"heterogeneous");
+  ImageMosaicReader reader=null;
+  try {
+    reader=(ImageMosaicReader)new ImageMosaicFormat().getReader(testMosaic,null);
+    final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+    final GeneralEnvelope envelope=reader.getOriginalEnvelope();
+    final Dimension dim=new Dimension();
+    dim.setSize(10,20);
+    final Rectangle rasterArea=((GridEnvelope2D)reader.getOriginalGridRange());
+    rasterArea.setSize(dim);
+    final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+    gg.setValue(new GridGeometry2D(range,envelope));
+    final RasterManager manager=reader.getRasterManager(reader.getGridCoverageNames()[0]);
+    final RasterLayerRequest request=new RasterLayerRequest(new GeneralParameterValue[]{gg},manager);
+    final RasterLayerResponse response=new RasterLayerResponse(request,manager);
+    final Class<?> c=response.getClass();
+    Method method=c.getDeclaredMethod("prepareResponse");
+    method.setAccessible(true);
+    method.invoke(response);
+    Field finalGridToWorldCorner=c.getDeclaredField("finalGridToWorldCorner");
+    finalGridToWorldCorner.setAccessible(true);
+    MathTransform2D transform=(MathTransform2D)finalGridToWorldCorner.get(response);
+    AffineTransform2D affineTransform=(AffineTransform2D)transform;
+    assertEquals(18,XAffineTransform.getScaleX0(affineTransform),DELTA);
+    assertEquals(18,XAffineTransform.getScaleY0(affineTransform),DELTA);
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
