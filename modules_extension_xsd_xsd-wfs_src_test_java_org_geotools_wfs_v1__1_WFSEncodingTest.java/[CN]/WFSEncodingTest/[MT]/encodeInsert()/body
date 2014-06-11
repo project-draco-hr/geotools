@@ -1,0 +1,14 @@
+{
+  WfsFactory wfsfac=WfsFactory.eINSTANCE;
+  FeatureFactory ff=CommonFactoryFinder.getFeatureFactory(null);
+  FeatureTypeFactory ftf=new FeatureTypeFactoryImpl();
+  AttributeDescriptor ad=ftf.createAttributeDescriptor(XSSchema.STRING_TYPE,new NameImpl("dummyAttribute"),0,1,true,null);
+  SimpleFeatureType ft=ftf.createSimpleFeatureType(new NameImpl("dummyFeatureType"),Collections.singletonList(ad),null,false,null,null,null);
+  SimpleFeature feature=ff.createSimpleFeature(new Object[]{"dummyValue"},ft,"dummyId");
+  InsertElementType insert=wfsfac.createInsertElementType();
+  insert.getFeature().add(feature);
+  Encoder encoder=new Encoder(new WFSConfiguration());
+  Document doc=encoder.encodeAsDOM(insert,WFS.Insert);
+  XMLAssert.assertXpathEvaluatesTo("dummyId","//wfs:Insert/wfs:dummyFeatureType/@gml:id",doc);
+  XMLAssert.assertXpathEvaluatesTo("dummyValue","//wfs:Insert/wfs:dummyFeatureType/wfs:dummyAttribute",doc);
+}

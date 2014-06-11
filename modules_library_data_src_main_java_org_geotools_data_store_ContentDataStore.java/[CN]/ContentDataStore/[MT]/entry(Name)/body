@@ -2,7 +2,16 @@
   ContentEntry entry=null;
   if (!entries.containsKey(name)) {
     List<Name> typeNames=createTypeNames();
-    if (typeNames.contains(name)) {
+    boolean found=typeNames.contains(name);
+    if (!found && name.getNamespaceURI() == null) {
+      for (      Name typeName : typeNames) {
+        if (typeName.getLocalPart().equals(name.getLocalPart())) {
+          name=typeName;
+          found=true;
+        }
+      }
+    }
+    if (found) {
 synchronized (this) {
         if (!entries.containsKey(name)) {
           entry=new ContentEntry(this,name);

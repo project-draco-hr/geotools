@@ -1,5 +1,4 @@
 {
-  final OperationType operationMetadata=getOperationMetadata(operation);
   String parameterName;
   final Version serviceVersion=getServiceVersion();
   final boolean wfs1_0=Versions.v1_0_0.equals(serviceVersion);
@@ -14,11 +13,18 @@ case GET_FEATURE_WITH_LOCK:
 parameterName=wfs1_0 ? "ResultFormat" : "outputFormat";
 break;
 case TRANSACTION:
-parameterName=wfs1_0 ? "" : "inputFormat";
+if (wfs1_0) {
+operation=GET_FEATURE;
+parameterName="ResultFormat";
+}
+ else {
+parameterName="inputFormat";
+}
 break;
 default :
 throw new UnsupportedOperationException("not yet implemented for " + operation);
 }
+final OperationType operationMetadata=getOperationMetadata(operation);
 Set<String> serverSupportedFormats;
 serverSupportedFormats=findParameters(operationMetadata,parameterName);
 return serverSupportedFormats;
