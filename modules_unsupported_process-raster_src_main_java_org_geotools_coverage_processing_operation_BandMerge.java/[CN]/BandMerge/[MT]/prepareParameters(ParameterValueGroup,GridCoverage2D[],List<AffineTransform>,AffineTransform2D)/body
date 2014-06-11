@@ -1,0 +1,24 @@
+{
+  final ImagingParameters copy=(ImagingParameters)descriptor.createValue();
+  final ParameterBlockJAI block=(ParameterBlockJAI)copy.parameters;
+  Range[] nodata=new Range[sources.length];
+  int dataType=sources[0].getRenderedImage().getSampleModel().getDataType();
+  for (int i=0; i < sources.length; i++) {
+    GridCoverage2D cov=sources[i];
+    block.setSource(cov.getRenderedImage(),i);
+    int dataTypeCov=cov.getRenderedImage().getSampleModel().getDataType();
+    if (dataType != dataTypeCov) {
+      throw new IllegalArgumentException("Input Coverages must have the same data type");
+    }
+    double nodataValue=CoverageUtilities.getBackgroundValues(cov)[0];
+    nodata[i]=createNoDataRange(cov,nodataValue,dataType);
+  }
+  block.setParameter("noData",nodata);
+  if (parameters.parameter(GEOMETRY).getValue() != null) {
+    ROI roi=new ROIGeometry(JTS.transform((Geometry)parameters.parameter(GEOMETRY).getValue(),crsToGRID));
+    block.setParameter("roi",roi);
+  }
+  block.setParameter("transformations",tr);
+  block.setParameter("destinationNoData",nodata[getIndex(parameters)].getMin().doubleValue());
+  return block;
+}

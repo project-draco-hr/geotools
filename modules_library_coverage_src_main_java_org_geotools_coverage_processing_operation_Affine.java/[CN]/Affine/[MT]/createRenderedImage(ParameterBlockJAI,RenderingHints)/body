@@ -1,0 +1,20 @@
+{
+  final RenderedImage source=(RenderedImage)parameters.getSource(0);
+  if (hints == null) {
+    hints=GeoTools.getDefaultHints().clone();
+  }
+  final Interpolation interpolation;
+  if (parameters.getObjectParameter("interpolation") != null) {
+    interpolation=(Interpolation)parameters.getObjectParameter("interpolation");
+  }
+ else   if (hints.get(JAI.KEY_INTERPOLATION) != null) {
+    interpolation=(Interpolation)hints.get(JAI.KEY_INTERPOLATION);
+  }
+ else {
+    interpolation=null;
+  }
+  final ImageWorker worker=new ImageWorker(source);
+  worker.setRenderingHints(hints);
+  worker.affine((AffineTransform)parameters.getObjectParameter("transform"),interpolation,(double[])parameters.getObjectParameter("backgroundValues"));
+  return worker.getRenderedImage();
+}

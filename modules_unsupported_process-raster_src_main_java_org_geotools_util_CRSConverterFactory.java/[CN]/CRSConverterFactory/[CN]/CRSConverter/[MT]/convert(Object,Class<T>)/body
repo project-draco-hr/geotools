@@ -1,0 +1,45 @@
+{
+  if (source == null || target == null) {
+    return null;
+  }
+  if ((source instanceof String) && CoordinateReferenceSystem.class.isAssignableFrom(target)) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("CRSConverter: Converting object of class " + source.getClass().getCanonicalName() + " to "+ target.getCanonicalName());
+    }
+    String input=(String)source;
+    input=input.trim();
+    try {
+      return (T)CRS.decode(input);
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+    try {
+      return (T)CRS.parseWKT(input);
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  if ((source instanceof CoordinateReferenceSystem) && String.class.isAssignableFrom(target)) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("CRSConverter: Converting object of class " + source.getClass().getCanonicalName() + " to "+ target.getCanonicalName());
+    }
+    try {
+      return (T)((CoordinateReferenceSystem)source).toWKT();
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
+      }
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("CRSConverter: Unable to convert object of class " + source.getClass().getCanonicalName() + " to "+ target.getCanonicalName());
+  }
+  return null;
+}
