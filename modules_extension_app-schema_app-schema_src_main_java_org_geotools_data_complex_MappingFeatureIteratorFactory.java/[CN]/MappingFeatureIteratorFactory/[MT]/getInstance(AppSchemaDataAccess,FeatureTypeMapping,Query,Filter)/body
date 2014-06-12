@@ -16,7 +16,14 @@
   if (isJoining) {
     if (!(query instanceof JoiningQuery)) {
       boolean hasIdColumn=!Expression.NIL.equals(mapping.getFeatureIdExpression()) && !(mapping.getFeatureIdExpression() instanceof Literal);
-      query=new JoiningQuery(query,hasIdColumn);
+      query=new JoiningQuery(query);
+      if (hasIdColumn) {
+        FilterAttributeExtractor extractor=new FilterAttributeExtractor();
+        mapping.getFeatureIdExpression().accept(extractor,null);
+        for (        String pn : extractor.getAttributeNameSet()) {
+          ((JoiningQuery)query).addId(pn);
+        }
+      }
     }
   }
   IMappingFeatureIterator iterator;
@@ -53,7 +60,9 @@
       int maxFeatures=Query.DEFAULT_MAX;
       if (filter != null && filter != Filter.INCLUDE) {
         maxFeatures=query.getMaxFeatures();
-        removeQueryLimitIfDenormalised=true;
+      }
+      if (isJoining) {
+        ((JoiningQuery)query).setDenormalised(mapping.isDenormalised());
       }
       if (isJoining && isListFilter != null) {
         ((JoiningQuery)query).setSubset(true);
@@ -62,7 +71,7 @@
         }
       }
       boolean isFiltered=!isJoining && preFilter != null && preFilter != Filter.INCLUDE;
-      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered,removeQueryLimitIfDenormalised);
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered);
       if (isListFilter == null) {
         if (filter != null && filter != Filter.INCLUDE) {
           iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
