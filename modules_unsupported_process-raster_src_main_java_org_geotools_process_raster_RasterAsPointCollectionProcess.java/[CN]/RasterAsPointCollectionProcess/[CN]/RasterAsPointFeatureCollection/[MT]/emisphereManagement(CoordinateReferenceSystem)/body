@@ -1,0 +1,28 @@
+{
+  if (emisphere) {
+    if (!CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,coverageCRS)) {
+      try {
+        final MathTransform transform=CRS.findMathTransform(coverageCRS,DefaultGeographicCRS.WGS84,true);
+        if (!transform.isIdentity()) {
+          this.transformToWGS84=transform;
+        }
+        final CoordinateSystem coordinateSystem=coverageCRS.getCoordinateSystem();
+        final int dimension=coordinateSystem.getDimension();
+        for (int i=0; i < dimension; i++) {
+          CoordinateSystemAxis axis=coordinateSystem.getAxis(i);
+          if (axis.getDirection().absolute().compareTo(AxisDirection.NORTH) == 0) {
+            this.northDimension=i;
+            break;
+          }
+        }
+        if (northDimension < 0) {
+          final IOException ioe=new IOException("Unable to find nort dimension in the coverage CRS+ " + coverageCRS.toWKT());
+          throw ioe;
+        }
+      }
+ catch (      FactoryException e) {
+        throw new IOException(e);
+      }
+    }
+  }
+}

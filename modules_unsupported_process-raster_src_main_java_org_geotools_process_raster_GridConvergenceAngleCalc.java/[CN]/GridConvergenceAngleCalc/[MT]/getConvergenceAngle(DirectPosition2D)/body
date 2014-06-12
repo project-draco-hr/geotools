@@ -1,0 +1,17 @@
+{
+  CoordinateReferenceSystem positionCRS=position.getCoordinateReferenceSystem();
+  if (!positionCRS.equals(crs)) {
+    throw new Exception("Position CRS does not match Calculator CRS");
+  }
+  CoordinateSystemAxis upAxis=crs.getCoordinateSystem().getAxis(upAxisDimension);
+  double upAxisMax=upAxis.getMaximumValue();
+  double startValueUp=position.getOrdinate(upAxisDimension);
+  if ((startValueUp + 1) > upAxisMax) {
+    position.setOrdinate(upAxisDimension,position.getOrdinate(upAxisDimension) - 1);
+  }
+  geoCalc.setStartingPosition(position);
+  DirectPosition2D endingPosition=new DirectPosition2D((DirectPosition)position);
+  endingPosition.setOrdinate(upAxisDimension,position.getOrdinate(upAxisDimension) + 1);
+  geoCalc.setDestinationPosition(endingPosition);
+  return geoCalc.getAzimuth();
+}

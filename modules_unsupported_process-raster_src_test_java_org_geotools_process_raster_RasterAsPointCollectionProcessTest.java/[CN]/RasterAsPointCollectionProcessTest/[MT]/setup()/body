@@ -1,0 +1,15 @@
+{
+  File tiff=TestData.file(RasterAsPointCollectionProcessTest.class,"sample.tif");
+  AbstractGridFormat format=GridFormatFinder.findFormat(tiff);
+  GridCoverageReader reader=format.getReader(tiff);
+  inputCoverage=(GridCoverage2D)reader.read(null);
+  final CoverageProcessor processor=CoverageProcessor.getInstance(GeoTools.getDefaultHints());
+  final ParameterValueGroup param=processor.getOperation("Resample").getParameters();
+  param.parameter("Source").setValue(inputCoverage);
+  param.parameter("CoordinateReferenceSystem").setValue(DefaultGeographicCRS.WGS84);
+  coverage=(GridCoverage2D)processor.doOperation(param);
+  reader.dispose();
+  pixelNumber=coverage.getRenderedImage().getHeight() * coverage.getRenderedImage().getWidth();
+  process=new RasterAsPointCollectionProcess();
+  bandName=coverage.getSampleDimension(0).getDescription().toString();
+}

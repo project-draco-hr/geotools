@@ -1,0 +1,32 @@
+{
+  if (gc2d == null) {
+    throw new ProcessException("Invalid input, source grid coverage should be not null");
+  }
+  GridEnvelope2D gridEnv=gc2d.getGridGeometry().getGridRange2D();
+  double coverageWidth=gridEnv.getWidth();
+  double coverageHeight=gridEnv.getHeight();
+  if (scaleFactor != null && (Math.abs(coverageWidth * (scaleFactor - 1f)) >= 1 || Math.abs(coverageHeight * (scaleFactor - 1f)) >= 1)) {
+    Interpolation interp=interpolation != null ? interpolation : new InterpolationNearest();
+    double scaleX=scaleFactor;
+    double scaleY=scaleFactor;
+    final RenderedImage imageToBescaled=gc2d.getRenderedImage();
+    if (imageToBescaled != null) {
+      final SampleModel sampleModel=imageToBescaled.getSampleModel();
+      final int height=sampleModel.getHeight();
+      final int width=sampleModel.getWidth();
+      if (height * scaleFactor < 1) {
+        scaleY=1d / height;
+      }
+      if (width * scaleFactor < 1) {
+        scaleX=1d / width;
+      }
+    }
+    gc2d=new AffineProcess().execute(gc2d,scaleX,scaleY,null,null,null,null,null,interp);
+  }
+  try {
+    return new RasterAsPointFeatureCollection(gc2d,emisphere,targetCRS);
+  }
+ catch (  IOException e) {
+    throw new ProcessException("Unable to wrap provided grid coverage",e);
+  }
+}

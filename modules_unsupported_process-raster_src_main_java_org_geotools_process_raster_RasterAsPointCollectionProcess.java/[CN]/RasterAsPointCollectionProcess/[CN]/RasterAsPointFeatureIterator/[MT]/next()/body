@@ -1,27 +1,31 @@
 {
-  if (!hasNext())   throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
-  if (iterator.finishedPixels())   throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
-  if (iterator.finishedLines())   throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  if (!hasNext()) {
+    throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  }
+  if (iterator.finishedPixels()) {
+    throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  }
+  if (iterator.finishedLines()) {
+    throw new NoSuchElementException("Index beyond size:" + index + ">"+ size);
+  }
   final int id=index;
-  coord.x=0.5 + fc.rasterBounds.x + index % fc.rasterBounds.width;
-  coord.y=0.5 + fc.rasterBounds.y + index / fc.rasterBounds.width;
-  final Point point=RasterAsPointFeatureCollection.geometryFactory.createPoint(coord);
+  sourceCoordinate.x=0.5 + fc.rasterBounds.x + index % fc.rasterBounds.width;
+  sourceCoordinate.y=0.5 + fc.rasterBounds.y + index / fc.rasterBounds.width;
+  Point point=RasterAsPointFeatureCollection.geometryFactory.createPoint(sourceCoordinate);
   try {
-    fb.add(JTS.transform(point,fc.mt2D));
+    point=(Point)JTS.transform(point,fc.mt2D);
+    fb.add(point);
+    iterator.getPixel(temp);
+    for (    double d : temp) {
+      fb.add(d);
+    }
+    emisphereAttributeManagement(point);
+    gridConvergenceAngleManagement(point);
   }
- catch (  MismatchedDimensionException e) {
+ catch (  Exception e) {
     final NoSuchElementException nse=new NoSuchElementException();
     nse.initCause(e);
     throw nse;
-  }
-catch (  TransformException e) {
-    final NoSuchElementException nse=new NoSuchElementException();
-    nse.initCause(e);
-    throw nse;
-  }
-  iterator.getPixel(temp);
-  for (  double d : temp) {
-    fb.add(d);
   }
   if (iterator.nextPixelDone()) {
     if (!iterator.nextLineDone())     iterator.startPixels();
