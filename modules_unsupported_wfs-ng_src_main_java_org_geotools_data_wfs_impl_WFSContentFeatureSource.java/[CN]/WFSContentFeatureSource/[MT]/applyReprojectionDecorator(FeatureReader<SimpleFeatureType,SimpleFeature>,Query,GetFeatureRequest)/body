@@ -1,0 +1,24 @@
+{
+  FeatureReader<SimpleFeatureType,SimpleFeature> tmp=reader;
+  if (query.getCoordinateSystem() != null && !query.getCoordinateSystem().equals(reader.getFeatureType().getCoordinateReferenceSystem())) {
+    if (request.getSrsName() != null) {
+      try {
+        reader=new ForceCoordinateSystemFeatureReader(reader,query.getCoordinateSystem());
+      }
+ catch (      SchemaException e) {
+        LOGGER.warning(e.toString());
+        reader=tmp;
+      }
+    }
+ else {
+      try {
+        reader=new ReprojectFeatureReader(reader,query.getCoordinateSystem());
+      }
+ catch (      Exception e) {
+        LOGGER.warning(e.toString());
+        reader=tmp;
+      }
+    }
+  }
+  return reader;
+}
