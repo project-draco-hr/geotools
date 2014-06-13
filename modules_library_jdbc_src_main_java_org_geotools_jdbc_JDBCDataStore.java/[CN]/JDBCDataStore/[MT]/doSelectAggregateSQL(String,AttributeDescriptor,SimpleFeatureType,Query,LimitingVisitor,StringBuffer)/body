@@ -1,7 +1,8 @@
 {
   JoinInfo join=!query.getJoins().isEmpty() ? JoinInfo.create(query,featureType,this) : null;
   boolean queryLimitOffset=checkLimitOffset(query.getStartIndex(),query.getMaxFeatures());
-  if (queryLimitOffset) {
+  boolean visitorLimitOffset=visitor == null ? false : checkLimitOffset(visitor.getStartIndex(),visitor.getMaxFeatures());
+  if (queryLimitOffset && !visitorLimitOffset) {
     if (join != null) {
       sql.append("SELECT ");
       dialect.encodeColumnName(null,join.getPrimaryAlias(),sql);
@@ -36,7 +37,6 @@
   if (dialect.isAggregatedSortSupported(function)) {
     sort(featureType,query.getSortBy(),null,sql);
   }
-  boolean visitorLimitOffset=visitor == null ? false : checkLimitOffset(visitor.getStartIndex(),visitor.getMaxFeatures());
   if (visitorLimitOffset) {
     applyLimitOffset(sql,visitor.getStartIndex(),visitor.getMaxFeatures());
   }
