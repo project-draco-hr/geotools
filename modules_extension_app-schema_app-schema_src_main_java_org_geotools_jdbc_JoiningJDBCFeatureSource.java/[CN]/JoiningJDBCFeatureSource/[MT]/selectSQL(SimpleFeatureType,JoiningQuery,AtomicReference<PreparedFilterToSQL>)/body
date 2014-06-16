@@ -5,17 +5,15 @@
   String lastTypeName=featureType.getTypeName();
   String curTypeName=lastTypeName;
   String[] aliases=null;
+  tableNames.add(lastTypeName);
+  String alias=null;
   if (query.getQueryJoins() != null) {
     aliases=new String[query.getQueryJoins().size()];
     for (int i=0; i < query.getQueryJoins().size(); i++) {
       JoiningQuery.QueryJoin join=query.getQueryJoins().get(i);
       fromclause.append(" INNER JOIN ");
-      String alias=null;
       FilterToSQL toSQL1=createFilterToSQL(getDataStore().getSchema(lastTypeName));
       FilterToSQL toSQL2=createFilterToSQL(getDataStore().getSchema(join.getJoiningTypeName()));
-      String last_alias=createAlias(lastTypeName,tableNames);
-      tableNames.add(last_alias);
-      curTypeName=last_alias;
       if (tableNames.contains(join.getJoiningTypeName())) {
         alias=createAlias(join.getJoiningTypeName(),tableNames);
         aliases[i]=alias;
@@ -194,19 +192,33 @@
           ids=pkColumnNames;
         }
         for (        String id : ids) {
-          sql.append(" INNER JOIN ");
-          String alias=createAlias(featureType.getTypeName(),tableNames);
-          tableNames.add(alias);
-          getDataStore().dialect.encodeTableName(alias,sql);
-          sql.append(" ON ( ");
-          sql.append(id);
-          sql.append(" NOT IN ");
+          sql.append(" INNER JOIN (");
           StringBuffer topIds=new StringBuffer();
-          topIds.append("SELECT DISTINCT ").append(id);
-          topIds.append(" FROM ").append(featureType.getTypeName());
+          topIds.append("SELECT DISTINCT ");
+          encodeColumnName(id,featureType.getTypeName(),topIds,query.getHints());
+          topIds.append(" FROM ");
+          getDataStore().encodeTableName(featureType.getTypeName(),topIds,query.getHints());
           getDataStore().dialect.applyLimitOffset(topIds,maxFeatures,startIndex);
           sql.append(topIds);
+          sql.append(") ");
+          alias=createAlias(featureType.getTypeName(),tableNames);
+          tableNames.add(alias);
+          sql.append("\"");
+          sql.append(alias);
+          sql.append("\"");
+          sql.append(" ON (");
+          encodeColumnName(id,featureType.getTypeName(),sql,query.getHints());
+          sql.append(" = ");
+          sql.append("\"");
+          sql.append(alias);
+          sql.append("\"");
+          sql.append(".");
+          getDataStore().dialect.encodeColumnName(null,id,sql);
           sql.append(" ) ");
+        }
+        if (!ids.isEmpty()) {
+          query.setStartIndex(0);
+          query.setMaxFeatures(Query.DEFAULT_MAX);
         }
       }
     }
