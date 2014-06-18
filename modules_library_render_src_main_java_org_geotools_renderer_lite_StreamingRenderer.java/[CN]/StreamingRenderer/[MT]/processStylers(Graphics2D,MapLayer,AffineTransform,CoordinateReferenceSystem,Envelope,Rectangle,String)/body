@@ -32,7 +32,16 @@
         GridGeometry2D gridGeometry=getRasterGridGeometry(destinationCrs,sourceCrs);
         RenderingTransformationHelper helper=new RenderingTransformationHelper(){
           @Override protected GridCoverage2D readCoverage(          GridCoverage2DReader reader,          Object params,          GridGeometry2D readGG) throws IOException {
-            return StreamingRenderer.this.readCoverage(reader,params,readGG);
+            GeneralParameterValue[] readParams=(GeneralParameterValue[])params;
+            Interpolation interpolation=getRenderingInterpolation();
+            GridCoverageReaderHelper helper;
+            try {
+              helper=new GridCoverageReaderHelper(reader,readGG.getGridRange2D(),ReferencedEnvelope.reference(readGG.getEnvelope2D()),interpolation);
+              return helper.readCoverage(readParams);
+            }
+ catch (            InvalidGridGeometryException|FactoryException e) {
+              throw new IOException("Failure reading the coverage",e);
+            }
           }
         }
 ;

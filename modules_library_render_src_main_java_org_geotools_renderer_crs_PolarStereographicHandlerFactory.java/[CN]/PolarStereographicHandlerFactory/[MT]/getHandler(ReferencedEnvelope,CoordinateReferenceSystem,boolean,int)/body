@@ -32,7 +32,23 @@
  else {
       validArea=new ReferencedEnvelope(-Double.MAX_VALUE,Double.MAX_VALUE,-90,0,DefaultGeographicCRS.WGS84);
     }
-    return new ProjectionHandler(sourceCrs,validArea,renderingEnvelope);
+    return new ProjectionHandler(sourceCrs,validArea,renderingEnvelope){
+      @Override public List<ReferencedEnvelope> getQueryEnvelopes() throws TransformException, FactoryException {
+        if (renderingEnvelope.getMaxY() < 0 && renderingEnvelope.getMinX() < 0 && renderingEnvelope.getMaxX() > 0) {
+          ReferencedEnvelope e1=new ReferencedEnvelope(renderingEnvelope.getMinX(),-1e-6,renderingEnvelope.getMinY(),renderingEnvelope.getMaxY(),renderingEnvelope.getCoordinateReferenceSystem());
+          ReferencedEnvelope e2=new ReferencedEnvelope(1e-6,renderingEnvelope.getMaxX(),renderingEnvelope.getMinY(),renderingEnvelope.getMaxY(),renderingEnvelope.getCoordinateReferenceSystem());
+          List<ReferencedEnvelope> envelopes=new ArrayList<ReferencedEnvelope>();
+          envelopes.add(e1);
+          envelopes.add(e2);
+          reprojectEnvelopes(sourceCRS,envelopes);
+          return envelopes;
+        }
+ else {
+          return super.getQueryEnvelopes();
+        }
+      }
+    }
+;
   }
   return null;
 }

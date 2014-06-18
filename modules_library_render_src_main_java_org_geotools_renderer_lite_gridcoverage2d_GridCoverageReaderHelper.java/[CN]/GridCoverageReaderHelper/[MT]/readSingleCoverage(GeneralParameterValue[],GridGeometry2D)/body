@@ -1,0 +1,57 @@
+{
+  boolean sameCRS;
+  ReferencedEnvelope requestedEnvelope=ReferencedEnvelope.reference(gg.getEnvelope2D());
+  try {
+    final CoordinateReferenceSystem coverageCRS=reader.getCoordinateReferenceSystem();
+    final CoordinateReferenceSystem requestCRS=gg.getCoordinateReferenceSystem();
+    final ReferencedEnvelope coverageEnvelope=ReferencedEnvelope.reference(reader.getOriginalEnvelope());
+    final ReferencedEnvelope readEnvelope=requestedEnvelope;
+    sameCRS=CRS.equalsIgnoreMetadata(coverageCRS,requestCRS);
+    if (sameCRS) {
+      if (!coverageEnvelope.intersects((BoundingBox)readEnvelope)) {
+        return null;
+      }
+    }
+ else {
+      ReferencedEnvelope dataEnvelopeWGS84=coverageEnvelope.transform(DefaultGeographicCRS.WGS84,true);
+      ReferencedEnvelope requestEnvelopeWGS84=readEnvelope.transform(DefaultGeographicCRS.WGS84,true);
+      if (!dataEnvelopeWGS84.intersects((BoundingBox)requestEnvelopeWGS84)) {
+        return null;
+      }
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.WARNING,"Failed to compare data and request envelopes, reading the whole mapExtent instead",e);
+  }
+  final Parameter<GridGeometry2D> readGGParam=(Parameter<GridGeometry2D>)AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  readGGParam.setValue(new GridGeometry2D(gg));
+  GridCoverage2D coverage=null;
+  if (readParams != null) {
+    final int length=readParams.length;
+    if (length > 0) {
+      final String name=AbstractGridFormat.READ_GRIDGEOMETRY2D.getName().toString();
+      int i=0;
+      for (; i < length; i++) {
+        if (readParams[i].getDescriptor().getName().toString().equalsIgnoreCase(name))         break;
+      }
+      if (i < length) {
+        readParams[i]=readGGParam;
+        coverage=reader.read(readParams);
+      }
+ else {
+        GeneralParameterValue[] readParams2=new GeneralParameterValue[length + 1];
+        System.arraycopy(readParams,0,readParams2,0,length);
+        readParams2[length]=readGGParam;
+        coverage=reader.read(readParams2);
+      }
+    }
+ else     coverage=reader.read(new GeneralParameterValue[]{readGGParam});
+  }
+ else   if (gg != null) {
+    coverage=reader.read(new GeneralParameterValue[]{readGGParam});
+  }
+ else {
+    coverage=reader.read(null);
+  }
+  return coverage;
+}

@@ -1,0 +1,15 @@
+{
+  CoordinateReferenceSystem crs=CRS.decode("EPSG:32632",true);
+  ReferencedEnvelope mapExtent=new ReferencedEnvelope(-1.5e7,1.5e7,0,1e6,crs);
+  GridCoverageReaderHelper helper=new GridCoverageReaderHelper(reader,new Rectangle(400,200),mapExtent,Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+  GridCoverage2D coverage=helper.readCoverage(null);
+  Envelope2D envelope=coverage.getEnvelope2D();
+  assertTrue(envelope.getMinX() < -100);
+  assertTrue(envelope.getMaxX() > 100);
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(mapExtent,reader.getCoordinateReferenceSystem(),true);
+  List<GridCoverage2D> coverages=helper.readCoverages(null,handler);
+  assertEquals(1,coverages.size());
+  envelope=coverages.get(0).getEnvelope2D();
+  assertEquals(-36,envelope.getMinX(),EPS);
+  assertEquals(54,envelope.getMaxX(),EPS);
+}

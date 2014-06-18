@@ -1,17 +1,23 @@
 {
   try {
+    GridGeometry2D gridGeometry;
     if (needsReprojection) {
       final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(computedRasterArea),computedBBox);
       computedGridToWorld=geMapper.createAffineTransform();
-      computedResolution=computeClassicResolution();
       if (accurateResolution) {
-        computedResolution=computeAccurateResolution();
+        gridGeometry=requestedGridGeometry;
+      }
+ else {
+        gridGeometry=new GridGeometry2D(new GridEnvelope2D(computedRasterArea),computedBBox);
       }
     }
  else {
+      gridGeometry=requestedGridGeometry;
       computedGridToWorld=requestedGridToWorld;
-      computedResolution=new double[]{XAffineTransform.getScaleX0(requestedGridToWorld),XAffineTransform.getScaleY0(requestedGridToWorld)};
     }
+    ReadResolutionCalculator calculator=new ReadResolutionCalculator(gridGeometry,coverageProperties.crs2D,coverageProperties.fullResolution);
+    calculator.setAccurateResolution(accurateResolution);
+    computedResolution=calculator.computeRequestedResolution(ReferencedEnvelope.reference(computedBBox));
     return;
   }
  catch (  Throwable e) {

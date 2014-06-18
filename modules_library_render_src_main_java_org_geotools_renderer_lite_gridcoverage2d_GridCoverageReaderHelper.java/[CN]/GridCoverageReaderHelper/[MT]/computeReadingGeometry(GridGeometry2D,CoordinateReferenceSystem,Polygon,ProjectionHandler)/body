@@ -1,0 +1,29 @@
+{
+  GridGeometry2D readingGridGeometry;
+  MathTransform2D crsToGrid2D=gg.getCRSToGrid2D();
+  MathTransform2D gridToCRS2D=gg.getGridToCRS2D();
+  if (sameCRS) {
+    Envelope gridEnvelope=JTS.transform(polygon,crsToGrid2D).getEnvelopeInternal();
+    GridEnvelope2D gridRange=new GridEnvelope2D((int)gridEnvelope.getMinX(),(int)gridEnvelope.getMinY(),(int)gridEnvelope.getWidth(),(int)gridEnvelope.getHeight());
+    readingGridGeometry=new GridGeometry2D(gridRange,gridToCRS2D,readerCRS);
+  }
+ else {
+    ReferencedEnvelope readEnvelope=new ReferencedEnvelope(polygon.getEnvelopeInternal(),readerCRS);
+    ReferencedEnvelope reducedEnvelope=reduceEnvelope(readEnvelope,handler);
+    if (reducedEnvelope == null) {
+      return null;
+    }
+    ReferencedEnvelope reducedEnvelopeInRequestedCRS=reducedEnvelope.transform(requestedGridGeometry.getCoordinateReferenceSystem(),true);
+    ReferencedEnvelope gridEnvelope=ReferencedEnvelope.reference(CRS.transform(crsToGrid2D,reducedEnvelopeInRequestedCRS));
+    GridEnvelope2D readingGridRange=new GridEnvelope2D((int)gridEnvelope.getMinX(),(int)gridEnvelope.getMinY(),(int)gridEnvelope.getWidth(),(int)gridEnvelope.getHeight());
+    GridGeometry2D localGridGeometry=new GridGeometry2D(readingGridRange,gridToCRS2D,mapExtent.getCoordinateReferenceSystem());
+    ReadResolutionCalculator calculator=new ReadResolutionCalculator(localGridGeometry,readerCRS,reader.getResolutionLevels()[0]);
+    calculator.setAccurateResolution(true);
+    double[] readResolution=calculator.computeRequestedResolution(reducedEnvelope);
+    int width=(int)Math.max(1,Math.round(readEnvelope.getWidth() / Math.abs(readResolution[0])));
+    int height=(int)Math.max(1,Math.round(readEnvelope.getHeight() / Math.abs(readResolution[1])));
+    GridEnvelope2D gridRange=new GridEnvelope2D(0,0,width,height);
+    readingGridGeometry=new GridGeometry2D(gridRange,readEnvelope);
+  }
+  return readingGridGeometry;
+}

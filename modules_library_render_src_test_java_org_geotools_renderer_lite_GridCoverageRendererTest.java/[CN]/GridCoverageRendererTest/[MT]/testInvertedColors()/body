@@ -1,0 +1,15 @@
+{
+  MapContent content=new MapContent();
+  content.getViewport().setBounds(new ReferencedEnvelope(-179.9997834892,180.00025801626,-89.999828389438,270.00021311603,DefaultGeographicCRS.WGS84));
+  RasterSymbolizer rs=buildRainColorMap();
+  final Style style=new StyleBuilder().createStyle(rs);
+  content.addLayer(new GridReaderLayer(rainReader,style));
+  final StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setMapContent(content);
+  Map<Object,Object> rendererParams=new HashMap<Object,Object>();
+  rendererParams.put(StreamingRenderer.ADVANCED_PROJECTION_HANDLING_KEY,true);
+  rendererParams.put(StreamingRenderer.CONTINUOUS_MAP_WRAPPING,true);
+  renderer.setRendererHints(rendererParams);
+  BufferedImage image=RendererBaseTest.showRender("testGridCoverageReprojection",renderer,1000,content.getViewport().getBounds());
+  ImageAssert.assertEquals(new File("src/test/resources/org/geotools/renderer/lite/inverted.png"),image,1000);
+}

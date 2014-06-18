@@ -8,28 +8,21 @@
         final Object grid=gridPropertyName.evaluate(drawMe.content);
         if (grid instanceof GridCoverage2D) {
           coverage=(GridCoverage2D)grid;
-          disposeCoverage=grid instanceof DisposableGridCoverage;
+          if (coverage != null) {
+            disposeCoverage=grid instanceof DisposableGridCoverage;
+            requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,(RasterSymbolizer)symbolizer,destinationCrs,at));
+            paintCommands++;
+          }
         }
  else         if (grid instanceof GridCoverage2DReader) {
-          final Object params=paramsPropertyName.evaluate(drawMe.content);
+          final GeneralParameterValue[] params=(GeneralParameterValue[])paramsPropertyName.evaluate(drawMe.content);
           GridCoverage2DReader reader=(GridCoverage2DReader)grid;
-          CoordinateReferenceSystem sourceCRS=reader.getCoordinateReferenceSystem();
-          GridGeometry2D readGG=getRasterGridGeometry(destinationCrs,sourceCRS);
-          coverage=readCoverage(reader,params,readGG);
-          disposeCoverage=true;
+          requests.put(new RenderCoverageReaderRequest(graphics,reader,params,(RasterSymbolizer)symbolizer,destinationCrs,at));
         }
       }
  catch (      IllegalArgumentException e) {
         LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
         fireErrorEvent(e);
-      }
-catch (      IOException e) {
-        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
-        fireErrorEvent(e);
-      }
-      if (coverage != null) {
-        requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,(RasterSymbolizer)symbolizer,destinationCrs,at));
-        paintCommands++;
       }
     }
  else {

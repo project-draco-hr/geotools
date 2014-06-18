@@ -1,0 +1,12 @@
+{
+  CoordinateReferenceSystem crs=CRS.decode("EPSG:32632",true);
+  ReferencedEnvelope mapExtent=new ReferencedEnvelope(-6e6,6e6,0,5.3e6,crs);
+  Rectangle screenSize=new Rectangle(400,(int)(mapExtent.getHeight() / mapExtent.getWidth() * 400));
+  AffineTransform w2s=RendererUtilities.worldToScreenTransform(mapExtent,screenSize);
+  GridCoverageRenderer renderer=new GridCoverageRenderer(mapExtent.getCoordinateReferenceSystem(),mapExtent,screenSize,w2s);
+  RasterSymbolizer rasterSymbolizer=new StyleBuilder().createRasterSymbolizer();
+  RenderedImage image=renderer.renderImage(worldReader,null,rasterSymbolizer,Interpolation.getInstance(Interpolation.INTERP_BICUBIC),Color.RED,256,256);
+  assertNotNull(image);
+  File reference=new File("src/test/resources/org/geotools/renderer/lite/gridcoverage2d/utm.png");
+  ImageAssert.assertEquals(reference,image,0);
+}

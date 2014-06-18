@@ -1,0 +1,23 @@
+{
+  ReferencedEnvelope mapExtent=new ReferencedEnvelope(170,190,70,80,DefaultGeographicCRS.WGS84);
+  GridCoverageReaderHelper helper=new GridCoverageReaderHelper(reader,new Rectangle(100,100),mapExtent,Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+  GridCoverage2D coverage=helper.readCoverage(null);
+  Envelope2D envelope=coverage.getEnvelope2D();
+  assertEquals(-180,envelope.getMinX(),EPS);
+  assertEquals(180,envelope.getMaxX(),EPS);
+  assertEquals(-90,envelope.getMinY(),EPS);
+  assertEquals(90,envelope.getMaxY(),EPS);
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(mapExtent,reader.getCoordinateReferenceSystem(),true);
+  List<GridCoverage2D> coverages=helper.readCoverages(null,handler);
+  assertEquals(2,coverages.size());
+  Envelope2D firstEnvelope=coverages.get(0).getEnvelope2D();
+  assertEquals(169.2,firstEnvelope.getMinX(),EPS);
+  assertEquals(180,firstEnvelope.getMaxX(),EPS);
+  assertEquals(69.3,firstEnvelope.getMinY(),EPS);
+  assertEquals(80.1,firstEnvelope.getMaxY(),EPS);
+  Envelope2D secondEnvelope=coverages.get(1).getEnvelope2D();
+  assertEquals(-180,secondEnvelope.getMinX(),EPS);
+  assertEquals(-169.2,secondEnvelope.getMaxX(),EPS);
+  assertEquals(69.3,secondEnvelope.getMinY(),EPS);
+  assertEquals(80.1,secondEnvelope.getMaxY(),EPS);
+}

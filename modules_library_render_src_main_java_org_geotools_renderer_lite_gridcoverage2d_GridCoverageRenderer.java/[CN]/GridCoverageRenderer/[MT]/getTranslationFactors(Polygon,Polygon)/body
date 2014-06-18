@@ -1,0 +1,19 @@
+{
+  Envelope re=reference.getEnvelopeInternal();
+  Envelope de=displaced.getEnvelopeInternal();
+  double dw=Math.abs(re.getWidth() - de.getWidth());
+  double dh=Math.abs(re.getHeight() - de.getHeight());
+  if (dw > EPS * re.getWidth() || dh > EPS * re.getWidth()) {
+    return null;
+  }
+  double dx=de.getMinX() - re.getMinX();
+  double dy=de.getMinY() - re.getMinY();
+  Polygon cloned=(Polygon)displaced.clone();
+  cloned.apply(AffineTransformation.translationInstance(-dx,-dy));
+  if (1 - new HausdorffSimilarityMeasure().measure(cloned,reference) > EPS) {
+    return null;
+  }
+ else {
+    return new double[]{dx,dy};
+  }
+}
