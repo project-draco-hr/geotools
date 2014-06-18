@@ -1,0 +1,26 @@
+{
+  ParameterValueGroup param=processor.getOperation("Mosaic").getParameters();
+  List<GridCoverage2D> sources=new ArrayList<GridCoverage2D>(2);
+  sources.add(coverage1);
+  sources.add(coverage2);
+  param.parameter("Sources").setValue(sources);
+  double nodata=-9999;
+  param.parameter(Mosaic.OUTNODATA_NAME).setValue(new double[]{nodata});
+  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param);
+  Envelope2D expected=coverage1.getEnvelope2D();
+  expected.include(coverage2.getEnvelope2D());
+  Envelope2D actual=mosaic.getEnvelope2D();
+  assertEqualBBOX(expected,actual);
+  double initialRes=calculateResolution(coverage1);
+  double finalRes=calculateResolution(mosaic);
+  double percentual=Math.abs(initialRes - finalRes) / initialRes;
+  Assert.assertTrue(percentual < TOLERANCE);
+  DirectPosition point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getCenterX(),actual.getCenterY());
+  double result=((int[])mosaic.evaluate(point))[0];
+  Assert.assertEquals(nodata,result,TOLERANCE);
+  point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getMinX() + finalRes,actual.getMinY() + finalRes);
+  result=((int[])mosaic.evaluate(point))[0];
+  Assert.assertNotEquals(nodata,result,TOLERANCE);
+  mosaic.dispose(true);
+  disposeCoveragePlanarImage(mosaic);
+}

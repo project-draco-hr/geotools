@@ -1,0 +1,61 @@
+{
+  final ImagingParameters copy=(ImagingParameters)descriptor.createValue();
+  final ParameterBlockJAI block=(ParameterBlockJAI)copy.parameters;
+  GridGeometryPolicy policy=null;
+  Object externalGG=parameters.parameter(GEOMETRY).getValue();
+  GridGeometry2D gg=null;
+  if (externalGG != null && externalGG instanceof GridGeometry2D) {
+    gg=(GridGeometry2D)externalGG;
+    policy=GridGeometryPolicy.EXTERNAL;
+  }
+ else {
+    Object ggPolicy=parameters.parameter(POLICY).getValue();
+    if (ggPolicy != null && ggPolicy instanceof String) {
+      policy=GridGeometryPolicy.getPolicyFromString((String)ggPolicy);
+    }
+  }
+  if (policy == null) {
+    policy=GridGeometryPolicy.FIRST;
+  }
+  ResampledRasters rr=policy.resampleGridGeometry(sources,gg,parameters);
+  RenderedImage[] rasters=rr.getRasters();
+  GridGeometry2D finalGeometry=rr.getFinalGeometry();
+  if (finalGeometry == null) {
+    throw new CoverageProcessingException("No final GridGeometry found");
+  }
+  int numSources=rasters.length;
+  for (int i=0; i < numSources; i++) {
+    block.setSource(rasters[i],i);
+  }
+  double nodata=0;
+  Object outputNodata=parameters.parameter(OUTNODATA_NAME).getValue();
+  if (outputNodata != null && outputNodata instanceof double[]) {
+    nodata=((double[])outputNodata)[0];
+  }
+ else {
+    nodata=CoverageUtilities.getBackgroundValues(sources[PRIMARY_SOURCE_INDEX])[0];
+  }
+  block.setParameter("backgroundValues",new double[]{nodata});
+  double threshold=CoverageUtilities.getMosaicThreshold(rasters[PRIMARY_SOURCE_INDEX].getSampleModel().getDataType());
+  block.setParameter("sourceThreshold",new double[][]{{threshold}});
+  block.setParameter("mosaicType",MosaicDescriptor.MOSAIC_TYPE_OVERLAY);
+  PlanarImage[] alpha=new PlanarImage[numSources];
+  boolean alphaChannel=true;
+  for (int i=0; i < numSources; i++) {
+    RenderedImage img=rasters[i];
+    ImageWorker w=new ImageWorker(img);
+    if (img.getSampleModel() instanceof MultiPixelPackedSampleModel || img.getColorModel() instanceof IndexColorModel) {
+      w.forceComponentColorModel();
+      img=w.getRenderedImage();
+    }
+    boolean hasAlpha=img.getColorModel().hasAlpha();
+    if (hasAlpha) {
+      alphaChannel&=hasAlpha;
+      alpha[i]=w.retainLastBand().getPlanarImage();
+    }
+  }
+  if (alphaChannel) {
+    block.setParameter("sourceAlpha",alpha);
+  }
+  return new Params(block,hints,finalGeometry);
+}

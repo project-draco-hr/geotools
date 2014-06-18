@@ -1,0 +1,35 @@
+{
+  int numSources=sources.length;
+  RenderedImage[] rasters=new RenderedImage[numSources];
+  MathTransform g2w=external.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+  Double nodata=null;
+  Object outputNodata=parameters.parameter(OUTNODATA_NAME).getValue();
+  if (outputNodata != null && outputNodata instanceof double[]) {
+    nodata=((double[])outputNodata)[0];
+  }
+  for (int i=0; i < numSources; i++) {
+    GridCoverage2D coverage=sources[i];
+    GridGeometry2D inputGG=coverage.getGridGeometry();
+    MathTransform g2wS=inputGG.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
+    MathTransform w2gD=external.getCRSToGrid2D(PixelOrientation.UPPER_LEFT);
+    MathTransform concatenated=ConcatenatedTransform.create(g2wS,w2gD);
+    if (concatenated != null && concatenated.isIdentity()) {
+      rasters[i]=coverage.getRenderedImage();
+    }
+ else {
+      GridGeometry2D newGG=new GridGeometry2D(PixelInCell.CELL_CORNER,g2w,inputGG.getEnvelope(),GeoTools.getDefaultHints());
+      double fillValue=0;
+      if (nodata == null) {
+        fillValue=CoverageUtilities.getBackgroundValues(coverage)[0];
+      }
+ else {
+        fillValue=nodata;
+      }
+      rasters[i]=GridCoverage2DRIA.create(coverage,newGG,fillValue);
+    }
+  }
+  ResampledRasters rr=new ResampledRasters();
+  rr.setFinalGeometry(external);
+  rr.setRasters(rasters);
+  return rr;
+}
