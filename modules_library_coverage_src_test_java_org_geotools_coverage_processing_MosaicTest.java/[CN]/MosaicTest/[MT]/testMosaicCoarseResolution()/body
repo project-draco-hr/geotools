@@ -1,0 +1,35 @@
+{
+  ParameterValueGroup param=processor.getOperation("Mosaic").getParameters();
+  List<GridCoverage2D> sources=new ArrayList<GridCoverage2D>(2);
+  sources.add(coverage1);
+  ParameterValueGroup paramResampling=processor.getOperation("resample").getParameters();
+  paramResampling.parameter("Source").setValue(coverage2);
+  GridEnvelope2D gridRange=coverage2.getGridGeometry().getGridRange2D();
+  gridRange.add(gridRange.getMaxX() + 100,gridRange.getMaxY() + 100);
+  GridGeometry2D ggNew=new GridGeometry2D(gridRange,coverage2.getEnvelope());
+  paramResampling.parameter("GridGeometry").setValue(ggNew);
+  GridCoverage2D resampled=(GridCoverage2D)processor.doOperation(paramResampling);
+  sources.add(resampled);
+  param.parameter("Sources").setValue(sources);
+  param.parameter(Mosaic.POLICY).setValue("coarse");
+  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param);
+  Envelope2D expected=coverage1.getEnvelope2D();
+  expected.include(resampled.getEnvelope2D());
+  Envelope2D actual=mosaic.getEnvelope2D();
+  assertEqualBBOX(expected,actual);
+  double initialRes=calculateResolution(coverage1);
+  double finalRes=calculateResolution(mosaic);
+  double percentual=Math.abs(initialRes - finalRes) / initialRes;
+  Assert.assertTrue(percentual < TOLERANCE);
+  DirectPosition point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getCenterX(),actual.getCenterY());
+  double nodata=CoverageUtilities.getBackgroundValues(coverage1)[0];
+  double result=((int[])mosaic.evaluate(point))[0];
+  Assert.assertEquals(nodata,result,TOLERANCE);
+  point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getMinX() + finalRes,actual.getMinY() + finalRes);
+  result=((int[])mosaic.evaluate(point))[0];
+  Assert.assertNotEquals(nodata,result,TOLERANCE);
+  mosaic.dispose(true);
+  resampled.dispose(true);
+  disposeCoveragePlanarImage(mosaic);
+  disposeCoveragePlanarImage(resampled);
+}

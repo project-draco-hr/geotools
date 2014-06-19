@@ -1,0 +1,34 @@
+{
+  GridCoverage2D primarySource=sources[PRIMARY_SOURCE_INDEX];
+  RenderingHints hints=ImageUtilities.getRenderingHints(parameters.getSource());
+  if (parameters.hints != null) {
+    if (hints != null) {
+      hints.add(parameters.hints);
+    }
+ else {
+      hints=parameters.hints;
+    }
+  }
+  ImageLayout layout=(hints != null) ? (ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT) : null;
+  if (layout != null) {
+    layout.unsetValid(ImageLayout.MIN_X_MASK);
+    layout.unsetValid(ImageLayout.MIN_Y_MASK);
+    layout.unsetValid(ImageLayout.WIDTH_MASK);
+    layout.unsetValid(ImageLayout.HEIGHT_MASK);
+  }
+ else {
+    layout=new ImageLayout2();
+  }
+  GridEnvelope2D gridRange=parameters.finalGeometry.getGridRange2D();
+  layout.setMinX(gridRange.x);
+  layout.setMinY(gridRange.y);
+  layout.setWidth(gridRange.width);
+  layout.setHeight(gridRange.height);
+  hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+  final InternationalString name=deriveName(sources,-1,null);
+  final CoordinateReferenceSystem crs=primarySource.getCoordinateReferenceSystem();
+  final MathTransform toCRS=parameters.finalGeometry.getGridToCRS();
+  final RenderedImage data=createRenderedImage(parameters.parameters,hints);
+  final Map<String,?> properties=getProperties(data,crs,name,toCRS,sources,null);
+  return getFactory(parameters.hints).create(name,data,crs,toCRS,null,sources,properties);
+}

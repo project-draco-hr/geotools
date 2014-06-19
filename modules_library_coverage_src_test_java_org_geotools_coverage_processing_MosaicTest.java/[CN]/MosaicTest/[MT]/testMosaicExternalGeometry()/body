@@ -1,0 +1,29 @@
+{
+  ParameterValueGroup param=processor.getOperation("Mosaic").getParameters();
+  List<GridCoverage2D> sources=new ArrayList<GridCoverage2D>(2);
+  sources.add(coverage1);
+  sources.add(coverage2);
+  param.parameter("Sources").setValue(sources);
+  Envelope2D startBBOX=coverage1.getEnvelope2D();
+  startBBOX.include(coverage2.getEnvelope2D());
+  Envelope2D expected=new Envelope2D(startBBOX);
+  Point2D pt=new Point2D.Double(startBBOX.getMaxX() + 1,startBBOX.getMaxY() + 1);
+  expected.add(pt);
+  GridGeometry2D ggStart=new GridGeometry2D(PixelInCell.CELL_CORNER,coverage1.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT),expected,GeoTools.getDefaultHints());
+  param.parameter("geometry").setValue(ggStart);
+  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param);
+  Envelope2D actual=mosaic.getEnvelope2D();
+  assertEqualBBOX(expected,actual);
+  double initialRes=calculateResolution(coverage1);
+  double finalRes=calculateResolution(mosaic);
+  Assert.assertEquals(initialRes,finalRes,TOLERANCE);
+  DirectPosition point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getMinX() + finalRes,actual.getMaxY() - finalRes);
+  double nodata=CoverageUtilities.getBackgroundValues(coverage1)[0];
+  double result=((int[])mosaic.evaluate(point))[0];
+  Assert.assertEquals(nodata,result,TOLERANCE);
+  point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getMinX() + finalRes,actual.getMinY() + finalRes);
+  result=((int[])mosaic.evaluate(point))[0];
+  Assert.assertNotEquals(nodata,result,TOLERANCE);
+  mosaic.dispose(true);
+  disposeCoveragePlanarImage(mosaic);
+}

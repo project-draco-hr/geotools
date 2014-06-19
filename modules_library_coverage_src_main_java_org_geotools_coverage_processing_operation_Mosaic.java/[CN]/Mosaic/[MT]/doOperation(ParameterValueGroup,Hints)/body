@@ -1,0 +1,22 @@
+{
+  final Collection<GridCoverage2D> sourceCollection=new ArrayList<GridCoverage2D>();
+  ViewType primarySourceType=extractSources(parameters,sourceCollection);
+  int numSources=sourceCollection.size();
+  GridCoverage2D[] sources=new GridCoverage2D[numSources];
+  sourceCollection.toArray(sources);
+  GridCoverage2D firstCoverage=sources[PRIMARY_SOURCE_INDEX];
+  CoordinateReferenceSystem crs=firstCoverage.getCoordinateReferenceSystem();
+  for (int i=0; i < sources.length; i++) {
+    final GridCoverage2D source=sources[i];
+    CoordinateReferenceSystem crsSource=source.getCoordinateReferenceSystem();
+    if (!CRS.equalsIgnoreMetadata(crs,crsSource)) {
+      throw new CoverageProcessingException("Input Coverages have different CRS");
+    }
+  }
+  final Params params=prepareParameters(parameters,sources,hints);
+  GridCoverage2D coverage=deriveGridCoverage(sources,params);
+  if (primarySourceType != null) {
+    coverage=coverage.view(primarySourceType);
+  }
+  return coverage;
+}
