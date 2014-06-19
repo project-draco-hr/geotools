@@ -4,7 +4,13 @@
   if (location == null)   throw new IllegalArgumentException("The provided expression cannot be evaluated to a URL");
   BufferedImage image=imageCache.get(location);
   if (image == null) {
-    image=ImageIO.read(location);
+    try {
+      image=ImageIO.read(location);
+    }
+ catch (    java.io.IOException ioe) {
+      LOGGER.warning("Unable to read image at " + location + " : "+ ioe.getMessage());
+      return null;
+    }
     imageCache.put(location,image);
   }
   if (size > 0 && image.getHeight() != size) {
