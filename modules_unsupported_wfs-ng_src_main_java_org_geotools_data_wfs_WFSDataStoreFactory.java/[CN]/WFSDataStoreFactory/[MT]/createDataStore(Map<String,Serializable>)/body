@@ -1,0 +1,31 @@
+{
+  final WFSConfig config=WFSConfig.fromParams(params);
+{
+    String user=config.getUser();
+    String password=config.getPassword();
+    if (((user == null) && (password != null)) || ((config.getPassword() == null) && (config.getUser() != null))) {
+      throw new IOException("Cannot define only one of USERNAME or PASSWORD, must define both or neither");
+    }
+  }
+  final HTTPClient http=new SimpleHttpClient();
+  http.setUser(config.getUser());
+  http.setPassword(config.getPassword());
+  int timeoutMillis=config.getTimeoutMillis();
+  http.setConnectTimeout(timeoutMillis / 1000);
+  final URL capabilitiesURL=(URL)URL.lookUp(params);
+  WFSClient wfsClient;
+  try {
+    wfsClient=new WFSClient(capabilitiesURL,http,config);
+  }
+ catch (  ServiceException e) {
+    throw new IOException(e);
+  }
+  WFSDataStore dataStore=new WFSDataStore(wfsClient);
+  dataStore.setFilterFactory(CommonFactoryFinder.getFilterFactory(null));
+  dataStore.setGeometryFactory(new GeometryFactory(PackedCoordinateSequenceFactory.DOUBLE_FACTORY));
+  dataStore.setFeatureTypeFactory(new FeatureTypeFactoryImpl());
+  dataStore.setFeatureFactory(CommonFactoryFinder.getFeatureFactory(null));
+  dataStore.setDataStoreFactory(this);
+  dataStore.setNamespaceURI(config.getNamespaceOverride());
+  return dataStore;
+}
