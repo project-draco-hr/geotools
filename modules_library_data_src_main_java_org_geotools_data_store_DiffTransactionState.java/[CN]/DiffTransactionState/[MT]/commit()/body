@@ -26,14 +26,11 @@
         update=(SimpleFeature)diff.getModified().get(fid);
         if (update == TransactionStateDiff.NULL) {
           writer.remove();
-          state.fireFeatureRemoved(store,feature);
         }
  else {
           try {
             feature.setAttributes(update.getAttributes());
             writer.write();
-            ReferencedEnvelope bounds=ReferencedEnvelope.reference(feature.getBounds());
-            state.fireFeatureUpdated(store,update,bounds);
           }
  catch (          IllegalAttributeException e) {
             throw new DataSourceException("Could update " + fid,e);
@@ -62,7 +59,6 @@ synchronized (diff) {
               nextFeature.getUserData().put(Hints.PROVIDED_FID,addedFeature.getID());
             }
             writer.write();
-            state.fireFeatureAdded(store,nextFeature);
           }
  catch (          IllegalAttributeException e) {
             throw new DataSourceException("Could update " + fid,e);
