@@ -1,58 +1,54 @@
 {
-  if (requestCRS == null)   requestCRS=CRS.getHorizontalCRS(requestedBBox.getCoordinateReferenceSystem());
   try {
-    if (destinationToSourceTransform != null && !destinationToSourceTransform.isIdentity()) {
-      final GeneralEnvelope temp=CRS.transform(requestedBBox,coverageProperties.crs2D);
-      temp.setCoordinateReferenceSystem(coverageProperties.crs2D);
-      cropBBox=new ReferencedEnvelope(temp);
-      needsReprojection=true;
+    if (needsReprojection) {
+      final GeneralEnvelope requestedBBoxInCoverageCRS=CRS.transform(requestedBBox,coverageProperties.crs2D);
+      computedBBox=new ReferencedEnvelope(requestedBBoxInCoverageCRS);
     }
  else {
-      cropBBox=new ReferencedEnvelope(requestedBBox.getMinX(),requestedBBox.getMaxX(),requestedBBox.getMinY(),requestedBBox.getMaxY(),coverageProperties.crs2D);
+      computedBBox=new ReferencedEnvelope(requestedBBox);
     }
-    if (!cropBBox.intersects((BoundingBox)coverageProperties.bbox)) {
+    if (!computedBBox.intersects((BoundingBox)coverageProperties.bbox)) {
       if (LOGGER.isLoggable(Level.FINE)) {
-        LOGGER.fine(new StringBuilder("The computed CropBoundingBox ").append(cropBBox).append(" Doesn't intersect the coverage BoundingBox ").append(coverageProperties.bbox).append(" resulting in an empty request").toString());
+        LOGGER.fine(new StringBuilder("The computed CropBoundingBox ").append(computedBBox).append(" Doesn't intersect the coverage BoundingBox ").append(coverageProperties.bbox).append(" resulting in an empty request").toString());
       }
-      cropBBox=null;
-      empty=true;
+      computedBBox=null;
+      emptyRequest=true;
       return;
     }
-    cropBBox=new ReferencedEnvelope(((ReferencedEnvelope)cropBBox).intersection(coverageProperties.bbox),coverageProperties.crs2D);
+    computedBBox=new ReferencedEnvelope(computedBBox.intersection(coverageProperties.bbox),coverageProperties.crs2D);
+    if (computedBBox.isEmpty()) {
+      emptyRequest=true;
+    }
     return;
   }
  catch (  TransformException te) {
     if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,te.getLocalizedMessage(),te);
   }
   try {
-    if (coverageProperties.geographicCRS2D != null && coverageProperties.geographicBBox != null) {
-      if (!CRS.equalsIgnoreMetadata(coverageProperties.geographicCRS2D,requestCRS)) {
-        CoordinateOperation operation=CRS.getCoordinateOperationFactory(true).createOperation(requestCRS,coverageProperties.geographicCRS2D);
-        requestedBBOXInCoverageGeographicCRS=CRS.transform(operation,requestedBBox);
-        requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS2D);
+    if (coverageProperties.geographicCRS != null && coverageProperties.geographicBBox != null) {
+      if (!CRS.equalsIgnoreMetadata(coverageProperties.geographicCRS,requestCRS)) {
+        requestedBBOXInCoverageGeographicCRS=CRS.transform(requestedBBox,coverageProperties.geographicCRS);
+        requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS);
       }
       if (requestedBBOXInCoverageGeographicCRS == null) {
         requestedBBOXInCoverageGeographicCRS=new GeneralEnvelope(requestCRS);
       }
       if (!requestedBBOXInCoverageGeographicCRS.intersects(coverageProperties.geographicBBox,true)) {
-        cropBBox=null;
-        empty=true;
+        computedBBox=null;
+        emptyRequest=true;
         return;
       }
       requestedBBOXInCoverageGeographicCRS.intersect(coverageProperties.geographicBBox);
-      requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS2D);
+      requestedBBOXInCoverageGeographicCRS.setCoordinateReferenceSystem(coverageProperties.geographicCRS);
       approximateRequestedBBoInNativeCRS=CRS.transform(requestedBBOXInCoverageGeographicCRS,coverageProperties.crs2D);
       approximateRequestedBBoInNativeCRS.setCoordinateReferenceSystem(coverageProperties.crs2D);
-      cropBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
+      computedBBox=new ReferencedEnvelope(approximateRequestedBBoInNativeCRS);
       return;
     }
   }
- catch (  TransformException te) {
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,te.getLocalizedMessage(),te);
-  }
-catch (  FactoryException fe) {
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,fe.getLocalizedMessage(),fe);
+ catch (  Exception e) {
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
   }
   LOGGER.log(Level.INFO,"We did not manage to crop the requested envelope, we fall back onto loading the whole coverage.");
-  cropBBox=null;
+  computedBBox=null;
 }
