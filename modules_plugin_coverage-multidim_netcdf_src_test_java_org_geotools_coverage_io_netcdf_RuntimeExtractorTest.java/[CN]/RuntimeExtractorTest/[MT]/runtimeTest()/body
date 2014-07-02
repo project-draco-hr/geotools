@@ -1,0 +1,16 @@
+{
+  final File file=TestData.file(this,"O3-NO2.nc");
+  long lastModified=file.lastModified();
+  final RuntimeExtractorSPI spi=new RuntimeExtractorSPI();
+  final PropertiesCollector collector=spi.create("regex=MODIFY_TIME",Arrays.asList("updated"));
+  final SimpleFeatureTypeBuilder featureTypeBuilder=new SimpleFeatureTypeBuilder();
+  featureTypeBuilder.setName("runtimeT");
+  featureTypeBuilder.add("updated",Date.class);
+  SimpleFeatureType featureType=featureTypeBuilder.buildFeatureType();
+  SimpleFeatureBuilder featureBuilder=new SimpleFeatureBuilder(featureType);
+  SimpleFeature feature=featureBuilder.buildFeature("0");
+  collector.collect(file);
+  collector.setProperties(feature);
+  Date date=(Date)feature.getAttribute("updated");
+  assertEquals(lastModified,date.getTime());
+}

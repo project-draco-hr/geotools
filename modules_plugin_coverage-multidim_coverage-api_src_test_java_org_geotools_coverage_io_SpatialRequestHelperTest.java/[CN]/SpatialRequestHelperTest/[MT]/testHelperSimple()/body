@@ -1,0 +1,16 @@
+{
+  SpatialRequestHelper helper=new SpatialRequestHelper();
+  GridEnvelope2D gridRange=new GridEnvelope2D(0,0,1024,1024);
+  GridGeometry2D gridGeometry=new GridGeometry2D(gridRange,coverageProperties.getBbox());
+  helper.setRequestedGridGeometry(gridGeometry);
+  helper.setCoverageProperties(coverageProperties);
+  helper.prepare();
+  AffineTransform requestedGridToWorld=helper.getRequestedGridToWorld();
+  double[] calculatedResolution=new double[]{XAffineTransform.getScaleX0(requestedGridToWorld),XAffineTransform.getScaleY0(requestedGridToWorld)};
+  Rectangle calculatedRasterArea=new Rectangle(1024,1024);
+  assertEquals(coverageProperties,helper.getCoverageProperties());
+  assertTrue(!helper.isEmpty());
+  assertArrayEquals(helper.getRequestedResolution(),calculatedResolution,TOLERANCE);
+  assertTrue(helper.getCropBBox().contains(new ReferencedEnvelope(coverageProperties.getBbox())));
+  assertTrue(helper.getDestinationRasterArea().contains(calculatedRasterArea));
+}

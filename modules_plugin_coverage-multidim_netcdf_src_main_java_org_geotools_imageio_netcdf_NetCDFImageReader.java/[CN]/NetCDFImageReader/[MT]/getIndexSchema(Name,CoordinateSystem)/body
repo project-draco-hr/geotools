@@ -1,0 +1,14 @@
+{
+  final String _coverageName=coverageName.toString();
+  final Coverage coverage=ancillaryFileManager.coveragesMapping.get(_coverageName);
+  SchemaType schema=coverage.getSchema();
+  String schemaDef=schema != null ? schema.getAttributes() : null;
+  if (schema == null || schema.getAttributes() == null) {
+    schemaDef=suggestSchemaFromCoordinateSystem(coverage,coordinateSystem);
+    ancillaryFileManager.setSchema(coverage,coverage.getName(),schemaDef);
+    schema=coverage.getSchema();
+  }
+  final SimpleFeatureType indexSchema=NetCDFUtilities.createFeatureType(coverage.getName(),schemaDef,NetCDFCRSUtilities.WGS84);
+  forceSchemaCreation(indexSchema);
+  return indexSchema;
+}

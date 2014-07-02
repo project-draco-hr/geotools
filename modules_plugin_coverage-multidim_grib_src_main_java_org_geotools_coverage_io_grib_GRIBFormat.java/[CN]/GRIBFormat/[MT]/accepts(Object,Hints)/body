@@ -1,0 +1,26 @@
+{
+  File file=null;
+  if (source instanceof URL) {
+    file=DataUtilities.urlToFile((URL)source);
+  }
+ else   if (source instanceof File) {
+    file=(File)source;
+  }
+  if (file != null) {
+    if (file.isDirectory()) {
+      return false;
+    }
+    String fileName=file.getName();
+    boolean gribExtension=NetCDFUtilities.isGribAvailable() && (fileName.contains("grb") || fileName.contains("grib"));
+    if (fileName.endsWith("ncml") || gribExtension) {
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.finest("File is accepted: " + fileName);
+      }
+      return true;
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("Object is not accepted: " + source);
+  }
+  return false;
+}

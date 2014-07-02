@@ -1,0 +1,20 @@
+{
+  rank=variableDS.getRank();
+  width=variableDS.getDimension(rank - NetCDFUtilities.X_DIMENSION).getLength();
+  height=variableDS.getDimension(rank - NetCDFUtilities.Y_DIMENSION).getLength();
+  numBands=rank > 2 ? variableDS.getDimension(2).getLength() : 1;
+  final int bufferType=NetCDFUtilities.getRawDataType(variableDS);
+  sampleModel=new BandedSampleModel(bufferType,width,height,1);
+  String description=variableDS.getDescription();
+  final StringBuilder sb=new StringBuilder();
+  final Set<SampleDimension> sampleDims=new HashSet<SampleDimension>();
+  sampleDims.add(new GridSampleDimension(description + ":sd",(Category[])null,null));
+  InternationalString desc=null;
+  if (description != null && !description.isEmpty()) {
+    desc=new SimpleInternationalString(description);
+  }
+  final FieldType fieldType=new DefaultFieldType(new NameImpl(getName()),desc,sampleDims);
+  sb.append(description != null ? description.toString() + "," : "");
+  final RangeType range=new DefaultRangeType(getName(),description,fieldType);
+  this.setRangeType(range);
+}

@@ -1,0 +1,32 @@
+{
+  ImageReader reader=new TIFFImageReaderSpi().createReaderInstance();
+  FileImageInputStream in=new FileImageInputStream(DataUtilities.urlToFile(granuleUrl));
+  try {
+    reader.setInput(in);
+    ReadType jaiImageRead=ReadType.JAI_IMAGEREAD;
+    ReadType defaultRead=ReadType.getDefault();
+    assertEquals(jaiImageRead,defaultRead);
+    RenderedImage output=jaiImageRead.read(readParameters,IMAGE_INDEX,granuleUrl,rasterDimensionsWrong,reader,hints,CLOSE_ELEMENTS);
+    assertNull(output);
+    output=jaiImageRead.read(readParameters,IMAGE_INDEX,null,rasterDimensions,reader,hints,CLOSE_ELEMENTS);
+    assertNull(output);
+    output=jaiImageRead.read(readParameters,IMAGE_INDEX,granuleUrl,rasterDimensions,null,hints,CLOSE_ELEMENTS);
+    assertNull(output);
+    output=jaiImageRead.read(readParameters,IMAGE_INDEX,granuleUrl,rasterDimensions,reader,hints,CLOSE_ELEMENTS);
+    assertNotNull(output);
+    Rectangle sourceRegion=readParameters.getSourceRegion();
+    Rectangle.intersect(sourceRegion,rasterDimensions,sourceRegion);
+    assertEquals(output.getMinX(),sourceRegion.x);
+    assertEquals(output.getMinY(),sourceRegion.y);
+    assertEquals(output.getWidth(),sourceRegion.width);
+    assertEquals(output.getHeight(),sourceRegion.height);
+  }
+  finally {
+    if (in != null) {
+      in.close();
+    }
+    if (reader != null) {
+      reader.dispose();
+    }
+  }
+}

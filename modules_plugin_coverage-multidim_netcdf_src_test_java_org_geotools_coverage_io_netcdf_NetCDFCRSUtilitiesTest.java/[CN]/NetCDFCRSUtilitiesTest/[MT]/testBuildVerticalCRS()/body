@@ -1,0 +1,28 @@
+{
+  final String url=TestData.url(this,"O3-NO2.nc").toExternalForm();
+  NetcdfDataset dataset=null;
+  try {
+    dataset=NetcdfDataset.openDataset(url);
+    assertNotNull(dataset);
+    final List<CoordinateAxis> cvs=dataset.getCoordinateAxes();
+    assertNotNull(cvs);
+    assertSame(4,cvs.size());
+    CoordinateAxis timeAxis=cvs.get(0);
+    assertNotNull(timeAxis);
+    assertEquals(AxisType.Time,timeAxis.getAxisType());
+    final TemporalCRS temporalCrs=NetCDFCRSUtilities.buildTemporalCrs(timeAxis);
+    assertNotNull(temporalCrs);
+    assertTrue(temporalCrs instanceof DefaultTemporalCRS);
+    CoordinateAxis verticalAxis=cvs.get(1);
+    assertNotNull(verticalAxis);
+    assertEquals(AxisType.Height,verticalAxis.getAxisType());
+    final VerticalCRS verticalCrs=NetCDFCRSUtilities.buildVerticalCrs(verticalAxis);
+    assertNotNull(verticalCrs);
+    assertTrue(verticalCrs instanceof DefaultVerticalCRS);
+  }
+  finally {
+    if (dataset != null) {
+      dataset.close();
+    }
+  }
+}

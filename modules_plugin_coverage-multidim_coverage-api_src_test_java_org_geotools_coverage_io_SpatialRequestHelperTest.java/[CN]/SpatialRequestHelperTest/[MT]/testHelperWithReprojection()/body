@@ -1,0 +1,19 @@
+{
+  SpatialRequestHelper helper=new SpatialRequestHelper();
+  GridEnvelope2D gridRange=new GridEnvelope2D(0,0,1024,1024);
+  GeneralEnvelope envelope=CRS.transform(coverage.getEnvelope(),CRS.decode("EPSG:3857"));
+  GridGeometry2D gridGeometry=new GridGeometry2D(gridRange,envelope);
+  helper.setRequestedGridGeometry(gridGeometry);
+  helper.setCoverageProperties(coverageProperties);
+  helper.prepare();
+  final GeneralEnvelope temp=new GeneralEnvelope(CRS.transform(gridGeometry.getEnvelope(),coverageProperties.crs2D));
+  temp.setCoordinateReferenceSystem(coverageProperties.crs2D);
+  temp.intersect(coverageProperties.getBbox());
+  final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(gridRange),temp);
+  final AffineTransform tempTransform=geMapper.createAffineTransform();
+  double[] calculatedResolution=new double[]{XAffineTransform.getScaleX0(tempTransform),XAffineTransform.getScaleY0(tempTransform)};
+  assertTrue(!helper.isEmpty());
+  assertArrayEquals(helper.getRequestedResolution(),calculatedResolution,TOLERANCE);
+  assertTrue(helper.getCropBBox().contains(new ReferencedEnvelope(temp)));
+  assertTrue(helper.getDestinationRasterArea().contains(gridRange));
+}

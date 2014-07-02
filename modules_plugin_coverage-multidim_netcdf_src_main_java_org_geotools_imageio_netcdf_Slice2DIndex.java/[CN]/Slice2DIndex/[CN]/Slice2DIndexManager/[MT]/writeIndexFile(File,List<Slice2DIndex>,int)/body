@@ -1,0 +1,30 @@
+{
+  RandomAccessFile raf=null;
+  try {
+    raf=new RandomAccessFile(file,"rw");
+    int size=indexList.size();
+    raf.writeInt(size);
+    long dataPosition=ADDRESS_POSITION + (size + 1) * ADDRESS_SIZE;
+    long[] pointer=new long[size];
+    raf.seek(dataPosition);
+    for (int i=0; i < size; i++) {
+      Slice2DIndex slice2DIndex=indexList.get(i);
+      long pos=raf.getFilePointer();
+      pointer[i]=pos;
+      raf.writeInt(slice2DIndex.getTIndex());
+      raf.writeInt(slice2DIndex.getZIndex());
+      raf.write(slice2DIndex.getVariableName().getBytes());
+    }
+    long dataEnd=raf.getFilePointer();
+    raf.seek(ADDRESS_POSITION);
+    for (    long address : pointer) {
+      raf.writeLong(address);
+    }
+    raf.writeLong(dataEnd);
+  }
+  finally {
+    if (raf != null) {
+      raf.close();
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  axis1D=axis;
+  units=axis.getUnitsString();
+  origin=null;
+  final String[] unitsParts=units.split("(?i)\\s+since\\s+");
+  if (unitsParts.length == 2) {
+    units=unitsParts[0].trim();
+    origin=unitsParts[1].trim();
+  }
+ else {
+    final Attribute attribute=axis.findAttribute("time_origin");
+    if (attribute != null) {
+      origin=attribute.getStringValue();
+    }
+  }
+  baseTimeUnits=NetCDFTimeUtilities.getTimeUnits(units,null);
+  if (baseTimeUnits == -1) {
+    throw new IllegalArgumentException("Couldn't determine time units from unit string '" + units + "'");
+  }
+  if (origin != null) {
+    origin=NetCDFTimeUtilities.trimFractionalPart(origin);
+    origin=NetCDFTimeUtilities.checkDateDigits(origin);
+    try {
+      epoch=(Date)NetCDFUtilities.getAxisFormat(AxisType.Time,origin).parseObject(origin);
+    }
+ catch (    ParseException e) {
+      LOGGER.warning("Error while parsing time Axis. Skip setting the TemporalExtent from coordinateAxis");
+    }
+  }
+}

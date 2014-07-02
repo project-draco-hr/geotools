@@ -1,0 +1,17 @@
+{
+  GridCoverageFactory coverageFactory=new GridCoverageFactory(GeoTools.getDefaultHints());
+  String coverageName="test";
+  int imageIndex=0;
+  PlanarImage image=ConstantDescriptor.create(10f,10f,new Byte[]{1},GeoTools.getDefaultHints());
+  MathTransform raster2Model=new AffineTransform2D(AffineTransform.getScaleInstance(2,2));
+  CoordinateReferenceSystem spatialReferenceSystem2D=DefaultGeographicCRS.WGS84;
+  Rectangle bounds=image.getBounds();
+  GridGeometry2D gg2D=new GridGeometry2D(new GridEnvelope2D(bounds),raster2Model,spatialReferenceSystem2D);
+  GeneralEnvelope coverageEnvelope2D=new GeneralEnvelope(gg2D.getEnvelope());
+  GridSampleDimension[] sampleDimensions=new GridSampleDimension[]{new GridSampleDimension("testDim")};
+  boolean getGeophysics=false;
+  GridCoverage2D coverage1=(GridCoverage2D)Utilities.createCoverageFromImage(coverageFactory,coverageName,imageIndex,image,raster2Model,spatialReferenceSystem2D,null,sampleDimensions,getGeophysics);
+  GridCoverage2D coverage2=(GridCoverage2D)Utilities.createCoverageFromImage(coverageFactory,coverageName,imageIndex,image,null,null,coverageEnvelope2D,sampleDimensions,getGeophysics);
+  assertTrue(coverage1.getEnvelope2D().boundsEquals(coverage2.getEnvelope2D(),0,1,0.01d));
+  assertSame(coverage1.getRenderedImage(),coverage2.getRenderedImage());
+}
