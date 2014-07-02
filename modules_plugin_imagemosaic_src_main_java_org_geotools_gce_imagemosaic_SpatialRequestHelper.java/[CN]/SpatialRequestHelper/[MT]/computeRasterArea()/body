@@ -1,0 +1,24 @@
+{
+  if (emptyRequest || computedBBox == null) {
+    throw new IllegalStateException("IllegalState, unable to compute raster area for null bbox");
+  }
+  try {
+    MathTransform2D requestedWorldToGrid=(MathTransform2D)PixelTranslation.translate(ProjectiveTransform.create(requestedGridToWorld),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER).inverse();
+    if (!needsReprojection) {
+      computedRasterArea=new GeneralGridEnvelope(CRS.transform(requestedWorldToGrid,new GeneralEnvelope(computedBBox)),PixelInCell.CELL_CORNER,false).toRectangle();
+    }
+ else {
+      final GeneralEnvelope cropBBOXInRequestCRS=CRS.transform(computedBBox,requestCRS);
+      cropBBOXInRequestCRS.intersect(requestedBBox);
+      computedRasterArea=new GeneralGridEnvelope(CRS.transform(requestedWorldToGrid,cropBBOXInRequestCRS),PixelInCell.CELL_CORNER,false).toRectangle();
+      XRectangle2D.intersect(computedRasterArea,requestedRasterArea,computedRasterArea);
+    }
+  }
+ catch (  Exception e) {
+    throw new DataSourceException(e);
+  }
+  if (computedRasterArea.isEmpty()) {
+    emptyRequest=true;
+    return;
+  }
+}

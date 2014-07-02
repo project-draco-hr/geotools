@@ -1,0 +1,22 @@
+{
+  try {
+    if (needsReprojection) {
+      final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(computedRasterArea),computedBBox);
+      computedGridToWorld=geMapper.createAffineTransform();
+      computedResolution=computeClassicResolution();
+      if (accurateResolution) {
+        computedResolution=computeAccurateResolution();
+      }
+    }
+ else {
+      computedGridToWorld=requestedGridToWorld;
+      computedResolution=new double[]{XAffineTransform.getScaleX0(requestedGridToWorld),XAffineTransform.getScaleY0(requestedGridToWorld)};
+    }
+    return;
+  }
+ catch (  Throwable e) {
+    if (LOGGER.isLoggable(Level.INFO))     LOGGER.log(Level.INFO,"Unable to compute requested resolution",e);
+  }
+  LOGGER.log(Level.WARNING,"Unable to compute requested resolution, using highest available");
+  computedResolution=coverageProperties.fullResolution;
+}

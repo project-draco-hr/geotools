@@ -1,0 +1,29 @@
+{
+  CoverageProperties coverageProperties=new CoverageProperties();
+  CoordinateReferenceSystem sourceCRS=CRS.decode("EPSG:27700");
+  ReferencedEnvelope sourceBBox=new ReferencedEnvelope(414000,420000,237000,301000,sourceCRS);
+  coverageProperties.setBBox(sourceBBox);
+  coverageProperties.setCrs2D(sourceCRS);
+  Rectangle sourceRasterArea=new Rectangle(0,0,1000,1000);
+  coverageProperties.setRasterArea(sourceRasterArea);
+  final GridToEnvelopeMapper geMapper=new GridToEnvelopeMapper(new GridEnvelope2D(sourceRasterArea),sourceBBox);
+  AffineTransform sourceGridToWorldTransform=geMapper.createAffineTransform();
+  coverageProperties.setGridToWorld2D((MathTransform2D)sourceGridToWorldTransform);
+  coverageProperties.setFullResolution(new double[]{XAffineTransform.getScaleX0(sourceGridToWorldTransform),XAffineTransform.getScaleY0(sourceGridToWorldTransform)});
+  coverageProperties.setGeographicBBox(new ReferencedEnvelope(-1.7973440460762267,-1.7061039437509753,52.03105268214016,52.60660481087451,DefaultGeographicCRS.WGS84));
+  coverageProperties.setGeographicCRS2D(DefaultGeographicCRS.WGS84);
+  SpatialRequestHelper spatialRequestHelper=new SpatialRequestHelper(coverageProperties);
+  spatialRequestHelper.setAccurateResolution(false);
+  spatialRequestHelper.setRequestedGridGeometry(new GridGeometry2D(new GridEnvelope2D(0,0,256,256),new GeneralEnvelope(new ReferencedEnvelope(-1.9868610903408341,-1.1430930819885086,51.938491047471814,52.705668101075581,DefaultGeographicCRS.WGS84))));
+  spatialRequestHelper.compute();
+  assertFalse(spatialRequestHelper.isEmpty());
+  assertTrue(spatialRequestHelper.isNeedsReprojection());
+  Rectangle destinationRasterArea=spatialRequestHelper.getComputedRasterArea();
+  assertFalse(destinationRasterArea.isEmpty());
+  BoundingBox computedBBox=spatialRequestHelper.getComputedBBox();
+  assertFalse(computedBBox.isEmpty());
+  AffineTransform computedG2W=spatialRequestHelper.getComputedGridToWorld();
+  assertNotNull(computedG2W);
+  double[] computedResolution=spatialRequestHelper.getComputedResolution();
+  assertNotNull(computedResolution);
+}
