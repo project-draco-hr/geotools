@@ -1,0 +1,31 @@
+{
+  try {
+    ReferencedEnvelope targetEnvelope=ReferencedEnvelope.reference(renderingEnvelope);
+    ReferencedEnvelope coveragesEnvelope=null;
+    for (    GridCoverage2D coverage : coverages) {
+      ReferencedEnvelope re=ReferencedEnvelope.reference(coverage.getEnvelope2D());
+      if (coveragesEnvelope == null) {
+        coveragesEnvelope=re;
+      }
+ else {
+        coveragesEnvelope.expandToInclude(re);
+      }
+    }
+    targetEnvelope=new ReferencedEnvelope(targetEnvelope.intersection(coveragesEnvelope),renderingEnvelope.getCoordinateReferenceSystem());
+    if (targetEnvelope.isEmpty() || targetEnvelope.isNull()) {
+      return null;
+    }
+    MathTransform2D mt=coverages.get(0).getGridGeometry().getCRSToGrid2D();
+    Rectangle rasterSpaceEnvelope;
+    rasterSpaceEnvelope=CRS.transform(mt,targetEnvelope).toRectangle2D().getBounds();
+    GridEnvelope2D gridRange=new GridEnvelope2D(rasterSpaceEnvelope);
+    GridGeometry2D gridGeometry=new GridGeometry2D(gridRange,targetEnvelope);
+    final ParameterValueGroup param=MOSAIC.getParameters().clone();
+    param.parameter("sources").setValue(coverages);
+    param.parameter("geometry").setValue(gridGeometry);
+    return (GridCoverage2D)MOSAIC.doOperation(param,hints);
+  }
+ catch (  Exception e) {
+    throw new RuntimeException("Failed to mosaic the input coverages",e);
+  }
+}

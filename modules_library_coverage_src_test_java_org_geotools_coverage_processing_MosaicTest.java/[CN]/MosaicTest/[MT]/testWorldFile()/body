@@ -7,17 +7,10 @@
   ReferencedEnvelope re3=new ReferencedEnvelope(180,350,-90,90,DefaultGeographicCRS.WGS84);
   GridCoverage2D shifted=new GridCoverageFactory().create(c2.getName(),c2.getRenderedImage(),re3);
   ReferencedEnvelope reUnion=new ReferencedEnvelope(10,350,-90,90,DefaultGeographicCRS.WGS84);
-  ParameterValueGroup param=MOSAIC.getParameters();
-  param.parameter("Sources").setValue(Arrays.asList(c1,shifted));
-  GridGeometry2D ggStart=new GridGeometry2D(PixelInCell.CELL_CORNER,c1.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT),reUnion,GeoTools.getDefaultHints());
-  param.parameter("geometry").setValue(ggStart);
-  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param);
+  GridCoverage2D mosaic=mosaic(sortCoverages(Arrays.asList(c1,shifted)),new GeneralEnvelope(reUnion),new Hints());
   Envelope2D expected=new Envelope2D(reUnion);
   assertEqualBBOX(expected,mosaic.getEnvelope2D());
-  double initialRes=calculateResolution(c1);
   double finalRes=calculateResolution(mosaic);
-  double percentual=Math.abs(initialRes - finalRes) / initialRes;
-  Assert.assertTrue(percentual < TOLERANCE);
   DirectPosition point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),expected.getCenterX(),expected.getCenterY());
   double nodata=0;
   double result=((byte[])mosaic.evaluate(point))[0];
@@ -28,4 +21,6 @@
   point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),expected.getMaxX() - finalRes,expected.getMinY() + finalRes);
   result=((byte[])mosaic.evaluate(point))[0];
   Assert.assertNotEquals(nodata,result,TOLERANCE);
+  mosaic.dispose(true);
+  disposeCoveragePlanarImage(mosaic);
 }
