@@ -1,0 +1,21 @@
+{
+  final WFSDataStore dataStore=getDataStore();
+  final Name localTypeName=getEntry().getName();
+  final QName remoteTypeName=dataStore.getRemoteTypeName(localTypeName);
+  final SimpleFeatureType remoteSimpleFeatureType;
+  remoteSimpleFeatureType=dataStore.getRemoteSimpleFeatureType(remoteTypeName);
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.init(remoteSimpleFeatureType);
+  builder.setName(localTypeName);
+  String namespaceOverride=entry.getName().getNamespaceURI();
+  if (namespaceOverride != null) {
+    builder.setNamespaceURI(namespaceOverride);
+  }
+  GeometryDescriptor defaultGeometry=remoteSimpleFeatureType.getGeometryDescriptor();
+  if (defaultGeometry != null) {
+    builder.setDefaultGeometry(defaultGeometry.getLocalName());
+    builder.setCRS(defaultGeometry.getCoordinateReferenceSystem());
+  }
+  final SimpleFeatureType adaptedFeatureType=builder.buildFeatureType();
+  return adaptedFeatureType;
+}

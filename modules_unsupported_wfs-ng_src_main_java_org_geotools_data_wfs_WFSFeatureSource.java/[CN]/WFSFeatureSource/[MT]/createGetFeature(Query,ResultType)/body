@@ -1,0 +1,21 @@
+{
+  GetFeatureRequest request=client.createGetFeatureRequest();
+  final WFSDataStore dataStore=getDataStore();
+  final QName remoteTypeName=dataStore.getRemoteTypeName(getEntry().getName());
+  final SimpleFeatureType remoteSimpleFeatureType;
+  remoteSimpleFeatureType=dataStore.getRemoteSimpleFeatureType(remoteTypeName);
+  request.setTypeName(remoteTypeName);
+  request.setFullType(remoteSimpleFeatureType);
+  invertAxisInFilterIfNeeded(query);
+  request.setFilter(query.getFilter());
+  request.setResultType(resultType);
+  int maxFeatures=query.getMaxFeatures();
+  if (Integer.MAX_VALUE > maxFeatures) {
+    request.setMaxFeatures(maxFeatures);
+  }
+  request.setPropertyNames(query.getPropertyNames());
+  request.setSortBy(query.getSortBy());
+  String srsName=getSupportedSrsName(request,query);
+  request.setSrsName(srsName);
+  return request;
+}
