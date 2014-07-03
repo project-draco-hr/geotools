@@ -90,5 +90,14 @@
   final double scaleY=originalGridRange.getSpan(1) / (1.0 * ssHeight);
   final AffineTransform tempRaster2Model=new AffineTransform((AffineTransform)raster2Model);
   tempRaster2Model.concatenate(new AffineTransform(scaleX,0,0,scaleY,0,0));
-  return createCoverage(coverageRaster,ProjectiveTransform.create((AffineTransform)tempRaster2Model));
+  try {
+    return createCoverage(coverageRaster,ProjectiveTransform.create((AffineTransform)tempRaster2Model));
+  }
+ catch (  Exception e) {
+    ImageUtilities.disposePlanarImageChain(coverageRaster);
+    if (e instanceof DataSourceException) {
+      throw (DataSourceException)e;
+    }
+    throw new DataSourceException(e);
+  }
 }
