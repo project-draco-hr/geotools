@@ -1,0 +1,43 @@
+{
+  initializeCenterRadius();
+  double sx=controlPoints[0];
+  double sy=controlPoints[1];
+  double mx=controlPoints[2];
+  double my=controlPoints[3];
+  double ex=controlPoints[4];
+  double ey=controlPoints[5];
+  envelope.expandToInclude(sx,sy);
+  envelope.expandToInclude(ex,ey);
+  if (radius == COLLINEARS) {
+    return;
+  }
+  double sa=atan2(sy - centerY,sx - centerX);
+  double ma=atan2(my - centerY,mx - centerX);
+  double ea=atan2(ey - centerY,ex - centerX);
+  boolean clockwise=(sa > ma && ma > ea) || (sa < ma && sa > ea) || (ma < ea && sa > ea);
+  if (clockwise) {
+    double tx=sx;
+    sx=ex;
+    ex=tx;
+    double ty=sy;
+    sy=ey;
+    ey=ty;
+    double ta=sa;
+    sa=ea;
+    ea=ta;
+  }
+  if (ma <= sa) {
+    ma+=PI_PI;
+    ea+=PI_PI;
+  }
+ else   if (ea <= sa) {
+    ea+=PI_PI;
+  }
+  double angle=(Math.floor(sa / HALF_PI) + 1) * HALF_PI;
+  while (angle < ea) {
+    double x=centerX + radius * cos(angle);
+    double y=centerY + radius * sin(angle);
+    envelope.expandToInclude(x,y);
+    angle+=HALF_PI;
+  }
+}

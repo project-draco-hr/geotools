@@ -1,0 +1,35 @@
+{
+  double[] sp1=new Circle(10).samplePoints(Math.PI / 2,Math.PI / 4,0);
+  double[] sp2=new Circle(10,20,0).samplePoints(Math.PI,Math.PI * 3 / 4,Math.PI / 2);
+  GrowableDoubleArray data=new GrowableDoubleArray();
+  data.addAll(sp1);
+  data.add(sp2[2],sp2[3]);
+  data.add(sp2[4],sp2[5]);
+  CircularString cs=new CircularString(data.getData(),GEOMETRY_FACTORY,Double.MAX_VALUE);
+  Envelope env=cs.getEnvelopeInternal();
+  assertEnvelopeEquals(new Envelope(0,20,0,10),env);
+  assertEquals(CircularArc.BASE_SEGMENTS_QUADRANT * 2 + 1,cs.getNumPoints());
+  CircularString cloned=(CircularString)cs.clone();
+  assertEquals(cs,cloned);
+  assertEquals(10 * Math.PI,cs.getLength(),1e-2);
+  assertEquals(10 * Math.PI,cs.linearize(1e-6).getLength(),1e-6);
+  assertTrue(cs.intersects(JTS.toGeometry(new Envelope(4,8,4,8))));
+  double[] controlPoints2=new Circle(9.99).samplePoints(Math.PI * 3 / 5,Math.PI / 4,Math.PI / 10);
+  CircularString cs2=new CircularString(controlPoints2,GEOMETRY_FACTORY,Double.MAX_VALUE);
+  assertFalse(cs.intersects(cs2));
+  String wkt=cs.toCurvedText();
+  assertEquals("CIRCULARSTRING(6.123233995736766E-16 10.0, 7.0710678118654755 7.071067811865475, 10.0 0.0, 12.928932188134524 7.0710678118654755, 20.0 10.0)",wkt);
+  CircularString reversed=(CircularString)cs.reverse();
+  double[] controlPoints=cs.controlPoints;
+  double[] controlPointsReverse=reversed.controlPoints;
+  assertEquals(controlPointsReverse[0],controlPoints[8],0d);
+  assertEquals(controlPointsReverse[1],controlPoints[9],0d);
+  assertEquals(controlPointsReverse[2],controlPoints[6],0d);
+  assertEquals(controlPointsReverse[3],controlPoints[7],0d);
+  assertEquals(controlPointsReverse[4],controlPoints[4],0d);
+  assertEquals(controlPointsReverse[5],controlPoints[5],0d);
+  assertEquals(controlPointsReverse[6],controlPoints[2],0d);
+  assertEquals(controlPointsReverse[7],controlPoints[3],0d);
+  assertEquals(controlPointsReverse[8],controlPoints[0],0d);
+  assertEquals(controlPointsReverse[9],controlPoints[1],0d);
+}
