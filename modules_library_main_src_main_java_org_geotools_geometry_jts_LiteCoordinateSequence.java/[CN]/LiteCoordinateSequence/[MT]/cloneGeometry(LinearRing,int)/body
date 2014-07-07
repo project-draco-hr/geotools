@@ -1,3 +1,22 @@
 {
-  return geomFac.createLinearRing(new LiteCoordinateSequence(geom.getCoordinateSequence(),dimension));
+  if (geom instanceof SingleCurvedGeometry<?>) {
+    SingleCurvedGeometry<?> curved=(SingleCurvedGeometry<?>)geom;
+    double[] controlPoints=curved.getControlPoints();
+    double[] clonedPoints=new double[controlPoints.length];
+    System.arraycopy(controlPoints,0,clonedPoints,0,controlPoints.length);
+    return new CircularRing(clonedPoints,geomFac,curved.getTolerance());
+  }
+ else   if (geom instanceof CompoundCurvedGeometry<?>) {
+    CompoundCurvedGeometry<?> curved=(CompoundCurvedGeometry<?>)geom;
+    List<LineString> components=curved.getComponents();
+    List<LineString> clonedComponents=new ArrayList<>(components.size());
+    for (    LineString ls : components) {
+      LineString cloned=(LineString)cloneGeometry(ls,dimension);
+      clonedComponents.add(cloned);
+    }
+    return new CompoundRing(clonedComponents,geomFac,dimension);
+  }
+ else {
+    return geomFac.createLinearRing(new LiteCoordinateSequence(geom.getCoordinateSequence(),dimension));
+  }
 }
