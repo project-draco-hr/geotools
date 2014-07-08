@@ -1,12 +1,34 @@
 {
-  File file;
-  if (source instanceof Collection<?>) {
-    file=(File)((Collection<?>)source).iterator().next();
+  Collection<File> files=(Collection<File>)source;
+  CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
+  configuration.setParameter(Prop.ABSOLUTE_PATH,Boolean.toString(true));
+  Iterator<File> it=files.iterator();
+  String indexingPath=it.next().getAbsolutePath();
+  configuration.setParameter(Prop.HARVEST_DIRECTORY,indexingPath);
+  if (defaultCoverage == null) {
+    String[] coverageNames=reader.getGridCoverageNames();
+    defaultCoverage=(coverageNames != null && coverageNames.length > 0) ? coverageNames[0] : Utils.DEFAULT_INDEX_NAME;
   }
- else {
-    file=(File)source;
+  configuration.setParameter(Prop.INDEX_NAME,defaultCoverage);
+  configuration.setHints(new Hints(Utils.MOSAIC_READER,reader));
+  File mosaicSource=DataUtilities.urlToFile(reader.sourceURL);
+  if (!mosaicSource.isDirectory()) {
+    mosaicSource=mosaicSource.getParentFile();
   }
-  File directory=file.getParentFile();
-  IOFileFilter filter=FileFilterUtils.nameFileFilter(file.getName());
-  harvestCalculation(defaultCoverage,result,reader,directory,filter);
+  configuration.setParameter(Prop.ROOT_MOSAIC_DIR,mosaicSource.getAbsolutePath());
+  ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
+  final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(configuration,eventHandler);
+  ImageMosaicFileCollectionWalker walker=new ImageMosaicFileCollectionWalker(catalogHandler,eventHandler,files);
+  eventHandler.addProcessingEventListener(new ImageMosaicEventHandlers.ProcessingEventListener(){
+    @Override public void getNotification(    ProcessingEvent event){
+      if (event instanceof FileProcessingEvent) {
+        FileProcessingEvent fileEvent=(FileProcessingEvent)event;
+        result.add(new DefaultHarvestedSource(fileEvent.getFile(),fileEvent.isIngested(),fileEvent.getMessage()));
+      }
+    }
+    @Override public void exceptionOccurred(    ExceptionEvent event){
+    }
+  }
+);
+  walker.run();
 }
