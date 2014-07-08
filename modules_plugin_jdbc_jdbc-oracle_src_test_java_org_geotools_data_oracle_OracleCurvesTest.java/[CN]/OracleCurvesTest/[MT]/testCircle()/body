@@ -1,0 +1,19 @@
+{
+  ContentFeatureSource fs=dataStore.getFeatureSource(tname("curves"));
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equal(ff.property(aname("name")),ff.literal("Circle"),true);
+  ContentFeatureCollection fc=fs.getFeatures(filter);
+  assertEquals(1,fc.size());
+  SimpleFeature feature=DataUtilities.first(fc);
+  Geometry g=(Geometry)feature.getDefaultGeometry();
+  assertNotNull(g);
+  assertTrue(g instanceof Polygon);
+  Polygon p=(Polygon)g;
+  assertEquals(0,p.getNumInteriorRing());
+  assertTrue(p.getExteriorRing() instanceof CircularRing);
+  CircularRing shell=(CircularRing)p.getExteriorRing();
+  assertTrue(CurvedGeometries.isCircle(shell));
+  CircularArc arc=shell.getArcN(0);
+  assertEquals(5,arc.getRadius(),0d);
+  assertEquals(new Coordinate(15,150),arc.getCenter());
+}

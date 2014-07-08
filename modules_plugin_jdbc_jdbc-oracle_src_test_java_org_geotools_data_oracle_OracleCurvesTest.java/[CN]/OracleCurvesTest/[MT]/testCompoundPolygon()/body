@@ -1,0 +1,24 @@
+{
+  ContentFeatureSource fs=dataStore.getFeatureSource(tname("curves"));
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equal(ff.property(aname("name")),ff.literal("Compound polygon"),true);
+  ContentFeatureCollection fc=fs.getFeatures(filter);
+  assertEquals(1,fc.size());
+  SimpleFeature feature=DataUtilities.first(fc);
+  Geometry g=(Geometry)feature.getDefaultGeometry();
+  assertNotNull(g);
+  assertTrue(g instanceof Polygon);
+  Polygon p=(Polygon)g;
+  assertEquals(0,p.getNumInteriorRing());
+  assertTrue(p.getExteriorRing() instanceof CompoundCurvedGeometry<?>);
+  CompoundCurvedGeometry<?> compound=(CompoundCurvedGeometry<?>)p.getExteriorRing();
+  List<LineString> components=compound.getComponents();
+  assertEquals(2,components.size());
+  LineString ls=components.get(0);
+  assertEquals(3,ls.getNumPoints());
+  assertEquals(new Coordinate(6,10),ls.getCoordinateN(0));
+  assertEquals(new Coordinate(10,1),ls.getCoordinateN(1));
+  assertEquals(new Coordinate(14,10),ls.getCoordinateN(2));
+  CircularString cs=(CircularString)components.get(1);
+  assertArrayEquals(new double[]{14,10,10,14,6,10},cs.getControlPoints(),0d);
+}

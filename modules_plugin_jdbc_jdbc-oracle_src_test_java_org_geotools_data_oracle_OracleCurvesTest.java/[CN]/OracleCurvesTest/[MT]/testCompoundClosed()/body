@@ -1,0 +1,22 @@
+{
+  ContentFeatureSource fs=dataStore.getFeatureSource(tname("curves"));
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equal(ff.property(aname("name")),ff.literal("Closed mixed line"),true);
+  ContentFeatureCollection fc=fs.getFeatures(filter);
+  assertEquals(1,fc.size());
+  SimpleFeature feature=DataUtilities.first(fc);
+  Geometry g=(Geometry)feature.getDefaultGeometry();
+  assertNotNull(g);
+  assertTrue(g instanceof CompoundCurvedGeometry<?>);
+  CompoundCurvedGeometry<?> compound=(CompoundCurvedGeometry<?>)g;
+  List<LineString> components=compound.getComponents();
+  assertEquals(2,components.size());
+  LineString ls=components.get(0);
+  assertEquals(4,ls.getNumPoints());
+  assertEquals(new Coordinate(10,78),ls.getCoordinateN(0));
+  assertEquals(new Coordinate(10,75),ls.getCoordinateN(1));
+  assertEquals(new Coordinate(20,75),ls.getCoordinateN(2));
+  assertEquals(new Coordinate(20,78),ls.getCoordinateN(3));
+  CircularString cs=(CircularString)components.get(1);
+  assertArrayEquals(new double[]{20,78,15,80,10,78},cs.getControlPoints(),0d);
+}

@@ -1,0 +1,50 @@
+{
+  final int STARTING_OFFSET=STARTING_OFFSET(elemInfo,triplet);
+  final int LENGTH=coords.size() * D(GTYPE);
+  if (!(STARTING_OFFSET >= 1) || !(STARTING_OFFSET <= LENGTH))   throw new IllegalArgumentException("ELEM_INFO STARTING_OFFSET " + STARTING_OFFSET + " inconsistent with ORDINATES length "+ coords.size());
+  final int endTriplet=(N != -1) ? (triplet + N) : ((elemInfo.length / 3) + 1);
+  List list=new LinkedList();
+  int etype;
+  int interpretation;
+  Geometry geom;
+  GEOMETRYS:   for (int i=triplet; i < endTriplet; i++) {
+    etype=ETYPE(elemInfo,i);
+    interpretation=INTERPRETATION(elemInfo,i);
+switch (etype) {
+case -1:
+      break GEOMETRYS;
+case ETYPE.POINT:
+    if (interpretation == 1) {
+      geom=createPoint(gf,GTYPE,SRID,elemInfo,i,coords);
+    }
+ else     if (interpretation > 1) {
+      geom=createMultiPoint(gf,GTYPE,SRID,elemInfo,i,coords);
+    }
+ else {
+      throw new IllegalArgumentException("ETYPE.POINT requires INTERPRETATION >= 1");
+    }
+  break;
+case ETYPE.LINE:
+geom=createLine(gf,GTYPE,SRID,elemInfo,i,coords,false);
+break;
+case ETYPE.POLYGON:
+case ETYPE.POLYGON_EXTERIOR:
+geom=createPolygon(gf,GTYPE,SRID,elemInfo,i,coords);
+i+=((Polygon)geom).getNumInteriorRing();
+break;
+case ETYPE.POLYGON_INTERIOR:
+throw new IllegalArgumentException("ETYPE 2003 (Polygon Interior) no expected in a GeometryCollection" + "(2003 is used to represent polygon holes, in a 1003 polygon exterior)");
+case ETYPE.CUSTOM:
+case ETYPE.COMPOUND:
+case ETYPE.COMPOUND_POLYGON:
+case ETYPE.COMPOUND_POLYGON_EXTERIOR:
+case ETYPE.COMPOUND_POLYGON_INTERIOR:
+default :
+throw new IllegalArgumentException("ETYPE " + etype + " not representable as a JTS Geometry."+ "(Custom and Compound Straight and Curved Geometries not supported)");
+}
+list.add(geom);
+}
+GeometryCollection geoms=gf.createGeometryCollection(toGeometryArray(list));
+geoms.setSRID(SRID);
+return geoms;
+}
