@@ -1,26 +1,9 @@
 {
   LineString arcLineString=GML3ParsingUtils.lineString(node,gFactory,csFactory);
-  Coordinate[] arcCoordinates=arcLineString.getCoordinates();
-  if (arcCoordinates.length < 3) {
-    throw new RuntimeException("Number of coordinates in an arc string must be at least 3, " + arcCoordinates.length + " were specified: "+ arcLineString);
+  CoordinateSequence cs=arcLineString.getCoordinateSequence();
+  if (cs.size() < 3) {
+    throw new RuntimeException("Number of coordinates in an arc string must be at least 3, " + cs.size() + " were specified: "+ arcLineString);
   }
-  Coordinate c1=arcCoordinates[0];
-  Coordinate c2=arcCoordinates[arcCoordinates.length / 2];
-  Coordinate c3=arcCoordinates[arcCoordinates.length - 1];
-  boolean mustReverse=laidOutClockwise(c1,c2,c3);
-  if (mustReverse) {
-    Coordinate cTemp=c1;
-    c1=c3;
-    c3=cTemp;
-  }
-  Circle circle=new Circle(c1,c2,c3);
-  double tolerance=arcParameters.getLinearizationTolerance().getTolerance(circle);
-  Coordinate[] resultCoordinates=circle.linearizeArc(c1,c2,c3,tolerance);
-  if (mustReverse) {
-    List<Coordinate> reversingCoordinates=Arrays.asList(resultCoordinates);
-    Collections.reverse(reversingCoordinates);
-    resultCoordinates=(Coordinate[])reversingCoordinates.toArray(new Coordinate[reversingCoordinates.size()]);
-  }
-  LineString resultLineString=gFactory.createLineString(resultCoordinates);
-  return resultLineString;
+  CurvedGeometryFactory factory=GML3ParsingUtils.getCurvedGeometryFactory(arcParameters,gFactory,cs);
+  return factory.createCurvedGeometry(cs);
 }

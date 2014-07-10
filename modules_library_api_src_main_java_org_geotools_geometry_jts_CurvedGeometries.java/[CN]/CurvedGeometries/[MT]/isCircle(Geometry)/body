@@ -1,0 +1,62 @@
+{
+  if (geom.isEmpty()) {
+    return false;
+  }
+  if (!(geom instanceof CircularRing) && !(geom instanceof CompoundRing)) {
+    return false;
+  }
+  if (geom instanceof CircularRing) {
+    CircularRing curved=(CircularRing)geom;
+    CircularArc first=curved.getArcN(0);
+    double radius=first.getRadius();
+    if (radius == Double.POSITIVE_INFINITY) {
+      return false;
+    }
+    Coordinate center=first.getCenter();
+    final int numArcs=curved.getNumArcs();
+    for (int i=1; i < numArcs; i++) {
+      CircularArc curr=curved.getArcN(i);
+      if (!CircularArc.equals(curr.getRadius(),radius)) {
+        return false;
+      }
+      Coordinate cc=curr.getCenter();
+      if (!CircularArc.equals(cc.x,center.x) || !CircularArc.equals(cc.y,center.y)) {
+        return false;
+      }
+    }
+    return true;
+  }
+ else {
+    CompoundRing curved=(CompoundRing)geom;
+    List<LineString> components=curved.getComponents();
+    double radius=Double.NaN;
+    Coordinate center=null;
+    for (    LineString component : components) {
+      if (!(component instanceof SingleCurvedGeometry<?>)) {
+        return false;
+      }
+      SingleCurvedGeometry<?> curvedComponent=(SingleCurvedGeometry<?>)component;
+      final int numArcs=curvedComponent.getNumArcs();
+      for (int i=0; i < numArcs; i++) {
+        CircularArc curr=curvedComponent.getArcN(i);
+        if (center == null) {
+          radius=curr.getRadius();
+          if (radius == Double.POSITIVE_INFINITY) {
+            return false;
+          }
+          center=curr.getCenter();
+        }
+ else {
+          if (!CircularArc.equals(curr.getRadius(),radius)) {
+            return false;
+          }
+          Coordinate cc=curr.getCenter();
+          if (!CircularArc.equals(cc.x,center.x) || !CircularArc.equals(cc.y,center.y)) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+}

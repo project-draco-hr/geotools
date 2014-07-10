@@ -1,0 +1,19 @@
+{
+  CurvedGeometryFactory cf=CurvedGeometries.getFactory(curved);
+  if (curved instanceof SingleCurvedGeometry<?>) {
+    SingleCurvedGeometry<?> single=(SingleCurvedGeometry<?>)curved;
+    double[] controlPoints=single.getControlPoints();
+    double[] target=new double[controlPoints.length];
+    transform.transform(controlPoints,0,target,0,controlPoints.length / 2);
+    return cf.createCurvedGeometry(target);
+  }
+ else {
+    CompoundCurvedGeometry<?> compound=(CompoundCurvedGeometry<?>)curved;
+    List<LineString> reprojected=new ArrayList<>();
+    for (    LineString component : compound.getComponents()) {
+      LineString ls=transformStraightLineString(component,gf);
+      reprojected.add(ls);
+    }
+    return cf.createCurvedGeometry(reprojected);
+  }
+}
