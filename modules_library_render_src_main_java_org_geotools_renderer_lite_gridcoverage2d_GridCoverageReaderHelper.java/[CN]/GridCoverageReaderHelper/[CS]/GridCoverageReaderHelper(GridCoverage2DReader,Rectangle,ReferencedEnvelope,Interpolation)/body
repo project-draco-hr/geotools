@@ -1,0 +1,24 @@
+{
+  this.reader=reader;
+  this.mapExtent=mapExtent;
+  this.requestedGridGeometry=new GridGeometry2D(new GridEnvelope2D(mapRasterArea),mapExtent);
+  this.worldToScreen=requestedGridGeometry.getCRSToGrid2D();
+  sameCRS=CRS.equalsIgnoreMetadata(mapExtent.getCoordinateReferenceSystem(),reader.getCoordinateReferenceSystem());
+  paddingRequired=!sameCRS || !(interpolation instanceof InterpolationNearest);
+  if (paddingRequired) {
+    GridEnvelope2D requestedGridEnvelope=new GridEnvelope2D(mapRasterArea);
+    applyReadGutter(requestedGridEnvelope);
+    try {
+      this.requestedGridGeometry=new GridGeometry2D(requestedGridEnvelope,PixelInCell.CELL_CORNER,worldToScreen.inverse(),mapExtent.getCoordinateReferenceSystem(),null);
+      this.mapExtent=ReferencedEnvelope.reference(requestedGridGeometry.getEnvelope2D());
+      this.mapRasterArea=requestedGridGeometry.getGridRange2D().getBounds();
+    }
+ catch (    Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+ else {
+    this.mapExtent=mapExtent;
+    this.mapRasterArea=mapRasterArea;
+  }
+}

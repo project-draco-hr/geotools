@@ -14,10 +14,14 @@
   if (width < radius && renderingEnvelope.contains(env) && reWidth <= radius * 2) {
     return geometry;
   }
-  if (width > radius && width < radius * 2) {
-    geometry.apply(new WrappingCoordinateFilter(radius,radius * 2,mt,northEast));
-    geometry.geometryChanged();
-    env=geometry.getEnvelopeInternal();
+  if (datelineWrappingCheckEnabled && width > radius && width < radius * 2) {
+    Geometry wrapped=(Geometry)geometry.clone();
+    wrapped.apply(new WrappingCoordinateFilter(radius,radius * 2,mt,northEast));
+    wrapped.geometryChanged();
+    if (wrapped.getEnvelopeInternal().getWidth() < radius) {
+      geometry=wrapped;
+      env=geometry.getEnvelopeInternal();
+    }
   }
   List<Geometry> geoms=new ArrayList<Geometry>();
   Class geomType=null;
@@ -57,18 +61,18 @@
     return geoms.get(0);
   }
   if (Point.class.equals(geomType)) {
-    Point[] points=(Point[])geoms.toArray(new Point[geoms.size()]);
+    Point[] points=geoms.toArray(new Point[geoms.size()]);
     return geometry.getFactory().createMultiPoint(points);
   }
  else   if (LineString.class.isAssignableFrom(geomType)) {
-    LineString[] lines=(LineString[])geoms.toArray(new LineString[geoms.size()]);
+    LineString[] lines=geoms.toArray(new LineString[geoms.size()]);
     return geometry.getFactory().createMultiLineString(lines);
   }
  else   if (Polygon.class.equals(geomType)) {
-    Polygon[] polys=(Polygon[])geoms.toArray(new Polygon[geoms.size()]);
+    Polygon[] polys=geoms.toArray(new Polygon[geoms.size()]);
     return geometry.getFactory().createMultiPolygon(polys);
   }
  else {
-    return geometry.getFactory().createGeometryCollection((Geometry[])geoms.toArray(new Geometry[geoms.size()]));
+    return geometry.getFactory().createGeometryCollection(geoms.toArray(new Geometry[geoms.size()]));
   }
 }

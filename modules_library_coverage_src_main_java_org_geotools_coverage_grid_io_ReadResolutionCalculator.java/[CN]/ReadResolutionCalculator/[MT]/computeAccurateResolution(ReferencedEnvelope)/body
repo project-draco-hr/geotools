@@ -1,0 +1,49 @@
+{
+  if (!CRS.equalsIgnoreMetadata(readBBox.getCoordinateReferenceSystem(),requestedBBox.getCoordinateReferenceSystem())) {
+    readBBox=readBBox.transform(requestedBBox.getCoordinateReferenceSystem(),true);
+  }
+  double resX=XAffineTransform.getScaleX0(requestedGridToWorld);
+  double resY=XAffineTransform.getScaleY0(requestedGridToWorld);
+  GeneralEnvelope cropBboxTarget=CRS.transform(readBBox,requestedBBox.getCoordinateReferenceSystem());
+  double[] points=new double[36];
+  for (int i=0; i < 3; i++) {
+    double x;
+    if (i == 0) {
+      x=cropBboxTarget.getMinimum(0) + resX / 2;
+    }
+ else     if (i == 1) {
+      x=cropBboxTarget.getMedian(0);
+    }
+ else {
+      x=cropBboxTarget.getMaximum(0) - resX / 2;
+    }
+    for (int j=0; j < 3; j++) {
+      double y;
+      if (j == 0) {
+        y=cropBboxTarget.getMinimum(1) + resY / 2;
+      }
+ else       if (j == 1) {
+        y=cropBboxTarget.getMedian(1);
+      }
+ else {
+        y=cropBboxTarget.getMaximum(1) - resY / 2;
+      }
+      int k=(i * 3 + j) * 4;
+      points[k]=x - resX / 2;
+      points[k + 1]=y - resY / 2;
+      points[k + 2]=x + resX / 2;
+      points[k + 3]=y + resY / 2;
+    }
+  }
+  destinationToSourceTransform.transform(points,0,points,0,18);
+  double minDistance=Double.MAX_VALUE;
+  for (int i=0; i < 36 && minDistance > 0; i+=4) {
+    double dx=points[i + 2] - points[i];
+    double dy=points[i + 3] - points[i + 1];
+    double d=Math.sqrt(dx * dx + dy * dy);
+    if (d < minDistance) {
+      minDistance=d;
+    }
+  }
+  return new double[]{Math.max(minDistance,fullResolution[0]),Math.max(minDistance,fullResolution[1])};
+}

@@ -1,0 +1,56 @@
+{
+  if (handler == null) {
+    GridCoverage2D readCoverage=readCoverage(readParams);
+    return Arrays.asList(readCoverage);
+  }
+  GridGeometry2D gg=new GridGeometry2D(new GridEnvelope2D(mapRasterArea),mapExtent);
+  CoordinateReferenceSystem readerCRS=reader.getCoordinateReferenceSystem();
+  List<GridCoverage2D> coverages=new ArrayList<GridCoverage2D>();
+  PolygonExtractor polygonExtractor=new PolygonExtractor();
+  for (  ReferencedEnvelope envelope : handler.getQueryEnvelopes()) {
+    Polygon polygon=JTS.toGeometry(envelope);
+    GridGeometry2D readingGridGeometry=computeReadingGeometry(gg,readerCRS,polygon,handler);
+    if (readingGridGeometry == null) {
+      continue;
+    }
+    if (paddingRequired) {
+      readingGridGeometry=applyReadGutter(readingGridGeometry);
+    }
+    GridCoverage2D coverage=readSingleCoverage(readParams,readingGridGeometry);
+    if (coverage == null) {
+      continue;
+    }
+    ReferencedEnvelope readingEnvelope=ReferencedEnvelope.reference(readingGridGeometry.getEnvelope2D());
+    ReferencedEnvelope coverageEnvelope=ReferencedEnvelope.reference(coverage.getEnvelope2D());
+    Polygon coverageFootprint=JTS.toGeometry(coverageEnvelope);
+    Geometry preProcessed=handler.preProcess(coverageFootprint);
+    if (preProcessed == null || preProcessed.isEmpty()) {
+      continue;
+    }
+ else     if (coverageFootprint.equals(preProcessed)) {
+      if (!readingEnvelope.contains((Envelope)coverageEnvelope)) {
+        ReferencedEnvelope cropEnvelope=new ReferencedEnvelope(readingEnvelope.intersection(coverageEnvelope),readerCRS);
+        if (isNotEmpty(cropEnvelope)) {
+          GridCoverage2D cropped=cropCoverage(coverage,cropEnvelope);
+          coverages.add(cropped);
+        }
+      }
+ else {
+        coverages.add(coverage);
+      }
+    }
+ else {
+      final List<Polygon> polygons=polygonExtractor.getPolygons(preProcessed);
+      for (      Polygon p : polygons) {
+        ReferencedEnvelope cropEnvelope=new ReferencedEnvelope(p.getEnvelopeInternal(),readerCRS);
+        cropEnvelope=new ReferencedEnvelope(cropEnvelope.intersection(coverageEnvelope),readerCRS);
+        cropEnvelope=new ReferencedEnvelope(cropEnvelope.intersection(readingEnvelope),readerCRS);
+        if (isNotEmpty(cropEnvelope)) {
+          GridCoverage2D cropped=cropCoverage(coverage,cropEnvelope);
+          coverages.add(cropped);
+        }
+      }
+    }
+  }
+  return coverages;
+}

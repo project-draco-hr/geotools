@@ -1,0 +1,12 @@
+{
+  CoordinateReferenceSystem crs=CRS.decode("EPSG:3031",true);
+  ReferencedEnvelope mapExtent=new ReferencedEnvelope(-1250000,0,-10000000,-8750000,crs);
+  Rectangle screenSize=new Rectangle(256,256);
+  AffineTransform w2s=RendererUtilities.worldToScreenTransform(mapExtent,screenSize);
+  GridCoverageRenderer renderer=new GridCoverageRenderer(mapExtent.getCoordinateReferenceSystem(),mapExtent,screenSize,w2s);
+  RasterSymbolizer rasterSymbolizer=buildRainColorMap();
+  RenderedImage image=renderer.renderImage(rainReader,null,rasterSymbolizer,Interpolation.getInstance(Interpolation.INTERP_NEAREST),Color.RED,256,256);
+  assertNotNull(image);
+  File reference=new File("src/test/resources/org/geotools/renderer/lite/gridcoverage2d/polar_touchdateline.png");
+  ImageAssert.assertEquals(reference,image,0);
+}
