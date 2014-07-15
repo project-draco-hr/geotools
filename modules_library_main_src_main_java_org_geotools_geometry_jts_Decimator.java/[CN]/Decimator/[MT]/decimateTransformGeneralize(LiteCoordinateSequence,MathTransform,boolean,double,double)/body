@@ -1,0 +1,61 @@
+{
+  int ncoords=seq.size();
+  double coords[]=null;
+  if (transform != null) {
+    coords=seq.getOrdinateArray(transform.getSourceDimensions());
+  }
+ else {
+    coords=seq.getXYArray();
+  }
+  if (ncoords < 2) {
+    if (ncoords == 1) {
+      if (transform != null) {
+        transform.transform(coords,0,coords,0,1);
+        seq.setArray(coords,2);
+      }
+      return;
+    }
+ else     return;
+  }
+  if (spanx == -1 && spany == -1) {
+    if ((transform != null) && (!transform.isIdentity())) {
+      transform.transform(coords,0,coords,0,ncoords);
+      seq.setArray(coords,2);
+    }
+    return;
+  }
+  int actualCoords=spanBasedGeneralize(ncoords,coords,spanx,spany);
+  if (DP_THRESHOLD > 0 && actualCoords > DP_THRESHOLD) {
+    actualCoords=dpBasedGeneralize(actualCoords,coords,Math.min(spanx,spany) * Math.min(spanx,spany));
+  }
+  if (ring && actualCoords <= 3) {
+    if (coords.length > 6) {
+      coords[2]=coords[2];
+      coords[3]=coords[3];
+      coords[4]=coords[4];
+      coords[5]=coords[5];
+      actualCoords=3;
+    }
+ else     if (coords.length > 4) {
+      coords[2]=coords[2];
+      coords[3]=coords[3];
+      actualCoords=2;
+    }
+  }
+  coords[actualCoords * 2]=coords[(ncoords - 1) * 2];
+  coords[actualCoords * 2 + 1]=coords[(ncoords - 1) * 2 + 1];
+  actualCoords++;
+  if ((transform == null) || (transform.isIdentity())) {
+  }
+ else {
+    transform.transform(coords,0,coords,0,actualCoords);
+  }
+  if (actualCoords * 2 < coords.length) {
+    double[] seqDouble=new double[2 * actualCoords];
+    System.arraycopy(coords,0,seqDouble,0,actualCoords * 2);
+    seq.setArray(seqDouble,2);
+  }
+ else {
+    seq.setArray(coords,2);
+  }
+}

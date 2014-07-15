@@ -1,0 +1,34 @@
+{
+  final int STARTING_OFFSET=STARTING_OFFSET(elemInfo,triplet);
+  final int eTYPE=ETYPE(elemInfo,triplet);
+  final int INTERPRETATION=INTERPRETATION(elemInfo,triplet);
+  final int LENGTH=coords.size() * D(GTYPE);
+  if (!(STARTING_OFFSET >= 1) || !(STARTING_OFFSET <= LENGTH))   throw new IllegalArgumentException("ELEM_INFO STARTING_OFFSET " + STARTING_OFFSET + " inconsistent with ORDINATES length "+ coords.size());
+  if (!(eTYPE == ETYPE.POLYGON) && !(eTYPE == ETYPE.POLYGON_EXTERIOR) && !(eTYPE == ETYPE.FACE_EXTERIOR)&& !(eTYPE == ETYPE.FACE_INTERIOR)&& !(eTYPE == ETYPE.COMPOUND_POLYGON)&& !(eTYPE == ETYPE.COMPOUND_POLYGON_EXTERIOR))   throw new IllegalArgumentException("ETYPE " + eTYPE + " inconsistent with expected POLYGON or POLYGON_EXTERIOR");
+  if (!(eTYPE == ETYPE.COMPOUND_POLYGON) && !(eTYPE == ETYPE.COMPOUND_POLYGON_EXTERIOR) && INTERPRETATION != 1 && INTERPRETATION != 3) {
+    LOGGER.warning("Could not create MultiPolygon with INTERPRETATION " + INTERPRETATION + " - we can only represent 1 for straight edges, or 3 for rectangle");
+    return null;
+  }
+  final int endTriplet=(N != -1) ? (triplet + N) : ((elemInfo.length / 3) + 1);
+  List list=new LinkedList();
+  int etype;
+  POLYGONS:   for (int i=triplet; (i < endTriplet) && ((etype=ETYPE(elemInfo,i)) != -1); i++) {
+    if ((etype == ETYPE.POLYGON) || (etype == ETYPE.POLYGON_EXTERIOR) || (etype == ETYPE.FACE_EXTERIOR)|| (etype == ETYPE.FACE_INTERIOR)) {
+      Polygon poly=createPolygon(gf,GTYPE,SRID,elemInfo,i,coords);
+      i+=poly.getNumInteriorRing();
+      list.add(poly);
+    }
+ else     if (etype == ETYPE.COMPOUND_POLYGON_EXTERIOR || etype == ETYPE.COMPOUND_POLYGON) {
+      Polygon poly=createPolygon(gf,GTYPE,SRID,elemInfo,i,coords);
+      int curvilinearElementsCount=getCurvilinearElementsCount(poly);
+      i+=curvilinearElementsCount - 1;
+      list.add(poly);
+    }
+ else {
+      break POLYGONS;
+    }
+  }
+  MultiPolygon polys=gf.createMultiPolygon(toPolygonArray(list));
+  polys.setSRID(SRID);
+  return polys;
+}

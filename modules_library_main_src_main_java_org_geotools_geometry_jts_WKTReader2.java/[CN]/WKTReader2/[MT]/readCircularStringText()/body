@@ -1,20 +1,13 @@
 {
   List<Coordinate> coordinates=getCoordinateList(true);
-  List<Coordinate> segmentized;
-  if (coordinates.size() < 3) {
-    segmentized=coordinates;
+  if (coordinates.size() == 0) {
+    return geometryFactory.createLineString(new Coordinate[0]);
+  }
+ else   if (coordinates.size() < 3) {
+    throw new ParseException("A CIRCULARSTRING must contain at least 3 control points");
   }
  else {
-    segmentized=new ArrayList<Coordinate>();
-    for (int i=0; i < coordinates.size() - 1; i+=2) {
-      Coordinate p1=coordinates.get(i);
-      Coordinate p2=coordinates.get(i + 1);
-      Coordinate p3=coordinates.get(i + 2);
-      List<Coordinate> segments=circularSegmentize(p1,p2,p3);
-      segmentized.addAll(segments.subList(0,segments.size() - 1));
-    }
-    segmentized.add(coordinates.get(coordinates.size() - 1));
+    double[] controlPoints=toControlPoints(coordinates);
+    return geometryFactory.createCurvedGeometry(controlPoints);
   }
-  Coordinate array[]=segmentized.toArray(new Coordinate[segmentized.size()]);
-  return geometryFactory.createLineString(array);
 }

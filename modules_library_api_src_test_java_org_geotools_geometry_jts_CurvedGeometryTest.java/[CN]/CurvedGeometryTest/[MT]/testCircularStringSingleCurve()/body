@@ -1,0 +1,24 @@
+{
+  double[] controlPoints=new Circle(10).samplePoints(Math.PI / 2,Math.PI / 4,0);
+  CircularString cs=new CircularString(controlPoints,GEOMETRY_FACTORY,Double.MAX_VALUE);
+  Envelope env=cs.getEnvelopeInternal();
+  assertEnvelopeEquals(new Envelope(0,10,0,10),env);
+  assertEquals(CircularArc.BASE_SEGMENTS_QUADRANT + 1,cs.getNumPoints());
+  CircularString cloned=(CircularString)cs.clone();
+  assertEquals(cs,cloned);
+  assertEquals(10 * Math.PI / 2,cs.getLength(),1e-1);
+  assertEquals(10 * Math.PI / 2,cs.linearize(1e-6).getLength(),1e-6);
+  assertTrue(cs.intersects(JTS.toGeometry(new Envelope(4,8,4,8))));
+  double[] controlPoints2=new Circle(9.9).samplePoints(Math.PI * 3 / 5,Math.PI / 4,Math.PI / 10);
+  CircularString cs2=new CircularString(controlPoints2,GEOMETRY_FACTORY,Double.MAX_VALUE);
+  assertFalse(cs.intersects(cs2));
+  String wkt=cs.toCurvedText();
+  assertEquals("CIRCULARSTRING(6.123233995736766E-16 10.0, 7.0710678118654755 7.071067811865475, 10.0 0.0)",wkt);
+  CircularString reversed=(CircularString)cs.reverse();
+  assertEquals(reversed.controlPoints[0],cs.controlPoints[4],0d);
+  assertEquals(reversed.controlPoints[1],cs.controlPoints[5],0d);
+  assertEquals(reversed.controlPoints[2],cs.controlPoints[2],0d);
+  assertEquals(reversed.controlPoints[3],cs.controlPoints[3],0d);
+  assertEquals(reversed.controlPoints[4],cs.controlPoints[0],0d);
+  assertEquals(reversed.controlPoints[5],cs.controlPoints[1],0d);
+}

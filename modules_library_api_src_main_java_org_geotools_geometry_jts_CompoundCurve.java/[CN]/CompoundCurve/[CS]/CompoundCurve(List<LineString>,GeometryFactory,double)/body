@@ -1,0 +1,26 @@
+{
+  super(CircularString.FAKE_STRING_2D,factory);
+  this.tolerance=tolerance;
+  this.components=new ArrayList<>();
+  for (  LineString ls : components) {
+    if (ls instanceof CompoundCurve) {
+      CompoundCurve cc=(CompoundCurve)ls;
+      this.components.addAll(cc.components);
+    }
+ else {
+      this.components.add(ls);
+    }
+  }
+  if (components.size() > 1) {
+    LineString prev=components.get(0);
+    for (int i=1; i < components.size(); i++) {
+      LineString curr=components.get(i);
+      Point endPoint=prev.getEndPoint();
+      Point startPoint=curr.getStartPoint();
+      if (!endPoint.equals(startPoint)) {
+        throw new IllegalArgumentException("Found two elements that are not connected, " + prev + " and "+ curr);
+      }
+      prev=curr;
+    }
+  }
+}

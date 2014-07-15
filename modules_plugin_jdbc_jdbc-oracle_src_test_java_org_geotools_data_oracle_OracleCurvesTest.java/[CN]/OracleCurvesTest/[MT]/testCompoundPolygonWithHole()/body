@@ -1,0 +1,34 @@
+{
+  ContentFeatureSource fs=dataStore.getFeatureSource(tname("curves"));
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equal(ff.property(aname("name")),ff.literal("Compound polygon with hole"),true);
+  ContentFeatureCollection fc=fs.getFeatures(filter);
+  assertEquals(1,fc.size());
+  SimpleFeature feature=DataUtilities.first(fc);
+  Geometry g=(Geometry)feature.getDefaultGeometry();
+  assertNotNull(g);
+  assertTrue(g instanceof Polygon);
+  Polygon p=(Polygon)g;
+  assertEquals(1,p.getNumInteriorRing());
+  assertTrue(p.getExteriorRing() instanceof CompoundCurvedGeometry<?>);
+  CompoundCurvedGeometry<?> shell=(CompoundCurvedGeometry<?>)p.getExteriorRing();
+  List<LineString> components=shell.getComponents();
+  assertEquals(2,components.size());
+  LineString ls=components.get(0);
+  assertEquals(7,ls.getNumPoints());
+  assertEquals(new Coordinate(20,30),ls.getCoordinateN(0));
+  assertEquals(new Coordinate(11,30),ls.getCoordinateN(1));
+  assertEquals(new Coordinate(7,22),ls.getCoordinateN(2));
+  assertEquals(new Coordinate(7,15),ls.getCoordinateN(3));
+  assertEquals(new Coordinate(11,10),ls.getCoordinateN(4));
+  assertEquals(new Coordinate(21,10),ls.getCoordinateN(5));
+  assertEquals(new Coordinate(27,30),ls.getCoordinateN(6));
+  CircularString cs=(CircularString)components.get(1);
+  assertArrayEquals(new double[]{27,30,25,27,20,30},cs.getControlPoints(),0d);
+  assertTrue(p.getInteriorRingN(0) instanceof CircularRing);
+  CircularRing hole=(CircularRing)p.getInteriorRingN(0);
+  assertTrue(CurvedGeometries.isCircle(hole));
+  CircularArc arc=hole.getArcN(0);
+  assertEquals(5,arc.getRadius(),0d);
+  assertEquals(new Coordinate(15,17),arc.getCenter());
+}

@@ -1,0 +1,81 @@
+{
+  initializeCenterRadius();
+  if (tolerance < 0) {
+    throw new IllegalArgumentException("The tolerance must be a positive number (or zero, to make the system use the " + "max number of segments per quadrant configured in " + "org.getools.geometry.arc.maxSegmentsQuadrant, default is 10000)");
+  }
+  int segmentsPerQuadrant;
+  if (tolerance == 0) {
+    segmentsPerQuadrant=MAX_SEGMENTS_QUADRANT;
+  }
+ else {
+    segmentsPerQuadrant=BASE_SEGMENTS_QUADRANT;
+    double currentTolerance=computeChordCircleDistance(segmentsPerQuadrant);
+    while (currentTolerance > tolerance && segmentsPerQuadrant < MAX_SEGMENTS_QUADRANT) {
+      segmentsPerQuadrant*=2;
+      currentTolerance=computeChordCircleDistance(segmentsPerQuadrant);
+    }
+  }
+  double sx=controlPoints[0];
+  double sy=controlPoints[1];
+  double mx=controlPoints[2];
+  double my=controlPoints[3];
+  double ex=controlPoints[4];
+  double ey=controlPoints[5];
+  double sa=atan2(sy - centerY,sx - centerX);
+  double ma=atan2(my - centerY,mx - centerX);
+  double ea=atan2(ey - centerY,ex - centerX);
+  double step=HALF_PI / segmentsPerQuadrant;
+  boolean clockwise=(sa > ma && ma > ea) || (sa > ma && sa < ea) || (ma > ea && sa < ea);
+  if (clockwise) {
+    double tx=sx;
+    sx=ex;
+    ex=tx;
+    double ty=sy;
+    sy=ey;
+    ey=ty;
+    double ta=sa;
+    sa=ea;
+    ea=ta;
+  }
+  if (ma < sa) {
+    ma+=TAU;
+    ea+=TAU;
+  }
+ else   if (ea < sa) {
+    ea+=TAU;
+  }
+  double angle=(Math.floor(sa / step) + 1) * step;
+  if (angle > ea) {
+    array.addAll(controlPoints);
+    return array;
+  }
+  int points=2 + (int)Math.ceil((ea - angle) / step);
+  if (!isWhole((ma - angle) / step)) {
+    points++;
+  }
+  int start=array.size();
+  array.ensureLength(start + points * 2);
+  array.add(sx,sy);
+  if (angle > ma) {
+    array.add(mx,my);
+    if (equals(angle,ma)) {
+      angle+=step;
+    }
+  }
+  final double end=ea - EPS;
+  while (angle < end) {
+    double x=centerX + radius * cos(angle);
+    double y=centerY + radius * sin(angle);
+    array.add(x,y);
+    double next=angle + step;
+    if (angle < ma && next > ma && !equals(angle,ma) && !equals(next,ma)) {
+      array.add(mx,my);
+    }
+    angle=next;
+  }
+  array.add(ex,ey);
+  if (clockwise) {
+    array.reverseOrdinates(start,array.size() - 1);
+  }
+  return array;
+}

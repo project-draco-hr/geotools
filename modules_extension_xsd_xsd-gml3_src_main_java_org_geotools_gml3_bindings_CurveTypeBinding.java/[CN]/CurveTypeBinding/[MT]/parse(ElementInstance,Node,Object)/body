@@ -1,4 +1,19 @@
 {
   LineString[] segments=(LineString[])node.getChildValue("segments");
-  return gf.createMultiLineString(segments);
+  if (segments.length == 0) {
+    return null;
+  }
+ else   if (segments.length > 1) {
+    return segments[1];
+  }
+ else {
+    LineString curved=null;
+    for (    LineString ls : segments) {
+      if (ls instanceof CurvedGeometry<?>) {
+        curved=ls;
+      }
+    }
+    CurvedGeometryFactory factory=GML3ParsingUtils.getCurvedGeometryFactory(arcParameters,gf,curved != null ? curved.getCoordinateSequence() : null);
+    return factory.createCurvedGeometry(Arrays.asList(segments));
+  }
 }

@@ -1,0 +1,13 @@
+{
+  CircularString cs=(CircularString)new CurvedGeometryFactory(0.1).createCurvedGeometry(0,1,1,2,2,1);
+  GeometryCoordinateSequenceTransformer transformer=new GeometryCoordinateSequenceTransformer();
+  CoordinateReferenceSystem targetCRS=CRS.decode("EPSG:3857");
+  CoordinateReferenceSystem sourceCRS=CRS.decode("EPSG:4326",true);
+  transformer.setCoordinateReferenceSystem(targetCRS);
+  MathTransform trans=CRS.findMathTransform(sourceCRS,targetCRS);
+  transformer.setMathTransform(trans);
+  Geometry transformed=transformer.transform(cs);
+  assertFalse(transformed instanceof CircularString);
+  LineString ls=(LineString)transformed;
+  assertTrue(ls.getCoordinateSequence().size() > 3);
+}

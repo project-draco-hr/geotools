@@ -1,0 +1,16 @@
+{
+  double[] halfCircle=new double[]{10,10,0,20,-10,10};
+  CircularString cs=new CircularString(halfCircle,GEOMETRY_FACTORY,Double.MAX_VALUE);
+  LineString ls=new LineString(new CoordinateArraySequence(new Coordinate[]{new Coordinate(-10,10),new Coordinate(-10,0),new Coordinate(10,0),new Coordinate(10,10)}),GEOMETRY_FACTORY);
+  CompoundRing ring=new CompoundRing(Arrays.asList(cs,ls),GEOMETRY_FACTORY,Double.MAX_VALUE);
+  Envelope env=ring.getEnvelopeInternal();
+  assertEnvelopeEquals(new Envelope(-10,10,0,20),env);
+  assertEquals(CircularArc.BASE_SEGMENTS_QUADRANT * 2 + 4,ring.getNumPoints());
+  CompoundRing cloned=(CompoundRing)ring.clone();
+  assertEquals(ring,cloned);
+  assertEquals(10 * Math.PI + 40,ring.getLength(),1e-1);
+  assertTrue(ring.intersects(JTS.toGeometry(new Envelope(0,10,12,15))));
+  assertTrue(ring.intersects(JTS.toGeometry(new Envelope(8,12,-2,2))));
+  String wkt=ring.toCurvedText();
+  assertEquals("COMPOUNDCURVE(CIRCULARSTRING(10.0 10.0, 0.0 20.0, -10.0 10.0), (-10.0 10.0, -10.0 0.0, 10.0 0.0, 10.0 10.0))",wkt);
+}

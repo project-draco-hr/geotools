@@ -1,0 +1,26 @@
+{
+  final int STARTING_OFFSET=STARTING_OFFSET(elemInfo,triplet);
+  final int eTYPE=ETYPE(elemInfo,triplet);
+  final int INTERPRETATION=INTERPRETATION(elemInfo,triplet);
+  final int LENGTH=coords.size() * D(GTYPE);
+  if (!(STARTING_OFFSET >= 1) || !(STARTING_OFFSET <= LENGTH))   throw new IllegalArgumentException("ELEM_INFO STARTING_OFFSET " + STARTING_OFFSET + " inconsistent with ORDINATES length "+ coords.size());
+  if (!(eTYPE == ETYPE.LINE))   throw new IllegalArgumentException("ETYPE " + eTYPE + " inconsistent with expected LINE");
+  if (!(INTERPRETATION == 1)) {
+    LOGGER.warning("Could not create MultiLineString with INTERPRETATION " + INTERPRETATION + " - we can only represent 1 for straight edges");
+    return null;
+  }
+  final int endTriplet=(N != -1) ? (triplet + N) : (elemInfo.length / 3);
+  List list=new LinkedList();
+  int etype;
+  LINES:   for (int i=triplet; (i < endTriplet) && ((etype=ETYPE(elemInfo,i)) != -1); i++) {
+    if (etype == ETYPE.LINE) {
+      list.add(createLine(gf,GTYPE,SRID,elemInfo,i,coords,false));
+    }
+ else {
+      break LINES;
+    }
+  }
+  MultiLineString lines=gf.createMultiLineString(toLineStringArray(list));
+  lines.setSRID(SRID);
+  return lines;
+}

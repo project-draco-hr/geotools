@@ -1,12 +1,22 @@
 {
-  List<MultiLineString> curveMemberList=node.getChildValues(MultiLineString.class);
-  List<LineString> curveMembers=new ArrayList<LineString>();
-  for (  MultiLineString curveMember : curveMemberList) {
-    for (int i=0; i < curveMember.getNumGeometries(); i++) {
-      LineString lineString=(LineString)curveMember.getGeometryN(i);
-      curveMembers.add(lineString);
-    }
+  List members=node.getChildValues("curveMember");
+  if (members.isEmpty()) {
+    return null;
   }
-  MultiLineString multiLineString=gf.createMultiLineString(GeometryFactory.toLineStringArray(curveMembers));
-  return gf.createLinearRing(multiLineString.getCoordinates());
+ else   if (members.size() == 1) {
+    return members.get(0);
+  }
+ else {
+    LineString curved=null;
+    List<LineString> components=new ArrayList<>();
+    for (Iterator it=members.iterator(); it.hasNext(); ) {
+      LineString ls=(LineString)it.next();
+      if (ls instanceof CurvedGeometry<?>) {
+        curved=ls;
+      }
+      components.add(ls);
+    }
+    CurvedGeometryFactory factory=GML3ParsingUtils.getCurvedGeometryFactory(arcParameters,gf,curved != null ? curved.getCoordinateSequence() : null);
+    return factory.createCurvedGeometry(components);
+  }
 }
