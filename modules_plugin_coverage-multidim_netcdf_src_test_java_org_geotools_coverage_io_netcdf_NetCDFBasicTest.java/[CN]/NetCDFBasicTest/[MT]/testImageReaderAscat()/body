@@ -1,0 +1,65 @@
+{
+  File file=null;
+  try {
+    file=TestData.file(this,"ascatl1.nc");
+  }
+ catch (  IOException e) {
+    LOGGER.warning("Unable to find file ascatl1.nc");
+    return;
+  }
+  if (!file.exists()) {
+    LOGGER.warning("Unable to find file ascatl1.nc");
+    return;
+  }
+  final NetCDFImageReaderSpi unidataImageReaderSpi=new NetCDFImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  NetCDFImageReader reader=null;
+  try {
+    reader=(NetCDFImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    int numImages=reader.getNumImages(true);
+    for (int i=0; i < numImages; i++) {
+      Slice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    final List<Name> names=reader.getCoveragesNames();
+    assertNotNull(names);
+    assertTrue(!names.isEmpty());
+    assertTrue(2 == names.size());
+    assertEquals("cell_index",names.get(0).toString());
+    assertEquals("f_land",names.get(1).toString());
+    final CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    final String[] typeNames=cs.getTypeNames();
+    for (    String typeName : typeNames) {
+      final List<CoverageSlice> granules=cs.getGranules(new Query(typeName,Filter.INCLUDE));
+      assertNotNull(granules);
+      assertFalse(granules.isEmpty());
+      for (      CoverageSlice slice : granules) {
+        final SimpleFeature sf=slice.getOriginator();
+        if (TestData.isInteractiveTest()) {
+          LOGGER.info(DataUtilities.encodeFeature(sf));
+        }
+        for (        Property p : sf.getProperties()) {
+          final String pName=p.getName().toString();
+          if (!pName.equalsIgnoreCase("time") && !pName.equalsIgnoreCase("elevation")) {
+            assertNotNull("Property " + p.getName() + " had a null value!",p.getValue());
+          }
+ else {
+            assertNull("Property " + p.getName() + " did not have a null value!",p.getValue());
+          }
+        }
+      }
+    }
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

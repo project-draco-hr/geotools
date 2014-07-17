@@ -1,0 +1,65 @@
+{
+  boolean canDecode=false;
+  File input=null;
+  if (source instanceof FileImageInputStreamExtImpl) {
+    input=((FileImageInputStreamExtImpl)source).getFile();
+    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Found a valid FileImageInputStream");
+  }
+  if (source instanceof File) {
+    input=(File)source;
+  }
+  if (source instanceof URIImageInputStream) {
+    URIImageInputStream uriInStream=(URIImageInputStream)source;
+    try {
+      NetcdfDataset openDataset=NetcdfDataset.openDataset(uriInStream.getUri().toString());
+      openDataset.close();
+      return true;
+    }
+ catch (    IOException e) {
+      return false;
+    }
+  }
+  if (input != null) {
+    NetcdfFile file=null;
+    FileImageInputStream fis=null;
+    try {
+      fis=new FileImageInputStream(input);
+      byte[] b=new byte[4];
+      fis.mark();
+      fis.readFully(b);
+      fis.reset();
+      boolean cdfCheck=(b[0] == (byte)0x43 && b[1] == (byte)0x44 && b[2] == (byte)0x46);
+      boolean hdf5Check=(b[0] == (byte)0x89 && b[1] == (byte)0x48 && b[2] == (byte)0x44);
+      boolean gribCheck=(b[0] == (byte)0x47 && b[1] == (byte)0x52 && b[2] == (byte)0x49 && b[3] == (byte)0x42);
+      gribCheck&=NetCDFUtilities.isGribAvailable();
+      boolean isNetCDF=true;
+      if (!cdfCheck && !hdf5Check && !gribCheck) {
+        if (!isNcML(input)) {
+          isNetCDF=false;
+        }
+      }
+      if (!isNetCDF) {
+        return false;
+      }
+      file=NetcdfDataset.openDataset(input.getPath());
+      if (file != null) {
+        if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine("File successfully opened");
+        canDecode=true;
+      }
+    }
+ catch (    IOException ioe) {
+      canDecode=false;
+    }
+ finally {
+      if (fis != null) {
+        try {
+          fis.close();
+        }
+ catch (        Throwable t) {
+        }
+      }
+      if (file != null)       file.close();
+    }
+  }
+  return canDecode;
+}

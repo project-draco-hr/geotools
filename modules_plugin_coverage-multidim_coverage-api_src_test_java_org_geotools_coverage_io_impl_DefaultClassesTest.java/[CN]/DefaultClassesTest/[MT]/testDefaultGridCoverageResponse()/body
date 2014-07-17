@@ -1,0 +1,21 @@
+{
+  GridCoverage2D cov=new GridCoverageFactory().create("test",new float[][]{{1.0f,1.0f}},new ReferencedEnvelope(0.0d,1.0d,0.0d,1.0d,null));
+  DateRange temporalExtent=new DateRange(new Date(10000),new Date(20000));
+  NumberRange<Double> verticalExtent=new NumberRange<Double>(Double.class,0.0d,100.0d);
+  DefaultGridCoverageResponse response=new DefaultGridCoverageResponse(cov,temporalExtent,verticalExtent);
+  assertEquals(response.getNumSampleDimensions(),cov.getNumSampleDimensions());
+  assertEquals(response.getNumOverviews(),cov.getNumOverviews());
+  assertTrue(CRS.equalsIgnoreMetadata(response.getCoordinateReferenceSystem(),cov.getCoordinateReferenceSystem()));
+  assertTrue(new ReferencedEnvelope(response.getEnvelope()).contains(cov.getEnvelope2D()));
+  assertTrue(response.isDataEditable() == cov.isDataEditable());
+  assertSame(response.getGridGeometry(),cov.getGridGeometry());
+  assertSame(response.getGridCoverage2D(),cov);
+  assertSame(response.getRenderedImage(),cov.getRenderedImage());
+  assertSame(response.getTemporalExtent(),temporalExtent);
+  assertSame(response.getVerticalExtent(),verticalExtent);
+  assertSame(response.getSampleDimension(0),cov.getSampleDimension(0));
+  assertSame(response.getSources(),cov.getSources());
+  assertArrayEquals(response.getOptimalDataBlockSizes(),cov.getOptimalDataBlockSizes());
+  DirectPosition2D pos=new DirectPosition2D(cov.getEnvelope2D().getCenterX(),cov.getEnvelope2D().getCenterY());
+  assertArrayEquals(response.evaluate(pos,new byte[1]),cov.evaluate(pos,new byte[1]));
+}

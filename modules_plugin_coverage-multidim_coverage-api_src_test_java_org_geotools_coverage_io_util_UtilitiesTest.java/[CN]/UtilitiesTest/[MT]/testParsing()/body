@@ -1,0 +1,23 @@
+{
+  Unit unit=Utilities.parseUnit("m");
+  assertEquals(unit,SI.METER);
+  unit=Utilities.parseUnit("s");
+  assertEquals(unit,SI.SECOND);
+  unit=Utilities.parseUnit("temp_deg_c");
+  assertEquals(unit,SI.CELSIUS);
+  final double inverseFlattening=298.257223563;
+  final double equatorialRadius=6378137;
+  final DefaultGeodeticDatum datum=Utilities.getDefaultGeodeticDatum("WGS84",equatorialRadius,inverseFlattening,SI.METER);
+  final PrimeMeridian primeMeridian=datum.getPrimeMeridian();
+  assertEquals(0,primeMeridian.getGreenwichLongitude(),DELTA);
+  final Ellipsoid ellipsoid=datum.getEllipsoid();
+  assertEquals(equatorialRadius,ellipsoid.getSemiMajorAxis(),DELTA);
+  assertEquals(inverseFlattening,ellipsoid.getInverseFlattening(),DELTA);
+  final GeographicCRS geoCrs=Utilities.getBaseCRS(equatorialRadius,inverseFlattening);
+  assertEquals(datum,geoCrs.getDatum());
+  CoordinateReferenceSystem mercatorCRS=Utilities.getMercator2SPProjectedCRS(10,0,0,geoCrs,null);
+  assertTrue(mercatorCRS instanceof DefaultProjectedCRS);
+  DefaultProjectedCRS mercator=(DefaultProjectedCRS)mercatorCRS;
+  assertEquals(datum,mercator.getDatum());
+  assertEquals(geoCrs,mercator.getBaseCRS());
+}

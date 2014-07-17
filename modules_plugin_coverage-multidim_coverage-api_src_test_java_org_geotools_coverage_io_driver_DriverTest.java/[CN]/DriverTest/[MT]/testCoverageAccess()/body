@@ -1,0 +1,25 @@
+{
+  Map<String,Serializable> connectionParams=new HashMap<String,Serializable>();
+  connectionParams.put(DefaultFileDriver.URL.key,new URL(TestDriver.TEST_URL));
+  CoverageAccess access=driver.access(DriverCapabilities.CONNECT,connectionParams,null,null);
+  assertFalse(access.isCreateSupported());
+  assertFalse(access.isDeleteSupported());
+  assertSame(driver,access.getDriver());
+  final List<Name> names=access.getNames(null);
+  final Name coverageName=names.get(0);
+  assertEquals(1,names.size());
+  assertEquals(TestCoverageSourceDescriptor.TEST_NAME,coverageName);
+  final CoverageSource source=access.access(TestCoverageSourceDescriptor.TEST_NAME,null,AccessType.READ_ONLY,null,null);
+  CoordinateReferenceSystem crs=source.getCoordinateReferenceSystem();
+  assertEquals(TestCoverageSourceDescriptor.TEST_NAME,source.getName(null));
+  assertTrue(source.getAdditionalDomains().isEmpty());
+  assertTrue(source.getDimensionDescriptors().isEmpty());
+  assertNull(source.getVerticalDomain());
+  assertNotNull(source.getTemporalDomain());
+  SpatialDomain spatialDomain=source.getSpatialDomain();
+  assertNotNull(spatialDomain);
+  assertTrue(CRS.equalsIgnoreMetadata(spatialDomain.getCoordinateReferenceSystem2D(),WGS84));
+  assertEquals(RasterLayoutTest.testRasterLayout,spatialDomain.getRasterElements(false,null).iterator().next());
+  assertNotNull(crs);
+  assertEquals(WGS84,crs);
+}

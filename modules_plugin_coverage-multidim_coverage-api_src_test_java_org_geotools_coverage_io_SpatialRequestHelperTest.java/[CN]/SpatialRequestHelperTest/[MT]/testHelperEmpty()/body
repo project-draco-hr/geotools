@@ -1,0 +1,21 @@
+{
+  SpatialRequestHelper helper=new SpatialRequestHelper();
+  ReferencedEnvelope envelope=new ReferencedEnvelope(-180,0,-90,90,coverageProperties.getGeographicCRS2D());
+  GridCoverage2D coverage2=new GridCoverageFactory(GeoTools.getDefaultHints()).create("testCoverage",image,envelope);
+  CoverageProperties coverageProperties2=new CoverageProperties();
+  coverageProperties2.setBbox(new ReferencedEnvelope(coverage2.getEnvelope2D()));
+  coverageProperties2.setCrs2D(coverage2.getCoordinateReferenceSystem2D());
+  coverageProperties2.setFullResolution(CoverageUtilities.getResolution((AffineTransform)coverage2.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT)));
+  coverageProperties2.setRasterArea(coverage2.getGridGeometry().getGridRange2D());
+  coverageProperties2.setGeographicBBox(new ReferencedEnvelope(coverage2.getEnvelope2D()));
+  coverageProperties2.setGeographicCRS2D(coverage2.getCoordinateReferenceSystem2D());
+  coverageProperties2.setGridToWorld2D(coverage2.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT));
+  GridEnvelope2D gridRange=new GridEnvelope2D(0,0,1024,1024);
+  ReferencedEnvelope envelope2=new ReferencedEnvelope(1,180,-90,90,coverageProperties.getGeographicCRS2D());
+  GridGeometry2D gridGeometry=new GridGeometry2D(gridRange,envelope2);
+  helper.setRequestedGridGeometry(gridGeometry);
+  helper.setCoverageProperties(coverageProperties2);
+  helper.prepare();
+  assertEquals(coverageProperties2,helper.getCoverageProperties());
+  assertTrue(helper.isEmpty());
+}

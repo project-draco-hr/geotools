@@ -1,0 +1,107 @@
+{
+  final File parentLocation=new File(TestData.file(this,"."),"db");
+  if (parentLocation.exists()) {
+    FileUtils.deleteDirectory(parentLocation);
+  }
+  assertTrue(parentLocation.mkdir());
+  final String databaseName="test";
+  CoverageSlicesCatalog sliceCat=null;
+  final Transaction t=new DefaultTransaction(Long.toString(System.nanoTime()));
+  try {
+    sliceCat=new CoverageSlicesCatalog(databaseName,parentLocation);
+    String[] typeNames=sliceCat.getTypeNames();
+    assertNull(typeNames);
+    final String schemaDef1="the_geom:Polygon,coverage:String,imageindex:Integer,cloud_formations:Integer";
+    sliceCat.createType("1",schemaDef1);
+    typeNames=sliceCat.getTypeNames();
+    assertNotNull(typeNames);
+    assertEquals(1,typeNames.length);
+    SimpleFeatureType schema=DataUtilities.createType("1",schemaDef1);
+    SimpleFeature feat=DataUtilities.template(schema);
+    feat.setAttribute("coverage","a");
+    feat.setAttribute("imageindex",Integer.valueOf(0));
+    feat.setAttribute("cloud_formations",Integer.valueOf(3));
+    ReferencedEnvelope referencedEnvelope=new ReferencedEnvelope(-180,180,-90,90,DefaultGeographicCRS.WGS84);
+    feat.setAttribute("the_geom",GEOM_FACTORY.toGeometry(referencedEnvelope));
+    sliceCat.addGranule("1",feat,t);
+    feat=DataUtilities.template(schema);
+    feat.setAttribute("coverage","a");
+    feat.setAttribute("imageindex",Integer.valueOf(1));
+    feat.setAttribute("cloud_formations",Integer.valueOf(2));
+    feat.setAttribute("the_geom",GEOM_FACTORY.toGeometry(referencedEnvelope));
+    sliceCat.addGranule("1",feat,t);
+    t.commit();
+    CountVisitor cv=new CountVisitor();
+    Query q=new Query("1");
+    q.setFilter(Filter.INCLUDE);
+    sliceCat.computeAggregateFunction(q,cv);
+    assertEquals(2,cv.getCount());
+    final String schemaDef2="the_geom:Polygon,coverage:String,imageindex:Integer,new:Double";
+    sliceCat.createType("2",schemaDef2);
+    typeNames=sliceCat.getTypeNames();
+    assertNotNull(typeNames);
+    assertEquals(2,typeNames.length);
+    schema=DataUtilities.createType("2",schemaDef2);
+    feat=DataUtilities.template(schema);
+    feat.setAttribute("coverage","b");
+    feat.setAttribute("imageindex",Integer.valueOf(0));
+    feat.setAttribute("new",Double.valueOf(3.22));
+    feat.setAttribute("the_geom",GEOM_FACTORY.toGeometry(referencedEnvelope));
+    sliceCat.addGranule("2",feat,t);
+    feat=DataUtilities.template(schema);
+    feat.setAttribute("coverage","b");
+    feat.setAttribute("imageindex",Integer.valueOf(1));
+    feat.setAttribute("new",Double.valueOf(1.12));
+    feat.setAttribute("the_geom",GEOM_FACTORY.toGeometry(referencedEnvelope));
+    sliceCat.addGranule("2",feat,t);
+    feat=DataUtilities.template(schema);
+    feat.setAttribute("coverage","b");
+    feat.setAttribute("imageindex",Integer.valueOf(2));
+    feat.setAttribute("new",Double.valueOf(1.32));
+    feat.setAttribute("the_geom",GEOM_FACTORY.toGeometry(referencedEnvelope));
+    sliceCat.addGranule("2",feat,t);
+    t.commit();
+    cv=new CountVisitor();
+    q=new Query("2");
+    q.setFilter(Filter.INCLUDE);
+    sliceCat.computeAggregateFunction(q,cv);
+    assertEquals(3,cv.getCount());
+    List<CoverageSlice> slices=sliceCat.getGranules(q);
+    double[] news=new double[]{3.22,1.12,1.32};
+    for (int i=0; i < news.length; i++) {
+      CoverageSlice slice=slices.get(i);
+      assertTrue(slice.getGranuleBBOX().contains(referencedEnvelope));
+      double newAttr=(double)slice.getOriginator().getAttribute("new");
+      assertEquals(newAttr,news[i],DELTA);
+    }
+    CoverageSlicesCatalogSource src=new CoverageSlicesCatalogSource(sliceCat,"2");
+    assertEquals(3,src.getCount(q));
+    SimpleFeatureCollection coll=src.getGranules(q);
+    cv.reset();
+    coll.accepts(cv,null);
+    assertEquals(3,cv.getCount());
+    assertTrue(src.getBounds(q).contains(referencedEnvelope.toBounds(referencedEnvelope.getCoordinateReferenceSystem())));
+    assertEquals(src.getSchema(),schema);
+    sliceCat.removeGranules("1",Filter.INCLUDE,t);
+    sliceCat.removeGranules("2",Filter.INCLUDE,t);
+    t.commit();
+    q=new Query("1");
+    q.setFilter(Filter.INCLUDE);
+    sliceCat.computeAggregateFunction(q,cv);
+    assertEquals(0,cv.getCount());
+    q=new Query("2");
+    sliceCat.computeAggregateFunction(q,cv);
+    assertEquals(0,cv.getCount());
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    t.rollback();
+  }
+ finally {
+    if (sliceCat != null) {
+      sliceCat.dispose();
+    }
+    t.close();
+    FileUtils.deleteDirectory(parentLocation);
+  }
+}

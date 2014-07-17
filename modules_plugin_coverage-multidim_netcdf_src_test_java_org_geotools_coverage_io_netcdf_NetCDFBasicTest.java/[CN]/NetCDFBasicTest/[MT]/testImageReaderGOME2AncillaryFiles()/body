@@ -1,0 +1,46 @@
+{
+  final File file=TestData.file(this,"20130101.METOPA.GOME2.NO2.DUMMY.nc");
+  final NetCDFImageReaderSpi unidataImageReaderSpi=new NetCDFImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  NetCDFImageReader reader=null;
+  try {
+    reader=(NetCDFImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    int numImages=reader.getNumImages(true);
+    assertEquals(1,numImages);
+    LOGGER.info("Found " + numImages + " images.");
+    for (int i=0; i < numImages; i++) {
+      Slice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    final List<Name> names=reader.getCoveragesNames();
+    assertNotNull(names);
+    assertTrue(!names.isEmpty());
+    assertTrue(1 == names.size());
+    assertEquals("NO2",names.get(0).toString());
+    final CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    MessageDigest md=MessageDigest.getInstance("SHA-1");
+    md.update(file.getCanonicalPath().getBytes());
+    String hashCode=AncillaryFileManager.convertToHex(md.digest());
+    File parentDir=file.getParentFile();
+    String auxiliaryDirPath=parentDir + File.separator + "."+ FilenameUtils.getBaseName(file.getName())+ "_"+ hashCode;
+    File auxiliaryDir=new File(auxiliaryDirPath);
+    assertTrue(auxiliaryDir.exists());
+    assertTrue(auxiliaryDir.isDirectory());
+    FilenameFilter nameFileFilter=FileFilterUtils.nameFileFilter("origin.txt");
+    File[] files=auxiliaryDir.listFiles(nameFileFilter);
+    assertTrue(files != null);
+    assertTrue(files[0].exists());
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

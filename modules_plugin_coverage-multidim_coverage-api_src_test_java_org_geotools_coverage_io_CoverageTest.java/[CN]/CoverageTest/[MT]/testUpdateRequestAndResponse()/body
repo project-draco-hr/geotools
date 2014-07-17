@@ -1,0 +1,22 @@
+{
+  Map<String,Serializable> connectionParams=new HashMap<String,Serializable>();
+  connectionParams.put(DefaultFileDriver.URL.key,new URL(TEST_URL));
+  CoverageAccess access=driver.access(DriverCapabilities.CONNECT,connectionParams,null,null);
+  final CoverageStore store=access.create(TEST_NAME,null,new Hints(),null);
+  CoverageUpdateRequest request=new CoverageUpdateRequest();
+  Map<String,String> metadata=new HashMap<String,String>();
+  metadata.put("testKey","testMetadata");
+  List<GridCoverage2D> data=new ArrayList<GridCoverage2D>();
+  GridCoverage2D cov=new GridCoverageFactory().create(TEST_NAME.getLocalPart(),new float[][]{{1.0f,1.0f}},new ReferencedEnvelope(0.0d,1.0d,0.0d,1.0d,null));
+  data.add(cov);
+  request.setMetadata(metadata);
+  request.setData(data);
+  CoverageResponse response=store.update(request,null);
+  Collection<? extends Coverage> results=response.getResults(null);
+  assertTrue(results != null);
+  assertTrue(!results.isEmpty());
+  GridCoverage2D covOutput=(GridCoverage2D)results.iterator().next();
+  assertSame(cov,covOutput);
+  CoverageUpdateRequest request2=(CoverageUpdateRequest)response.getRequest();
+  assertEquals(metadata.get("testKey"),request2.getMetadata().get("testKey"));
+}
