@@ -19,7 +19,19 @@
       return null;
     }
   }
-  Object value=Converters.convert(stringValue,attType.getType().getBinding());
+  Object value=null;
+  if (attType instanceof GeometryDescriptor && stringValue != null && !stringValue.trim().isEmpty()) {
+    try {
+      Geometry geometry=wktReader.read(stringValue.trim());
+      value=Converters.convert(geometry,attType.getType().getBinding());
+    }
+ catch (    ParseException e) {
+      value=null;
+    }
+  }
+ else {
+    value=Converters.convert(stringValue,attType.getType().getBinding());
+  }
   if (attType.getType() instanceof GeometryType) {
     CoordinateReferenceSystem crs=((GeometryType)attType.getType()).getCoordinateReferenceSystem();
     if (crs != null) {

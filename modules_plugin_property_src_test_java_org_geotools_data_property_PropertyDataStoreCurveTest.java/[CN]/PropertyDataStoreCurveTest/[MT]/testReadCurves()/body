@@ -1,0 +1,27 @@
+{
+  String names[]=store.getTypeNames();
+  assertEquals(1,names.length);
+  assertEquals("curvelines",names[0]);
+  Query query=new Query("curvelines");
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=store.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    assertTrue(reader.hasNext());
+    Object geom=reader.next().getDefaultGeometry();
+    assertTrue(geom instanceof CompoundRing);
+    CurvedGeometry<?> curved=(CurvedGeometry<?>)geom;
+    assertEquals(Double.MAX_VALUE,curved.getTolerance());
+    assertTrue(reader.hasNext());
+    geom=reader.next().getDefaultGeometry();
+    assertTrue(geom instanceof CircularRing);
+    curved=(CurvedGeometry<?>)geom;
+    assertEquals(Double.MAX_VALUE,curved.getTolerance());
+    assertTrue(reader.hasNext());
+    geom=reader.next().getDefaultGeometry();
+    assertTrue(geom instanceof CircularString);
+    curved=(CurvedGeometry<?>)geom;
+    assertEquals(Double.MAX_VALUE,curved.getTolerance());
+  }
+  finally {
+    reader.close();
+  }
+}
