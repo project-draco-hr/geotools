@@ -1,0 +1,40 @@
+{
+  String nextToken=getNextEmptyOrOpener();
+  if (nextToken.equals(EMPTY)) {
+    return new Coordinate[]{};
+  }
+  boolean innerParens=false;
+  try {
+    String peek=getNextWord();
+    innerParens=peek.equals(L_PAREN);
+  }
+ catch (  ParseException ex) {
+  }
+ finally {
+    tokenizer.pushBack();
+  }
+  if (innerParens) {
+    ArrayList coordinates=new ArrayList();
+    Coordinate[] coords=getCoordinates();
+    coordinates.add(coords[0]);
+    nextToken=getNextCloserOrComma();
+    while (nextToken.equals(COMMA)) {
+      coords=getCoordinates();
+      coordinates.add(coords[0]);
+      nextToken=getNextCloserOrComma();
+    }
+    Coordinate[] array=new Coordinate[coordinates.size()];
+    return (Coordinate[])coordinates.toArray(array);
+  }
+ else {
+    ArrayList coordinates=new ArrayList();
+    coordinates.add(getPreciseCoordinate());
+    nextToken=getNextCloserOrComma();
+    while (nextToken.equals(COMMA)) {
+      coordinates.add(getPreciseCoordinate());
+      nextToken=getNextCloserOrComma();
+    }
+    Coordinate[] array=new Coordinate[coordinates.size()];
+    return (Coordinate[])coordinates.toArray(array);
+  }
+}
