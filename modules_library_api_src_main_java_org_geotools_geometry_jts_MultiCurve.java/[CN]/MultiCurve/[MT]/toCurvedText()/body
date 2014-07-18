@@ -1,0 +1,27 @@
+{
+  StringBuilder sb=new StringBuilder("MULTICURVE(");
+  int numGeometries=getNumGeometries();
+  for (int k=0; k < numGeometries; k++) {
+    LineString component=(LineString)getGeometryN(k);
+    if (component instanceof SingleCurvedGeometry<?>) {
+      SingleCurvedGeometry<?> curved=(SingleCurvedGeometry<?>)component;
+      sb.append(curved.toCurvedText());
+    }
+ else {
+      sb.append("(");
+      CoordinateSequence cs=component.getCoordinateSequence();
+      for (int i=0; i < cs.size(); i++) {
+        sb.append(cs.getX(i) + " " + cs.getY(i));
+        if (i < cs.size() - 1) {
+          sb.append(", ");
+        }
+      }
+      sb.append(")");
+    }
+    if (k < numGeometries - 1) {
+      sb.append(", ");
+    }
+  }
+  sb.append(")");
+  return sb.toString();
+}
