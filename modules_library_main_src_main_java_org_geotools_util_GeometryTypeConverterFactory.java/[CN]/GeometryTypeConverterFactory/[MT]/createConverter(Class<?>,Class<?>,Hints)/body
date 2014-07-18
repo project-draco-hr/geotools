@@ -1,5 +1,19 @@
 {
-  if (Geometry.class.isAssignableFrom(source) && Geometry.class.isAssignableFrom(target)) {
+  if (LineString.class.isAssignableFrom(source) && CurvedGeometry.class.isAssignableFrom(target)) {
+    return new Converter(){
+      @Override public <T>T convert(      Object source,      Class<T> target) throws Exception {
+        LineString ls=((LineString)source);
+        if (ls instanceof LinearRing) {
+          return (T)new CompoundRing(Arrays.asList(ls),ls.getFactory(),Double.MAX_VALUE);
+        }
+ else {
+          return (T)new CompoundCurve(Arrays.asList(ls),ls.getFactory(),Double.MAX_VALUE);
+        }
+      }
+    }
+;
+  }
+ else   if (Geometry.class.isAssignableFrom(source) && Geometry.class.isAssignableFrom(target)) {
     return new Converter(){
       /** 
  * Converts all the geometries of the given GeometryCollection to a specified
