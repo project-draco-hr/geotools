@@ -1,0 +1,18 @@
+{
+  String yaml="feature-styles: \n" + "- transform:\n" + "    name: vec:Heatmap\n"+ "    params:\n"+ "      weightAttr: pop2000\n"+ "      radius: 100\n"+ "      pixelsPerCell: 10\n"+ "      outputBBOX: wms_bbox\n"+ "      outputWidth: wms_width\n"+ "      outputHeight: wms_height\n";
+  StyledLayerDescriptor sld=Ysld.parse(yaml);
+  FeatureTypeStyle fs=SLD.defaultStyle(sld).featureTypeStyles().get(0);
+  Expression tx=fs.getTransformation();
+  assertNotNull(tx);
+  ProcessFunction pf=(ProcessFunction)tx;
+  assertEquals(7,pf.getParameters().size());
+  Function e=(Function)pf.getParameters().get(0);
+  assertEquals(1,e.getParameters().size());
+  assertTrue(e.getParameters().get(0) instanceof Literal);
+  assertEquals("data",e.getParameters().get(0).evaluate(null,String.class));
+  e=(Function)pf.getParameters().get(1);
+  assertEquals(2,e.getParameters().size());
+  assertTrue(e.getParameters().get(0) instanceof Literal);
+  assertEquals("weightAttr",e.getParameters().get(0).evaluate(null,String.class));
+  assertEquals("pop2000",e.getParameters().get(1).evaluate(null,String.class));
+}
