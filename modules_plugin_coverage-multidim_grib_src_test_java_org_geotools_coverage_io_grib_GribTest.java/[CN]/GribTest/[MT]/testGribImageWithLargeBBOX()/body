@@ -1,0 +1,32 @@
+{
+  final File inputFile=TestData.file(this,"sampleGrib.grb2");
+  final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(inputFile.toURI().toURL(),null);
+  final NetCDFReader reader=new NetCDFReader(inputFile,null);
+  Assert.assertNotNull(format);
+  Assert.assertNotNull(reader);
+  try {
+    String[] names=reader.getGridCoverageNames();
+    Assert.assertNotNull(names);
+    String coverageName=names[0];
+    assertEquals("true",reader.getMetadataValue(coverageName,"HAS_TIME_DOMAIN"));
+    final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+    final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope(coverageName);
+    final GeneralEnvelope newEnvelope=new GeneralEnvelope(originalEnvelope);
+    newEnvelope.setCoordinateReferenceSystem(reader.getCoordinateReferenceSystem(coverageName));
+    newEnvelope.add(new DirectPosition2D(newEnvelope.getMinimum(0) - 10,newEnvelope.getMinimum(1) - 10));
+    GridEnvelope gridRange=reader.getOriginalGridRange(coverageName);
+    gg.setValue(new GridGeometry2D(gridRange,newEnvelope));
+    GeneralParameterValue[] values=new GeneralParameterValue[]{gg};
+    GridCoverage2D grid=reader.read(coverageName,values);
+    assertNotNull(grid);
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
