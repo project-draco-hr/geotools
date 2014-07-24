@@ -21,7 +21,9 @@
     gridToWorldTransform_.preConcatenate(baseGridToWorld);
     AffineTransform2D cropWorldToGrid=new AffineTransform2D(gridToWorldTransform_);
     cropWorldToGrid=(AffineTransform2D)cropWorldToGrid.inverse();
-    final Rectangle sourceArea=CRS.transform(cropWorldToGrid,intersection).toRectangle2D().getBounds();
+    Rectangle sourceArea=CRS.transform(cropWorldToGrid,intersection).toRectangle2D().getBounds();
+    final Rectangle initialArea=request.source.getSpatialDomain().getRasterElements(true,null).iterator().next().toRectangle();
+    sourceArea=sourceArea.intersection(initialArea);
     if (sourceArea.isEmpty()) {
       if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
         LOGGER.fine("Got empty area for granuleDescriptor " + this.toString() + " with request "+ request.toString()+ " Resulting in no granule loaded: Empty result");
