@@ -1,16 +1,20 @@
 {
   GridCoverage2D primarySource=sources[PRIMARY_SOURCE_INDEX];
-  RenderingHints hints=ImageUtilities.getRenderingHints(parameters.getSource());
+  RenderingHints hintsStart=ImageUtilities.getRenderingHints(parameters.getSource());
+  RenderingHints hints=null;
   if (parameters.hints != null) {
-    if (hints != null) {
+    if (hintsStart != null) {
+      hints=new Hints(hintsStart);
       hints.add(parameters.hints);
     }
  else {
-      hints=parameters.hints;
+      hints=new Hints(parameters.hints);
     }
   }
-  ImageLayout layout=(hints != null) ? (ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT) : null;
-  if (layout != null) {
+  ImageLayout layoutOld=(hints != null) ? (ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT) : null;
+  ImageLayout layout=null;
+  if (layoutOld != null) {
+    layout=(ImageLayout)layoutOld.clone();
     layout.unsetValid(ImageLayout.MIN_X_MASK);
     layout.unsetValid(ImageLayout.MIN_Y_MASK);
     layout.unsetValid(ImageLayout.WIDTH_MASK);
@@ -24,7 +28,12 @@
   layout.setMinY(gridRange.y);
   layout.setWidth(gridRange.width);
   layout.setHeight(gridRange.height);
-  hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+  if (hints == null) {
+    hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+  }
+ else {
+    hints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+  }
   final InternationalString name=deriveName(sources,-1,null);
   final CoordinateReferenceSystem crs=primarySource.getCoordinateReferenceSystem();
   final MathTransform toCRS=parameters.finalGeometry.getGridToCRS();

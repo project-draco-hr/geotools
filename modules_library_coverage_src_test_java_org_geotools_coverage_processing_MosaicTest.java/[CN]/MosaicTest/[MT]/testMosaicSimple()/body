@@ -4,7 +4,11 @@
   sources.add(coverage1);
   sources.add(coverage2);
   param.parameter("Sources").setValue(sources);
-  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param);
+  Hints hints=new Hints();
+  Assert.assertTrue(!hints.containsKey(JAI.KEY_IMAGE_LAYOUT));
+  ImageLayout il=new ImageLayout();
+  hints.put(JAI.KEY_IMAGE_LAYOUT,il);
+  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param,hints);
   Envelope2D expected=coverage1.getEnvelope2D();
   expected.include(coverage2.getEnvelope2D());
   Envelope2D actual=mosaic.getEnvelope2D();
@@ -20,6 +24,12 @@
   point=new DirectPosition2D(mosaic.getCoordinateReferenceSystem(),actual.getMinX() + finalRes,actual.getMinY() + finalRes);
   result=((int[])mosaic.evaluate(point))[0];
   Assert.assertNotEquals(nodata,result,TOLERANCE);
+  Assert.assertTrue(hints.containsKey(JAI.KEY_IMAGE_LAYOUT));
+  ImageLayout layout=(ImageLayout)hints.get(JAI.KEY_IMAGE_LAYOUT);
+  Assert.assertTrue(!layout.isValid(ImageLayout.MIN_X_MASK));
+  Assert.assertTrue(!layout.isValid(ImageLayout.MIN_Y_MASK));
+  Assert.assertTrue(!layout.isValid(ImageLayout.WIDTH_MASK));
+  Assert.assertTrue(!layout.isValid(ImageLayout.HEIGHT_MASK));
   mosaic.dispose(true);
   disposeCoveragePlanarImage(mosaic);
 }
