@@ -10,11 +10,15 @@
     String alias=String.valueOf((char)('b' + i));
     part.setAlias(alias);
     Filter joinFilter=j.getJoinFilter();
+    Map<String,String> mappings=new HashMap<String,String>();
     if (query.getAlias() != null) {
-      joinFilter=(Filter)joinFilter.accept(new JoinPrefixRewriter(query.getAlias(),"a"),null);
+      mappings.put(query.getAlias(),"a");
     }
     if (j.getAlias() != null) {
-      joinFilter=(Filter)joinFilter.accept(new JoinPrefixRewriter(j.getAlias(),alias),null);
+      mappings.put(j.getAlias(),alias);
+    }
+    if (!mappings.isEmpty()) {
+      joinFilter=(Filter)joinFilter.accept(new JoinPrefixRewriter(mappings),null);
     }
     joinFilter=(Filter)joinFilter.accept(new JoinQualifier(featureType,"a",joinFeatureSource.getSchema(),alias),null);
     part.setJoinFilter(joinFilter);
