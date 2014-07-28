@@ -1,0 +1,59 @@
+{
+  int dataType=sm.getDataType();
+  int numBands=sm.getNumBands();
+  if (dataType < DataBuffer.TYPE_BYTE || dataType == DataBuffer.TYPE_SHORT || dataType > DataBuffer.TYPE_DOUBLE || numBands < 1 || numBands > 4) {
+    return null;
+  }
+  ColorSpace cs=null;
+switch (numBands) {
+case 0:
+    throw new IllegalArgumentException("No input bands defined");
+case 1:
+  cs=ColorSpace.getInstance(ColorSpace.CS_GRAY);
+break;
+case 2:
+case 4:
+cs=new ColorSpace(dataType,numBands){
+@Override public float[] toRGB(float[] colorvalue){
+  return null;
+}
+@Override public float[] toCIEXYZ(float[] colorvalue){
+  return null;
+}
+@Override public float[] fromRGB(float[] rgbvalue){
+  return null;
+}
+@Override public float[] fromCIEXYZ(float[] colorvalue){
+  return null;
+}
+}
+;
+break;
+case 3:
+cs=ColorSpace.getInstance(ColorSpace.CS_sRGB);
+break;
+default :
+return null;
+}
+int dataTypeSize=DataBuffer.getDataTypeSize(dataType);
+int[] bits=new int[numBands];
+for (int i=0; i < numBands; i++) {
+bits[i]=dataTypeSize;
+}
+boolean useAlpha=false, premultiplied=false;
+int transparency=Transparency.OPAQUE;
+switch (dataType) {
+case DataBuffer.TYPE_BYTE:
+return new ComponentColorModel(cs,bits,useAlpha,premultiplied,transparency,dataType);
+case DataBuffer.TYPE_USHORT:
+return new ComponentColorModel(cs,bits,useAlpha,premultiplied,transparency,dataType);
+case DataBuffer.TYPE_INT:
+return new ComponentColorModel(cs,bits,useAlpha,premultiplied,transparency,dataType);
+case DataBuffer.TYPE_FLOAT:
+return new FloatDoubleColorModel(cs,useAlpha,premultiplied,transparency,dataType);
+case DataBuffer.TYPE_DOUBLE:
+return new FloatDoubleColorModel(cs,useAlpha,premultiplied,transparency,dataType);
+default :
+throw new IllegalArgumentException("Wrong data type used");
+}
+}
