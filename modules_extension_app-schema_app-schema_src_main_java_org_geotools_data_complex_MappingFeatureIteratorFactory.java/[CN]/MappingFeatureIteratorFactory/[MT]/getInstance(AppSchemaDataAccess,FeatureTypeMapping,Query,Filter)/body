@@ -3,6 +3,7 @@
     return new XmlMappingFeatureIterator(store,mapping,query);
   }
   boolean isJoining=AppSchemaDataAccessConfigurator.isJoining();
+  boolean removeQueryLimitIfDenormalised=false;
   FeatureSource mappedSource=mapping.getSource();
   if (isJoining && !(mappedSource instanceof JDBCFeatureSource || mappedSource instanceof JDBCFeatureStore)) {
     if (AppSchemaDataAccessConfigurator.isJoiningSet()) {
@@ -34,7 +35,7 @@
       iterator=new MappingAttributeIterator(store,mapping,query,unrolledQuery);
     }
  else {
-      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,unrolledQuery);
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,unrolledQuery,false);
     }
   }
  else {
@@ -59,6 +60,7 @@
       int maxFeatures=Query.DEFAULT_MAX;
       if (filter != null && filter != Filter.INCLUDE) {
         maxFeatures=query.getMaxFeatures();
+        removeQueryLimitIfDenormalised=true;
       }
       if (isJoining) {
         ((JoiningQuery)query).setDenormalised(mapping.isDenormalised());
@@ -70,33 +72,32 @@
         }
       }
       boolean isFiltered=!isJoining && preFilter != null && preFilter != Filter.INCLUDE;
-      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered);
+      boolean hasPostFilter=false;
       if (isListFilter == null) {
         if (filter != null && filter != Filter.INCLUDE) {
-          iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
+          hasPostFilter=true;
         }
+      }
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered,removeQueryLimitIfDenormalised,hasPostFilter);
+      if (isListFilter != null) {
+        ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
+      }
+      if (hasPostFilter) {
+        iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
       }
     }
  else     if (mappedSource instanceof MappingFeatureSource) {
       iterator=new DataAccessMappingFeatureIterator(store,mapping,query);
-    }
- else {
-      Query unrolledQuery=store.unrollQuery(query,mapping);
-      Filter filter=unrolledQuery.getFilter();
-      if (!filter.equals(Filter.INCLUDE) && !filter.equals(Filter.EXCLUDE) && !(filter instanceof FidFilterImpl)) {
-        unrolledQuery.setFilter(Filter.INCLUDE);
-        CoordinateReferenceSystem crs=query.getCoordinateSystemReproject();
-        if (crs != null) {
-          unrolledQuery.setCoordinateSystemReproject(null);
-        }
-        iterator=new FilteringMappingFeatureIterator(store,mapping,query,unrolledQuery,filter);
-      }
- else {
-        iterator=new DataAccessMappingFeatureIterator(store,mapping,query);
+      if (isListFilter != null) {
+        ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
       }
     }
-    if (isListFilter != null && iterator instanceof DataAccessMappingFeatureIterator) {
-      ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
+ else {
+      Filter filter=query.getFilter();
+      iterator=new DataAccessMappingFeatureIterator(store,mapping,query,!Filter.INCLUDE.equals(filter),true);
+      if (isListFilter != null) {
+        ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
+      }
     }
   }
   return iterator;
