@@ -12,5 +12,15 @@
   if (dataStore.getFetchSize() <= 0) {
     dataStore.setFetchSize(200);
   }
+  Connection cx=dataStore.getConnection(Transaction.AUTO_COMMIT);
+  try {
+    OracleConnection oracleConnection=dialect.unwrapConnection(cx);
+  }
+ catch (  SQLException e) {
+    throw new IOException("Unable to obtain Oracle Connection require for SDO Geometry access)." + "Check connection pool implementation to unsure unwrap is available",e);
+  }
+ finally {
+    dataStore.closeSafe(cx);
+  }
   return dataStore;
 }
