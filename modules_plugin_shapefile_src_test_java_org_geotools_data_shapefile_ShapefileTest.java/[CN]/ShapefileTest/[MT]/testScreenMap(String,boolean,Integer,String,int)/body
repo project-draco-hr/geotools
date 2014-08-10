@@ -1,0 +1,27 @@
+{
+  URL shpUrl=TestData.url(this,shpName + "/" + shpName+ ".shp");
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put(ShapefileDataStoreFactory.URLP.key,shpUrl);
+  ShapefileDataStore ds=(ShapefileDataStore)new ShapefileDataStoreFactory().createDataStore(params);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  if (isFilterBeforeScreenMap && filterFid != null) {
+    FilterFactory2 factory=CommonFactoryFinder.getFilterFactory2(null);
+    Id id=factory.id(Collections.singleton(ff.featureId(shpName + "." + filterFid.toString())));
+    reader=ds.getFeatureReader(new Query(ds.getTypeNames()[0],id),Transaction.AUTO_COMMIT);
+  }
+ else {
+    reader=ds.getFeatureReader();
+  }
+  ScreenMap screenMap=new ScreenMap(-180,-90,360,180);
+  screenMap.setSpans(1.0,1.0);
+  screenMap.setTransform(IdentityTransform.create(2));
+  ((ShapefileFeatureReader)reader).setScreenMap(screenMap);
+  ((ShapefileFeatureReader)reader).setSimplificationDistance(1.0);
+  assertTrue(reader.hasNext());
+  SimpleFeature feature=reader.next();
+  assertFalse(reader.hasNext());
+  assertNotNull(feature);
+  assertEquals(expectedName,feature.getAttribute("NAME"));
+  assertEquals(expectedFid,feature.getAttribute("feature_id"));
+  reader.close();
+}
