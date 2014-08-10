@@ -1,0 +1,26 @@
+{
+  Envelope envelope=record.envelope();
+  Geometry geometry=null;
+  if (schema.getGeometryDescriptor() != null) {
+    if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
+      geometry=SKIP;
+    }
+ else     if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
+      try {
+        if (screenMap != null && screenMap.get(envelope)) {
+          geometry=SKIP;
+        }
+ else {
+          geometry=(Geometry)record.getSimplifiedShape(screenMap);
+        }
+      }
+ catch (      Exception e) {
+        geometry=(Geometry)record.getSimplifiedShape();
+      }
+    }
+ else {
+      geometry=(Geometry)record.shape();
+    }
+  }
+  return geometry;
+}
