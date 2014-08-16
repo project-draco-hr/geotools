@@ -1,32 +1,8 @@
 {
   while (nextFeature == null && filesHaveMore()) {
     Record record=shp.nextRecord();
-    Envelope envelope=record.envelope();
-    boolean skip=false;
-    Geometry geometry=null;
-    if (schema.getGeometryDescriptor() != null) {
-      if (targetBBox != null && !targetBBox.isNull() && !targetBBox.intersects(envelope)) {
-        skip=true;
-      }
- else       if (simplificationDistance > 0 && envelope.getWidth() < simplificationDistance && envelope.getHeight() < simplificationDistance) {
-        try {
-          if (screenMap != null && screenMap.checkAndSet(envelope)) {
-            geometry=null;
-            skip=true;
-          }
- else {
-            geometry=(Geometry)record.getSimplifiedShape(screenMap);
-          }
-        }
- catch (        Exception e) {
-          geometry=(Geometry)record.getSimplifiedShape();
-        }
-      }
- else {
-        geometry=(Geometry)record.shape();
-      }
-    }
-    if (!skip) {
+    Geometry geometry=getGeometry(record);
+    if (geometry != SKIP) {
       Row row;
       if (dbf != null) {
         row=dbf.readRow();
@@ -37,7 +13,7 @@
  else {
         row=null;
       }
-      nextFeature=buildFeature(record.number,geometry,row);
+      nextFeature=buildFeature(record.number,geometry,row,record.envelope());
     }
  else {
       if (dbf != null) {
