@@ -5,17 +5,15 @@
   String lastTypeName=featureType.getTypeName();
   String curTypeName=lastTypeName;
   String[] aliases=null;
+  tableNames.add(lastTypeName);
+  String alias=null;
   if (query.getQueryJoins() != null) {
     aliases=new String[query.getQueryJoins().size()];
     for (int i=0; i < query.getQueryJoins().size(); i++) {
       JoiningQuery.QueryJoin join=query.getQueryJoins().get(i);
       fromclause.append(" INNER JOIN ");
-      String alias=null;
       FilterToSQL toSQL1=createFilterToSQL(getDataStore().getSchema(lastTypeName));
       FilterToSQL toSQL2=createFilterToSQL(getDataStore().getSchema(join.getJoiningTypeName()));
-      String last_alias=createAlias(lastTypeName,tableNames);
-      tableNames.add(last_alias);
-      curTypeName=last_alias;
       if (tableNames.contains(join.getJoiningTypeName())) {
         alias=createAlias(join.getJoiningTypeName(),tableNames);
         aliases[i]=alias;
@@ -38,7 +36,8 @@
       fromclause.append(toSQL1.encodeToString(join.getJoiningKeyName()));
       fromclause.append(") ");
       lastTypeName=join.getJoiningTypeName();
-      curTypeName=alias == null ? lastTypeName : alias;
+      curTypeName=aliases[i] == null ? lastTypeName : aliases[i];
+      tableNames.add(curTypeName);
     }
   }
   StringBuffer sql=new StringBuffer();
@@ -134,43 +133,56 @@
       String lastTableName=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getJoiningTypeName();
       String lastTableAlias=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : aliases[query.getQueryJoins().size() - 1] == null ? lastTableName : aliases[query.getQueryJoins().size() - 1];
       toSQL=createFilterToSQL(getDataStore().getSchema(lastTableName));
+      Collection<String> ids=applyPaging(query,sql,pkColumnNames,featureType.getTypeName(),tableNames,toSQL,filter);
       if (lastSortBy != null && (lastSortBy.length > 0 || !lastPkColumnNames.isEmpty())) {
-        sql.append(" INNER JOIN ( SELECT DISTINCT ");
+        StringBuffer sortBySQL=new StringBuffer();
+        sortBySQL.append(" INNER JOIN ( SELECT DISTINCT ");
+        boolean hasSortBy=false;
         for (int i=0; i < lastSortBy.length; i++) {
-          getDataStore().dialect.encodeColumnName(null,lastSortBy[i].getPropertyName().getPropertyName(),sql);
-          if (i < lastSortBy.length - 1)           sql.append(",");
+          if (!ids.contains(lastSortBy[i])) {
+            getDataStore().dialect.encodeColumnName(null,lastSortBy[i].getPropertyName().getPropertyName(),sortBySQL);
+            if (i < lastSortBy.length - 1)             sortBySQL.append(",");
+            sortBySQL.append(" FROM ");
+            getDataStore().encodeTableName(lastTableName,sortBySQL,query.getHints());
+            sortBySQL.append(" ").append(toSQL.encodeToString(filter));
+            sortBySQL.append(" ) ");
+            getDataStore().dialect.encodeTableName(TEMP_FILTER_ALIAS,sortBySQL);
+            sortBySQL.append(" ON ( ");
+            encodeColumnName2(lastSortBy[i].getPropertyName().getPropertyName(),lastTableAlias,sortBySQL,null);
+            sortBySQL.append(" = ");
+            encodeColumnName2(lastSortBy[i].getPropertyName().getPropertyName(),TEMP_FILTER_ALIAS,sortBySQL,null);
+            if (i < lastSortBy.length - 1) {
+              sortBySQL.append(" AND ");
+            }
+            hasSortBy=true;
+          }
         }
         if (lastSortBy.length == 0) {
           int i=0;
           for (          String pk : lastPkColumnNames) {
-            getDataStore().dialect.encodeColumnName(null,pk,sql);
-            if (i < lastPkColumnNames.size() - 1)             sql.append(",");
-            i++;
+            if (!ids.contains(pk)) {
+              getDataStore().dialect.encodeColumnName(null,pk,sortBySQL);
+              if (i < lastPkColumnNames.size() - 1)               sortBySQL.append(",");
+              sortBySQL.append(" FROM ");
+              getDataStore().encodeTableName(lastTableName,sortBySQL,query.getHints());
+              sortBySQL.append(" ").append(toSQL.encodeToString(filter));
+              sortBySQL.append(" ) ");
+              getDataStore().dialect.encodeTableName(TEMP_FILTER_ALIAS,sortBySQL);
+              sortBySQL.append(" ON ( ");
+              encodeColumnName2(pk,lastTableAlias,sortBySQL,null);
+              sortBySQL.append(" = ");
+              encodeColumnName2(pk,TEMP_FILTER_ALIAS,sortBySQL,null);
+              if (i < lastPkColumnNames.size() - 1) {
+                sortBySQL.append(" AND ");
+              }
+              i++;
+              hasSortBy=true;
+            }
           }
         }
-        sql.append(" FROM ");
-        getDataStore().encodeTableName(lastTableName,sql,query.getHints());
-        sql.append(" ").append(toSQL.encodeToString(filter));
-        sql.append(" ) ");
-        getDataStore().dialect.encodeTableName(TEMP_FILTER_ALIAS,sql);
-        sql.append(" ON ( ");
-        for (int i=0; i < lastSortBy.length; i++) {
-          encodeColumnName2(lastSortBy[i].getPropertyName().getPropertyName(),lastTableAlias,sql,null);
-          sql.append(" = ");
-          encodeColumnName2(lastSortBy[i].getPropertyName().getPropertyName(),TEMP_FILTER_ALIAS,sql,null);
-          if (i < lastSortBy.length - 1)           sql.append(" AND ");
+        if (hasSortBy) {
+          sql.append(sortBySQL).append(" ) ");
         }
-        if (lastSortBy.length == 0) {
-          int i=0;
-          for (          String pk : lastPkColumnNames) {
-            encodeColumnName2(pk,lastTableAlias,sql,null);
-            sql.append(" = ");
-            encodeColumnName2(pk,TEMP_FILTER_ALIAS,sql,null);
-            if (i < lastPkColumnNames.size() - 1)             sql.append(" AND ");
-            i++;
-          }
-        }
-        sql.append(" ) ");
       }
  else {
         toSQL.setFieldEncoder(new JoiningFieldEncoder(curTypeName));
@@ -180,6 +192,9 @@
  catch (    FilterToSQLException e) {
       throw new RuntimeException(e);
     }
+  }
+ else {
+    applyPaging(query,sql,pkColumnNames,featureType.getTypeName(),tableNames,null,null);
   }
   sort(query,sql,aliases,pkColumnNames);
   getDataStore().applyLimitOffset(sql,query);
