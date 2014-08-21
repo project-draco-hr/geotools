@@ -1,6 +1,5 @@
 {
-  StringBuffer fromclause=new StringBuffer();
-  getDataStore().encodeTableName(featureType.getTypeName(),fromclause,query.getHints());
+  StringBuffer joinClause=new StringBuffer();
   Set<String> tableNames=new HashSet<String>();
   String lastTypeName=featureType.getTypeName();
   String curTypeName=lastTypeName;
@@ -11,30 +10,31 @@
     aliases=new String[query.getQueryJoins().size()];
     for (int i=0; i < query.getQueryJoins().size(); i++) {
       JoiningQuery.QueryJoin join=query.getQueryJoins().get(i);
-      fromclause.append(" INNER JOIN ");
+      joinClause.append(" INNER JOIN ");
       FilterToSQL toSQL1=createFilterToSQL(getDataStore().getSchema(lastTypeName));
       FilterToSQL toSQL2=createFilterToSQL(getDataStore().getSchema(join.getJoiningTypeName()));
       if (tableNames.contains(join.getJoiningTypeName())) {
         alias=createAlias(join.getJoiningTypeName(),tableNames);
         aliases[i]=alias;
-        getDataStore().encodeTableName(join.getJoiningTypeName(),fromclause,query.getHints());
-        fromclause.append(" ");
-        getDataStore().dialect.encodeTableName(alias,fromclause);
-        fromclause.append(" ON ( ");
+        getDataStore().encodeTableName(join.getJoiningTypeName(),joinClause,query.getHints());
+        joinClause.append(" ");
+        getDataStore().dialect.encodeTableName(alias,joinClause);
+        joinClause.append(" ON ( ");
         toSQL2.setFieldEncoder(new JoiningFieldEncoder(alias));
-        fromclause.append(toSQL2.encodeToString(join.getForeignKeyName()));
+        joinClause.append(toSQL2.encodeToString(join.getForeignKeyName()));
       }
  else {
         aliases[i]=null;
-        getDataStore().encodeTableName(join.getJoiningTypeName(),fromclause,query.getHints());
-        fromclause.append(" ON ( ");
+        getDataStore().encodeTableName(join.getJoiningTypeName(),joinClause,query.getHints());
+        joinClause.append(" ON ( ");
         toSQL2.setFieldEncoder(new JoiningFieldEncoder(join.getJoiningTypeName()));
-        fromclause.append(toSQL2.encodeToString(join.getForeignKeyName()));
+        joinClause.append(toSQL2.encodeToString(join.getForeignKeyName()));
       }
-      fromclause.append(" = ");
-      toSQL1.setFieldEncoder(new JoiningFieldEncoder(curTypeName));
-      fromclause.append(toSQL1.encodeToString(join.getJoiningKeyName()));
-      fromclause.append(") ");
+      joinClause.append(" = ");
+      String fromTypeName=curTypeName;
+      toSQL1.setFieldEncoder(new JoiningFieldEncoder(fromTypeName));
+      joinClause.append(toSQL1.encodeToString(join.getJoiningKeyName()));
+      joinClause.append(") ");
       lastTypeName=join.getJoiningTypeName();
       curTypeName=aliases[i] == null ? lastTypeName : aliases[i];
       tableNames.add(curTypeName);
@@ -121,25 +121,35 @@
   }
   sql.setLength(sql.length() - 1);
   sql.append(" FROM ");
-  sql.append(fromclause);
+  getDataStore().encodeTableName(featureType.getTypeName(),sql,query.getHints());
   FilterToSQL toSQL=null;
   Filter filter=query.getFilter();
+  sql.append(joinClause);
+  boolean isRootFeature=(query.getQueryJoins() == null || query.getQueryJoins().size() == 0);
+  boolean pagingApplied=false;
   if (filter != null && !Filter.INCLUDE.equals(filter)) {
     try {
       SortBy[] lastSortBy=null;
       if (!query.isSubset()) {
         lastSortBy=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getSortBy() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getSortBy();
       }
-      String lastTableName=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getJoiningTypeName();
-      String lastTableAlias=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getTypeName() : aliases[query.getQueryJoins().size() - 1] == null ? lastTableName : aliases[query.getQueryJoins().size() - 1];
+      String lastTableName=isRootFeature ? query.getTypeName() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getJoiningTypeName();
+      String lastTableAlias=isRootFeature ? query.getTypeName() : aliases[query.getQueryJoins().size() - 1] == null ? lastTableName : aliases[query.getQueryJoins().size() - 1];
       toSQL=createFilterToSQL(getDataStore().getSchema(lastTableName));
-      Collection<String> ids=applyPaging(query,sql,pkColumnNames,featureType.getTypeName(),tableNames,toSQL,filter);
+      Collection<String> ids=new ArrayList<String>();
+      if (isRootFeature && query.isDenormalised()) {
+        pagingApplied=applyPaging(query,sql,pkColumnNames,featureType.getTypeName(),featureType.getTypeName(),tableNames,toSQL,filter,ids);
+      }
+      if (!isRootFeature) {
+        QueryJoin lastJoin=query.getQueryJoins().get(query.getQueryJoins().size() - 1);
+        pagingApplied=applyPaging(lastJoin,sql,pkColumnNames,lastTableName,lastTableAlias,tableNames,toSQL,filter,ids);
+      }
       if (lastSortBy != null && (lastSortBy.length > 0 || !lastPkColumnNames.isEmpty())) {
         StringBuffer sortBySQL=new StringBuffer();
         sortBySQL.append(" INNER JOIN ( SELECT DISTINCT ");
         boolean hasSortBy=false;
         for (int i=0; i < lastSortBy.length; i++) {
-          if (!ids.contains(lastSortBy[i])) {
+          if (!ids.contains(lastSortBy[i].getPropertyName().toString())) {
             getDataStore().dialect.encodeColumnName(null,lastSortBy[i].getPropertyName().getPropertyName(),sortBySQL);
             if (i < lastSortBy.length - 1)             sortBySQL.append(",");
             sortBySQL.append(" FROM ");
@@ -184,7 +194,7 @@
           sql.append(sortBySQL).append(" ) ");
         }
       }
- else {
+ else       if (!pagingApplied) {
         toSQL.setFieldEncoder(new JoiningFieldEncoder(curTypeName));
         sql.append(" ").append(toSQL.encodeToString(filter));
       }
@@ -194,10 +204,19 @@
     }
   }
  else {
-    applyPaging(query,sql,pkColumnNames,featureType.getTypeName(),tableNames,null,null);
+    if (isRootFeature && query.isDenormalised()) {
+      pagingApplied=applyPaging(query,sql,pkColumnNames,featureType.getTypeName(),featureType.getTypeName(),tableNames,null,null,null);
+    }
+    if (!isRootFeature) {
+      QueryJoin lastJoin=query.getQueryJoins().get(query.getQueryJoins().size() - 1);
+      String lastTableAlias=aliases[query.getQueryJoins().size() - 1] == null ? lastJoin.getJoiningTypeName() : aliases[query.getQueryJoins().size() - 1];
+      pagingApplied=applyPaging(lastJoin,sql,pkColumnNames,lastJoin.getJoiningTypeName(),lastTableAlias,tableNames,null,null,null);
+    }
   }
   sort(query,sql,aliases,pkColumnNames);
-  getDataStore().applyLimitOffset(sql,query);
+  if (!pagingApplied) {
+    getDataStore().applyLimitOffset(sql,query);
+  }
   if (toSQLref != null && toSQL instanceof PreparedFilterToSQL) {
     toSQLref.set((PreparedFilterToSQL)toSQL);
   }

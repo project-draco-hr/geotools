@@ -57,11 +57,6 @@
       Filter preFilter=splitter.getFilterPre();
       query.setFilter(preFilter);
       filter=splitter.getFilterPost();
-      int maxFeatures=Query.DEFAULT_MAX;
-      if (filter != null && filter != Filter.INCLUDE) {
-        maxFeatures=query.getMaxFeatures();
-        removeQueryLimitIfDenormalised=true;
-      }
       if (isJoining) {
         ((JoiningQuery)query).setDenormalised(mapping.isDenormalised());
       }
@@ -78,12 +73,20 @@
           hasPostFilter=true;
         }
       }
+      int offset=0;
+      int maxFeatures=1000000;
+      if (hasPostFilter) {
+        offset=query.getStartIndex() == null ? 0 : query.getStartIndex();
+        query.setStartIndex(null);
+        maxFeatures=query.getMaxFeatures();
+        removeQueryLimitIfDenormalised=true;
+      }
       iterator=new DataAccessMappingFeatureIterator(store,mapping,query,isFiltered,removeQueryLimitIfDenormalised,hasPostFilter);
       if (isListFilter != null) {
         ((DataAccessMappingFeatureIterator)iterator).setListFilter(isListFilter);
       }
       if (hasPostFilter) {
-        iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures);
+        iterator=new PostFilteringMappingFeatureIterator(iterator,filter,maxFeatures,offset);
       }
     }
  else     if (mappedSource instanceof MappingFeatureSource) {
