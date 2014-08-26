@@ -1,0 +1,64 @@
+{
+  if (init == false) {
+synchronized (LOGGER) {
+      if (init) {
+        return;
+      }
+      PATH=System.getenv("PATH");
+      RASTER2PGSQL_PATH=System.getProperty(RASTER2PGSQL_PATH_KEY);
+      File file=null;
+      try {
+        String OS=System.getProperty("os.name").toLowerCase();
+        final File dir;
+        if (OS.indexOf("win") >= 0) {
+          EXECUTE="execute.bat";
+          String executable=RASTER2PGSQL_COMMAND;
+          final String executablePath=RASTER2PGSQL_PATH + File.separatorChar;
+          if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("RASTER2PGSQL_PATH = " + RASTER2PGSQL_PATH);
+          }
+          dir=new File(executablePath);
+          executable=executablePath + executable + ".exe";
+          RASTER2PGSQL_COMMAND=executable;
+        }
+ else {
+          dir=new File(".");
+        }
+        IMPORT_COMMAND=RASTER2PGSQL_COMMAND + " " + OPTIONS_KEY+ " -F "+ FILES_KEY+ " "+ SCHEMA_KEY+ "."+ TABLE_PREFIX_KEY+ " > "+ SQL_FILE_KEY+ LINE_SEPARATOR+ "psql -d "+ DATABASE_KEY+ " -U "+ PGUSER_KEY+ " -h "+ HOST_KEY+ " -p "+ PORT_KEY+ " -f "+ SQL_FILE_KEY;
+        final ExecTask task=new ExecTask();
+        task.setExecutable(RASTER2PGSQL_COMMAND);
+        task.setDir(dir);
+        task.createArg().setValue("-G");
+        Variable variable=new Variable();
+        variable.setKey("PATH");
+        variable.setValue(PATH);
+        task.addEnv(variable);
+        file=File.createTempFile("r2pg",".tmp");
+        task.setOutput(file);
+        task.execute();
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("raster2pgsql script is available");
+        }
+        available=true;
+      }
+ catch (      BuildException e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.warning("Failed to invoke the raster2pgsql script. This is not a problem " + "unless you need to use the raster2pgsql script to automatically configure pgrasters.\n" + e.toString());
+        }
+        available=false;
+      }
+catch (      IOException e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.warning("Failed to invoke the raster2pgsql script. This is not a problem " + "unless you need to use the raster2pgsql script to automatically configure pgrasters.\n" + e.toString());
+        }
+        available=false;
+      }
+ finally {
+        init=true;
+        if (file != null) {
+          file.delete();
+        }
+      }
+    }
+  }
+}

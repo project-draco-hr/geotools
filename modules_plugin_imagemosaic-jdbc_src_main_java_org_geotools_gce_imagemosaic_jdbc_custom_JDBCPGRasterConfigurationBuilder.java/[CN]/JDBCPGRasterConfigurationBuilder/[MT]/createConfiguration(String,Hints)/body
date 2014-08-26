@@ -1,0 +1,36 @@
+{
+  Utilities.ensureNonNull("url",url);
+  try {
+    JDBCPGRasterConfigurationBuilder builder=null;
+    JDBCPGrasterConfigurationBean config=null;
+    if (url.startsWith("pgraster")) {
+      config=parseConfig(url);
+      final int fileURLIndex=url.indexOf("#");
+      final String dataUrl=url.substring(fileURLIndex + 1);
+      final String fileUrl=dataUrl.startsWith("file:/") ? dataUrl : "file://" + dataUrl;
+      builder=new JDBCPGRasterConfigurationBuilder(config,new URL(fileUrl));
+    }
+ else {
+      if (hints != null && hints.containsKey(JDBCPGrasterConfigurationBean.CONFIG_KEY)) {
+        Object object=hints.get(JDBCPGrasterConfigurationBean.CONFIG_KEY);
+        if (object != null && object instanceof JDBCPGrasterConfigurationBean) {
+          config=(JDBCPGrasterConfigurationBean)object;
+          builder=new JDBCPGRasterConfigurationBuilder(config,new URL(url));
+        }
+      }
+    }
+    if (builder != null) {
+      if (!isRaster2PgsqlAvailable() && config != null && (config.getFileExtension() != null || config.getImportOptions() != null)) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.warning("The specified URL refers to a pgraster but raster2pgsql script is unavailable.\n" + "Automatic configuration won't be performed. In case raster tiles have been manually imported, " + "make sure to leave fileExtensions and importOptions parameters empty and repeat the coverage configuration.");
+          return null;
+        }
+      }
+      return builder.buildConfiguration();
+    }
+    return new URL(url);
+  }
+ catch (  MalformedURLException mfe) {
+    throw new IllegalArgumentException(mfe);
+  }
+}

@@ -1,0 +1,29 @@
+{
+  final File configDirectory=DataUtilities.urlToFile(configDir);
+  if (!configDirectory.exists()) {
+    throw new IllegalArgumentException("Specified URL doesn't exist: " + configDir);
+  }
+  if (!configDirectory.isDirectory()) {
+    throw new IllegalArgumentException("Specified URL doesn't refer to a directory: " + configDir);
+  }
+  final String tablePrefix=configBean.getTileTablePrefix();
+  final String importOptions=configBean.getImportOptions();
+  final String fileExtension=configBean.getFileExtension();
+  final String schema=configBean.getSchema();
+  final Properties datastoreProperties=configBean.getDatastoreProperties();
+  final String database=(String)datastoreProperties.get(DATABASE_KEY.substring(1));
+  final String pguser=(String)datastoreProperties.get(PGUSER_KEY.substring(1));
+  final String password=(String)datastoreProperties.get(PASSWORD_KEY.substring(1));
+  final String port=(String)datastoreProperties.get(PORT_KEY.substring(1));
+  final String host=(String)datastoreProperties.get(HOST_KEY.substring(1));
+  final List<String> tileTables=new ArrayList<String>();
+  final File dataDir=DataUtilities.urlToFile(configDir);
+  String script=createScript(dataDir,database,schema,host,port,pguser,tablePrefix,fileExtension,tileTables,importOptions,filesToBeDeleted);
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Executing the script");
+  }
+  executeScript(dataDir,script,password,filesToBeDeleted);
+  final String tableName=configBean.getTableName();
+  final String coverageName=configBean.getCoverageName();
+  createMetadataTable(connection,tableName,coverageName,tileTables);
+}
