@@ -1,0 +1,48 @@
+{
+  if (pgrasterUrl != null && pgrasterUrl.startsWith("pgraster:/")) {
+    final int fileURLIndex=pgrasterUrl.indexOf("#");
+    if (fileURLIndex < 0) {
+      throw new IllegalArgumentException("The specified URL doesn't contain the data folder");
+    }
+    final int prefix=pgrasterUrl.startsWith("pgraster://") ? 11 : 10;
+    final int pguserEndIndex=pgrasterUrl.indexOf(":",prefix);
+    final String pguser=pgrasterUrl.substring(prefix,pguserEndIndex);
+    final int passwordEndIndex=pgrasterUrl.indexOf("@");
+    final String password=pgrasterUrl.substring(pguserEndIndex + 1,passwordEndIndex);
+    final int hostEndIndex=pgrasterUrl.indexOf(":",passwordEndIndex + 1);
+    final String host=pgrasterUrl.substring(passwordEndIndex + 1,hostEndIndex);
+    final int portEndIndex=pgrasterUrl.indexOf(":",hostEndIndex + 1);
+    final String port=pgrasterUrl.substring(hostEndIndex + 1,portEndIndex);
+    final int dbEndIndex=pgrasterUrl.indexOf(".",portEndIndex + 1);
+    final String db=pgrasterUrl.substring(portEndIndex + 1,dbEndIndex);
+    final int schemaEndIndex=pgrasterUrl.indexOf(".",dbEndIndex + 1);
+    final String schema=pgrasterUrl.substring(dbEndIndex + 1,schemaEndIndex);
+    final int tableEndIndex=pgrasterUrl.indexOf(":",schemaEndIndex + 1);
+    int epsgCode=DEFAULT_EPSG_CODE;
+    final int epsgStartIndex=pgrasterUrl.indexOf("@",schemaEndIndex + 1);
+    if (epsgStartIndex != -1) {
+      try {
+        epsgCode=Integer.parseInt(pgrasterUrl.substring(epsgStartIndex + 1,tableEndIndex));
+      }
+ catch (      NumberFormatException nfe) {
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.severe("Unable to parse the specified EPSGCode. Proceeding with DEFAULT:" + DEFAULT_EPSG_CODE + " due to : "+ nfe.getLocalizedMessage());
+        }
+      }
+    }
+    final String table=pgrasterUrl.substring(schemaEndIndex + 1,epsgStartIndex != -1 ? epsgStartIndex : tableEndIndex);
+    final int optionsStartIndex=pgrasterUrl.indexOf("?",tableEndIndex + 1);
+    final String options=optionsStartIndex != -1 ? pgrasterUrl.substring(optionsStartIndex + 1,fileURLIndex) : DEFAULT_OPTIONS;
+    final int fileExtensionEndIndex=optionsStartIndex != -1 ? optionsStartIndex : fileURLIndex;
+    final String fileExtension=pgrasterUrl.substring(tableEndIndex + 1,fileExtensionEndIndex);
+    Properties datastoreProperties=new Properties();
+    datastoreProperties.put(HOST_KEY.substring(1),host);
+    datastoreProperties.put(PGUSER_KEY.substring(1),pguser);
+    datastoreProperties.put(PORT_KEY.substring(1),port);
+    datastoreProperties.put(PASSWORD_KEY.substring(1),password);
+    datastoreProperties.put(DATABASE_KEY.substring(1),db);
+    JDBCPGrasterConfigurationBean bean=new JDBCPGrasterConfigurationBean(datastoreProperties,table,"rt" + table,fileExtension,table,options,schema,epsgCode);
+    return bean;
+  }
+  return null;
+}

@@ -5,18 +5,33 @@
   URL sourceURL=null;
   try {
     if (source instanceof File) {
-      sourceURL=((File)source).toURI().toURL();
+      File file=(File)source;
+      String path=file.getPath();
+      if (path.contains("pgraster:/")) {
+        path=path.substring(path.indexOf("pgraster:/"));
+        sourceURL=JDBCPGRasterConfigurationBuilder.createConfiguration(path,null);
+      }
+ else {
+        sourceURL=file.toURI().toURL();
+      }
     }
  else     if (source instanceof URL) {
       sourceURL=(URL)source;
     }
  else     if (source instanceof String) {
-      final File tempFile=new File((String)source);
-      if (tempFile.exists()) {
-        sourceURL=tempFile.toURI().toURL();
+      String path=((String)source);
+      if (path.contains("pgraster:/")) {
+        path=path.substring(path.indexOf("pgraster:/"));
+        sourceURL=JDBCPGRasterConfigurationBuilder.createConfiguration(path,null);
       }
  else {
-        sourceURL=new URL(URLDecoder.decode((String)source,"UTF8"));
+        final File tempFile=new File((String)source);
+        if (tempFile.exists()) {
+          sourceURL=tempFile.toURI().toURL();
+        }
+ else {
+          sourceURL=new URL(URLDecoder.decode((String)source,"UTF8"));
+        }
       }
     }
   }

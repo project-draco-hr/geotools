@@ -1,0 +1,53 @@
+{
+  validateConfiguration();
+  final File configFile=new File(DataUtilities.urlToFile(configDir).getAbsolutePath() + File.separatorChar + configBean.getCoverageName()+ ".pgraster.xml");
+  URL url=DataUtilities.fileToURL(configFile);
+  Config config=null;
+  Connection connection=null;
+  final List<File> filesToBeDeleted=new ArrayList<File>();
+  if (!configFile.exists()) {
+    try {
+      createConfigFile(configFile);
+      config=Config.readFrom(url);
+      DBDialect dialect=DBDialect.getDBDialect(config);
+      connection=dialect.getConnection();
+      if (!isMosaicAlreadyInDB(connection)) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Proceeding with raster tiles automatic import using raster2pgsql");
+        }
+        importTilesIntoDB(connection,filesToBeDeleted);
+      }
+ else {
+        if (LOGGER.isLoggable(Level.INFO)) {
+          LOGGER.info("Skipping raster tiles import " + "since metadata tables and tile tables already exists into the DB");
+        }
+      }
+    }
+ catch (    Exception e) {
+      if (configFile.exists()) {
+        configFile.delete();
+      }
+      throw new RuntimeException(e);
+    }
+ finally {
+      if (connection != null) {
+        try {
+          connection.close();
+        }
+ catch (        Throwable t) {
+        }
+      }
+      for (      File file : filesToBeDeleted) {
+        try {
+          file.delete();
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("Exception occurred while deleting temp file: " + file.getAbsolutePath() + "\n"+ e.getLocalizedMessage());
+          }
+        }
+      }
+    }
+  }
+  return url;
+}

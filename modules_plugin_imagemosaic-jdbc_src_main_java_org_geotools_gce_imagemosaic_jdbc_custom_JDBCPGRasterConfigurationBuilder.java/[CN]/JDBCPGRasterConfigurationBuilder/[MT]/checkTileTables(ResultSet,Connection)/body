@@ -1,0 +1,36 @@
+{
+  boolean proceed=true;
+  boolean found=false;
+  while (set.next() && proceed) {
+    final String tileTableName=set.getString("tiletable");
+    final String selectMetadataTableQuery=TILE_TABLE_CHECK_SQL.replace((MOSAIC_KEY),tileTableName);
+    try {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Looking for mosaic table already created");
+      }
+      final PreparedStatement ps=connection.prepareStatement(selectMetadataTableQuery);
+      ResultSet tileSet=ps.executeQuery();
+      if (tileSet.next()) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("tile table " + tileTableName + " has been found");
+        }
+        if (set.isLast()) {
+          proceed=false;
+          found=true;
+        }
+        continue;
+      }
+    }
+ catch (    SQLException sqle) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine(sqle.getLocalizedMessage());
+      }
+      final String message="Database contains the metadata table but some referred tile tables are missing. \n" + "Please, cleanup your database and retry the configuration";
+      if (LOGGER.isLoggable(Level.SEVERE)) {
+        LOGGER.severe(message);
+      }
+      throw new IllegalArgumentException(message);
+    }
+  }
+  return found;
+}

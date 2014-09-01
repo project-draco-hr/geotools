@@ -1,0 +1,27 @@
+{
+  final String selectMetadataTableQuery=TABLE_CHECK_SQL.replace((MOSAIC_KEY),configBean.getTableName());
+  try {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Looking for mosaic table already created");
+    }
+    final PreparedStatement ps=connection.prepareStatement(selectMetadataTableQuery);
+    ResultSet set=ps.executeQuery();
+    final boolean allTablesArePresent=checkTileTables(set,connection);
+    connection.commit();
+    return allTablesArePresent;
+  }
+ catch (  SQLException e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine(e.getLocalizedMessage());
+    }
+    try {
+      connection.rollback();
+    }
+ catch (    SQLException ex) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Exception occurred while doing rollback:\n" + e.getLocalizedMessage());
+      }
+    }
+  }
+  return false;
+}
