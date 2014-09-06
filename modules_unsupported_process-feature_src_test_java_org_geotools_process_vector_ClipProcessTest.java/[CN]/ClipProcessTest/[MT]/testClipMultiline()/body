@@ -1,0 +1,25 @@
+{
+  SimpleFeatureCollection features=fsMultilines.getFeatures();
+  ClipProcess cp=new ClipProcess();
+  SimpleFeatureCollection result=cp.execute(features,new WKTReader().read("POLYGON((900 900, 900 2100, 2100 2100, 2100 900, 900 900))"),true);
+  assertEquals(1,result.size());
+  SimpleFeatureIterator fi=result.features();
+  SimpleFeature f=fi.next();
+  fi.close();
+  MultiLineString ml=(MultiLineString)f.getDefaultGeometry();
+  assertEquals(2,ml.getNumGeometries());
+  LineString ls=(LineString)ml.getGeometryN(0);
+  CoordinateSequence cs=ls.getCoordinateSequence();
+  assertEquals(4,cs.size());
+  assertOrdinates(1000,900,0.9,cs,0);
+  assertOrdinates(1000,1000,1.0,cs,1);
+  assertOrdinates(2000,1000,2.0,cs,2);
+  assertOrdinates(2000,900,2.1,cs,3);
+  ls=(LineString)ml.getGeometryN(1);
+  cs=ls.getCoordinateSequence();
+  assertEquals(4,cs.size());
+  assertOrdinates(1000,2100,0.9,cs,0);
+  assertOrdinates(1000,2000,1.0,cs,1);
+  assertOrdinates(2000,2000,2.0,cs,2);
+  assertOrdinates(2000,2100,2.1,cs,3);
+}

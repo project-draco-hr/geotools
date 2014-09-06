@@ -1,0 +1,30 @@
+{
+  if (elevations == null) {
+    return;
+  }
+  if (seq.getDimension() < 3) {
+    throw new IllegalArgumentException("Expecting a 3 dimensional coordinate sequence to re-apply the Z values");
+  }
+  double x=seq.getX(i);
+  double y=seq.getY(i);
+  for (  PointDistance pd : elevations) {
+    double distance=pd.updateDistance(x,y,crs);
+    if (distance < PointDistance.EPS_METERS) {
+      seq.setOrdinate(i,2,pd.c.z);
+      return;
+    }
+  }
+  Collections.sort(elevations);
+  double sum=0;
+  double weights=0;
+  final int usedPoints=Math.min(MAX_POINTS,elevations.size());
+  for (int j=0; j < usedPoints; j++) {
+    PointDistance pd=elevations.get(j);
+    sum+=pd.c.z / pd.squareDistance;
+    weights+=1 / pd.squareDistance;
+  }
+  double z=sum / weights;
+  BigDecimal bd=new BigDecimal(z);
+  double rz=bd.setScale(scale,BigDecimal.ROUND_HALF_EVEN).doubleValue();
+  seq.setOrdinate(i,2,rz);
+}

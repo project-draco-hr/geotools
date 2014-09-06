@@ -1,0 +1,32 @@
+{
+  final List<PointDistance> results=new ArrayList<PointDistance>();
+  geom.apply(new CoordinateSequenceFilter(){
+    @Override public boolean isGeometryChanged(){
+      return false;
+    }
+    @Override public boolean isDone(){
+      return false;
+    }
+    @Override public void filter(    CoordinateSequence seq,    int i){
+      if (i > 0) {
+        return;
+      }
+      if (hasElevations(seq)) {
+        Coordinate[] coords=seq.toCoordinateArray();
+        for (int j=0; j < coords.length; j++) {
+          Coordinate c=coords[j];
+          if ((j < coords.length - 1 || !c.equals(coords[0])) && !Double.isNaN(c.z)) {
+            results.add(new PointDistance(c));
+          }
+        }
+      }
+    }
+  }
+);
+  if (results.size() == 0) {
+    return null;
+  }
+ else {
+    return results;
+  }
+}
