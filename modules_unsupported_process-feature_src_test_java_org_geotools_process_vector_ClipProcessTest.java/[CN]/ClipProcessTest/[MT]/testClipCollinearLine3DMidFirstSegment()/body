@@ -1,0 +1,18 @@
+{
+  SimpleFeatureCollection features=fsCollinear.getFeatures();
+  ClipProcess cp=new ClipProcess();
+  SimpleFeatureCollection result=cp.execute(features,new WKTReader().read("POLYGON((-10 -10, -10 10, 5000 10, 5000 -10, -10 -10))"),true);
+  assertEquals(1,result.size());
+  SimpleFeatureIterator fi=result.features();
+  SimpleFeature f=fi.next();
+  MultiLineString ml=(MultiLineString)f.getDefaultGeometry();
+  assertEquals(1,ml.getNumGeometries());
+  LineString ls=(LineString)ml.getGeometryN(0);
+  CoordinateSequence cs=ls.getCoordinateSequence();
+  assertEquals(4,cs.size());
+  assertOrdinates(0,0,0,cs,0);
+  assertOrdinates(1000,0,0.1,cs,1);
+  assertOrdinates(4000,0,0.4,cs,2);
+  assertOrdinates(5000,0,0.5,cs,3);
+  fi.close();
+}

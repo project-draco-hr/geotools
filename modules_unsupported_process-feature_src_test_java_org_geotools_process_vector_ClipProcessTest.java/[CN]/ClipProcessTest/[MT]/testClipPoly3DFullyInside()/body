@@ -1,0 +1,21 @@
+{
+  SimpleFeatureCollection features=fsMeters.getFeatures();
+  ClipProcess cp=new ClipProcess();
+  SimpleFeatureCollection result=cp.execute(features,new WKTReader().read("POLYGON((2500 2500, 2500 7500, 7500 7500, 7500 2500, 2500 2500))"),true);
+  assertEquals(2,result.size());
+  SimpleFeatureIterator fi=result.features();
+  SimpleFeature f=fi.next();
+  MultiPolygon mp=(MultiPolygon)f.getDefaultGeometry();
+  assertEquals(1,mp.getNumGeometries());
+  Polygon p=(Polygon)mp.getGeometryN(0);
+  assertEquals(0,p.getNumInteriorRing());
+  LineString shell=p.getExteriorRing();
+  CoordinateSequence cs=shell.getCoordinateSequence();
+  assertEquals(5,cs.size());
+  assertOrdinates(2500,2500,0.411765,cs,0);
+  assertOrdinates(2500,7500,1.588235,cs,1);
+  assertOrdinates(7500,7500,1.588235,cs,2);
+  assertOrdinates(7500,2500,0.411765,cs,3);
+  assertOrdinates(2500,2500,0.411765,cs,4);
+  fi.close();
+}
