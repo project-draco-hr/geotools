@@ -1,0 +1,24 @@
+{
+  System.out.println("example5 start\n");
+  URL url=CSVWriteTest.class.getResource("locations.csv");
+  File file=new File(url.toURI());
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureSource featureSource=store.getFeatureSource("locations");
+  Filter filter=CQL.toFilter("CITY = 'Denver'");
+  SimpleFeatureCollection features=featureSource.getFeatures(filter);
+  System.out.println("found :" + features.size() + " feature");
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=iterator.next();
+      Geometry geometry=(Geometry)feature.getDefaultGeometry();
+      System.out.println(feature.getID() + " default geometry " + geometry);
+    }
+  }
+ catch (  Throwable t) {
+    iterator.close();
+  }
+  System.out.println("\nexample5 end\n");
+}
