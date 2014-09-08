@@ -1,11 +1,20 @@
 {
-  ContentFeatureCollection cfc=this.getFeatures(query);
-  int count=0;
-  SimpleFeatureIterator iter=cfc.features();
-  while (iter.hasNext()) {
-    iter.next();
-    count++;
+  if (query.getFilter() == Filter.INCLUDE) {
+    CsvReader reader=getDataStore().read();
+    try {
+      boolean connect=reader.readHeaders();
+      if (connect == false) {
+        throw new IOException("Unable to connect");
+      }
+      int count=0;
+      while (reader.readRecord()) {
+        count+=1;
+      }
+      return count;
+    }
+  finally {
+      reader.close();
+    }
   }
-  iter.close();
-  return count;
+  return -1;
 }

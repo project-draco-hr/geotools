@@ -1,9 +1,24 @@
 {
-  if (this.append) {
-    this.builder.addAll(new Object[this.state.getEntry().getDataStore().getSchema(this.getFeatureType().getTypeName()).getAttributeCount()]);
-    this.each=this.buildFeature();
-    return this.each;
+  if (csvWriter == null) {
+    throw new IOException("Writer has been closed");
   }
-  this.checkPendingWrite();
-  return this.each=super.next();
+  try {
+    if (this.appending) {
+      SimpleFeatureType featureType=state.getFeatureType();
+      String fid=featureType.getTypeName() + "." + System.currentTimeMillis();
+      Object values[]=DataUtilities.defaultValues(featureType);
+      this.currentFeature=SimpleFeatureBuilder.build(featureType,values,fid);
+      return this.currentFeature;
+    }
+ else {
+      if (this.currentFeature != null) {
+        this.write();
+      }
+      this.currentFeature=delegate.next();
+      return this.currentFeature;
+    }
+  }
+ catch (  IllegalArgumentException invalid) {
+    throw new IOException("Unable to create feature:" + invalid.getMessage(),invalid);
+  }
 }
