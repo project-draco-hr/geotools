@@ -1,0 +1,22 @@
+{
+  List<String> header=new ArrayList<String>();
+  GeometryDescriptor geometryDescrptor=featureType.getGeometryDescriptor();
+  if (geometryDescrptor != null && CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84,geometryDescrptor.getCoordinateReferenceSystem()) && geometryDescrptor.getType().getBinding().isAssignableFrom(Point.class)) {
+    header.add("LAT");
+    header.add("LON");
+  }
+ else {
+    throw new IOException("Unable use LAT/LON to represent " + geometryDescrptor);
+  }
+  for (  AttributeDescriptor descriptor : featureType.getAttributeDescriptors()) {
+    if (descriptor instanceof GeometryDescriptor)     continue;
+    header.add(descriptor.getLocalName());
+  }
+  CsvWriter writer=write();
+  try {
+    writer.writeRecord(header.toArray(new String[header.size()]));
+  }
+  finally {
+    writer.close();
+  }
+}
