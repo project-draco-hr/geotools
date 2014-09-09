@@ -1,0 +1,32 @@
+{
+  System.out.println("copyContent start\n");
+  File directory=tmp;
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=store.getSchema("locations");
+  Map<String,Serializable> params2=new HashMap<String,Serializable>();
+  params2.put("file",new File(directory,"duplicate.rst"));
+  CSVDataStoreFactory factory=new CSVDataStoreFactory();
+  DataStore duplicate=factory.createNewDataStore(params2);
+  duplicate.createSchema(featureType);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  SimpleFeature feature, newFeature;
+  Query query=new Query(featureType.getTypeName(),Filter.INCLUDE);
+  reader=store.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  writer=duplicate.getFeatureWriterAppend("duplicate",Transaction.AUTO_COMMIT);
+  try {
+    while (reader.hasNext()) {
+      feature=reader.next();
+      newFeature=writer.next();
+      newFeature.setAttributes(feature.getAttributes());
+      writer.write();
+    }
+  }
+  finally {
+    reader.close();
+    writer.close();
+  }
+  System.out.println("\ncopyContent end\n");
+}
