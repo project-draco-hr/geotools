@@ -1,11 +1,17 @@
 {
-  if (this.currentFeature != null) {
-    this.write();
+  if (csvWriter == null) {
+    throw new IOException("Writer alread closed");
   }
+  while (hasNext()) {
+    next();
+    write();
+  }
+  csvWriter.close();
+  csvWriter=null;
   if (delegate != null) {
     this.delegate.close();
+    this.delegate=null;
   }
-  this.csvWriter.close();
   File file=((CSVDataStore)state.getEntry().getDataStore()).file;
   Files.copy(temp.toPath(),file.toPath(),StandardCopyOption.REPLACE_EXISTING);
 }
