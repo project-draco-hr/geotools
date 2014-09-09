@@ -1,0 +1,30 @@
+{
+  System.out.println("example4 start\n");
+  URL url=CSVTest.class.getResource("locations.csv");
+  File file=new File(url.toURI());
+  Map<String,Serializable> params=new HashMap<String,Serializable>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+  Set<FeatureId> selection=new HashSet<FeatureId>();
+  selection.add(ff.featureId("locations.7"));
+  Filter filter=ff.id(selection);
+  Query query=new Query("locations",filter);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader=store.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  try {
+    while (reader.hasNext()) {
+      SimpleFeature feature=reader.next();
+      System.out.println("feature " + feature.getID());
+      for (      Property property : feature.getProperties()) {
+        System.out.print("\t");
+        System.out.print(property.getName());
+        System.out.print(" = ");
+        System.out.println(property.getValue());
+      }
+    }
+  }
+  finally {
+    reader.close();
+  }
+  System.out.println("\nexample4 end\n");
+}

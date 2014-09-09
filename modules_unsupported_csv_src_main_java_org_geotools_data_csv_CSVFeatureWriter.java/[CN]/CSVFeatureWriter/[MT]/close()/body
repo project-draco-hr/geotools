@@ -1,9 +1,17 @@
 {
-  if (this.appending) {
-    return;
+  if (csvWriter == null) {
+    throw new IOException("Writer alread closed");
   }
-  this.checkPendingWrite();
-  super.close();
-  this.csvWriter.close();
-  ((CSVDataStore)this.state.getEntry().getDataStore()).write(this.tempFile);
+  while (hasNext()) {
+    next();
+    write();
+  }
+  csvWriter.close();
+  csvWriter=null;
+  if (delegate != null) {
+    this.delegate.close();
+    this.delegate=null;
+  }
+  File file=((CSVDataStore)state.getEntry().getDataStore()).file;
+  Files.copy(temp.toPath(),file.toPath(),StandardCopyOption.REPLACE_EXISTING);
 }
