@@ -7,6 +7,17 @@
   this.csvWriter=new CsvWriter(new FileWriter(this.temp),',');
   if (append) {
     Files.copy(file.toPath(),temp.toPath(),StandardCopyOption.REPLACE_EXISTING);
+    CsvReader count=null;
+    try {
+      count=((CSVDataStore)state.getEntry().getDataStore()).read();
+      count.getHeaders();
+      while (count.readRecord()) {
+        nextRow++;
+      }
+    }
+  finally {
+      count.close();
+    }
   }
  else {
     this.delegate=new CSVFeatureReader(state,query);
