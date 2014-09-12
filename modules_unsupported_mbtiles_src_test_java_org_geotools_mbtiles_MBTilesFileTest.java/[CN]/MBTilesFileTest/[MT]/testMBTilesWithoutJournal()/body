@@ -1,0 +1,44 @@
+{
+  File temp=File.createTempFile("temp2_",".mbtiles");
+  MBTilesFile file=new MBTilesFile(temp,true);
+  file.init();
+  final File journal=new File(temp.getAbsolutePath() + "-journal");
+  final AtomicLong counter=new AtomicLong(0);
+  Thread th=new Thread(new Runnable(){
+    @Override public void run(){
+      while (true) {
+        if (journal.exists()) {
+          counter.incrementAndGet();
+        }
+      }
+    }
+  }
+);
+  th.start();
+  for (int i=0; i < 10; i++) {
+    for (int j=0; j < 10; j++) {
+      MBTilesTile tile1=new MBTilesTile(1,i,j);
+      tile1.setData("dummy data 1".getBytes());
+      file.saveTile(tile1);
+    }
+  }
+  try {
+    th.interrupt();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+  }
+  try {
+    file.close();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+  }
+  try {
+    temp.delete();
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+  }
+  assertTrue(counter.get() == 0);
+}
