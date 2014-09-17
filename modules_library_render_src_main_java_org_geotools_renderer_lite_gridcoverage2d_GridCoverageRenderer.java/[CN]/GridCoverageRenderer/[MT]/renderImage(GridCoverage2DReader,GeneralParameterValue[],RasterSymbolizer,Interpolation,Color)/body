@@ -1,12 +1,21 @@
 {
   CoordinateReferenceSystem sourceCRS=reader.getCoordinateReferenceSystem();
   CoordinateReferenceSystem targetCRS=destinationEnvelope.getCoordinateReferenceSystem();
+  ProjectionHandler handler=null;
+  List<GridCoverage2D> coverages;
   GridCoverageReaderHelper rh=new GridCoverageReaderHelper(reader,destinationSize,ReferencedEnvelope.reference(destinationEnvelope),interpolation);
-  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(rh.getReadEnvelope(),sourceCRS,wrapEnabled);
-  if (handler instanceof WrappingProjectionHandler) {
-    ((WrappingProjectionHandler)handler).setDatelineWrappingCheckEnabled(false);
+  if ("true".equals(reader.getMetadataValue(GridCoverage2DReader.REPROJECTING_READER))) {
+    GridCoverage2D coverage=rh.readCoverage(readParams);
+    coverages=new ArrayList<>();
+    coverages.add(coverage);
   }
-  List<GridCoverage2D> coverages=rh.readCoverages(readParams,handler);
+ else {
+    handler=ProjectionHandlerFinder.getHandler(rh.getReadEnvelope(),sourceCRS,wrapEnabled);
+    if (handler instanceof WrappingProjectionHandler) {
+      ((WrappingProjectionHandler)handler).setDatelineWrappingCheckEnabled(false);
+    }
+    coverages=rh.readCoverages(readParams,handler);
+  }
   final CoordinateReferenceSystem coverageCRS=reader.getCoordinateReferenceSystem();
   List<GridCoverage2D> reprojectedCoverages=new ArrayList<GridCoverage2D>();
   if (!CRS.equalsIgnoreMetadata(coverageCRS,destinationCRS)) {
