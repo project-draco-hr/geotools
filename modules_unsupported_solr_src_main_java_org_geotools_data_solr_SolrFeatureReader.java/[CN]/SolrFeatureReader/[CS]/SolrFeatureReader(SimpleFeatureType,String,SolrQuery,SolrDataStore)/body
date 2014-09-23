@@ -1,0 +1,26 @@
+{
+  this.featureType=featureType;
+  this.solrQuery=solrQuery;
+  this.wktReader=new WKTReader();
+  this.solrDataStore=solrDataStore;
+  this.pkey=solrDataStore.getPrimaryKey(featureType.getTypeName());
+  this.builder=new SimpleFeatureBuilder(featureType);
+  server=new HttpSolrServer(solrUrl);
+  if (solrQuery.getFields() != null && !solrQuery.getFields().contains(pkey.getName())) {
+    solrQuery.addField(pkey.getName());
+  }
+  if (solrQuery.getStart() != null && solrQuery.getStart() > 0) {
+    cursorMark=getCursorMarkForStart(server,solrQuery);
+  }
+ else {
+    cursorMark=CursorMarkParams.CURSOR_MARK_START;
+  }
+  solrQuery.set(CursorMarkParams.CURSOR_MARK_PARAM,cursorMark);
+  QueryResponse rsp=server.query(solrQuery);
+  if (this.solrDataStore.getLogger().isLoggable(Level.FINE)) {
+    this.solrDataStore.getLogger().log(Level.FINE,"SOLR query done: " + solrQuery.toString());
+  }
+  this.solrDocIterator=rsp.getResults().iterator();
+  nextCursorMark=rsp.getNextCursorMark();
+  counter=0;
+}

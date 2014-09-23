@@ -1,0 +1,42 @@
+{
+  SolrQuery query=new SolrQuery();
+  query.setParam("omitHeader",true);
+  try {
+    if (q.getPropertyNames() != null) {
+      for (      String prop : q.getPropertyNames()) {
+        query.addField(prop);
+      }
+    }
+    query.setQuery("*:*");
+    if (q.getStartIndex() != null && q.getStartIndex() >= 0) {
+      query.setStart(q.getStartIndex());
+    }
+    if (q.getMaxFeatures() > 0) {
+      query.setRows(q.getMaxFeatures());
+    }
+    ORDER naturalSortOrder=ORDER.asc;
+    if (q.getSortBy() != null) {
+      for (      SortBy sort : q.getSortBy()) {
+        if (sort.getPropertyName() != null) {
+          query.addSort(sort.getPropertyName().getPropertyName(),sort.getSortOrder().equals(SortOrder.ASCENDING) ? ORDER.asc : ORDER.desc);
+        }
+ else {
+          naturalSortOrder=sort.getSortOrder().equals(SortOrder.ASCENDING) ? ORDER.asc : ORDER.desc;
+        }
+      }
+    }
+    query.addSort(getPrimaryKey(featureType.getTypeName()).getName(),naturalSortOrder);
+    FilterToSolr f2s=initializeFilterToSolr(featureType);
+    String fq=this.field + ":" + featureType.getTypeName();
+    String ffq=f2s.encodeToString(q.getFilter());
+    if (ffq != null && !ffq.isEmpty()) {
+      fq=fq + " AND " + ffq;
+    }
+    query.setFilterQueries(fq);
+    addViewparams(q,query);
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.SEVERE,e.getMessage(),e);
+  }
+  return query;
+}

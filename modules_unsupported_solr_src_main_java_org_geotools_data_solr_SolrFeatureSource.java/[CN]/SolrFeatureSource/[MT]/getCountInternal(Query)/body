@@ -1,0 +1,43 @@
+{
+  int count=0;
+  try {
+    SolrDataStore store=getDataStore();
+    Filter[] split=splitFilter(query.getFilter(),this);
+    Filter preFilter=split[0];
+    Filter postFilter=split[1];
+    if (postFilter != null && postFilter != Filter.INCLUDE) {
+      FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(query);
+      try {
+        while (reader.hasNext()) {
+          reader.next();
+          count++;
+        }
+      }
+  finally {
+        reader.close();
+      }
+      return count;
+    }
+ else {
+      DefaultQuery preQuery=new DefaultQuery(query);
+      preQuery.setFilter(preFilter);
+      SolrQuery q=store.count(getSchema(),preQuery);
+      if (store.getLogger().isLoggable(Level.FINE)) {
+        store.getLogger().log(Level.FINE,q.toString());
+      }
+      HttpSolrServer server=new HttpSolrServer(store.getUrl().toString());
+      QueryResponse rsp=server.query(q);
+      count=rsp.getResults().size();
+      server.shutdown();
+    }
+  }
+ catch (  Throwable e) {
+    if (e instanceof Error) {
+      throw (Error)e;
+    }
+ else {
+      throw (IOException)new IOException().initCause(e);
+    }
+  }
+  return count;
+}

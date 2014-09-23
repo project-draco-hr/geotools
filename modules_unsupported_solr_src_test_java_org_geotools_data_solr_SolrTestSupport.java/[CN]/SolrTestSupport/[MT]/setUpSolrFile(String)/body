@@ -1,0 +1,26 @@
+{
+  if (setUpIsDone) {
+    return;
+  }
+  File testDir=(Paths.get(getClass().getResource("/" + testFile).toURI()).getParent()).toFile();
+  ProcessBuilder pb=new ProcessBuilder("java","-Durl=" + url + "/update","-jar","post.jar",testFile);
+  pb.directory(testDir);
+  LOGGER.log(Level.FINE,"Starting SOLR import");
+  final Process command=pb.start();
+  LOGGER.log(Level.FINE,"Started SOLR import");
+  String line;
+  BufferedReader bri=new BufferedReader(new InputStreamReader(command.getInputStream()));
+  BufferedReader bre=new BufferedReader(new InputStreamReader(command.getErrorStream()));
+  while ((line=bri.readLine()) != null) {
+    LOGGER.log(Level.FINE,line);
+  }
+  bri.close();
+  while ((line=bre.readLine()) != null) {
+    LOGGER.log(Level.FINE,line);
+  }
+  bre.close();
+  int i=command.waitFor();
+  assertTrue(i == 0);
+  LOGGER.log(Level.FINE,"SOLR import DONE!");
+  setUpIsDone=true;
+}

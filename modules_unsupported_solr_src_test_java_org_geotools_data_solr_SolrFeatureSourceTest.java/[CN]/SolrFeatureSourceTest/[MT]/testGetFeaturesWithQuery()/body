@@ -1,0 +1,21 @@
+{
+  init();
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equals(ff.property("modem_b"),ff.literal(true));
+  Query query=new Query();
+  query.setPropertyNames(new String[]{"standard_ss","security_ss"});
+  query.setFilter(filter);
+  SimpleFeatureCollection features=featureSource.getFeatures(query);
+  assertEquals(8,features.size());
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    assertTrue(iterator.hasNext());
+    SimpleFeature feature=(SimpleFeature)iterator.next();
+    assertEquals(2,feature.getAttributeCount());
+    String st=(String)feature.getAttribute("standard_ss");
+    assertTrue(st.contains("IEEE 802.11b"));
+  }
+  finally {
+    iterator.close();
+  }
+}

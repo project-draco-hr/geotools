@@ -1,0 +1,38 @@
+{
+  CoordinateReferenceSystem flatCRS=CRS.getHorizontalCRS(getSchema().getCoordinateReferenceSystem());
+  ReferencedEnvelope bounds=new ReferencedEnvelope(flatCRS);
+  SolrDataStore store=getDataStore();
+  Filter[] split=splitFilter(query.getFilter(),this);
+  Filter preFilter=split[0];
+  Filter postFilter=split[1];
+  DefaultQuery preQuery=new DefaultQuery(query);
+  preQuery.setFilter(preFilter);
+  SolrQuery q=getDataStore().select(getSchema(),preQuery);
+  if (getDataStore().getLogger().isLoggable(Level.FINE)) {
+    getDataStore().getLogger().log(Level.FINE,q.toString());
+  }
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  try {
+    reader=new SolrFeatureReader(getSchema(),store.getUrl().toString(),q,this.getDataStore());
+    if (postFilter != null && postFilter != Filter.INCLUDE) {
+      reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,postFilter);
+    }
+    try {
+      if (reader.hasNext()) {
+        SimpleFeature f=(SimpleFeature)reader.next();
+        bounds.init(f.getBounds());
+        while (reader.hasNext()) {
+          f=reader.next();
+          bounds.include(f.getBounds());
+        }
+      }
+    }
+  finally {
+      reader.close();
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+  return bounds;
+}

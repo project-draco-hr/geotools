@@ -1,0 +1,59 @@
+{
+  StringWriter output=asStringWriter(extraData);
+  Expression e1=filter.getExpression1();
+  Expression e2=filter.getExpression2();
+  ExpressionToSolr visitor=new ExpressionToSolr(filter);
+  if (filter instanceof After) {
+    checkExpressionIsProperty(e1);
+    checkExpressionIsLiteral(e2);
+    PropertyName propertyName=(PropertyName)e1;
+    propertyName.accept(visitor,output);
+    output.append(":{");
+    e2.accept(visitor,output);
+    output.append(" TO *}");
+  }
+  if (filter instanceof Before) {
+    checkExpressionIsProperty(e1);
+    checkExpressionIsLiteral(e2);
+    PropertyName propertyName=(PropertyName)e1;
+    propertyName.accept(visitor,output);
+    output.append(":{* TO ");
+    e2.accept(visitor,output);
+    output.append("}");
+  }
+  if (filter instanceof Begins || filter instanceof Ends || filter instanceof TEquals) {
+    checkExpressionIsProperty(e1);
+    checkExpressionIsLiteral(e2);
+    PropertyName propertyName=(PropertyName)e1;
+    propertyName.accept(visitor,output);
+    output.append(":");
+    e2.accept(visitor,output);
+  }
+  if (filter instanceof BegunBy || filter instanceof EndedBy) {
+    checkExpressionIsProperty(e2);
+    checkExpressionIsLiteral(e1);
+    PropertyName propertyName=(PropertyName)e2;
+    propertyName.accept(visitor,output);
+    output.append(":");
+    e1.accept(visitor,output);
+  }
+  if (filter instanceof During) {
+    checkExpressionIsProperty(e1);
+    checkExpressionIsLiteral(e2);
+    PropertyName propertyName=(PropertyName)e1;
+    propertyName.accept(visitor,output);
+    output.append(":{");
+    e2.accept(visitor,output);
+    output.append("}");
+  }
+  if (filter instanceof TContains) {
+    checkExpressionIsProperty(e2);
+    checkExpressionIsLiteral(e1);
+    PropertyName propertyName=(PropertyName)e2;
+    propertyName.accept(visitor,output);
+    output.append(":{");
+    e1.accept(visitor,output);
+    output.append("}");
+  }
+  return output;
+}

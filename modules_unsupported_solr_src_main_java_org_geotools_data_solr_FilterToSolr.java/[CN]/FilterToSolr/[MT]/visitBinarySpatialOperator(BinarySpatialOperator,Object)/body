@@ -1,0 +1,38 @@
+{
+  StringWriter output=asStringWriter(extraData);
+  Expression e1=filter.getExpression1();
+  checkExpressionIsProperty(e1);
+  Expression e2=filter.getExpression2();
+  checkExpressionIsLiteral(e2);
+  ExpressionToSolr visitor=new ExpressionToSolr();
+  e1.accept(visitor,extraData);
+  if (filter instanceof BBOX) {
+    output.append(":\"IsWithin(");
+    e2.accept(visitor,extraData);
+    output.append(")\"");
+  }
+ else   if (filter instanceof Disjoint) {
+    output.append(":\"IsDisjointTo(");
+    e2.accept(visitor,extraData);
+    output.append(")\"");
+  }
+ else   if (filter instanceof Within) {
+    output.append(":\"IsWithin(");
+    e2.accept(visitor,extraData);
+    output.append(")\"");
+  }
+ else   if (filter instanceof Intersects) {
+    output.append(":\"Intersects(");
+    e2.accept(visitor,extraData);
+    output.append(")\"");
+  }
+ else   if (filter instanceof Contains) {
+    output.append(":\"Contains(");
+    e2.accept(visitor,extraData);
+    output.append(")\"");
+  }
+ else {
+    throw new RuntimeException("Unsupported filter type " + filter.getClass());
+  }
+  return output;
+}

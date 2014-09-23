@@ -1,0 +1,44 @@
+{
+  StringBuffer temp=new StringBuffer("");
+  StringWriter output=FilterToSolr.asStringWriter(extraData);
+  Object literal=expression.getValue();
+  if (literal instanceof Geometry) {
+    Geometry geometry=(Geometry)literal;
+    WKTWriter writer=new WKTWriter();
+    String wkt=writer.write(geometry);
+    temp.append(wkt);
+  }
+ else   if (literal instanceof Number) {
+    temp.append(literal.toString());
+  }
+ else   if (literal instanceof Date) {
+    temp.append("\"" + dateFormatUTC.format(literal) + "\"");
+  }
+ else   if (literal instanceof Period) {
+    if (filter instanceof After) {
+      Period period=(Period)literal;
+      temp.append(dateFormatUTC.format(period.getEnding().getPosition().getDate()));
+    }
+    if (filter instanceof Before || filter instanceof Begins || filter instanceof BegunBy) {
+      Period period=(Period)literal;
+      temp.append("\"" + dateFormatUTC.format(period.getBeginning().getPosition().getDate()) + "\"");
+    }
+    if (filter instanceof Ends || filter instanceof EndedBy) {
+      Period period=(Period)literal;
+      temp.append("\"" + dateFormatUTC.format(period.getEnding().getPosition().getDate()) + "\"");
+    }
+    if (filter instanceof During || filter instanceof TContains) {
+      Period period=(Period)literal;
+      temp.append("\"" + dateFormatUTC.format(period.getBeginning().getPosition().getDate()) + "\"");
+      temp.append(" TO ");
+      temp.append("\"" + dateFormatUTC.format(period.getEnding().getPosition().getDate()) + "\"");
+    }
+  }
+ else {
+    String escaped=FilterToSolr.escapeSpecialCharacters(literal.toString());
+    escaped="\"" + escaped + "\"";
+    temp.append(escaped);
+  }
+  output.append(temp);
+  return temp;
+}

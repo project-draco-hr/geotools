@@ -1,0 +1,57 @@
+{
+  if (solrAttributes.isEmpty()) {
+    solrAttributes=new ArrayList<SolrAttribute>();
+    try {
+      HttpSolrServer solrServer=new HttpSolrServer(url.toString());
+      LukeRequest lq=new LukeRequest();
+      lq.setShowSchema(true);
+      LukeResponse processSchema=lq.process(solrServer);
+      lq=new LukeRequest();
+      lq.setShowSchema(false);
+      LukeResponse processField=lq.process(solrServer);
+      Map<String,FieldInfo> fis=processField.getFieldInfo();
+      SortedSet<String> keys=new TreeSet<String>(fis.keySet());
+      for (      String k : keys) {
+        FieldInfo fieldInfo=fis.get(k);
+        String name=fieldInfo.getName();
+        String type=fieldInfo.getType();
+        SolrQuery query=new SolrQuery();
+        query.setQuery("*:*");
+        query.setRows(0);
+        query.addFilterQuery(this.field + ":*");
+        if (layerName != null && layerName.isEmpty()) {
+          query.addFilterQuery(name + ":" + layerName);
+        }
+ else {
+          query.addFilterQuery(name + ":*");
+        }
+        QueryResponse rsp=solrServer.query(query);
+        long founds=rsp.getResults().getNumFound();
+        FieldTypeInfo fty=processSchema.getFieldTypeInfo(type);
+        if (fty != null) {
+          Class<?> objType=SolrUtils.decodeSolrFieldType(fty.getClassName());
+          if (objType != null) {
+            ExtendedFieldSchemaInfo extendedFieldSchemaInfo=new SolrUtils.ExtendedFieldSchemaInfo(processSchema,processField,name);
+            SolrAttribute at=new SolrAttribute(name,objType);
+            if (extendedFieldSchemaInfo.getUniqueKey()) {
+              at.setPk(true);
+              at.setUse(true);
+            }
+            if (extendedFieldSchemaInfo.getMultivalued() && !Geometry.class.isAssignableFrom(at.getType())) {
+              at.setType(String.class);
+            }
+            at.setEmpty(founds == 0);
+            solrAttributes.add(at);
+          }
+        }
+      }
+      List<BeanComparator> sortFields=Arrays.asList(new BeanComparator("empty"),new BeanComparator("name"));
+      ComparatorChain multiSort=new ComparatorChain(sortFields);
+      Collections.sort(solrAttributes,multiSort);
+    }
+ catch (    Exception ex) {
+      LOGGER.log(Level.SEVERE,ex.getMessage(),ex);
+    }
+  }
+  return solrAttributes;
+}

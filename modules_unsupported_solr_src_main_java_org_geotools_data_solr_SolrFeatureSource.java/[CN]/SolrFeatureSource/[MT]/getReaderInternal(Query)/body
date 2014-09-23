@@ -1,0 +1,32 @@
+{
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  try {
+    SolrDataStore store=getDataStore();
+    Filter[] split=splitFilter(query.getFilter(),this);
+    Filter preFilter=split[0];
+    Filter postFilter=split[1];
+    DefaultQuery preQuery=new DefaultQuery(query);
+    preQuery.setFilter(preFilter);
+    SimpleFeatureType[] types=buildQueryAndReturnFeatureTypes(getSchema(),query.getPropertyNames(),postFilter);
+    SimpleFeatureType querySchema=types[0];
+    SimpleFeatureType returnedSchema=types[1];
+    SolrQuery q=store.select(querySchema,preQuery);
+    if (store.getLogger().isLoggable(Level.FINE)) {
+      store.getLogger().log(Level.FINE,q.toString());
+    }
+    reader=new SolrFeatureReader(querySchema,store.getUrl().toString(),q,store);
+    if (postFilter != null && postFilter != Filter.INCLUDE) {
+      reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,postFilter);
+      if (!returnedSchema.equals(querySchema))       reader=new ReTypeFeatureReader(reader,returnedSchema);
+    }
+  }
+ catch (  Throwable e) {
+    if (e instanceof Error) {
+      throw (Error)e;
+    }
+ else {
+      throw (IOException)new IOException().initCause(e);
+    }
+  }
+  return reader;
+}

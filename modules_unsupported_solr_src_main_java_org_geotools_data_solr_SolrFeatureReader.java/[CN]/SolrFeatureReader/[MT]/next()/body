@@ -1,0 +1,42 @@
+{
+  String fid="";
+  try {
+    if (!hasNext()) {
+      throw new NoSuchElementException("No more features in this reader, you should call " + "hasNext() to check for feature availability");
+    }
+    SolrDocument doc=this.solrDocIterator.next();
+    fid=featureType.getTypeName() + "." + doc.getFieldValue(pkey.getName());
+    final int attributeCount=featureType.getAttributeCount();
+    for (int i=0; i < attributeCount; i++) {
+      AttributeDescriptor type=featureType.getDescriptor(i);
+      Object value=doc.getFieldValue(type.getLocalName());
+      if (value instanceof List<?>) {
+        value=StringUtils.join(((List)value).toArray(),";");
+      }
+      if (type instanceof GeometryDescriptor) {
+        GeometryDescriptor gatt=(GeometryDescriptor)type;
+        if (value != null) {
+          Geometry geometry=(Geometry)wktReader.read(value.toString());
+          if (geometry != null && geometry.getUserData() == null) {
+            geometry.setUserData(gatt.getCoordinateReferenceSystem());
+          }
+          builder.add(geometry);
+        }
+      }
+ else {
+        builder.add(value);
+      }
+    }
+    return builder.buildFeature(fid);
+  }
+ catch (  ParseException e) {
+    throw new RuntimeException(e);
+  }
+ finally {
+    if (this.solrDataStore.getLogger().isLoggable(Level.FINE)) {
+      this.solrDataStore.getLogger().log(Level.FINE,"Created " + fid);
+    }
+    next=null;
+    counter++;
+  }
+}

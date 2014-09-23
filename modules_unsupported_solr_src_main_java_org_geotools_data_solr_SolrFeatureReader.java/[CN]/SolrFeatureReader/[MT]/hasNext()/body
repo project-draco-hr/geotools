@@ -1,0 +1,30 @@
+{
+  if (next == null) {
+    if (this.solrDocIterator.hasNext()) {
+      next=true;
+    }
+ else {
+      if (counter < solrQuery.getRows() && !cursorMark.equals(nextCursorMark)) {
+        cursorMark=nextCursorMark;
+        solrQuery.set(CursorMarkParams.CURSOR_MARK_PARAM,cursorMark);
+        try {
+          QueryResponse rsp=server.query(solrQuery);
+          if (this.solrDataStore.getLogger().isLoggable(Level.FINE)) {
+            this.solrDataStore.getLogger().log(Level.FINE,solrQuery.toString());
+          }
+          this.solrDocIterator=rsp.getResults().iterator();
+          nextCursorMark=rsp.getNextCursorMark();
+          next=this.solrDocIterator.hasNext();
+        }
+ catch (        SolrServerException e) {
+          this.solrDataStore.getLogger().log(Level.SEVERE,e.getMessage(),e);
+          next=false;
+        }
+      }
+ else {
+        next=false;
+      }
+    }
+  }
+  return next.booleanValue();
+}
