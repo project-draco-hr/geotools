@@ -1,0 +1,47 @@
+{
+  Object here=this;
+  for (  String key : path.split("/")) {
+    if (here instanceof Map) {
+      here=new YamlMap(here);
+    }
+    if (here instanceof List) {
+      here=new YamlSeq(here);
+    }
+    if (here.getClass().isArray()) {
+      here=new YamlSeq(here);
+    }
+    int index;
+    try {
+      index=Integer.parseInt(key);
+    }
+ catch (    NumberFormatException nan) {
+      index=-1;
+    }
+    if (here instanceof YamlMap) {
+      YamlMap map=(YamlMap)here;
+      if (index != -1) {
+        String tempKey=map.key(index);
+        here=map.get(tempKey);
+      }
+ else       if (map.has(key)) {
+        here=map.get(key);
+      }
+ else {
+        throw new NoSuchElementException("Key: " + key + ", Keys: "+ map.raw.keySet());
+      }
+    }
+ else     if (here instanceof YamlSeq) {
+      YamlSeq list=(YamlSeq)here;
+      if (index != -1) {
+        here=list.get(index);
+      }
+ else {
+        throw new IndexOutOfBoundsException("Index: " + key + ", Size: "+ list.raw.size());
+      }
+    }
+ else {
+      throw new NoSuchElementException("Key: " + key + ", For:"+ here.getClass().getSimpleName());
+    }
+  }
+  return here;
+}
