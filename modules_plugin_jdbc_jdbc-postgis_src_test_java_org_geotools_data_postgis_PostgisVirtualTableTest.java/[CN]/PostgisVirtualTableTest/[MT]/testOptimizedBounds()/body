@@ -1,0 +1,26 @@
+{
+  Handler handler=new Handler(){
+    @Override public synchronized void publish(    LogRecord record){
+      fail("We should not have received any log statement");
+    }
+    @Override public void flush(){
+    }
+    @Override public void close() throws SecurityException {
+    }
+  }
+;
+  handler.setLevel(Level.WARNING);
+  ((PostGISDialect)dataStore.getSQLDialect()).setEstimatedExtentsEnabled(true);
+  Logger logger=Logging.getLogger("org.geotools.jdbc");
+  Level oldLevel=logger.getLevel();
+  try {
+    logger.setLevel(java.util.logging.Level.WARNING);
+    logger.addHandler(handler);
+    super.testBounds();
+  }
+  finally {
+    ((PostGISDialect)dataStore.getSQLDialect()).setEstimatedExtentsEnabled(false);
+    logger.setLevel(oldLevel);
+    logger.removeHandler(handler);
+  }
+}
