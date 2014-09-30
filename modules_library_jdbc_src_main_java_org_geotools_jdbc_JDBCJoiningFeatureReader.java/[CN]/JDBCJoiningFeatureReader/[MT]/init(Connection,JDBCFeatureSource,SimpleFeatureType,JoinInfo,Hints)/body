@@ -1,9 +1,6 @@
 {
   joinReaders=new ArrayList<JDBCFeatureReader>();
-  int offset=featureType.getAttributeCount();
-  if (!featureSource.isExposePrimaryKeyColumns()) {
-    offset+=getPrimaryKey().getColumns().size();
-  }
+  int offset=featureType.getAttributeCount() + getPrimaryKeyOffset(featureSource,getPrimaryKey(),featureType);
   for (  JoinPart part : join.getParts()) {
     SimpleFeatureType ft=part.getQueryFeatureType();
     JDBCFeatureReader joinReader=new JDBCFeatureReader(rs,cx,offset,featureSource.getDataStore().getAbsoluteFeatureSource(ft.getTypeName()),ft,hints){
@@ -12,7 +9,7 @@
     }
 ;
     joinReaders.add(joinReader);
-    offset+=ft.getAttributeCount() + joinReader.getPrimaryKey().getColumns().size();
+    offset+=ft.getAttributeCount() + getPrimaryKeyOffset(featureSource,joinReader.getPrimaryKey(),ft);
   }
   joinFeatureBuilder=new SimpleFeatureBuilder(retype(featureType,join));
 }
