@@ -1,3 +1,16 @@
 {
+  CoordinateReferenceSystem featuresCRS=features.getSchema().getCoordinateReferenceSystem();
+  if (featuresCRS != null && !CRS.equalsIgnoreMetadata(featuresCRS,clip.getCoordinateReferenceSystem())) {
+    boolean lenient=true;
+    try {
+      clip=clip.transform(featuresCRS,lenient);
+    }
+ catch (    TransformException e) {
+      throw new ProcessException(e);
+    }
+catch (    FactoryException e) {
+      throw new ProcessException(e);
+    }
+  }
   return new ClipProcess().execute(features,JTS.toGeometry(clip),preserveZ);
 }
