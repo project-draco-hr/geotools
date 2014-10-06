@@ -1,0 +1,43 @@
+{
+  final File file=TestData.file(this,"noVars.nc");
+  NetcdfDataset dataset=NetcdfDataset.acquireDataset(file.getAbsolutePath(),null);
+  List<Variable> variables=dataset.getVariables();
+  boolean speedVariableIsPresent=false;
+  String speedVariableName="";
+  for (  Variable variable : variables) {
+    if (variable.getShortName().equals("spd")) {
+      speedVariableIsPresent=true;
+      speedVariableName=variable.getFullName();
+      break;
+    }
+  }
+  assertTrue(speedVariableIsPresent);
+  final NetCDFImageReaderSpi unidataImageReaderSpi=new NetCDFImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  NetCDFImageReader reader=null;
+  try {
+    reader=(NetCDFImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(file);
+    final List<Name> names=reader.getCoveragesNames();
+    boolean isSpeedCoverageAvailable=false;
+    for (    Name name : names) {
+      if (name.toString().equals(speedVariableName)) {
+        isSpeedCoverageAvailable=true;
+        break;
+      }
+    }
+    assertFalse(isSpeedCoverageAvailable);
+  }
+  finally {
+    if (dataset != null) {
+      dataset.close();
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
