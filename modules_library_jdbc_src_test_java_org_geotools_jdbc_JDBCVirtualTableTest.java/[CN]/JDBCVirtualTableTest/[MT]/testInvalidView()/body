@@ -1,0 +1,56 @@
+{
+  StringBuffer sb=new StringBuffer();
+  sb.append("select ");
+  dialect.encodeColumnName(null,aname("id"),sb);
+  sb.append(", ");
+  dialect.encodeColumnName(null,aname("flow"),sb);
+  sb.append(" from ");
+  if (dbSchemaName != null) {
+    dialect.encodeSchemaName(dbSchemaName,sb);
+    sb.append(".");
+  }
+  dialect.encodeTableName(tname("river"),sb);
+  VirtualTable vt=new VirtualTable("invalid_attribute",sb.toString());
+  Handler handler=new Handler(){
+    @Override public synchronized void publish(    LogRecord record){
+      fail("We should not have received any log statement");
+    }
+    @Override public void flush(){
+    }
+    @Override public void close() throws SecurityException {
+    }
+  }
+;
+  handler.setLevel(Level.WARNING);
+  Logger logger=Logging.getLogger("org.geotools.jdbc");
+  Level oldLevel=logger.getLevel();
+  SimpleFeatureIterator fi=null;
+  try {
+    logger.setLevel(java.util.logging.Level.SEVERE);
+    logger.addHandler(handler);
+    dataStore.createVirtualTable(vt);
+    ContentFeatureSource fs=dataStore.getFeatureSource("invalid_attribute");
+    sb.setLength(0);
+    dialect.encodeColumnName(null,aname("not_valid"),sb);
+    String notValid=sb.toString();
+    sb.setLength(0);
+    dialect.encodeColumnName(null,aname("flow"),sb);
+    String flow=sb.toString();
+    dataStore.virtualTables.get("invalid_attribute").sql=vt.sql.replace(flow,notValid);
+    fi=fs.getFeatures().features();
+    fail("We should not have gotten here, we were supposed to get a sql exception");
+  }
+ catch (  RuntimeException e) {
+    assertTrue(e.getCause() instanceof IOException);
+  }
+ finally {
+    if (fi != null) {
+      fi.close();
+    }
+    dataStore.dropVirtualTable("invalid_attribute");
+    System.gc();
+    System.runFinalization();
+    logger.setLevel(oldLevel);
+    logger.removeHandler(handler);
+  }
+}
