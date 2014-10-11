@@ -1,25 +1,34 @@
 {
   ContentEntry entry=null;
-  if (!entries.containsKey(name)) {
+  boolean found=entries.containsKey(name);
+  if (!found && name.getNamespaceURI() == null && this.namespaceURI != null) {
+    Name defaultNsName=new NameImpl(namespaceURI,name.getLocalPart());
+    if (entries.containsKey(defaultNsName)) {
+      name=defaultNsName;
+      found=true;
+    }
+  }
+  if (!found) {
     List<Name> typeNames=createTypeNames();
-    boolean found=typeNames.contains(name);
+    found=typeNames.contains(name);
     if (!found && name.getNamespaceURI() == null) {
       for (      Name typeName : typeNames) {
         if (typeName.getLocalPart().equals(name.getLocalPart())) {
           name=typeName;
           found=true;
+          break;
         }
       }
-    }
-    if (found) {
-synchronized (this) {
-        if (!entries.containsKey(name)) {
-          entry=new ContentEntry(this,name);
-          entries.put(name,entry);
-        }
-      }
-      entry=(ContentEntry)entries.get(name);
     }
   }
-  return (ContentEntry)entries.get(name);
+  if (found) {
+synchronized (this) {
+      if (!entries.containsKey(name)) {
+        entry=new ContentEntry(this,name);
+        entries.put(name,entry);
+      }
+    }
+    entry=entries.get(name);
+  }
+  return entries.get(name);
 }
