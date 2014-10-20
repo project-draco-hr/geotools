@@ -1,0 +1,63 @@
+{
+  Collection<String> ids=Collections.emptyList();
+  if (getDataStore().dialect.isLimitOffsetSupported()) {
+    int startIndex=query.getStartIndex() == null ? 0 : query.getStartIndex();
+    int maxFeatures=query.getMaxFeatures();
+    if (startIndex > 0 || maxFeatures < 1000000) {
+      if (!query.getIds().isEmpty()) {
+        ids=query.getIds();
+      }
+ else {
+        ids=pkColumnNames;
+      }
+      for (      String id : ids) {
+        sql.append(" INNER JOIN (");
+        StringBuffer topIds=new StringBuffer();
+        topIds.append("SELECT DISTINCT ");
+        StringBuffer idSQL=new StringBuffer();
+        encodeColumnName(id,typeName,idSQL,query.getHints());
+        topIds.append(idSQL);
+        SortBy[] sort=query.getSortBy();
+        Set<String> orderByFields=new LinkedHashSet<String>();
+        StringBuffer sortSQL=new StringBuffer();
+        if (sort != null) {
+          sort(typeName,null,sort,orderByFields,sortSQL);
+        }
+        if (!orderByFields.contains(idSQL.toString())) {
+          sortSQL.append(idSQL);
+        }
+        for (        String orderBy : orderByFields) {
+          if (!idSQL.toString().equals(orderBy)) {
+            topIds.append(", ").append(orderBy);
+          }
+        }
+        topIds.append(" FROM ");
+        getDataStore().encodeTableName(typeName,topIds,query.getHints());
+        if (filter != null) {
+          filterToSQL.setFieldEncoder(new JoiningFieldEncoder(typeName));
+          topIds.append(" ").append(filterToSQL.encodeToString(filter));
+        }
+        topIds.append(" ORDER BY ");
+        topIds.append(sortSQL);
+        getDataStore().dialect.applyLimitOffset(topIds,maxFeatures,startIndex);
+        sql.append(topIds);
+        sql.append(") ");
+        String newAlias=createAlias(typeName,tableNames);
+        tableNames.add(newAlias);
+        getDataStore().dialect.encodeTableName(newAlias,sql);
+        sql.append(" ON (");
+        getDataStore().dialect.encodeColumnName(alias,id,sql);
+        sql.append(" = ");
+        getDataStore().dialect.encodeColumnName(newAlias,id,sql);
+        sql.append(" ) ");
+      }
+    }
+  }
+  if (!ids.isEmpty()) {
+    if (allIds != null) {
+      allIds.addAll(ids);
+    }
+    return true;
+  }
+  return false;
+}

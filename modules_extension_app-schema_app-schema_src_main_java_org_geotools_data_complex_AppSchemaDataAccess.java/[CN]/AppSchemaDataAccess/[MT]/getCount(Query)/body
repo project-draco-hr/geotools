@@ -1,6 +1,12 @@
 {
   final FeatureTypeMapping mapping=getMappingByElement(getName(targetQuery));
   FeatureSource mappedSource=mapping.getSource();
+  if (mappedSource instanceof JDBCFeatureSource) {
+    mappedSource=new JoiningJDBCFeatureSource((JDBCFeatureSource)mappedSource);
+  }
+ else   if (mappedSource instanceof JDBCFeatureStore) {
+    mappedSource=new JoiningJDBCFeatureSource((JDBCFeatureStore)mappedSource);
+  }
   Query unmappedQuery=unrollQuery(targetQuery,mapping);
   return mappedSource.getCount(unmappedQuery);
 }
