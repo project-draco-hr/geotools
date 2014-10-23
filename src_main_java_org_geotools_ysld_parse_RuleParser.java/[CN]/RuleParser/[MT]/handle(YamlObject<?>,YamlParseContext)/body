@@ -22,21 +22,9 @@
       }
     }
     rule.setElseFilter(r.boolOr("else",false));
-    if (r.has("scale")) {
-      String value=r.str("scale");
-      Tuple t=null;
-      try {
-        t=Tuple.of(2).parse(value);
-      }
- catch (      IllegalArgumentException e) {
-        throw new IllegalArgumentException(String.format("Bad scale value: '%s', must be of form (<min>,<max>)",value),e);
-      }
-      if (t.at(0) != null) {
-        rule.setMinScaleDenominator(Double.parseDouble(t.strAt(0)));
-      }
-      if (t.at(1) != null) {
-        rule.setMaxScaleDenominator(Double.parseDouble(t.strAt(1)));
-      }
+    Optional<ScaleRange> range=parseScale(r).or(parseZoom(r,context));
+    if (range.isPresent()) {
+      range.get().applyTo(rule);
     }
     context.push(r,"symbolizers",new SymbolizersParser(rule,factory));
   }

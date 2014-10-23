@@ -1,0 +1,17 @@
+{
+  YamlParseContext ctxt=new YamlParseContext();
+  YamlParseHandler handler=createMock(YamlParseHandler.class);
+  YamlObject obj1=createMock(YamlObject.class);
+  replay(handler);
+  ctxt.push(obj1,handler);
+  assertThat(ctxt.getDocHint("testHint1"),not(isPresent()));
+  ctxt.setDocHint("testHint1","th1v1");
+  assertThat((Optional<String>)ctxt.getDocHint("testHint1"),optionalOf(is("th1v1")));
+  ctxt.setDocHint("testHint1","th1v2");
+  assertThat((String)ctxt.getDocHint("testHint1").get(),is("th1v2"));
+  assertThat(ctxt.getDocHint("testHint2"),not(isPresent()));
+  ctxt.setDocHint("testHint2","th2v1");
+  assertThat((String)ctxt.getDocHint("testHint2").get(),is("th2v1"));
+  assertThat((String)ctxt.getDocHint("testHint1").get(),is("th1v2"));
+  verify(handler);
+}
