@@ -1,0 +1,17 @@
+{
+  double scaleDenominators[]=new double[GOOGLE_MERCATOR_PIXEL_SIZES.length];
+  for (int i=0; i < GOOGLE_MERCATOR_PIXEL_SIZES.length; i++) {
+    scaleDenominators[i]=OGC_DPI * INCHES_PER_METRE * GOOGLE_MERCATOR_PIXEL_SIZES[i];
+  }
+  StyledLayerDescriptor sld=Ysld.parse(yaml);
+  FeatureTypeStyle fs=SLD.defaultStyle(sld).featureTypeStyles().get(0);
+  for (int i=0; i < GOOGLE_MERCATOR_PIXEL_SIZES.length; i++) {
+    scaleDenominators[i]=OGC_DPI * INCHES_PER_METRE * GOOGLE_MERCATOR_PIXEL_SIZES[i];
+  }
+  assertThat(fs.rules().size(),is(20));
+  assertThat(fs.rules().get(0),allOf(appliesToScale(scaleDenominators[0]),not(appliesToScale(scaleDenominators[1]))));
+  assertThat(fs.rules().get(19),allOf(appliesToScale(scaleDenominators[19]),not(appliesToScale(scaleDenominators[18]))));
+  for (int i=1; i < 19; i++) {
+    assertThat(fs.rules().get(i),describedAs("rule applies only to level %0 (%1)",allOf(appliesToScale(scaleDenominators[i]),not(appliesToScale(scaleDenominators[i + 1])),not(appliesToScale(scaleDenominators[i + -1]))),i,scaleDenominators[i]));
+  }
+}
