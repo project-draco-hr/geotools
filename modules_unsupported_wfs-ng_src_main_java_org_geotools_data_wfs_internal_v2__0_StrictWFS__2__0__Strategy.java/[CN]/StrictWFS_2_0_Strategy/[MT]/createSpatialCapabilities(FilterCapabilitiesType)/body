@@ -1,0 +1,36 @@
+{
+  SpatialCapabilitiesType sct=filterCapabilities.getSpatialCapabilities();
+  SpatialCapabiltiesImpl spatialCapabilities=new SpatialCapabiltiesImpl();
+  List<GeometryOperandType> geometryOperandTypes=null;
+  if (sct != null && sct.getGeometryOperands() != null) {
+    geometryOperandTypes=sct.getGeometryOperands().getGeometryOperand();
+  }
+  if (geometryOperandTypes == null) {
+    geometryOperandTypes=Collections.emptyList();
+  }
+  List<GeometryOperand> geometryOperands=convertGeometryOperands(geometryOperandTypes);
+  spatialCapabilities.setGeometryOperands(geometryOperands);
+  SpatialOperatorsImpl spatialOperators=new SpatialOperatorsImpl();
+  spatialCapabilities.setSpatialOperators(spatialOperators);
+  Collection<SpatialOperator> ops=new ArrayList<SpatialOperator>();
+  List<SpatialOperatorType> spatialOperatorTypes=null;
+  if (sct != null && sct.getSpatialOperators() != null) {
+    spatialOperatorTypes=sct.getSpatialOperators().getSpatialOperator();
+  }
+  if (spatialOperatorTypes == null) {
+    spatialOperatorTypes=Collections.emptyList();
+  }
+  for (  SpatialOperatorType sot : spatialOperatorTypes) {
+    SpatialOperator op;
+    String name=(String)sot.getName();
+    if (sot.getGeometryOperands() != null && sot.getGeometryOperands().getGeometryOperand() != null) {
+      op=new SpatialOperatorImpl(name,convertGeometryOperands(sot.getGeometryOperands().getGeometryOperand()));
+    }
+ else {
+      op=new SpatialOperatorImpl(name);
+    }
+    ops.add(op);
+  }
+  spatialOperators.setOperators(ops);
+  return spatialCapabilities;
+}

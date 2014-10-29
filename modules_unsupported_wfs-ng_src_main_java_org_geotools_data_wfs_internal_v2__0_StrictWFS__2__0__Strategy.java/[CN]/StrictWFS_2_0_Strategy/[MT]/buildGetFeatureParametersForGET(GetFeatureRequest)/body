@@ -1,0 +1,32 @@
+{
+  Map<String,String> kvp=null;
+  if (query.isStoredQuery()) {
+    FeatureTypeInfoImpl featureTypeInfo=(FeatureTypeInfoImpl)getFeatureTypeInfo(query.getTypeName());
+    StoredQueryDescriptionType desc=query.getStoredQueryDescriptionType();
+    StoredQueryConfiguration config=null;
+    kvp=new HashMap<String,String>();
+    kvp.put("SERVICE","WFS");
+    kvp.put("VERSION",getVersion());
+    kvp.put("REQUEST","GetFeature");
+    kvp.put("STOREDQUERY_ID",desc.getId());
+    Filter originalFilter=query.getFilter();
+    query.setUnsupportedFilter(originalFilter);
+    Map<String,String> viewParams=null;
+    if (query.getHints() != null) {
+      viewParams=(Map<String,String>)query.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS);
+      config=(StoredQueryConfiguration)query.getHints().get(CONFIG_KEY);
+    }
+    List<ParameterType> params=new ParameterTypeFactory(config,desc,featureTypeInfo).buildStoredQueryParameters(viewParams,originalFilter);
+    for (    ParameterType p : params) {
+      kvp.put(p.getName(),p.getValue());
+    }
+  }
+ else {
+    kvp=super.buildGetFeatureParametersForGET(query);
+    if (query.getMaxFeatures() != null) {
+      String count=kvp.remove("MAXFEATURES");
+      kvp.put("COUNT",count);
+    }
+  }
+  return kvp;
+}

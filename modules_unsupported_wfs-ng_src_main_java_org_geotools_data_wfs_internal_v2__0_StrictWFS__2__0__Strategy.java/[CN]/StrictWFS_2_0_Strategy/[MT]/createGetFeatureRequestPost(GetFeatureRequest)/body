@@ -1,3 +1,70 @@
 {
-  return null;
+  final QName typeName=query.getTypeName();
+  final FeatureTypeInfoImpl featureTypeInfo=(FeatureTypeInfoImpl)getFeatureTypeInfo(typeName);
+  final Wfs20Factory factory=Wfs20Factory.eINSTANCE;
+  GetFeatureType getFeature=factory.createGetFeatureType();
+  getFeature.setService("WFS");
+  getFeature.setVersion(getVersion());
+  String outputFormat=query.getOutputFormat();
+  getFeature.setOutputFormat(outputFormat);
+  getFeature.setHandle(query.getHandle());
+  Integer maxFeatures=query.getMaxFeatures();
+  if (maxFeatures != null) {
+    getFeature.setCount(BigInteger.valueOf(maxFeatures.intValue()));
+  }
+  ResultType resultType=query.getResultType();
+  getFeature.setResultType(ResultType.RESULTS == resultType ? ResultTypeType.RESULTS : ResultTypeType.HITS);
+  AbstractQueryExpressionType abstractQuery;
+  if (query.isStoredQuery()) {
+    StoredQueryDescriptionType desc=query.getStoredQueryDescriptionType();
+    StoredQueryType storedQuery=factory.createStoredQueryType();
+    storedQuery.setId(desc.getId());
+    query.setUnsupportedFilter(query.getFilter());
+    Map<String,String> viewParams=null;
+    StoredQueryConfiguration config=null;
+    if (query.getHints() != null) {
+      viewParams=(Map<String,String>)query.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS);
+      config=(StoredQueryConfiguration)query.getHints().get(CONFIG_KEY);
+    }
+    List<ParameterType> params=new ParameterTypeFactory(config,desc,featureTypeInfo).buildStoredQueryParameters(viewParams,query.getFilter());
+    storedQuery.getParameter().addAll(params);
+    abstractQuery=storedQuery;
+  }
+ else {
+    QueryType wfsQuery=factory.createQueryType();
+    wfsQuery.getTypeNames().add(typeName);
+    final Filter supportedFilter;
+    final Filter unsupportedFilter;
+{
+      final Filter filter=query.getFilter();
+      Filter[] splitFilters=splitFilters(typeName,filter);
+      supportedFilter=splitFilters[0];
+      unsupportedFilter=splitFilters[1];
+    }
+    query.setUnsupportedFilter(unsupportedFilter);
+    if (!Filter.INCLUDE.equals(supportedFilter)) {
+      wfsQuery.setFilter(supportedFilter);
+    }
+    String srsName=query.getSrsName();
+    if (null == srsName) {
+      srsName=featureTypeInfo.getDefaultSRS();
+    }
+    try {
+      wfsQuery.setSrsName(new URI(srsName));
+    }
+ catch (    URISyntaxException e) {
+      throw new RuntimeException("Can't create a URI from the query CRS: " + srsName,e);
+    }
+    String[] propertyNames=query.getPropertyNames();
+    boolean retrieveAllProperties=propertyNames == null;
+    if (!retrieveAllProperties) {
+      List<QName> propertyName=wfsQuery.getPropertyNames();
+      for (      String propName : propertyNames) {
+        propertyName.add(new QName(featureTypeInfo.getQName().getNamespaceURI(),propName));
+      }
+    }
+    abstractQuery=wfsQuery;
+  }
+  getFeature.getAbstractQueryExpression().add(abstractQuery);
+  return getFeature;
 }

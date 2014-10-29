@@ -1,0 +1,39 @@
+{
+  super(originatingRequest,response);
+  MODULE.finer("Parsing ListStoredQueries response");
+  try {
+    final Document rawDocument;
+    final byte[] rawResponse;
+{
+      ByteArrayOutputStream buff=new ByteArrayOutputStream();
+      InputStream inputStream=response.getResponseStream();
+      try {
+        IOUtils.copy(inputStream,buff);
+      }
+  finally {
+        inputStream.close();
+      }
+      rawResponse=buff.toByteArray();
+    }
+    if (RESPONSES.isLoggable(Level.FINE)) {
+      RESPONSES.fine("Full ListStoredQueries response: " + new String(rawResponse));
+    }
+    try {
+      DocumentBuilderFactory builderFactory=DocumentBuilderFactory.newInstance();
+      builderFactory.setNamespaceAware(true);
+      builderFactory.setValidating(false);
+      DocumentBuilder documentBuilder=builderFactory.newDocumentBuilder();
+      rawDocument=documentBuilder.parse(new ByteArrayInputStream(rawResponse));
+    }
+ catch (    Exception e) {
+      throw new IOException("Error parsing capabilities document: " + e.getMessage(),e);
+    }
+    listStoredQueriesResponse=parseStoredQueries(rawDocument,WFS_2_0_CONFIGURATION);
+    if (null == listStoredQueriesResponse) {
+      throw new IllegalStateException("Unable to parse ListStoredQueries document");
+    }
+  }
+  finally {
+    response.dispose();
+  }
+}

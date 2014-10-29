@@ -1,0 +1,50 @@
+{
+  File tmp=File.createTempFile("geoserver-DescribeFeatureType","xml");
+  tmp.deleteOnExit();
+  InputStream in=getClass().getResourceAsStream("geoserver-DescribeFeatureType.xml");
+  copy(in,tmp);
+  in=getClass().getResourceAsStream("geoserver-GetFeature.xml");
+  DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+  dbf.setNamespaceAware(true);
+  DocumentBuilder db=dbf.newDocumentBuilder();
+  Document doc=db.parse(in);
+  String schemaLocation=doc.getDocumentElement().getAttributeNS("http://www.w3.org/2001/XMLSchema-instance","schemaLocation");
+  String absolutePath=DataUtilities.fileToURL(tmp).toExternalForm();
+  schemaLocation=schemaLocation.replaceAll("http://cite.opengeospatial.org/gmlsf .*","http://cite.opengeospatial.org/gmlsf " + absolutePath);
+  doc.getDocumentElement().setAttributeNS("http://www.w3.org/2001/XMLSchema-instance","schemaLocation",schemaLocation);
+  tmp=File.createTempFile("geoserver-GetFeature","xml");
+  tmp.deleteOnExit();
+  Transformer tx=TransformerFactory.newInstance().newTransformer();
+  tx.transform(new DOMSource(doc),new StreamResult(tmp));
+  in=new FileInputStream(tmp);
+  Parser parser=new Parser(configuration);
+  FeatureCollectionType fc=(FeatureCollectionType)parser.parse(in);
+  assertNotNull(fc);
+  List featureCollections=fc.getMember();
+  assertEquals(1,featureCollections.size());
+  SimpleFeatureCollection featureCollection;
+  featureCollection=(SimpleFeatureCollection)featureCollections.get(0);
+  assertEquals(5,featureCollection.size());
+  SimpleFeatureIterator features=featureCollection.features();
+  try {
+    assertTrue(features.hasNext());
+    SimpleFeature f=features.next();
+    assertEquals("PrimitiveGeoFeature.f001",f.getID());
+    assertNull(f.getDefaultGeometry());
+    assertNotNull(f.getAttribute("pointProperty"));
+    Point p=(Point)f.getAttribute("pointProperty");
+    assertEquals(39.73245,p.getX(),0.1);
+    assertEquals(2.00342,p.getY(),0.1);
+    Object intProperty=f.getAttribute("intProperty");
+    assertNotNull(intProperty);
+    assertTrue(intProperty.getClass().getName(),intProperty instanceof BigInteger);
+    assertEquals(BigInteger.valueOf(155),intProperty);
+    assertEquals(new URI("http://www.opengeospatial.org/"),f.getAttribute("uriProperty"));
+    assertEquals(new Float(12765.0),f.getAttribute("measurand"));
+    assertTrue(f.getAttribute("dateProperty") instanceof Date);
+    assertEquals(BigDecimal.valueOf(5.03),f.getAttribute("decimalProperty"));
+  }
+  finally {
+    features.close();
+  }
+}
