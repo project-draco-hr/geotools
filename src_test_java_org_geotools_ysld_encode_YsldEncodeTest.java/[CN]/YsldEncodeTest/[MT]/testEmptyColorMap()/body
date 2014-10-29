@@ -1,0 +1,19 @@
+{
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  FilterFactory filterFactory=CommonFactoryFinder.getFilterFactory();
+  StyledLayerDescriptor sld=styleFactory.createStyledLayerDescriptor();
+  UserLayer layer=styleFactory.createUserLayer();
+  sld.layers().add(layer);
+  Style style=styleFactory.createStyle();
+  layer.userStyles().add(style);
+  Rule rule=styleFactory.createRule();
+  style.featureTypeStyles().add(styleFactory.createFeatureTypeStyle());
+  style.featureTypeStyles().get(0).rules().add(rule);
+  RasterSymbolizer symb=styleFactory.createRasterSymbolizer();
+  rule.symbolizers().add((Symbolizer)symb);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld,out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  YamlMap symbMap=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("raster");
+  assertFalse(symbMap.has("color-map"));
+}
