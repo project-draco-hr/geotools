@@ -1,0 +1,12 @@
+{
+  PointSymbolizer p=CommonFactoryFinder.getStyleFactory().createPointSymbolizer();
+  Expression nameExpression=CommonFactoryFinder.getFilterFactory2().property("test");
+  Mark mark=CommonFactoryFinder.getStyleFactory().createMark();
+  mark.setWellKnownName(nameExpression);
+  p.getGraphic().graphicalSymbols().add(mark);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld(p),out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  String result=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("point").seq("symbols").map(0).map("mark").str("shape");
+  assertThat(result,equalTo("[test]"));
+}
