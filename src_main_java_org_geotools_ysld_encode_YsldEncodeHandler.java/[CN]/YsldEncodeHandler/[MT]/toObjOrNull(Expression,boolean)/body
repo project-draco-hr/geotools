@@ -1,11 +1,17 @@
 {
-  String str=!isNull(expr) ? ECQL.toCQL(expr) : null;
-  if (expr instanceof Literal && str != null && (isname || isNumericLiteral(expr))) {
-    str=stripQuotes(str);
+  if (isNull(expr))   return null;
+  List<Expression> subExpressions=Util.splitConcatenates(expr);
+  StringBuilder builder=new StringBuilder();
+  for (  Expression subExpr : subExpressions) {
+    if (isNull(subExpr)) {
+    }
+ else     if (subExpr instanceof Literal) {
+      builder.append(escapeForEmbededCQL(((Literal)subExpr).getValue().toString()));
+    }
+ else {
+      builder.append("${").append(escapeForEmbededCQL(ECQL.toCQL(subExpr))).append("}");
+    }
   }
-  if (isname && expr instanceof PropertyName && str != null && !str.isEmpty() && !str.startsWith("[")) {
-    str=String.format("[%s]",str);
-  }
-  Object result=makeNumberIfPossible(str);
+  Object result=makeNumberIfPossible(builder.toString());
   return result;
 }
