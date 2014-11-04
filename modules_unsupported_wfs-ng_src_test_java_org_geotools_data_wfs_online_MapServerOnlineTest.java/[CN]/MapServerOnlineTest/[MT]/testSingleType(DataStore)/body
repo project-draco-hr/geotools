@@ -1,0 +1,34 @@
+{
+  if (url_100 == null)   return;
+  String typeName="ms_cities";
+  SimpleFeatureType type=wfs.getSchema(typeName);
+  type.getTypeName();
+  type.getName().getNamespaceURI();
+  assertEquals(typeName,type.getName().getLocalPart());
+  SimpleFeatureSource source=wfs.getFeatureSource(typeName);
+  source.getBounds();
+  SimpleFeatureCollection features=source.getFeatures();
+  features.getBounds();
+  features.getSchema();
+  GeometryDescriptor geometryDesc=wfs.getSchema(typeName).getGeometryDescriptor();
+  CoordinateReferenceSystem crs=geometryDesc.getCoordinateReferenceSystem();
+  ReferencedEnvelope env=new ReferencedEnvelope(-59,-58,-35,-34,crs);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+  Filter filter=ff.bbox(ff.property("msGeometry"),env);
+  Query query=new Query();
+  query.setTypeName(typeName);
+  query.setFilter(filter);
+  features=source.getFeatures(query);
+  int size=features.size();
+  assertEquals(2,size);
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=iterator.next();
+      System.out.println(feature.getID());
+    }
+  }
+  finally {
+    iterator.close();
+  }
+}
