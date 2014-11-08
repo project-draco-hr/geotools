@@ -1,5 +1,6 @@
 {
-  ResultSet tables=cx.getMetaData().getTables(null,"sysspatial",TESSELLATION,new String[]{"TABLE"});
+  DatabaseMetaData metadata=cx.getMetaData();
+  ResultSet tables=metadata.getTables(null,dataStore.escapeNamePattern(metadata,"sysspatial"),dataStore.escapeNamePattern(metadata,TESSELLATION),new String[]{"TABLE"});
   try {
     if (!tables.next()) {
       LOGGER.warning("sysspatial." + TESSELLATION + " does not exist. Unable to "+ " perform spatially index queries.");
@@ -44,7 +45,7 @@
         tinfo.setColumName(rs.getString("F_GEOMETRY_COLUMN"));
         tinfo.setSchemaName(schemaName);
         tinfo.setTableName(tableName);
-        tables=cx.getMetaData().getTables(null,schemaName,tableName + "_" + columnName+ "_idx",new String[]{"TABLE","VIEW"});
+        tables=metadata.getTables(null,dataStore.escapeNamePattern(metadata,schemaName),dataStore.escapeNamePattern(metadata,tableName + "_" + columnName+ "_idx"),new String[]{"TABLE","VIEW"});
         try {
           if (tables.next()) {
             tinfo.setIndexTableName(tables.getString("TABLE_NAME"));
