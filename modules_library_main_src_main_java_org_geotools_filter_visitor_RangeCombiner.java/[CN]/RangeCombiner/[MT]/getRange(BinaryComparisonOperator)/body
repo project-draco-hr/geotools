@@ -1,0 +1,57 @@
+{
+  Range range=null;
+  Expression expression=null;
+  String name=getPropertyName(op.getExpression1());
+  if (name != null) {
+    expression=op.getExpression1();
+    Class binding=getTypeIfComparable(name);
+    if (binding != null) {
+      Object value=evaluate(op.getExpression2(),binding);
+      if (value != null) {
+        if (op instanceof PropertyIsLessThan) {
+          range=new Range(binding,null,false,(Comparable)value,false);
+        }
+ else         if (op instanceof PropertyIsLessThanOrEqualTo) {
+          range=new Range(binding,null,false,(Comparable)value,true);
+        }
+ else         if (op instanceof PropertyIsEqualTo) {
+          range=new Range(binding,(Comparable)value,(Comparable)value);
+        }
+ else         if (op instanceof PropertyIsGreaterThanOrEqualTo) {
+          range=new Range(binding,(Comparable)value,true,null,false);
+        }
+ else         if (op instanceof PropertyIsGreaterThan) {
+          range=new Range(binding,(Comparable)value,false,null,false);
+        }
+      }
+    }
+  }
+ else {
+    name=getPropertyName(op.getExpression2());
+    if (name != null) {
+      expression=op.getExpression2();
+      Class binding=getTypeIfComparable(name);
+      if (binding != null) {
+        Object value=evaluate(op.getExpression1(),binding);
+        if (value != null) {
+          if (op instanceof PropertyIsLessThan) {
+            range=new Range(binding,(Comparable)value,true,null,false);
+          }
+ else           if (op instanceof PropertyIsLessThanOrEqualTo) {
+            range=new Range(binding,(Comparable)value,false,null,false);
+          }
+ else           if (op instanceof PropertyIsEqualTo) {
+            range=new Range(binding,(Comparable)value,(Comparable)value);
+          }
+ else           if (op instanceof PropertyIsGreaterThanOrEqualTo) {
+            range=new Range(binding,null,false,(Comparable)value,false);
+          }
+ else           if (op instanceof PropertyIsGreaterThan) {
+            range=new Range(binding,null,false,(Comparable)value,true);
+          }
+        }
+      }
+    }
+  }
+  return new ExpressionRange(expression,range);
+}
