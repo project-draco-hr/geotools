@@ -1,0 +1,41 @@
+{
+  String css=FileUtils.readFileToString(file);
+  File sldFile=new File(file.getParentFile(),FilenameUtils.getBaseName(file.getName()) + ".sld");
+  if (!sldFile.exists()) {
+    throw new IllegalStateException("Could not locate sample sld file " + sldFile.getPath());
+  }
+  Style expected;
+  try (FileInputStream fis=new FileInputStream(sldFile)){
+    SLDParser parser=new SLDParser(STYLE_FACTORY,fis);
+    StyledLayerDescriptor parsedSLD=parser.parseSLD();
+    NamedLayer layer=(NamedLayer)parsedSLD.getStyledLayers()[0];
+    expected=layer.getStyles()[0];
+  }
+   Style actual=cssToSld(css);
+  File sldFile2=new File("./target/css",FilenameUtils.getBaseName(file.getName()) + ".sld");
+  writeStyle(actual,sldFile2);
+  String actualSld=FileUtils.readFileToString(sldFile2);
+  List validationErrors=validateSLD(actualSld);
+  if (!validationErrors.isEmpty()) {
+    System.err.println("Validation failed, errors are: ");
+    for (    Object e : validationErrors) {
+      if (e instanceof SAXParseException) {
+        SAXParseException se=(SAXParseException)e;
+        System.out.println("line " + se.getLineNumber() + ": "+ se.getLocalizedMessage());
+      }
+ else {
+        System.out.println(e);
+      }
+    }
+    System.err.println("Validation failed, the two files are: " + sldFile.getAbsolutePath() + " "+ sldFile2.getAbsolutePath());
+    fail("Validation failed");
+  }
+  String expectedSld=FileUtils.readFileToString(sldFile);
+  Document expectedDom=XMLUnit.buildControlDocument(expectedSld);
+  Document actualDom=XMLUnit.buildControlDocument(actualSld);
+  Diff diff=new Diff(expectedDom,actualDom);
+  if (!diff.identical()) {
+    System.err.println("Comparison failed, the two files are: " + sldFile.getAbsolutePath() + " "+ sldFile2.getAbsolutePath());
+    fail(diff.toString());
+  }
+}

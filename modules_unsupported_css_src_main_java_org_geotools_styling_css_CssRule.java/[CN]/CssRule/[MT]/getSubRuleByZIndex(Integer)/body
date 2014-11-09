@@ -1,0 +1,41 @@
+{
+  Map<PseudoClass,List<Property>> zProperties=new HashMap<>();
+  List<Integer> zIndexes=new ArrayList<>();
+  for (  Map.Entry<PseudoClass,List<Property>> entry : this.getProperties().entrySet()) {
+    List<Property> props=entry.getValue();
+    collectZIndexesInProperties(props,zIndexes);
+    ListIterator<Integer> it=zIndexes.listIterator();
+    while (it.hasNext()) {
+      int zIndexPosition=it.nextIndex();
+      Integer nextZIndex=it.next();
+      if (nextZIndex == NO_Z_INDEX) {
+        zProperties.put(entry.getKey(),props);
+      }
+ else       if (!nextZIndex.equals(zIndex)) {
+        continue;
+      }
+ else {
+        List<Property> zIndexProperties=new ArrayList<>();
+        for (        Property property : props) {
+          if (isZIndex(property)) {
+            continue;
+          }
+          List<Value> values=property.getValues();
+          if (zIndexPosition < values.size()) {
+            Property p=new Property(property.getName(),Arrays.asList(values.get(zIndexPosition)));
+            zIndexProperties.add(p);
+          }
+        }
+        if (zIndexProperties.size() > 0) {
+          zProperties.put(entry.getKey(),zIndexProperties);
+        }
+      }
+    }
+  }
+  if (zProperties.size() > 0) {
+    return new CssRule(this.getSelector(),zProperties,this.getComment());
+  }
+ else {
+    return null;
+  }
+}

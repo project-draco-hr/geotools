@@ -1,0 +1,26 @@
+{
+  Range<Double> range=ScaleRangeExtractor.getScaleRange(selector);
+  if (range == null) {
+    range=FULL_SCALE_RANGE;
+  }
+  Filter filter=OgcFilterBuilder.buildFilter(selector,targetFeatureType);
+  boolean merged=false;
+  for (  SLDSelector existing : scaleDependentFilters) {
+    if (existing.scaleRange.equals(range)) {
+      if (existing.filter instanceof org.opengis.filter.Or) {
+        org.opengis.filter.Or or=(org.opengis.filter.Or)existing.filter;
+        List<Filter> children=new ArrayList<>(or.getChildren());
+        children.add(filter);
+        existing.filter=simplify(FF.or(children));
+      }
+ else {
+        existing.filter=simplify(FF.or(existing.filter,filter));
+      }
+      merged=true;
+      break;
+    }
+  }
+  if (!merged) {
+    scaleDependentFilters.add(new SLDSelector(new NumberRange<>(range),filter));
+  }
+}

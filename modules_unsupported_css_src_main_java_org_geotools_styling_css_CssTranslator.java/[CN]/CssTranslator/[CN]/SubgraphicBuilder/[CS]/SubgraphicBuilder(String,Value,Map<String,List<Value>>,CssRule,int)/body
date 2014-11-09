@@ -1,0 +1,35 @@
+{
+  if (v != null) {
+    if (!(v instanceof Function)) {
+      throw new IllegalArgumentException("The value of '" + propertyName + "' must be a symbol or a url");
+    }
+    Function f=(Function)v;
+    GraphicBuilder gb=getGraphicBuilder();
+    if (Function.SYMBOL.equals(f.name)) {
+      buildMark(f.parameters.get(0),cssRule,propertyName,i,gb);
+    }
+ else     if (Function.URL.equals(f.name)) {
+      Value graphicLocation=f.parameters.get(0);
+      String location=graphicLocation.toLiteral();
+      String mime=getLiteral(values,propertyName + "-mime",i,"image/jpeg");
+      gb.externalGraphic(location,mime);
+    }
+ else {
+      throw new IllegalArgumentException("'" + propertyName + "' accepts either a 'symbol' or a 'url' function, the following function is unrecognized: "+ f);
+    }
+    Expression rotation=getMeasureExpression(values,propertyName + "-rotation",i,"deg");
+    if (rotation != null) {
+      gb.rotation(rotation);
+    }
+    Expression size=getMeasureExpression(values,propertyName + "-size",i,"px");
+    if (size != null) {
+      gb.size(size);
+    }
+    if ("mark".equals(propertyName)) {
+      Expression opacity=getExpression(values,"mark-opacity",i);
+      if (opacity != null) {
+        gb.opacity(opacity);
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  return Sequence(WhiteSpaceOrComment(),Selector(),WhiteSpace(),'{',WhiteSpaceOrIgnoredComment(),PropertyList(),WhiteSpaceOrIgnoredComment(),'}',new Action(){
+    @Override public boolean run(    Context ctx){
+      List properties=(List)pop();
+      Selector selector=(Selector)pop();
+      if (!ctx.getValueStack().isEmpty() && peek() instanceof String) {
+        String comment=(String)pop();
+        comment=comment.trim();
+        while (!ctx.getValueStack().isEmpty() && peek() instanceof String) {
+          pop();
+        }
+        push(new CssRule(selector,properties,comment));
+      }
+ else {
+        push(new CssRule(selector,properties));
+      }
+      return true;
+    }
+  }
+);
+}

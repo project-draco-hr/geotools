@@ -1,0 +1,114 @@
+{
+  Map<String,List<Value>> values=cssRule.getPropertyValues(PseudoClass.ROOT,"label","font","shield","halo");
+  if (values == null || values.isEmpty()) {
+    return;
+  }
+  int repeatCount=getMaxRepeatCount(values);
+  for (int i=0; i < repeatCount; i++) {
+    final TextSymbolizerBuilder tb=ruleBuilder.text();
+    Expression labelGeometry=getExpression(values,"label-geometry",i);
+    if (labelGeometry != null) {
+      tb.geometry(labelGeometry);
+    }
+    Value labelValue=getValue(values,"label",i);
+    Expression labelExpression;
+    if (labelValue instanceof MultiValue) {
+      MultiValue m=(MultiValue)labelValue;
+      List<Expression> parts=new ArrayList<>();
+      for (      Value mv : m.values) {
+        parts.add(mv.toExpression());
+      }
+      labelExpression=FF.function("Concatenate",parts.toArray(new Expression[parts.size()]));
+    }
+ else {
+      labelExpression=labelValue.toExpression();
+    }
+    tb.label(labelExpression);
+    double[] anchor=getDoubleArray(values,"label-anchor",i);
+    double[] offsets=getDoubleArray(values,"label-offset",i);
+    if (offsets != null && offsets.length == 1) {
+      tb.linePlacement().offset((float)offsets[0]);
+    }
+ else     if (offsets != null || anchor != null) {
+      PointPlacementBuilder ppb=tb.pointPlacement();
+      if (anchor != null) {
+        if (anchor.length == 2) {
+          ppb.anchor().x(anchor[0]);
+          ppb.anchor().y(anchor[1]);
+        }
+ else {
+          throw new IllegalArgumentException("Invalid anchor specification, should be two " + "floats between 0 and 1 with a space in between, instead it is " + getValue(values,"label-anchor",i));
+        }
+      }
+      if (offsets != null) {
+        if (offsets.length == 2) {
+          ppb.displacement().x(offsets[0]);
+          ppb.displacement().y(offsets[1]);
+        }
+ else {
+          throw new IllegalArgumentException("Invalid anchor specification, should be two " + "floats (or 1 for line placement with a certain offset) instead it is " + getValue(values,"label-anchor",i));
+        }
+      }
+    }
+    Expression rotation=getMeasureExpression(values,"label-rotation",i,"deg");
+    if (rotation != null) {
+      tb.pointPlacement().rotation(rotation);
+    }
+    for (    Value shieldValue : getMultiValue(values,"shield",i)) {
+      new SubgraphicBuilder("shield",shieldValue,values,cssRule,i){
+        @Override protected GraphicBuilder getGraphicBuilder(){
+          return tb.shield();
+        }
+      }
+;
+    }
+    Expression fill=getExpression(values,"font-fill",i);
+    if (fill != null) {
+      tb.fill().color(fill);
+    }
+    Expression opacity=getExpression(values,"font-opacity",i);
+    if (opacity != null) {
+      tb.fill().opacity(opacity);
+    }
+    Map<String,List<Value>> fontLikeProperties=cssRule.getPropertyValues(PseudoClass.ROOT,"font");
+    if (!fontLikeProperties.isEmpty() && (fontLikeProperties.size() > 1 || fontLikeProperties.get("font-fill") == null)) {
+      FontBuilder fb=tb.newFont();
+      Expression fontFamily=getExpression(values,"font-family",i);
+      if (fontFamily != null) {
+        fb.family(fontFamily);
+      }
+      Expression fontStyle=getExpression(values,"font-style",i);
+      if (fontStyle != null) {
+        fb.style(fontStyle);
+      }
+      Expression fontWeight=getExpression(values,"font-weight",i);
+      if (fontWeight != null) {
+        fb.weight(fontWeight);
+      }
+      Expression fontSize=getMeasureExpression(values,"font-size",i,"px");
+      if (fontSize != null) {
+        fb.size(fontSize);
+      }
+    }
+    if (!cssRule.getPropertyValues(PseudoClass.ROOT,"halo").isEmpty()) {
+      HaloBuilder hb=tb.halo();
+      Expression haloRadius=getMeasureExpression(values,"halo-radius",i,"px");
+      if (haloRadius != null) {
+        hb.radius(haloRadius);
+      }
+      Expression haloColor=getExpression(values,"halo-color",i);
+      if (haloColor != null) {
+        hb.fill().color(haloColor);
+      }
+      Expression haloOpacity=getExpression(values,"halo-opacity",i);
+      if (haloOpacity != null) {
+        hb.fill().opacity(haloOpacity);
+      }
+    }
+    Expression priority=getExpression(values,"-gt-label-priority",i);
+    if (priority != null) {
+      tb.priority(priority);
+    }
+    addVendorOptions(tb,TEXT_VENDOR_OPTIONS,values,i);
+  }
+}

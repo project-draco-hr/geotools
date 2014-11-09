@@ -1,0 +1,23 @@
+{
+  Map<String,List<Value>> values=cssRule.getPropertyValues(PseudoClass.ROOT,"mark");
+  if (values == null || values.isEmpty()) {
+    return;
+  }
+  int repeatCount=getMaxRepeatCount(values);
+  for (int i=0; i < repeatCount; i++) {
+    final PointSymbolizerBuilder pb=ruleBuilder.point();
+    Expression markGeometry=getExpression(values,"mark-geometry",i);
+    if (markGeometry != null) {
+      pb.geometry(markGeometry);
+    }
+    for (    Value markValue : getMultiValue(values,"mark",i)) {
+      new SubgraphicBuilder("mark",markValue,values,cssRule,i){
+        @Override protected GraphicBuilder getGraphicBuilder(){
+          return pb.graphic();
+        }
+      }
+;
+    }
+    addVendorOptions(pb,POINT_VENDOR_OPTIONS,values,i);
+  }
+}

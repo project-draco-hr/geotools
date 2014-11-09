@@ -1,0 +1,50 @@
+{
+  Range<Double> scaleRange=ScaleRangeExtractor.getScaleRange(cssRule);
+  if (scaleRange != null && scaleRange.isEmpty()) {
+    return;
+  }
+  Filter filter=OgcFilterBuilder.buildFilter(cssRule.getSelector(),targetFeatureType);
+  if (filter == Filter.EXCLUDE) {
+    return;
+  }
+  RuleBuilder ruleBuilder;
+  ruleBuilder=fts.rule();
+  ruleBuilder.filter(filter);
+  String title=getCombinedTag(cssRule.getComment(),TITLE_PATTERN,", ");
+  if (title != null) {
+    ruleBuilder.title(title);
+  }
+  String ruleAbstract=getCombinedTag(cssRule.getComment(),ABSTRACT_PATTERN,"\n");
+  if (ruleAbstract != null) {
+    ruleBuilder.ruleAbstract(ruleAbstract);
+  }
+  if (scaleRange != null) {
+    Double minValue=scaleRange.getMinValue();
+    if (minValue != null && minValue > 0) {
+      ruleBuilder.min(minValue);
+    }
+    Double maxValue=scaleRange.getMaxValue();
+    if (maxValue != null && maxValue < Double.POSITIVE_INFINITY) {
+      ruleBuilder.max(maxValue);
+    }
+  }
+  boolean generateStroke=cssRule.hasProperty(PseudoClass.ROOT,"stroke");
+  boolean lineSymbolizerSpecificProperties=cssRule.hasAnyProperty(PseudoClass.ROOT,LINE_VENDOR_OPTIONS.keySet());
+  boolean includeStrokeInPolygonSymbolizer=generateStroke && !lineSymbolizerSpecificProperties;
+  boolean generatePolygonSymbolizer=cssRule.hasProperty(PseudoClass.ROOT,"fill");
+  if (generatePolygonSymbolizer) {
+    addPolygonSymbolizer(cssRule,ruleBuilder,includeStrokeInPolygonSymbolizer);
+  }
+  if (generateStroke && !(generatePolygonSymbolizer && includeStrokeInPolygonSymbolizer)) {
+    addLineSymbolizer(cssRule,ruleBuilder);
+  }
+  if (cssRule.hasProperty(PseudoClass.ROOT,"mark")) {
+    addPointSymbolizer(cssRule,ruleBuilder);
+  }
+  if (cssRule.hasProperty(PseudoClass.ROOT,"label")) {
+    addTextSymbolizer(cssRule,ruleBuilder);
+  }
+  if (cssRule.hasProperty(PseudoClass.ROOT,"raster-channels")) {
+    rasterSymbolizer(cssRule,ruleBuilder);
+  }
+}

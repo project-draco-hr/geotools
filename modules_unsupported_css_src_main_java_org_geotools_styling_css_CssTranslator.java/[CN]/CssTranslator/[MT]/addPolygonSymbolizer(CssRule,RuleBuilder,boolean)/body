@@ -1,0 +1,27 @@
+{
+  Map<String,List<Value>> values;
+  if (includeStrokeInPolygonSymbolizer) {
+    values=cssRule.getPropertyValues(PseudoClass.ROOT,"fill","-gt-graphic-margin","stroke");
+  }
+ else {
+    values=cssRule.getPropertyValues(PseudoClass.ROOT,"fill","-gt-graphic-margin");
+  }
+  if (values == null || values.isEmpty()) {
+    return;
+  }
+  int repeatCount=getMaxRepeatCount(values);
+  for (int i=0; i < repeatCount; i++) {
+    PolygonSymbolizerBuilder pb=ruleBuilder.polygon();
+    Expression fillGeometry=getExpression(values,"fill-geometry",i);
+    if (fillGeometry != null) {
+      pb.geometry(fillGeometry);
+    }
+    FillBuilder fb=pb.fill();
+    buildFill(cssRule,fb,values,i);
+    if (includeStrokeInPolygonSymbolizer) {
+      StrokeBuilder sb=pb.stroke();
+      buildStroke(cssRule,sb,values,i);
+    }
+    addVendorOptions(pb,POLYGON_VENDOR_OPTIONS,values,i);
+  }
+}

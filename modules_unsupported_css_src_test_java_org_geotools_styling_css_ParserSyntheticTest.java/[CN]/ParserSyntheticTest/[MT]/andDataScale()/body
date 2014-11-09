@@ -1,0 +1,13 @@
+{
+  String css="[att < 15] [@scale > 3000] { stroke: #000000; }";
+  ParsingResult<Stylesheet> result=new ReportingParseRunner<Stylesheet>(parser.StyleSheet()).run(css);
+  assertNoErrors(result);
+  Stylesheet ss=result.parseTreeRoot.getValue();
+  assertEquals(1,ss.getRules().size());
+  CssRule r=ss.getRules().get(0);
+  assertNull(r.getComment());
+  assertTrue(r.getSelector() instanceof And);
+  And s=(And)r.getSelector();
+  assertEquals(new Data(ECQL.toFilter("att < 15")),s.children.get(0));
+  assertEquals(new ScaleRange(3000,true,Double.POSITIVE_INFINITY,true),s.children.get(1));
+}

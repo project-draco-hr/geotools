@@ -1,0 +1,40 @@
+{
+  if (args.length != 2) {
+    System.err.println("Usage: CssTranslator <input.css> <output.sld>");
+    System.exit(-1);
+  }
+  File input=new File(args[0]);
+  if (!input.exists()) {
+    System.err.println("Could not locate input file " + input.getPath());
+    System.exit(-2);
+  }
+  File output=new File(args[1]);
+  File outputParent=output.getParentFile();
+  if (!outputParent.exists() && !outputParent.mkdirs()) {
+    System.err.println("Output file parent directory does not exist, and cannot be created: " + outputParent.getPath());
+    System.exit(-2);
+  }
+  CssParser parser=Parboiled.createParser(CssParser.class);
+  String css=FileUtils.readFileToString(input);
+  long start=System.currentTimeMillis();
+  ParsingResult<Stylesheet> result=new ReportingParseRunner<Stylesheet>(parser.StyleSheet()).run(css);
+  if (result.hasErrors()) {
+    System.err.println(ErrorUtils.printParseErrors(result));
+    System.exit(-3);
+  }
+  Stylesheet ss=result.parseTreeRoot.getValue();
+  CssTranslator translator=new CssTranslator();
+  Style style=translator.translate(ss);
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  StyledLayerDescriptor sld=styleFactory.createStyledLayerDescriptor();
+  NamedLayer layer=styleFactory.createNamedLayer();
+  layer.addStyle((org.geotools.styling.Style)style);
+  sld.layers().add(layer);
+  SLDTransformer tx=new SLDTransformer();
+  tx.setIndentation(2);
+  try (FileOutputStream fos=new FileOutputStream(output)){
+    tx.transform(sld,fos);
+  }
+   long end=System.currentTimeMillis();
+  System.out.println("Translation performed in " + (end - start) / 1000d + " seconds");
+}
