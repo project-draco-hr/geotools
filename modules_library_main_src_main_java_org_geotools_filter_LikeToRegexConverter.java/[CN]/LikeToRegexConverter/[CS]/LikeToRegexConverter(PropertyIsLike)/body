@@ -1,0 +1,66 @@
+{
+  String pattern=like.getLiteral();
+  String wildcardMulti=like.getWildCard();
+  String wildcardSingle=like.getSingleChar();
+  String escape=like.getEscape();
+  char esc=escape.charAt(0);
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("wildcard " + wildcardMulti + " single "+ wildcardSingle);
+    LOGGER.finer("escape " + escape + " esc "+ esc+ " esc == \\ "+ (esc == '\\'));
+  }
+  String escapedWildcardMulti=fixSpecials(wildcardMulti,escape);
+  String escapedWildcardSingle=fixSpecials(wildcardSingle,escape);
+  StringBuffer tmp=new StringBuffer("");
+  boolean escapedMode=false;
+  for (int i=0; i < pattern.length(); i++) {
+    char chr=pattern.charAt(i);
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.finer("tmp = " + tmp + " looking at "+ chr);
+    }
+    if (pattern.regionMatches(false,i,escape,0,escape.length())) {
+      LOGGER.finer("escape ");
+      escapedMode=true;
+      i+=escape.length();
+      chr=pattern.charAt(i);
+    }
+    if (pattern.regionMatches(false,i,wildcardMulti,0,wildcardMulti.length())) {
+      LOGGER.finer("multi wildcard");
+      if (escapedMode) {
+        LOGGER.finer("escaped ");
+        tmp.append(escapedWildcardMulti);
+      }
+ else {
+        tmp.append(".*");
+      }
+      i+=(wildcardMulti.length() - 1);
+      escapedMode=false;
+      continue;
+    }
+    if (pattern.regionMatches(false,i,wildcardSingle,0,wildcardSingle.length())) {
+      LOGGER.finer("single wildcard");
+      if (escapedMode) {
+        LOGGER.finer("escaped ");
+        tmp.append(escapedWildcardSingle);
+      }
+ else {
+        tmp.append(".{1}");
+      }
+      i+=(wildcardSingle.length() - 1);
+      escapedMode=false;
+      continue;
+    }
+    if (isSpecial(chr)) {
+      LOGGER.finer("special");
+      tmp.append(escape + chr);
+      escapedMode=false;
+      continue;
+    }
+    tmp.append(chr);
+    escapedMode=false;
+  }
+  pattern=tmp.toString();
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("final pattern " + pattern);
+  }
+  this.pattern=pattern;
+}
