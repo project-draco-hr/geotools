@@ -1,5 +1,5 @@
 {
-  for (  CoordinateAxis axis : axes) {
+  for (  CoordinateAxis axis : coordinateAxis) {
     final CoordinateVariable<?> cv=coordinatesVariables.get(axis.getFullName());
     if (cv != null) {
       final String name=cv.getName();
@@ -14,7 +14,7 @@ case Pressure:
 case RadialElevation:
 case RadialDistance:
 case GeoZ:
-      if (NetCDFCRSUtilities.VERTICAL_AXIS_NAMES.contains(name)) {
+      if (NetCDFCRSUtilities.VERTICAL_AXIS_NAMES.contains(name) && !dimensionsMapping.containsKey(NetCDFUtilities.ELEVATION_DIM)) {
         dimensionsMapping.put(NetCDFUtilities.ELEVATION_DIM,name);
       }
  else {
@@ -22,7 +22,12 @@ case GeoZ:
       }
     break;
 case Time:
-  dimensionsMapping.put(NetCDFUtilities.TIME_DIM,name);
+  if (!dimensionsMapping.containsKey(NetCDFUtilities.TIME_DIM)) {
+    dimensionsMapping.put(NetCDFUtilities.TIME_DIM,name);
+  }
+ else {
+    dimensionsMapping.put(name.toUpperCase(),name);
+  }
 break;
 }
 }
