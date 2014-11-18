@@ -1,0 +1,19 @@
+{
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  FilterFactory2 filterFactory=CommonFactoryFinder.getFilterFactory2();
+  RasterSymbolizer symb=styleFactory.createRasterSymbolizer();
+  ColorMapEntry e1=styleFactory.createColorMapEntry();
+  e1.setColor(filterFactory.literal("#000011"));
+  e1.setQuantity(filterFactory.literal(0.0d));
+  ColorMapEntry e2=styleFactory.createColorMapEntry();
+  e2.setColor(filterFactory.literal("#0000EE"));
+  e2.setQuantity(filterFactory.literal(1.0d));
+  symb.getColorMap().addColorMapEntry(e1);
+  symb.getColorMap().addColorMapEntry(e2);
+  StyledLayerDescriptor sld=sld(symb);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld,out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  YamlMap symbMap=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("raster");
+  assertThat(symbMap,yHasEntry("color-map",yHasEntry("entries",allOf(yHasItem(0,equalTo("(0x000011,,0.0,)")),yHasItem(1,equalTo("(0x0000EE,,1.0,)"))))));
+}
