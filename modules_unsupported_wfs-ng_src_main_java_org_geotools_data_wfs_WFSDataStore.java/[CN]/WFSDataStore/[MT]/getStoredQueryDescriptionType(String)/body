@@ -1,21 +1,29 @@
 {
   StoredQueryDescriptionType desc=null;
-  final String lockObj=storedQueryId.intern();
-synchronized (lockObj) {
+  storedQueryDescriptionTypesLock.readLock().lock();
+  desc=storedQueryDescriptionTypes.get(storedQueryId);
+  storedQueryDescriptionTypesLock.readLock().unlock();
+  if (desc == null) {
+    storedQueryDescriptionTypesLock.writeLock().lock();
     desc=storedQueryDescriptionTypes.get(storedQueryId);
-    if (desc == null) {
-      DescribeStoredQueriesRequest request=client.createDescribeStoredQueriesRequest();
-      URI id;
-      try {
-        id=new URI(storedQueryId);
+    try {
+      if (desc == null) {
+        DescribeStoredQueriesRequest request=client.createDescribeStoredQueriesRequest();
+        URI id;
+        try {
+          id=new URI(storedQueryId);
+        }
+ catch (        URISyntaxException use) {
+          throw new IOException(use);
+        }
+        request.getStoredQueryIds().add(id);
+        DescribeStoredQueriesResponse response=client.issueRequest(request);
+        desc=response.getStoredQueryDescriptions().get(0);
+        storedQueryDescriptionTypes.put(storedQueryId,desc);
       }
- catch (      URISyntaxException use) {
-        throw new IOException(use);
-      }
-      request.getStoredQueryIds().add(id);
-      DescribeStoredQueriesResponse response=client.issueRequest(request);
-      desc=response.getStoredQueryDescriptions().get(0);
-      storedQueryDescriptionTypes.put(storedQueryId,desc);
+    }
+  finally {
+      storedQueryDescriptionTypesLock.writeLock().unlock();
     }
   }
   return desc;
