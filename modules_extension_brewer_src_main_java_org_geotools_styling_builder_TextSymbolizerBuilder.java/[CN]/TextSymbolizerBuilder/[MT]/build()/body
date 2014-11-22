@@ -2,17 +2,25 @@
   if (unset) {
     return null;
   }
-  Font[] array=new Font[fonts.size()];
-  for (int i=0; i < array.length; i++) {
-    array[i]=fonts.get(i).build();
+  Font[] array=null;
+  if (!fonts.isEmpty()) {
+    array=new Font[fonts.size()];
+    for (int i=0; i < array.length; i++) {
+      array[i]=fonts.get(i).build();
+    }
   }
-  TextSymbolizer ts=sf.createTextSymbolizer(fill.build(),array,halo.build(),label,placement.build(),geometry);
+  TextSymbolizer ts=sf.createTextSymbolizer(fill.build(),array,halo.build(),label,placement.build(),null);
+  ts.setGeometry(geometry);
   if (uom != null) {
     ts.setUnitOfMeasure(uom);
   }
-  if (ts instanceof TextSymbolizer2 && options != null) {
+  ts.getOptions().putAll(options);
+  ts.setPriority(priority);
+  if (ts instanceof TextSymbolizer2) {
     TextSymbolizer2 ts2=(TextSymbolizer2)ts;
-    ts2.getOptions().putAll(options);
+    if (!shield.isUnset()) {
+      ts2.setGraphic(shield.build());
+    }
   }
   reset();
   return ts;

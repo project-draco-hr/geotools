@@ -1,0 +1,46 @@
+{
+  List<CssRule> allRules=stylesheet.getRules();
+  StyleBuilder styleBuilder=new StyleBuilder();
+  styleBuilder.name("Default Styler");
+  List<List<CssRule>> zIndexRules=organizeByZIndex(allRules);
+  for (  List<CssRule> rules : zIndexRules) {
+    Collections.sort(rules,Collections.reverseOrder(new CssRuleComparator()));
+    Map<String,List<CssRule>> typenameRules=organizeByTypeName(rules);
+    for (    Map.Entry<String,List<CssRule>> entry : typenameRules.entrySet()) {
+      FeatureTypeStyleBuilder ftsBuilder=styleBuilder.featureTypeStyle();
+      String featureTypeName=entry.getKey();
+      List<CssRule> localRules=entry.getValue();
+      if (featureTypeName != null) {
+        ftsBuilder.setFeatureTypeNames(Arrays.asList((Name)new NameImpl(featureTypeName)));
+      }
+      final FeatureType targetFeatureType=getTargetFeatureType(featureTypeName,localRules);
+      if (targetFeatureType != null) {
+        for (        CssRule rule : localRules) {
+          rule.getSelector().accept(new AbstractSelectorVisitor(){
+            @Override public Object visit(            Data data){
+              data.featureType=targetFeatureType;
+              return super.visit(data);
+            }
+          }
+);
+        }
+      }
+      List<CssRule> flattenedRules=flattenScaleRanges(localRules);
+      RulePowerSetBuilder builder=new RulePowerSetBuilder(flattenedRules,maxCombinations);
+      List<CssRule> combinedRules=builder.buildPowerSet();
+      Collections.sort(combinedRules,Collections.reverseOrder(new CssRuleComparator()));
+      DomainCoverage coverage=new DomainCoverage(targetFeatureType);
+      for (int i=0; i < combinedRules.size(); i++) {
+        CssRule cssRule=combinedRules.get(i);
+        if (!cssRule.hasSymbolizerProperty()) {
+          continue;
+        }
+        List<CssRule> derivedRules=coverage.addRule(cssRule);
+        for (        CssRule derived : derivedRules) {
+          buildSldRule(derived,ftsBuilder,targetFeatureType);
+        }
+      }
+    }
+  }
+  return styleBuilder.build();
+}

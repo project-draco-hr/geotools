@@ -1,0 +1,22 @@
+{
+  if (range.getMinValue() == null && range.getMaxValue() == null) {
+    return Filter.INCLUDE;
+  }
+ else   if (range.isMinIncluded() && range.isMaxIncluded()) {
+    if (range.getMinValue().equals(range.getMaxValue())) {
+      return ff.equals(variable,ff.literal(range.getMinValue()));
+    }
+    return ff.between(variable,ff.literal(range.getMinValue()),ff.literal(range.getMaxValue()));
+  }
+ else   if (range.getMinValue() == null) {
+    return toLessFilter(ff,variable,range);
+  }
+ else   if (range.getMaxValue() == null) {
+    return toGreaterFilter(ff,variable,range);
+  }
+ else {
+    Filter less=toLessFilter(ff,variable,range);
+    Filter greater=toGreaterFilter(ff,variable,range);
+    return ff.and(greater,less);
+  }
+}

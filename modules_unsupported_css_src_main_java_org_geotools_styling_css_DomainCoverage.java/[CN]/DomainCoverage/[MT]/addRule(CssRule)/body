@@ -1,0 +1,33 @@
+{
+  Selector selector=rule.getSelector();
+  List<SLDSelector> ruleCoverage=toSLDSelectors(selector,targetFeatureType);
+  if (elements.isEmpty()) {
+    elements.addAll(ruleCoverage);
+    return Collections.singletonList(rule);
+  }
+ else {
+    List<SLDSelector> reducedCoverage=new ArrayList<>(ruleCoverage);
+    for (    SLDSelector element : elements) {
+      List<SLDSelector> difference=new ArrayList<>();
+      for (      SLDSelector rc : reducedCoverage) {
+        difference.addAll(rc.difference(element));
+      }
+      reducedCoverage=difference;
+      if (reducedCoverage.isEmpty()) {
+        break;
+      }
+    }
+    if (!reducedCoverage.isEmpty()) {
+      List<CssRule> derivedRules=new ArrayList<>();
+      for (      SLDSelector rc : reducedCoverage) {
+        derivedRules.add(new CssRule(rc.toSelector(),rule.getProperties(),rule.getComment()));
+      }
+      elements.addAll(reducedCoverage);
+      Collections.sort(elements,new ScaleDependentFilterComparator());
+      return derivedRules;
+    }
+ else {
+      return Collections.emptyList();
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  if (ranges.size() == 0) {
+    return Filter.EXCLUDE;
+  }
+ else   if (ranges.size() == 1 && ranges.first().getMinValue() == null && ranges.first().getMaxValue() == null) {
+    return Filter.INCLUDE;
+  }
+  List<Range<T>> rangeList=new ArrayList<>(ranges);
+  List<Filter> filters=new ArrayList<>();
+  int rangeCount=rangeList.size();
+  for (int i=0; i < rangeCount; ) {
+    Range range=rangeList.get(i);
+    i++;
+    List<T> exclusions=new ArrayList<>();
+    Range curr=range;
+    while (i < rangeCount) {
+      Range next=rangeList.get(i);
+      if (next.getMinValue().equals(curr.getMaxValue())) {
+        if (!next.isMinIncluded() && !curr.isMaxIncluded()) {
+          exclusions.add((T)curr.getMaxValue());
+        }
+        i++;
+        curr=next;
+      }
+ else {
+        break;
+      }
+    }
+    if (curr == range) {
+      filters.add(toFilter(ff,variable,range));
+    }
+ else {
+      Range<T> union=new Range<T>(range.getElementClass(),(T)range.getMinValue(),range.isMinIncluded(),(T)curr.getMaxValue(),curr.isMaxIncluded());
+      Filter filter=toFilter(ff,variable,union);
+      if (exclusions.size() == 0) {
+        filters.add(filter);
+      }
+ else {
+        List<Filter> exclusionFilters=new ArrayList<>();
+        if (!filter.INCLUDE.equals(filter)) {
+          exclusionFilters.add(filter);
+        }
+        for (        T exclusion : exclusions) {
+          PropertyIsNotEqualTo ne=ff.notEqual(variable,ff.literal(exclusion));
+          exclusionFilters.add(ne);
+        }
+        if (exclusionFilters.size() == 1) {
+          filter=exclusionFilters.get(0);
+        }
+ else {
+          filter=ff.and(exclusionFilters);
+        }
+        filters.add(filter);
+      }
+    }
+  }
+  if (filters.size() == 0) {
+    return Filter.EXCLUDE;
+  }
+ else   if (filters.size() == 1) {
+    return filters.get(0);
+  }
+ else {
+    return ff.or(filters);
+  }
+}

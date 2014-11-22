@@ -1,7 +1,63 @@
 {
-  if (filter.getFilter() instanceof Not) {
-    Not inner=(Not)filter.getFilter();
-    return inner.getFilter().accept(this,extraData);
+  FilterFactory2 ff=getFactory(extraData);
+  Filter inner=filter.getFilter();
+  if (inner instanceof Not) {
+    Not innerNot=(Not)inner;
+    return innerNot.getFilter().accept(this,extraData);
+  }
+ else   if (inner == Filter.INCLUDE) {
+    return Filter.EXCLUDE;
+  }
+ else   if (inner == Filter.EXCLUDE) {
+    return Filter.INCLUDE;
+  }
+ else   if (inner instanceof PropertyIsBetween) {
+    PropertyIsBetween pb=(PropertyIsBetween)inner.accept(this,extraData);
+    Filter lt=ff.less(pb.getExpression(),pb.getLowerBoundary());
+    Filter gt=ff.greater(pb.getExpression(),pb.getUpperBoundary());
+    return ff.or(lt,gt);
+  }
+ else   if (inner instanceof PropertyIsEqualTo) {
+    PropertyIsEqualTo pe=(PropertyIsEqualTo)inner.accept(this,extraData);
+    return ff.notEqual(pe.getExpression1(),pe.getExpression2(),pe.isMatchingCase());
+  }
+ else   if (inner instanceof PropertyIsNotEqualTo) {
+    PropertyIsNotEqualTo pe=(PropertyIsNotEqualTo)inner.accept(this,extraData);
+    return ff.equal(pe.getExpression1(),pe.getExpression2(),pe.isMatchingCase());
+  }
+ else   if (inner instanceof PropertyIsGreaterThan) {
+    PropertyIsGreaterThan pg=(PropertyIsGreaterThan)inner.accept(this,extraData);
+    return ff.lessOrEqual(pg.getExpression1(),pg.getExpression2(),pg.isMatchingCase());
+  }
+ else   if (inner instanceof PropertyIsGreaterThanOrEqualTo) {
+    PropertyIsGreaterThanOrEqualTo pg=(PropertyIsGreaterThanOrEqualTo)inner.accept(this,extraData);
+    return ff.less(pg.getExpression1(),pg.getExpression2(),pg.isMatchingCase());
+  }
+ else   if (inner instanceof PropertyIsLessThan) {
+    PropertyIsLessThan pl=(PropertyIsLessThan)inner.accept(this,extraData);
+    return ff.greaterOrEqual(pl.getExpression1(),pl.getExpression2(),pl.isMatchingCase());
+  }
+ else   if (inner instanceof PropertyIsLessThanOrEqualTo) {
+    PropertyIsLessThanOrEqualTo pl=(PropertyIsLessThanOrEqualTo)inner.accept(this,extraData);
+    return ff.greater(pl.getExpression1(),pl.getExpression2(),pl.isMatchingCase());
+  }
+ else   if (inner instanceof And) {
+    And and=(And)inner;
+    List<Filter> children=and.getChildren();
+    List<Filter> negatedChildren=new ArrayList<>();
+    for (    Filter child : children) {
+      negatedChildren.add((Filter)ff.not(child).accept(this,extraData));
+    }
+    return ff.or(negatedChildren);
+  }
+ else   if (inner instanceof Or) {
+    Or or=(Or)inner;
+    List<Filter> children=or.getChildren();
+    List<Filter> negatedChildren=new ArrayList<>();
+    for (    Filter child : children) {
+      negatedChildren.add((Filter)ff.not(child).accept(this,extraData));
+    }
+    return ff.and(negatedChildren);
   }
  else {
     return super.visit(filter,extraData);

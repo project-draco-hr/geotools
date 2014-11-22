@@ -1,0 +1,16 @@
+{
+  String css="#states.2 [@scale > 1000], [myAtt > 10] { stroke: #000000; }";
+  ParsingResult<Stylesheet> result=new ReportingParseRunner<Stylesheet>(parser.StyleSheet()).run(css);
+  assertNoErrors(result);
+  Stylesheet ss=result.parseTreeRoot.getValue();
+  assertEquals(1,ss.getRules().size());
+  CssRule r=ss.getRules().get(0);
+  assertNull(r.getComment());
+  assertTrue(r.getSelector() instanceof Or);
+  Or s=(Or)r.getSelector();
+  assertEquals(new Data(ECQL.toFilter("myAtt > 10")),s.children.get(1));
+  assertTrue(s.children.get(0) instanceof And);
+  And and=(And)s.children.get(0);
+  assertEquals(new Id("states.2"),and.children.get(0));
+  assertEquals(new ScaleRange(1000,true,Double.POSITIVE_INFINITY,true),and.children.get(1));
+}

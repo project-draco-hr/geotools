@@ -1,0 +1,56 @@
+{
+  boolean foundSymbolizerProperty=false;
+  for (  CssRule rule : rules) {
+    if (rule.hasSymbolizerProperty()) {
+      foundSymbolizerProperty=true;
+      break;
+    }
+  }
+  if (!foundSymbolizerProperty) {
+    return null;
+  }
+  CssRule combined;
+  if (rules.size() == 1) {
+    combined=rules.get(0);
+  }
+ else {
+    Selector combinedSelector=combineSelectors(rules);
+    Collections.sort(rules,new CssRuleComparator());
+    Map<PseudoClass,Map<String,Property>> properties=new LinkedHashMap<>();
+    for (    CssRule cssRule : rules) {
+      for (      Map.Entry<PseudoClass,List<Property>> entry : cssRule.getProperties().entrySet()) {
+        PseudoClass ps=entry.getKey();
+        Map<String,Property> psProperties=properties.get(ps);
+        if (psProperties == null) {
+          psProperties=new HashMap<String,Property>();
+          properties.put(ps,psProperties);
+        }
+        for (        Property p : entry.getValue()) {
+          psProperties.put(p.getName(),p);
+        }
+        if (ps != PseudoClass.ROOT) {
+          for (          PseudoClass containedClass : properties.keySet()) {
+            if (ps.contains(containedClass)) {
+              Map<String,Property> containedProperties=properties.get(containedClass);
+              for (              Property p : entry.getValue()) {
+                containedProperties.put(p.getName(),p);
+              }
+            }
+          }
+        }
+      }
+    }
+    Map<PseudoClass,List<Property>> newProperties=new LinkedHashMap<>();
+    for (    Map.Entry<PseudoClass,Map<String,Property>> entry : properties.entrySet()) {
+      newProperties.put(entry.getKey(),new ArrayList<Property>(entry.getValue().values()));
+    }
+    String comment=getCombinedComment(rules);
+    CssRule result=new CssRule(combinedSelector,newProperties,comment);
+    result.setAncestry(rules);
+    combined=result;
+  }
+  if (maxCombinations > 0 && count++ > maxCombinations) {
+    throw new IllegalStateException("The CSS rule combinations have already generated more than " + maxCombinations + " SLD rules, giving up. Please simplify your CSS style");
+  }
+  return combined;
+}

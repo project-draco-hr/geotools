@@ -1,0 +1,84 @@
+{
+  Map<String,List<Value>> values=cssRule.getPropertyValues(PseudoClass.ROOT,"raster");
+  if (values == null || values.isEmpty()) {
+    return;
+  }
+  int repeatCount=getMaxRepeatCount(values);
+  for (int i=0; i < repeatCount; i++) {
+    RasterSymbolizerBuilder rb=ruleBuilder.raster();
+    String[] channelNames=getStringArray(values,"raster-channels",i);
+    String[] constrastEnhancements=getStringArray(values,"raster-contrast-enhancement",i);
+    double[] gammas=getDoubleArray(values,"raster-gamma",i);
+    if (!"auto".equals(channelNames[0])) {
+      ChannelSelectionBuilder cs=rb.channelSelection();
+      if (channelNames.length == 1) {
+        applyContrastEnhancement(cs.gray().channelName(channelNames[0]).contrastEnhancement(),constrastEnhancements,gammas,0);
+      }
+ else       if (channelNames.length == 2 || channelNames.length > 3) {
+        throw new IllegalArgumentException("raster-channels can accept the name of one or three bands, not " + channelNames.length);
+      }
+ else {
+        applyContrastEnhancement(cs.red().channelName(channelNames[0]).contrastEnhancement(),constrastEnhancements,gammas,0);
+        applyContrastEnhancement(cs.green().channelName(channelNames[1]).contrastEnhancement(),constrastEnhancements,gammas,1);
+        applyContrastEnhancement(cs.blue().channelName(channelNames[2]).contrastEnhancement(),constrastEnhancements,gammas,2);
+      }
+    }
+ else {
+      applyContrastEnhancement(rb.contrastEnhancement(),constrastEnhancements,gammas,0);
+    }
+    Expression opacity=getExpression(values,"raster-opacity",i);
+    if (opacity != null) {
+      rb.opacity(opacity);
+    }
+    Expression geom=getExpression(values,"raster-geometry",i);
+    if (geom != null) {
+      rb.geometry(geom);
+    }
+    Value v=getValue(values,"raster-color-map",i);
+    if (v != null) {
+      if (v instanceof Function) {
+        v=new MultiValue(v);
+      }
+      if (!(v instanceof MultiValue)) {
+        throw new IllegalArgumentException("Invalid color map, it must be comprised of one or more color-map-entry function: " + v);
+      }
+ else {
+        MultiValue cm=(MultiValue)v;
+        ColorMapBuilder cmb=rb.colorMap();
+        for (        Value entry : cm.values) {
+          if (!(entry instanceof Function)) {
+            throw new IllegalArgumentException("Invalid color map content, it must be a color-map-entry function" + entry);
+          }
+          Function f=(Function)entry;
+          if (!"color-map-entry".equals(f.name)) {
+            throw new IllegalArgumentException("Invalid color map content, it must be a color-map-entry function" + entry);
+          }
+ else           if (f.parameters.size() < 2 || f.parameters.size() > 3) {
+            throw new IllegalArgumentException("Invalid color map content, it must be a color-map-entry function " + "with either 2 parameters (color and value) or 3 parameters " + "(color, value and opacity)"+ entry);
+          }
+          ColorMapEntryBuilder eb=cmb.entry();
+          eb.color(f.parameters.get(0).toExpression());
+          eb.quantity(f.parameters.get(1).toExpression());
+          if (f.parameters.size() == 3) {
+            eb.opacity(f.parameters.get(2).toExpression());
+          }
+        }
+        String type=getLiteral(values,"raster-color-map-type",i,null);
+        if (type != null) {
+          if ("intervals".equals(type)) {
+            cmb.type(ColorMap.TYPE_INTERVALS);
+          }
+ else           if ("ramp".equals(type)) {
+            cmb.type(ColorMap.TYPE_RAMP);
+          }
+ else           if ("values".equals(type)) {
+            cmb.type(ColorMap.TYPE_VALUES);
+          }
+ else {
+            throw new IllegalArgumentException("Invalid color map type " + type);
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  List<CssRule> filtered=new ArrayList<>();
+  for (  CssRule cssRule : result) {
+    if (cssRule.getProperties().get(PseudoClass.ROOT) != null) {
+      filtered.add(cssRule);
+    }
+  }
+  if (filtered.size() <= 1) {
+    return filtered;
+  }
+  Collections.sort(filtered,Collections.reverseOrder(new CssRuleComparator()));
+  List<CssRule> folded=new ArrayList<>();
+  CssRule prev=filtered.get(0);
+  for (int i=1; i < filtered.size(); i++) {
+    CssRule curr=filtered.get(i);
+    if (curr.covers(prev)) {
+      prev=curr;
+    }
+ else     if (prev.covers(curr)) {
+    }
+ else {
+      folded.add(prev);
+      prev=curr;
+    }
+  }
+  folded.add(prev);
+  return folded;
+}

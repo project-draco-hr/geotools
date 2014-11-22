@@ -1,0 +1,29 @@
+{
+  List<CssRule> result=new ArrayList<>();
+  for (  CssRule rule : rules) {
+    if (rule.getSelector() instanceof Or) {
+      Or or=(Or)rule.getSelector();
+      List<Selector> others=new ArrayList<>();
+      for (      Selector child : or.children) {
+        ScaleRangeExtractor extractor=new ScaleRangeExtractor();
+        Range<Double> range=extractor.getScaleRange(child);
+        if (range == null) {
+          others.add(child);
+        }
+ else {
+          result.add(new CssRule(child,rule.getProperties(),rule.getComment()));
+        }
+      }
+      if (others.size() == 1) {
+        result.add(new CssRule(others.get(0),rule.getProperties(),rule.getComment()));
+      }
+ else       if (others.size() > 0) {
+        result.add(new CssRule(new Or(others),rule.getProperties(),rule.getComment()));
+      }
+    }
+ else {
+      result.add(rule);
+    }
+  }
+  return result;
+}
