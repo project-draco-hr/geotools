@@ -1,16 +1,23 @@
 {
   Selector selector=rule.getSelector();
   List<SLDSelector> ruleCoverage=toSLDSelectors(selector,targetFeatureType);
+  if (generatedSelectors.contains(ruleCoverage)) {
+    return Collections.emptyList();
+  }
+ else {
+    generatedSelectors.add(ruleCoverage);
+  }
   if (elements.isEmpty()) {
     elements.addAll(ruleCoverage);
-    return Collections.singletonList(rule);
+    return coverageToRules(rule,ruleCoverage);
   }
  else {
     List<SLDSelector> reducedCoverage=new ArrayList<>(ruleCoverage);
     for (    SLDSelector element : elements) {
       List<SLDSelector> difference=new ArrayList<>();
       for (      SLDSelector rc : reducedCoverage) {
-        difference.addAll(rc.difference(element));
+        List<SLDSelector> ruleDifference=rc.difference(element);
+        difference.addAll(ruleDifference);
       }
       reducedCoverage=difference;
       if (reducedCoverage.isEmpty()) {
@@ -20,10 +27,10 @@
     if (!reducedCoverage.isEmpty()) {
       List<CssRule> derivedRules=new ArrayList<>();
       for (      SLDSelector rc : reducedCoverage) {
-        derivedRules.add(new CssRule(rc.toSelector(),rule.getProperties(),rule.getComment()));
+        derivedRules.add(new CssRule(rc.toSelector(simplifier),rule.getProperties(),rule.getComment()));
       }
       elements.addAll(reducedCoverage);
-      Collections.sort(elements,new ScaleDependentFilterComparator());
+      Collections.sort(elements,new SLDSelectorComparator());
       List<SLDSelector> combined=new ArrayList<>();
       SLDSelector prev=null;
       for (      SLDSelector ss : elements) {

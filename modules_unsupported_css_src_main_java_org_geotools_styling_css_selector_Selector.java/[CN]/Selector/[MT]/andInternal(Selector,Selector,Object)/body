@@ -1,0 +1,69 @@
+{
+  if (s1 instanceof Accept) {
+    return s2;
+  }
+ else   if (s2 instanceof Accept) {
+    return s1;
+  }
+  if (s1 instanceof Reject || s2 instanceof Reject) {
+    return REJECT;
+  }
+  if (s1 instanceof Or) {
+    return foldInOr((Or)s1,s2,context);
+  }
+ else   if (s2 instanceof Or) {
+    return foldInOr((Or)s2,s1,context);
+  }
+  List<Selector> selectors=new ArrayList<>();
+  flatten(selectors,s1,And.class);
+  flatten(selectors,s2,And.class);
+  Map<Class,List<Selector>> classifieds=mapByClass(selectors);
+  if (classifieds.get(Reject.class) != null) {
+    return REJECT;
+  }
+  classifieds.remove(Accept.class);
+  List<Class<? extends Selector>> classes=Arrays.asList(TypeName.class,ScaleRange.class,Id.class,Data.class,PseudoClass.class);
+  for (  Class<? extends Selector> clazz : classes) {
+    List<Selector> classSelectors=classifieds.get(clazz);
+    if (classSelectors == null) {
+      continue;
+    }
+    if (classSelectors.size() > 1) {
+      try {
+        Method combineAnd=clazz.getDeclaredMethod("combineAnd",List.class,Object.class);
+        Selector result=(Selector)combineAnd.invoke(null,classSelectors,context);
+        if (result == REJECT) {
+          return REJECT;
+        }
+ else         if (result == ACCEPT) {
+          classifieds.remove(clazz);
+        }
+ else         if (result instanceof And) {
+          classifieds.put(clazz,new ArrayList<>(((Composite)result).getChildren()));
+        }
+ else {
+          classifieds.put(clazz,Collections.singletonList(result));
+        }
+      }
+ catch (      Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+  List<Selector> finalList=new ArrayList<>();
+  for (  Class c : classes) {
+    List<Selector> list=classifieds.get(c);
+    if (list != null) {
+      finalList.addAll(list);
+    }
+  }
+  if (finalList.size() == 0) {
+    return ACCEPT;
+  }
+ else   if (finalList.size() == 1) {
+    return finalList.get(0);
+  }
+ else {
+    return new And(finalList);
+  }
+}

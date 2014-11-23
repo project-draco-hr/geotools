@@ -1,0 +1,29 @@
+{
+  return Sequence(push(MARKER),OneOrMore(FirstOf(ECQLExpression(),String())),new Action(){
+    @Override public boolean run(    Context ctx){
+      Object value=pop();
+      List<Expression> expressions=new ArrayList<>();
+      Object firstValue=null;
+      while (value != MARKER) {
+        firstValue=value;
+        if (value instanceof Value) {
+          expressions.add(((Value)value).toExpression());
+        }
+        value=pop();
+      }
+      if (expressions.size() == 0) {
+        return false;
+      }
+ else       if (expressions.size() == 1) {
+        push(firstValue);
+      }
+ else {
+        Collections.reverse(expressions);
+        org.opengis.filter.expression.Function function=Data.FF.function("Concatenate",expressions.toArray(new Expression[expressions.size()]));
+        push(new Value.Expression(function));
+      }
+      return true;
+    }
+  }
+);
+}

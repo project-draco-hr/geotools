@@ -14,45 +14,51 @@
     combined=rules.get(0);
   }
  else {
-    Selector combinedSelector=combineSelectors(rules);
-    Map<PseudoClass,Map<String,Property>> properties=new LinkedHashMap<>();
-    for (    CssRule cssRule : rules) {
-      for (      Map.Entry<PseudoClass,List<Property>> entry : cssRule.getProperties().entrySet()) {
-        PseudoClass ps=entry.getKey();
-        Map<String,Property> psProperties=properties.get(ps);
-        if (psProperties == null) {
-          psProperties=new HashMap<String,Property>();
-          properties.put(ps,psProperties);
+    combined=combineRules(rules);
+  }
+  List<CssRule> results=new ArrayList<>();
+  if (mixins == null || mixins.size() == 0) {
+    results.add(combined);
+  }
+ else {
+    List<CssRule> applicableMixins=getApplicableMixins(combined);
+    if (applicableMixins.size() > 0) {
+      int idx=0;
+      for (; idx < applicableMixins.size(); idx++) {
+        CssRule mixin=applicableMixins.get(idx);
+        Selector mixedSelector=Selector.and(mixin.selector,combined.selector,simplifier);
+        if (mixedSelector == Selector.REJECT) {
+          continue;
         }
-        for (        Property p : entry.getValue()) {
-          psProperties.put(p.getName(),p);
+ else         if (mixedSelector.equals(combined.selector)) {
+          combined=combineRules(Arrays.asList(combined,mixin));
         }
-        if (ps != PseudoClass.ROOT) {
-          for (          PseudoClass containedClass : properties.keySet()) {
-            if (ps.contains(containedClass)) {
-              Map<String,Property> containedProperties=properties.get(containedClass);
-              for (              Property p : entry.getValue()) {
-                containedProperties.put(p.getName(),p);
-              }
-            }
-          }
+ else {
+          break;
         }
       }
+      if (idx < applicableMixins.size()) {
+        List<CssRule> list=new ArrayList<>();
+        list.add(combined);
+        list.addAll(applicableMixins.subList(idx,applicableMixins.size()));
+        RulePowerSetBuilder builder=new RulePowerSetBuilder(new List[]{list,Collections.emptyList()},simplifier,maxCombinations - count);
+        List<CssRule> conditionalPowerSet=builder.buildPowerSet();
+        results.addAll(conditionalPowerSet);
+      }
+ else {
+        results.add(combined);
+      }
     }
-    Map<PseudoClass,List<Property>> newProperties=new LinkedHashMap<>();
-    for (    Map.Entry<PseudoClass,Map<String,Property>> entry : properties.entrySet()) {
-      newProperties.put(entry.getKey(),new ArrayList<Property>(entry.getValue().values()));
+ else {
+      results.add(combined);
     }
-    String comment=getCombinedComment(rules);
-    CssRule result=new CssRule(combinedSelector,newProperties,comment);
-    result.setAncestry(rules);
-    combined=result;
   }
-  if (maxCombinations > 0 && count++ > maxCombinations) {
+  count+=results.size();
+  if (maxCombinations > 0 && count > maxCombinations) {
     LOGGER.severe("Bailing out, the CSS rule combinations have already generated more than " + "maxCombinations SLD rules, giving up. Please simplify your CSS style");
   }
  else   if (LOGGER.isLoggable(Level.FINE)) {
     LOGGER.fine("New rule: " + combined);
   }
-  return combined;
+  return results;
 }

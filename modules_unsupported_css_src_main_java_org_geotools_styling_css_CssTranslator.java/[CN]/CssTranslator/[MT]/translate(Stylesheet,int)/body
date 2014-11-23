@@ -10,7 +10,7 @@
     LOGGER.fine("Split the rules into " + zIndexRules + "  sets after z-index separation");
   }
   for (  List<CssRule> rules : zIndexRules) {
-    Collections.sort(rules,Collections.reverseOrder(new CssRuleComparator()));
+    Collections.sort(rules,CssRuleComparator.DESCENDING);
     Map<String,List<CssRule>> typenameRules=organizeByTypeName(rules);
     for (    Map.Entry<String,List<CssRule>> entry : typenameRules.entrySet()) {
       FeatureTypeStyleBuilder ftsBuilder=styleBuilder.featureTypeStyle();
@@ -35,13 +35,14 @@
       if (LOGGER.isLoggable(Level.FINE)) {
         LOGGER.fine("Preparing power set expansion with " + flattenedRules.size() + "  rules for feature type: "+ featureTypeName);
       }
-      RulePowerSetBuilder builder=new RulePowerSetBuilder(flattenedRules,maxCombinations);
+      CachedSimplifyingFilterVisitor cachedSimplifier=new CachedSimplifyingFilterVisitor(targetFeatureType);
+      RulePowerSetBuilder builder=new RulePowerSetBuilder(flattenedRules,cachedSimplifier,maxCombinations);
       List<CssRule> combinedRules=builder.buildPowerSet();
-      Collections.sort(combinedRules,Collections.reverseOrder(new CssRuleComparator()));
+      Collections.sort(combinedRules,CssRuleComparator.DESCENDING);
       if (LOGGER.isLoggable(Level.FINE)) {
         LOGGER.fine("Generated " + combinedRules.size() + " combined rules after filtered power set expansion");
       }
-      DomainCoverage coverage=new DomainCoverage(targetFeatureType);
+      DomainCoverage coverage=new DomainCoverage(targetFeatureType,cachedSimplifier);
       for (int i=0; i < combinedRules.size(); i++) {
         CssRule cssRule=combinedRules.get(i);
         if (!cssRule.hasSymbolizerProperty()) {

@@ -1,0 +1,30 @@
+{
+  if (selectors.size() == 1) {
+    return selectors.get(0);
+  }
+  List<Filter> filters=new ArrayList<>();
+  FeatureType featureType=null;
+  for (  Data selector : selectors) {
+    filters.add(selector.filter);
+    featureType=selector.featureType;
+  }
+  org.opengis.filter.And and=FF.and(filters);
+  SimplifyingFilterVisitor visitor;
+  if (ctx instanceof SimplifyingFilterVisitor) {
+    visitor=(SimplifyingFilterVisitor)ctx;
+  }
+ else {
+    visitor=new UnboundSimplifyingFilterVisitor();
+    visitor.setFeatureType(featureType);
+  }
+  Filter simplified=(Filter)and.accept(visitor,null);
+  if (Filter.INCLUDE.equals(simplified)) {
+    return ACCEPT;
+  }
+ else   if (Filter.EXCLUDE.equals(simplified)) {
+    return REJECT;
+  }
+ else {
+    return new Data(simplified);
+  }
+}

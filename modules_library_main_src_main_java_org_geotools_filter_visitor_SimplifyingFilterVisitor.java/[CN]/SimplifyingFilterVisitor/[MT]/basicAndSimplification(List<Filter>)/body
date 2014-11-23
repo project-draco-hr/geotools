@@ -1,0 +1,32 @@
+{
+  if (featureType != null) {
+    RangeCombiner combiner=new RangeCombiner.And(ff,featureType,filters);
+    filters=combiner.getReducedFilters();
+  }
+  List<Filter> simplified=new ArrayList<Filter>(filters.size());
+  for (  Filter child : filters) {
+    if (child == Filter.EXCLUDE) {
+      return Arrays.asList((Filter)Filter.EXCLUDE);
+    }
+    if (child == Filter.INCLUDE) {
+      continue;
+    }
+    simplified.add(child);
+  }
+  for (int i=0; i < simplified.size(); i++) {
+    for (int j=i + 1; j < simplified.size(); ) {
+      Filter f1=simplified.get(i);
+      Filter f2=simplified.get(j);
+      if (f1.equals(f2)) {
+        simplified.remove(j);
+      }
+ else       if (dualFilters(f1,f2)) {
+        return Arrays.asList((Filter)Filter.EXCLUDE);
+      }
+ else {
+        j++;
+      }
+    }
+  }
+  return simplified;
+}

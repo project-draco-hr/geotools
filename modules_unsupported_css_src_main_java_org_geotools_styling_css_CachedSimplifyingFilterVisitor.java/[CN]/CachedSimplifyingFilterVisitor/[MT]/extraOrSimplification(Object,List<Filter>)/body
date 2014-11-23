@@ -1,0 +1,47 @@
+{
+  if (filters.size() > 1) {
+    for (int i=0; i < filters.size(); i++) {
+      Filter f=filters.get(i);
+      if (f instanceof And) {
+        And and=((And)f);
+        Filter reduced=null;
+        boolean twoOrMore=false;
+        for (        Filter child : and.getChildren()) {
+          List<Filter> newList=new ArrayList<>(filters);
+          newList.remove(and);
+          newList.add(child);
+          Or or=getFactory(extraData).or(newList);
+          Filter simplified=(Filter)or.accept(this,extraData);
+          if (simplified == Filter.EXCLUDE) {
+            return Collections.singletonList((Filter)Filter.EXCLUDE);
+          }
+ else           if (simplified == Filter.INCLUDE) {
+            continue;
+          }
+ else           if (reduced == null) {
+            reduced=simplified;
+          }
+ else           if (!simplified.equals(reduced)) {
+            twoOrMore=true;
+            break;
+          }
+        }
+        if (reduced == null) {
+          return Collections.singletonList((Filter)Filter.INCLUDE);
+        }
+ else         if (!twoOrMore) {
+          filters.clear();
+          if (!(reduced instanceof Or)) {
+            return Collections.singletonList(reduced);
+          }
+ else {
+            filters.addAll(((Or)reduced).getChildren());
+            filters=basicOrSimplification(filters);
+            i=0;
+          }
+        }
+      }
+    }
+  }
+  return filters;
+}
