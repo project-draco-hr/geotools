@@ -1,8 +1,14 @@
 {
   List<CssRule> allRules=stylesheet.getRules();
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Starting with " + allRules.size() + "  rules in the stylesheet");
+  }
   StyleBuilder styleBuilder=new StyleBuilder();
   styleBuilder.name("Default Styler");
   List<List<CssRule>> zIndexRules=organizeByZIndex(allRules);
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Split the rules into " + zIndexRules + "  sets after z-index separation");
+  }
   for (  List<CssRule> rules : zIndexRules) {
     Collections.sort(rules,Collections.reverseOrder(new CssRuleComparator()));
     Map<String,List<CssRule>> typenameRules=organizeByTypeName(rules);
@@ -26,16 +32,30 @@
         }
       }
       List<CssRule> flattenedRules=flattenScaleRanges(localRules);
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Preparing power set expansion with " + flattenedRules.size() + "  rules for feature type: "+ featureTypeName);
+      }
       RulePowerSetBuilder builder=new RulePowerSetBuilder(flattenedRules,maxCombinations);
       List<CssRule> combinedRules=builder.buildPowerSet();
       Collections.sort(combinedRules,Collections.reverseOrder(new CssRuleComparator()));
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Generated " + combinedRules.size() + " combined rules after filtered power set expansion");
+      }
       DomainCoverage coverage=new DomainCoverage(targetFeatureType);
       for (int i=0; i < combinedRules.size(); i++) {
         CssRule cssRule=combinedRules.get(i);
         if (!cssRule.hasSymbolizerProperty()) {
           continue;
         }
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Current domain coverage: " + coverage);
+          LOGGER.fine("Adding rule to domain coverage: " + cssRule);
+          LOGGER.fine("Rules left to process: " + (combinedRules.size() - i));
+        }
         List<CssRule> derivedRules=coverage.addRule(cssRule);
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Derived rules not yet covered in domain coverage: " + derivedRules.size() + "\n"+ derivedRules);
+        }
         for (        CssRule derived : derivedRules) {
           buildSldRule(derived,ftsBuilder,targetFeatureType);
         }

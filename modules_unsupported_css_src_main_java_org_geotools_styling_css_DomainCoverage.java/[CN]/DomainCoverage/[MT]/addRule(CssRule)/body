@@ -24,6 +24,26 @@
       }
       elements.addAll(reducedCoverage);
       Collections.sort(elements,new ScaleDependentFilterComparator());
+      List<SLDSelector> combined=new ArrayList<>();
+      SLDSelector prev=null;
+      for (      SLDSelector ss : elements) {
+        if (prev == null) {
+          prev=ss;
+        }
+ else         if (prev.scaleRange.equals(ss.scaleRange)) {
+          org.opengis.filter.Or or=FF.or(ss.filter,prev.filter);
+          Filter simplified=simplify(or);
+          prev=new SLDSelector(prev.scaleRange,simplified);
+        }
+ else {
+          combined.add(prev);
+          prev=ss;
+        }
+      }
+      if (prev != null) {
+        combined.add(prev);
+      }
+      this.elements=combined;
       return derivedRules;
     }
  else {
