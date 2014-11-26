@@ -1,0 +1,51 @@
+{
+  if (coverage == null) {
+    throw new ProcessException("Invalid input, source grid coverage should be not null");
+  }
+  if (exclusionRange == null) {
+    exclusionRange=MarchingSquaresVectorizer.DEFAULT_RANGE;
+  }
+  if (computeSimplifiedFootprint == null) {
+    computeSimplifiedFootprint=false;
+  }
+  if (simplifierFactor == null) {
+    simplifierFactor=MarchingSquaresVectorizer.DEFAULT_SIMPLIFIER_FACTOR;
+  }
+  if (forceValid == null) {
+    forceValid=true;
+  }
+  if (removeCollinear == null) {
+    removeCollinear=true;
+  }
+  if (imageLoadingType == null) {
+    imageLoadingType=ImageLoadingType.getDefault();
+  }
+  if (thresholdArea == null) {
+    thresholdArea=MarchingSquaresVectorizer.DEFAULT_THRESHOLD_AREA;
+  }
+  MarchingSquaresVectorizer vectorizer=new MarchingSquaresVectorizer(coverage,null,thresholdArea,simplifierFactor,imageLoadingType,exclusionRange);
+  vectorizer.setComputeSimplifiedFootprint(computeSimplifiedFootprint);
+  vectorizer.setForceValid(forceValid);
+  vectorizer.setRemoveCollinear(removeCollinear);
+  try {
+    vectorizer.process();
+    Geometry geometry=vectorizer.getFootprint();
+    final SimpleFeatureType featureType=CoverageUtilities.createFeatureType(coverage,Geometry.class);
+    final SimpleFeatureBuilder builder=new SimpleFeatureBuilder(featureType);
+    int i=0;
+    final ListFeatureCollection featureCollection=new ListFeatureCollection(featureType);
+    builder.set("the_geom",geometry);
+    featureCollection.add(builder.buildFeature(String.valueOf(i++)));
+    if (computeSimplifiedFootprint) {
+      builder.set("the_geom",vectorizer.getSimplifiedFootprint());
+      featureCollection.add(builder.buildFeature(String.valueOf(i++)));
+    }
+    return featureCollection;
+  }
+ catch (  Exception e) {
+    throw new ProcessException("Exception occurred while computing the footprint",e);
+  }
+ finally {
+    vectorizer.dispose();
+  }
+}

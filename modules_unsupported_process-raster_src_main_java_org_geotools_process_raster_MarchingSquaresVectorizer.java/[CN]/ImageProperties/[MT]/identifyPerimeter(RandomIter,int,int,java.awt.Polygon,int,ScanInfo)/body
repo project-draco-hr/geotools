@@ -1,0 +1,131 @@
+{
+  if ((initialX < imageProperties.minX) || (initialX > imageProperties.maxX) || (initialY < imageProperties.minY)|| (initialY > imageProperties.maxY)) {
+    throw new IllegalArgumentException("Coordinate outside the bounds.");
+  }
+  int initialValue=value(iter,initialX,initialY,sampleDataType,false);
+  if (initialValue == 0) {
+    throw new IllegalArgumentException(String.format("Supplied initial coordinates (%d, %d) do not lie on a perimeter.",initialX,initialY));
+  }
+  if (initialValue == 15) {
+    return null;
+  }
+  final Point2D worldPosition=new Point2D.Double(initialX - 1,initialY - 1);
+  Coordinate startCoordinate=new Coordinate(worldPosition.getX(),worldPosition.getY());
+  List<Coordinate> coordinateList=new ArrayList<Coordinate>(200);
+  int x=initialX;
+  int y=initialY;
+  awtPolygon.reset();
+  awtPolygon.addPoint(x,y);
+  boolean previousWentNorth=false;
+  boolean previousWentEast=true;
+  int v=value(iter,x,y,sampleDataType,true);
+  do {
+    int dx=0;
+    int dy=0;
+switch (v) {
+case 1:
+      dy=NEGATIVE_STEP;
+    previousWentNorth=true;
+  break;
+case 2:
+dx=POSITIVE_STEP;
+previousWentEast=true;
+break;
+case 3:
+dx=POSITIVE_STEP;
+previousWentEast=true;
+break;
+case 4:
+dx=NEGATIVE_STEP;
+previousWentEast=false;
+break;
+case 5:
+dy=NEGATIVE_STEP;
+previousWentNorth=true;
+break;
+case 6:
+if (!previousWentNorth) {
+dx=NEGATIVE_STEP;
+previousWentEast=false;
+}
+ else {
+dx=POSITIVE_STEP;
+previousWentEast=true;
+}
+break;
+case 7:
+dx=POSITIVE_STEP;
+previousWentEast=true;
+break;
+case 8:
+dy=POSITIVE_STEP;
+previousWentNorth=false;
+break;
+case 9:
+if (previousWentEast) {
+if (isLowerCorner(iter,x,y,sampleDataType)) {
+dy=POSITIVE_STEP;
+previousWentNorth=false;
+}
+ else {
+dy=NEGATIVE_STEP;
+previousWentNorth=true;
+}
+}
+ else {
+if (isLowerCorner(iter,x,y,sampleDataType)) {
+dy=NEGATIVE_STEP;
+previousWentNorth=true;
+}
+ else {
+dy=POSITIVE_STEP;
+previousWentNorth=false;
+}
+}
+break;
+case 10:
+dy=POSITIVE_STEP;
+previousWentNorth=false;
+break;
+case 11:
+dy=POSITIVE_STEP;
+previousWentNorth=false;
+break;
+case 12:
+dx=NEGATIVE_STEP;
+previousWentEast=false;
+break;
+case 13:
+dy=NEGATIVE_STEP;
+previousWentNorth=true;
+break;
+case 14:
+dx=NEGATIVE_STEP;
+previousWentEast=false;
+break;
+default :
+throw new IllegalStateException("Illegal state: " + v);
+}
+Coordinate direction=new Coordinate(x - 1,y - 1);
+coordinateList.add(direction);
+x=x + dx;
+y=y + dy;
+v=value(iter,x,y,sampleDataType,true);
+awtPolygon.addPoint(x,y);
+}
+ while ((x != initialX) || (y != initialY));
+double polygonArea=getPolygonArea(awtPolygon.xpoints,awtPolygon.ypoints,awtPolygon.npoints - 1);
+if (polygonArea < thresholdArea) {
+if (!scanInfo.firstFound) {
+scanInfo.firstFound=true;
+}
+if (!scanInfo.takeFirst) {
+return null;
+}
+}
+coordinateList.add(startCoordinate);
+Coordinate[] coordinateArray=(Coordinate[])coordinateList.toArray(new Coordinate[coordinateList.size()]);
+LinearRing linearRing=gf.createLinearRing(coordinateArray);
+Polygon polygon=gf.createPolygon(linearRing,null);
+return polygon;
+}

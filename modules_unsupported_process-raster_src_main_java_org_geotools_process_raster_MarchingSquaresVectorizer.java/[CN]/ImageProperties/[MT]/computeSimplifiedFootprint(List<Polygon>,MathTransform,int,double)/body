@@ -1,0 +1,39 @@
+{
+  if (computeSimplifiedFootprint && !geometriesList.isEmpty()) {
+    Geometry simplifiedFootprintGeometry=geometriesList.get(polygonIndex);
+    Geometry finalSimplifiedFootprint=null;
+    if (footprintCoordinates == FootprintCoordinates.MODEL_SPACE) {
+      finalSimplifiedFootprint=JTS.transform(simplifiedFootprintGeometry,transform);
+    }
+ else {
+      simplifiedFootprintGeometry.setSRID(NO_SRID);
+      finalSimplifiedFootprint=simplifiedFootprintGeometry;
+    }
+    this.polygonArea=finalSimplifiedFootprint.getArea();
+    final double tolerance=Math.max(xRes,yRes) * simplifierFactor;
+    simplifiedFootprintGeometry=(area > MIN_AREA_TO_BE_SIMPLIFIED) ? DouglasPeuckerSimplifier.simplify(finalSimplifiedFootprint,tolerance) : finalSimplifiedFootprint;
+    if (simplifiedFootprintGeometry == null) {
+      throw new IllegalStateException("No simplified Footprint can be computed");
+    }
+    try {
+      final Integer srid=CRS.lookupEpsgCode(crs,false);
+      if (footprintCoordinates == FootprintCoordinates.MODEL_SPACE) {
+        if (srid != null) {
+          simplifiedFootprintGeometry.setSRID(srid);
+        }
+      }
+ else {
+        simplifiedFootprintGeometry.setSRID(NO_SRID);
+      }
+    }
+ catch (    FactoryException fe) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to lookup an EPSG code for the provided CRS");
+      }
+    }
+    this.simplifiedFootprint=simplifiedFootprintGeometry;
+  }
+ else {
+    simplifiedFootprint=null;
+  }
+}

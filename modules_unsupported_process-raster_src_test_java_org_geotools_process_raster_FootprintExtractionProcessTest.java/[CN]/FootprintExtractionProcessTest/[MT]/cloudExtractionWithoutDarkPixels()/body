@@ -1,0 +1,43 @@
+{
+  GeoTiffReader reader=null;
+  FeatureIterator iter=null;
+  GridCoverage2D cov=null;
+  try {
+    reader=new GeoTiffReader(cloudFile);
+    cov=reader.read(null);
+    final int referenceLuminance=10;
+    Range<Integer> exclusionRange=new Range<Integer>(Integer.class,0,referenceLuminance);
+    SimpleFeatureCollection fc=process.execute(cov,exclusionRange,10d,false,null,true,true,null,null);
+    iter=fc.features();
+    SimpleFeature feature=(SimpleFeature)iter.next();
+    Geometry poly=(Geometry)feature.getDefaultGeometry();
+    Raster raster=cov.getRenderedImage().getData();
+    int[] darkPixel=new int[3];
+    raster.getPixel(9,13,darkPixel);
+    double luminance=ImageUtilities.RGB_TO_GRAY_MATRIX[0][0] * darkPixel[0] + ImageUtilities.RGB_TO_GRAY_MATRIX[0][1] * darkPixel[1] + ImageUtilities.RGB_TO_GRAY_MATRIX[0][2] * darkPixel[2];
+    assertTrue(luminance < referenceLuminance);
+    raster.getPixel(15,7,darkPixel);
+    luminance=ImageUtilities.RGB_TO_GRAY_MATRIX[0][0] * darkPixel[0] + ImageUtilities.RGB_TO_GRAY_MATRIX[0][1] * darkPixel[1] + ImageUtilities.RGB_TO_GRAY_MATRIX[0][2] * darkPixel[2];
+    assertTrue(luminance < referenceLuminance);
+    assertFalse(referenceGeometry.equalsExact(poly,TOLERANCE));
+  }
+  finally {
+    if (iter != null) {
+      iter.close();
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    if (cov != null) {
+      try {
+        cov.dispose(true);
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

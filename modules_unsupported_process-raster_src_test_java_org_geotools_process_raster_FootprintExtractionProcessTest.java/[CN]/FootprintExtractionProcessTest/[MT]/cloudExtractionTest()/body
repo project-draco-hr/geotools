@@ -1,0 +1,34 @@
+{
+  GeoTiffReader reader=null;
+  FeatureIterator iter=null;
+  GridCoverage2D cov=null;
+  try {
+    reader=new GeoTiffReader(cloudFile);
+    cov=reader.read(null);
+    SimpleFeatureCollection fc=process.execute(cov,null,10d,false,null,true,true,null,null);
+    assertEquals(1,fc.size());
+    iter=fc.features();
+    SimpleFeature feature=(SimpleFeature)iter.next();
+    MultiPolygon poly=(MultiPolygon)feature.getDefaultGeometry();
+    assertTrue(referenceGeometry.equalsExact(poly,TOLERANCE));
+  }
+  finally {
+    if (iter != null) {
+      iter.close();
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    if (cov != null) {
+      try {
+        cov.dispose(true);
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
