@@ -1,0 +1,75 @@
+{
+  if (inputImage != null) {
+    if (inputImage instanceof PlanarImage) {
+      PlanarImage planarImage=(PlanarImage)inputImage;
+      final int nSources=planarImage.getNumSources();
+      if (nSources > 0) {
+        for (int k=0; k < nSources; k++) {
+          Object source=null;
+          try {
+            source=planarImage.getSourceObject(k);
+          }
+ catch (          ArrayIndexOutOfBoundsException e) {
+          }
+          if (source != null) {
+            if (source instanceof PlanarImage) {
+              disposeImage((PlanarImage)source);
+            }
+ else             if (source instanceof BufferedImage) {
+              ((BufferedImage)source).flush();
+              source=null;
+            }
+          }
+        }
+      }
+ else {
+        Object imageReader=inputImage.getProperty(ImageReadDescriptor.PROPERTY_NAME_IMAGE_READER);
+        if ((imageReader != null) && (imageReader instanceof ImageReader)) {
+          final ImageReader reader=(ImageReader)imageReader;
+          final ImageInputStream stream=(ImageInputStream)reader.getInput();
+          try {
+            stream.close();
+          }
+ catch (          Throwable e) {
+          }
+          try {
+            reader.dispose();
+          }
+ catch (          Throwable e) {
+          }
+        }
+      }
+      final Object roi=inputImage.getProperty("ROI");
+      if ((roi != null) && ((roi instanceof ROI) || (roi instanceof RenderedImage))) {
+        if (roi instanceof ROI) {
+          ROI roiImage=(ROI)roi;
+          Rectangle bounds=roiImage.getBounds();
+          if (!(bounds.isEmpty())) {
+            PlanarImage image=roiImage.getAsImage();
+            if (image != null) {
+              image.dispose();
+              image=null;
+              roiImage=null;
+            }
+          }
+        }
+ else {
+          PlanarImage roiImage=PlanarImage.wrapRenderedImage((RenderedImage)roi);
+          roiImage.dispose();
+          roiImage=null;
+        }
+      }
+      if (inputImage instanceof PlanarImage) {
+        ((PlanarImage)inputImage).dispose();
+      }
+ else       if (inputImage instanceof BufferedImage) {
+        ((BufferedImage)inputImage).flush();
+        inputImage=null;
+      }
+    }
+ else     if (inputImage instanceof BufferedImage) {
+      ((BufferedImage)inputImage).flush();
+      inputImage=null;
+    }
+  }
+}
