@@ -9,8 +9,17 @@
     assertEquals(1,fc.size());
     iter=fc.features();
     SimpleFeature feature=iter.next();
-    MultiPolygon geometry=(MultiPolygon)feature.getDefaultGeometry();
+    Geometry geometry=(Geometry)feature.getDefaultGeometry();
     assertTrue(referenceGeometry.equalsExact(geometry,TOLERANCE));
+    final File wktFile=TestData.temp(this,"cloudWkt.wkt");
+    final File wkbFile=TestData.temp(this,"cloudWkb.wkb");
+    final File shapeFile=TestData.temp(this,"cloudShape.shp");
+    CoordinateReferenceSystem crs=reader.getCoordinateReferenceSystem();
+    writeGeometry(WritingFormat.WKT,geometry,wktFile,crs);
+    writeGeometry(WritingFormat.WKB,geometry,wkbFile,crs);
+    writeGeometry(WritingFormat.SHAPEFILE,geometry,shapeFile,crs);
+    assertTrue(referenceGeometry.equalsExact(wktRead(wktFile),TOLERANCE));
+    assertTrue(referenceGeometry.equalsExact(wkbRead(wkbFile),TOLERANCE));
   }
   finally {
     if (iter != null) {
