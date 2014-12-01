@@ -1,0 +1,75 @@
+{
+  int sampleDataType=-1;
+  RandomIter iter=null;
+  RenderedImage inputRI=null;
+  try {
+    if (inGeodata != null) {
+      inputRI=inGeodata.getRenderedImage();
+    }
+ else {
+      inputRI=inputRenderedImage;
+    }
+    inputRI=new DisposeStopper(inputRI);
+    final ImageLayout layout=new ImageLayout(inputRI);
+    RenderingHints localHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    if (hints != null) {
+      localHints.add(hints);
+    }
+    inputRI=computeLuminance(inputRI,localHints);
+    inputRI=prepareMaskingLookup(inputRI,localHints);
+    imagesStack.push(inputRI);
+    iter=RandomIterFactory.create(inputRI,null);
+    if (inGeodata != null) {
+      HashMap<String,Double> regionMap=CoverageUtilities.getRegionParamsFromGridCoverage(inGeodata);
+      imageProperties.init(regionMap,inputRI);
+      xRes=regionMap.get(CoverageUtilities.XRES);
+      yRes=regionMap.get(CoverageUtilities.YRES);
+      gridGeometry=inGeodata.getGridGeometry();
+      crs=inGeodata.getCoordinateReferenceSystem2D();
+    }
+ else {
+      imageProperties.init(inputRI);
+    }
+    sampleDataType=inputRI.getSampleModel().getDataType();
+    bitSet=new DrawableBitSet(imageProperties.width,imageProperties.height);
+    List<Polygon> geometriesList=new ArrayList<Polygon>();
+    final ScanInfo scanInfo=new ScanInfo();
+    identifyGeometries(iter,sampleDataType,geometriesList,scanInfo);
+    scanInfo.isFullyInvalid(geometriesList,inputRI,localHints);
+    geometriesList=validateGeometries(geometriesList);
+    if (noGeometries(geometriesList,scanInfo.fullyInvalid)) {
+      return;
+    }
+    MathTransform transform=null;
+    if (footprintCoordinates == FootprintCoordinates.MODEL_SPACE) {
+      transform=gridGeometry.getGridToCRS(PixelInCell.CELL_CORNER);
+      LinearTransform translation=ProjectiveTransform.createTranslation(2,1);
+      transform=ConcatenatedTransform.create(translation,transform);
+    }
+ else {
+    }
+    double area=0;
+    int polygonIndex=0;
+    int index=0;
+    for (    Polygon polygon : geometriesList) {
+      double polygonArea=polygon.getArea();
+      if (polygonArea > area) {
+        polygonIndex=index;
+        area=polygonArea;
+      }
+      index++;
+    }
+    computeFootprint(geometriesList,transform);
+    computeSimplifiedFootprint(geometriesList,transform,polygonIndex,area);
+  }
+ catch (  Exception ex) {
+    ImageAnalysisResultThdLocal.set(ex);
+    throw ex;
+  }
+ finally {
+    if (iter != null) {
+      iter.done();
+      iter=null;
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  GeoTiffReader reader=null;
+  FeatureIterator iter=null;
+  GridCoverage2D cov=null;
+  try {
+    reader=new GeoTiffReader(cloudFile);
+    cov=reader.read(null);
+    SimpleFeatureCollection fc=process.execute(cov,null,10d,false,null,false,true,null,null);
+    iter=fc.features();
+    SimpleFeature feature=(SimpleFeature)iter.next();
+    Geometry poly=(Geometry)feature.getDefaultGeometry();
+    final int removeCollinearLength=referenceGeometry.getGeometryN(0).getCoordinates().length;
+    assertEquals(133,removeCollinearLength);
+    final int length=poly.getGeometryN(0).getCoordinates().length;
+    assertTrue(length > removeCollinearLength);
+    assertFalse(referenceGeometry.equalsExact(poly,TOLERANCE));
+  }
+  finally {
+    if (iter != null) {
+      iter.close();
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    if (cov != null) {
+      try {
+        cov.dispose(true);
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
