@@ -1,0 +1,37 @@
+{
+  GeoTiffReader reader=null;
+  FeatureIterator<SimpleFeature> iter=null;
+  GridCoverage2D cov=null;
+  try {
+    reader=new GeoTiffReader(islandFile);
+    cov=reader.read(null);
+    List<Range<Integer>> exclusionRanges=new ArrayList<Range<Integer>>();
+    exclusionRanges.add(new Range<Integer>(Integer.class,0,10));
+    exclusionRanges.add(new Range<Integer>(Integer.class,253,255));
+    SimpleFeatureCollection fc=process.execute(cov,exclusionRanges,10d,false,null,true,true,null,null);
+    iter=fc.features();
+    SimpleFeature feature=iter.next();
+    Geometry geometry=(Geometry)feature.getDefaultGeometry();
+    Geometry islandWkt=wktRead(TestData.file(this,"island.wkt"));
+    assertTrue(islandWkt.equalsExact(geometry,TOLERANCE));
+  }
+  finally {
+    if (iter != null) {
+      iter.close();
+    }
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+    if (cov != null) {
+      try {
+        cov.dispose(true);
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
