@@ -16,11 +16,20 @@
     if ("description".equals(name.getLocalPart())) {
       return feature.getAttribute("description");
     }
-    if (KML.styleUrl.equals(name)) {
+    if (KML.styleUrl.getLocalPart().equals(name.getLocalPart())) {
       URI uri=(URI)feature.getAttribute("Style");
       if (uri != null) {
         return styleMap.get(uri);
       }
+    }
+    if ("ExtendedData".equals(name.getLocalPart())) {
+      SimpleFeatureType t=feature.getFeatureType();
+      List<Map.Entry<Name,Object>> attributes=new LinkedList<Map.Entry<Name,Object>>();
+      for (      AttributeDescriptor ad : t.getAttributeDescriptors()) {
+        Object obj=feature.getAttribute(ad.getName());
+        if (!(obj instanceof Geometry))         attributes.add(new AbstractMap.SimpleEntry<Name,Object>(ad.getName(),obj));
+      }
+      return attributes;
     }
   }
   return super.getProperty(object,name);
