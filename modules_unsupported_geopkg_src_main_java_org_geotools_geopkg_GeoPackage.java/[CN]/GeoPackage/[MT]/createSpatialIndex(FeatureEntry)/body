@@ -1,0 +1,23 @@
+{
+  Map<String,String> properties=new HashMap<String,String>();
+  PrimaryKey pk=((JDBCFeatureStore)(dataStore.getFeatureSource(e.getTableName()))).getPrimaryKey();
+  if (pk.getColumns().size() != 1) {
+    throw new IOException("Spatial index only supported for primary key of single column.");
+  }
+  properties.put("t",e.getTableName());
+  properties.put("c",e.getGeometryColumn());
+  properties.put("i",pk.getColumns().get(0).getName());
+  Connection cx;
+  try {
+    cx=connPool.getConnection();
+    try {
+      runScript(SPATIAL_INDEX + ".sql",cx,properties);
+    }
+  finally {
+      cx.close();
+    }
+  }
+ catch (  SQLException ex) {
+    throw new IOException(ex);
+  }
+}
