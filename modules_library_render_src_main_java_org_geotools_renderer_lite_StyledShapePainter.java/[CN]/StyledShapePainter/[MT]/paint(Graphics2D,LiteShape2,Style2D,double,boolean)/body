@@ -13,22 +13,23 @@
       IconStyle2D icoStyle=(IconStyle2D)style;
       Icon icon=icoStyle.getIcon();
       graphics.setComposite(icoStyle.getComposite());
-      float dx=-(float)(icon.getIconWidth() / 2.0 + icoStyle.getDisplacementX());
-      float dy=-(float)(icon.getIconHeight() / 2.0 + icoStyle.getDisplacementY());
+      float dx=-(icon.getIconWidth() * icoStyle.getAnchorPointX()) + icoStyle.getDisplacementX();
+      float dy=-(icon.getIconHeight() * icoStyle.getAnchorPointY()) + icoStyle.getDisplacementY();
       float[] coords=new float[2];
       PathIterator citer=getPathIterator(shape);
-      AffineTransform markAT=new AffineTransform(temp);
+      AffineTransform at=new AffineTransform(temp);
       while (!(citer.isDone())) {
-        citer.currentSegment(coords);
-        markAT.setTransform(temp);
-        double x=coords[0] + dx;
-        double y=coords[1] + dy;
-        markAT.translate(x,y);
-        markAT.rotate(icoStyle.getRotation());
-        graphics.setTransform(markAT);
-        icon.paintIcon(null,graphics,0,0);
-        if (isLabelObstacle) {
-          labelCache.put(new Rectangle2D.Double(x,y,icon.getIconWidth(),icon.getIconHeight()));
+        if (citer.currentSegment(coords) != PathIterator.SEG_MOVETO) {
+          at.setTransform(temp);
+          double x=coords[0] + dx;
+          double y=coords[1] + dy;
+          at.translate(x,y);
+          at.rotate(icoStyle.getRotation());
+          graphics.setTransform(at);
+          icon.paintIcon(null,graphics,0,0);
+          if (isLabelObstacle) {
+            labelCache.put(new Rectangle2D.Double(x,y,icon.getIconWidth(),icon.getIconHeight()));
+          }
         }
         citer.next();
       }
@@ -43,25 +44,26 @@
     MarkStyle2D ms2d=(MarkStyle2D)style;
     Shape transformedShape;
     while (!(citer.isDone())) {
-      citer.currentSegment(coords);
-      transformedShape=ms2d.getTransformedShape(coords[0],coords[1]);
-      if (transformedShape != null) {
-        if (ms2d.getFill() != null) {
-          graphics.setPaint(ms2d.getFill());
-          graphics.setComposite(ms2d.getFillComposite());
-          graphics.fill(transformedShape);
+      if (citer.currentSegment(coords) != PathIterator.SEG_MOVETO) {
+        transformedShape=ms2d.getTransformedShape(coords[0],coords[1]);
+        if (transformedShape != null) {
+          if (ms2d.getFill() != null) {
+            graphics.setPaint(ms2d.getFill());
+            graphics.setComposite(ms2d.getFillComposite());
+            graphics.fill(transformedShape);
+          }
+          if (ms2d.getContour() != null) {
+            graphics.setPaint(ms2d.getContour());
+            graphics.setStroke(ms2d.getStroke());
+            graphics.setComposite(ms2d.getContourComposite());
+            graphics.draw(transformedShape);
+          }
+          if (isLabelObstacle) {
+            labelCache.put(transformedShape.getBounds2D());
+          }
         }
-        if (ms2d.getContour() != null) {
-          graphics.setPaint(ms2d.getContour());
-          graphics.setStroke(ms2d.getStroke());
-          graphics.setComposite(ms2d.getContourComposite());
-          graphics.draw(transformedShape);
-        }
-        if (isLabelObstacle) {
-          labelCache.put(transformedShape.getBounds2D());
-        }
-        citer.next();
       }
+      citer.next();
     }
   }
  else   if (style instanceof GraphicStyle2D) {
@@ -69,9 +71,13 @@
     PathIterator iter=getPathIterator(shape);
     iter.currentSegment(coords);
     GraphicStyle2D gs2d=(GraphicStyle2D)style;
+    BufferedImage image=gs2d.getImage();
+    double dx=gs2d.getDisplacementX() - gs2d.getAnchorPointX() * image.getWidth();
+    double dy=gs2d.getDisplacementY() - gs2d.getAnchorPointY() * image.getHeight();
     while (!(iter.isDone())) {
-      iter.currentSegment(coords);
-      renderImage(graphics,coords[0],coords[1],gs2d.getImage(),gs2d.getRotation(),gs2d.getOpacity(),isLabelObstacle);
+      if (iter.currentSegment(coords) != PathIterator.SEG_MOVETO) {
+        renderImage(graphics,coords[0],coords[1],dx,dy,image,gs2d.getRotation(),gs2d.getOpacity(),isLabelObstacle);
+      }
       iter.next();
     }
   }

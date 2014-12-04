@@ -1,0 +1,33 @@
+{
+  if (LOGGER.isLoggable(Level.FINEST)) {
+    LOGGER.finest("drawing Image @" + x + ","+ y);
+  }
+  AffineTransform markAT=new AffineTransform();
+  if (ROUND_ICON_COORDS && rotation == 0) {
+    long tx=Math.round(x + dx);
+    long ty=Math.round(y + dy);
+    markAT.translate(tx,ty);
+  }
+ else {
+    markAT.translate(x,y);
+    markAT.rotate(rotation);
+    markAT.translate(dx,dy);
+  }
+  if (isLabelObstacle) {
+    int w=Math.max(image.getWidth() * 1,1);
+    int h=Math.max(image.getHeight() * 1,1);
+    labelCache.put(new Rectangle2D.Double(x + dx,y + dy,w,h));
+  }
+  graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,opacity));
+  Object interpolation=graphics.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+  if (interpolation == null) {
+    interpolation=RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+  }
+  try {
+    graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+    graphics.drawRenderedImage(image,markAT);
+  }
+  finally {
+    graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,interpolation);
+  }
+}

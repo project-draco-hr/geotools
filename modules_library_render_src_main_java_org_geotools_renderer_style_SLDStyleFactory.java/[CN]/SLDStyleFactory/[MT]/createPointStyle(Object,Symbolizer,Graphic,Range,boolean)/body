@@ -4,9 +4,17 @@
   Composite composite=AlphaComposite.getInstance(AlphaComposite.SRC_OVER,opacity);
   float displacementX=0;
   float displacementY=0;
-  if (sldGraphic.getDisplacement() != null) {
-    displacementX=evalToFloat(sldGraphic.getDisplacement().getDisplacementX(),feature,0f);
-    displacementY=evalToFloat(sldGraphic.getDisplacement().getDisplacementY(),feature,0f);
+  Displacement displacement=sldGraphic.getDisplacement();
+  if (displacement != null) {
+    displacementX=evalToFloat(displacement.getDisplacementX(),feature,0f);
+    displacementY=evalToFloat(displacement.getDisplacementY(),feature,0f);
+  }
+  float anchorPointX=0.5f;
+  float anchorPointY=0.5f;
+  AnchorPoint anchorPoint=sldGraphic.getAnchorPoint();
+  if (anchorPoint != null) {
+    anchorPointX=evalToFloat(anchorPoint.getAnchorPointX(),feature,0.5f);
+    anchorPointY=evalToFloat(anchorPoint.getAnchorPointY(),feature,0.5f);
   }
   double size=0;
   try {
@@ -44,7 +52,7 @@
           continue;
         }
  else         if (icon instanceof ImageIcon) {
-          GraphicStyle2D g2d=getGraphicStyle(eg,(Feature)feature,size,1);
+          GraphicStyle2D g2d=getGraphicStyle(eg,feature,size,1);
           if (g2d == null) {
             continue;
           }
@@ -57,15 +65,15 @@
         }
  else {
           if (icon.getIconHeight() != size && size != 0) {
-            double scale=((double)size) / icon.getIconHeight();
+            double scale=(size) / icon.getIconHeight();
             icon=new RescaledIcon(icon,scale);
           }
-          retval=new IconStyle2D(icon,feature,displacementX,displacementY,rotation,composite);
+          retval=new IconStyle2D(icon,feature,composite);
           break;
         }
       }
  else {
-        GraphicStyle2D g2d=getGraphicStyle(eg,(Feature)feature,size,1);
+        GraphicStyle2D g2d=getGraphicStyle(eg,feature,size,1);
         if (g2d != null) {
           g2d.setRotation(rotation);
           g2d.setOpacity(opacity);
@@ -78,12 +86,18 @@
       if (LOGGER.isLoggable(Level.FINER)) {
         LOGGER.finer("rendering mark @ PointRenderer " + symbol.toString());
       }
-      retval=createMarkStyle((Mark)symbol,feature,symbolizer,size,rotation);
+      retval=createMarkStyle((Mark)symbol,feature,symbolizer,size);
       break;
     }
   }
   if (retval != null) {
     setScaleRange(retval,scaleRange);
+    PointStyle2D ps=(PointStyle2D)retval;
+    ps.setDisplacementX(displacementX);
+    ps.setDisplacementY(displacementY);
+    ps.setAnchorPointX(anchorPointX);
+    ps.setAnchorPointY(anchorPointY);
+    ps.setRotation(rotation);
   }
  else {
     StyleFactory sf=CommonFactoryFinder.getStyleFactory();
@@ -91,7 +105,7 @@
     if (size <= 0) {
       size=6;
     }
-    retval=createMarkStyle(defaultMark,feature,symbolizer,size,rotation);
+    retval=createMarkStyle(defaultMark,feature,symbolizer,size);
   }
   return retval;
 }
