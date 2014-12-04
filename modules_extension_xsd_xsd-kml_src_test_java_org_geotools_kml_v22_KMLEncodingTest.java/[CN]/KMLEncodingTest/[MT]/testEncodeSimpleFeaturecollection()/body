@@ -1,0 +1,34 @@
+{
+  GeometryFactory geomFactory=new GeometryFactory();
+  DefaultFeatureCollection collection=new DefaultFeatureCollection("internal",null);
+  SimpleFeatureType type=DataUtilities.createType("location","geom:Point,attr1:String,attr2:Integer");
+  Point point1=geomFactory.createPoint(new Coordinate(40,50));
+  Point point2=geomFactory.createPoint(new Coordinate(30,45));
+  Point point3=geomFactory.createPoint(new Coordinate(35,46));
+  collection.add(SimpleFeatureBuilder.build(type,new Object[]{point1,"first feat.",17},null));
+  collection.add(SimpleFeatureBuilder.build(type,new Object[]{point2,"feature #2",24},null));
+  collection.add(SimpleFeatureBuilder.build(type,new Object[]{point3,"third feature",42},null));
+  Encoder encoder=new Encoder(new KMLConfiguration());
+  Document kmlDoc=encoder.encodeAsDOM(collection,KML.kml);
+  assertTrue(KML.kml.getLocalPart().equals(kmlDoc.getFirstChild().getLocalName()));
+  assertTrue(KML.NAMESPACE.equals(kmlDoc.getFirstChild().getNamespaceURI()));
+  Node docNode=kmlDoc.getFirstChild().getChildNodes().item(0);
+  assertTrue(KML.Document.getLocalPart().equals(docNode.getLocalName()));
+  Attr docId=(Attr)docNode.getAttributes().getNamedItem("id");
+  assertTrue("internal".equals(docId.getValue()));
+  Node Placemark1=docNode.getChildNodes().item(0);
+  Node Placemark2=docNode.getChildNodes().item(1);
+  Node Placemark3=docNode.getChildNodes().item(2);
+  assertTrue(KML.Placemark.getLocalPart().equals(Placemark1.getLocalName()));
+  assertTrue(KML.Placemark.getLocalPart().equals(Placemark2.getLocalName()));
+  assertTrue(KML.Placemark.getLocalPart().equals(Placemark3.getLocalName()));
+  Node extData1=Placemark1.getChildNodes().item(0);
+  assertTrue(KML.ExtendedData.getLocalPart().equals(extData1.getLocalName()));
+  Node data1=extData1.getChildNodes().item(0), data2=extData1.getChildNodes().item(1);
+  assertTrue(KML.Data.getLocalPart().equals(data1.getLocalName()));
+  assertTrue(KML.Data.getLocalPart().equals(data2.getLocalName()));
+  Attr attrName1=(Attr)data1.getAttributes().getNamedItem(KML.name.getLocalPart());
+  Attr attrName2=(Attr)data2.getAttributes().getNamedItem(KML.name.getLocalPart());
+  assertTrue("attr1".equals(attrName1.getValue()));
+  assertTrue("attr2".equals(attrName2.getValue()));
+}
