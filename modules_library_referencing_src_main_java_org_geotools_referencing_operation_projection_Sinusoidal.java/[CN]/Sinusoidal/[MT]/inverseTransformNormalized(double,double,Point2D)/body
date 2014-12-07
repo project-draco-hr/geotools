@@ -1,0 +1,29 @@
+{
+  double phi;
+  double lam;
+  if (isSpherical) {
+    phi=y;
+    lam=x / cos(y);
+  }
+ else {
+    phi=inv_mlfn(y);
+    double s=Math.abs(phi);
+    if (s < HALFPI) {
+      s=sin(phi);
+      lam=x * sqrt(1. - excentricitySquared * s * s) / cos(phi);
+    }
+ else     if ((s - EPS10) < HALFPI) {
+      lam=0.;
+    }
+ else {
+      throw new ProjectionException(ErrorKeys.TOLERANCE_ERROR);
+    }
+  }
+  if (ptDst != null) {
+    ptDst.setLocation(lam,phi);
+    return ptDst;
+  }
+ else {
+    return new Point2D.Double(lam,phi);
+  }
+}
