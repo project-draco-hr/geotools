@@ -1,0 +1,25 @@
+{
+  GeometryHeader h=new GeometryHeader();
+  byte[] buf=new byte[4];
+  input.read(buf);
+  h.setFlags(new GeometryHeaderFlags((byte)buf[3]));
+  ByteOrderDataInStream din=new ByteOrderDataInStream(input);
+  din.setOrder(h.getFlags().getEndianess());
+  h.setSrid(din.readInt());
+  if (h.getFlags().getEnvelopeIndicator() != EnvelopeType.NONE) {
+    double x1=din.readDouble();
+    double x2=din.readDouble();
+    double y1=din.readDouble();
+    double y2=din.readDouble();
+    if (h.getFlags().getEnvelopeIndicator().getValue() > 1) {
+      din.readDouble();
+      din.readDouble();
+    }
+    if (h.getFlags().getEnvelopeIndicator().getValue() > 3) {
+      din.readDouble();
+      din.readDouble();
+    }
+    h.setEnvelope(new Envelope(x1,x2,y1,y2));
+  }
+  return h;
+}
