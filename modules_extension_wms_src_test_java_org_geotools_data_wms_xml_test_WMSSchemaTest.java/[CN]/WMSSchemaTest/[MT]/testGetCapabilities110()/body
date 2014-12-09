@@ -1,0 +1,31 @@
+{
+  File getCaps=TestData.file(this,"1.1.0Capabilities.xml");
+  URL getCapsURL=getCaps.toURI().toURL();
+  Map hints=new HashMap();
+  hints.put(DocumentHandler.DEFAULT_NAMESPACE_HINT_KEY,WMSSchema.getInstance());
+  Object object=DocumentFactory.getInstance(getCapsURL.openStream(),hints,Level.WARNING);
+  assertTrue("Capabilities failed to parse",object instanceof WMSCapabilities);
+  WMSCapabilities capabilities=(WMSCapabilities)object;
+  assertEquals(capabilities.getVersion(),"1.1.0");
+  assertEquals(capabilities.getService().getName(),"OGC:WMS");
+  assertEquals(capabilities.getService().getTitle(),"GMap WMS Demo Server");
+  assertTrue(capabilities.getService().get_abstract().contains("This demonstration server was setup by DM Solutions Group"));
+  assertEquals(capabilities.getService().getOnlineResource(),new URL("http://dev1.dmsolutions.ca/cgi-bin/mswms_gmap?"));
+  assertEquals(capabilities.getRequest().getGetCapabilities().getFormats().get(0),"application/vnd.ogc.wms_xml");
+  Layer topLayer=(Layer)capabilities.getLayerList().get(0);
+  assertNotNull(topLayer);
+  assertNull(topLayer.getParent());
+  assertFalse(topLayer.isQueryable());
+  assertEquals(topLayer.getTitle(),"GMap WMS Demo Server");
+  assertEquals(topLayer.getSrs().size(),4);
+  Attribution attribution=topLayer.getAttribution();
+  assertNotNull(attribution);
+  assertEquals(attribution.getTitle(),"test");
+  assertEquals(attribution.getOnlineResource().toString(),"http://www.example.com");
+  LogoURL logoURL=attribution.getLogoURL();
+  assertNotNull(logoURL);
+  assertEquals(logoURL.getFormat(),"image/png");
+  assertEquals(logoURL.getOnlineResource().toString(),"http://www.osgeo.org/sites/all/themes/osgeo/logo.png");
+  assertEquals(logoURL.getHeight(),100);
+  assertEquals(logoURL.getWidth(),100);
+}
