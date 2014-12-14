@@ -14,21 +14,15 @@
     System.err.println("Output file parent directory does not exist, and cannot be created: " + outputParent.getPath());
     System.exit(-2);
   }
-  CssParser parser=Parboiled.createParser(CssParser.class);
-  String css=FileUtils.readFileToString(input);
   long start=System.currentTimeMillis();
-  ParsingResult<Stylesheet> result=new ReportingParseRunner<Stylesheet>(parser.StyleSheet()).run(css);
-  if (result.hasErrors()) {
-    System.err.println(ErrorUtils.printParseErrors(result));
-    System.exit(-3);
-  }
+  String css=FileUtils.readFileToString(input);
+  Stylesheet styleSheet=CssParser.parse(css);
   java.util.logging.ConsoleHandler handler=new java.util.logging.ConsoleHandler();
   handler.setLevel(java.util.logging.Level.FINE);
   org.geotools.util.logging.Logging.getLogger("org.geotools.styling.css").setLevel(java.util.logging.Level.FINE);
   org.geotools.util.logging.Logging.getLogger("org.geotools.styling.css").addHandler(handler);
-  Stylesheet ss=result.parseTreeRoot.getValue();
   CssTranslator translator=new CssTranslator();
-  Style style=translator.translate(ss);
+  Style style=translator.translate(styleSheet);
   StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
   StyledLayerDescriptor sld=styleFactory.createStyledLayerDescriptor();
   NamedLayer layer=styleFactory.createNamedLayer();
