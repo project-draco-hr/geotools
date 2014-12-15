@@ -1,15 +1,34 @@
 {
   String widthName=attrs.getValue("width");
+  int width;
   if (widthName == null || widthName.length() == 0) {
-    throw new SAXException("LogoURL element contains no 'width' attribute");
+    width=0;
+  }
+ else {
+    width=Integer.parseInt(widthName);
   }
   String heightName=attrs.getValue("height");
+  int height;
   if (heightName == null || heightName.length() == 0) {
-    throw new SAXException("LogoURL element contains no 'height' attribute");
+    height=0;
   }
-  int width=Integer.parseInt(widthName);
-  int height=Integer.parseInt(heightName);
-  URL url=(URL)value[1].getValue();
-  String format=(String)(((Object[])value[0].getValue())[0]);
+ else {
+    height=Integer.parseInt(heightName);
+  }
+  int length=Math.min(elems.length,value.length);
+  URL url=null;
+  String format=null;
+  for (int i=0; i < length; i++) {
+    if (value[i].getValue() == null || value[i].getElement() == null) {
+      continue;
+    }
+    if (sameName(elems[0],value[i])) {
+      Object[] formObj=(Object[])value[0].getValue();
+      format=(formObj == null || formObj.length == 0) ? null : (String)(formObj[0]);
+    }
+    if (sameName(elems[1],value[i])) {
+      url=(URL)value[1].getValue();
+    }
+  }
   return new LogoURL(format,url,width,height);
 }
