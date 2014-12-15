@@ -1,0 +1,24 @@
+{
+  UnpackedImageData uid=accessor.getPixels(raster,rect,DataBuffer.TYPE_DOUBLE,false);
+  double[][] doubleData=uid.getDoubleData();
+  int pixelStride=uid.pixelStride * xPeriod;
+  int lineStride=uid.lineStride * yPeriod;
+  int[] offsets=uid.bandOffsets;
+  for (int i=0; i < bands.length; i++) {
+    int b=bands[i];
+    double[] data=doubleData[b];
+    int lineOffset=offsets[b];
+    for (int h=0; h < rect.height; h+=yPeriod) {
+      int pixelOffset=lineOffset;
+      lineOffset+=lineStride;
+      for (int w=0; w < rect.width; w+=xPeriod) {
+        double d=data[pixelOffset];
+        pixelOffset+=pixelStride;
+        if (noData != null && noData.equals(d)) {
+          continue;
+        }
+        handleValue(d,c,i);
+      }
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  if (features == null) {
+    throw new ProcessException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"features"));
+  }
+  if (attribute == null) {
+    throw new ProcessException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"attribute"));
+  }
+  PropertyDescriptor property=features.getSchema().getDescriptor(attribute);
+  if (property == null) {
+    throw new ProcessException("No such feature attribute '" + attribute + "'");
+  }
+  if (!Number.class.isAssignableFrom(property.getType().getBinding())) {
+    throw new ProcessException("Feature attribute '" + attribute + "' is not numeric");
+  }
+  if (classes == null) {
+    classes=10;
+  }
+  if (classes < 1) {
+    throw new ProcessException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"classes",classes));
+  }
+  if (method == null) {
+    method=ClassificationMethod.EQUAL_INTERVAL;
+  }
+  if (stats == null || stats.isEmpty()) {
+    stats=Collections.singleton(Statistic.MEAN);
+  }
+  ClassificationFunction cf=null;
+switch (method) {
+case EQUAL_INTERVAL:
+    cf=new EqualIntervalFunction();
+  break;
+case QUANTILE:
+cf=new QuantileFunction();
+break;
+case NATURAL_BREAKS:
+cf=new JenksNaturalBreaksFunction();
+break;
+default :
+throw new ProcessException("Unknown method: " + method);
+}
+cf.setParameters(Arrays.asList(filterFactory.property(attribute),filterFactory.literal(classes)));
+RangedClassifier rc=(RangedClassifier)cf.evaluate(features);
+List<Range<Double>> ranges=new ArrayList<>();
+StreamingSampleStats[] sampleStats=new StreamingSampleStats[rc.getSize()];
+for (int i=0; i < rc.getSize(); i++) {
+ranges.add(Range.create((Double)rc.getMin(i),true,(Double)rc.getMax(i),i == rc.getSize() - 1));
+StreamingSampleStats s=new StreamingSampleStats(Range.Type.INCLUDE);
+s.setStatistics(stats.toArray(new Statistic[stats.size()]));
+if (noData != null) {
+s.addNoDataValue(noData);
+}
+sampleStats[i]=s;
+}
+FeatureIterator it=features.features();
+try {
+while (it.hasNext()) {
+Feature f=it.next();
+Object val=f.getProperty(attribute).getValue();
+if (val == null) {
+continue;
+}
+Double dubVal=Converters.convert(val,Double.class);
+if (dubVal == null) {
+LOG.warning(String.format("Unable to convert value %s (attribute '%s') to Double, skipping",val,attribute));
+continue;
+}
+int slot=rc.classify(dubVal);
+sampleStats[slot].offer(dubVal);
+}
+}
+  finally {
+it.close();
+}
+return new Results(ranges,sampleStats);
+}
