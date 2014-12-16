@@ -1,0 +1,14 @@
+{
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+  ShapefileDataStore shp=new ShapefileDataStore(setUpShapefile());
+  FeatureEntry entry=new FeatureEntry();
+  geopkg.add(entry,shp.getFeatureSource(),null);
+  assertFalse(geopkg.hasSpatialIndex(entry));
+  geopkg.createSpatialIndex(entry);
+  assertTrue(geopkg.hasSpatialIndex(entry));
+  Set ids=geopkg.searchSpatialIndex(entry,590230.0,4915038.0,590234.0,4915040.0);
+  SimpleFeatureReader sfr=geopkg.reader(entry,ff.id(ids),null);
+  assertTrue(sfr.hasNext());
+  assertEquals("bugsites.1",sfr.next().getID().toString());
+  assertFalse(sfr.hasNext());
+}

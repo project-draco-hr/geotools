@@ -1,0 +1,26 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps=prepare(cx,"SELECT name FROM sqlite_master WHERE type='table' AND name=? ").set(getSpatialIndexName(entry)).log(Level.FINE).statement();
+      try {
+        ResultSet rs=ps.executeQuery();
+        try {
+          return rs.next();
+        }
+  finally {
+          close(rs);
+        }
+      }
+  finally {
+        close(ps);
+      }
+    }
+  finally {
+      close(cx);
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}
