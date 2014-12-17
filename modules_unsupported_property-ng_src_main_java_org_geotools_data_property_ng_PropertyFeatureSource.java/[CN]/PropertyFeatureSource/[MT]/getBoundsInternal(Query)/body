@@ -1,14 +1,17 @@
 {
-  ReferencedEnvelope bounds=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
-  FeatureReader<SimpleFeatureType,SimpleFeature> featureReader=getReaderInternal(query);
-  try {
-    while (featureReader.hasNext()) {
-      SimpleFeature feature=featureReader.next();
-      bounds.include(feature.getBounds());
+  if (query.getFilter() == Filter.INCLUDE) {
+    ReferencedEnvelope bounds=new ReferencedEnvelope(getSchema().getCoordinateReferenceSystem());
+    FeatureReader<SimpleFeatureType,SimpleFeature> featureReader=getReaderInternal(query);
+    try {
+      while (featureReader.hasNext()) {
+        SimpleFeature feature=featureReader.next();
+        bounds.include(feature.getBounds());
+      }
     }
-  }
   finally {
-    featureReader.close();
+      featureReader.close();
+    }
+    return bounds;
   }
-  return bounds;
+  return null;
 }
