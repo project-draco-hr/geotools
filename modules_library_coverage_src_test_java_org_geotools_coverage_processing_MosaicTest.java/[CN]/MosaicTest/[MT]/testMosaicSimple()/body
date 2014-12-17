@@ -8,11 +8,16 @@
   Assert.assertTrue(!hints.containsKey(JAI.KEY_IMAGE_LAYOUT));
   ImageLayout il=new ImageLayout();
   hints.put(JAI.KEY_IMAGE_LAYOUT,il);
+  il.setTileHeight(TILE_SIZE);
+  il.setTileWidth(TILE_SIZE);
   GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param,hints);
   Envelope2D expected=coverage1.getEnvelope2D();
   expected.include(coverage2.getEnvelope2D());
   Envelope2D actual=mosaic.getEnvelope2D();
   assertEqualBBOX(expected,actual);
+  RenderedImage renderedImage=mosaic.getRenderedImage();
+  Assert.assertTrue(renderedImage.getTileHeight() == TILE_SIZE);
+  Assert.assertTrue(renderedImage.getTileWidth() == TILE_SIZE);
   double initialRes=calculateResolution(coverage1);
   double finalRes=calculateResolution(mosaic);
   double percentual=Math.abs(initialRes - finalRes) / initialRes;
@@ -30,6 +35,8 @@
   Assert.assertTrue(!layout.isValid(ImageLayout.MIN_Y_MASK));
   Assert.assertTrue(!layout.isValid(ImageLayout.WIDTH_MASK));
   Assert.assertTrue(!layout.isValid(ImageLayout.HEIGHT_MASK));
+  Assert.assertTrue(layout.isValid(ImageLayout.TILE_HEIGHT_MASK));
+  Assert.assertTrue(layout.isValid(ImageLayout.TILE_WIDTH_MASK));
   mosaic.dispose(true);
   disposeCoveragePlanarImage(mosaic);
 }
