@@ -1,0 +1,44 @@
+{
+  String baseName="streams";
+  String typeName="GenStreams";
+  try {
+    DataStore baseDs=TestSetup.REPOSITORY.dataStore("dsStreams");
+    SimpleFeatureSource fs=baseDs.getFeatureSource(baseName);
+    SimpleFeatureCollection fColl=fs.getFeatures();
+    SimpleFeatureIterator iterator=fColl.features();
+    Geometry original=null;
+    try {
+      if (iterator.hasNext()) {
+        original=(Geometry)iterator.next().getDefaultGeometry();
+      }
+    }
+  finally {
+      iterator.close();
+    }
+    double width=original.getEnvelope().getEnvelopeInternal().getWidth();
+    GeneralizationInfosProvider provider=new GeneralizationInfosProviderImpl();
+    GeneralizationInfos ginfos=provider.getGeneralizationInfos("src/test/resources/geninfo_horizontal.xml");
+    PreGeneralizedDataStore ds=new PreGeneralizedDataStore(ginfos,TestSetup.REPOSITORY);
+    fs=ds.getFeatureSource(typeName);
+    Query query=new Query();
+    if (hintKey != null) {
+      Hints hints=new Hints(Hints.GEOMETRY_SIMPLIFICATION,width / 2);
+      query.setHints(hints);
+    }
+    Geometry simplified=null;
+    fColl=fs.getFeatures(query);
+    iterator=fColl.features();
+    try {
+      if (iterator.hasNext())       simplified=(Geometry)iterator.next().getDefaultGeometry();
+    }
+  finally {
+      iterator.close();
+    }
+    return original.getNumPoints() > simplified.getNumPoints();
+  }
+ catch (  IOException ex) {
+    ex.printStackTrace();
+    Assert.fail();
+    return false;
+  }
+}
