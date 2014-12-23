@@ -1,0 +1,46 @@
+{
+  Map<String,Class<?>> result=new HashMap<String,Class<?>>();
+  for (  String header : headers) {
+    result.put(header,Integer.class);
+  }
+  while (csvReader.readRecord()) {
+    String[] record=csvReader.getValues();
+    List<String> values=Arrays.asList(record);
+    if (record.length >= headers.length) {
+      values=values.subList(0,headers.length);
+    }
+    int i=0;
+    for (    String value : values) {
+      String header=headers[i];
+      Class<?> type=result.get(header);
+      if (type == Integer.class) {
+        try {
+          Integer.parseInt(value);
+        }
+ catch (        NumberFormatException e) {
+          try {
+            Double.parseDouble(value);
+            type=Double.class;
+          }
+ catch (          NumberFormatException ex) {
+            type=String.class;
+          }
+        }
+      }
+ else       if (type == Double.class) {
+        try {
+          Double.parseDouble(value);
+        }
+ catch (        NumberFormatException e) {
+          type=String.class;
+        }
+      }
+ else {
+        type=String.class;
+      }
+      result.put(header,type);
+      i++;
+    }
+  }
+  return result;
+}

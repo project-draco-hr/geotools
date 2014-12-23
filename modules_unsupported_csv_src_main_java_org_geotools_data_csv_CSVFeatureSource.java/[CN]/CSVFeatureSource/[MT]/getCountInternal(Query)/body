@@ -1,20 +1,13 @@
 {
-  if (query.getFilter() == Filter.INCLUDE) {
-    CsvReader reader=getDataStore().read();
-    try {
-      boolean connect=reader.readHeaders();
-      if (connect == false) {
-        throw new IOException("Unable to connect");
-      }
-      int count=0;
-      while (reader.readRecord()) {
-        count+=1;
-      }
-      return count;
-    }
-  finally {
-      reader.close();
+  FeatureReader<SimpleFeatureType,SimpleFeature> featureReader=getReader(query);
+  int n=0;
+  try {
+    for (n=0; featureReader.hasNext(); n++) {
+      featureReader.next();
     }
   }
-  return -1;
+  finally {
+    featureReader.close();
+  }
+  return n;
 }

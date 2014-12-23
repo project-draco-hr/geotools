@@ -1,0 +1,31 @@
+{
+  String input=CSVTestStrategySupport.buildInputString("fleem,zoo,morx","3,4,car","8,9.9,cdr");
+  CSVFileState fileState=new CSVFileState(input,"bar");
+  CSVStrategy strategy=new CSVSpecifiedLatLngStrategy(fileState,"fleem","zoo");
+  SimpleFeatureType featureType=strategy.getFeatureType();
+  assertEquals("Invalid attribute count",2,featureType.getAttributeCount());
+  List<AttributeDescriptor> attrs=featureType.getAttributeDescriptors();
+  CSVTestStrategySupport.verifyType(attrs.get(0),String.class);
+  CSVTestStrategySupport.verifyType(attrs.get(1),Point.class);
+  CSVIterator iterator=strategy.iterator();
+  assertTrue("next value not read",iterator.hasNext());
+  SimpleFeature feature=iterator.next();
+  assertNull("Unexpected property",feature.getAttribute("fleem"));
+  assertNull("Unexpected property",feature.getAttribute("zoo"));
+  assertEquals("Invalid feature property","car",feature.getAttribute("morx"));
+  assertNotNull("Missing geometry",feature.getDefaultGeometry());
+  assertTrue("next value not read",iterator.hasNext());
+  feature=iterator.next();
+  assertNull("Unexpected property",feature.getAttribute("fleem"));
+  assertNull("Unexpected property",feature.getAttribute("zoo"));
+  assertEquals("Invalid feature property","cdr",feature.getAttribute("morx"));
+  assertNotNull("Missing geometry",feature.getDefaultGeometry());
+  assertFalse("extra next value",iterator.hasNext());
+  try {
+    iterator.next();
+    fail("NoSuchElementException should have been thrown");
+  }
+ catch (  NoSuchElementException e) {
+    assertTrue(true);
+  }
+}
