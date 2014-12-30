@@ -1,0 +1,34 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps=cx.prepareStatement(String.format("SELECT definition FROM %s WHERE srs_id = ?",SPATIAL_REF_SYS));
+      try {
+        ResultSet rs=prepare(ps).set(srid).log(Level.FINE).statement().executeQuery();
+        try {
+          if (rs.next()) {
+            try {
+              return CRS.parseWKT(rs.getString("definition"));
+            }
+ catch (            FactoryException e) {
+              LOGGER.log(Level.FINE,"Error parsing CRS definitions!",e);
+            }
+          }
+        }
+  finally {
+          close(rs);
+        }
+      }
+  finally {
+        close(ps);
+      }
+    }
+  finally {
+      close(cx);
+    }
+  }
+ catch (  SQLException e) {
+    throw new RuntimeException(e);
+  }
+  return null;
+}
