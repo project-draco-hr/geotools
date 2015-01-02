@@ -1,0 +1,16 @@
+{
+  SimpleFeatureSource fs=store3d.getFeatureSource("road3");
+  Query q=new Query("road3",Filter.INCLUDE);
+  assertEquals(2,fs.getCount(q));
+  ReferencedEnvelope bounds=new ReferencedEnvelope3D(0,30,0,30,0,20,fs.getSchema().getCoordinateReferenceSystem());
+  assertEquals(bounds,fs.getBounds());
+  assertEquals(bounds,fs.getBounds(q));
+  SimpleFeatureCollection features=fs.getFeatures();
+  assertEquals(2,features.size());
+  SimpleFeatureIterator i=features.features();
+  for (SimpleFeature feature=i.next(); i.hasNext(); feature=i.next()) {
+    Property p=feature.getProperty("geom");
+    assertTrue(p.getType() instanceof GeometryType);
+    assertTrue(p.getValue() instanceof Geometry);
+  }
+}
