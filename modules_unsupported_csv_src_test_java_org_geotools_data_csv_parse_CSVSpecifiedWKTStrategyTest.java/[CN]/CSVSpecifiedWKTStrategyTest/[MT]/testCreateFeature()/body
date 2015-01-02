@@ -1,0 +1,19 @@
+{
+  String input=CSVTestStrategySupport.buildInputString("fleem,zoo,morx","foo,POINT(3.14 1.59),car");
+  CSVFileState fileState=new CSVFileState(input,"bar");
+  CSVStrategy strategy=new CSVSpecifiedWKTStrategy(fileState,"zoo");
+  SimpleFeatureType featureType=strategy.getFeatureType();
+  assertEquals("Invalid attribute count",3,featureType.getAttributeCount());
+  CSVTestStrategySupport.verifyType(featureType.getDescriptor("fleem"),String.class);
+  CSVTestStrategySupport.verifyType(featureType.getDescriptor("zoo"),Geometry.class);
+  CSVTestStrategySupport.verifyType(featureType.getDescriptor("morx"),String.class);
+  CSVIterator iterator=strategy.iterator();
+  SimpleFeature feature=iterator.next();
+  assertEquals("Invalid feature property","foo",feature.getAttribute("fleem"));
+  assertEquals("Invalid feature property","car",feature.getAttribute("morx"));
+  assertNotNull("Expected geometry",feature.getDefaultGeometry());
+  Point point=(Point)feature.getAttribute("zoo");
+  Coordinate coordinate=point.getCoordinate();
+  assertEquals("Invalid x coordinate",coordinate.x,3.14,0.1);
+  assertEquals("Invalid y coordinate",coordinate.y,1.59,0.1);
+}

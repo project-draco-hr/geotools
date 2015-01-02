@@ -1,0 +1,27 @@
+{
+  String[] headers;
+  Map<String,Class<?>> typesFromData;
+  CsvReader csvReader=null;
+  try {
+    csvReader=csvFileState.openCSVReader();
+    headers=csvReader.getHeaders();
+    typesFromData=CSVStrategySupport.findMostSpecificTypesFromData(csvReader,headers);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+ finally {
+    if (csvReader != null) {
+      csvReader.close();
+    }
+  }
+  SimpleFeatureTypeBuilder builder=CSVStrategySupport.createBuilder(csvFileState,headers,typesFromData);
+  Class<?> latClass=typesFromData.get(latField);
+  Class<?> lngClass=typesFromData.get(lngField);
+  if (CSVStrategySupport.isNumeric(latClass) && CSVStrategySupport.isNumeric(lngClass)) {
+    builder.remove(latField);
+    builder.remove(lngField);
+    builder.add(pointField,Point.class);
+  }
+  return builder.buildFeatureType();
+}

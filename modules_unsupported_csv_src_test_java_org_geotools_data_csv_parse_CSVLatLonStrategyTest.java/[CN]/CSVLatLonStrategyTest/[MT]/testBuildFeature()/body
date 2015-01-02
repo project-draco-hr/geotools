@@ -1,0 +1,30 @@
+{
+  String input=CSVTestStrategySupport.buildInputString("lat,lon,fleem,zoo","3,4,car,cdr","8,9,blub,frob");
+  CSVFileState fileState=new CSVFileState(input,"bar");
+  CSVLatLonStrategy strategy=new CSVLatLonStrategy(fileState);
+  CSVIterator iterator=strategy.iterator();
+  assertTrue("next value not read",iterator.hasNext());
+  SimpleFeature feature=iterator.next();
+  Point geometry=(Point)feature.getDefaultGeometry();
+  Coordinate coordinate=geometry.getCoordinate();
+  assertEquals("Invalid point",3,coordinate.y,0.1);
+  assertEquals("Invalid point",4,coordinate.x,0.1);
+  assertEquals("Invalid feature property","car",feature.getAttribute("fleem").toString());
+  assertEquals("Invalid feature property","cdr",feature.getAttribute("zoo").toString());
+  assertTrue("next value not read",iterator.hasNext());
+  feature=iterator.next();
+  geometry=(Point)feature.getDefaultGeometry();
+  coordinate=geometry.getCoordinate();
+  assertEquals("Invalid point",8,coordinate.y,0.1);
+  assertEquals("Invalid point",9,coordinate.x,0.1);
+  assertEquals("Invalid feature property","blub",feature.getAttribute("fleem").toString());
+  assertEquals("Invalid feature property","frob",feature.getAttribute("zoo").toString());
+  assertFalse("extra next value",iterator.hasNext());
+  try {
+    iterator.next();
+    fail("NoSuchElementException should have been thrown");
+  }
+ catch (  NoSuchElementException e) {
+    assertTrue(true);
+  }
+}

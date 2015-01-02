@@ -1,0 +1,30 @@
+{
+  SimpleFeatureType featureType=getFeatureType();
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(featureType);
+  GeometryDescriptor geometryDescriptor=featureType.getGeometryDescriptor();
+  String[] headers=csvFileState.getCSVHeaders();
+  for (int i=0; i < headers.length; i++) {
+    String header=headers[i];
+    if (i < csvRecord.length) {
+      String value=csvRecord[i].trim();
+      if (geometryDescriptor != null && header.equals(wktField)) {
+        WKTReader wktReader=new WKTReader();
+        Geometry geometry;
+        try {
+          geometry=wktReader.read(value);
+        }
+ catch (        ParseException e) {
+          geometry=null;
+        }
+        builder.set(wktField,geometry);
+      }
+ else {
+        builder.set(header,value);
+      }
+    }
+ else {
+      builder.set(header,null);
+    }
+  }
+  return builder.buildFeature(csvFileState.getTypeName() + "-" + recordId);
+}

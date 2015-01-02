@@ -1,0 +1,33 @@
+{
+  CSVFileState csvFileState=new CSVFileState(file,namespace);
+  Object strategyParam=STRATEGYP.lookUp(params);
+  CSVStrategy csvStrategy=null;
+  if (strategyParam != null) {
+    String strategyString=strategyParam.toString();
+    if (strategyString.equalsIgnoreCase("guess")) {
+      csvStrategy=new CSVLatLonStrategy(csvFileState);
+    }
+ else     if (strategyString.equalsIgnoreCase("specify")) {
+      Object latParam=LATFIELDP.lookUp(params);
+      Object lngParam=LnGFIELDP.lookUp(params);
+      if (latParam == null || lngParam == null) {
+        throw new IllegalArgumentException("'specify' csv strategy selected, but lat/lng params both not specified");
+      }
+      csvStrategy=new CSVSpecifiedLatLngStrategy(csvFileState,latParam.toString(),lngParam.toString());
+    }
+ else     if (strategyString.equalsIgnoreCase("wkt")) {
+      Object wktParam=WKTP.lookUp(params);
+      if (wktParam == null) {
+        throw new IllegalArgumentException("'wkt' csv strategy selected, but wktField param not specified");
+      }
+      csvStrategy=new CSVSpecifiedWKTStrategy(csvFileState,wktParam.toString());
+    }
+ else {
+      csvStrategy=new CSVAttributesOnlyStrategy(csvFileState);
+    }
+  }
+ else {
+    csvStrategy=new CSVAttributesOnlyStrategy(csvFileState);
+  }
+  return new CSVDataStore(csvFileState,csvStrategy);
+}
