@@ -1,4 +1,6 @@
 {
+  int maxCombinations=getMaxCombinations(stylesheet);
+  TranslationMode mode=getTranslationMode(stylesheet);
   List<CssRule> allRules=stylesheet.getRules();
   if (LOGGER.isLoggable(Level.FINE)) {
     LOGGER.fine("Starting with " + allRules.size() + "  rules in the stylesheet");
@@ -14,9 +16,7 @@
     Map<String,List<CssRule>> typenameRules=organizeByTypeName(rules);
     for (    Map.Entry<String,List<CssRule>> entry : typenameRules.entrySet()) {
       FeatureTypeStyleBuilder ftsBuilder=styleBuilder.featureTypeStyle();
-      if (!exclusiveRulesEnabled) {
-        ftsBuilder.option(FeatureTypeStyle.KEY_EVALUATION_MODE,FeatureTypeStyle.VALUE_EVALUATION_MODE_FIRST);
-      }
+      ftsBuilder.option(FeatureTypeStyle.KEY_EVALUATION_MODE,FeatureTypeStyle.VALUE_EVALUATION_MODE_FIRST);
       String featureTypeName=entry.getKey();
       List<CssRule> localRules=entry.getValue();
       if (featureTypeName != null) {
@@ -46,7 +46,7 @@
         LOGGER.fine("Generated " + combinedRules.size() + " combined rules after filtered power set expansion");
       }
       DomainCoverage coverage=new DomainCoverage(targetFeatureType,cachedSimplifier);
-      coverage.exclusiveRulesEnabled=exclusiveRulesEnabled;
+      coverage.exclusiveRulesEnabled=(mode == TranslationMode.Exclusive);
       for (int i=0; i < combinedRules.size(); i++) {
         CssRule cssRule=combinedRules.get(i);
         if (!cssRule.hasSymbolizerProperty()) {
