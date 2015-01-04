@@ -1,6 +1,7 @@
 {
   int maxCombinations=getMaxCombinations(stylesheet);
   TranslationMode mode=getTranslationMode(stylesheet);
+  int autoThreshold=getAutoThreshold(stylesheet);
   List<CssRule> allRules=stylesheet.getRules();
   if (LOGGER.isLoggable(Level.FINE)) {
     LOGGER.fine("Starting with " + allRules.size() + "  rules in the stylesheet");
@@ -42,12 +43,28 @@
       RulePowerSetBuilder builder=new RulePowerSetBuilder(flattenedRules,cachedSimplifier,maxCombinations);
       List<CssRule> combinedRules=builder.buildPowerSet();
       Collections.sort(combinedRules,CssRuleComparator.DESCENDING);
+      int rulesCount=combinedRules.size();
       if (LOGGER.isLoggable(Level.FINE)) {
-        LOGGER.fine("Generated " + combinedRules.size() + " combined rules after filtered power set expansion");
+        LOGGER.fine("Generated " + rulesCount + " combined rules after filtered power set expansion");
       }
       DomainCoverage coverage=new DomainCoverage(targetFeatureType,cachedSimplifier);
-      coverage.exclusiveRulesEnabled=(mode == TranslationMode.Exclusive);
-      for (int i=0; i < combinedRules.size(); i++) {
+      if (mode == TranslationMode.Exclusive) {
+        coverage.exclusiveRulesEnabled=true;
+      }
+ else       if (mode == TranslationMode.Auto) {
+        if (rulesCount < autoThreshold) {
+          LOGGER.fine("Sticking to Exclusive translation mode, rules number is " + rulesCount + " with a threshold of "+ autoThreshold);
+          coverage.exclusiveRulesEnabled=true;
+        }
+ else {
+          LOGGER.info("Switching to Simple translation mode, rules number is " + rulesCount + " with a threshold of "+ autoThreshold);
+          coverage.exclusiveRulesEnabled=false;
+        }
+      }
+ else {
+        coverage.exclusiveRulesEnabled=false;
+      }
+      for (int i=0; i < rulesCount; i++) {
         CssRule cssRule=combinedRules.get(i);
         if (!cssRule.hasSymbolizerProperty()) {
           continue;
@@ -55,7 +72,7 @@
         if (LOGGER.isLoggable(Level.FINE)) {
           LOGGER.fine("Current domain coverage: " + coverage);
           LOGGER.fine("Adding rule to domain coverage: " + cssRule);
-          LOGGER.fine("Rules left to process: " + (combinedRules.size() - i));
+          LOGGER.fine("Rules left to process: " + (rulesCount - i));
         }
         List<CssRule> derivedRules=coverage.addRule(cssRule);
         if (LOGGER.isLoggable(Level.FINE)) {
