@@ -14,7 +14,7 @@
  else {
       DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
       FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(query);
-      writer=new DiffContentFeatureWriter(this,state.getDiff(),reader);
+      writer=state.diffWriter(this,reader);
     }
   }
  else {
@@ -29,8 +29,8 @@
     }
   }
   if (!canLock()) {
-    LockingManager lockingManager=getDataStore().getLockingManager();
-    writer=((InProcessLockingManager)lockingManager).checkedWriter(writer,transaction);
+    InProcessLockingManager lockingManager=(InProcessLockingManager)getDataStore().getLockingManager();
+    writer=lockingManager.checkedWriter(writer,transaction);
   }
   return writer;
 }
