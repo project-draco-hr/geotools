@@ -3,9 +3,19 @@
   query=resolvePropertyNames(query);
   FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
   if (!canTransact() && transaction != null && transaction != Transaction.AUTO_COMMIT) {
-    DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
-    FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(query);
-    writer=new DiffContentFeatureWriter(this,state.getDiff(),reader);
+    if ((flags | WRITER_COMMIT) == WRITER_COMMIT) {
+      writer=getWriterInternal(query,flags);
+      if (!canFilter()) {
+        if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE) {
+          writer=new FilteringFeatureWriter(writer,query.getFilter());
+        }
+      }
+    }
+ else {
+      DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
+      FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReader(query);
+      writer=state.diffWriter(this,reader);
+    }
   }
  else {
     writer=getWriterInternal(query,flags);
@@ -17,10 +27,10 @@
         writer=new FilteringFeatureWriter(writer,query.getFilter());
       }
     }
-    if (!canLock()) {
-      LockingManager lockingManager=getDataStore().getLockingManager();
-      writer=((InProcessLockingManager)lockingManager).checkedWriter(writer,transaction);
-    }
+  }
+  if (!canLock()) {
+    InProcessLockingManager lockingManager=(InProcessLockingManager)getDataStore().getLockingManager();
+    writer=lockingManager.checkedWriter(writer,transaction);
   }
   return writer;
 }
