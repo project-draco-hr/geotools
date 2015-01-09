@@ -1,8 +1,32 @@
 {
   ImageOutputStream out=null;
   final GridCoverage2D gc1=rescaleCoverage(gc);
-  final GridCoverage2D gc2=gc1.geophysics(false);
-  final RenderedImage image=gc2.getRenderedImage();
+  final GridCoverage2D gc2=gc1;
+  RenderedImage image=gc2.getRenderedImage();
+  ColorModel cm=image.getColorModel();
+  SampleModel sm=image.getSampleModel();
+  if (!(cm instanceof IndexColorModel)) {
+    ImageLayout layout=ImageUtilities.getImageLayout(image);
+    cm=ColorUtilities.getIndexColorModel(new int[]{0});
+    int sourceType=sm.getDataType();
+    sm=cm.createCompatibleSampleModel(layout.getTileWidth(image),layout.getTileHeight(image));
+    int targetType=sm.getDataType();
+    MathTransform1D transform=LinearTransform1D.create(1,9999);
+    layout.setColorModel(cm).setSampleModel(sm);
+    ParameterBlock param=new ParameterBlock().addSource(image);
+    RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    hints.put(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE);
+    hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP,Boolean.FALSE);
+    try {
+      LookupTableJAI table=LookupTableFactory.create(sourceType,targetType,new MathTransform1D[]{transform});
+      String operation="Lookup";
+      param=param.add(table);
+      image=JAI.create(operation,param,hints);
+    }
+ catch (    TransformException e) {
+      LOGGER.severe(e.getLocalizedMessage());
+    }
+  }
   if (dest instanceof File) {
     final File file=new File((File)dest,new StringBuffer(name).append(".GIF").toString());
     out=ImageIOExt.createImageOutputStream(image,file);
