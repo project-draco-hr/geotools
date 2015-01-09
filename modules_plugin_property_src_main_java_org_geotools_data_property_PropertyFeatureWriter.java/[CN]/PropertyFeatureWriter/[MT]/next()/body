@@ -3,21 +3,20 @@
     throw new IOException("Writer has been closed");
   }
   String fid=null;
-  SimpleFeatureType type=reader.type;
   try {
     if (hasNext()) {
-      reader.next();
-      fid=reader.getFeatureID();
-      Object values[]=new Object[reader.getAttributeCount()];
-      for (int i=0; i < reader.getAttributeCount(); i++) {
-        values[i]=reader.read(i);
+      delegate.next();
+      fid=delegate.fid;
+      Object values[]=new Object[type.getAttributeCount()];
+      for (int i=0; i < type.getAttributeCount(); i++) {
+        values[i]=delegate.read(i);
       }
       origional=SimpleFeatureBuilder.build(type,values,fid);
       live=SimpleFeatureBuilder.copy(origional);
       return live;
     }
  else {
-      fid=type.getTypeName() + "." + (nextFid++);
+      fid=type.getTypeName() + "." + System.currentTimeMillis();
       Object values[]=DataUtilities.defaultValues(type);
       origional=null;
       live=SimpleFeatureBuilder.build(type,values,fid);

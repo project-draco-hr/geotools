@@ -1,0 +1,16 @@
+{
+  CoordinateReferenceSystem world=CRS.decode("EPSG:4326");
+  CoordinateReferenceSystem local=CRS.decode("EPSG:3005");
+  SimpleFeatureSource road=store.getFeatureSource("road");
+  SimpleFeatureType origionalType=road.getSchema();
+  Query query=new Query("road",Filter.INCLUDE,new String[]{"geom","name"});
+  query.setCoordinateSystem(local);
+  query.setCoordinateSystemReproject(world);
+  SimpleFeatureCollection features=road.getFeatures(query);
+  SimpleFeatureType resultType=features.getSchema();
+  assertNotNull(resultType);
+  assertNotSame(resultType,origionalType);
+  assertEquals(world,resultType.getCoordinateReferenceSystem());
+  GeometryDescriptor geometryDescriptor=resultType.getGeometryDescriptor();
+  assertTrue(Geometry.class.isAssignableFrom(geometryDescriptor.getType().getBinding()));
+}
