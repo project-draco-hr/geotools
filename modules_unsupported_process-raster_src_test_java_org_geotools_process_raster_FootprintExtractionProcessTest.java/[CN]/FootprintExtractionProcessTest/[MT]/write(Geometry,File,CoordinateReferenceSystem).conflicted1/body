@@ -1,45 +1,12 @@
 {
-  final SimpleFeatureTypeBuilder featureTypeBuilder=new SimpleFeatureTypeBuilder();
-  featureTypeBuilder.setName("raster2vector");
-  featureTypeBuilder.setCRS(crs);
-  featureTypeBuilder.add(THE_GEOM,Polygon.class);
-  featureTypeBuilder.add("cat",Integer.class);
-  SimpleFeatureType featureType=featureTypeBuilder.buildFeatureType();
-  final ListFeatureCollection collection=new ListFeatureCollection(featureType);
-  final String typeName=featureType.getTypeName();
-  final SimpleFeatureBuilder featureBuilder=new SimpleFeatureBuilder(featureType);
-  final Object[] values=new Object[]{geometry,0};
-  featureBuilder.addAll(values);
-  final SimpleFeature feature=featureBuilder.buildFeature(typeName + '.' + 0);
-  collection.add(feature);
-  final DataStoreFactorySpi factory=new ShapefileDataStoreFactory();
-  final Map<String,Serializable> params=new HashMap<String,Serializable>();
-  params.put(CREATE_SPATIAL_INDEX,Boolean.TRUE);
-  params.put("url",DataUtilities.fileToURL(outputFile));
-  final ShapefileDataStore ds=(ShapefileDataStore)factory.createNewDataStore(params);
-  ds.createSchema(featureType);
-  if (crs != null) {
-    ds.forceSchemaCRS(crs);
+  final WKBWriter wkbWriter=new WKBWriter(2);
+  final OutputStream outputStream=new FileOutputStream(outputFile);
+  final BufferedOutputStream bufferedStream=new BufferedOutputStream(outputStream);
+  final OutStream outStream=new OutputStreamOutStream(bufferedStream);
+  try {
+    wkbWriter.write(geometry,outStream);
   }
-  Transaction transaction=new DefaultTransaction("create");
-  FeatureSource source=ds.getFeatureSource(ds.getTypeNames()[0]);
-  if (source instanceof FeatureStore) {
-    FeatureStore store=(FeatureStore)source;
-    store.setTransaction(transaction);
-    try {
-      store.addFeatures(collection);
-      transaction.commit();
-    }
- catch (    Exception e) {
-      transaction.rollback();
-    }
- finally {
-      try {
-        transaction.close();
-      }
- catch (      IOException ioe) {
-      }
-    }
+  finally {
+    IOUtils.closeQuietly(bufferedStream);
   }
-  ds.dispose();
 }
