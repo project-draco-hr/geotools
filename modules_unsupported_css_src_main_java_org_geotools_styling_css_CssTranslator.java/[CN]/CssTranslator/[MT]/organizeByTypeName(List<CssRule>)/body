@@ -8,15 +8,13 @@
   if (typeNames.size() == 1 && typeNames.contains(TypeName.DEFAULT)) {
     result.put(TypeName.DEFAULT.name,rules);
   }
- else {
-    typeNames.remove(TypeName.DEFAULT);
-  }
   for (  TypeName tn : typeNames) {
     List<CssRule> typeNameRules=new ArrayList<>();
     for (    CssRule rule : rules) {
-      Selector combined=Selector.and(tn,rule.getSelector(),null);
-      if (combined != Selector.REJECT) {
-        typeNameRules.add(new CssRule(combined,rule.getProperties(),rule.getComment()));
+      TypeNameSimplifier simplifier=new TypeNameSimplifier(tn);
+      Selector simplified=(Selector)rule.getSelector().accept(simplifier);
+      if (simplified != Selector.REJECT) {
+        typeNameRules.add(new CssRule(simplified,rule.getProperties(),rule.getComment()));
       }
     }
     result.put(tn.name,typeNameRules);

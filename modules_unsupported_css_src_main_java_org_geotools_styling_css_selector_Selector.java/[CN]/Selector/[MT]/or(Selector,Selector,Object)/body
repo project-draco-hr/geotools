@@ -1,0 +1,35 @@
+{
+  if (s1 instanceof Reject) {
+    return s2;
+  }
+ else   if (s2 instanceof Reject) {
+    return s1;
+  }
+  if (s1 instanceof Accept || s2 instanceof Accept) {
+    return ACCEPT;
+  }
+  List<Selector> selectors=new ArrayList<>();
+  flatten(selectors,s1,Or.class);
+  flatten(selectors,s2,Or.class);
+  Map<Class,List<Selector>> classifieds=mapByClass(selectors);
+  if (classifieds.get(Accept.class) != null) {
+    return ACCEPT;
+  }
+  classifieds.remove(Reject.class);
+  List<Selector> finalList=new ArrayList<>();
+  for (  Class c : classifieds.keySet()) {
+    List<Selector> list=classifieds.get(c);
+    if (list != null) {
+      finalList.addAll(list);
+    }
+  }
+  if (finalList.size() == 0) {
+    return REJECT;
+  }
+ else   if (finalList.size() == 1) {
+    return finalList.get(0);
+  }
+ else {
+    return new Or(finalList);
+  }
+}
