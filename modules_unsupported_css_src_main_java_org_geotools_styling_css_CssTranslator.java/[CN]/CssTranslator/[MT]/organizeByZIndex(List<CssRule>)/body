@@ -1,24 +1,25 @@
 {
-  TreeSet<Integer> indexes=new TreeSet<>(new ZIndexComparator());
-  for (  CssRule rule : rules) {
-    Set<Integer> ruleIndexes=rule.getZIndexes();
-    indexes.addAll(ruleIndexes);
+  TreeSet<Integer> indexes=getZIndexesForRules(rules);
+  Map<Integer,List<CssRule>> result=new HashMap<>();
+  if (indexes.size() == 1) {
+    result.put(indexes.first(),rules);
   }
-  List<List<CssRule>> result=new ArrayList<>();
-  int symbolizerPropertyCount=0;
-  for (  Integer index : indexes) {
-    List<CssRule> rulesByIndex=new ArrayList<>();
-    for (    CssRule rule : rules) {
-      CssRule subRule=rule.getSubRuleByZIndex(index);
-      if (subRule != null) {
-        if (subRule.hasSymbolizerProperty()) {
-          symbolizerPropertyCount++;
+ else {
+    int symbolizerPropertyCount=0;
+    for (    Integer index : indexes) {
+      List<CssRule> rulesByIndex=new ArrayList<>();
+      for (      CssRule rule : rules) {
+        CssRule subRule=rule.getSubRuleByZIndex(index);
+        if (subRule != null) {
+          if (subRule.hasSymbolizerProperty()) {
+            symbolizerPropertyCount++;
+          }
+          rulesByIndex.add(subRule);
         }
-        rulesByIndex.add(subRule);
       }
-    }
-    if (symbolizerPropertyCount > 0) {
-      result.add(rulesByIndex);
+      if (symbolizerPropertyCount > 0) {
+        result.put(index,rulesByIndex);
+      }
     }
   }
   return result;

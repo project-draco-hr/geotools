@@ -9,7 +9,7 @@
       int zIndexPosition=it.nextIndex();
       Integer nextZIndex=it.next();
       if (nextZIndex == NO_Z_INDEX) {
-        zProperties.put(entry.getKey(),props);
+        zProperties.put(entry.getKey(),new ArrayList<>(props));
       }
  else       if (!nextZIndex.equals(zIndex)) {
         continue;
@@ -36,7 +36,17 @@
     }
   }
   if (zProperties.size() > 0) {
-    return new CssRule(this.getSelector(),zProperties,this.getComment());
+    if (zIndex != null && zIndexes.contains(zIndex)) {
+      List<Property> rootProperties=zProperties.get(PseudoClass.ROOT);
+      if (rootProperties == null) {
+        rootProperties=new ArrayList<>();
+        zProperties.put(PseudoClass.ROOT,rootProperties);
+      }
+      rootProperties.add(new Property("z-index",Arrays.asList((Value)new Value.Literal(String.valueOf(zIndex)))));
+    }
+    CssRule zRule=new CssRule(this.getSelector(),zProperties,this.getComment());
+    zRule.ancestry=Arrays.asList(this);
+    return zRule;
   }
  else {
     return null;
