@@ -1,7 +1,10 @@
 {
   Style2D retval=null;
   float opacity=evalOpacity(sldGraphic.getOpacity(),feature);
-  Composite composite=AlphaComposite.getInstance(AlphaComposite.SRC_OVER,opacity);
+  Composite composite=getComposite(symbolizer.getOptions(),opacity);
+  if (composite == null) {
+    composite=AlphaComposite.getInstance(AlphaComposite.SRC_OVER,opacity);
+  }
   float displacementX=0;
   float displacementY=0;
   Displacement displacement=sldGraphic.getDisplacement();
@@ -58,7 +61,6 @@
           }
  else {
             g2d.setRotation(rotation);
-            g2d.setOpacity(opacity);
             retval=g2d;
             break;
           }
@@ -68,7 +70,7 @@
             double scale=(size) / icon.getIconHeight();
             icon=new RescaledIcon(icon,scale);
           }
-          retval=new IconStyle2D(icon,feature,composite);
+          retval=new IconStyle2D(icon,feature);
           break;
         }
       }
@@ -76,7 +78,6 @@
         GraphicStyle2D g2d=getGraphicStyle(eg,feature,size,1);
         if (g2d != null) {
           g2d.setRotation(rotation);
-          g2d.setOpacity(opacity);
           retval=g2d;
           break;
         }
@@ -90,16 +91,7 @@
       break;
     }
   }
-  if (retval != null) {
-    setScaleRange(retval,scaleRange);
-    PointStyle2D ps=(PointStyle2D)retval;
-    ps.setDisplacementX(displacementX);
-    ps.setDisplacementY(displacementY);
-    ps.setAnchorPointX(anchorPointX);
-    ps.setAnchorPointY(anchorPointY);
-    ps.setRotation(rotation);
-  }
- else {
+  if (retval == null) {
     StyleFactory sf=CommonFactoryFinder.getStyleFactory();
     Mark defaultMark=sf.mark(ff.literal("square"),sf.fill(null,ff.literal("#808080"),null),sf.createStroke(ff.literal("#000000"),ff.literal(1)));
     if (size <= 0) {
@@ -107,5 +99,13 @@
     }
     retval=createMarkStyle(defaultMark,feature,symbolizer,size);
   }
+  setScaleRange(retval,scaleRange);
+  PointStyle2D ps=(PointStyle2D)retval;
+  ps.setDisplacementX(displacementX);
+  ps.setDisplacementY(displacementY);
+  ps.setAnchorPointX(anchorPointX);
+  ps.setAnchorPointY(anchorPointY);
+  ps.setRotation(rotation);
+  ps.setComposite(composite);
   return retval;
 }

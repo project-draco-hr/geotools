@@ -5,6 +5,7 @@
   List<Rule> elseRuleList;
   LiteFeatureTypeStyle lfts;
   BufferedImage image;
+  boolean foundComposite=false;
   for (  FeatureTypeStyle fts : featureStyles) {
     if (typeDescription == null || typeDescription.toString().indexOf(fts.getFeatureTypeName()) == -1)     continue;
     rules=fts.rules();
@@ -21,12 +22,15 @@
       }
     }
     if ((ruleList.isEmpty()) && (elseRuleList.isEmpty()))     continue;
-    if (result.isEmpty() || !isOptimizedFTSRenderingEnabled()) {
+    Composite composite=SLDStyleFactory.getComposite(fts.getOptions());
+    foundComposite|=composite != null;
+    if (!foundComposite && (result.isEmpty() || !isOptimizedFTSRenderingEnabled())) {
       lfts=new LiteFeatureTypeStyle(graphics,ruleList,elseRuleList,fts.getTransformation());
     }
  else {
       lfts=new LiteFeatureTypeStyle(new DelayedBackbufferGraphic(graphics,screenSize),ruleList,elseRuleList,fts.getTransformation());
     }
+    lfts.composite=composite;
     if (FeatureTypeStyle.VALUE_EVALUATION_MODE_FIRST.equals(fts.getOptions().get(FeatureTypeStyle.KEY_EVALUATION_MODE))) {
       lfts.matchFirst=true;
     }
