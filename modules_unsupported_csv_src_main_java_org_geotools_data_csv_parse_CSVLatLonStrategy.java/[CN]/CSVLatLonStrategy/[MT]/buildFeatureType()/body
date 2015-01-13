@@ -5,7 +5,7 @@
   try {
     csvReader=csvFileState.openCSVReader();
     headers=csvReader.getHeaders();
-    typesFromData=CSVStrategySupport.findMostSpecificTypesFromData(csvReader,headers);
+    typesFromData=CSVStrategy.findMostSpecificTypesFromData(csvReader,headers);
   }
  catch (  IOException e) {
     throw new RuntimeException(e);
@@ -15,7 +15,7 @@
       csvReader.close();
     }
   }
-  SimpleFeatureTypeBuilder builder=CSVStrategySupport.createBuilder(csvFileState,headers,typesFromData);
+  SimpleFeatureTypeBuilder builder=CSVStrategy.createBuilder(csvFileState,headers,typesFromData);
   boolean validLat=false;
   boolean validLon=false;
   String latSpelling=null;
@@ -24,19 +24,25 @@
     Class<?> type=typesFromData.get(col);
     if (isLatitude(col)) {
       latSpelling=col;
-      if (CSVStrategySupport.isNumeric(type)) {
+      if (CSVStrategy.isNumeric(type)) {
         validLat=true;
       }
     }
  else     if (isLongitude(col)) {
       lonSpelling=col;
-      if (CSVStrategySupport.isNumeric(type)) {
+      if (CSVStrategy.isNumeric(type)) {
         validLon=true;
       }
     }
   }
   if (validLat && validLon) {
-    builder.add(GEOMETRY_COLUMN,Point.class);
+    List<String> csvHeaders=Arrays.asList(headers);
+    int index=csvHeaders.indexOf(latSpelling);
+    AttributeTypeBuilder builder2=new AttributeTypeBuilder();
+    builder2.setCRS(DefaultGeographicCRS.WGS84);
+    builder2.binding(Point.class);
+    AttributeDescriptor descriptor=builder2.buildDescriptor(GEOMETRY_COLUMN);
+    builder.add(index,descriptor);
     builder.remove(latSpelling);
     builder.remove(lonSpelling);
   }

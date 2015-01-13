@@ -1,0 +1,18 @@
+{
+  CSVFileState fileState=new CSVFileState("CITY, NUMBER, YEAR","TEST");
+  CSVStrategy strategy=new CSVAttributesOnlyStrategy(fileState);
+  SimpleFeatureType featureType=strategy.buildFeatureType();
+  assertEquals("TEST",featureType.getName().getLocalPart());
+  assertEquals(3,featureType.getAttributeCount());
+  SimpleFeature feature=SimpleFeatureBuilder.build(featureType,new Object[]{"Trento",140,2002},"TEST-fid1");
+  String[] csvRecord=new String[]{"Trento","140","2002"};
+  SimpleFeature parsed=strategy.decode("fid1",csvRecord);
+  assertEquals(feature,parsed);
+  String[] record=strategy.encode(feature);
+  assertEquals(csvRecord.length,record.length);
+  if (csvRecord.length == record.length) {
+    for (int i=0; i < csvRecord.length; i++) {
+      assertEquals(csvRecord[i],record[i]);
+    }
+  }
+}
