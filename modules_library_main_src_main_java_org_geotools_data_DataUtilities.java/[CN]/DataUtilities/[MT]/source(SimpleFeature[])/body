@@ -6,12 +6,12 @@
  else {
     featureType=featureArray[0].getFeatureType();
   }
-  DataStore arrayStore=new ArrayDataStore(featureArray);
-  String typeName=featureType.getTypeName();
-  try {
-    return arrayStore.getFeatureSource(typeName);
+  ListFeatureCollection collection=new ListFeatureCollection(featureType,featureArray);
+  for (  SimpleFeature feature : collection) {
+    if (feature.getFeatureType() != featureType) {
+      String typeName=featureType.getTypeName();
+      throw new IllegalStateException("Array inconsistent, expected each feature of type  " + typeName);
+    }
   }
- catch (  IOException e) {
-    throw new IllegalStateException("Unable to find " + typeName + " ArrayDataStore in an inconsistent"+ "state",e);
-  }
+  return source(collection);
 }
