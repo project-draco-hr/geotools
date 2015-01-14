@@ -2,13 +2,14 @@
   CoordinateReferenceSystem crs=DefaultGeographicCRS.WGS84;
   GeometryFactory fac=new GeometryFactory();
   Point p=fac.createPoint(new Coordinate(10,10));
-  MemoryDataStore ds=createDatastore(crs,p);
-  FeatureReader<SimpleFeatureType,SimpleFeature> original=ds.getFeatureReader(FEATURE_TYPE_NAME);
-  ForceCoordinateSystemFeatureReader modified=new ForceCoordinateSystemFeatureReader(ds.getFeatureReader(FEATURE_TYPE_NAME),crs);
-  SimpleFeature f1=original.next();
-  SimpleFeature f2=modified.next();
-  assertEquals(f1,f2);
-  assertFalse(original.hasNext());
-  assertFalse(modified.hasNext());
-  assertSame(modified.builder.getFeatureType(),original.getFeatureType());
-}
+  SimpleFeatureCollection features=createTestFeatureCollection(crs,p);
+  FeatureReader<SimpleFeatureType,SimpleFeature> original=DataUtilities.reader(features);
+  try (ForceCoordinateSystemFeatureReader modified=new ForceCoordinateSystemFeatureReader(DataUtilities.reader(features),crs)){
+    SimpleFeature f1=original.next();
+    SimpleFeature f2=modified.next();
+    assertEquals(f1,f2);
+    assertFalse(original.hasNext());
+    assertFalse(modified.hasNext());
+    assertSame(modified.builder.getFeatureType(),original.getFeatureType());
+  }
+ }
