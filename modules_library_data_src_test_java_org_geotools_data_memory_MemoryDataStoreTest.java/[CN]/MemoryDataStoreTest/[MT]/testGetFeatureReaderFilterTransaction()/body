@@ -3,7 +3,6 @@
   SimpleFeatureType type=data.getSchema("road");
   FeatureReader<SimpleFeatureType,SimpleFeature> reader;
   reader=data.getFeatureReader(new DefaultQuery("road",Filter.EXCLUDE),t);
-  assertTrue(reader instanceof EmptyFeatureReader);
   assertEquals(type,reader.getFeatureType());
   assertEquals(0,count(reader));
   reader=data.getFeatureReader(new DefaultQuery("road"),t);
@@ -13,8 +12,7 @@
   reader=data.getFeatureReader(new DefaultQuery("road",rd1Filter),t);
   assertEquals(type,reader.getFeatureType());
   assertEquals(1,count(reader));
-  TransactionStateDiff state=(TransactionStateDiff)t.getState(data);
-  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=state.writer("road",Filter.INCLUDE);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=((ContentFeatureStore)data.getFeatureSource("road",t)).getWriter(Filter.INCLUDE);
   SimpleFeature feature;
   while (writer.hasNext()) {
     feature=writer.next();

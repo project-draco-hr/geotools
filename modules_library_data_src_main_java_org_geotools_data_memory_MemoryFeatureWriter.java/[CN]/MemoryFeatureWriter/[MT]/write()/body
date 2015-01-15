@@ -1,0 +1,31 @@
+{
+  if (contents == null) {
+    throw new IOException("FeatureWriter has been closed");
+  }
+  if (current == null) {
+    throw new IOException("No feature available to write");
+  }
+  if (live != null) {
+    if (live.equals(current)) {
+      live=null;
+      current=null;
+    }
+ else {
+      try {
+        live.setAttributes(current.getAttributes());
+      }
+ catch (      Exception e) {
+        throw new DataSourceException("Unable to accept modifications to " + live.getID() + " on "+ featureType.getTypeName());
+      }
+      ReferencedEnvelope bounds=new ReferencedEnvelope();
+      bounds.expandToInclude(new ReferencedEnvelope(live.getBounds()));
+      bounds.expandToInclude(new ReferencedEnvelope(current.getBounds()));
+      live=null;
+      current=null;
+    }
+  }
+ else {
+    contents.put(current.getID(),current);
+    current=null;
+  }
+}
