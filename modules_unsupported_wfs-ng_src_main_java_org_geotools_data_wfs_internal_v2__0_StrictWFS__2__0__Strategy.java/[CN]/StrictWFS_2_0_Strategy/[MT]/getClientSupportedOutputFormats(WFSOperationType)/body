@@ -1,3 +1,19 @@
 {
-  return null;
+  List<WFSResponseFactory> operationResponseFactories;
+  operationResponseFactories=WFSExtensions.findResponseFactories(operation);
+  List<String> outputFormats=new LinkedList<String>();
+  for (  WFSResponseFactory factory : operationResponseFactories) {
+    List<String> factoryFormats=factory.getSupportedOutputFormats();
+    outputFormats.addAll(factoryFormats);
+  }
+  if (GET_FEATURE.equals(operation)) {
+    for (    String preferred : PREFERRED_FORMATS) {
+      boolean hasFormat=outputFormats.remove(preferred);
+      if (hasFormat) {
+        outputFormats.add(0,preferred);
+        break;
+      }
+    }
+  }
+  return outputFormats;
 }

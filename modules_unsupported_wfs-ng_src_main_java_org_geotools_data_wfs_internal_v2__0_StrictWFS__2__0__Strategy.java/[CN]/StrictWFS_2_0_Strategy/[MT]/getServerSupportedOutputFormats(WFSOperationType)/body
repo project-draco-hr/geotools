@@ -1,15 +1,31 @@
 {
-  OperationsMetadataType omt=this.capabilities.getOperationsMetadata();
-  omt.getOperation();
-  trace("Looking suppoerted output formats for ",operation);
-  List<OperationType> operations=capabilities.getOperationsMetadata().getOperation();
-  for (  OperationType op : operations) {
-    if (!operation.getName().equals(op.getName())) {
-      continue;
-    }
-    for (    Object o : op.getParameter()) {
-      System.out.println(o);
-    }
-  }
-  return null;
+  String parameterName;
+  final Version serviceVersion=getServiceVersion();
+  final boolean wfs1_0=Versions.v1_0_0.equals(serviceVersion);
+switch (operation) {
+case GET_FEATURE:
+    parameterName=wfs1_0 ? "ResultFormat" : "outputFormat";
+  break;
+case DESCRIBE_FEATURETYPE:
+parameterName=wfs1_0 ? "SchemaDescriptionLanguage" : "outputFormat";
+break;
+case GET_FEATURE_WITH_LOCK:
+parameterName=wfs1_0 ? "ResultFormat" : "outputFormat";
+break;
+case TRANSACTION:
+if (wfs1_0) {
+operation=GET_FEATURE;
+parameterName="ResultFormat";
+}
+ else {
+parameterName="inputFormat";
+}
+break;
+default :
+throw new UnsupportedOperationException("not yet implemented for " + operation);
+}
+final OperationType operationMetadata=getOperationMetadata(operation);
+Set<String> serverSupportedFormats;
+serverSupportedFormats=findParameters(operationMetadata,parameterName);
+return serverSupportedFormats;
 }

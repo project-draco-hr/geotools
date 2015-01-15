@@ -1,9 +1,16 @@
 {
-  FeatureTypeType type=typeInfos.get(typeName);
-  Set<String> ret=new HashSet<String>();
-  if (type.getDefaultCRS() != null) {
-    ret.add(type.getDefaultCRS());
+  FeatureTypeInfo featureTypeInfo=getFeatureTypeInfo(typeName);
+  String defaultSRS=featureTypeInfo.getDefaultSRS();
+  List<String> otherSRS=featureTypeInfo.getOtherSRS();
+  Set<String> ftypeCrss=new HashSet<String>();
+  ftypeCrss.add(defaultSRS);
+  ftypeCrss.addAll(otherSRS);
+  final boolean wfs2_0=Versions.v2_0_0.equals(getServiceVersion());
+  if (wfs2_0) {
+    OperationType operationMetadata=getOperationMetadata(GET_FEATURE);
+    final String operationParameter="SrsName";
+    Set<String> globalSrsNames=findParameters(operationMetadata,operationParameter);
+    ftypeCrss.addAll(globalSrsNames);
   }
-  ret.addAll(type.getOtherCRS());
-  return ret;
+  return ftypeCrss;
 }

@@ -1,5 +1,5 @@
 {
-  if (name.getLocalPart().equals("aliases")) {
+  if ("aliases".equalsIgnoreCase(name.getLocalPart())) {
     List aliases=((QueryType)object).getAliases();
     if (aliases.size() == 0)     return null;
     StringBuffer ret=new StringBuffer();
@@ -10,16 +10,20 @@
     }
     return ret.toString();
   }
-  if (name.getLocalPart().equals("typeNames")) {
-    List qNames=((QueryType)object).getTypeNames();
-    if (qNames.size() == 0)     return null;
-    StringBuffer ret=new StringBuffer();
-    for (    Object o : qNames) {
-      QName type=(QName)o;
-      if (ret.length() > 0)       ret.append(",");
-      ret.append(type.getPrefix() + ":" + type.getLocalPart());
+ else   if ("typeNames".equalsIgnoreCase(name.getLocalPart())) {
+    StringBuilder s=new StringBuilder();
+    for (    Object typeName : ((QueryType)object).getTypeNames()) {
+      if (typeName instanceof Collection) {
+        typeName=((Collection)typeName).iterator().next();
+      }
+      s.append(Converters.convert(typeName,String.class));
+      s.append(",");
     }
-    return ret.toString();
+    s.setLength(s.length() - 1);
+    return s.toString();
+  }
+ else   if (("AbstractProjectionClause").equalsIgnoreCase(name.getLocalPart())) {
+    return null;
   }
   return super.getProperty(object,name);
 }

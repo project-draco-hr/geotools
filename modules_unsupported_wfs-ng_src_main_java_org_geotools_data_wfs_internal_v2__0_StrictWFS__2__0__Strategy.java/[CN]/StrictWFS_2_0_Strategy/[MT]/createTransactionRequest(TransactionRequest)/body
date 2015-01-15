@@ -1,3 +1,38 @@
 {
-  return null;
+  final Wfs20Factory factory=Wfs20Factory.eINSTANCE;
+  TransactionType tx=factory.createTransactionType();
+  tx.setService("WFS");
+  tx.setHandle(request.getHandle());
+  tx.setVersion(getVersion());
+  List<TransactionElement> transactionElements=request.getTransactionElements();
+  if (transactionElements.isEmpty()) {
+    requestInfo("Asked to perform transaction with no transaction elements");
+    return tx;
+  }
+  @SuppressWarnings("unchecked") List<AbstractTransactionActionType> actions=tx.getAbstractTransactionAction();
+  try {
+    for (    TransactionElement elem : transactionElements) {
+      AbstractTransactionActionType action=null;
+      if (elem instanceof TransactionRequest.Insert) {
+        action=createInsert(factory,(Insert)elem);
+      }
+ else       if (elem instanceof TransactionRequest.Update) {
+        action=createUpdate(factory,(Update)elem);
+      }
+ else       if (elem instanceof TransactionRequest.Delete) {
+        action=createDelete(factory,(Delete)elem);
+      }
+      actions.add(action);
+    }
+  }
+ catch (  IOException e) {
+    throw e;
+  }
+catch (  RuntimeException re) {
+    throw re;
+  }
+catch (  Exception other) {
+    throw new RuntimeException(other);
+  }
+  return tx;
 }
