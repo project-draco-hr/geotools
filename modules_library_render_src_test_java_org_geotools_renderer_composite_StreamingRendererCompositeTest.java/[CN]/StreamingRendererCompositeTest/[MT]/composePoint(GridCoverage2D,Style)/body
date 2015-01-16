@@ -1,0 +1,21 @@
+{
+  MapContent mc=new MapContent();
+  StyleBuilder sb=new StyleBuilder();
+  Style baseStyle=sb.createStyle(sb.createRasterSymbolizer());
+  mc.addLayer(new GridCoverageLayer(first,baseStyle));
+  RenderedImage referenceImage=first.getRenderedImage();
+  Point midPoint=new Point(new LiteCoordinateSequence(referenceImage.getWidth() / 2d,referenceImage.getHeight() / 2d),GEOMETRY_FACTORY);
+  SimpleFeatureType ft=DataUtilities.createType("test","geom:Point:srid=4326");
+  SimpleFeatureBuilder fb=new SimpleFeatureBuilder(ft);
+  fb.add(midPoint);
+  SimpleFeature pointFeature=fb.buildFeature(null);
+  SimpleFeatureCollection collection=DataUtilities.collection(pointFeature);
+  mc.addLayer(new FeatureLayer(collection,pointStyle));
+  BufferedImage blended=new BufferedImage(referenceImage.getWidth(),referenceImage.getWidth(),BufferedImage.TYPE_4BYTE_ABGR);
+  Graphics2D graphics=blended.createGraphics();
+  StreamingRenderer sr=new StreamingRenderer();
+  sr.setMapContent(mc);
+  sr.paint(graphics,new Rectangle(0,0,referenceImage.getWidth(),referenceImage.getHeight()),ReferencedEnvelope.reference(first.getEnvelope()));
+  graphics.dispose();
+  return blended;
+}

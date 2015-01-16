@@ -1,0 +1,37 @@
+{
+  String spec=options.get(FeatureTypeStyle.COMPOSITE);
+  if (spec == null) {
+    return null;
+  }
+  String name;
+  float opacity=defaultOpacity;
+  if (spec.indexOf(',') != -1) {
+    String[] split=spec.split("\\s*,\\s*");
+    if (split.length != 2) {
+      throw new IllegalArgumentException("Invalid syntax for " + FeatureTypeStyle.COMPOSITE + " key, expecting 'name' or 'name,opacity' but got "+ spec);
+    }
+    name=split[0].trim();
+    boolean invalidOpacity=false;
+    try {
+      opacity=Float.parseFloat(split[1]);
+    }
+ catch (    NumberFormatException e) {
+      invalidOpacity=true;
+    }
+    if (invalidOpacity || opacity < 0 || opacity > 1) {
+      throw new IllegalArgumentException("Invalid value for composite opacity, expecting a number between 0 and 1, but got '" + split[1] + "' instead");
+    }
+  }
+ else {
+    name=spec;
+  }
+  if (ALPHA_COMPOSITE_LOOKUP.containsKey(name)) {
+    Integer rule=ALPHA_COMPOSITE_LOOKUP.get(name);
+    return AlphaComposite.getInstance(rule,opacity);
+  }
+  BlendingMode blend=BlendingMode.lookupByName(name);
+  if (blend == null) {
+    throw new IllegalArgumentException("Invalid composite name, not part of the supported alpha composite ones " + ALPHA_COMPOSITE_LOOKUP.keySet() + ", nor the blending ones "+ BlendingMode.getStandardNames());
+  }
+  return BlendComposite.getInstance(blend,opacity);
+}

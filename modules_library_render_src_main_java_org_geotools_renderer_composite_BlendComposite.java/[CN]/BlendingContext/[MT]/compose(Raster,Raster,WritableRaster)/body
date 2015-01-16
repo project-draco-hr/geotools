@@ -1,0 +1,31 @@
+{
+  int width=Math.min(src.getWidth(),dstIn.getWidth());
+  int height=Math.min(src.getHeight(),dstIn.getHeight());
+  float alpha=composite.getAlpha();
+  int[] pixel=new int[4];
+  RgbaAccessor srcAccessor=getAccessor(src,srcColorModel);
+  RgbaAccessor dstAccessor=getAccessor(dstIn,dstColorModel);
+  for (int y=0; y < height; y++) {
+    srcAccessor.readRow(y);
+    dstAccessor.readRow(y);
+    for (int x=0; x < width; x++) {
+      srcAccessor.getColor(x,pixel);
+      int sr=pixel[0];
+      int sg=pixel[1];
+      int sb=pixel[2];
+      int sa=pixel[3];
+      dstAccessor.getColor(x,pixel);
+      int dr=pixel[0];
+      int dg=pixel[1];
+      int db=pixel[2];
+      int da=pixel[3];
+      composite.getBlend().perform(sr,sg,sb,sa,dr,dg,db,da,pixel);
+      int or=(int)(dr + (pixel[0] - dr) * alpha);
+      int og=(int)(dg + (pixel[1] - dg) * alpha);
+      int ob=(int)(db + (pixel[2] - db) * alpha);
+      int oa=(int)(da + (pixel[3] - da) * alpha);
+      dstAccessor.setColor(x,or,og,ob,oa);
+    }
+    dstAccessor.writeRow(y,dstOut);
+  }
+}

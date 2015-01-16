@@ -1,0 +1,25 @@
+{
+  RgbaAccessor accessor;
+  if (cm instanceof DirectColorModel && cm.getTransferType() == DataBuffer.TYPE_INT) {
+    DirectColorModel dcm=(DirectColorModel)cm;
+    if (dcm.getRedMask() == 0x00FF0000 && dcm.getGreenMask() == 0x0000FF00 && dcm.getBlueMask() == 0x000000FF && (dcm.getNumComponents() == 3 || dcm.getAlphaMask() == 0xFF000000)) {
+      accessor=new IntegerRgbAccessor(raster,cm.hasAlpha());
+    }
+ else     if (dcm.getRedMask() == 0x000000FF && dcm.getGreenMask() == 0x0000FF00 && dcm.getBlueMask() == 0x00FF0000 && (dcm.getNumComponents() == 3 || dcm.getAlphaMask() == 0xFF000000)) {
+      accessor=new IntegerBgrAccessor(raster,cm.hasAlpha());
+    }
+ else {
+      throw new RasterFormatException("Color model " + cm + " is not supported, cannot perform color blending on it");
+    }
+  }
+ else   if (cm instanceof ComponentColorModel && cm.getNumColorComponents() == 3) {
+    accessor=new ByteRgbAccessor(raster,cm.hasAlpha());
+  }
+ else {
+    throw new RasterFormatException("Color model " + cm + " is not supported, cannot perform color blending on it");
+  }
+  if (!cm.isAlphaPremultiplied()) {
+    accessor=new PremultiplyAccessor(accessor);
+  }
+  return accessor;
+}

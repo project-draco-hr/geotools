@@ -2,18 +2,22 @@
   if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("creating rules for scale denominator - " + NumberFormat.getNumberInstance().format(scaleDenominator));
   ArrayList<LiteFeatureTypeStyle> result=new ArrayList<LiteFeatureTypeStyle>();
   LiteFeatureTypeStyle lfts;
+  boolean foundComposite=false;
   for (  FeatureTypeStyle fts : featureStyles) {
     if (isFeatureTypeStyleActive(ftype,fts)) {
       List[] splittedRules=splitRules(fts);
       List ruleList=splittedRules[0];
       List elseRuleList=splittedRules[1];
       if ((ruleList.isEmpty()) && (elseRuleList.isEmpty()))       continue;
-      if (result.isEmpty() || !isOptimizedFTSRenderingEnabled()) {
+      Composite composite=styleFactory.getComposite(fts.getOptions());
+      foundComposite|=composite != null;
+      if (!foundComposite && (result.isEmpty() || !isOptimizedFTSRenderingEnabled())) {
         lfts=new LiteFeatureTypeStyle(graphics,ruleList,elseRuleList,fts.getTransformation());
       }
  else {
         lfts=new LiteFeatureTypeStyle(new DelayedBackbufferGraphic(graphics,screenSize),ruleList,elseRuleList,fts.getTransformation());
       }
+      lfts.composite=composite;
       if (FeatureTypeStyle.VALUE_EVALUATION_MODE_FIRST.equals(fts.getOptions().get(FeatureTypeStyle.KEY_EVALUATION_MODE))) {
         lfts.matchFirst=true;
       }

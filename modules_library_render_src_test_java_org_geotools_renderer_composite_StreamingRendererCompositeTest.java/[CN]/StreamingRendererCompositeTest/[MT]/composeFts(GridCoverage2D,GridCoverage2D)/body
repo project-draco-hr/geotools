@@ -1,0 +1,19 @@
+{
+  MapContent mc=new MapContent();
+  StyleBuilder sb=new StyleBuilder();
+  Style baseStyle=sb.createStyle(sb.createRasterSymbolizer());
+  mc.addLayer(new GridCoverageLayer(first,baseStyle));
+  FeatureTypeStyle compositeFts=sb.createFeatureTypeStyle(sb.createRasterSymbolizer());
+  compositeFts.getOptions().put(FeatureTypeStyle.COMPOSITE,composite);
+  Style compositeStyle=sb.createStyle();
+  compositeStyle.featureTypeStyles().add(compositeFts);
+  mc.addLayer(new GridCoverageLayer(second,compositeStyle));
+  RenderedImage referenceImage=first.getRenderedImage();
+  BufferedImage blended=new BufferedImage(referenceImage.getWidth(),referenceImage.getWidth(),BufferedImage.TYPE_4BYTE_ABGR);
+  Graphics2D graphics=blended.createGraphics();
+  StreamingRenderer sr=new StreamingRenderer();
+  sr.setMapContent(mc);
+  sr.paint(graphics,new Rectangle(0,0,referenceImage.getWidth(),referenceImage.getHeight()),ReferencedEnvelope.reference(first.getEnvelope()));
+  graphics.dispose();
+  return blended;
+}
