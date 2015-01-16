@@ -41,13 +41,20 @@
     bounds=getBoundsInternal(query);
   }
   if (!canReproject()) {
+    CoordinateReferenceSystem sourceCRS=query.getCoordinateSystem();
     CoordinateReferenceSystem targetCRS=query.getCoordinateSystemReproject();
+    CoordinateReferenceSystem nativeCRS=getSchema().getCoordinateReferenceSystem();
+    if (sourceCRS != null && !sourceCRS.equals(nativeCRS)) {
+      bounds=new ReferencedEnvelope(bounds,sourceCRS);
+    }
+ else {
+      sourceCRS=nativeCRS;
+    }
     if (targetCRS != null) {
-      CoordinateReferenceSystem nativeCRS=getSchema().getCoordinateReferenceSystem();
-      if (nativeCRS == null) {
+      if (sourceCRS == null) {
         throw new IOException("Cannot reproject data, the source CRS is not available");
       }
- else       if (!nativeCRS.equals(targetCRS)) {
+ else       if (!sourceCRS.equals(targetCRS)) {
         try {
           bounds=bounds.transform(targetCRS,true);
         }
