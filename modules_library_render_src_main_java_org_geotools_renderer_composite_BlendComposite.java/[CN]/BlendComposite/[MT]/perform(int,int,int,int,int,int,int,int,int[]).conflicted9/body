@@ -1,22 +1,15 @@
 {
-  double usr=sr * 1d / UBYTE_MAX_VALUE;
-  double usg=sg * 1d / UBYTE_MAX_VALUE;
-  double usb=sb * 1d / UBYTE_MAX_VALUE;
-  double usa=sa * 1d / UBYTE_MAX_VALUE;
-  double udr=dr * 1d / UBYTE_MAX_VALUE;
-  double udg=dg * 1d / UBYTE_MAX_VALUE;
-  double udb=db * 1d / UBYTE_MAX_VALUE;
-  double uda=(da > 0 ? da * 1d : 1d) / UBYTE_MAX_VALUE;
-  if (usa > 0) {
-    result[RED]=(int)Math.round(softLight(usr,udr,usa,uda) * UBYTE_MAX_VALUE);
-    result[GREEN]=(int)Math.round(softLight(usg,udg,usa,uda) * UBYTE_MAX_VALUE);
-    result[BLUE]=(int)Math.round(softLight(usb,udb,usa,uda) * UBYTE_MAX_VALUE);
-    result[ALPHA]=(sa + da - ((sa * da + UBYTE_MAX_VALUE) >> SHIFT8));
-  }
- else {
-    result[RED]=dr;
-    result[GREEN]=dg;
-    result[BLUE]=db;
-    result[ALPHA]=da;
-  }
+  int s1a=UBYTE_MAX_VALUE - sa;
+  int d1a=UBYTE_MAX_VALUE - da;
+  int drsa=dr * sa;
+  int dgsa=dg * sa;
+  int dbsa=db * sa;
+  int srda=sr * da;
+  int sgda=sg * da;
+  int sbda=sb * da;
+  int sada=sa * da;
+  result[RED]=(((srda + drsa <= sada) ? sr * d1a + dr * s1a : (sr > 0 ? sa * (srda + drsa - sada) / sr + sr * d1a + dr * s1a + UBYTE_MAX_VALUE : 0)) >> SHIFT8);
+  result[GREEN]=(((sgda + dgsa <= sada) ? sg * d1a + dg * s1a : (sg > 0 ? sa * (sgda + dgsa - sada) / sg + sg * d1a + dg * s1a + UBYTE_MAX_VALUE : 0)) >> SHIFT8);
+  result[BLUE]=(((sbda + dbsa <= sada) ? sb * d1a + db * s1a : (sb > 0 ? sa * (sbda + dbsa - sada) / sb + sb * d1a + db * s1a + UBYTE_MAX_VALUE : 0)) >> SHIFT8);
+  result[ALPHA]=(sa + da - ((sada + UBYTE_MAX_VALUE) >> SHIFT8));
 }
