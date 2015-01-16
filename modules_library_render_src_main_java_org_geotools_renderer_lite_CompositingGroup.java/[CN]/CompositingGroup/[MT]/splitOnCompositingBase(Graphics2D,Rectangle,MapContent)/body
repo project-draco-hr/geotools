@@ -1,0 +1,33 @@
+{
+  List<CompositingGroup> result=new ArrayList<>();
+  List<Layer> layers=new ArrayList<>();
+  for (  Layer layer : mc.layers()) {
+    Style style=layer.getStyle();
+    if (layer instanceof DirectLayer) {
+      layers.add(layer);
+    }
+ else {
+      List<Style> styles=splitOnCompositingBase(style);
+      for (      Style s : styles) {
+        FeatureTypeStyle firstFts=s.featureTypeStyles().get(0);
+        if (isCompositingBase(firstFts) && !layers.isEmpty()) {
+          addToCompositingMapContents(graphics,screenSize,result,layers);
+        }
+        if (s == style) {
+          layers.add(layer);
+        }
+ else {
+          FeatureLayer clone=new FeatureLayer(layer.getFeatureSource(),s);
+          clone.setQuery(layer.getQuery());
+          clone.setVisible(layer.isVisible());
+          clone.setSelected(layer.isSelected());
+          layers.add(clone);
+        }
+      }
+    }
+  }
+  if (!layers.isEmpty()) {
+    addToCompositingMapContents(graphics,screenSize,result,layers);
+  }
+  return result;
+}

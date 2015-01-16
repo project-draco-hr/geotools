@@ -51,22 +51,47 @@
     if (mapContent == null) {
       throw new IllegalStateException("Cannot call paint, you did not set a MapContent in this renderer");
     }
-    labelCache.start();
-    if (labelCache instanceof LabelCacheImpl) {
-      ((LabelCacheImpl)labelCache).setLabelRenderingMode(LabelRenderingMode.valueOf(getTextRenderingMethod()));
-    }
-    final int layersNumber=mapContent.layers().size();
-    for (int i=0; i < layersNumber; i++) {
-      Layer layer=mapContent.layers().get(i);
-      if (!layer.isVisible()) {
-        continue;
+    List<CompositingGroup> compositingGroups=CompositingGroup.splitOnCompositingBase(graphics,paintArea,mapContent);
+    int layerId=0;
+    for (    CompositingGroup compositingGroup : compositingGroups) {
+      MapContent currentMapContent=compositingGroup.mapContent;
+      Graphics2D compositingGraphic=compositingGroup.graphics;
+      labelCache.start();
+      if (labelCache instanceof LabelCacheImpl) {
+        ((LabelCacheImpl)labelCache).setLabelRenderingMode(LabelRenderingMode.valueOf(getTextRenderingMethod()));
       }
-      if (renderingStopRequested) {
-        return;
+      for (      Layer layer : currentMapContent.layers()) {
+        layerId++;
+        if (!layer.isVisible()) {
+          continue;
+        }
+        if (renderingStopRequested) {
+          return;
+        }
+        labelCache.startLayer(String.valueOf(layerId));
+        if (layer instanceof DirectLayer) {
+          RenderingRequest request=new RenderDirectLayerRequest(compositingGraphic,(DirectLayer)layer);
+          try {
+            requests.put(request);
+          }
+ catch (          InterruptedException e) {
+            fireErrorEvent(e);
+          }
+        }
+ else {
+          MapLayer currLayer=new MapLayer(layer);
+          try {
+            processStylers(compositingGraphic,currLayer,worldToScreenTransform,destinationCrs,mapExtent,screenSize,layerId + "");
+          }
+ catch (          Throwable t) {
+            fireErrorEvent(t);
+          }
+        }
+        labelCache.endLayer(String.valueOf(layerId),graphics,screenSize);
       }
-      labelCache.startLayer(i + "");
-      if (layer instanceof DirectLayer) {
-        RenderingRequest request=new RenderDirectLayerRequest(graphics,(DirectLayer)layer);
+      if (compositingGraphic instanceof DelayedBackbufferGraphic) {
+        DelayedBackbufferGraphic delayedGraphic=(DelayedBackbufferGraphic)compositingGraphic;
+        RenderingRequest request=new MargeCompositingGroupRequest(graphics,compositingGroup);
         try {
           requests.put(request);
         }
@@ -74,16 +99,7 @@
           fireErrorEvent(e);
         }
       }
- else {
-        MapLayer currLayer=new MapLayer(layer);
-        try {
-          processStylers(graphics,currLayer,worldToScreenTransform,destinationCrs,mapExtent,screenSize,i + "");
-        }
- catch (        Throwable t) {
-          fireErrorEvent(t);
-        }
-      }
-      labelCache.endLayer(i + "",graphics,screenSize);
+      compositingGroup.mapContent.dispose();
     }
   }
   finally {
