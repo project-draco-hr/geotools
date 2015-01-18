@@ -1,0 +1,26 @@
+{
+  if (csvWriter == null) {
+    throw new IOException("Writer has been closed");
+  }
+  if (this.currentFeature != null) {
+    this.write();
+  }
+  try {
+    if (!appending) {
+      if (iterator.hasNext()) {
+        this.currentFeature=iterator.next();
+        return this.currentFeature;
+      }
+ else {
+        this.appending=true;
+      }
+    }
+    String fid=featureType.getTypeName() + "." + nextRow;
+    Object values[]=DataUtilities.defaultValues(featureType);
+    this.currentFeature=SimpleFeatureBuilder.build(featureType,values,fid);
+    return this.currentFeature;
+  }
+ catch (  IllegalArgumentException invalid) {
+    throw new IOException("Unable to create feature:" + invalid.getMessage(),invalid);
+  }
+}
