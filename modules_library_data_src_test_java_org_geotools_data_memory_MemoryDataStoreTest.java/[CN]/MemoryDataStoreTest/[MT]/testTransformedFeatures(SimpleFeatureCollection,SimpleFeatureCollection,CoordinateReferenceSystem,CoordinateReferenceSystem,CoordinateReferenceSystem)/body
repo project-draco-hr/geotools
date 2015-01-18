@@ -1,0 +1,35 @@
+{
+  CoordinateReferenceSystem targetCRS=nativeCRS;
+  GeometryCoordinateSequenceTransformer transformer=new GeometryCoordinateSequenceTransformer();
+  if (reprojectCRS != null) {
+    targetCRS=reprojectCRS;
+    if (forcedCRS == null) {
+      transformer.setMathTransform(CRS.findMathTransform(nativeCRS,reprojectCRS,true));
+    }
+ else {
+      transformer.setMathTransform(CRS.findMathTransform(forcedCRS,reprojectCRS,true));
+    }
+  }
+ else   if (forcedCRS != null) {
+    targetCRS=forcedCRS;
+  }
+  SimpleFeatureIterator i=sourceFeatures.features();
+  SimpleFeatureIterator j=transformedFeatures.features();
+  while (i.hasNext() && j.hasNext()) {
+    SimpleFeature sourceFeature=i.next();
+    SimpleFeature transformedFeature=j.next();
+    assertEquals(targetCRS,transformedFeature.getFeatureType().getCoordinateReferenceSystem());
+    for (int k=0; k < sourceFeature.getAttributes().size(); k++) {
+      Object o=sourceFeature.getAttributes().get(k);
+      if (o instanceof Geometry) {
+        Geometry sourceGeometry=(Geometry)o;
+        Geometry transformedGeometry=(Geometry)transformedFeature.getAttributes().get(k);
+        Geometry expectedGeometry=(Geometry)sourceGeometry.clone();
+        if (reprojectCRS != null) {
+          expectedGeometry=transformer.transform(expectedGeometry);
+        }
+        assertEquals(expectedGeometry,transformedGeometry);
+      }
+    }
+  }
+}
