@@ -1,0 +1,30 @@
+{
+  final int nnodes=100;
+  Node[] ends=GraphTestUtil.buildNoBifurcations(builder(),nnodes);
+  CountingWalker walker=new CountingWalker();
+  final DijkstraIterator iterator=createIterator();
+  iterator.setSource(ends[0]);
+  BasicGraphTraversal traversal=new BasicGraphTraversal(builder().getGraph(),walker,iterator);
+  traversal.init();
+  traversal.traverse();
+  GraphVisitor visitor=new GraphVisitor(){
+    public int visit(    Graphable component){
+      Iterator related=iterator.getRelated(component);
+      int count=0;
+      int expectedCount=2;
+      if (component.getID() == 0 || component.getID() == nnodes - 1) {
+        expectedCount=1;
+      }
+      while (related.hasNext()) {
+        Graphable relatedComponent=(Graphable)related.next();
+        assertTrue(component.getID() == relatedComponent.getID() - 1 || component.getID() == relatedComponent.getID() + 1);
+        count++;
+      }
+      assertEquals(expectedCount,count);
+      return 0;
+    }
+  }
+;
+  builder().getGraph().visitNodes(visitor);
+  assertTrue(walker.getCount() == nnodes);
+}
