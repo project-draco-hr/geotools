@@ -3,17 +3,17 @@
   SimpleFeatureBuilder builder=new SimpleFeatureBuilder(featureType);
   GeometryDescriptor geometryDescriptor=featureType.getGeometryDescriptor();
   GeometryFactory geometryFactory=new GeometryFactory();
-  Double x=null, y=null;
+  Double lat=null, lng=null;
   String[] headers=csvFileState.getCSVHeaders();
   for (int i=0; i < headers.length; i++) {
     String header=headers[i];
     if (i < csvRecord.length) {
       String value=csvRecord[i].trim();
-      if (geometryDescriptor != null && isLatitude(header)) {
-        y=Double.valueOf(value);
+      if (geometryDescriptor != null && header.equals(latField)) {
+        lat=Double.valueOf(value);
       }
- else       if (geometryDescriptor != null && isLongitude(header)) {
-        x=Double.valueOf(value);
+ else       if (geometryDescriptor != null && header.equals(lngField)) {
+        lng=Double.valueOf(value);
       }
  else {
         builder.set(header,value);
@@ -23,8 +23,8 @@
       builder.set(header,null);
     }
   }
-  if (x != null && y != null && geometryDescriptor != null) {
-    Coordinate coordinate=new Coordinate(x,y);
+  if (geometryDescriptor != null && lat != null && lng != null) {
+    Coordinate coordinate=new Coordinate(lng,lat);
     Point point=geometryFactory.createPoint(coordinate);
     builder.set(geometryDescriptor.getLocalName(),point);
   }
