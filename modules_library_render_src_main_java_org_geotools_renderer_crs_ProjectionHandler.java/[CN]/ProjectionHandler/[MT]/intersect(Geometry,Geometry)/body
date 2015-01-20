@@ -1,6 +1,39 @@
 {
-  if (geometry instanceof GeometryCollection && geometry.getNumGeometries() == 1) {
-    geometry=geometry.getGeometryN(0);
+  if (geometry instanceof GeometryCollection) {
+    if (geometry.getNumGeometries() == 1) {
+      geometry=geometry.getGeometryN(0);
+    }
+ else {
+      List<Geometry> elements=new ArrayList<>();
+      for (int i=0; i < geometry.getNumGeometries(); i++) {
+        Geometry g=geometry.getGeometryN(i);
+        if (g.getEnvelopeInternal().intersects(mask.getEnvelopeInternal())) {
+          Geometry intersected=intersect(g,mask);
+          if (intersected != null) {
+            elements.add(intersected);
+          }
+        }
+      }
+      if (elements.size() == 0) {
+        return null;
+      }
+      if (geometry instanceof MultiPoint) {
+        Point[] array=elements.toArray(new Point[elements.size()]);
+        return geometry.getFactory().createMultiPoint(array);
+      }
+ else       if (geometry instanceof MultiLineString) {
+        LineString[] array=elements.toArray(new LineString[elements.size()]);
+        return geometry.getFactory().createMultiLineString(array);
+      }
+ else       if (geometry instanceof MultiPolygon) {
+        Polygon[] array=elements.toArray(new Polygon[elements.size()]);
+        return geometry.getFactory().createMultiPolygon(array);
+      }
+ else {
+        Geometry[] array=elements.toArray(new Geometry[elements.size()]);
+        return geometry.getFactory().createGeometryCollection(array);
+      }
+    }
   }
   Geometry result;
   try {
