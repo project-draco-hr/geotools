@@ -5,14 +5,26 @@
   if (includedb) {
     params.put(DATABASE.key,db.getProperty(DATABASE.key));
   }
-  params.put(PORT.key,db.getProperty(PORT.key));
+  String instance=db.getProperty(INSTANCE.key);
+  if (instance == null || instance.isEmpty()) {
+    params.put(PORT.key,db.getProperty(PORT.key));
+  }
+ else {
+    params.put(INSTANCE.key,instance);
+  }
   params.put(USER.key,db.getProperty(USER.key));
   String password=db.getProperty(PASSWD.key);
   if (password == null) {
     password=db.getProperty("password");
   }
   params.put(PASSWD.key,password);
-  SQLServerDataStoreFactory factory=new SQLServerDataStoreFactory();
+  SQLServerDataStoreFactory factory=null;
+  if (db.getProperty("driver").equalsIgnoreCase("com.microsoft.sqlserver.jdbc.SQLServerDriver")) {
+    factory=new SQLServerDataStoreFactory();
+  }
+ else {
+    factory=new JTDSSqlServerDataStoreFactory();
+  }
   params.put(DBTYPE.key,factory.getDatabaseID());
   params.put(SQLServerDataStoreFactory.INTSEC.key,false);
   assertTrue(factory.canProcess(params));
