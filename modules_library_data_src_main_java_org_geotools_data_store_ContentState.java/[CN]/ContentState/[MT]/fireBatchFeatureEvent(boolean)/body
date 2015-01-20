@@ -2,23 +2,20 @@
   if (batchFeatureEvent == null) {
     return;
   }
-  if (listeners.isEmpty()) {
-    return;
-  }
   if (isCommit) {
     batchFeatureEvent.setType(Type.COMMIT);
+    this.entry.notifiyFeatureEvent(this,batchFeatureEvent);
   }
  else {
     batchFeatureEvent.setType(Type.ROLLBACK);
-  }
-  for (  FeatureListener listener : listeners) {
-    try {
-      listener.changed(batchFeatureEvent);
+    for (    FeatureListener listener : listeners) {
+      try {
+        listener.changed(batchFeatureEvent);
+      }
+ catch (      Throwable t) {
+        this.entry.dataStore.LOGGER.log(Level.WARNING,"Problem issuing batch feature event " + batchFeatureEvent,t);
+      }
     }
- catch (    Throwable t) {
-      this.entry.dataStore.LOGGER.log(Level.WARNING,"Problem issuing batch feature event " + batchFeatureEvent,t);
-    }
   }
-  this.entry.notifiyFeatureEvent(this,batchFeatureEvent);
   batchFeatureEvent=null;
 }
