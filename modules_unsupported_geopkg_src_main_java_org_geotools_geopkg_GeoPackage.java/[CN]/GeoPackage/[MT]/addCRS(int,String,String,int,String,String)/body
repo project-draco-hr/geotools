@@ -1,0 +1,35 @@
+{
+  try {
+    Connection cx=connPool.getConnection();
+    try {
+      PreparedStatement ps=cx.prepareStatement(String.format("SELECT srs_id FROM %s WHERE srs_id = ?",SPATIAL_REF_SYS));
+      try {
+        ResultSet rs=prepare(ps).set(srid).log(Level.FINE).statement().executeQuery();
+        try {
+          if (rs.next()) {
+            return;
+          }
+        }
+  finally {
+          close(rs);
+        }
+      }
+  finally {
+        close(ps);
+      }
+      ps=cx.prepareStatement(String.format("INSERT INTO %s (srs_id, srs_name, organization, organization_coordsys_id, definition, description) " + "VALUES (?,?,?,?,?,?)",SPATIAL_REF_SYS));
+      try {
+        prepare(ps).set(srid).set(srsName).set(organization).set(organizationCoordSysId).set(definition).set(description).log(Level.FINE).statement().execute();
+      }
+  finally {
+        close(ps);
+      }
+    }
+  finally {
+      close(cx);
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+}
