@@ -5,6 +5,13 @@
   Expression e2=filter.getExpression2();
   checkExpressionIsLiteral(e2);
   ExpressionToSolr visitor=new ExpressionToSolr();
+  AttributeDescriptor spatialAtt=(AttributeDescriptor)e1.evaluate(featureType);
+  if (spatialAtt != null && spatialAtt instanceof GeometryDescriptor) {
+    visitor.setSpatialStrategy(SolrSpatialStrategy.createStrategy((GeometryDescriptor)spatialAtt));
+  }
+ else {
+    LOGGER.warning("Spatial field: " + e1.toString() + " resolved to null or non-spatial");
+  }
   e1.accept(visitor,extraData);
   if (filter instanceof BBOX) {
     output.append(":\"Intersects(");
