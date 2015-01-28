@@ -1,0 +1,20 @@
+{
+  List<String> names=new ArrayList<>();
+  SolrQuery query=new SolrQuery();
+  query.setQuery("*:*");
+  query.addFacetField(field);
+  query.setFacet(true);
+  query.setFacetMinCount(1);
+  query.setFacetSort(FacetParams.FACET_SORT_INDEX);
+  query.setRows(0);
+  query.setParam("omitHeader",true);
+  QueryResponse rsp=solrServer.query(query);
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.log(Level.FINE,"SOLR query done: " + query.toString());
+  }
+  List<Count> uniqueFacetFields=rsp.getFacetFields().get(0).getValues();
+  for (  Count field : uniqueFacetFields) {
+    names.add(field.getName());
+  }
+  return names;
+}

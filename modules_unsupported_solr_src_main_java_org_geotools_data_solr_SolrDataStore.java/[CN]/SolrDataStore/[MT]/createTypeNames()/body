@@ -1,23 +1,11 @@
 {
   try {
     if (typeNames == null || typeNames.isEmpty()) {
-      typeNames=new ArrayList<Name>();
-      SolrQuery query=new SolrQuery();
-      query.setQuery("*:*");
-      query.addFacetField(field);
-      query.setFacet(true);
-      query.setFacetMinCount(1);
-      query.setFacetSort(FacetParams.FACET_SORT_INDEX);
-      query.setRows(0);
-      query.setParam("omitHeader",true);
-      QueryResponse rsp=solrServer.query(query);
-      if (LOGGER.isLoggable(Level.FINE)) {
-        LOGGER.log(Level.FINE,"SOLR query done: " + query.toString());
+      List<Name> names=new ArrayList<>();
+      for (      String name : layerMapper.createTypeNames(solrServer)) {
+        names.add(new NameImpl(namespaceURI,name));
       }
-      List<Count> uniqueFacetFields=rsp.getFacetFields().get(0).getValues();
-      for (      Count field : uniqueFacetFields) {
-        typeNames.add(new NameImpl(namespaceURI,field.getName()));
-      }
+      typeNames=names;
     }
   }
  catch (  Exception ex) {
