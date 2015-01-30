@@ -1,0 +1,27 @@
+{
+  URL testURL=TestData.url(this,"index_palette/");
+  Assert.assertNotNull(testURL);
+  File currentDir=DataUtilities.urlToFile(testURL);
+  final AbstractGridFormat format=TestUtils.getFormat(testURL);
+  ImageMosaicReader reader=TestUtils.getReader(testURL,format);
+  GridCoverage2D coverage=reader.read(null);
+  assertTrue(coverage.getRenderedImage().getColorModel() instanceof IndexColorModel);
+  File props=new File(currentDir,"index_palette.properties");
+  assertTrue(props.exists() && props.canRead() && props.canWrite());
+  String properties=FileUtils.readFileToString(props);
+  assertTrue(properties.contains("ExpandToRGB"));
+  properties=properties.replace("ExpandToRGB=false","ExpandToRGB=true");
+  FileUtils.write(props,properties,false);
+  reader=TestUtils.getReader(testURL,format);
+  coverage=reader.read(null);
+  assertTrue(coverage.getRenderedImage().getColorModel() instanceof ComponentColorModel);
+  IOFileFilter prefixFileFilter=FileFilterUtils.prefixFileFilter("index_palette");
+  IOFileFilter nameFileFilter=FileFilterUtils.nameFileFilter("sample_image");
+  FileFilter ff=FileFilterUtils.or(prefixFileFilter,nameFileFilter);
+  File[] listFiles=currentDir.listFiles(ff);
+  if (listFiles != null && listFiles.length > 0) {
+    for (    File f : listFiles) {
+      FileUtils.deleteQuietly(f);
+    }
+  }
+}
