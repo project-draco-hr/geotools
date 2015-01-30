@@ -5,12 +5,18 @@
     }
  else {
       List<Geometry> elements=new ArrayList<>();
+      String geometryType=geometry.getGeometryN(0).getGeometryType();
       for (int i=0; i < geometry.getNumGeometries(); i++) {
         Geometry g=geometry.getGeometryN(i);
         if (g.getEnvelopeInternal().intersects(mask.getEnvelopeInternal())) {
           Geometry intersected=intersect(g,mask);
           if (intersected != null) {
-            elements.add(intersected);
+            if (intersected.getGeometryType().equals(geometryType)) {
+              elements.add(intersected);
+            }
+ else             if (intersected instanceof GeometryCollection) {
+              addGeometries(elements,(GeometryCollection)intersected,geometryType);
+            }
           }
         }
       }
