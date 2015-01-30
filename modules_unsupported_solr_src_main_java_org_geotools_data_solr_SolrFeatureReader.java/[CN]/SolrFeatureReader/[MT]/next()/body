@@ -16,7 +16,10 @@
       if (type instanceof GeometryDescriptor) {
         GeometryDescriptor gatt=(GeometryDescriptor)type;
         if (value != null) {
-          SolrSpatialStrategy spatialStrategy=SolrSpatialStrategy.createStrategy(gatt);
+          SolrSpatialStrategy spatialStrategy=geometryReaders.get(gatt.getName());
+          if (spatialStrategy == null) {
+            spatialStrategy=SolrSpatialStrategy.DEFAULT;
+          }
           Geometry geometry=spatialStrategy.decode(value.toString());
           if (geometry != null && geometry.getUserData() == null) {
             geometry.setUserData(gatt.getCoordinateReferenceSystem());
