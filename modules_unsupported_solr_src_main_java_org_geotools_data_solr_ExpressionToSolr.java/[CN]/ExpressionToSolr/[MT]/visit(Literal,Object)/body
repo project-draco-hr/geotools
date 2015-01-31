@@ -3,6 +3,9 @@
   StringWriter output=FilterToSolr.asStringWriter(extraData);
   Object literal=expression.getValue();
   if (literal instanceof Geometry) {
+    if (spatialStrategy == null) {
+      throw new IllegalStateException("Attempt to encode geometry literal but spatialStrategy is null");
+    }
     Geometry geometry=(Geometry)literal;
     if (!WORLD.contains(geometry.getEnvelopeInternal()) && !WORLD.equals(geometry.getEnvelopeInternal())) {
       if (LOGGER.isLoggable(Level.FINE)) {
@@ -25,9 +28,7 @@
         LOGGER.fine("Densified geometry: " + geometry.toText());
       }
     }
-    WKTWriter writer=new WKTWriter();
-    String wkt=writer.write(geometry);
-    temp.append(wkt);
+    temp.append(spatialStrategy.encode(geometry));
   }
  else   if (literal instanceof Number) {
     temp.append(literal.toString());
