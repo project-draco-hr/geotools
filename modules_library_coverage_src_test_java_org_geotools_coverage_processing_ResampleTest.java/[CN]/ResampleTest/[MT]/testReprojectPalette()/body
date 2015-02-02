@@ -1,0 +1,25 @@
+{
+  GridCoverage2D input=ushortCoverage;
+  RenderedImage src=input.getRenderedImage();
+  ImageWorker iw=new ImageWorker(src).rescaleToBytes().forceIndexColorModel(false);
+  src=iw.getRenderedOperation();
+  Hints hints=GeoTools.getDefaultHints().clone();
+  hints.put(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,true);
+  hints.put(Hints.COVERAGE_PROCESSING_VIEW,ViewType.SAME);
+  GridCoverageFactory factory=new GridCoverageFactory(hints);
+  GridCoverage2D palette=factory.create("test",src,input.getEnvelope());
+  CoordinateReferenceSystem targetCRS=CRS.parseWKT(GOOGLE_MERCATOR_WKT);
+  GridCoverage2D coverage_=project(palette,targetCRS,null,"bilinear",hints,true);
+  coverage_=(GridCoverage2D)Operations.DEFAULT.extrema(coverage_);
+  Object minimums=coverage_.getProperty(Extrema.GT_SYNTHETIC_PROPERTY_MINIMUM);
+  Assert.assertTrue(minimums instanceof double[]);
+  final double[] mins=(double[])minimums;
+  Object maximums=coverage_.getProperty(Extrema.GT_SYNTHETIC_PROPERTY_MAXIMUM);
+  Assert.assertTrue(maximums instanceof double[]);
+  final double[] max=(double[])maximums;
+  boolean fail=true;
+  for (int i=0; i < mins.length; i++)   if (mins[i] != max[i] && max[i] > 0)   fail=false;
+  Assert.assertFalse("Reprojection failed",fail);
+  CoordinateReferenceSystem targetCoverageCRS=coverage_.getCoordinateReferenceSystem();
+  Assert.assertTrue(CRS.equalsIgnoreMetadata(targetCRS,targetCoverageCRS));
+}
