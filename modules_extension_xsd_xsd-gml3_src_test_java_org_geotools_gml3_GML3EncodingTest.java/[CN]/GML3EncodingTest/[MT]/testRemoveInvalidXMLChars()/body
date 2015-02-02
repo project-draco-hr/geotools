@@ -1,0 +1,13 @@
+{
+  SimpleFeatureType ft=DataUtilities.createType(TEST.TestFeature.getNamespaceURI(),TEST.TestFeature.getLocalPart(),"the_geom:Point,data:String");
+  SimpleFeature feature=SimpleFeatureBuilder.build(ft,new Object[]{new WKTReader().read("POINT(0 0)"),"One " + ((char)0x7) + " test"},"123");
+  SimpleFeatureCollection fc=DataUtilities.collection(feature);
+  TestConfiguration configuration=new TestConfiguration();
+  Encoder encoder=new Encoder(configuration);
+  String result=encoder.encodeAsString(feature,TEST.TestFeature);
+  Map<String,String> namespaces=new HashMap<String,String>();
+  namespaces.put("test",TEST.TestFeature.getNamespaceURI());
+  XMLUnit.setXpathNamespaceContext(new SimpleNamespaceContext(namespaces));
+  Document dom=XMLUnit.buildControlDocument(result);
+  assertXpathEvaluatesTo("One  test","//test:data",dom);
+}
