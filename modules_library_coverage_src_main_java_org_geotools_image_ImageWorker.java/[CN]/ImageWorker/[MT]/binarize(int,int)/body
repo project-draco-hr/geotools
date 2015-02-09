@@ -2,24 +2,35 @@
   tileCacheEnabled(false);
   binarize();
   tileCacheEnabled(true);
-  final LookupTableJAI table;
+  final LookupTable table;
   final int min=Math.min(value0,value1);
   if (min >= 0) {
     final int max=Math.max(value0,value1);
     if (max < 256) {
-      table=new LookupTableJAI(new byte[]{(byte)value0,(byte)value1});
+      table=LookupTableFactory.create(new byte[]{(byte)value0,(byte)value1},DataBuffer.TYPE_BYTE);
     }
  else     if (max < 65536) {
-      table=new LookupTableJAI(new short[]{(short)value0,(short)value1},true);
+      table=LookupTableFactory.create(new short[]{(short)value0,(short)value1},true);
     }
  else {
-      table=new LookupTableJAI(new int[]{value0,value1});
+      table=LookupTableFactory.create(new int[]{value0,value1});
     }
   }
  else {
-    table=new LookupTableJAI(new int[]{value0,value1});
+    table=LookupTableFactory.create(new int[]{value0,value1},DataBuffer.TYPE_BYTE);
   }
-  image=LookupDescriptor.create(image,table,getRenderingHints());
+  ParameterBlock pb=new ParameterBlock();
+  pb.setSource(image,0);
+  pb.set(table,0);
+  pb.set(roi,2);
+  pb.set(nodata,3);
+  if (isNoDataNeeded()) {
+    if (background != null && background.length > 0) {
+      pb.set(background[0],1);
+      setNoData(RangeFactory.create(background[0],background[0]));
+    }
+  }
+  image=JAI.create("Lookup",pb,getRenderingHints());
   invalidateStatistics();
   return this;
 }

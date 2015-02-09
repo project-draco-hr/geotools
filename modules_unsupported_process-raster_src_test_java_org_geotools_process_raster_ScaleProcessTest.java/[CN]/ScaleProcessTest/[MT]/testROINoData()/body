@@ -1,0 +1,29 @@
+{
+  ScaleCoverage process=new ScaleCoverage();
+  GridCoverage2D result=process.execute(coverageNoDataROI,scaleX,scaleY,0,0,nearest);
+  ensureCorrectTransformation(result,scaleX,scaleY);
+  NoDataContainer container=CoverageUtilities.getNoDataProperty(result);
+  assertNotNull(container);
+  ROI roiNew=CoverageUtilities.getROIProperty(result);
+  assertNotNull(roiNew);
+  Rectangle bounds=roiNew.getBounds();
+  Rectangle inBounds=roi.getBounds();
+  assertEquals(bounds.x,inBounds.x * scaleX,0.0001);
+  assertEquals(bounds.y,inBounds.y * scaleY,0.0001);
+  assertEquals(bounds.width,inBounds.width * scaleX,0.0001);
+  assertEquals(bounds.height,inBounds.height * scaleY,0.0001);
+  RenderedImage img=result.getRenderedImage();
+  RandomIter it=RandomIterFactory.create(img,null,true,true);
+  int minX=img.getMinX();
+  int minY=img.getMinY();
+  int maxX=img.getWidth() + minX;
+  int maxY=img.getHeight() + minY;
+  for (int x=minX; x < maxX; x++) {
+    for (int y=minY; y < maxY; y++) {
+      int sample=it.getSample(x,y,0);
+      if (!roiNew.contains(x,y)) {
+        assertEquals(sample,0);
+      }
+    }
+  }
+}

@@ -1,9 +1,33 @@
 {
   if (data instanceof RenderedOp) {
     final RenderedOp result=(RenderedOp)data;
-    final javax.media.jai.Histogram hist=(javax.media.jai.Histogram)result.getProperty(GT_SYNTHETIC_PROPERTY_HISTOGRAM);
-    final Map<String,javax.media.jai.Histogram> synthProp=new HashMap<String,javax.media.jai.Histogram>();
-    synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM,hist);
+    final Map<String,Object> synthProp=new HashMap<String,Object>();
+    if (JAIExt.isJAIExtOperation(STATS)) {
+      Statistics[][] results=((Statistics[][])result.getProperty(Statistics.STATS_PROPERTY));
+      int numBands=result.getNumBands();
+      int[][] bins=new int[numBands][];
+      for (int i=0; i < results.length; i++) {
+        Statistics stat=results[i][0];
+        double[] binsDouble=(double[])stat.getResult();
+        bins[i]=new int[binsDouble.length];
+        for (int j=0; j < binsDouble.length; j++) {
+          bins[i][j]=(int)binsDouble[j];
+        }
+      }
+      ParameterBlock parameterBlock=result.getParameterBlock();
+      double[] lowValues=(double[])parameterBlock.getObjectParameter(7);
+      double[] highValues=(double[])parameterBlock.getObjectParameter(8);
+      int[] numBins=(int[])parameterBlock.getObjectParameter(9);
+      HistogramWrapper wrapper=new HistogramWrapper(numBins,lowValues,highValues,bins);
+      synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM,wrapper);
+    }
+ else {
+      final javax.media.jai.Histogram hist=(javax.media.jai.Histogram)result.getProperty(GT_SYNTHETIC_PROPERTY_HISTOGRAM);
+      synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM,hist);
+    }
+    GridCoverage2D source=sources[0];
+    CoverageUtilities.setROIProperty(synthProp,CoverageUtilities.getROIProperty(source));
+    CoverageUtilities.setNoDataProperty(synthProp,CoverageUtilities.getNoDataProperty(source));
     return Collections.unmodifiableMap(synthProp);
   }
   return super.getProperties(data,crs,name,toCRS,sources,parameters);

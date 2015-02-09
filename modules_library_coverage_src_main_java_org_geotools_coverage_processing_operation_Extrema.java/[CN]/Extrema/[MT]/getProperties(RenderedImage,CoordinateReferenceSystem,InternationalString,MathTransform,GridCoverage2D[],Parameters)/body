@@ -2,14 +2,33 @@
   if (data instanceof RenderedOp) {
     final RenderedOp result=(RenderedOp)data;
     final Map<String,Object> synthProp=new HashMap<String,Object>();
-    final double[] maximums=(double[])result.getProperty(GT_SYNTHETIC_PROPERTY_MAXIMUM);
-    final double[] minimums=(double[])result.getProperty(GT_SYNTHETIC_PROPERTY_MINIMUM);
-    Object property=result.getProperty(GT_SYNTHETIC_PROPERTY_MIN_LOCATIONS);
-    if ((property instanceof List[]))     synthProp.put(GT_SYNTHETIC_PROPERTY_MIN_LOCATIONS,(List<int[]>[])property);
-    property=result.getProperty(GT_SYNTHETIC_PROPERTY_MAX_LOCATIONS);
-    if ((property instanceof List[]))     synthProp.put(GT_SYNTHETIC_PROPERTY_MAX_LOCATIONS,(List<int[]>[])property);
-    synthProp.put(GT_SYNTHETIC_PROPERTY_MINIMUM,minimums);
-    synthProp.put(GT_SYNTHETIC_PROPERTY_MAXIMUM,maximums);
+    if (JAIExt.isJAIExtOperation(STATS)) {
+      Statistics[][] results=((Statistics[][])result.getProperty(Statistics.STATS_PROPERTY));
+      int numBands=result.getNumBands();
+      double[] maximums=new double[numBands];
+      double[] minimums=new double[numBands];
+      for (int i=0; i < results.length; i++) {
+        Statistics stat=results[i][0];
+        double[] binsDouble=(double[])stat.getResult();
+        minimums[i]=binsDouble[0];
+        maximums[i]=binsDouble[1];
+      }
+      synthProp.put(GT_SYNTHETIC_PROPERTY_MINIMUM,minimums);
+      synthProp.put(GT_SYNTHETIC_PROPERTY_MAXIMUM,maximums);
+    }
+ else {
+      final double[] maximums=(double[])result.getProperty(GT_SYNTHETIC_PROPERTY_MAXIMUM);
+      final double[] minimums=(double[])result.getProperty(GT_SYNTHETIC_PROPERTY_MINIMUM);
+      Object property=result.getProperty(GT_SYNTHETIC_PROPERTY_MIN_LOCATIONS);
+      if ((property instanceof List[]))       synthProp.put(GT_SYNTHETIC_PROPERTY_MIN_LOCATIONS,(List<int[]>[])property);
+      property=result.getProperty(GT_SYNTHETIC_PROPERTY_MAX_LOCATIONS);
+      if ((property instanceof List[]))       synthProp.put(GT_SYNTHETIC_PROPERTY_MAX_LOCATIONS,(List<int[]>[])property);
+      synthProp.put(GT_SYNTHETIC_PROPERTY_MINIMUM,minimums);
+      synthProp.put(GT_SYNTHETIC_PROPERTY_MAXIMUM,maximums);
+    }
+    GridCoverage2D source=sources[0];
+    CoverageUtilities.setROIProperty(synthProp,CoverageUtilities.getROIProperty(source));
+    CoverageUtilities.setNoDataProperty(synthProp,CoverageUtilities.getNoDataProperty(source));
     return Collections.unmodifiableMap(synthProp);
   }
   return super.getProperties(data,crs,name,toCRS,sources,parameters);

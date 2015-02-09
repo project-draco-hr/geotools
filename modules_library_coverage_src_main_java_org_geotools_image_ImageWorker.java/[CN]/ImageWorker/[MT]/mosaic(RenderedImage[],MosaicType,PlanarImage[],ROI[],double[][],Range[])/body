@@ -1,0 +1,79 @@
+{
+  ParameterBlock pb=new ParameterBlock();
+  int srcNum=0;
+  if (images != null && images.length > 0) {
+    for (int i=0; i < images.length; i++) {
+      if (images[i] != null) {
+        pb.addSource(images[i]);
+        srcNum++;
+      }
+    }
+  }
+  ROI[] roisNew=null;
+  if (rois != null && srcNum > 0) {
+    roisNew=new ROI[srcNum];
+    System.arraycopy(rois,0,roisNew,0,rois.length);
+  }
+  PlanarImage[] alphasNew=null;
+  if (alphas != null && srcNum > 0) {
+    alphasNew=new PlanarImage[srcNum];
+    System.arraycopy(alphas,0,alphasNew,0,alphas.length);
+  }
+  Range[] nodataNew=null;
+  boolean noInternalNoData=true;
+  if (nodata != null && srcNum > 0) {
+    nodataNew=new Range[srcNum];
+    System.arraycopy(nodata,0,nodataNew,0,nodata.length);
+  }
+ else {
+    nodataNew=new Range[srcNum];
+    for (int i=0; i < srcNum; i++) {
+      RenderedImage img=pb.getRenderedSource(i);
+      Range nodProp=extractNoDataProperty(img);
+      noInternalNoData&=(nodProp == null);
+      nodataNew[i]=nodProp;
+    }
+  }
+  if (noInternalNoData && thresholds != null) {
+    nodataNew=handleMosaicThresholds(thresholds,srcNum);
+  }
+  pb.add(type);
+  pb.add(alphasNew);
+  pb.add(roisNew);
+  pb.add(thresholds);
+  pb.add(background);
+  pb.add(nodataNew);
+  Range nod=null;
+  if (background != null && background.length > 0) {
+    nod=(RangeFactory.create(background[0],background[0]));
+  }
+  if (roisNew != null) {
+    int numROI=roisNew.length;
+    ROI roi2=roisNew[0];
+    ROI finalROI=roi2 != null ? new ROI(roi2.getAsImage()) : null;
+    for (int i=1; i < numROI; i++) {
+      ROI added=roisNew[i];
+      if (added != null) {
+        if (finalROI != null) {
+          finalROI.add(added);
+        }
+ else {
+          finalROI=new ROI(added.getAsImage());
+        }
+      }
+    }
+    if (numROI != srcNum) {
+      for (int i=numROI; i < srcNum; i++) {
+        RenderedImage img=(RenderedImage)pb.getSource(i);
+        ROI r=new ROIShape(new Rectangle(img.getMinX(),img.getMinY(),img.getWidth(),img.getHeight()));
+        finalROI.add(r);
+      }
+    }
+    setROI(finalROI);
+  }
+  image=JAI.create("Mosaic",pb,getRenderingHints());
+  if (nodata != null || (!noInternalNoData && nodataNew != null)) {
+    setNoData(nod);
+  }
+  return this;
+}

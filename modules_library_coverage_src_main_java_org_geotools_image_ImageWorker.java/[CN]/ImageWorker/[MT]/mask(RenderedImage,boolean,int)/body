@@ -6,20 +6,76 @@
     final byte[] lutData=new byte[256];
     Arrays.fill(lutData,(byte)0);
     lutData[0]=(byte)255;
-    final LookupTableJAI lut=new LookupTableJAI(lutData);
-    mask=LookupDescriptor.create(mask,lut,hints);
-    image=AddDescriptor.create(image,mask,getRenderingHints());
+    final LookupTable lut=LookupTableFactory.create(lutData,mask.getSampleModel().getDataType());
+    ParameterBlock pb=new ParameterBlock();
+    pb.setSource(mask,0);
+    pb.set(lut,0);
+    if (background != null && background.length > 0) {
+      pb.set(background[0],1);
+    }
+    pb.set(roi,2);
+    mask=JAI.create("Lookup",pb,hints);
+    pb=new ParameterBlock();
+    pb.setSource(image,0);
+    pb.setSource(mask,1);
+    if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
+      prepareAlgebricOperation(Operator.SUM,pb,roi,nodata,true);
+      image=JAI.create(ALGEBRIC_OP_NAME,pb,getRenderingHints());
+    }
+ else {
+      image=JAI.create("Add",pb,getRenderingHints());
+    }
     tileCacheEnabled(true);
     invalidateStatistics();
     return this;
   }
  else {
     if (!isBinary())     binarize();
-    if (maskValue)     mask=NotDescriptor.create(mask,new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE));
+    boolean algebricJAIExt=JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME);
+    boolean opConstJAIExt=JAIExt.isJAIExtOperation(OPERATION_CONST_OP_NAME);
+    ParameterBlock pb;
+    RenderingHints renderingHints=new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE);
+    if (maskValue) {
+      pb=new ParameterBlock();
+      pb.setSource(mask,0);
+      if (algebricJAIExt) {
+        prepareAlgebricOperation(Operator.NOT,pb,roi,null,false);
+        mask=JAI.create(ALGEBRIC_OP_NAME,pb,renderingHints);
+      }
+ else {
+        mask=JAI.create("Not",pb,renderingHints);
+      }
+    }
     tileCacheEnabled(false);
-    image=AndDescriptor.create(mask,image,getRenderingHints());
-    mask=AddConstDescriptor.create(mask,new double[]{newValue},new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE));
-    image=AddDescriptor.create(mask,image,getRenderingHints());
+    pb=new ParameterBlock();
+    pb.setSource(mask,0);
+    pb.setSource(image,1);
+    if (algebricJAIExt) {
+      prepareAlgebricOperation(Operator.AND,pb,roi,nodata,true);
+      image=JAI.create(ALGEBRIC_OP_NAME,pb,getRenderingHints());
+    }
+ else {
+      image=JAI.create("And",pb,getRenderingHints());
+    }
+    pb=new ParameterBlock();
+    pb.setSource(mask,0);
+    if (opConstJAIExt) {
+      prepareOpConstOperation(Operator.SUM,new double[]{newValue},pb,roi,null,false);
+      image=JAI.create(OPERATION_CONST_OP_NAME,pb,renderingHints);
+    }
+ else {
+      image=JAI.create("AddConst",pb,renderingHints);
+    }
+    pb=new ParameterBlock();
+    pb.setSource(mask,0);
+    pb.setSource(image,1);
+    if (algebricJAIExt) {
+      prepareAlgebricOperation(Operator.SUM,pb,roi,nodata,true);
+      image=JAI.create(ALGEBRIC_OP_NAME,pb,getRenderingHints());
+    }
+ else {
+      image=JAI.create("Add",pb,getRenderingHints());
+    }
     tileCacheEnabled(true);
     invalidateStatistics();
     return this;

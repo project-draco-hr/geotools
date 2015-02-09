@@ -1,5 +1,22 @@
 {
-  image=InvertDescriptor.create(image,getRenderingHints());
+  ParameterBlock pb=new ParameterBlock();
+  pb.setSource(image,0);
+  if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
+    pb.set(AlgebraDescriptor.Operator.INVERT,0);
+    pb.set(roi,1);
+    pb.set(nodata,2);
+    if (isNoDataNeeded()) {
+      if (background != null && background.length > 0) {
+        double dest=background[0];
+        pb.set(dest,3);
+        setNoData(RangeFactory.create(dest,dest));
+      }
+    }
+    image=JAI.create(ALGEBRIC_OP_NAME,pb,getRenderingHints());
+  }
+ else {
+    image=JAI.create("Invert",pb,getRenderingHints());
+  }
   invalidateStatistics();
   return this;
 }

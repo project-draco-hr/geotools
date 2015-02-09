@@ -1,0 +1,28 @@
+{
+  File tiff=TestData.file(ScaleProcessTest.class,"sample.tif");
+  AbstractGridFormat format=GridFormatFinder.findFormat(tiff);
+  GridCoverageReader reader=format.getReader(tiff);
+  coverage=(GridCoverage2D)reader.read(null);
+  Map properties=coverage.getProperties();
+  if (properties == null) {
+    properties=new HashMap<>();
+  }
+  GridCoverageFactory gcf=new GridCoverageFactory(GeoTools.getDefaultHints());
+  Map properties1=new HashMap(properties);
+  CoverageUtilities.setNoDataProperty(properties1,RangeFactory.create((short)-1,(short)1));
+  coverageNoData=gcf.create("nodata",coverage.getRenderedImage(),coverage.getEnvelope(),coverage.getSampleDimensions(),null,properties1);
+  Map properties2=new HashMap(properties);
+  roi=new ROIShape(new Rectangle(8,8,2,2));
+  CoverageUtilities.setROIProperty(properties2,roi);
+  coverageROI=gcf.create("roi",coverage.getRenderedImage(),coverage.getEnvelope(),coverage.getSampleDimensions(),null,properties2);
+  Map properties3=new HashMap(properties);
+  CoverageUtilities.setNoDataProperty(properties3,RangeFactory.create((short)-1,(short)-1));
+  CoverageUtilities.setROIProperty(properties3,roi);
+  coverageNoDataROI=gcf.create("roiNoData",coverage.getRenderedImage(),coverage.getEnvelope(),coverage.getSampleDimensions(),null,properties3);
+  reader.dispose();
+  nearest=new InterpolationNearest();
+  bilinear=new InterpolationBilinear();
+  bicubic=new InterpolationBicubic(8);
+  scaleX=2d;
+  scaleY=2d;
+}

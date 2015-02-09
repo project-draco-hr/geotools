@@ -1,18 +1,18 @@
 {
   final HashMap properties=new HashMap();
-  properties.put("GC_NODATA",Double.valueOf(-9999.0));
+  CoverageUtilities.setNoDataProperty(properties,Double.valueOf(-9999.0));
   final GridGeometry2D gg2D=new GridGeometry2D(new Rectangle(0,0,800,600),new Rectangle(-180,90,360,180));
-  GridCoverage2D gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",ImageFunctionDescriptor.create(new MyImageFunction(),Integer.valueOf(800),Integer.valueOf(600),Float.valueOf(1.0f),Float.valueOf(1.0f),Float.valueOf(0.0f),Float.valueOf(0.0f),null),gg2D,null,null,properties);
+  GridCoverage2D gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",new ImageWorker().function(new MyImageFunction(),Integer.valueOf(800),Integer.valueOf(600),Float.valueOf(1.0f),Float.valueOf(1.0f),Float.valueOf(0.0f),Float.valueOf(0.0f)).getRenderedImage(),gg2D,null,null,properties);
   double[] bkg=CoverageUtilities.getBackgroundValues(gc);
   assertEquals(1,bkg.length);
-  assertEquals(Double.valueOf(-9999.0),bkg[0]);
+  assertEquals(NO_DATA,bkg[0],DELTA);
   final Category noDataCategory=new Category(CoverageUtilities.NODATA,new Color[]{Color.black},NumberRange.create(Double.valueOf(-9999.0),Double.valueOf(-9999.0)),false);
   final GridSampleDimension gsd=new GridSampleDimension("test",new Category[]{noDataCategory},Unit.ONE);
-  gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",ImageFunctionDescriptor.create(new MyImageFunction(),Integer.valueOf(800),Integer.valueOf(600),Float.valueOf(1.0f),Float.valueOf(1.0f),Float.valueOf(0.0f),Float.valueOf(0.0f),null),gg2D,new GridSampleDimension[]{gsd},null,null);
+  gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",new ImageWorker().function(new MyImageFunction(),Integer.valueOf(800),Integer.valueOf(600),Float.valueOf(1.0f),Float.valueOf(1.0f),Float.valueOf(0.0f),Float.valueOf(0.0f)).getRenderedImage(),gg2D,new GridSampleDimension[]{gsd},null,null);
   bkg=CoverageUtilities.getBackgroundValues(gc);
   assertEquals(1,bkg.length);
-  assertEquals(Double.valueOf(-9999.0),bkg[0]);
-  gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",ImageFunctionDescriptor.create(new MyImageFunction(),Integer.valueOf(800),Integer.valueOf(600),Float.valueOf(1.0f),Float.valueOf(1.0f),Float.valueOf(0.0f),Float.valueOf(0.0f),null),gg2D,null,null,null);
+  assertEquals(NO_DATA,bkg[0],DELTA);
+  gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",new ImageWorker().function(new MyImageFunction(),Integer.valueOf(800),Integer.valueOf(600),Float.valueOf(1.0f),Float.valueOf(1.0f),Float.valueOf(0.0f),Float.valueOf(0.0f)).getRenderedImage(),gg2D,null,null,null);
   bkg=CoverageUtilities.getBackgroundValues(gc);
   assertEquals(1,bkg.length);
   assertTrue(Double.isNaN(bkg[0]));

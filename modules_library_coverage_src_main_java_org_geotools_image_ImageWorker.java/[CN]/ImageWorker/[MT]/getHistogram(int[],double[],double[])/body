@@ -1,0 +1,66 @@
+{
+  Object histogram=getComputedProperty(HISTOGRAM);
+  if (!(histogram instanceof Histogram)) {
+    final Integer ONE=1;
+    ParameterBlock pb=new ParameterBlock();
+    pb.setSource(image,0);
+    if (JAIExt.isJAIExtOperation("Stats")) {
+      StatsType[] stats=new StatsType[]{StatsType.HISTOGRAM};
+      int numBands=getNumBands();
+      int[] bands=new int[numBands];
+      for (int i=0; i < numBands; i++) {
+        bands[i]=i;
+      }
+      pb.set(ONE,0);
+      pb.set(ONE,1);
+      pb.set(roi,2);
+      pb.set(nodata,3);
+      pb.set(bands,5);
+      pb.set(stats,6);
+      pb.set(numBins,9);
+      pb.set(lowValues,7);
+      pb.set(highValues,8);
+      image=JAI.create("Stats",pb,getRenderingHints());
+      Statistics[][] results=(Statistics[][])getComputedProperty(Statistics.STATS_PROPERTY);
+      int[][] bins=new int[numBands][];
+      for (int i=0; i < results.length; i++) {
+        Statistics stat=results[i][0];
+        double[] binsDouble=(double[])stat.getResult();
+        bins[i]=new int[binsDouble.length];
+        for (int j=0; j < binsDouble.length; j++) {
+          bins[i][j]=(int)binsDouble[j];
+        }
+      }
+      ParameterBlock parameterBlock=getRenderedOperation().getParameterBlock();
+      if (numBins == null) {
+        numBins=(int[])parameterBlock.getObjectParameter(9);
+      }
+      if (lowValues == null) {
+        lowValues=(double[])parameterBlock.getObjectParameter(7);
+      }
+      if (highValues == null) {
+        highValues=(double[])parameterBlock.getObjectParameter(8);
+      }
+      HistogramWrapper wrapper=new HistogramWrapper(numBins,lowValues,highValues,bins);
+      if (image instanceof PlanarImage) {
+        ((PlanarImage)image).setProperty(HISTOGRAM,wrapper);
+      }
+ else {
+        PlanarImage p=getPlanarImage();
+        p.setProperty(HISTOGRAM,wrapper);
+        image=p;
+      }
+    }
+ else {
+      pb.set(roi,0);
+      pb.set(ONE,1);
+      pb.set(ONE,2);
+      pb.set(numBins,3);
+      pb.set(lowValues,4);
+      pb.set(highValues,5);
+      image=JAI.create("Histogram",pb,getRenderingHints());
+    }
+    histogram=getComputedProperty(HISTOGRAM);
+  }
+  return (Histogram)histogram;
+}

@@ -6,8 +6,12 @@
     throw new ProcessException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"classificationRanges"));
   }
   double nd=DEFAULT_NODATA;
+  NoDataContainer noDataProperty=org.geotools.resources.coverage.CoverageUtilities.getNoDataProperty(coverage);
   if (noData != null) {
     nd=noData.doubleValue();
+  }
+ else   if (noDataProperty != null) {
+    nd=noDataProperty.getAsSingleValue();
   }
   if (outputPixelValues != null && outputPixelValues.length > 0) {
     final int ranges=classificationRanges.size();
@@ -16,22 +20,30 @@
     }
   }
   RenderedImage sourceImage=coverage.getRenderedImage();
+  ImageWorker worker=new ImageWorker(sourceImage);
   if (classificationBand != null) {
     final int band=classificationBand;
     final int numbands=sourceImage.getSampleModel().getNumBands();
     if (band < 0 || numbands <= band) {
       throw new ProcessException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"band",band));
     }
-    if (band == 0 && numbands > 0 || band > 0)     sourceImage=BandSelectDescriptor.create(sourceImage,new int[]{band},null);
+    if (band == 0 && numbands > 0 || band > 0) {
+      worker.retainBands(new int[]{band});
+    }
   }
-  final RangeLookupTable lookupTable;
+  Object lookupTable;
   final int size=classificationRanges.size();
-switch (ColorUtilities.getTransferType(size)) {
+  int transferType=ColorUtilities.getTransferType(size);
+  if (JAIExt.isJAIExtOperation("RLookup")) {
+    lookupTable=CoverageUtilities.getRangeLookupTableJAIEXT(classificationRanges,outputPixelValues,nd,transferType);
+  }
+ else {
+switch (transferType) {
 case DataBuffer.TYPE_BYTE:
-    lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,(byte)nd);
-  break;
+      lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,(byte)nd);
+    break;
 case DataBuffer.TYPE_USHORT:
-lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,(short)nd);
+  lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,(short)nd);
 break;
 case DataBuffer.TYPE_INT:
 lookupTable=CoverageUtilities.getRangeLookupTable(classificationRanges,outputPixelValues,nd);
@@ -39,17 +51,19 @@ break;
 default :
 throw new IllegalArgumentException(org.geotools.resources.i18n.Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"classification ranges size",size));
 }
-ParameterBlockJAI pb=new ParameterBlockJAI("RangeLookup");
-pb.setSource("source0",sourceImage);
-pb.setParameter("table",lookupTable);
-final RenderedOp indexedClassification=JAI.create("RangeLookup",pb);
+}
+worker.setROI(org.geotools.resources.coverage.CoverageUtilities.getROIProperty(coverage));
+worker.setBackground(new double[]{nd});
+final RenderedOp indexedClassification=worker.rangeLookup(lookupTable).getRenderedOperation();
 final GridSampleDimension outSampleDimension=new GridSampleDimension("classification",new Category[]{Category.NODATA},null);
 final GridCoverageFactory factory=CoverageFactoryFinder.getGridCoverageFactory(GeoTools.getDefaultHints());
-final GridCoverage2D output=factory.create("reclassified",indexedClassification,coverage.getGridGeometry(),new GridSampleDimension[]{outSampleDimension},new GridCoverage[]{coverage},new HashMap<String,Double>(){
+HashMap<String,Object> properties=new HashMap<String,Object>(){
 {
-put("GC_NODATA",0d);
+put(NoDataContainer.GC_NODATA,new NoDataContainer(0d));
 }
 }
-);
+;
+org.geotools.resources.coverage.CoverageUtilities.setROIProperty(properties,worker.getROI());
+final GridCoverage2D output=factory.create("reclassified",indexedClassification,coverage.getGridGeometry(),new GridSampleDimension[]{outSampleDimension},new GridCoverage[]{coverage},properties);
 return output;
 }

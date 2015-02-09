@@ -1,0 +1,31 @@
+{
+  Map props=sources[PRIMARY_SOURCE_INDEX].getProperties();
+  Map properties=new HashMap<>();
+  if (props != null) {
+    properties.putAll(props);
+  }
+  double[] background=(double[])parameters.parameters.getObjectParameter(2);
+  if (parameters.parameters.getNumParameters() > 3 && parameters.parameters.getObjectParameter(6) != null) {
+    CoverageUtilities.setNoDataProperty(properties,background);
+  }
+  PropertyGenerator propertyGenerator=null;
+  if (data instanceof RenderedOp) {
+    String operationName=((RenderedOp)data).getOperationName();
+    if (operationName.equalsIgnoreCase(AFFINE)) {
+      propertyGenerator=new AffineDescriptor().getPropertyGenerators()[0];
+    }
+ else     if (operationName.equalsIgnoreCase("Scale")) {
+      propertyGenerator=new ScaleDescriptor().getPropertyGenerators()[0];
+    }
+ else     if (operationName.equalsIgnoreCase("Translate")) {
+      propertyGenerator=new TranslateDescriptor().getPropertyGenerators()[0];
+    }
+    if (propertyGenerator != null) {
+      Object roiProp=propertyGenerator.getProperty("roi",data);
+      if (roiProp != null && roiProp instanceof ROI) {
+        CoverageUtilities.setROIProperty(properties,(ROI)roiProp);
+      }
+    }
+  }
+  return properties;
+}

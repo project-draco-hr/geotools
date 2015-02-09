@@ -13,15 +13,16 @@
     int targetType=sm.getDataType();
     MathTransform1D transform=LinearTransform1D.create(1,9999);
     layout.setColorModel(cm).setSampleModel(sm);
-    ParameterBlock param=new ParameterBlock().addSource(image);
     RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
     hints.put(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE);
     hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP,Boolean.FALSE);
     try {
       LookupTableJAI table=LookupTableFactory.create(sourceType,targetType,new MathTransform1D[]{transform});
-      String operation="Lookup";
-      param=param.add(table);
-      image=JAI.create(operation,param,hints);
+      LookupTable lut=it.geosolutions.jaiext.lookup.LookupTableFactory.create(table);
+      ImageWorker worker=new ImageWorker(image);
+      worker.setRenderingHints(hints);
+      worker.looukp(lut);
+      image=worker.getRenderedImage();
     }
  catch (    TransformException e) {
       LOGGER.severe(e.getLocalizedMessage());
