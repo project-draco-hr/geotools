@@ -1,0 +1,39 @@
+{
+  Wps10Factory factory=Wps10Factory.eINSTANCE;
+  ComplexDataType complexData=factory.createComplexDataType();
+  complexData.setMimeType("text/xml");
+  complexData.getData().add(0,new EncoderDelegate(){
+    @Override public void encode(    ContentHandler output) throws Exception {
+      String ns="http://www.geotools.org";
+      String local="myElement";
+      String qualified="gt:myElement";
+      output.startElement(ns,local,qualified,new org.xml.sax.helpers.AttributesImpl());
+      String txt="hello world";
+      output.characters(txt.toCharArray(),0,txt.length());
+      output.endElement(ns,local,qualified);
+    }
+  }
+);
+  Encoder encoder=new Encoder(new WPSConfiguration());
+  encoder.setIndenting(true);
+  encoder.setIndentSize(2);
+  encoder.setRootElementType(WPS.ComplexDataType);
+  String xml=encoder.encodeAsString(complexData,WPS.ComplexDataType);
+  buildDocument(xml);
+  Element element=document.getDocumentElement();
+  assertEquals("ComplexDataType",element.getLocalName());
+  assertEquals("text/xml",element.getAttribute("mimeType"));
+  NodeList children=element.getChildNodes();
+  boolean myElementFound=false;
+  for (int i=0; i < children.getLength(); i++) {
+    Node node=children.item(i);
+    if (node instanceof Text) {
+      continue;
+    }
+ else {
+      myElementFound|=node.getLocalName().equals("myElement");
+      assertEquals("hello world",node.getTextContent());
+    }
+  }
+  assertTrue(myElementFound);
+}

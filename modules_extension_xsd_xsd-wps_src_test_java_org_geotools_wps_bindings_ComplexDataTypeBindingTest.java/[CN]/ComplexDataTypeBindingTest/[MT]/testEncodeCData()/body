@@ -1,0 +1,30 @@
+{
+  Wps10Factory factory=Wps10Factory.eINSTANCE;
+  ComplexDataType complexData=factory.createComplexDataType();
+  complexData.setMimeType("text/plain");
+  complexData.getData().add(0,new EncoderDelegate(){
+    @Override public void encode(    ContentHandler output) throws Exception {
+      ((LexicalHandler)output).startCDATA();
+      Reader r=new StringReader("test data");
+      char[] buffer=new char[1024];
+      int read;
+      while ((read=r.read(buffer)) > 0) {
+        output.characters(buffer,0,read);
+      }
+      r.close();
+      ((LexicalHandler)output).endCDATA();
+    }
+  }
+);
+  Encoder encoder=new Encoder(new WPSConfiguration());
+  encoder.setIndenting(true);
+  encoder.setIndentSize(2);
+  encoder.setRootElementType(WPS.ComplexDataType);
+  String xml=encoder.encodeAsString(complexData,WPS.ComplexDataType);
+  buildDocument(xml);
+  Element element=document.getDocumentElement();
+  assertEquals("ComplexDataType",element.getLocalName());
+  assertEquals("text/plain",element.getAttribute("mimeType"));
+  Node node=element.getChildNodes().item(0);
+  assertEquals("test data",node.getTextContent());
+}
