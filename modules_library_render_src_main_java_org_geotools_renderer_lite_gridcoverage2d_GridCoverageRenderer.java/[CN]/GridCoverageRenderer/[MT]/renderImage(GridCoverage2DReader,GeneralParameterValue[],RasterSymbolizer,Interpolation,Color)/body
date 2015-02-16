@@ -65,24 +65,27 @@
  else {
     displacedCoverages.addAll(reprojectedCoverages);
   }
+  List<GridCoverage2D> symbolizedCoverages=new ArrayList<>();
+  for (  GridCoverage2D displaced : displacedCoverages) {
+    GridCoverage2D symbolized=symbolize(displaced,symbolizer,GridCoverageRendererUtilities.colorToArray(background));
+    symbolizedCoverages.add(symbolized);
+  }
   GridCoverage2D mosaicked=null;
-  if (displacedCoverages.size() == 0) {
+  if (symbolizedCoverages.size() == 0) {
     return null;
   }
- else   if (displacedCoverages.size() == 1) {
-    mosaicked=displacedCoverages.get(0);
+ else   if (symbolizedCoverages.size() == 1) {
+    mosaicked=symbolizedCoverages.get(0);
   }
  else {
-    mosaicked=GridCoverageRendererUtilities.mosaic(displacedCoverages,destinationEnvelope,hints);
+    mosaicked=GridCoverageRendererUtilities.mosaic(symbolizedCoverages,destinationEnvelope,hints);
   }
   if (mosaicked == null) {
     return null;
   }
-  GridCoverage2D result=renderCoverage(mosaicked,symbolizer,GridCoverageRendererUtilities.colorToArray(background));
-  if (result == null) {
+  GridCoverage2D cropped=crop(mosaicked,destinationEnvelope,false);
+  if (cropped == null) {
     return null;
   }
- else {
-    return result.getRenderedImage();
-  }
+  return cropped.getRenderedImage();
 }
