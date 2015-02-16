@@ -13,7 +13,21 @@
       if (inStreamSPI == null)       throw new IllegalArgumentException("No input stream for the provided source");
       inStream=inStreamSPI.createInputStreamInstance(source,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
     }
-    if (inStream == null)     throw new IllegalArgumentException("No input stream for the provided source");
+    if (inStream == null) {
+      if (source instanceof File) {
+        File f=(File)source;
+        if (!f.exists()) {
+          throw new FileNotFoundException("File " + f.getAbsolutePath() + " does not exist.");
+        }
+ else         if (f.isDirectory()) {
+          throw new IOException("File " + f.getAbsolutePath() + " is a directory.");
+        }
+ else         if (!f.canRead()) {
+          throw new IOException("File " + f.getAbsolutePath() + " can not be read.");
+        }
+      }
+      throw new IllegalArgumentException("No input stream for the provided source");
+    }
     checkForExternalOverviews();
     getHRInfo(this.hints);
     coverageName=source instanceof File ? ((File)source).getName() : "geotiff_coverage";
