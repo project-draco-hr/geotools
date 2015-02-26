@@ -1,0 +1,46 @@
+{
+  Transaction t=new DefaultTransaction();
+  SimpleFeatureStore fs=(SimpleFeatureStore)ds.getFeatureSource(ft.getTypeName());
+  fs.setTransaction(t);
+  AttributeDescriptor at=ft.getDescriptor(attributeToChange);
+  assertNotNull("Attribute " + attributeToChange + " does not exist",at);
+  FilterFactory filterFactory=CommonFactoryFinder.getFilterFactory(null);
+  Filter f=filterFactory.equals(filterFactory.property(at.getLocalName()),filterFactory.literal(newValue));
+  System.out.println("Update Read 1");
+  SimpleFeatureIterator fr=fs.getFeatures(f).features();
+  int count1=0;
+  Object oldValue=null;
+  if (fr != null)   while (fr.hasNext()) {
+    count1++;
+    oldValue=fr.next().getAttribute(attributeToChange);
+  }
+  fr.close();
+  System.out.println("Update Modify");
+  fs.modifyFeatures(at,newValue,Filter.INCLUDE);
+  System.out.println("Update Read 2");
+  fr=fs.getFeatures(f).features();
+  int count2=0;
+  while (fr.hasNext()) {
+    count2++;
+    fr.next();
+  }
+  fr.close();
+  assertTrue("Read 1 == " + count1 + " Read 2 == "+ count2,count2 > count1);
+  System.out.println("Update Commit");
+  try {
+    t.commit();
+    System.out.println("Update Read 3");
+    fr=fs.getFeatures(f).features();
+    int count3=0;
+    while (fr.hasNext()) {
+      count3++;
+      fr.next();
+    }
+    fr.close();
+    assertEquals(count2,count3);
+  }
+  finally {
+    fs.modifyFeatures(at,oldValue,Filter.INCLUDE);
+    t.commit();
+  }
+}

@@ -8,7 +8,18 @@
  else     if (bboxLiteral.getValue() instanceof Geometry) {
       Geometry geom=(Geometry)bboxLiteral.getValue();
       Envelope geomEnvelope=geom.getEnvelopeInternal();
-      return ff.bbox(filter.getExpression1(),new ReferencedEnvelope(geomEnvelope.getMinY(),geomEnvelope.getMaxY(),geomEnvelope.getMinX(),geomEnvelope.getMaxX(),null));
+      CoordinateReferenceSystem crs=null;
+      if (geom.getUserData() instanceof CoordinateReferenceSystem) {
+        crs=(CoordinateReferenceSystem)geom.getUserData();
+      }
+ else       if (filter.getSRS() != null) {
+        try {
+          crs=CRS.decode(filter.getSRS());
+        }
+ catch (        FactoryException e) {
+        }
+      }
+      return ff.bbox(filter.getExpression1(),new ReferencedEnvelope(geomEnvelope.getMinY(),geomEnvelope.getMaxY(),geomEnvelope.getMinX(),geomEnvelope.getMaxX(),crs));
     }
   }
   return filter;

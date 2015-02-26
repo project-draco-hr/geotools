@@ -1,13 +1,21 @@
 {
-  boolean invertXY;
-  if (WFSDataStoreFactory.AXIS_ORDER_EAST_NORTH.equals(axisOrder)) {
-    invertXY=false;
+  CRS.AxisOrder requestedAxis=CRS.getAxisOrder(crs);
+  if (requestedAxis == CRS.AxisOrder.INAPPLICABLE) {
+    boolean forcedLonLat=Boolean.getBoolean("org.geotools.referencing.forceXY") || Boolean.TRUE.equals(Hints.getSystemDefault(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER));
+    if (forcedLonLat) {
+      requestedAxis=CRS.AxisOrder.EAST_NORTH;
+    }
+ else {
+      requestedAxis=CRS.AxisOrder.NORTH_EAST;
+    }
   }
- else   if (WFSDataStoreFactory.AXIS_ORDER_NORTH_EAST.equals(axisOrder)) {
-    invertXY=true;
+  if (WFSDataStoreFactory.AXIS_ORDER_NORTH_EAST.equals(axisOrder)) {
+    return requestedAxis.equals(CRS.AxisOrder.EAST_NORTH);
+  }
+ else   if (WFSDataStoreFactory.AXIS_ORDER_EAST_NORTH.equals(axisOrder)) {
+    return requestedAxis.equals(CRS.AxisOrder.NORTH_EAST);
   }
  else {
-    invertXY=CRS.getAxisOrder(crs).equals(CRS.AxisOrder.NORTH_EAST);
+    return false;
   }
-  return invertXY;
 }
