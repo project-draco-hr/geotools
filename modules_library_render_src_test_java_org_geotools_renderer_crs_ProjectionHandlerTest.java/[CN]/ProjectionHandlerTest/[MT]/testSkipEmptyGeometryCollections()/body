@@ -1,0 +1,12 @@
+{
+  ReferencedEnvelope world=new ReferencedEnvelope(160,180,-40,40,WGS84);
+  ReferencedEnvelope mercatorEnvelope=world.transform(MERCATOR,true);
+  mercatorEnvelope.translate(mercatorEnvelope.getWidth() / 2,0);
+  Geometry g1=new WKTReader().read("POLYGON((150 40, 150 -90, 190 -90, 190 40, 175 40, 175 -87, 165 -87, 165 40, 150 40))");
+  Geometry collection=new GeometryCollection(null,g1.getFactory());
+  ProjectionHandler handler=new ProjectionHandler(WGS84,new Envelope(-0.5d,2.0d,-0.5d,2.0d),mercatorEnvelope);
+  assertTrue(handler.requiresProcessing(collection));
+  Geometry preProcessed=handler.preProcess(collection);
+  assertNotEquals(collection,preProcessed);
+  assertNull(preProcessed);
+}
