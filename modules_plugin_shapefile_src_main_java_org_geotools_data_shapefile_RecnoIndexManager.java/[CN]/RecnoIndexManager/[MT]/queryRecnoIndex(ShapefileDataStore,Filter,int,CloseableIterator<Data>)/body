@@ -1,0 +1,44 @@
+{
+  if ((MICROSOFT_FOXPRO_DRIVER_INSTALLED || ADVANTAGE_ODBC_DRIVER_INSTALLED) && filter != null && !Filter.INCLUDE.equals(filter) && !Filter.EXCLUDE.equals(filter) && filterCapabilities.fullySupports(filter)) {
+    String shapeFileName=featureStore.shpFiles.get(SHP);
+    List<Integer> recnoList=RecnoIndexManager.queryRecnoIndex(shapeFileName,filter,maxFeatures);
+    List<Data> records=new ArrayList<Data>();
+    if (recnoList == null)     return goodRecs;
+    if (recnoList.size() > 0) {
+      IndexFile shx=featureStore.shpManager.openIndexFile();
+      try {
+        DataDefinition def=new DataDefinition("US-ASCII");
+        def.addField(Integer.class);
+        def.addField(Long.class);
+        if (goodRecs != null) {
+          HashMap<Integer,Integer> recnoHash=new HashMap<Integer,Integer>();
+          for (int i=0, icount=recnoList.size(); i < icount; i++) {
+            int recno=recnoList.get(i);
+            recnoHash.put(recno + 1,recno);
+          }
+          while (goodRecs.hasNext()) {
+            Data data=goodRecs.next();
+            if (recnoHash.containsKey(data.getValue(0)))             records.add(data);
+          }
+          recnoHash.clear();
+          goodRecs.close();
+        }
+ else {
+          for (int i=0, icount=recnoList.size(); i < icount; i++) {
+            int recno=recnoList.get(i);
+            Data data=new Data(def);
+            data.addValue(new Integer(recno + 1));
+            data.addValue(new Long(shx.getOffsetInBytes(recno)));
+            records.add(data);
+          }
+        }
+        recnoList.clear();
+      }
+  finally {
+        shx.close();
+      }
+    }
+    return new CloseableIteratorWrapper<Data>(records.iterator());
+  }
+  return goodRecs;
+}
