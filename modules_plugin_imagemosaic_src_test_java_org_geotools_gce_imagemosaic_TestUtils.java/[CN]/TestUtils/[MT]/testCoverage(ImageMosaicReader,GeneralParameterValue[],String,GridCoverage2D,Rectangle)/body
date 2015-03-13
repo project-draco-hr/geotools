@@ -5,7 +5,14 @@
   if (values != null)   for (  GeneralParameterValue pv : values) {
     if (pv.getDescriptor().getName().equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
       Parameter<GridGeometry2D> param=(Parameter<GridGeometry2D>)pv;
-      assertTrue(CRS.equalsIgnoreMetadata(param.getValue().getEnvelope().getCoordinateReferenceSystem(),coverage.getCoordinateReferenceSystem()));
+      CoordinateReferenceSystem envCRS=param.getValue().getEnvelope().getCoordinateReferenceSystem();
+      CoordinateReferenceSystem coverageCRS=coverage.getCoordinateReferenceSystem();
+      boolean equalsIgnoreMetadata=CRS.equalsIgnoreMetadata(envCRS,coverageCRS);
+      if (!equalsIgnoreMetadata) {
+        MathTransform destinationToSourceTransform=CRS.findMathTransform(envCRS,coverageCRS,true);
+        equalsIgnoreMetadata=destinationToSourceTransform != null && destinationToSourceTransform.isIdentity();
+      }
+      assertTrue(equalsIgnoreMetadata);
     }
   }
   if (rect != null) {
