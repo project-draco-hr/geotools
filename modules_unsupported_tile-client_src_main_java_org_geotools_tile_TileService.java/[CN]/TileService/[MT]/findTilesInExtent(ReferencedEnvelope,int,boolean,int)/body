@@ -1,0 +1,53 @@
+{
+  ReferencedEnvelope mapExtent=createSafeEnvelopeInWGS84(_mapExtent);
+  ReferencedEnvelope extent=normalizeExtent(mapExtent);
+  if (!extent.intersects((Envelope)getBounds())) {
+    return Collections.emptySet();
+  }
+  TileFactory tileFactory=getTileFactory();
+  ScaleZoomLevelMatcher zoomLevelMatcher=null;
+  try {
+    zoomLevelMatcher=new ScaleZoomLevelMatcher(getTileCrs(),getProjectedTileCrs(),CRS.findMathTransform(getTileCrs(),getProjectedTileCrs()),CRS.findMathTransform(getProjectedTileCrs(),getTileCrs()),mapExtent,mapExtent,scaleFactor);
+  }
+ catch (  FactoryException e) {
+    throw new RuntimeException(e);
+  }
+  int zoomLevelA=getZoomLevelToUse(zoomLevelMatcher,scaleFactor,recommendedZoomLevel) - 1;
+  ZoomLevel zoomLevel=tileFactory.getZoomLevel(zoomLevelA,this);
+  long maxNumberOfTilesForZoomLevel=zoomLevel.getMaxTileNumber();
+  Set<Tile> tileList=new HashSet<Tile>(100);
+  Tile firstTile=tileFactory.findTileAtCoordinate(extent.getMinX(),extent.getMaxY(),zoomLevel,this);
+  addTileToCache(firstTile);
+  tileList.add(firstTile);
+  Tile firstTileOfRow=firstTile;
+  Tile movingTile=firstTile;
+  do {
+    do {
+      Tile rightNeighbour=tileFactory.findRightNeighbour(movingTile,this);
+      if (extent.intersects((Envelope)rightNeighbour.getExtent()) && !firstTileOfRow.equals(rightNeighbour)) {
+        addTileToCache(rightNeighbour);
+        tileList.add(rightNeighbour);
+        movingTile=rightNeighbour;
+      }
+ else {
+        break;
+      }
+      if (tileList.size() > maxNumberOfTiles) {
+        LOGGER.warning("Reached tile limit of " + maxNumberOfTiles + ". Returning an empty collection.");
+        return Collections.emptySet();
+      }
+    }
+ while (tileList.size() < maxNumberOfTilesForZoomLevel);
+    Tile lowerNeighbour=tileFactory.findLowerNeighbour(firstTileOfRow,this);
+    if (extent.intersects((Envelope)lowerNeighbour.getExtent()) && !firstTile.equals(lowerNeighbour)) {
+      addTileToCache(lowerNeighbour);
+      tileList.add(lowerNeighbour);
+      firstTileOfRow=movingTile=lowerNeighbour;
+    }
+ else {
+      break;
+    }
+  }
+ while (tileList.size() < maxNumberOfTilesForZoomLevel);
+  return tileList;
+}

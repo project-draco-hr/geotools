@@ -1,0 +1,20 @@
+{
+  g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+  double[] points=new double[4];
+  for (  Tile tile : tiles) {
+    ReferencedEnvelope nativeTileEnvelope=tile.getExtent();
+    ReferencedEnvelope tileEnvViewport;
+    try {
+      tileEnvViewport=nativeTileEnvelope.transform(viewportExtent.getCoordinateReferenceSystem(),true);
+    }
+ catch (    TransformException|FactoryException e) {
+      throw new RuntimeException(e);
+    }
+    points[0]=tileEnvViewport.getMinX();
+    points[3]=tileEnvViewport.getMinY();
+    points[2]=tileEnvViewport.getMaxX();
+    points[1]=tileEnvViewport.getMaxY();
+    worldToImageTransform.transform(points,0,points,0,2);
+    renderTile(tile,g2d,points);
+  }
+}
