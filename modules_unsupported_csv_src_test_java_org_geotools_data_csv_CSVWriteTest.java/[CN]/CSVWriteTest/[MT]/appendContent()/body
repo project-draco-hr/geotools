@@ -1,5 +1,4 @@
 {
-  System.out.println("appendContent start\n");
   File directory=tmp;
   Map<String,Serializable> params=new HashMap<String,Serializable>();
   params.put("file",file);
@@ -29,6 +28,15 @@
     reader.close();
     writer.close();
   }
-  System.out.println("\nappendContent end\n");
-  fileContents("appendContent",file2);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("locations");
+  assertEquals(9,featureStore.getFeatures().size());
+  ByteArrayOutputStream baos1=new ByteArrayOutputStream();
+  ByteArrayOutputStream baos2=new ByteArrayOutputStream();
+  Files.copy(file.toPath(),baos1);
+  Files.copy(file2.toPath(),baos2);
+  String contents1=new String(baos1.toByteArray(),StandardCharsets.UTF_8);
+  String contents2=new String(baos2.toByteArray(),StandardCharsets.UTF_8);
+  contents1=contents1.replace(" ","").trim();
+  contents2=contents2.replace(" ","").trim();
+  assertEquals("Contents of both files should be the same",contents1,contents2);
 }

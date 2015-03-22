@@ -5,7 +5,7 @@
   try {
     csvReader=csvFileState.openCSVReader();
     headers=csvReader.getHeaders();
-    typesFromData=CSVStrategy.findMostSpecificTypesFromData(csvReader,headers);
+    typesFromData=findMostSpecificTypesFromData(csvReader,headers);
   }
  catch (  IOException e) {
     throw new RuntimeException(e);
@@ -15,36 +15,29 @@
       csvReader.close();
     }
   }
-  SimpleFeatureTypeBuilder builder=CSVStrategy.createBuilder(csvFileState,headers,typesFromData);
-  boolean validLat=false;
-  boolean validLon=false;
-  String latSpelling=null;
-  String lonSpelling=null;
-  for (  String col : headers) {
-    Class<?> type=typesFromData.get(col);
-    if (isLatitude(col)) {
-      latSpelling=col;
-      if (CSVStrategy.isNumeric(type)) {
-        validLat=true;
+  SimpleFeatureTypeBuilder builder=createBuilder(csvFileState,headers,typesFromData);
+  if (latField == null || lngField == null) {
+    for (    String col : headers) {
+      if (isLatitude(col)) {
+        latField=col;
       }
-    }
- else     if (isLongitude(col)) {
-      lonSpelling=col;
-      if (CSVStrategy.isNumeric(type)) {
-        validLon=true;
+ else       if (isLongitude(col)) {
+        lngField=col;
       }
     }
   }
-  if (validLat && validLon) {
+  Class<?> latClass=typesFromData.get(latField);
+  Class<?> lngClass=typesFromData.get(lngField);
+  if (isNumeric(latClass) && isNumeric(lngClass)) {
     List<String> csvHeaders=Arrays.asList(headers);
-    int index=csvHeaders.indexOf(latSpelling);
+    int index=csvHeaders.indexOf(latField);
     AttributeTypeBuilder builder2=new AttributeTypeBuilder();
     builder2.setCRS(DefaultGeographicCRS.WGS84);
     builder2.binding(Point.class);
-    AttributeDescriptor descriptor=builder2.buildDescriptor(GEOMETRY_COLUMN);
+    AttributeDescriptor descriptor=builder2.buildDescriptor(pointField);
     builder.add(index,descriptor);
-    builder.remove(latSpelling);
-    builder.remove(lonSpelling);
+    builder.remove(latField);
+    builder.remove(lngField);
   }
   return builder.buildFeatureType();
 }

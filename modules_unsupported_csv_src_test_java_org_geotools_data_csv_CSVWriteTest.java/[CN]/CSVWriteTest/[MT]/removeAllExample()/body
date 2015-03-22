@@ -1,23 +1,22 @@
 {
-  System.out.println("removeAllExample start\n");
   Map<String,Serializable> params=new HashMap<String,Serializable>();
   params.put("file",file);
   DataStore store=DataStoreFinder.getDataStore(params);
   Transaction t=new DefaultTransaction("locations");
   try {
     FeatureWriter<SimpleFeatureType,SimpleFeature> writer=store.getFeatureWriter("locations",Filter.INCLUDE,t);
-    SimpleFeature feature;
     try {
       while (writer.hasNext()) {
-        feature=writer.next();
-        System.out.println("remove " + feature.getID());
+        writer.next();
         writer.remove();
       }
     }
   finally {
       writer.close();
     }
-    System.out.println("commit " + t);
+    SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("locations");
+    assertEquals("featureStore should be empty",0,featureStore.getFeatures().size());
+    assertEquals("file should have no content","",checkFileContents(file));
     t.commit();
   }
  catch (  Throwable eek) {
@@ -27,6 +26,4 @@
     t.close();
     store.dispose();
   }
-  System.out.println("\nremoveAllExample end\n");
-  fileContents("removeAllExample",file);
 }
