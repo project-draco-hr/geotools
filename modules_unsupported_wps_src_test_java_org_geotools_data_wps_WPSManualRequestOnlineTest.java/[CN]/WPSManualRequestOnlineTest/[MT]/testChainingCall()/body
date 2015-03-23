@@ -1,0 +1,55 @@
+{
+  if (fixture == null) {
+    return;
+  }
+  EObject processUnionCascadeReference=Wps10Factory.eINSTANCE.createInputReferenceType();
+  ((InputReferenceType)processUnionCascadeReference).setMimeType("application/xml");
+  ((InputReferenceType)processUnionCascadeReference).setMethod(MethodType.POST_LITERAL);
+  ((InputReferenceType)processUnionCascadeReference).setHref("http://geoserver/wps");
+  ExecuteType processUnionExecType=Wps10Factory.eINSTANCE.createExecuteType();
+  processUnionExecType.setVersion("1.0.0");
+  processUnionExecType.setService("WPS");
+  String processIden="JTS:union";
+  CodeType resultsCodeType=Ows11Factory.eINSTANCE.createCodeType();
+  resultsCodeType.setValue("result");
+  CodeType codeType=Ows11Factory.eINSTANCE.createCodeType();
+  codeType.setValue(processIden);
+  processUnionExecType.setIdentifier(codeType);
+  DataInputsType1 inputtypes=Wps10Factory.eINSTANCE.createDataInputsType1();
+  processUnionExecType.setDataInputs(inputtypes);
+  ResponseFormType processUnionResponseForm=Wps10Factory.eINSTANCE.createResponseFormType();
+  OutputDefinitionType processUnionRawDataOutput=Wps10Factory.eINSTANCE.createOutputDefinitionType();
+  processUnionRawDataOutput.setIdentifier(resultsCodeType);
+  processUnionResponseForm.setRawDataOutput(processUnionRawDataOutput);
+  processUnionExecType.setResponseForm(processUnionResponseForm);
+  ComplexDataType cdt1=Wps10Factory.eINSTANCE.createComplexDataType();
+  cdt1.getData().add(0,new CDATAEncoder("POLYGON((20 10, 30 0, 40 10, 30 20, 20 10))"));
+  cdt1.setMimeType("application/wkt");
+  net.opengis.wps10.DataType data1=Wps10Factory.eINSTANCE.createDataType();
+  data1.setComplexData(cdt1);
+  InputType input1=Wps10Factory.eINSTANCE.createInputType();
+  CodeType inputIdent=Ows11Factory.eINSTANCE.createCodeType();
+  inputIdent.setValue("geom");
+  input1.setIdentifier(inputIdent);
+  input1.setData(data1);
+  processUnionExecType.getDataInputs().getInput().add(input1);
+  ComplexDataType cdt2=Wps10Factory.eINSTANCE.createComplexDataType();
+  cdt2.getData().add(0,new CDATAEncoder("POLYGON((2 1, 3 0, 4 1, 3 2, 2 1))"));
+  cdt2.setMimeType("application/wkt");
+  net.opengis.wps10.DataType data2=Wps10Factory.eINSTANCE.createDataType();
+  data2.setComplexData(cdt2);
+  InputType input2=Wps10Factory.eINSTANCE.createInputType();
+  CodeType inputIdent2=Ows11Factory.eINSTANCE.createCodeType();
+  inputIdent2.setValue("geom");
+  input2.setIdentifier(inputIdent2);
+  input2.setData(data2);
+  processUnionExecType.getDataInputs().getInput().add(input2);
+  ((InputReferenceType)processUnionCascadeReference).setBody(new WPSEncodeDelegate(processUnionExecType,WPS.Execute));
+  String areaProcessIdent="JTS:area";
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(areaProcessIdent);
+  exeRequest.addInput("geom",Arrays.asList(processUnionCascadeReference));
+  ExecuteProcessResponse response=wps.issueRequest(exeRequest);
+  Object result=response.getExecuteResponse().getProcessOutputs().getOutput().get(0);
+  System.out.println(result);
+}

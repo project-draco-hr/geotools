@@ -1,0 +1,24 @@
+{
+  if (fixture == null) {
+    LOGGER.info("Skipping " + getName() + ": fixture not found");
+    return;
+  }
+  String requestedProcess="JTS:area";
+  WPSCapabilitiesType capabilities=wps.getCapabilities();
+  ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
+  List<ProcessBriefType> processes=processOfferings.getProcess();
+  boolean found=false;
+  for (  ProcessBriefType process : processes) {
+    if (process.getIdentifier().getValue().equalsIgnoreCase(requestedProcess)) {
+      found=true;
+      break;
+    }
+  }
+  Assume.assumeTrue(found);
+  DescribeProcessRequest descRequest=wps.createDescribeProcessRequest();
+  descRequest.setIdentifier(requestedProcess);
+  DescribeProcessResponse descResponse=wps.issueRequest(descRequest);
+  ProcessDescriptionsType processDesc=descResponse.getProcessDesc();
+  ProcessDescriptionType pdt=(ProcessDescriptionType)processDesc.getProcessDescription().get(0);
+  WPSFactory wpsfactory=new WPSFactory(pdt,this.url);
+}

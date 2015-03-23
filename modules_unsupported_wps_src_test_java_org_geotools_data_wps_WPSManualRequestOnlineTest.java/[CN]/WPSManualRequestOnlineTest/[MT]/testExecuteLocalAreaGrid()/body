@@ -1,0 +1,52 @@
+{
+  if (fixture == null) {
+    return;
+  }
+  String processIdenLocal="gs:AreaGrid";
+  WPSCapabilitiesType capabilities=wps.getCapabilities();
+  ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
+  EList processes=processOfferings.getProcess();
+  boolean found=false;
+  Iterator iterator=processes.iterator();
+  while (iterator.hasNext()) {
+    ProcessBriefType process=(ProcessBriefType)iterator.next();
+    if (process.getIdentifier().getValue().equalsIgnoreCase(processIdenLocal)) {
+      found=true;
+      break;
+    }
+  }
+  if (!found) {
+    System.out.println("Skipping, gs:AreaGrid not found!");
+    return;
+  }
+  DescribeProcessRequest descRequest=wps.createDescribeProcessRequest();
+  descRequest.setIdentifier(processIdenLocal);
+  DescribeProcessResponse descResponse=wps.issueRequest(descRequest);
+  ProcessDescriptionsType processDesc=descResponse.getProcessDesc();
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(processIdenLocal);
+  exeRequest.addInput("envelope",Arrays.asList(wps.createBoundingBoxInputValue("EPSG:4326",2,Arrays.asList(-180d,-90d),Arrays.asList(180d,90d))));
+  exeRequest.addInput("width",Arrays.asList(wps.createLiteralInputValue("2")));
+  exeRequest.addInput("height",Arrays.asList(wps.createLiteralInputValue("1")));
+  OutputDefinitionType rawOutput=wps.createOutputDefinitionType("result");
+  rawOutput.setMimeType("application/arcgrid");
+  ResponseFormType responseForm=wps.createResponseForm(null,rawOutput);
+  exeRequest.setResponseForm(responseForm);
+  ExecuteProcessResponse response=wps.issueRequest(exeRequest);
+  assertNotNull(response);
+  ExecuteResponseType executeResponse=response.getExecuteResponse();
+  assertNull(executeResponse);
+  ExceptionReportType exceptionResponse=response.getExceptionResponse();
+  assertNull(exceptionResponse);
+  assertEquals("application/arcgrid",response.getRawContentType());
+  BufferedReader reader=new BufferedReader(new InputStreamReader(response.getRawResponseStream()));
+  StringBuilder sb=new StringBuilder();
+  String line=null;
+  while ((line=reader.readLine()) != null) {
+    sb.append(line).append("\n");
+  }
+  reader.close();
+  String arcgrid=sb.toString();
+  String expectedHeader="NCOLS 2\n" + "NROWS 1\n" + "XLLCORNER -180.0\n"+ "YLLCORNER -90.0\n"+ "CELLSIZE 180.0\n"+ "NODATA_VALUE -9999";
+  assertTrue(arcgrid.startsWith(expectedHeader));
+}
