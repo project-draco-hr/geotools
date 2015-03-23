@@ -1,20 +1,21 @@
 {
   ReferencedEnvelope gridEnvelope=initMapRequest(requestedEnvelope,width,height,backgroundColor);
-  InputStream is=null;
   try {
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.fine("Issuing request: " + mapRequest.getFinalURL());
     }
+    InputStream is=null;
     GetMapResponse response=wms.issueRequest(mapRequest);
     try {
       is=response.getInputStream();
       BufferedImage image=ImageIO.read(is);
       if (image == null) {
-        throw (IOException)new IOException("GetMap failed: " + mapRequest.getFinalURL());
+        throw new IOException("GetMap failed: " + mapRequest.getFinalURL());
       }
       return gcf.create(layers.get(0).getTitle(),image,gridEnvelope);
     }
   finally {
+      IOUtils.closeQuietly(is);
       response.dispose();
     }
   }
