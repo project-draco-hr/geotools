@@ -1,8 +1,12 @@
 {
   ColorMapUtilities.ensureNonNull("ColorMapEntry",entry);
-  final Expression color=entry.getColor();
+  Expression color=entry.getColor();
   ColorMapUtilities.ensureNonNull("color",color);
-  final String colorString=(String)color.evaluate(null,String.class);
+  String colorString=(String)color.evaluate(null,String.class);
+  if (colorString != null && colorString.startsWith("${")) {
+    color=ExpressionExtractor.extractCqlExpressions(colorString);
+    colorString=color.evaluate(null,String.class);
+  }
   ColorMapUtilities.ensureNonNull("colorString",colorString);
   return Color.decode(colorString);
 }
