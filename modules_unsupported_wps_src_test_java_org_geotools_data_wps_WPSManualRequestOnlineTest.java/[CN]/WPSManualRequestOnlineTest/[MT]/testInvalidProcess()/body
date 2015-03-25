@@ -1,0 +1,37 @@
+{
+  if (fixture == null) {
+    return;
+  }
+  String processIdenLocal="gs:InvalidProcessName";
+  WPSCapabilitiesType capabilities=wps.getCapabilities();
+  ProcessOfferingsType processOfferings=capabilities.getProcessOfferings();
+  EList processes=processOfferings.getProcess();
+  boolean found=false;
+  Iterator iterator=processes.iterator();
+  while (iterator.hasNext()) {
+    ProcessBriefType process=(ProcessBriefType)iterator.next();
+    if (process.getIdentifier().getValue().equalsIgnoreCase(processIdenLocal)) {
+      found=true;
+      break;
+    }
+  }
+  if (found) {
+    System.out.println("Skipping, gs:InvalidProcessName has been found!");
+    return;
+  }
+  ExecuteProcessRequest exeRequest=wps.createExecuteProcessRequest();
+  exeRequest.setIdentifier(processIdenLocal);
+  ResponseDocumentType doc=wps.createResponseDocumentType(false,true,true,"result");
+  DocumentOutputDefinitionType odt=(DocumentOutputDefinitionType)doc.getOutput().get(0);
+  odt.setMimeType("application/arcgrid");
+  odt.setAsReference(true);
+  ResponseFormType responseForm=wps.createResponseForm(doc,null);
+  exeRequest.setResponseForm(responseForm);
+  ExecuteProcessResponse response=wps.issueRequest(exeRequest);
+  assertNotNull(response);
+  ExceptionReportType report=response.getExceptionResponse();
+  assertNotNull(report);
+  ExceptionType exception=(ExceptionType)report.getException().get(0);
+  String errorMessage=exception.getExceptionText().get(0).toString();
+  assertTrue(errorMessage.contains(processIdenLocal));
+}
