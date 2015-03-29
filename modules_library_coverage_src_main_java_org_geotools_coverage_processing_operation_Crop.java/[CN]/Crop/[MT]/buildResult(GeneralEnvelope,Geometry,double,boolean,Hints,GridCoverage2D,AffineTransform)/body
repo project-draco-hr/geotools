@@ -43,8 +43,14 @@
         final ROI[] roiarr;
         try {
           if (cropROI != null) {
-            final Shape cropRoiLS2=new LiteShape2(cropROI,ProjectiveTransform.create(sourceWorldToGridTransform),null,false);
-            final ROIShape cropRS=new ROIShape(cropRoiLS2);
+            final LiteShape2 cropRoiLS2=new LiteShape2(cropROI,ProjectiveTransform.create(sourceWorldToGridTransform),null,false);
+            ROI cropRS=new ROIShape(cropRoiLS2);
+            Rectangle2D rt=cropRoiLS2.getBounds2D();
+            if (!hasIntegerBounds(rt)) {
+              Geometry geo=(Geometry)cropRoiLS2.getGeometry().clone();
+              transformGeometry(geo);
+              cropRS=new ROIShape(new LiteShape2(geo,null,null,false));
+            }
             roiarr=new ROI[]{cropRS};
           }
  else {
