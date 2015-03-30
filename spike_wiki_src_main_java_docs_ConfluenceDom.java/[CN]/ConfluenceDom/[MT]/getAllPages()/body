@@ -1,0 +1,44 @@
+{
+  NodeList objectList=docEle.getElementsByTagName("object");
+  if (objectList != null && objectList.getLength() > 0) {
+    for (int i=0; i < objectList.getLength(); i++) {
+      Element objectItem=(Element)objectList.item(i);
+      if (objectItem.getAttribute("class").equalsIgnoreCase("Page")) {
+        ConfluencePage tempPage=new ConfluencePage();
+        NodeList pagePropertyList=objectItem.getElementsByTagName("property");
+        for (int j=0; j < pagePropertyList.getLength(); j++) {
+          Element pagePropertyItem=(Element)pagePropertyList.item(j);
+          if (pagePropertyItem.getAttribute("name").equalsIgnoreCase("title")) {
+            tempPage.setTitle(pagePropertyItem.getTextContent());
+          }
+          if (pagePropertyItem.getAttribute("name").equalsIgnoreCase("contentStatus")) {
+            tempPage.setStatus(pagePropertyItem.getTextContent());
+          }
+          if (pagePropertyItem.getAttribute("name").equalsIgnoreCase("version")) {
+            tempPage.setVersion(pagePropertyItem.getTextContent());
+          }
+          if (pagePropertyItem.getAttribute("name").equalsIgnoreCase("originalVersion")) {
+            tempPage.setOriginalVersion(true);
+          }
+          if (pagePropertyItem.getAttribute("name").equalsIgnoreCase("parent")) {
+            NodeList pageIdList=pagePropertyItem.getElementsByTagName("id");
+            for (int k=0; k < pageIdList.getLength(); k++) {
+              Element pageId=(Element)pageIdList.item(k);
+              tempPage.setParent(pageId.getTextContent());
+            }
+          }
+        }
+        NodeList collectionList=objectItem.getElementsByTagName("collection");
+        for (int j=0; j < collectionList.getLength(); j++) {
+          Element collectionItem=(Element)collectionList.item(j);
+          if (collectionItem.getAttribute("name").equalsIgnoreCase("historicalVersions")) {
+            tempPage.setHistoricalVersions(true);
+          }
+        }
+        NodeList pageIdList=objectItem.getElementsByTagName("id");
+        tempPage.setId(pageIdList.item(0).getTextContent());
+        pageList.put(tempPage.getId(),tempPage);
+      }
+    }
+  }
+}
