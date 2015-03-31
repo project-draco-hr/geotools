@@ -1,0 +1,39 @@
+{
+  String disableMediaLibKey="com.sun.media.jai.disableMediaLib";
+  String oldDisableMediaLib=System.getProperty(disableMediaLibKey,"false");
+  Registry.setNativeAccelerationAllowed("Mosaic",false);
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  Byte[] red=new Byte[]{(byte)255,0,0};
+  RenderedOp image=ConstantDescriptor.create(Float.valueOf(40),Float.valueOf(37),red,null);
+  final Envelope envelope=new ReferencedEnvelope(-1d,1d,-1d,1d,DefaultGeographicCRS.WGS84);
+  final GridCoverageFactory factory=new GridCoverageFactory(GeoTools.getDefaultHints());
+  final GridCoverage2D source=factory.create("test",image,envelope);
+  final ReferencedEnvelope cropBounds=new ReferencedEnvelope(0d,1d,0d,1d,DefaultGeographicCRS.WGS84);
+  com.vividsolutions.jts.geom.Polygon polygon=JTS.toGeometry(cropBounds);
+  Geometry roi=polygon.getFactory().createMultiPolygon(new com.vividsolutions.jts.geom.Polygon[]{polygon});
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(source);
+  param.parameter("Envelope").setValue(cropBounds);
+  param.parameter("ROI").setValue(roi);
+  GridCoverage2D cropped=(GridCoverage2D)processor.doOperation(param);
+  if (SHOW) {
+    Viewer.show(source,"Original");
+    Viewer.show(cropped,"Cropped");
+    Thread.sleep(10000);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(cropped.getRenderedImage()).getTiles());
+  }
+  RenderedImage raster=cropped.getRenderedImage();
+  assertEquals(20,raster.getMinX());
+  assertEquals(0,raster.getMinY());
+  assertEquals(20,raster.getWidth());
+  assertEquals(19,raster.getHeight());
+  assertEquals(source.getGridGeometry().getGridToCRS2D(),cropped.getGridGeometry().getGridToCRS2D());
+  byte[] result=new byte[3];
+  cropped.evaluate(new DirectPosition2D(0d,0d),result);
+  assertEquals((byte)red[0],result[0]);
+  assertEquals((byte)red[1],result[1]);
+  assertEquals((byte)red[2],result[2]);
+  Registry.setNativeAccelerationAllowed("Mosaic",Boolean.valueOf(oldDisableMediaLib));
+}
