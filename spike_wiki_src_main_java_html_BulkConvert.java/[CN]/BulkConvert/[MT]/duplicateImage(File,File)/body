@@ -1,0 +1,36 @@
+{
+  String fileName=attachementImage.getName();
+  File liveImage=searchPluginImages(fileName);
+  if (liveImage != null) {
+    System.out.println("   Override attachment image from : " + liveImage);
+    attachementImage=liveImage;
+  }
+ else   if (!attachementImage.exists()) {
+    File otherAttachment=searchAllAttachments(fileName);
+    if (otherAttachment != null) {
+      System.out.println("   Found attachment on another page " + otherAttachment);
+      attachementImage=otherAttachment;
+    }
+ else {
+      System.out.println("   WARNING: Unable to locate " + attachementImage + " broken link!");
+    }
+  }
+  File pageDir=pageImage.getParentFile();
+  if (!pageDir.exists()) {
+    pageDir.mkdirs();
+  }
+  if (!pageImage.exists()) {
+    System.out.println("   Copy image to  " + pageImage);
+    bufferedStreamsCopy(attachementImage,pageImage);
+  }
+ else {
+    boolean deleted=pageImage.delete();
+    if (deleted) {
+      System.out.println("   Copy image to  " + pageImage);
+      bufferedStreamsCopy(attachementImage,pageImage);
+    }
+ else {
+      System.out.println("   WARNING: Unable to repalce " + pageImage);
+    }
+  }
+}

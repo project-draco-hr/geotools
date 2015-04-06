@@ -1,0 +1,35 @@
+{
+  StringBuilder contents=new StringBuilder();
+  BufferedReader reader=null;
+  String line;
+  try {
+    reader=new BufferedReader(new FileReader(rstFile));
+    READ:     while ((line=reader.readLine()) != null) {
+      UPDATE:       for (      Entry<String,String> rename : moved.entrySet()) {
+        String search=rename.getKey();
+        String replace=rename.getValue();
+        if (line.contains(search)) {
+          String updated=line.replace(search,replace);
+          contents.append(updated);
+          contents.append("\n");
+          continue READ;
+        }
+      }
+      contents.append(line);
+      contents.append("\n");
+    }
+  }
+ catch (  FileNotFoundException notFound) {
+    System.err.println("Unable to locate " + rstFile + ":"+ notFound);
+    return;
+  }
+catch (  IOException io) {
+    System.err.println("Unable to read " + rstFile + ":"+ io);
+    return;
+  }
+ finally {
+    close(reader);
+  }
+  String text=contents.toString();
+  replaceContents(rstFile,text);
+}
