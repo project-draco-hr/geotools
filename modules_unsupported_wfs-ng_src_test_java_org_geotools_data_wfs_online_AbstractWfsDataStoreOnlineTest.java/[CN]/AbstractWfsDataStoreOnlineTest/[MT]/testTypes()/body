@@ -1,0 +1,40 @@
+{
+  if (Boolean.FALSE.equals(serviceAvailable)) {
+    return;
+  }
+  assertTrue(wfs instanceof WFSDataStore);
+  String types[]=wfs.getTypeNames();
+  List<String> typeNames=Arrays.asList(types);
+  assertTrue(typeNames.contains(testType.FEATURETYPENAME));
+  for (int i=0; i < types.length; i++) {
+    String typeName=types[i];
+    SimpleFeatureType type=wfs.getSchema(typeName);
+    type.getTypeName();
+    type.getName().getNamespaceURI();
+    SimpleFeatureSource source=wfs.getFeatureSource(typeName);
+    source.getBounds();
+    SimpleFeatureCollection features=source.getFeatures();
+    features.getBounds();
+    features.getSchema();
+    Query query=new Query(typeName,Filter.INCLUDE,20,Query.ALL_NAMES,"work already");
+    features=source.getFeatures(query);
+    features.size();
+    SimpleFeatureIterator iterator=features.features();
+    try {
+      while (iterator.hasNext()) {
+        iterator.next();
+      }
+    }
+  finally {
+      iterator.close();
+    }
+  }
+  SimpleFeatureType schema=wfs.getSchema(testType.FEATURETYPENAME);
+  assertNotNull(schema);
+  GeometryDescriptor geometryDescriptor=schema.getGeometryDescriptor();
+  assertNotNull(geometryDescriptor);
+  assertEquals(defaultGeometryName,geometryDescriptor.getLocalName());
+  assertEquals(geometryType,geometryDescriptor.getType().getBinding());
+  CoordinateReferenceSystem crs=geometryDescriptor.getCoordinateReferenceSystem();
+  assertNotNull(crs);
+}

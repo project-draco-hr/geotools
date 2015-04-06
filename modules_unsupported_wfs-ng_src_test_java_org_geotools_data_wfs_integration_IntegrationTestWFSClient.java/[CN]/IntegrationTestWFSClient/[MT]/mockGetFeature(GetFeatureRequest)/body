@@ -49,12 +49,17 @@
           }
           final DiffFeatureReader<SimpleFeatureType,SimpleFeature> serverFiltered;
           serverFiltered=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(all,diff);
-          int count=0;
-          while (serverFiltered.hasNext()) {
-            serverFiltered.next();
-            count++;
+          try {
+            int count=0;
+            while (serverFiltered.hasNext()) {
+              serverFiltered.next();
+              count++;
+            }
+            return count;
           }
-          return count;
+  finally {
+            serverFiltered.close();
+          }
         }
  catch (        Exception e) {
           e.printStackTrace();
@@ -67,6 +72,7 @@
       return allFeatures.getFeatureType();
     }
     @Override public void close() throws IOException {
+      serverFilteredReader.close();
     }
   }
 ;

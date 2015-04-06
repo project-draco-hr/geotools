@@ -1,0 +1,37 @@
+{
+  SimpleFeatureSource source=data.getFeatureSource(test.typeName);
+  assertSchemaEqual(test.featureType,source.getSchema());
+  assertEquals(data,source.getDataStore());
+  assertEquals(test.numberOfFeatures,source.getCount(Query.ALL));
+  assertEquals(test.typeName,source.getSchema().getTypeName());
+  assertSame(data,source.getDataStore());
+  SimpleFeatureCollection collection=source.getFeatures();
+  assertEquals(test.numberOfFeatures,collection.size());
+  assertTrue(source.getBounds().covers(test.bounds));
+  assertTrue(covers(collection.features(),test.features));
+  SimpleFeatureCollection expected=DataUtilities.collection(test.features);
+  assertCovers(test.typeName,expected,collection);
+  assertTrue(collection.getBounds().covers(test.bounds));
+  SimpleFeatureCollection some=source.getFeatures(test.feat12Filter);
+  assertEquals(2,some.size());
+  assertEquals(test.feat12Bounds,some.getBounds());
+  assertEquals(some.getSchema(),source.getSchema());
+  Query query=new Query(test.typeName,test.feat12Filter,new String[]{test.stringAttribute,test.featureType.getGeometryDescriptor().getName().getLocalPart()});
+  SimpleFeatureCollection half=source.getFeatures(query);
+  assertEquals(2,half.size());
+  assertEquals(2,half.getSchema().getAttributeCount());
+  SimpleFeatureIterator reader=half.features();
+  SimpleFeatureType type=half.getSchema();
+  reader.close();
+  SimpleFeatureType actual=half.getSchema();
+  assertEquals(type.getTypeName(),actual.getTypeName());
+  assertEquals(type.getName().getNamespaceURI(),actual.getName().getNamespaceURI());
+  assertEquals(type.getAttributeCount(),actual.getAttributeCount());
+  for (int i=0; i < type.getAttributeCount(); i++) {
+    assertEquals(type.getDescriptor(i),actual.getDescriptor(i));
+  }
+  assertEquals(type.getGeometryDescriptor(),actual.getGeometryDescriptor());
+  assertEquals(type,actual);
+  BoundingBox b=half.getBounds();
+  assertEquals(test.feat12Bounds,b);
+}

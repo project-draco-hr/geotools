@@ -1,0 +1,73 @@
+{
+  Transaction t1=new DefaultTransaction();
+  Transaction t2=new DefaultTransaction();
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer1=data.getFeatureWriter(first.typeName,first.feat1Filter,t1);
+  FeatureWriter<SimpleFeatureType,SimpleFeature> writer2=data.getFeatureWriterAppend(first.typeName,t2);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  SimpleFeature feature;
+  SimpleFeature[] ORIGIONAL=first.features;
+  SimpleFeature[] REMOVE=new SimpleFeature[ORIGIONAL.length - 1];
+  SimpleFeature[] ADD=new SimpleFeature[ORIGIONAL.length + 1];
+  SimpleFeature[] FINAL=new SimpleFeature[ORIGIONAL.length];
+  int i;
+  int index;
+  index=0;
+  for (i=0; i < ORIGIONAL.length; i++) {
+    feature=ORIGIONAL[i];
+    if (!feature.getID().equals(first.features[0].getID())) {
+      REMOVE[index++]=feature;
+    }
+  }
+  for (i=0; i < ORIGIONAL.length; i++) {
+    ADD[i]=ORIGIONAL[i];
+  }
+  ADD[i]=first.newFeature;
+  for (i=0; i < REMOVE.length; i++) {
+    FINAL[i]=REMOVE[i];
+  }
+  FINAL[i]=first.newFeature;
+  final Query allRoadsQuery=new Query(first.typeName);
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(covers(reader,ORIGIONAL));
+  while (writer1.hasNext()) {
+    feature=(SimpleFeature)writer1.next();
+    assertEquals(first.features[0].getID(),feature.getID());
+    writer1.remove();
+  }
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(covers(reader,ORIGIONAL));
+  reader=data.getFeatureReader(allRoadsQuery,t1);
+  assertTrue(covers(reader,REMOVE));
+  writer1.close();
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(covers(reader,ORIGIONAL));
+  reader=data.getFeatureReader(allRoadsQuery,t1);
+  assertTrue(covers(reader,REMOVE));
+  feature=(SimpleFeature)writer2.next();
+  feature.setAttributes(first.newFeature.getAttributes());
+  writer2.write();
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(covers(reader,ORIGIONAL));
+  reader=data.getFeatureReader(allRoadsQuery,t2);
+  assertTrue(coversLax(reader,ADD));
+  writer2.close();
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(covers(reader,ORIGIONAL));
+  reader=data.getFeatureReader(allRoadsQuery,t2);
+  assertTrue(coversLax(reader,ADD));
+  t1.commit();
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(covers(reader,REMOVE));
+  reader=data.getFeatureReader(allRoadsQuery,t1);
+  assertTrue(covers(reader,REMOVE));
+  reader=data.getFeatureReader(allRoadsQuery,t2);
+  assertTrue(coversLax(reader,FINAL));
+  t2.commit();
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  reader=data.getFeatureReader(allRoadsQuery,Transaction.AUTO_COMMIT);
+  assertTrue(coversLax(reader,FINAL));
+  reader=data.getFeatureReader(allRoadsQuery,t1);
+  assertTrue(coversLax(reader,FINAL));
+  reader=data.getFeatureReader(allRoadsQuery,t2);
+  assertTrue(coversLax(reader,FINAL));
+}

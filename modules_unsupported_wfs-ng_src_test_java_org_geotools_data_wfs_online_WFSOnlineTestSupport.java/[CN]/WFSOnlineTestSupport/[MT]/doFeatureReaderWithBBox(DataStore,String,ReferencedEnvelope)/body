@@ -1,0 +1,21 @@
+{
+  SimpleFeatureType featureType=wfs.getSchema(typeName);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(null);
+  Query query=new Query(featureType.getTypeName());
+  PropertyName theGeom=ff.property(featureType.getGeometryDescriptor().getName());
+  Filter filter=ff.bbox(theGeom,bbox);
+  query.setFilter(filter);
+  FeatureReader<SimpleFeatureType,SimpleFeature> fr=wfs.getFeatureReader(query,Transaction.AUTO_COMMIT);
+  assertNotNull("GET " + typeName + " FeatureType was null",featureType);
+  assertTrue("GET " + typeName + " has next?",fr.hasNext());
+  assertNotNull("GET " + typeName + " has feature type",fr.getFeatureType());
+  SimpleFeature feature=fr.next();
+  assertNotNull("GET " + typeName + " has non null feature",feature);
+  int j=0;
+  while (fr.hasNext()) {
+    fr.next();
+    j++;
+  }
+  System.out.println("bbox selected " + j + " Features");
+  fr.close();
+}

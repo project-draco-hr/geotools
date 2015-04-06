@@ -1,0 +1,19 @@
+{
+  FeatureLock lock=new FeatureLock("Timed",100);
+  FeatureLocking<SimpleFeatureType,SimpleFeature> road;
+{
+    SimpleFeatureSource source=data.getFeatureSource(first.typeName);
+    if (!(source instanceof FeatureLocking)) {
+      LOGGER.info("testLockFeatureInteraction ignored, store does not support locking");
+      return;
+    }
+    road=(FeatureLocking<SimpleFeatureType,SimpleFeature>)source;
+  }
+  road.setFeatureLock(lock);
+  String fid=first.features[0].getID();
+  assertFalse(isLocked(first.typeName,fid));
+  road.lockFeatures(first.feat1Filter);
+  assertTrue(fid + " not locked",isLocked(first.typeName,fid));
+  Thread.sleep(150);
+  assertFalse(isLocked(first.typeName,fid));
+}

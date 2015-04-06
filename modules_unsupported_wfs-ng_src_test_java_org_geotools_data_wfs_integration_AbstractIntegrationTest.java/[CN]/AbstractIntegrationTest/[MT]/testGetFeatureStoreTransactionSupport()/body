@@ -1,0 +1,48 @@
+{
+  Transaction t1=new DefaultTransaction();
+  Transaction t2=new DefaultTransaction();
+  SimpleFeatureStore road=(SimpleFeatureStore)data.getFeatureSource(first.typeName);
+  SimpleFeatureStore road1=(SimpleFeatureStore)data.getFeatureSource(first.typeName);
+  SimpleFeatureStore road2=(SimpleFeatureStore)data.getFeatureSource(first.typeName);
+  road1.setTransaction(t1);
+  road2.setTransaction(t2);
+  SimpleFeature feature;
+  SimpleFeature[] ORIGINAL=first.features;
+  SimpleFeature[] REMOVE=new SimpleFeature[ORIGINAL.length - 1];
+  SimpleFeature[] ADD=new SimpleFeature[ORIGINAL.length + 1];
+  SimpleFeature[] FINAL=new SimpleFeature[ORIGINAL.length];
+  int i;
+  int index;
+  index=0;
+  for (i=0; i < ORIGINAL.length; i++) {
+    feature=ORIGINAL[i];
+    if (!feature.getID().equals(first.features[0].getID())) {
+      REMOVE[index++]=feature;
+    }
+  }
+  for (i=0; i < ORIGINAL.length; i++) {
+    ADD[i]=ORIGINAL[i];
+  }
+  ADD[i]=first.newFeature;
+  for (i=0; i < REMOVE.length; i++) {
+    FINAL[i]=REMOVE[i];
+  }
+  FINAL[i]=first.newFeature;
+  assertTrue(covers(road.getFeatures().features(),ORIGINAL));
+  road1.removeFeatures(first.feat1Filter);
+  assertTrue(covers(road.getFeatures().features(),ORIGINAL));
+  assertTrue(covers(road1.getFeatures().features(),REMOVE));
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{first.newFeature});
+  road2.addFeatures(collection);
+  assertTrue(covers(road.getFeatures().features(),ORIGINAL));
+  assertTrue(covers(road1.getFeatures().features(),REMOVE));
+  assertTrue(coversLax(road2.getFeatures().features(),ADD));
+  t1.commit();
+  assertTrue(covers(road.getFeatures().features(),REMOVE));
+  assertTrue(covers(road1.getFeatures().features(),REMOVE));
+  assertTrue(coversLax(road2.getFeatures().features(),FINAL));
+  t2.commit();
+  assertTrue(coversLax(road.getFeatures().features(),FINAL));
+  assertTrue(coversLax(road1.getFeatures().features(),FINAL));
+  assertTrue(coversLax(road2.getFeatures().features(),FINAL));
+}

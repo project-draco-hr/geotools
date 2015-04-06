@@ -1,0 +1,31 @@
+{
+  if (Boolean.FALSE.equals(serviceAvailable)) {
+    return;
+  }
+  if (spatialFilter == null) {
+    LOGGER.info("Ignoring testFeatureSourceGetCountFilter " + "since the subclass didn't provide a spatial filter");
+    return;
+  }
+  SimpleFeatureSource featureSource;
+  featureSource=wfs.getFeatureSource(testType.FEATURETYPENAME);
+  assertNotNull(featureSource);
+  Query query=new Query(testType.FEATURETYPENAME);
+  query.setFilter(spatialFilter);
+  SimpleFeatureCollection features;
+  features=featureSource.getFeatures(query);
+  assertNotNull(features);
+  SimpleFeatureType schema=features.getSchema();
+  assertNotNull(schema);
+  SimpleFeatureIterator iterator=features.features();
+  assertNotNull(iterator);
+  try {
+    assertTrue(iterator.hasNext());
+    SimpleFeature next=iterator.next();
+    assertNotNull(next);
+    assertNotNull(next.getDefaultGeometry());
+    assertFalse(iterator.hasNext());
+  }
+  finally {
+    iterator.close();
+  }
+}

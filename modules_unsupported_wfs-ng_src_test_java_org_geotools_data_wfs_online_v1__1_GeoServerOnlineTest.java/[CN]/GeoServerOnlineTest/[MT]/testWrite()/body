@@ -1,0 +1,47 @@
+{
+  SimpleFeatureType ft=wfs.getSchema(testType.FEATURETYPENAME);
+  SimpleFeatureSource fs=wfs.getFeatureSource(testType.FEATURETYPENAME);
+  Id startingFeatures=createFidFilter(fs);
+  FilterFactory2 filterFac=CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+  try {
+    GeometryFactory gf=new GeometryFactory();
+    MultiPolygon mp=gf.createMultiPolygon(new Polygon[]{gf.createPolygon(gf.createLinearRing(new Coordinate[]{new Coordinate(-88.071564,37.51099),new Coordinate(-88.467644,37.400757),new Coordinate(-90.638329,42.509361),new Coordinate(-89.834618,42.50346),new Coordinate(-88.071564,37.51099)}),new LinearRing[]{})});
+    mp.setUserData("http://www.opengis.net/gml/srs/epsg.xml#" + EPSG_CODE);
+    PropertyName geometryAttributeExpression=filterFac.property(ft.getGeometryDescriptor().getLocalName());
+    PropertyIsNull geomNullCheck=filterFac.isNull(geometryAttributeExpression);
+    Query query=new Query(testType.FEATURETYPENAME,filterFac.not(geomNullCheck),1,Query.ALL_NAMES,null);
+    SimpleFeatureIterator inStore=fs.getFeatures(query).features();
+    SimpleFeature f, f2;
+    try {
+      SimpleFeature feature=inStore.next();
+      SimpleFeature copy=SimpleFeatureBuilder.deep(feature);
+      SimpleFeature copy2=SimpleFeatureBuilder.deep(feature);
+      f=SimpleFeatureBuilder.build(ft,copy.getAttributes(),null);
+      f2=SimpleFeatureBuilder.build(ft,copy2.getAttributes(),null);
+      assertFalse("Max Feature failed",inStore.hasNext());
+    }
+  finally {
+      inStore.close();
+    }
+    org.geotools.util.logging.Logging.getLogger("org.geotools.data.wfs").setLevel(Level.FINE);
+    SimpleFeatureCollection inserts=DataUtilities.collection(new SimpleFeature[]{f,f2});
+    Id fp=WFSOnlineTestSupport.doInsert(wfs,ft,inserts);
+    FeatureReader<SimpleFeatureType,SimpleFeature> count=wfs.getFeatureReader(new Query(ft.getTypeName()),Transaction.AUTO_COMMIT);
+    int i=0;
+    while (count.hasNext() && i < 3) {
+      f=count.next();
+      i++;
+    }
+    count.close();
+    WFSOnlineTestSupport.doDelete(wfs,ft,fp);
+    WFSOnlineTestSupport.doUpdate(wfs,ft,ATTRIBUTE_TO_EDIT,NEW_EDIT_VALUE);
+  }
+  finally {
+    try {
+      ((SimpleFeatureStore)fs).removeFeatures(filterFac.not(startingFeatures));
+    }
+ catch (    Exception e) {
+      System.out.println(e);
+    }
+  }
+}
