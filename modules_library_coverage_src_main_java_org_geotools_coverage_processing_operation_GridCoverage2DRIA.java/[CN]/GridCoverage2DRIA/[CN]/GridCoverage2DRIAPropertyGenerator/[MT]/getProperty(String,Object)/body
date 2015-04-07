@@ -1,0 +1,48 @@
+{
+  validate(name,opNode);
+  if (opNode instanceof GridCoverage2DRIA && name.equalsIgnoreCase("roi")) {
+    GridCoverage2DRIA op=(GridCoverage2DRIA)opNode;
+    RenderedImage src=(RenderedImage)op.src.getRenderedImage();
+    Object property=op.getProperty("ROI");
+    if (property == null || property.equals(java.awt.Image.UndefinedProperty) || !(property instanceof ROI)) {
+      return java.awt.Image.UndefinedProperty;
+    }
+    ROI srcROI=(ROI)property;
+    if (srcROI.getBounds().isEmpty()) {
+      return java.awt.Image.UndefinedProperty;
+    }
+    InterpolationNearest interp=(InterpolationNearest)Interpolation.getInstance(Interpolation.INTERP_NEAREST);
+    Rectangle srcBounds=null;
+    PlanarImage dst=op;
+    if (dst instanceof GeometricOpImage && ((GeometricOpImage)dst).getBorderExtender() == null) {
+      srcBounds=new Rectangle(src.getMinX() + interp.getLeftPadding(),src.getMinY() + interp.getTopPadding(),src.getWidth() - interp.getWidth() + 1,src.getHeight() - interp.getHeight() + 1);
+    }
+ else {
+      srcBounds=new Rectangle(src.getMinX(),src.getMinY(),src.getWidth(),src.getHeight());
+    }
+    if (!srcBounds.contains(srcROI.getBounds())) {
+      srcROI=srcROI.intersect(new ROIShape(srcBounds));
+    }
+    Rectangle dstBounds=op.getBounds();
+    ImageLayout2 layout=new ImageLayout2();
+    int minx=(int)srcBounds.getMinX();
+    int miny=(int)srcBounds.getMinY();
+    int w=(int)srcBounds.getWidth();
+    int h=(int)srcBounds.getHeight();
+    layout.setMinX(minx);
+    layout.setMinY(miny);
+    layout.setWidth(w);
+    layout.setHeight(h);
+    RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
+    final PlanarImage constantImage=ConstantDescriptor.create(new Float(w),new Float(h),new Byte[]{(byte)255},hints);
+    GridCoverage2D input=new GridCoverageFactory(GeoTools.getDefaultHints()).create(name,constantImage,op.src.getEnvelope());
+    PlanarImage roiImage=null;
+    roiImage=create(input,op.dst,new double[]{0d},null,srcROI);
+    ROI dstROI=new ROI(roiImage,1);
+    if (!dstBounds.contains(dstROI.getBounds())) {
+      dstROI=dstROI.intersect(new ROIShape(dstBounds));
+    }
+    return dstROI;
+  }
+  return java.awt.Image.UndefinedProperty;
+}

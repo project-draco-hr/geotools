@@ -1,0 +1,36 @@
+{
+  int[] ibands=new int[]{0};
+  if (bands == null) {
+    bands=ibands;
+  }
+  if (stats == null) {
+    stats=DEFAULT_STATISTICS;
+  }
+  RenderedImage classificationRaster=null;
+  if (classifier != null) {
+    GridSampleDimension sampleDimension=classifier.getSampleDimension(0);
+    double[] nodataarr=sampleDimension.getNoDataValues();
+    double[] noDataClassifier=nodataarr != null ? nodataarr : new double[]{Double.NaN};
+    classificationRaster=GridCoverage2DRIA.create(classifier,coverage,noDataClassifier);
+    RenderingHints hints=new RenderingHints(JAI.KEY_TILE_CACHE,new SunTileCache());
+    classificationRaster=NullDescriptor.create(classificationRaster,hints);
+  }
+  final ParameterValueGroup param=PROCESSOR.getOperation("Zonal").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("bands").setValue(bands);
+  param.parameter("classifier").setValue(classificationRaster);
+  param.parameter("roi").setValue(roi);
+  param.parameter("roilist").setValue(zones);
+  param.parameter("NoData").setValue(nodata);
+  param.parameter("mask").setValue(mask);
+  param.parameter("useROIAccessor").setValue(useROIAccessor);
+  param.parameter("stats").setValue(stats);
+  param.parameter("minbound").setValue(minbounds);
+  param.parameter("maxbound").setValue(maxbounds);
+  param.parameter("numbin").setValue(numbins);
+  param.parameter("rangeData").setValue(rangeData);
+  param.parameter("localstats").setValue(localStats);
+  GridCoverage2D output=(GridCoverage2D)PROCESSOR.doOperation(param);
+  List<ZoneGeometry> value=(List<ZoneGeometry>)output.getProperty(ZonalStatsDescriptor.ZS_PROPERTY);
+  return value;
+}

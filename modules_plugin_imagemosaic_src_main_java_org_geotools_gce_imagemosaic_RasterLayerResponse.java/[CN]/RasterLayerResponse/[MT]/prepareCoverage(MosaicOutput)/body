@@ -25,7 +25,11 @@
     final SampleDimensionType st=TypeMap.getSampleDimensionType(sm,i);
     final double noData;
     double min=-Double.MAX_VALUE, max=Double.MAX_VALUE;
-    if (backgroundValues != null) {
+    Double noDataAsProperty=getNoDataProperty(image);
+    if (noDataAsProperty != null) {
+      noData=noDataAsProperty.doubleValue();
+    }
+ else     if (backgroundValues != null) {
       noData=backgroundValues[backgroundValues.length > i ? i : 0];
     }
  else {
@@ -57,7 +61,7 @@
  else         if (st.compareTo(SampleDimensionType.UNSIGNED_32BITS) == 0)         max=Math.pow(2,32) - 1;
       }
     }
-    bands[i]=new SimplifiedGridSampleDimension(bandName,st,colorInterpretation,noData,min,max,1,0,null).geophysics(true);
+    bands[i]=new SimplifiedGridSampleDimension(bandName,st,colorInterpretation,noData,min,max,1,0,null);
   }
   Map<String,Object> properties=null;
   if (granulesPaths != null) {
@@ -67,5 +71,7 @@
   if (mosaicOutput.pamDataset != null) {
     properties.put(Utils.PAM_DATASET,mosaicOutput.pamDataset);
   }
+  ImageWorker w=new ImageWorker(image);
+  CoverageUtilities.setNoDataProperty(properties,w.getNoData());
   return coverageFactory.create(rasterManager.getCoverageIdentifier(),image,new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(image).getBounds()),PixelInCell.CELL_CORNER,finalGridToWorldCorner,this.mosaicBBox.getCoordinateReferenceSystem(),hints),bands,null,properties);
 }

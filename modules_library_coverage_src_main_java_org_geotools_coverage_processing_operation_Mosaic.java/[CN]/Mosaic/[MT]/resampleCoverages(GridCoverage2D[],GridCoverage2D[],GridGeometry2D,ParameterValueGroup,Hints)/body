@@ -1,6 +1,9 @@
 {
   int numSources=sources.length;
   RenderedImage[] rasters=new RenderedImage[numSources];
+  double[] backgrounds=new double[numSources];
+  ROI[] rois=new ROI[numSources];
+  boolean hasNoDataProp=false;
   MathTransform g2w=external.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
   double[] nodata=null;
   Object outputNodata=parameters.parameter(OUTNODATA_NAME).getValue();
@@ -18,10 +21,27 @@
     if (concatenated != null && concatenated.isIdentity()) {
       RenderedImage renderedImage=coverage.getRenderedImage();
       rasters[i]=renderedImage;
+      rois[i]=CoverageUtilities.getROIProperty(coverage);
       if (hasAlpha && alphas[i] != null) {
         checkAlpha(coverage,alphas[i]);
         alphaArray[i]=PlanarImage.wrapRenderedImage(alphas[i].getRenderedImage());
+        if (rois[i] != null) {
+          ImageWorker w=new ImageWorker(alphaArray[i]);
+          ImageWorker w1=new ImageWorker(rois[i].getAsImage());
+          ImageLayout layout=new ImageLayout();
+          layout.setMinX(alphaArray[i].getMinX());
+          layout.setMinY(alphaArray[i].getMinY());
+          layout.setWidth(alphaArray[i].getWidth());
+          layout.setHeight(alphaArray[i].getHeight());
+          w1.setRenderingHint(JAI.KEY_IMAGE_LAYOUT,layout);
+          w1.translate(0f,0f,null);
+          w.mask(w1.getRenderedImage(),false,0);
+        }
       }
+      double fillValue=CoverageUtilities.getBackgroundValues(coverage)[0];
+      backgrounds[i]=fillValue;
+      NoDataContainer noDataProperty=CoverageUtilities.getNoDataProperty(coverage);
+      hasNoDataProp|=noDataProperty != null;
     }
  else {
       GridGeometry2D newGG=new GridGeometry2D(PixelInCell.CELL_CORNER,g2w,inputGG.getEnvelope(),GeoTools.getDefaultHints());
@@ -47,17 +67,27 @@ catch (      TransformException e) {
  else {
         fillValue=nodata;
       }
-      rasters[i]=GridCoverage2DRIA.create(coverage,newGG,fillValue,hints);
+      rasters[i]=GridCoverage2DRIA.create(coverage,newGG,fillValue,hints,CoverageUtilities.getROIProperty(coverage));
       if (hasAlpha && alphas[i] != null) {
         checkAlpha(coverage,alphas[i]);
-        RenderedImage al=GridCoverage2DRIA.create(alphas[i],newGG,new double[1],hints);
+        RenderedImage al=GridCoverage2DRIA.create(alphas[i],newGG,new double[1],hints,CoverageUtilities.getROIProperty(coverage));
         alphaArray[i]=PlanarImage.wrapRenderedImage(al);
       }
+      backgrounds[i]=fillValue[0];
+      GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator propertyGenerator=new GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator();
+      Object property=propertyGenerator.getProperty("roi",rasters[i]);
+      ROI roi=(property != null && property instanceof ROI) ? (ROI)property : null;
+      rois[i]=roi;
+      NoDataContainer noDataProperty=CoverageUtilities.getNoDataProperty(coverage);
+      hasNoDataProp|=noDataProperty != null;
     }
   }
   ResampledRasters rr=new ResampledRasters();
   rr.setFinalGeometry(external);
   rr.setRasters(rasters);
   rr.setAlphas(alphaArray);
+  rr.setBackgrounds(backgrounds);
+  rr.setRois(rois);
+  rr.setHasNoData(hasNoDataProp);
   return rr;
 }

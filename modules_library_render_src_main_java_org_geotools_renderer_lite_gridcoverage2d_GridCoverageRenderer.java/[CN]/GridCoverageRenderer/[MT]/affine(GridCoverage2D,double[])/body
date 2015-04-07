@@ -6,6 +6,8 @@
     throw new UnsupportedOperationException("Non-affine transformations not yet implemented");
   }
   final AffineTransform finalGCgridToWorld=new AffineTransform((AffineTransform)finalGCTransform);
+  Range noData=CoverageUtilities.getNoDataProperty(input) != null ? CoverageUtilities.getNoDataProperty(input).getAsRange() : null;
+  ROI roi=CoverageUtilities.getROIProperty(input);
   final AffineTransform finalRasterTransformation=(AffineTransform)finalWorldToGrid.clone();
   finalRasterTransformation.concatenate(finalGCgridToWorld);
   Rectangle2D finalLayout=GridCoverageRendererUtilities.layoutHelper(finalImage,(float)finalRasterTransformation.getScaleX(),(float)finalRasterTransformation.getScaleY(),(float)finalRasterTransformation.getTranslateX(),(float)finalRasterTransformation.getTranslateY(),interpolation);
@@ -17,8 +19,12 @@
   try {
     ImageWorker iw=new ImageWorker(finalImage);
     iw.setRenderingHints(hints);
+    iw.setROI(roi);
+    iw.setNoData(noData);
     iw.affine(finalRasterTransformation,interpolation,bkgValues);
     im=iw.getRenderedImage();
+    roi=iw.getROI();
+    noData=iw.getNoData();
   }
   finally {
     if (DEBUG) {
@@ -30,5 +36,11 @@
   for (int i=0; i < numBands; i++) {
     sd[i]=new GridSampleDimension(TypeMap.getColorInterpretation(im.getColorModel(),i).name());
   }
-  return this.gridCoverageFactory.create(input.getName(),im,new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(im).getBounds()),input.getEnvelope()),sd,new GridCoverage[]{input},input.getProperties());
+  Map properties=input.getProperties();
+  if (properties == null) {
+    properties=new HashMap<>();
+  }
+  CoverageUtilities.setNoDataProperty(properties,noData);
+  CoverageUtilities.setROIProperty(properties,roi);
+  return this.gridCoverageFactory.create(input.getName(),im,new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(im).getBounds()),input.getEnvelope()),sd,new GridCoverage[]{input},properties);
 }

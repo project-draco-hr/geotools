@@ -14,8 +14,14 @@
     interpolation=(Interpolation)pld.getParamDefaultValue("interpolation");
   }
   if (bgValues == null) {
-    bgValues=(double[])pld.getParamDefaultValue("backgroundValues");
+    if (background == null || background.length <= 0) {
+      bgValues=(double[])pld.getParamDefaultValue("backgroundValues");
+    }
+ else {
+      bgValues=background;
+    }
   }
+  background=bgValues;
   RenderedImage source=image;
   if (image instanceof RenderedOp) {
     RenderedOp op=(RenderedOp)image;
@@ -37,7 +43,18 @@
         }
         WarpBuilder wb=new WarpBuilder(tolerance);
         wb.setMaxPositions(4 * 1024 * 1024);
-        RenderedOp at=AffineDescriptor.create(source,tx,interpolation,bgValues,commonHints);
+        ParameterBlock pb=new ParameterBlock();
+        pb.setSource(source,0);
+        pb.set(tx,0);
+        pb.set(interpolation,1);
+        pb.set(bgValues,2);
+        pb.set(roi,3);
+        pb.set(true,5);
+        pb.set(nodata,6);
+        if (isNoDataNeeded() && bgValues != null && bgValues.length > 0) {
+          setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
+        }
+        RenderedOp at=JAI.create("Affine",pb,commonHints);
         Rectangle targetBB=at.getBounds();
         at.dispose();
         Rectangle sourceBB=(Rectangle)sourceBoundsProperty;
@@ -56,9 +73,24 @@
           Object property=sourceImage.getProperty("ROI");
           if ((property == null) || property.equals(java.awt.Image.UndefinedProperty) || !(property instanceof ROI)) {
             paramBlk.add(warp).add(interpolation).add(bgValues);
+            paramBlk.set(nodata,4);
+            if (isNoDataNeeded() && bgValues != null && bgValues.length > 0) {
+              setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
+            }
           }
  else {
-            paramBlk.add(warp).add(interpolation).add(bgValues).add(property);
+            ROI newROI=null;
+            if (roi != null) {
+              newROI=roi.intersect((ROI)property);
+            }
+ else {
+              newROI=(ROI)property;
+            }
+            setROI(newROI);
+            paramBlk.add(warp).add(interpolation).add(bgValues).add(newROI).add(nodata);
+            if ((isNoDataNeeded() || newROI != null) && bgValues != null && bgValues.length > 0) {
+              setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
+            }
           }
           Hints localHints=new Hints(commonHints);
           localHints.remove(JAI.KEY_IMAGE_LAYOUT);
@@ -75,6 +107,11 @@
           RenderedOp result=JAI.create("Warp",paramBlk,localHints);
           result.setProperty("MathTransform",chained);
           image=result;
+          PropertyGenerator gen=new WarpDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+          Object prop=gen.getProperty("roi",image);
+          if (prop != null && prop instanceof ROI) {
+            setROI((ROI)prop);
+          }
           return this;
         }
       }
@@ -88,11 +125,38 @@
       AffineTransform sTx=(AffineTransform)paramBlock.getObjectParameter(0);
       Interpolation sInterp=(Interpolation)paramBlock.getObjectParameter(1);
       double[] sBgValues=(double[])paramBlock.getObjectParameter(2);
-      if ((sInterp == interpolation && Arrays.equals(sBgValues,bgValues))) {
+      Range nodata=null;
+      ROI r=null;
+      boolean similarROI=true;
+      if (paramBlock.getNumParameters() > 3) {
+        nodata=(Range)paramBlock.getObjectParameter(6);
+        r=(ROI)paramBlock.getObjectParameter(3);
+        if (r != null) {
+          try {
+            AffineTransform inverse=sTx.createInverse();
+            ROI newROI=this.roi != null ? this.roi.transform(inverse) : null;
+            similarROI=newROI != null && newROI.intersects(r.getBounds());
+          }
+ catch (          NoninvertibleTransformException e) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+      }
+      if ((sInterp == interpolation && Arrays.equals(sBgValues,bgValues)) && ((nodata == null || nodata.equals(this.nodata)) && (r == null || similarROI))) {
         AffineTransform concat=new AffineTransform(tx);
         concat.concatenate(sTx);
         tx=concat;
         source=sSource;
+        if (similarROI && r != null) {
+          try {
+            AffineTransform inverse=sTx.createInverse();
+            ROI newROI=this.roi != null ? this.roi.transform(inverse) : null;
+            this.roi=newROI.intersect(r);
+          }
+ catch (          NoninvertibleTransformException e) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
       }
     }
  else     if ("Scale".equals(opName)) {
@@ -103,11 +167,42 @@
       float xTrans=paramBlock.getFloatParameter(2);
       float yTrans=paramBlock.getFloatParameter(3);
       Interpolation sInterp=(Interpolation)paramBlock.getObjectParameter(4);
-      if (sInterp == interpolation) {
+      Range nodata=null;
+      ROI r=null;
+      boolean similarROI=true;
+      if (paramBlock.getNumParameters() > 5) {
+        nodata=(Range)paramBlock.getObjectParameter(7);
+        r=(ROI)paramBlock.getObjectParameter(5);
+        if (r != null) {
+          try {
+            AffineTransform sTx=AffineTransform.getScaleInstance(xScale,yScale);
+            sTx.concatenate(AffineTransform.getTranslateInstance(xTrans,yTrans));
+            AffineTransform inverse=sTx.createInverse();
+            ROI newROI=this.roi != null ? this.roi.transform(inverse) : null;
+            similarROI=newROI != null && newROI.intersects(r.getBounds());
+          }
+ catch (          NoninvertibleTransformException e) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+      }
+      if (sInterp == interpolation && ((nodata == null || nodata.equals(this.nodata)) && (r == null || similarROI))) {
         AffineTransform concat=new AffineTransform(tx);
         concat.concatenate(new AffineTransform(xScale,0,0,yScale,xTrans,yTrans));
         tx=concat;
         source=sSource;
+        if (similarROI && r != null) {
+          try {
+            AffineTransform sTx=AffineTransform.getScaleInstance(xScale,yScale);
+            sTx.concatenate(AffineTransform.getTranslateInstance(xTrans,yTrans));
+            AffineTransform inverse=sTx.createInverse();
+            ROI newROI=this.roi != null ? this.roi.transform(inverse) : null;
+            this.roi=newROI.intersect(r);
+          }
+ catch (          NoninvertibleTransformException e) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
       }
     }
   }
@@ -123,18 +218,78 @@
     this.image=source;
     return this;
   }
+  ParameterBlock pb=new ParameterBlock();
+  pb.setSource(source,0);
   if (!hasShearX && !hasShearY) {
     if (!hasScaleX && !hasScaleY && intTranslateX&& intTranslateY) {
       Hints localHints=new Hints(commonHints);
       localHints.remove(JAI.KEY_IMAGE_LAYOUT);
-      image=ScaleDescriptor.create(source,1.0f,1.0f,(float)Math.round(tx.getTranslateX()),(float)Math.round(tx.getTranslateY()),interpolation,localHints);
+      pb.set(1.0f,0);
+      pb.set(1.0f,1);
+      pb.set((float)Math.round(tx.getTranslateX()),2);
+      pb.set((float)Math.round(tx.getTranslateY()),3);
+      pb.set(interpolation,4);
+      pb.set(roi,5);
+      pb.set(nodata,7);
+      if (isNoDataNeeded()) {
+        if (background != null && background.length > 0) {
+          pb.set(background,8);
+          setNoData(RangeFactory.create(background[0],background[0]));
+        }
+      }
+      image=JAI.create("Scale",pb,localHints);
+      if (roi != null) {
+        PropertyGenerator gen=new ScaleDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+        Object prop=gen.getProperty("roi",image);
+        if (prop != null && prop instanceof ROI) {
+          setROI((ROI)prop);
+        }
+      }
     }
  else {
-      image=ScaleDescriptor.create(source,(float)tx.getScaleX(),(float)tx.getScaleY(),(float)tx.getTranslateX(),(float)tx.getTranslateY(),interpolation,commonHints);
+      pb.set((float)tx.getScaleX(),0);
+      pb.set((float)tx.getScaleY(),1);
+      pb.set((float)tx.getTranslateX(),2);
+      pb.set((float)tx.getTranslateY(),3);
+      pb.set(interpolation,4);
+      pb.set(roi,5);
+      pb.set(nodata,7);
+      if (isNoDataNeeded()) {
+        if (background != null && background.length > 0) {
+          pb.set(background,8);
+          setNoData(RangeFactory.create(background[0],background[0]));
+        }
+      }
+      image=JAI.create("Scale",pb,commonHints);
+      if (roi != null) {
+        PropertyGenerator gen=new ScaleDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+        Object prop=gen.getProperty("roi",image);
+        if (prop != null && prop instanceof ROI) {
+          setROI((ROI)prop);
+        }
+      }
     }
   }
  else {
-    image=AffineDescriptor.create(source,tx,interpolation,bgValues,commonHints);
+    pb.set(tx,0);
+    pb.set(interpolation,1);
+    pb.set(bgValues,2);
+    pb.set(roi,3);
+    pb.set(true,5);
+    pb.set(nodata,6);
+    if (isNoDataNeeded()) {
+      if (bgValues != null && bgValues.length > 0) {
+        setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
+      }
+    }
+    image=JAI.create("Affine",pb,commonHints);
+    if (roi != null) {
+      PropertyGenerator gen=new AffineDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+      Object prop=gen.getProperty("roi",image);
+      if (prop != null && prop instanceof ROI) {
+        setROI((ROI)prop);
+      }
+    }
   }
   return this;
 }

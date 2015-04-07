@@ -5,7 +5,7 @@
   final MathTransform tr=ProjectiveTransform.create(gridToCRS);
   CoordinateReferenceSystem crs=source.getCoordinateReferenceSystem();
   crs=new DefaultDerivedCRS("Rotated CRS",crs,tr,crs.getCoordinateSystem());
-  final GridCoverage2D rotated=project(source,crs,null,null,true);
+  final GridCoverage2D rotated=project(source,crs,null,null);
   final CoverageProcessor processor=CoverageProcessor.getInstance();
   final Envelope oldEnvelope=rotated.getEnvelope();
   final GeneralEnvelope cropEnvelope=new GeneralEnvelope(new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0) * 3 / 8,oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1) * 3 / 8},new double[]{oldEnvelope.getMinimum(0) + oldEnvelope.getSpan(0) * 5 / 8,oldEnvelope.getMinimum(1) + oldEnvelope.getSpan(1) * 5 / 8});
@@ -28,9 +28,9 @@
   assertEquals(228,raster.getWidth());
   assertEquals(228,raster.getHeight());
   assertEquals(rotated.getGridGeometry().getGridToCRS2D(),cropped.getGridGeometry().getGridToCRS2D());
-  Object property=cropped.getProperty("GC_ROI");
+  Object property=CoverageUtilities.getROIProperty(cropped);
   assertNotNull(property);
-  assertTrue(property instanceof Polygon);
-  Polygon roi=(Polygon)property;
+  assertTrue(property instanceof ROI);
+  ROI roi=(ROI)property;
   assertEquals(new Rectangle(raster.getMinX(),raster.getMinY(),raster.getWidth(),raster.getHeight()),roi.getBounds());
 }

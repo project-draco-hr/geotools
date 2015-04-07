@@ -1,6 +1,4 @@
 {
-  final double SCALE=0.1;
-  final double OFFSET=5.0;
   final double PIXEL_SIZE=.25;
   final int BEGIN_VALID=3;
   final GridCoverage2D coverage;
@@ -8,7 +6,7 @@
   final WritableRaster raster;
   final Rectangle2D bounds;
   final GridSampleDimension band;
-  band=new GridSampleDimension("Temperature",new Category[]{new Category("No data",null,0),new Category("Land",null,1),new Category("Cloud",null,2),new Category("Temperature",null,BEGIN_VALID,256,SCALE,OFFSET)},CELSIUS);
+  band=new GridSampleDimension("Temperature",new Category[]{new Category("No data",null,0),new Category("Land",null,1),new Category("Cloud",null,2),new Category("Temperature",null,BEGIN_VALID,256)},CELSIUS);
   image=new BufferedImage(120,80,BufferedImage.TYPE_BYTE_INDEXED);
   raster=image.getRaster();
   for (int i=raster.getWidth(); --i >= 0; ) {
@@ -30,16 +28,8 @@
   assertEquals("raw",coverage.tileEncoding);
   assertSame(coverage.getRenderedImage(),coverage.getRenderableImage(0,1).createDefaultRendering());
   assertSame(image.getTile(0,0),coverage.getRenderedImage().getTile(0,0));
-  GridCoverage2D geophysics=coverage.view(ViewType.GEOPHYSICS);
-  assertSame(coverage,coverage.view(ViewType.PACKED));
-  assertSame(coverage,geophysics.view(ViewType.PACKED));
-  assertSame(geophysics,geophysics.view(ViewType.GEOPHYSICS));
-  assertFalse(coverage.equals(geophysics));
-  assertFalse(coverage.getSampleDimension(0).getSampleToGeophysics().isIdentity());
-  assertTrue(geophysics.getSampleDimension(0).getSampleToGeophysics().isIdentity());
   final int bandN=0;
   double[] bufferCov=null;
-  double[] bufferGeo=null;
   final double left=bounds.getMinX() + (0.5 * PIXEL_SIZE);
   final double upper=bounds.getMaxY() - (0.5 * PIXEL_SIZE);
   final Point2D.Double point=new Point2D.Double();
@@ -49,14 +39,7 @@
       point.y=upper - PIXEL_SIZE * j;
       double r=raster.getSampleDouble(i,j,bandN);
       bufferCov=coverage.evaluate(point,bufferCov);
-      bufferGeo=geophysics.evaluate(point,bufferGeo);
       assertEquals(r,bufferCov[bandN],EPS);
-      if (r < BEGIN_VALID) {
-        assertTrue(Double.isNaN(bufferGeo[bandN]));
-      }
- else {
-        assertEquals(OFFSET + SCALE * r,bufferGeo[bandN],EPS);
-      }
     }
   }
   return coverage;

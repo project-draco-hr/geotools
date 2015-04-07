@@ -13,12 +13,14 @@
   if (ImageUtilities.isMediaLibAvailable()) {
     finalImage=ConstantDescriptor.create(Float.valueOf(rasterBounds.width),Float.valueOf(rasterBounds.height),values,renderingHints);
     if (rasterBounds.x != 0 || rasterBounds.y != 0) {
-      finalImage=TranslateDescriptor.create(finalImage,Float.valueOf(rasterBounds.x),Float.valueOf(rasterBounds.y),Interpolation.getInstance(Interpolation.INTERP_NEAREST),null);
+      ImageWorker w=new ImageWorker(finalImage);
+      w.translate(Float.valueOf(rasterBounds.x),Float.valueOf(rasterBounds.y),Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+      finalImage=w.getRenderedImage();
     }
     if (rasterManager.defaultCM != null) {
       il.setColorModel(rasterManager.defaultCM);
       il.setSampleModel(rasterManager.defaultCM.createCompatibleSampleModel(tileSize.width,tileSize.height));
-      finalImage=FormatDescriptor.create(finalImage,Integer.valueOf(il.getSampleModel(null).getDataType()),renderingHints);
+      finalImage=new ImageWorker(finalImage).setRenderingHints(renderingHints).format(il.getSampleModel(null).getDataType()).getRenderedImage();
     }
   }
  else {
@@ -35,7 +37,10 @@
       bkgValues[i]=values[i].doubleValue();
     }
     Assert.isTrue(il.isValid(ImageLayout.WIDTH_MASK | ImageLayout.HEIGHT_MASK | ImageLayout.SAMPLE_MODEL_MASK));
-    finalImage=MosaicDescriptor.create(new RenderedImage[0],MosaicDescriptor.MOSAIC_TYPE_OVERLAY,null,null,new double[][]{{CoverageUtilities.getMosaicThreshold(il.getSampleModel(null).getDataType())}},bkgValues,renderingHints);
+    ImageWorker w=new ImageWorker(renderingHints);
+    w.setBackground(bkgValues);
+    w.mosaic(new RenderedImage[0],MosaicDescriptor.MOSAIC_TYPE_OVERLAY,null,null,new double[][]{{CoverageUtilities.getMosaicThreshold(il.getSampleModel(null).getDataType())}},new Range[]{RangeFactory.create(0,0)});
+    finalImage=w.getRenderedImage();
   }
   if (footprintBehavior != null) {
     finalImage=footprintBehavior.postProcessBlankResponse(finalImage,renderingHints);

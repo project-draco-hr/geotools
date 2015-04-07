@@ -1,0 +1,30 @@
+{
+  Map properties;
+  if (sources[0].getProperties() == null) {
+    properties=new HashMap<>();
+  }
+ else {
+    properties=new HashMap<>(sources[0].getProperties());
+  }
+  ParameterBlockJAI jai=parameters.parameters;
+  int numSources=jai.getNumSources();
+  ResampledRasters rr=parameters.rr;
+  if (rr != null && rr.getRois() != null) {
+    ROI[] rois=rr.getRois();
+    ROI finalROI=null;
+    for (int i=0; i < numSources; i++) {
+      if (finalROI == null) {
+        finalROI=rois[i];
+      }
+ else {
+        finalROI.add(rois[i]);
+      }
+    }
+    CoverageUtilities.setROIProperty(properties,finalROI);
+  }
+  Object nodataParam=jai.getObjectParameter(4);
+  if (nodataParam != null && rr != null && rr.hasNoData()) {
+    CoverageUtilities.setNoDataProperty(properties,nodataParam);
+  }
+  return properties;
+}

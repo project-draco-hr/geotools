@@ -1,0 +1,19 @@
+{
+  ensureNonNull("name",name);
+  this.name=SimpleInternationalString.wrap(name);
+  this.ARGB=ARGB;
+  this.range=range;
+  Class<?> type=range.getElementClass();
+  boolean minInc=range.isMinIncluded();
+  boolean maxInc=range.isMaxIncluded();
+  this.minimum=doubleValue(type,range.getMinValue(),minInc ? 0 : +1);
+  this.maximum=doubleValue(type,range.getMaxValue(),maxInc ? 0 : -1);
+  if (minInc && maxInc && Double.isNaN(minimum)&& Double.doubleToRawLongBits(minimum) == Double.doubleToRawLongBits(maximum)) {
+    this.isQuantitative=false;
+    return;
+  }
+  this.isQuantitative=isQuantitative;
+  if (!(minimum <= maximum) || Double.isInfinite(minimum) || Double.isInfinite(maximum)) {
+    throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_RANGE_$2,range.getMinValue(),range.getMaxValue()));
+  }
+}

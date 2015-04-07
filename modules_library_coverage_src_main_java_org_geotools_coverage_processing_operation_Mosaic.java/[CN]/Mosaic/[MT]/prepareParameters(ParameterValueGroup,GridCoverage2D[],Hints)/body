@@ -26,6 +26,7 @@
   }
   ResampledRasters rr=policy.resampleGridGeometry(sources,alphaCovs,gg,parameters,hints);
   RenderedImage[] rasters=rr.getRasters();
+  ROI[] newRois=rr.getRois();
   GridGeometry2D finalGeometry=rr.getFinalGeometry();
   if (finalGeometry == null) {
     throw new CoverageProcessingException("No final GridGeometry found");
@@ -42,17 +43,35 @@
  else {
     nodata=CoverageUtilities.getBackgroundValues(sources[PRIMARY_SOURCE_INDEX]);
   }
-  block.setParameter("backgroundValues",nodata);
-  double threshold=CoverageUtilities.getMosaicThreshold(rasters[PRIMARY_SOURCE_INDEX].getSampleModel().getDataType());
-  block.setParameter("sourceThreshold",new double[][]{{threshold}});
+  block.set(nodata,BACKGROUND_PARAM);
   ROI[] rois=new ROI[numSources];
   for (int i=0; i < numSources; i++) {
-    rois[i]=new ROIShape(PlanarImage.wrapRenderedImage(rasters[i]).getBounds());
+    if (newRois != null && newRois[i] != null) {
+      rois[i]=newRois[i];
+    }
+ else {
+      rois[i]=new ROIShape(PlanarImage.wrapRenderedImage(rasters[i]).getBounds());
+    }
   }
-  block.setParameter("sourceROI",rois);
-  block.setParameter("mosaicType",MosaicDescriptor.MOSAIC_TYPE_OVERLAY);
+  block.set(rois,ROI_PARAM);
   if (rr.getAlphas() != null) {
-    block.setParameter("sourceAlpha",rr.getAlphas());
+    block.set(rr.getAlphas(),ALPHA_PARAM);
   }
-  return new Params(block,hints,finalGeometry);
+  double threshold=CoverageUtilities.getMosaicThreshold(rasters[PRIMARY_SOURCE_INDEX].getSampleModel().getDataType());
+  block.set(new double[][]{{threshold}},THRESHOLD_PARAM);
+  block.set(MosaicDescriptor.MOSAIC_TYPE_OVERLAY,MOSAIC_TYPE_PARAM);
+  if (JAIExt.isJAIExtOperation("Mosaic")) {
+    double[] nodatas=rr.getBackgrounds();
+    if (nodatas != null && rr.hasNoData()) {
+      Range[] ranges=new Range[numSources];
+      for (int i=0; i < numSources; i++) {
+        double value=nodatas[i];
+        ranges[i]=RangeFactory.create(value,value);
+      }
+      block.set(ranges,NODATA_RANGE_PARAM);
+    }
+  }
+  Params params=new Params(block,hints,finalGeometry);
+  params.rr=rr;
+  return params;
 }

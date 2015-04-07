@@ -6,7 +6,29 @@
   final RenderingHints newRi=(RenderingHints)oldRi.clone();
   newRi.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,il));
   setRenderingHints(newRi);
-  image=ColorConvertDescriptor.create(image,cm,getRenderingHints());
+  ParameterBlock pb=new ParameterBlock();
+  pb.setSource(image,0);
+  pb.set(cm,0);
+  pb.set(roi,1);
+  pb.set(nodata,2);
+  if (isNoDataNeeded()) {
+    if (background != null && background.length > 0) {
+      if (background.length != cm.getNumColorComponents()) {
+        throw new IllegalArgumentException("Wrong DestinationNoData value defined");
+      }
+      pb.set(background,3);
+      ColorSpace in=image.getColorModel().getColorSpace();
+      ColorSpace out=cm.getColorSpace();
+      float[] output=new float[background.length];
+      for (int i=0; i < background.length; i++) {
+        output[i]=(float)background[i];
+      }
+      float[] toXYZ=in.toCIEXYZ(output);
+      float[] fromXYZ=out.fromCIEXYZ(toXYZ);
+      setNoData(RangeFactory.create(fromXYZ[0],fromXYZ[0]));
+    }
+  }
+  image=JAI.create("ColorConvert",pb,getRenderingHints());
   this.setRenderingHints(oldRi);
   invalidateStatistics();
 }

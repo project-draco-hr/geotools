@@ -1,8 +1,10 @@
 {
   final ParameterBlockJAI block=prepareParameters(parameters);
   final String[] sourceNames=operation.getSourceNames();
-  final GridCoverage2D[] sources=new GridCoverage2D[sourceNames.length];
-  ViewType primarySourceType=extractSources(parameters,sourceNames,sources);
+  final Collection<GridCoverage2D> sourceCollection=new ArrayList<GridCoverage2D>();
+  extractSources(parameters,sourceCollection,sourceNames);
+  int numSources=sourceCollection.size();
+  final GridCoverage2D[] sources=sourceCollection.toArray(new GridCoverage2D[numSources]);
   resampleToCommonGeometry(sources,null,null,hints);
   GridCoverage2D coverage=sources[PRIMARY_SOURCE_INDEX];
   final CoordinateReferenceSystem crs=coverage.getCoordinateReferenceSystem2D();
@@ -15,8 +17,8 @@
     if (!CRS.equalsIgnoreMetadata(crs,source.getCoordinateReferenceSystem2D()) || !CRS.equalsIgnoreMetadata(gridToCRS,source.getGridGeometry().getGridToCRS2D())) {
       throw new IllegalArgumentException(Errors.format(ErrorKeys.INCOMPATIBLE_GRID_GEOMETRY));
     }
-    block.setSource(sourceNames[i],source.getRenderedImage());
+    block.setSource(source.getRenderedImage(),i);
   }
   coverage=deriveGridCoverage(sources,new Parameters(crs,gridToCRS,block,hints));
-  return postProcessResult(coverage,primarySourceType);
+  return postProcessResult(coverage);
 }

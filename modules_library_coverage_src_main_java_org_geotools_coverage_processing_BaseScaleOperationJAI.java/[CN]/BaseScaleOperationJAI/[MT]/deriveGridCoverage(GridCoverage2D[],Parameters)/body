@@ -18,64 +18,53 @@
   final BorderExtender borderExtender=(BorderExtender)(indexOfBorderExtenderParam != -1 ? parameters.parameters.getObjectParameter("BorderExtender") : ImageUtilities.DEFAULT_BORDER_EXTENDER);
   GridCoverage2D sourceCoverage=sources[PRIMARY_SOURCE_INDEX];
   RenderedImage sourceImage=sourceCoverage.getRenderedImage();
-  ViewType strategy=CoverageUtilities.preferredViewForOperation(sourceCoverage,interpolation,false,parameters.hints);
-switch (strategy) {
-case PHOTOGRAPHIC:
-    break;
-case GEOPHYSICS:
-case PACKED:
-  sourceCoverage=sourceCoverage.view(strategy);
-sourceImage=sourceCoverage.getRenderedImage();
-break;
-}
-RenderingHints targetHints=parameters.hints != null ? parameters.hints : ImageUtilities.getRenderingHints(sourceImage);
-if (targetHints == null) targetHints=new RenderingHints(null);
-if (parameters.hints != null) targetHints.add(parameters.hints);
-ImageLayout layout=(ImageLayout)targetHints.get(JAI.KEY_IMAGE_LAYOUT);
-if (layout != null) {
-layout=(ImageLayout)layout.clone();
-}
+  RenderingHints targetHints=parameters.hints != null ? parameters.hints : ImageUtilities.getRenderingHints(sourceImage);
+  if (targetHints == null)   targetHints=new RenderingHints(null);
+  if (parameters.hints != null)   targetHints.add(parameters.hints);
+  ImageLayout layout=(ImageLayout)targetHints.get(JAI.KEY_IMAGE_LAYOUT);
+  if (layout != null) {
+    layout=(ImageLayout)layout.clone();
+  }
  else {
-layout=new ImageLayout(sourceImage);
-layout.unsetTileLayout();
-}
-if ((layout.getValidMask() & (ImageLayout.TILE_WIDTH_MASK | ImageLayout.TILE_HEIGHT_MASK | ImageLayout.TILE_GRID_X_OFFSET_MASK| ImageLayout.TILE_GRID_Y_OFFSET_MASK)) == 0) {
-layout.setTileGridXOffset(layout.getMinX(sourceImage));
-layout.setTileGridYOffset(layout.getMinY(sourceImage));
-final int width=layout.getWidth(sourceImage);
-final int height=layout.getHeight(sourceImage);
-if (layout.getTileWidth(sourceImage) > width) layout.setTileWidth(width);
-if (layout.getTileHeight(sourceImage) > height) layout.setTileHeight(height);
-}
-targetHints.put(JAI.KEY_IMAGE_LAYOUT,layout);
-targetHints.put(JAI.KEY_BORDER_EXTENDER,borderExtender);
-if (strategy != ViewType.PHOTOGRAPHIC) targetHints.add(ImageUtilities.DONT_REPLACE_INDEX_COLOR_MODEL);
+    layout=new ImageLayout(sourceImage);
+    layout.unsetTileLayout();
+  }
+  if ((layout.getValidMask() & (ImageLayout.TILE_WIDTH_MASK | ImageLayout.TILE_HEIGHT_MASK | ImageLayout.TILE_GRID_X_OFFSET_MASK| ImageLayout.TILE_GRID_Y_OFFSET_MASK)) == 0) {
+    layout.setTileGridXOffset(layout.getMinX(sourceImage));
+    layout.setTileGridYOffset(layout.getMinY(sourceImage));
+    final int width=layout.getWidth(sourceImage);
+    final int height=layout.getHeight(sourceImage);
+    if (layout.getTileWidth(sourceImage) > width)     layout.setTileWidth(width);
+    if (layout.getTileHeight(sourceImage) > height)     layout.setTileHeight(height);
+  }
+  targetHints.put(JAI.KEY_IMAGE_LAYOUT,layout);
+  targetHints.put(JAI.KEY_BORDER_EXTENDER,borderExtender);
+  final boolean asPhotographicStrategy=sourceImage.getColorModel() instanceof IndexColorModel;
+  if (!(asPhotographicStrategy))   targetHints.add(ImageUtilities.DONT_REPLACE_INDEX_COLOR_MODEL);
  else {
-targetHints.add(ImageUtilities.REPLACE_INDEX_COLOR_MODEL);
-layout.unsetValid(ImageLayout.COLOR_MODEL_MASK);
-layout.unsetValid(ImageLayout.SAMPLE_MODEL_MASK);
-}
-RenderedImage image=createRenderedImage(parameters.parameters,targetHints);
-final double scaleX=image.getWidth() / (1.0 * sourceImage.getWidth());
-final double scaleY=image.getHeight() / (1.0 * sourceImage.getHeight());
-final double tX=image.getMinX() - sourceImage.getMinX() * scaleX;
-final double tY=image.getMinY() - sourceImage.getMinY() * scaleY;
-final AffineTransform scaleTranslate=new AffineTransform(scaleX,0,0,scaleY,tX,tY);
-final MathTransform finalTransform;
-try {
-scaleTranslate.invert();
-scaleTranslate.preConcatenate(CoverageUtilities.CENTER_TO_CORNER);
-final AffineTransform2D tr=new AffineTransform2D(scaleTranslate);
-finalTransform=ConcatenatedTransform.create(tr,sourceCoverage.getGridGeometry().getGridToCRS2D());
-}
- catch (Exception e) {
-throw new RuntimeException(e);
-}
-final InternationalString name=deriveName(sources,0,parameters);
-final Map<String,?> properties=getProperties(image,parameters.crs,name,finalTransform,sources,parameters);
-final GridGeometry2D gg2D=new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(image).getBounds()),PixelInCell.CELL_CORNER,finalTransform,parameters.crs,null);
-final GridCoverage2D result=getFactory(parameters.hints).create(name,image,gg2D,(GridSampleDimension[])(strategy == ViewType.PHOTOGRAPHIC ? null : sourceCoverage.getSampleDimensions().clone()),sources,properties);
-if (strategy == ViewType.GEOPHYSICS) return result.view(ViewType.PACKED);
-if (strategy == ViewType.PACKED) return result.view(ViewType.GEOPHYSICS);
-return result;
+    targetHints.add(ImageUtilities.REPLACE_INDEX_COLOR_MODEL);
+    layout.unsetValid(ImageLayout.COLOR_MODEL_MASK);
+    layout.unsetValid(ImageLayout.SAMPLE_MODEL_MASK);
+  }
+  RenderedImage image=createRenderedImage(parameters.parameters,targetHints);
+  final double scaleX=image.getWidth() / (1.0 * sourceImage.getWidth());
+  final double scaleY=image.getHeight() / (1.0 * sourceImage.getHeight());
+  final double tX=image.getMinX() - sourceImage.getMinX() * scaleX;
+  final double tY=image.getMinY() - sourceImage.getMinY() * scaleY;
+  final AffineTransform scaleTranslate=new AffineTransform(scaleX,0,0,scaleY,tX,tY);
+  final MathTransform finalTransform;
+  try {
+    scaleTranslate.invert();
+    scaleTranslate.preConcatenate(CoverageUtilities.CENTER_TO_CORNER);
+    final AffineTransform2D tr=new AffineTransform2D(scaleTranslate);
+    finalTransform=ConcatenatedTransform.create(tr,sourceCoverage.getGridGeometry().getGridToCRS2D());
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+  final InternationalString name=deriveName(sources,0,parameters);
+  final Map<String,?> properties=getProperties(image,parameters.crs,name,finalTransform,sources,parameters);
+  final GridGeometry2D gg2D=new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(image).getBounds()),PixelInCell.CELL_CORNER,finalTransform,parameters.crs,null);
+  final GridCoverage2D result=getFactory(parameters.hints).create(name,image,gg2D,(GridSampleDimension[])(asPhotographicStrategy ? null : sourceCoverage.getSampleDimensions().clone()),sources,properties);
+  return result;
 }
