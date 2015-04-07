@@ -1,0 +1,26 @@
+{
+  Attribute spatialRef=var.findAttribute(NetCDFUtilities.SPATIAL_REF);
+  CoordinateReferenceSystem crs=parseSpatialRef(spatialRef);
+  if (crs != null) {
+    return crs;
+  }
+  Attribute gridMappingName=var.findAttribute(NetCDFUtilities.GRID_MAPPING_NAME);
+  if (gridMappingName == null) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("No grid_mapping_name attribute has been found.\n " + "Unable to parse a CF projection from this variable.\n" + "This probably means that is WGS84 or unsupported");
+    }
+    return null;
+  }
+  String mappingName=gridMappingName.getStringValue();
+  String projectionName=getProjectionName(mappingName,var);
+  NetCDFProjection projection=supportedProjections.get(projectionName);
+  String ogcName=projection.getOGCName();
+  ParameterValueGroup ogcParameters=ProjectionBuilder.getDefaultparameters(ogcName);
+  Map<String,String> netCDFParamsMapping=projection.getParameters();
+  Set<String> ogcParameterKeys=netCDFParamsMapping.keySet();
+  for (  String ogcParameterKey : ogcParameterKeys) {
+    handleParam(netCDFParamsMapping,ogcParameters,ogcParameterKey,var);
+  }
+  Ellipsoid ellipsoid=buildEllipsoid(var,SI.METER);
+  return ProjectionBuilder.buildCRS(java.util.Collections.singletonMap(NetCDFUtilities.NAME,projectionName),ogcParameters,ellipsoid);
+}

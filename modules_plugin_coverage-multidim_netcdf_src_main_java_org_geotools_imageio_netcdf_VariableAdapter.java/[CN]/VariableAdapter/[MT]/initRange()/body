@@ -17,7 +17,22 @@
   }
   final StringBuilder sb=new StringBuilder();
   final Set<SampleDimension> sampleDims=new HashSet<SampleDimension>();
-  sampleDims.add(new GridSampleDimension(description + ":sd",categories,null));
+  Unit unit=null;
+  String unitString=variableDS.getUnitsString();
+  if (unitString != null) {
+    try {
+      for (      UnitCharReplacement replacement : UNIT_CHARS_REPLACEMENTS) {
+        unitString=replacement.replace(unitString);
+      }
+      unit=Unit.valueOf(unitString);
+    }
+ catch (    IllegalArgumentException iae) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Unable to parse the unit:" + unitString + "\nNo unit will be assigned");
+      }
+    }
+  }
+  sampleDims.add(new GridSampleDimension(description + ":sd",categories,unit));
   InternationalString desc=null;
   if (description != null && !description.isEmpty()) {
     desc=new SimpleInternationalString(description);

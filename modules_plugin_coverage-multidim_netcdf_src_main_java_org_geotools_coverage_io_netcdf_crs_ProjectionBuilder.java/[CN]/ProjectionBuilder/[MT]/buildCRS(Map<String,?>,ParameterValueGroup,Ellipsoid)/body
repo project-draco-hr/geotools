@@ -1,0 +1,21 @@
+{
+  updateEllipsoidParams(parameters,ellipsoid);
+  final GeodeticDatum datum=ProjectionBuilder.createGeodeticDatum(DEFAULT_DATUM_NAME,ellipsoid);
+  GeographicCRS baseCRS=ProjectionBuilder.createGeographicCRS(NetCDFUtilities.UNKNOWN,datum);
+  MathTransform transform=ProjectionBuilder.createTransform(parameters);
+  String name=NetCDFUtilities.UNKNOWN;
+  if (props != null && !props.isEmpty() && props.containsKey(NetCDFUtilities.NAME)) {
+    name=(String)props.get(NetCDFUtilities.NAME);
+  }
+  DefiningConversion conversionFromBase=ProjectionBuilder.createConversionFromBase(name,transform);
+  OperationMethod method=conversionFromBase.getMethod();
+  if (!(method instanceof MathTransformProvider)) {
+    OperationMethod opMethod=mtFactory.getLastMethodUsed();
+    if (opMethod instanceof MathTransformProvider) {
+      final Map<String,Object> copy=new HashMap<String,Object>(props);
+      copy.put(DefaultProjectedCRS.CONVERSION_TYPE_KEY,((MathTransformProvider)opMethod).getOperationType());
+      props=copy;
+    }
+  }
+  return ProjectionBuilder.createProjectedCRS(props,baseCRS,conversionFromBase,transform);
+}

@@ -51,6 +51,11 @@
   }
   Map<String,Set<?>> domainsSubset=readRequest.getAdditionalDomainsSubset();
   Filter requestFilter=request.originalRequest.getFilter();
+  double[] noData=null;
+  if (sampleDimensions != null && sampleDimensions.length > 0) {
+    GridSampleDimension sampleDimension=sampleDimensions[0];
+    noData=sampleDimension.getNoDataValues();
+  }
   for (  DateRange timeRange : tempSubset) {
     for (    NumberRange<Double> elevation : vertSubset) {
       Query query=new Query();
@@ -66,9 +71,9 @@
         continue;
       }
       int imageIndex=indexes.get(0);
-      final RenderedImage image=loadRaster(baseReadParameters,imageIndex,targetBBox,finalWorldToGridCorner,hints);
-      RenderedImage finalRaster=postProcessRaster(image);
-      GridCoverage2D gridCoverage=prepareCoverage(finalRaster,sampleDimensions);
+      final RenderedImage image=loadRaster(baseReadParameters,imageIndex,targetBBox,finalWorldToGridCorner,hints,noData);
+      RenderedImage finalRaster=postProcessRaster(image,noData);
+      GridCoverage2D gridCoverage=prepareCoverage(finalRaster,sampleDimensions,noData);
       if (gridCoverage != null) {
         GridCoverage gcResponse=new DefaultGridCoverageResponse(gridCoverage,timeRange,elevation);
         addResult(gcResponse);

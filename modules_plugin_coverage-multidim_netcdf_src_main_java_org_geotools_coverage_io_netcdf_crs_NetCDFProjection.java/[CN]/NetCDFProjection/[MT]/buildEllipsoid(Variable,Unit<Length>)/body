@@ -1,0 +1,31 @@
+{
+  Number semiMajorAxis=null;
+  Number semiMinorAxis=null;
+  Double inverseFlattening=Double.NEGATIVE_INFINITY;
+  Map<String,Number> ellipsoidParams=new HashMap<String,Number>();
+  Attribute semiMajorAxisAttribute=gridMappingVariable.findAttribute(CF.SEMI_MAJOR_AXIS);
+  if (semiMajorAxisAttribute != null) {
+    semiMajorAxis=semiMajorAxisAttribute.getNumericValue();
+    ellipsoidParams.put(NetCDFUtilities.SEMI_MAJOR,semiMajorAxis);
+  }
+  if (semiMajorAxis == null) {
+    semiMajorAxisAttribute=gridMappingVariable.findAttribute(CF.EARTH_RADIUS);
+    if (semiMajorAxisAttribute != null) {
+      semiMajorAxis=semiMajorAxisAttribute.getNumericValue();
+      ellipsoidParams.put(NetCDFUtilities.SEMI_MAJOR,semiMajorAxis);
+    }
+  }
+  Attribute semiMinorAxisAttribute=gridMappingVariable.findAttribute(CF.SEMI_MINOR_AXIS);
+  if (semiMinorAxisAttribute != null) {
+    semiMinorAxis=semiMinorAxisAttribute.getNumericValue();
+    ellipsoidParams.put(NetCDFUtilities.SEMI_MINOR,semiMinorAxis);
+  }
+  if (semiMinorAxis == null) {
+    Attribute inverseFlatteningAttribute=gridMappingVariable.findAttribute(CF.INVERSE_FLATTENING);
+    if (inverseFlatteningAttribute != null) {
+      inverseFlattening=inverseFlatteningAttribute.getNumericValue().doubleValue();
+    }
+    ellipsoidParams.put(NetCDFUtilities.INVERSE_FLATTENING,inverseFlattening);
+  }
+  return ProjectionBuilder.createEllipsoid(NetCDFUtilities.UNKNOWN,ellipsoidParams);
+}

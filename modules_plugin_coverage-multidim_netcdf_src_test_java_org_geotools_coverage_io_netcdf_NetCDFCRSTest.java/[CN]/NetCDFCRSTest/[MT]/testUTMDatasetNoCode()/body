@@ -1,0 +1,27 @@
+{
+  final File file=TestData.file(this,"utmnocode.nc");
+  NetCDFReader reader=null;
+  try {
+    reader=new NetCDFReader(file,null);
+    String[] coverages=reader.getGridCoverageNames();
+    CoordinateReferenceSystem crs=reader.getCoordinateReferenceSystem(coverages[0]);
+    assertTrue(crs instanceof ProjectedCRS);
+    ProjectedCRS projectedCRS=((ProjectedCRS)crs);
+    Projection projection=projectedCRS.getConversionFromBase();
+    MathTransform transform=projection.getMathTransform();
+    assertTrue(transform instanceof TransverseMercator);
+    NetCDFCoordinateReferenceSystemType crsType=NetCDFCoordinateReferenceSystemType.parseCRS(crs);
+    assertSame(NetCDFCoordinateReferenceSystemType.TRANSVERSE_MERCATOR,crsType);
+    assertSame(NetCDFCoordinateReferenceSystemType.NetCDFCoordinate.YX_COORDS,crsType.getCoordinates());
+    assertSame(NetCDFProjection.TRANSVERSE_MERCATOR,crsType.getNetCDFProjection());
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

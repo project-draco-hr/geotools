@@ -1,0 +1,23 @@
+{
+  ParameterValueGroup params=ProjectionBuilder.getProjectionParameters(NetCDFProjection.LAMBERT_CONFORMAL_CONIC_1SP.getOGCName());
+  params.parameter("central_meridian").setValue(-95.0);
+  params.parameter("latitude_of_origin").setValue(25.0);
+  params.parameter("scale_factor").setValue(1.0);
+  params.parameter("false_easting").setValue(0.0);
+  params.parameter("false_northing").setValue(0.0);
+  Map<String,Number> ellipsoidParams=new HashMap<String,Number>();
+  ellipsoidParams.put(NetCDFUtilities.SEMI_MAJOR,6378137);
+  ellipsoidParams.put(NetCDFUtilities.INVERSE_FLATTENING,298.257223563);
+  Ellipsoid ellipsoid=ProjectionBuilder.createEllipsoid("WGS 84",ellipsoidParams);
+  ProjectionBuilder.updateEllipsoidParams(params,ellipsoid);
+  GeodeticDatum datum=ProjectionBuilder.createGeodeticDatum("WGS_1984",ellipsoid);
+  GeographicCRS geoCRS=ProjectionBuilder.createGeographicCRS("WGS 84",datum);
+  MathTransform transform=ProjectionBuilder.createTransform(params);
+  DefiningConversion conversionFromBase=ProjectionBuilder.createConversionFromBase("lambert_conformal_mercator_1sp",transform);
+  CoordinateReferenceSystem crs=ProjectionBuilder.createProjectedCRS(Collections.singletonMap("name","custom_lambert_conformal_conic_1sp"),geoCRS,conversionFromBase,transform);
+  assertTrue(crs instanceof ProjectedCRS);
+  ProjectedCRS projectedCRS=((ProjectedCRS)crs);
+  GeographicCRS baseCRS=projectedCRS.getBaseCRS();
+  assertTrue(CRS.equalsIgnoreMetadata(baseCRS,DefaultGeographicCRS.WGS84));
+  assertTrue(transform instanceof LambertConformal1SP);
+}
