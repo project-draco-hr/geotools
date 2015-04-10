@@ -4,11 +4,17 @@
   final GridCoverage2D source;
   final double roiTolerance=parameters.parameter(Crop.PARAMNAME_ROITOLERANCE).doubleValue();
   final boolean forceMosaic=parameters.parameter(Crop.PARAMNAME_FORCEMOSAIC).booleanValue();
+  Range nodata=(Range)parameters.parameter(Crop.PARAMNAME_NODATA).getValue();
+  double[] destnodata=(double[])parameters.parameter(Crop.PARAMNAME_DEST_NODATA).getValue();
   final ParameterValue sourceParameter=parameters.parameter("Source");
   if (sourceParameter == null || !(sourceParameter.getValue() instanceof GridCoverage2D)) {
     throw new CannotCropException(Errors.format(ErrorKeys.NULL_PARAMETER_$2,"Source",GridCoverage2D.class.toString()));
   }
   source=(GridCoverage2D)sourceParameter.getValue();
+  if (nodata == null) {
+    NoDataContainer noDataProperty=CoverageUtilities.getNoDataProperty(source);
+    nodata=noDataProperty != null ? noDataProperty.getAsRange() : null;
+  }
   final ParameterValue envelopeParameter=parameters.parameter(PARAMNAME_ENVELOPE);
   final ParameterValue roiParameter=parameters.parameter(PARAMNAME_ROI);
   if ((envelopeParameter == null || envelopeParameter.getValue() == null) && (roiParameter == null || roiParameter.getValue() == null))   throw new CannotCropException(Errors.format(ErrorKeys.NULL_PARAMETER_$2,PARAMNAME_ENVELOPE,GeneralEnvelope.class.toString()));
@@ -54,11 +60,12 @@
     final Geometry jis=JTS.toGeometry((com.vividsolutions.jts.geom.Envelope)new ReferencedEnvelope(intersectionEnvelope));
     if (!IntersectUtils.intersects(cropRoi,jis))     throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
   }
+  ROI internalROI=CoverageUtilities.getROIProperty(source);
   final AffineTransform sourceCornerGridToWorld=(AffineTransform)((GridGeometry2D)source.getGridGeometry()).getGridToCRS(PixelInCell.CELL_CORNER);
   final double tolerance=XAffineTransform.getScale(sourceCornerGridToWorld);
-  if (cropRoi != null || !intersectionEnvelope.equals(sourceEnvelope,tolerance / 2.0,false)) {
+  if (internalROI != null || cropRoi != null || !intersectionEnvelope.equals(sourceEnvelope,tolerance / 2.0,false)) {
     cropEnvelope=intersectionEnvelope.clone();
-    return buildResult(cropEnvelope,cropRoi,roiTolerance,forceMosaic,(hints instanceof Hints) ? (Hints)hints : new Hints(hints),source,sourceCornerGridToWorld);
+    return buildResult(internalROI,nodata,destnodata,cropEnvelope,cropRoi,roiTolerance,forceMosaic,(hints instanceof Hints) ? (Hints)hints : new Hints(hints),source,sourceCornerGridToWorld);
   }
  else {
     return source;

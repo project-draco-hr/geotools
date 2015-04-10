@@ -1,19 +1,11 @@
 {
-  ParameterBlock pb=new ParameterBlock();
   final double[] Max=new double[]{Short.MAX_VALUE};
   final double[] Min=new double[]{Short.MIN_VALUE};
-  pb.addSource(image);
-  pb.add(null);
-  pb.add(1);
-  pb.add(1);
-  pb.add(new int[]{(int)(Max[0] - Min[0] + 1)});
-  pb.add(Min);
-  pb.add(Max);
-  pb.add(1);
-  final PlanarImage histogramImage=JAI.create("histogram",pb,new RenderingHints(JAI.KEY_TILE_CACHE,null));
-  final Histogram hist=(Histogram)histogramImage.getProperty("histogram");
-  pb.removeParameters();
-  pb.removeSources();
+  final int[] bins=new int[]{(int)(Max[0] - Min[0] + 1)};
+  ImageWorker w=new ImageWorker(image);
+  w.setRenderingHint(JAI.KEY_TILE_CACHE,null);
+  final Histogram hist=w.getHistogram(bins,Min,Max);
+  final PlanarImage histogramImage=w.getPlanarImage();
   if (dest instanceof File) {
     if (dest instanceof File) {
       dest=new File((File)dest,new StringBuffer(name).append(".STX").toString());

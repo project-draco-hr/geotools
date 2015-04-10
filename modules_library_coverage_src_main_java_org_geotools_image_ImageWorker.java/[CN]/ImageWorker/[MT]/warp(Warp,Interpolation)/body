@@ -1,0 +1,21 @@
+{
+  ParameterBlock pb=new ParameterBlock();
+  pb.setSource(image,0);
+  pb.set(warp,0);
+  pb.set(interp,1);
+  pb.set(roi,3);
+  pb.set(nodata,4);
+  pb.set(background,2);
+  if (isNoDataNeeded()) {
+    if (background != null && background.length > 0) {
+      setNoData(RangeFactory.create(background[0],background[0]));
+    }
+  }
+  image=JAI.create("Warp",pb,getRenderingHints());
+  PropertyGenerator gen=new WarpDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+  Object prop=gen.getProperty("roi",image);
+  if (prop != null && prop instanceof ROI) {
+    setROI((ROI)prop);
+  }
+  return this;
+}

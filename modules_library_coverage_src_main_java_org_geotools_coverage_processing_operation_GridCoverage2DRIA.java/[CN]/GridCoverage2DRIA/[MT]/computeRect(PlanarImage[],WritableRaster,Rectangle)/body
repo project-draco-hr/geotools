@@ -1,24 +1,73 @@
 {
   RasterFormatTag[] formatTags=getFormatTags();
   RasterAccessor d=new RasterAccessor(dest,destRect,formatTags[1],getColorModel());
+  ROI roiTile=null;
+  RandomIter roiIter=null;
+  boolean roiContainsTile=false;
+  boolean roiDisjointTile=false;
+  if (hasROI) {
+    Rectangle srcRectExpanded=null;
+    int x=(int)destRect.getMinX();
+    int y=(int)destRect.getMinY();
+    int w=(int)destRect.getWidth();
+    int h=(int)destRect.getHeight();
+    float[] src=new float[w * h * 2];
+    warpRect(x,y,w,h,src);
+    double minX=Double.POSITIVE_INFINITY;
+    double minY=Double.POSITIVE_INFINITY;
+    double maxX=Double.NEGATIVE_INFINITY;
+    double maxY=Double.NEGATIVE_INFINITY;
+    int numP=src.length;
+    for (int i=0; i < numP; i=i + 2) {
+      float xi=src[i];
+      float yi=src[i + 1];
+      minX=xi < minX ? xi : minX;
+      minY=yi < minY ? yi : minY;
+      maxX=xi > maxX ? xi : maxX;
+      maxY=yi > maxY ? yi : maxY;
+    }
+    srcRectExpanded=new Rectangle((int)minX,(int)minY,(int)(maxX - minX) + 1,(int)(maxY - minY) + 1);
+    srcRectExpanded.setRect(srcRectExpanded.getMinX() - interp.getLeftPadding(),srcRectExpanded.getMinY() - interp.getTopPadding(),srcRectExpanded.getWidth() + interp.getRightPadding() + interp.getLeftPadding(),srcRectExpanded.getHeight() + interp.getBottomPadding() + interp.getTopPadding());
+    roiTile=roi.intersect(new ROIShape(srcRectExpanded));
+    if (!roiBounds.intersects(srcRectExpanded)) {
+      roiDisjointTile=true;
+    }
+ else {
+      roiContainsTile=roiTile.contains(srcRectExpanded);
+      if (!roiContainsTile) {
+        if (!roiTile.intersects(srcRectExpanded)) {
+          roiDisjointTile=true;
+        }
+ else {
+          PlanarImage roiIMG=getImage();
+          roiIter=RandomIterFactory.create(roiIMG,null,true,true);
+        }
+      }
+    }
+  }
+  if (roiDisjointTile) {
+    double[] bkg=setBackground ? backgroundValues : new double[dest.getNumBands()];
+    ImageUtil.fillBackground(dest,destRect,bkg);
+    return;
+  }
 switch (d.getDataType()) {
 case DataBuffer.TYPE_BYTE:
-    computeRectByte(sources[0],d);
+    computeRectByte(sources[0],d,roiIter,roiContainsTile);
   break;
 case DataBuffer.TYPE_USHORT:
-computeRectUShort(sources[0],d);
+computeRectUShort(sources[0],d,roiIter,roiContainsTile);
 break;
 case DataBuffer.TYPE_SHORT:
-computeRectShort(sources[0],d);
+computeRectShort(sources[0],d,roiIter,roiContainsTile);
 break;
 case DataBuffer.TYPE_INT:
-computeRectInt(sources[0],d);
+computeRectInt(sources[0],d,roiIter,roiContainsTile);
 break;
 case DataBuffer.TYPE_FLOAT:
-computeRectFloat(sources[0],d);
+computeRectFloat(sources[0],d,roiIter,roiContainsTile);
 break;
 case DataBuffer.TYPE_DOUBLE:
-computeRectDouble(sources[0],d);
+computeRectDouble(sources[0],d,roiIter,roiContainsTile);
 break;
 }
 if (d.isDataCopy()) {

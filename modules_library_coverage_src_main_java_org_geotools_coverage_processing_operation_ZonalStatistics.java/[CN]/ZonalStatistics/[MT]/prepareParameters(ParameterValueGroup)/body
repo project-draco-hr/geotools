@@ -1,0 +1,89 @@
+{
+  final ImagingParameters copy=(ImagingParameters)descriptor.createValue();
+  org.geotools.parameter.Parameters.copy(parameters,copy);
+  final ParameterBlockJAI block=(ParameterBlockJAI)copy.parameters;
+  try {
+    final GridCoverage2D source=(GridCoverage2D)parameters.parameter(operation.getSourceNames()[PRIMARY_SOURCE_INDEX]).getValue();
+    final AffineTransform gridToWorldTransformCorrected=new AffineTransform((AffineTransform)((GridGeometry2D)source.getGridGeometry()).getGridToCRS2D(PixelOrientation.UPPER_LEFT));
+    final MathTransform worldToGridTransform;
+    try {
+      worldToGridTransform=ProjectiveTransform.create(gridToWorldTransformCorrected.createInverse());
+    }
+ catch (    NoninvertibleTransformException e) {
+      final CoverageProcessingException ce=new CoverageProcessingException(e);
+      throw ce;
+    }
+    final CoordinateReferenceSystem crs=source.getCoordinateReferenceSystem2D();
+    final Envelope2D envelope=source.getEnvelope2D();
+    final Object roilist=parameters.parameter("roilist").getValue();
+    Object o;
+    try {
+      o=parameters.parameter("roi").getValue();
+    }
+ catch (    ParameterNotFoundException p) {
+      o=null;
+    }
+    List<ROI> outputList=null;
+    ReferencedEnvelope coverageEnvelope=new ReferencedEnvelope(envelope);
+    if (roilist != null && roilist instanceof List<?>) {
+      List<SimpleFeature> geomList=(List<SimpleFeature>)roilist;
+      int numGeom=geomList.size();
+      Iterator<SimpleFeature> geomIter=geomList.iterator();
+      outputList=new ArrayList<ROI>(numGeom);
+      while (geomIter.hasNext()) {
+        SimpleFeature zone=geomIter.next();
+        Geometry geometry=(Geometry)zone.getDefaultGeometry();
+        ReferencedEnvelope geometryEnvelope=new ReferencedEnvelope(geometry.getEnvelopeInternal(),crs);
+        if (!coverageEnvelope.intersects((Envelope)geometryEnvelope)) {
+          continue;
+        }
+ else         if (!coverageEnvelope.contains((Envelope)geometryEnvelope)) {
+          geometry=JTS.toGeometry((Envelope)coverageEnvelope).intersection(geometry);
+          geometryEnvelope=new ReferencedEnvelope(geometry.getEnvelopeInternal(),crs);
+        }
+        Geometry rasterSpaceGeometry=JTS.transform(geometry,worldToGridTransform);
+        Geometry simplifiedGeometry=DouglasPeuckerSimplifier.simplify(rasterSpaceGeometry,1);
+        AffineTransformation at=new AffineTransformation();
+        at.setToTranslation(-0.5,-0.5);
+        simplifiedGeometry.apply(at);
+        ROI roi=new ROIGeometry(simplifiedGeometry,false);
+        outputList.add(roi);
+      }
+    }
+ else     if (o != null && o instanceof Polygon) {
+      outputList=new ArrayList<ROI>(1);
+      final Polygon roiInput=(Polygon)o;
+      if (new ReferencedEnvelope(roiInput.getEnvelopeInternal(),source.getCoordinateReferenceSystem2D()).intersects((Envelope)new ReferencedEnvelope(envelope))) {
+        final java.awt.Polygon shapePolygon=convertPolygon(roiInput,worldToGridTransform);
+        outputList.add(new ROIShape(shapePolygon));
+      }
+    }
+    block.setParameter("roilist",outputList);
+    Geometry mask=(Geometry)parameters.parameter("mask").getValue();
+    if (mask != null) {
+      ReferencedEnvelope maskEnvelope=new ReferencedEnvelope(mask.getEnvelopeInternal(),crs);
+      if (coverageEnvelope.intersects((Envelope)maskEnvelope)) {
+        if (!coverageEnvelope.contains((Envelope)maskEnvelope)) {
+          mask=JTS.toGeometry((Envelope)coverageEnvelope).intersection(mask);
+          maskEnvelope=new ReferencedEnvelope(mask.getEnvelopeInternal(),crs);
+        }
+        Geometry maskSpaceGeometry=JTS.transform(mask,worldToGridTransform);
+        Geometry simplifiedMaskGeometry=DouglasPeuckerSimplifier.simplify(maskSpaceGeometry,1);
+        AffineTransformation at=new AffineTransformation();
+        at.setToTranslation(-0.5,-0.5);
+        simplifiedMaskGeometry.apply(at);
+        ROI maskROI=new ROIGeometry(simplifiedMaskGeometry,false);
+        block.setParameter("mask",maskROI);
+      }
+ else {
+        throw new IllegalArgumentException("Mask is outside the Coverage Envelope");
+      }
+    }
+    handleROINoDataInternal(block,source,"Zonal",4,3);
+    return block;
+  }
+ catch (  Exception e) {
+    final CoverageProcessingException ce=new CoverageProcessingException(e);
+    throw ce;
+  }
+}

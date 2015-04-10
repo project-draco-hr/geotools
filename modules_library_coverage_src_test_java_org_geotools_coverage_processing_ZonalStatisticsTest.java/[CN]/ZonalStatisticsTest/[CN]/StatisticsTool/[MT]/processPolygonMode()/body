@@ -1,0 +1,47 @@
+{
+  final StatsType[] statistis=statisticsSet.toArray(new StatsType[statisticsSet.size()]);
+  ParameterValueGroup params=PROCESSOR.getOperation("Zonal").getParameters();
+  params.parameter("Source").setValue(gridCoverage2D);
+  params.parameter("stats").setValue(statistis);
+  params.parameter("bands").setValue(bands);
+  params.parameter("roilist").setValue(featureList);
+  params.parameter("rangeData").setValue(ranges);
+  params.parameter("localStats").setValue(localStats);
+  final GridCoverage2D coverage=(GridCoverage2D)((ZonalStatistics)PROCESSOR.getOperation("Zonal")).doOperation(params,null);
+  final List<ZoneGeometry> zoneList=(List<ZoneGeometry>)coverage.getProperty(ZonalStatsDescriptor.ZS_PROPERTY);
+  int zoneNum=zoneList.size();
+  for (int i=0; i < zoneNum; i++) {
+    ZoneGeometry geom=zoneList.get(i);
+    SimpleFeature feature=featureList.get(i);
+    final String fid=feature.getID();
+    final Map<Integer,Map<StatsType,Object>> rangeMap=new HashMap<Integer,Map<StatsType,Object>>();
+    int count=0;
+    if (localStats) {
+      for (      Range range : ranges) {
+        final Map<StatsType,Object> statsMap=new HashMap<StatsType,Object>();
+        Statistics[] stats=geom.getStatsPerBandPerClassPerRange(0,0,range);
+        int statNum=stats.length;
+        for (int j=0; j < statNum; j++) {
+          Statistics singleStat=stats[j];
+          StatsType type=statistis[j];
+          statsMap.put(type,singleStat.getResult());
+        }
+        rangeMap.put(count,statsMap);
+        count++;
+      }
+    }
+ else {
+      final Map<StatsType,Object> statsMap=new HashMap<StatsType,Object>();
+      Statistics[] stats=geom.getStatsPerBandNoClassifierNoRange(0);
+      int statNum=stats.length;
+      for (int j=0; j < statNum; j++) {
+        Statistics singleStat=stats[j];
+        StatsType type=statistis[j];
+        statsMap.put(type,singleStat.getResult());
+      }
+      rangeMap.put(count,statsMap);
+      count++;
+    }
+    feature2StatisticsMap.put(fid,rangeMap);
+  }
+}

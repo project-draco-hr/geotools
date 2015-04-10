@@ -2,7 +2,45 @@
   Object extrema=getComputedProperty(EXTREMA);
   if (!(extrema instanceof double[][])) {
     final Integer ONE=1;
-    image=ExtremaDescriptor.create(image,roi,ONE,ONE,null,ONE,getRenderingHints());
+    ParameterBlock pb=new ParameterBlock();
+    pb.setSource(image,0);
+    if (JAIExt.isJAIExtOperation("Stats")) {
+      StatsType[] stats=new StatsType[]{StatsType.EXTREMA};
+      int numBands=getNumBands();
+      int[] bands=new int[numBands];
+      for (int i=0; i < numBands; i++) {
+        bands[i]=i;
+      }
+      pb.set(ONE,0);
+      pb.set(ONE,1);
+      pb.set(roi,2);
+      pb.set(nodata,3);
+      pb.set(bands,5);
+      pb.set(stats,6);
+      image=JAI.create("Stats",pb,getRenderingHints());
+      Statistics[][] results=(Statistics[][])getComputedProperty(Statistics.STATS_PROPERTY);
+      double[][] ext=new double[2][numBands];
+      for (int i=0; i < numBands; i++) {
+        double[] extBand=(double[])results[i][0].getResult();
+        ext[0][i]=extBand[0];
+        ext[1][i]=extBand[1];
+      }
+      if (image instanceof PlanarImage) {
+        ((PlanarImage)image).setProperty(EXTREMA,ext);
+      }
+ else {
+        PlanarImage p=getPlanarImage();
+        p.setProperty(EXTREMA,ext);
+        image=p;
+      }
+    }
+ else {
+      pb.set(roi,0);
+      pb.set(ONE,1);
+      pb.set(ONE,2);
+      pb.set(ONE,4);
+      image=JAI.create("Extrema",pb,getRenderingHints());
+    }
     extrema=getComputedProperty(EXTREMA);
   }
   return (double[][])extrema;

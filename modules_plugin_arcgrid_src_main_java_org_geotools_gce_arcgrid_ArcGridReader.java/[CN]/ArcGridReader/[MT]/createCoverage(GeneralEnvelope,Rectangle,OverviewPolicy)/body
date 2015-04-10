@@ -42,18 +42,18 @@ catch (  TransformException e) {
     Unit<?> uom=null;
     final Category nan;
     if (Double.isNaN(inNoData)) {
-      nan=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color(0,0,0,0),0);
+      nan=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color(0,0,0,0),Double.NaN);
     }
  else {
-      nan=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color[]{new Color(0,0,0,0)},NumberRange.create(0,0),NumberRange.create(inNoData,inNoData));
+      nan=new Category(Vocabulary.formatInternational(VocabularyKeys.NODATA),new Color[]{new Color(0,0,0,0)},NumberRange.create(inNoData,inNoData));
     }
     final SampleModel sm=asciiCoverage.getSampleModel();
     final ColorModel cm=asciiCoverage.getColorModel();
     final ColorInterpretation colorInterpretation=TypeMap.getColorInterpretation(cm,0);
     if (colorInterpretation == null)     throw new IOException("Unrecognized sample dimension type");
-    final GridSampleDimension band=new GridSampleDimension(coverageName,new Category[]{nan},uom).geophysics(true);
-    final Map<String,Double> properties=new HashMap<String,Double>();
-    properties.put("GC_NODATA",new Double(inNoData));
+    final GridSampleDimension band=new GridSampleDimension(coverageName,new Category[]{nan},uom);
+    final Map<String,Object> properties=new HashMap<String,Object>();
+    CoverageUtilities.setNoDataProperty(properties,new Double(inNoData));
     return coverageFactory.create(coverageName,asciiCoverage,originalEnvelope,new GridSampleDimension[]{band},null,properties);
   }
  catch (  NoSuchElementException e) {

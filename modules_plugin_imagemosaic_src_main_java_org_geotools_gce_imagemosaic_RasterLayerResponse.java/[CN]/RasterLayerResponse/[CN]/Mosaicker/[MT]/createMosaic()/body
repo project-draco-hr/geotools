@@ -29,7 +29,12 @@
             iw.setRenderingHints(localHints);
             iw.crop(imageBounds.x,imageBounds.y,imageBounds.width,imageBounds.height);
             mosaic=iw.getRenderedImage();
-            imageBounds=PlanarImage.wrapRenderedImage(mosaic).getBounds();
+            PlanarImage t=PlanarImage.wrapRenderedImage(mosaic);
+            if (iw.getNoData() != null) {
+              t.setProperty(NoDataContainer.GC_NODATA,new NoDataContainer(iw.getNoData()));
+              mosaic=t;
+            }
+            imageBounds=t.getBounds();
           }
           if (!imageBounds.contains(rasterBounds)) {
             mosaic=MergeBehavior.FLAT.process(new RenderedImage[]{mosaic},backgroundValues,sourceThreshold,(hasAlpha || doInputTransparency) ? new PlanarImage[]{in.alphaChannel} : new PlanarImage[]{null},new ROI[]{in.roi},request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,localHints);

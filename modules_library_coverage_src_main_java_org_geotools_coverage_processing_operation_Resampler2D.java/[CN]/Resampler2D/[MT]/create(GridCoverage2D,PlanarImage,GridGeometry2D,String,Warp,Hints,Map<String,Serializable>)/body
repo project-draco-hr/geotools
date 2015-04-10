@@ -1,0 +1,21 @@
+{
+  GridSampleDimension[] sampleDimensions=source.getSampleDimensions();
+  if (sampleDimensions != null && isColorModelExpanded(source.getRenderedImage(),hints)) {
+    sampleDimensions=null;
+  }
+  Map<String,Serializable> properties=new HashMap<String,Serializable>();
+  if (operation != null) {
+    properties.put(Resample.OPERATION,operation);
+    if (warp != null) {
+      properties.put(Resample.WARP_TYPE,warp.getClass());
+      if (warp instanceof WarpGrid) {
+        WarpGrid grid=(WarpGrid)warp;
+        Dimension dimension=new Dimension(grid.getXNumCells(),grid.getYNumCells());
+        properties.put(Resample.GRID_DIMENSIONS,dimension);
+      }
+    }
+  }
+  properties.putAll(inProperties);
+  GridCoverage2D coverage=new Resampler2D(source,image,geometry,sampleDimensions,properties,hints);
+  return coverage;
+}

@@ -1,0 +1,23 @@
+{
+  MapContent mc=new MapContent();
+  ReferencedEnvelope reWgs=new ReferencedEnvelope(new Envelope(-180,180,-90,90),DefaultGeographicCRS.WGS84);
+  BufferedImage testImage=new BufferedImage(200,200,BufferedImage.TYPE_4BYTE_ABGR);
+  GridCoverage2D testCoverage=new GridCoverageFactory().create("test",testImage,reWgs);
+  GridCoverage2D coverage=new GridCoverage2D("test",testCoverage);
+  GridCoverage2DReader gridCoverageReader=Mockito.mock(GridCoverage2DReader.class);
+  Mockito.when(gridCoverageReader.getOriginalEnvelope()).thenReturn(new GeneralEnvelope(reWgs));
+  Mockito.when(gridCoverageReader.getCoordinateReferenceSystem()).thenReturn(DefaultGeographicCRS.WGS84);
+  Mockito.when(gridCoverageReader.read(Mockito.any(GeneralParameterValue[].class))).thenReturn(coverage);
+  Layer layer=new FeatureLayer(FeatureUtilities.wrapGridCoverageReader(gridCoverageReader,new GeneralParameterValue[]{}),createRasterStyle());
+  layer.getUserData().put(StreamingRenderer.BYLAYER_INTERPOLATION,Interpolation.getInstance(Interpolation.INTERP_BICUBIC));
+  mc.addLayer(layer);
+  BufferedImage image=new BufferedImage(200,200,BufferedImage.TYPE_4BYTE_ABGR);
+  StreamingRenderer sr=new StreamingRenderer();
+  sr.setMapContent(mc);
+  Graphics2D graphics=(Graphics2D)image.getGraphics();
+  sr.paint(graphics,new Rectangle(200,200),reWgs);
+  assertEquals(graphics.getRenderingHint(JAI.KEY_INTERPOLATION),Interpolation.getInstance(Interpolation.INTERP_BICUBIC));
+  layer.getUserData().put(StreamingRenderer.BYLAYER_INTERPOLATION,Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+  sr.paint(graphics,new Rectangle(200,200),reWgs);
+  assertEquals(graphics.getRenderingHint(JAI.KEY_INTERPOLATION),Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+}

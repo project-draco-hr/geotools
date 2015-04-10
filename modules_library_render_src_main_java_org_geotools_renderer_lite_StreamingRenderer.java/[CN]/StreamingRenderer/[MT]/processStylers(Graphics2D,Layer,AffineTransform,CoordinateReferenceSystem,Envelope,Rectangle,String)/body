@@ -1,0 +1,103 @@
+{
+  final MapLayer currLayer=new MapLayer(layer);
+  final Style style=currLayer.getStyle();
+  final FeatureSource featureSource=currLayer.getFeatureSource();
+  final CoordinateReferenceSystem sourceCrs;
+  final NumberRange scaleRange=NumberRange.create(scaleDenominator,scaleDenominator);
+  final ArrayList<LiteFeatureTypeStyle> lfts;
+  if (featureSource != null) {
+    FeatureCollection features=null;
+    final FeatureType schema=featureSource.getSchema();
+    final GeometryDescriptor geometryAttribute=schema.getGeometryDescriptor();
+    if (geometryAttribute != null && geometryAttribute.getType() != null) {
+      sourceCrs=geometryAttribute.getType().getCoordinateReferenceSystem();
+    }
+ else {
+      sourceCrs=null;
+    }
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Processing " + style.featureTypeStyles().size() + " stylers for "+ featureSource.getSchema().getName());
+    }
+    lfts=createLiteFeatureTypeStyles(style.featureTypeStyles(),schema,graphics);
+    if (lfts.isEmpty())     return;
+    reprojectSpatialFilters(lfts,featureSource);
+    applyUnitRescale(lfts);
+    List<List<LiteFeatureTypeStyle>> txClassified=classifyByTransformation(lfts);
+    for (    List<LiteFeatureTypeStyle> uniform : txClassified) {
+      Expression transform=uniform.get(0).transformation;
+      inMemoryGeneralization=true;
+      boolean hasTransformation=transform != null;
+      Query styleQuery=getStyleQuery(featureSource,schema,uniform,mapArea,destinationCrs,sourceCrs,screenSize,geometryAttribute,at,hasTransformation);
+      Query definitionQuery=getDefinitionQuery(currLayer,featureSource,sourceCrs);
+      if (hasTransformation) {
+        GridGeometry2D gridGeometry=getRasterGridGeometry(destinationCrs,sourceCrs);
+        RenderingTransformationHelper helper=new RenderingTransformationHelper(){
+          @Override protected GridCoverage2D readCoverage(          GridCoverage2DReader reader,          Object params,          GridGeometry2D readGG) throws IOException {
+            GeneralParameterValue[] readParams=(GeneralParameterValue[])params;
+            Interpolation interpolation=getRenderingInterpolation(layer);
+            GridCoverageReaderHelper helper;
+            try {
+              helper=new GridCoverageReaderHelper(reader,readGG.getGridRange2D(),ReferencedEnvelope.reference(readGG.getEnvelope2D()),interpolation);
+              return helper.readCoverage(readParams);
+            }
+ catch (            InvalidGridGeometryException|FactoryException e) {
+              throw new IOException("Failure reading the coverage",e);
+            }
+          }
+        }
+;
+        Object result=helper.applyRenderingTransformation(transform,featureSource,definitionQuery,styleQuery,gridGeometry,sourceCrs,java2dHints);
+        if (result == null) {
+          return;
+        }
+ else         if (result instanceof FeatureCollection) {
+          features=(FeatureCollection)result;
+        }
+ else         if (result instanceof GridCoverage2D) {
+          GridCoverage2D coverage=(GridCoverage2D)result;
+          if ((schema instanceof SimpleFeatureType && !FeatureUtilities.isWrappedCoverage((SimpleFeatureType)schema))) {
+            coverage=new DisposableGridCoverage(coverage);
+          }
+          features=FeatureUtilities.wrapGridCoverage(coverage);
+        }
+ else         if (result instanceof GridCoverage2DReader) {
+          features=FeatureUtilities.wrapGridCoverageReader((GridCoverage2DReader)result,null);
+        }
+ else {
+          throw new IllegalArgumentException("Don't know how to handle the results of the transformation, " + "the supported result types are FeatureCollection, GridCoverage2D " + "and GridCoverage2DReader, but we got: "+ result.getClass());
+        }
+      }
+ else {
+        Query mixed=DataUtilities.mixQueries(definitionQuery,styleQuery,null);
+        checkAttributeExistence(featureSource.getSchema(),mixed);
+        features=featureSource.getFeatures(mixed);
+        features=RendererUtilities.fixFeatureCollectionReferencing(features,sourceCrs);
+      }
+      if (!(features instanceof SimpleFeatureCollection)) {
+        features.getSchema().getUserData().put("targetCrs",destinationCrs);
+        features.getSchema().getUserData().put("targetVersion","wms:getmap");
+      }
+      if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
+        drawOptimized(graphics,currLayer,at,destinationCrs,layerId,null,features,scaleRange,uniform);
+      }
+ else {
+        drawPlain(graphics,currLayer,at,destinationCrs,layerId,null,features,scaleRange,uniform);
+      }
+    }
+  }
+ else {
+    Collection collection=null;
+    CollectionSource source=currLayer.getSource();
+    collection=queryLayer(currLayer,currLayer.getSource());
+    sourceCrs=null;
+    lfts=createLiteFeatureTypeStyles(style.featureTypeStyles(),source.describe(),graphics);
+    applyUnitRescale(lfts);
+    if (lfts.isEmpty())     return;
+    if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
+      drawOptimized(graphics,currLayer,at,destinationCrs,layerId,collection,null,scaleRange,lfts);
+    }
+ else {
+      drawPlain(graphics,currLayer,at,destinationCrs,layerId,collection,null,scaleRange,lfts);
+    }
+  }
+}

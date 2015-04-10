@@ -1,13 +1,10 @@
 {
-  final Category[] categories=new Category[]{new Category("No data",null,0),new Category("Land",null,7),new Category("Clouds",null,3),new Category("Temperature",null,10,100,0.1,5),new Category("Foo",null,100,120,-1,3)};
+  final Category[] categories=new Category[]{new Category("No data",null,0),new Category("Land",null,7),new Category("Clouds",null,3),new Category("Temperature",null,10,100),new Category("Foo",null,100,120)};
   CategoryList list;
   boolean searchNearest=false;
   do {
-    list=new CategoryList(categories,null,searchNearest,null);
+    list=new CategoryList(categories,null,searchNearest);
     assertTrue("containsAll",list.containsAll(Arrays.asList(categories)));
-    assertSame(list.geophysics(true),list.inverse());
-    assertSame(list.geophysics(true).geophysics(false),list);
-    assertSame(list.geophysics(false),list);
     final Range range=list.getRange();
     assertEquals("min",0,((Number)range.getMinValue()).doubleValue(),0);
     assertEquals("max",120,((Number)range.getMaxValue()).doubleValue(),0);
@@ -36,48 +33,6 @@
       assertNull("120",list.getCategory(120));
       assertNull("200",list.getCategory(200));
     }
-    assertTrue("0",Double.isNaN(list.transform(0)));
-    assertTrue("7",Double.isNaN(list.transform(7)));
-    assertTrue("3",Double.isNaN(list.transform(3)));
-    assertEquals("10",6,list.transform(10),EPS);
-    assertEquals("50",10,list.transform(50),EPS);
-    assertEquals("100",-97,list.transform(100),EPS);
-    assertEquals("110",-107,list.transform(110),EPS);
-    try {
-      assertEquals("9",searchNearest ? 6 : 5.9,list.transform(9),EPS);
-      if (!searchNearest) {
-        fail();
-      }
-    }
- catch (    TransformException exception) {
-      if (searchNearest) {
-        throw exception;
-      }
-    }
   }
  while ((searchNearest=!searchNearest) == true);
-  final double[] input=new double[512];
-  final double[] output0=new double[input.length];
-  final double[] output1=new double[input.length];
-  for (int i=0; i < input.length; i++) {
-    input[i]=random.nextInt(130) - 5;
-    output0[i]=list.transform(input[i]);
-  }
-  list.transform(input,0,output1,0,input.length);
-  compare(output0,output1,EPS);
-  System.arraycopy(input,0,output1,3,input.length - 3);
-  list.transform(output1,3,output1,0,input.length - 3);
-  System.arraycopy(output0,input.length - 3,output1,input.length - 3,3);
-  compare(output0,output1,EPS);
-  System.arraycopy(input,3,output1,0,input.length - 3);
-  list.transform(output1,0,output1,3,input.length - 3);
-  System.arraycopy(output0,0,output1,0,3);
-  compare(output0,output1,EPS);
-  list.inverse().transform(output0,0,output0,0,output0.length);
-  for (int i=0; i < output0.length; i++) {
-    final double expected=input[i];
-    if (expected >= 10 && expected < 120) {
-      assertEquals("inverse",expected,output0[i],EPS);
-    }
-  }
 }

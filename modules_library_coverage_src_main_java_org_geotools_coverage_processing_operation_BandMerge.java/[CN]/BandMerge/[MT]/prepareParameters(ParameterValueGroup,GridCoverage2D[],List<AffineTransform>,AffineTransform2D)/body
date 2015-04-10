@@ -1,0 +1,53 @@
+{
+  final ImagingParameters copy=(ImagingParameters)descriptor.createValue();
+  final ParameterBlockJAI block=(ParameterBlockJAI)copy.parameters;
+  Range[] nodata=new Range[sources.length];
+  int dataType=sources[0].getRenderedImage().getSampleModel().getDataType();
+  for (int i=0; i < sources.length; i++) {
+    GridCoverage2D cov=sources[i];
+    block.setSource(cov.getRenderedImage(),i);
+    int dataTypeCov=cov.getRenderedImage().getSampleModel().getDataType();
+    if (dataType != dataTypeCov) {
+      throw new IllegalArgumentException("Input Coverages must have the same data type");
+    }
+    nodata[i]=createNoDataRange(cov,dataType);
+  }
+  if (JAIExt.isJAIExtOperation("BandMerge")) {
+    block.setParameter("noData",nodata);
+    block.setParameter("transformations",tr);
+    ROI roi=null;
+    if (parameters.parameter(GEOMETRY).getValue() != null) {
+      roi=new ROIGeometry(JTS.transform((Geometry)parameters.parameter(GEOMETRY).getValue(),crsToGRID));
+    }
+    for (int i=0; i < sources.length; i++) {
+      GridCoverage2D cov=sources[i];
+      ROI covROI=CoverageUtilities.getROIProperty(cov);
+      if (covROI != null) {
+        ROI newROI=null;
+        if (tr != null) {
+          try {
+            AffineTransform trans=tr.get(i).createInverse();
+            newROI=covROI.transform(trans);
+          }
+ catch (          NoninvertibleTransformException e) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+ else {
+          newROI=covROI;
+        }
+        if (roi == null) {
+          roi=newROI;
+        }
+ else {
+          roi=roi.intersect(newROI);
+        }
+      }
+    }
+    if (roi != null) {
+      block.setParameter("roi",roi);
+    }
+    block.setParameter("destinationNoData",nodata[getIndex(parameters)].getMin().doubleValue());
+  }
+  return block;
+}

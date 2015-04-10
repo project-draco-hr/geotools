@@ -19,11 +19,22 @@
       }
     }
     IndexColorModel newColorModel=new IndexColorModel(index.getPixelSize(),index.getMapSize(),reds,greens,blues,alphas);
-    LookupTableJAI table=buildOpacityLookupTable(0,1,-1);
+    LookupTable table=buildOpacityLookupTable(0,1,-1,image.getSampleModel().getDataType());
     ImageLayout layout=new ImageLayout(image);
     layout.setColorModel(newColorModel);
     RenderingHints hints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout);
-    result=LookupDescriptor.create(image,table,hints);
+    ParameterBlock pb=new ParameterBlock();
+    pb.setSource(image,0);
+    pb.set(table,0);
+    pb.set(roi,2);
+    pb.set(nodata,3);
+    if (isNoDataNeeded()) {
+      if (background != null && background.length > 0) {
+        pb.set(background[0],1);
+        setNoData(RangeFactory.create(background[0],background[0]));
+      }
+    }
+    result=JAI.create("Lookup",pb,hints);
   }
  else {
     RenderedImage expanded;
@@ -37,13 +48,37 @@
       byte alpha=(byte)Math.round(255 * opacity);
       ImageLayout layout=new ImageLayout(image.getMinX(),image.getMinY(),image.getWidth(),image.getHeight());
       RenderedOp alphaBand=ConstantDescriptor.create((float)image.getWidth(),(float)image.getHeight(),new Byte[]{new Byte(alpha)},new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
-      result=BandMergeDescriptor.create(expanded,alphaBand,null);
+      ParameterBlock pb=new ParameterBlock();
+      pb.setSource(expanded,0);
+      pb.setSource(alphaBand,1);
+      pb.set(new Range[]{nodata,nodata == null ? null : RangeFactory.create(alpha - 1,alpha - 1)},0);
+      if (isNoDataNeeded()) {
+        if (background != null && background.length > 0) {
+          double dest=background[0];
+          pb.set(dest,1);
+          setNoData(RangeFactory.create(dest,dest));
+        }
+      }
+      pb.set(roi,3);
+      pb.set(true,4);
+      result=JAI.create("BandMerge",pb,null);
     }
  else {
       final int bands=expanded.getSampleModel().getNumBands();
       int alphaBand=bands - 1;
-      LookupTableJAI table=buildOpacityLookupTable(opacity,bands,alphaBand);
-      result=LookupDescriptor.create(expanded,table,null);
+      ParameterBlock pb=new ParameterBlock();
+      pb.setSource(expanded,0);
+      LookupTable table=buildOpacityLookupTable(opacity,bands,alphaBand,expanded.getSampleModel().getDataType());
+      pb.set(table,0);
+      pb.set(roi,2);
+      pb.set(nodata,3);
+      if (isNoDataNeeded()) {
+        if (background != null && background.length > 0) {
+          pb.set(background[0],1);
+          setNoData(RangeFactory.create(background[0],background[0]));
+        }
+      }
+      result=JAI.create("Lookup",pb,null);
     }
   }
   image=result;
