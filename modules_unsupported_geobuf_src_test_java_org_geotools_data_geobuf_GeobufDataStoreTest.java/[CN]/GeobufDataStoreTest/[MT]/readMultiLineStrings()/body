@@ -1,0 +1,34 @@
+{
+  File file=DataUtilities.urlToFile(getClass().getClassLoader().getResource("org/geotools/data/geobuf/multilinestrings.pbf"));
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  assertEquals(1,store.getTypeNames().length);
+  assertEquals("multilinestrings",store.getTypeNames()[0]);
+  SimpleFeatureSource featureSource=store.getFeatureSource("multilinestrings");
+  assertEquals("geom:MultiLineString,id:Integer,name:String",DataUtilities.encodeType(featureSource.getSchema()));
+  SimpleFeatureCollection featureCollection=featureSource.getFeatures();
+  assertEquals(2,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (c == 0) {
+        assertEquals("MULTILINESTRING ((24.257813 49.61071, 45.12 67.45), " + "(-92.460937 40.178873, 54.321 65.562))",feature.getDefaultGeometry().toString());
+        assertEquals(1,feature.getAttribute("id"));
+        assertEquals("number 1",feature.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("MULTILINESTRING ((100 0, 101 1), (102 2, 103 3))",feature.getDefaultGeometry().toString());
+        assertEquals(2,feature.getAttribute("id"));
+        assertEquals("number 2",feature.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

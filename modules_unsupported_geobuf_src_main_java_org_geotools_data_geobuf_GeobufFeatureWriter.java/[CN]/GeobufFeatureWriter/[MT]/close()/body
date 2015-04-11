@@ -1,0 +1,22 @@
+{
+  if (dataBuilder == null) {
+    throw new IOException("Writer alread closed");
+  }
+  if (this.currentFeature != null) {
+    this.write();
+  }
+  while (hasNext()) {
+    next();
+    write();
+  }
+  dataBuilder.setFeatureCollection(featureCollectionBuilder.build());
+  Geobuf.Data data=dataBuilder.build();
+  data.writeTo(new FileOutputStream(temp));
+  dataBuilder=null;
+  if (delegate != null) {
+    this.delegate.close();
+    this.delegate=null;
+  }
+  Files.copy(temp.toPath(),this.file.toPath(),StandardCopyOption.REPLACE_EXISTING);
+  temp.delete();
+}

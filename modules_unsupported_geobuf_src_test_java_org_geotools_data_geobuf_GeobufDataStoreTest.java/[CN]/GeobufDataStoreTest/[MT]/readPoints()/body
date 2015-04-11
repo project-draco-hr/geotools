@@ -1,0 +1,34 @@
+{
+  File file=DataUtilities.urlToFile(getClass().getClassLoader().getResource("org/geotools/data/geobuf/points.pbf"));
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  assertEquals(1,store.getTypeNames().length);
+  assertEquals("points",store.getTypeNames()[0]);
+  SimpleFeatureSource featureSource=store.getFeatureSource("points");
+  assertEquals("geom:Point,id:Integer,name:String",DataUtilities.encodeType(featureSource.getSchema()));
+  SimpleFeatureCollection featureCollection=featureSource.getFeatures();
+  assertEquals(2,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (c == 0) {
+        assertEquals("POINT (24.257813 49.61071)",feature.getDefaultGeometry().toString());
+        assertEquals(1,feature.getAttribute("id"));
+        assertEquals("number 1",feature.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("POINT (-92.460937 40.178873)",feature.getDefaultGeometry().toString());
+        assertEquals(2,feature.getAttribute("id"));
+        assertEquals("number 2",feature.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

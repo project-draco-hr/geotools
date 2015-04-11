@@ -1,0 +1,32 @@
+{
+  File file=temporaryFolder.newFile("geometrycollections.pbf");
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=DataUtilities.createType("test2","geom:GeometryCollection,name:String,id:int");
+  store.createSchema(featureType);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("geometrycollections");
+  WKTReader reader=new WKTReader();
+  SimpleFeature feature1=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("GEOMETRYCOLLECTION (POINT (100 0), LINESTRING (101 0, 102 1))"),"ABC",9},"location.1");
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{feature1});
+  featureStore.addFeatures(collection);
+  SimpleFeatureCollection featureCollection=featureStore.getFeatures();
+  assertEquals(1,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int i=1;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (i == 1) {
+        assertEquals("GEOMETRYCOLLECTION (POINT (100 0), LINESTRING (101 0, 102 1))",feature.getDefaultGeometry().toString());
+        assertEquals("9",feature.getAttribute("id"));
+        assertEquals("ABC",feature.getAttribute("name"));
+      }
+      i++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

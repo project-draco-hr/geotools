@@ -1,0 +1,72 @@
+{
+  if (g.getType() == Geobuf.Data.Geometry.Type.POINT) {
+    return geometryFactory.createPoint(getAllCoordinates(g)[0]);
+  }
+ else   if (g.getType() == Geobuf.Data.Geometry.Type.LINESTRING) {
+    return geometryFactory.createLineString(getAllCoordinates(g));
+  }
+ else   if (g.getType() == Geobuf.Data.Geometry.Type.POLYGON) {
+    Coordinate[] coords=getAllCoordinates(g);
+    if (!CoordinateArrays.isRing(coords)) {
+      Coordinate[] closedCoords=new Coordinate[coords.length + 1];
+      CoordinateArrays.copyDeep(coords,0,closedCoords,0,coords.length);
+      closedCoords[closedCoords.length - 1]=coords[0];
+      coords=closedCoords;
+    }
+    LinearRing shell=geometryFactory.createLinearRing(coords);
+    LinearRing[] holes=new LinearRing[0];
+    return geometryFactory.createPolygon(shell,holes);
+  }
+ else   if (g.getType() == Geobuf.Data.Geometry.Type.MULTIPOINT) {
+    Coordinate[] coords=getAllCoordinates(g);
+    return geometryFactory.createMultiPoint(coords);
+  }
+ else   if (g.getType() == Geobuf.Data.Geometry.Type.MULTILINESTRING) {
+    List<Coordinate[]> listOfCoordinates=getCoordinates(g);
+    LineString[] lines=new LineString[listOfCoordinates.size()];
+    for (int i=0; i < listOfCoordinates.size(); i++) {
+      lines[i]=geometryFactory.createLineString(listOfCoordinates.get(i));
+    }
+    return geometryFactory.createMultiLineString(lines);
+  }
+ else   if (g.getType() == Geobuf.Data.Geometry.Type.MULTIPOLYGON) {
+    int lengthPosition=0;
+    int numberOfPolygons=g.getLengths(lengthPosition);
+    lengthPosition++;
+    Polygon[] polygons=new Polygon[numberOfPolygons];
+    int start=0;
+    for (int p=0; p < numberOfPolygons; p++) {
+      int numberOfRings=g.getLengths(lengthPosition);
+      lengthPosition++;
+      LinearRing[] rings=new LinearRing[numberOfRings];
+      for (int r=0; r < numberOfRings; r++) {
+        int numberOfCoordinates=g.getLengths(lengthPosition);
+        lengthPosition++;
+        int end=start + numberOfCoordinates * dimension;
+        Coordinate[] coords=getCoordinates(g,start,end);
+        if (!CoordinateArrays.isRing(coords)) {
+          Coordinate[] closedCoords=new Coordinate[coords.length + 1];
+          CoordinateArrays.copyDeep(coords,0,closedCoords,0,coords.length);
+          closedCoords[closedCoords.length - 1]=coords[0];
+          coords=closedCoords;
+        }
+        rings[r]=geometryFactory.createLinearRing(coords);
+        start=end;
+      }
+      if (rings.length > 1) {
+        polygons[p]=geometryFactory.createPolygon(rings[0],Arrays.copyOfRange(rings,1,rings.length));
+      }
+ else {
+        polygons[p]=geometryFactory.createPolygon(rings[0]);
+      }
+    }
+    return geometryFactory.createMultiPolygon(polygons);
+  }
+ else   if (g.getType() == Geobuf.Data.Geometry.Type.GEOMETRYCOLLECTION) {
+    List<Geometry> geoms=getGeometries(g);
+    return geometryFactory.createGeometryCollection(geoms.toArray(new Geometry[]{}));
+  }
+ else {
+    return null;
+  }
+}

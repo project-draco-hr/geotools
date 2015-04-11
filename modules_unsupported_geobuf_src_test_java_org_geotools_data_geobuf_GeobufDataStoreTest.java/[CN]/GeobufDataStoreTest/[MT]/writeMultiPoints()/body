@@ -1,0 +1,38 @@
+{
+  File file=temporaryFolder.newFile("multipoints.pbf");
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=DataUtilities.createType("test2","geom:MultiPoint,name:String,id:int");
+  store.createSchema(featureType);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("multipoints");
+  WKTReader reader=new WKTReader();
+  SimpleFeature feature1=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("MULTIPOINT ((24.257813 49.61071), (-92.460937 40.178873))"),"ABC",9},"location.1");
+  SimpleFeature feature2=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("MULTIPOINT ((100 0), (101 1))"),"TYU",56},"location.2");
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{feature1,feature2});
+  featureStore.addFeatures(collection);
+  SimpleFeatureCollection featureCollection=featureStore.getFeatures();
+  assertEquals(2,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (c == 0) {
+        assertEquals("MULTIPOINT ((24.257813 49.61071), (-92.460937 40.178873))",feature.getDefaultGeometry().toString());
+        assertEquals("9",feature.getAttribute("id"));
+        assertEquals("ABC",feature.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("MULTIPOINT ((100 0), (101 1))",feature.getDefaultGeometry().toString());
+        assertEquals("56",feature.getAttribute("id"));
+        assertEquals("TYU",feature.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

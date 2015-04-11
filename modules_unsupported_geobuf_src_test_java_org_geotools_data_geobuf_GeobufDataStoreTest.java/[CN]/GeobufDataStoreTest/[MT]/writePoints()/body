@@ -1,0 +1,38 @@
+{
+  File file=temporaryFolder.newFile("points.pbf");
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=DataUtilities.createType("test2","geom:Point,name:String,id:int");
+  store.createSchema(featureType);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("points");
+  GeometryFactory gf=JTSFactoryFinder.getGeometryFactory();
+  SimpleFeature feature1=SimpleFeatureBuilder.build(featureType,new Object[]{gf.createPoint(new Coordinate(-8.349609375,14.349547837185362)),"ABC",1},"location.1");
+  SimpleFeature feature2=SimpleFeatureBuilder.build(featureType,new Object[]{gf.createPoint(new Coordinate(-18.349609375,24.349547837185362)),"DEF",2},"location.2");
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{feature1,feature2});
+  featureStore.addFeatures(collection);
+  SimpleFeatureCollection featureCollection=featureStore.getFeatures();
+  assertEquals(2,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      if (c == 0) {
+        assertEquals("POINT (-8.349609 14.349548)",f.getDefaultGeometry().toString());
+        assertEquals("1",f.getAttribute("id"));
+        assertEquals("ABC",f.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("POINT (-18.349609 24.349548)",f.getDefaultGeometry().toString());
+        assertEquals("2",f.getAttribute("id"));
+        assertEquals("DEF",f.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

@@ -1,0 +1,20 @@
+{
+  Geobuf.Data data=Geobuf.Data.parseFrom(in);
+  if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.GEOMETRY) {
+    Geometry g=geobufFeature.getGeobufGeometry().decode(data.getGeometry());
+    Envelope env=g.getEnvelopeInternal();
+    return new ReferencedEnvelope(env.getMinX(),env.getMaxX(),env.getMinY(),env.getMaxY(),null);
+  }
+ else   if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.FEATURE) {
+    Geometry g=(Geometry)geobufFeature.decode(data).getDefaultGeometry();
+    Envelope env=g.getEnvelopeInternal();
+    return new ReferencedEnvelope(env.getMinX(),env.getMaxX(),env.getMinY(),env.getMaxY(),null);
+  }
+ else   if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.FEATURE_COLLECTION) {
+    SimpleFeatureCollection fc=decode(data);
+    return fc.getBounds();
+  }
+ else {
+    return null;
+  }
+}
