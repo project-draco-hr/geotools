@@ -1,0 +1,29 @@
+{
+  File file=DataUtilities.urlToFile(getClass().getClassLoader().getResource("org/geotools/data/geobuf/multipolygons.pbf"));
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  assertEquals(1,store.getTypeNames().length);
+  assertEquals("multipolygons",store.getTypeNames()[0]);
+  SimpleFeatureSource featureSource=store.getFeatureSource("multipolygons");
+  assertEquals("geom:MultiPolygon,id:Integer,name:String",DataUtilities.encodeType(featureSource.getSchema()));
+  SimpleFeatureCollection featureCollection=featureSource.getFeatures();
+  assertEquals(1,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (c == 0) {
+        assertEquals("MULTIPOLYGON (((102 2, 103 2, 103 3, 102 3, 102 2)), " + "((100 0, 101 0, 101 1, 100 1, 100 0)), " + "((100.2 0.2, 100.8 0.2, 100.8 0.8, 100.2 0.8, 100.2 0.2)))",feature.getDefaultGeometry().toString());
+        assertEquals(1,feature.getAttribute("id"));
+        assertEquals("number 1",feature.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

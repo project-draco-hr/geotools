@@ -1,0 +1,50 @@
+{
+  File file=temporaryFolder.newFile("polygons.pbf");
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=DataUtilities.createType("lines","geom:Polygon,name:String,id:int");
+  store.createSchema(featureType);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("polygons");
+  WKTReader reader=new WKTReader();
+  SimpleFeature feature1=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("POLYGON ((59.0625 57.704147, 37.617187 24.527135, 98.789062 36.031332, " + "59.062499 57.704147, 59.0625 57.704147))"),"ABC",1},"location.1");
+  SimpleFeature feature2=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("POLYGON ((-72.773438 58.077876, -89.296876 17.644022, -37.265626 -2.460181, " + "-2.109376 42.811522, -15.117189 60.413853, -50.976564 29.840645, -64.687502 39.909737, " + "-58.71094 56.365251, -72.77344 58.077877, -72.773438 58.077876))"),"DEF",2},"location.2");
+  SimpleFeature feature3=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("POLYGON ((12.65625 63.548552, 12.65625 69.534517, 29.179687 69.534517, " + "29.179687 63.548552, 12.65625 63.548552))"),"GHI",3},"location.3");
+  SimpleFeature feature4=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("POLYGON ((-22.5 67.875541, -22.5 73.124945, -8.789062 73.124945, " + "-8.789062 67.875541, -22.5 67.875541))"),"JKL",4},"location.4");
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{feature1,feature2,feature3,feature4});
+  featureStore.addFeatures(collection);
+  SimpleFeatureCollection featureCollection=featureStore.getFeatures();
+  assertEquals(4,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (c == 0) {
+        assertEquals("POLYGON ((59.0625 57.704147, 37.617187 24.527135, 98.789062 36.031332, " + "59.062499 57.704147, 59.0625 57.704147))",feature.getDefaultGeometry().toString());
+        assertEquals("1",feature.getAttribute("id"));
+        assertEquals("ABC",feature.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("POLYGON ((-72.773438 58.077876, -89.296876 17.644022, -37.265626 -2.460181, " + "-2.109376 42.811522, -15.117189 60.413853, -50.976564 29.840645, -64.687502 39.909737, " + "-58.71094 56.365251, -72.77344 58.077877, -72.773438 58.077876))",feature.getDefaultGeometry().toString());
+        assertEquals("2",feature.getAttribute("id"));
+        assertEquals("DEF",feature.getAttribute("name"));
+      }
+ else       if (c == 2) {
+        assertEquals("POLYGON ((12.65625 63.548552, 12.65625 69.534517, 29.179687 69.534517, " + "29.179687 63.548552, 12.65625 63.548552))",feature.getDefaultGeometry().toString());
+        assertEquals("3",feature.getAttribute("id"));
+        assertEquals("GHI",feature.getAttribute("name"));
+      }
+ else       if (c == 3) {
+        assertEquals("POLYGON ((-22.5 67.875541, -22.5 73.124945, -8.789062 73.124945, " + "-8.789062 67.875541, -22.5 67.875541))",feature.getDefaultGeometry().toString());
+        assertEquals("4",feature.getAttribute("id"));
+        assertEquals("JKL",feature.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

@@ -1,0 +1,34 @@
+{
+  if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.GEOMETRY) {
+    if (index > 0) {
+      return null;
+    }
+    featureBuilder.set(featureBuilder.getFeatureType().getGeometryDescriptor().getLocalName(),geobufGeometry.decode(data.getGeometry()));
+  }
+ else   if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.FEATURE) {
+    if (index > 0) {
+      return null;
+    }
+    featureBuilder.set(featureBuilder.getFeatureType().getGeometryDescriptor().getLocalName(),geobufGeometry.decode(data.getFeature().getGeometry()));
+    int keyCount=data.getKeysCount();
+    for (int j=0; j < keyCount; j++) {
+      String key=data.getKeys(j);
+      Object value=getValue(data.getFeature().getValues(j));
+      featureBuilder.set(key,value);
+    }
+  }
+ else   if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.FEATURE_COLLECTION) {
+    if (index >= data.getFeatureCollection().getFeaturesCount()) {
+      return null;
+    }
+    Geobuf.Data.Feature feature=data.getFeatureCollection().getFeatures(index);
+    featureBuilder.set(featureBuilder.getFeatureType().getGeometryDescriptor().getLocalName(),geobufGeometry.decode(feature.getGeometry()));
+    int keyCount=data.getKeysCount();
+    for (int j=0; j < keyCount; j++) {
+      String key=data.getKeys(j);
+      Object value=feature.getValuesCount() > j ? getValue(feature.getValues(j)) : null;
+      featureBuilder.set(key,value);
+    }
+  }
+  return featureBuilder.buildFeature(String.valueOf(index));
+}

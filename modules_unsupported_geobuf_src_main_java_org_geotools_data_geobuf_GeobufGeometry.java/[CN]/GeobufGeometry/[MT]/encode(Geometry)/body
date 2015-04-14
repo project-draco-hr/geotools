@@ -1,0 +1,61 @@
+{
+  Geobuf.Data.Geometry.Builder builder=Geobuf.Data.Geometry.newBuilder();
+  if (geometry instanceof Point) {
+    Point point=(Point)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.POINT);
+    addCoords(builder,new Coordinate[]{point.getCoordinate()});
+  }
+ else   if (geometry instanceof LineString) {
+    LineString line=(LineString)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.LINESTRING);
+    Coordinate[] coords=line.getCoordinates();
+    addCoords(builder,coords);
+  }
+ else   if (geometry instanceof Polygon) {
+    Polygon polygon=(Polygon)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.POLYGON);
+    Coordinate[] coords=polygon.getCoordinates();
+    addCoords(builder,coords);
+  }
+ else   if (geometry instanceof MultiPoint) {
+    MultiPoint multiPoint=(MultiPoint)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.MULTIPOINT);
+    Coordinate[] coords=multiPoint.getCoordinates();
+    addCoords(builder,coords);
+  }
+ else   if (geometry instanceof MultiLineString) {
+    MultiLineString multiLineString=(MultiLineString)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.MULTILINESTRING);
+    for (int i=0; i < multiLineString.getNumGeometries(); i++) {
+      LineString line=(LineString)multiLineString.getGeometryN(i);
+      builder.addLengths(line.getCoordinates().length);
+      addCoords(builder,line.getCoordinates());
+    }
+  }
+ else   if (geometry instanceof MultiPolygon) {
+    MultiPolygon multiPolygon=(MultiPolygon)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.MULTIPOLYGON);
+    builder.addLengths(multiPolygon.getNumGeometries());
+    for (int i=0; i < multiPolygon.getNumGeometries(); i++) {
+      Polygon polygon=(Polygon)multiPolygon.getGeometryN(i);
+      builder.addLengths(1 + polygon.getNumInteriorRing());
+      builder.addLengths(polygon.getExteriorRing().getCoordinates().length);
+      addCoords(builder,polygon.getExteriorRing().getCoordinates());
+      for (int j=0; j < polygon.getNumInteriorRing(); j++) {
+        LinearRing ring=(LinearRing)polygon.getInteriorRingN(j);
+        builder.addLengths(ring.getCoordinates().length);
+        addCoords(builder,ring.getCoordinates());
+      }
+    }
+  }
+ else   if (geometry instanceof GeometryCollection) {
+    GeometryCollection geometryCollection=(GeometryCollection)geometry;
+    builder.setType(Geobuf.Data.Geometry.Type.GEOMETRYCOLLECTION);
+    for (int i=0; i < geometryCollection.getNumGeometries(); i++) {
+      Geometry geom=geometryCollection.getGeometryN(i);
+      builder.addGeometries(encode(geom));
+    }
+  }
+  Geobuf.Data.Geometry geom=builder.build();
+  return geom;
+}

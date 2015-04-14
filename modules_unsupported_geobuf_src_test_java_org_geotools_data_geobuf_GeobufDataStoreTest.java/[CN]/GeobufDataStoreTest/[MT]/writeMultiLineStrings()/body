@@ -1,0 +1,38 @@
+{
+  File file=temporaryFolder.newFile("multilinestrings.pbf");
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=DataUtilities.createType("test2","geom:MultiLineString,name:String,id:int");
+  store.createSchema(featureType);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("multilinestrings");
+  WKTReader reader=new WKTReader();
+  SimpleFeature feature1=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("MULTILINESTRING ((24.257813 49.61071, 45.12 67.45), (-92.460937 40.178873, 54.321 65.562))"),"ABC",9},"location.1");
+  SimpleFeature feature2=SimpleFeatureBuilder.build(featureType,new Object[]{reader.read("MULTILINESTRING ((100 0, 101 1), (102 2, 103 3))"),"TYU",56},"location.2");
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{feature1,feature2});
+  featureStore.addFeatures(collection);
+  SimpleFeatureCollection featureCollection=featureStore.getFeatures();
+  assertEquals(2,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      if (c == 0) {
+        assertEquals("MULTILINESTRING ((24.257813 49.61071, 45.12 67.45), " + "(-92.460937 40.178873, 54.321 65.562))",f.getDefaultGeometry().toString());
+        assertEquals("9",f.getAttribute("id"));
+        assertEquals("ABC",f.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("MULTILINESTRING ((100 0, 101 1), (102 2, 103 3))",f.getDefaultGeometry().toString());
+        assertEquals("56",f.getAttribute("id"));
+        assertEquals("TYU",f.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

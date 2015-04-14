@@ -1,0 +1,38 @@
+{
+  File file=temporaryFolder.newFile("lines.pbf");
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  SimpleFeatureType featureType=DataUtilities.createType("lines","geom:LineString,name:String,id:int");
+  store.createSchema(featureType);
+  SimpleFeatureStore featureStore=(SimpleFeatureStore)store.getFeatureSource("lines");
+  GeometryFactory gf=JTSFactoryFinder.getGeometryFactory();
+  SimpleFeature feature1=SimpleFeatureBuilder.build(featureType,new Object[]{gf.createLineString(new Coordinate[]{new Coordinate(0,0),new Coordinate(10,10)}),"ABC",1},"location.1");
+  SimpleFeature feature2=SimpleFeatureBuilder.build(featureType,new Object[]{gf.createLineString(new Coordinate[]{new Coordinate(20,20),new Coordinate(21,21),new Coordinate(23,23)}),"DEF",2},"location.2");
+  SimpleFeatureCollection collection=DataUtilities.collection(new SimpleFeature[]{feature1,feature2});
+  featureStore.addFeatures(collection);
+  SimpleFeatureCollection featureCollection=featureStore.getFeatures();
+  assertEquals(2,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      if (c == 0) {
+        assertEquals("LINESTRING (0 0, 10 10)",f.getDefaultGeometry().toString());
+        assertEquals("1",f.getAttribute("id"));
+        assertEquals("ABC",f.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("LINESTRING (20 20, 21 21, 23 23)",f.getDefaultGeometry().toString());
+        assertEquals("2",f.getAttribute("id"));
+        assertEquals("DEF",f.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}

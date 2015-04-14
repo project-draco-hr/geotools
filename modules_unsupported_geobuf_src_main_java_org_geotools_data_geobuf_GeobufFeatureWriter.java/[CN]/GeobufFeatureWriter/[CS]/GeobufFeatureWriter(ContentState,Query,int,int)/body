@@ -1,0 +1,20 @@
+{
+  this.state=state;
+  String typeName=query.getTypeName();
+  DataStore dataStore=state.getEntry().getDataStore();
+  if (dataStore instanceof GeobufDirectoryDataStore) {
+    this.file=((GeobufDirectoryDataStore)dataStore).getDataStore(typeName).getFile();
+  }
+ else {
+    this.file=((GeobufDataStore)dataStore).getFile();
+  }
+  File directory=file.getParentFile();
+  this.temp=File.createTempFile(typeName + System.currentTimeMillis(),"geobuf",directory);
+  this.dataBuilder=Geobuf.Data.newBuilder();
+  GeobufFeatureType geobufFeatureType=new GeobufFeatureType();
+  geobufFeatureType.encode(state.getFeatureType(),dataBuilder);
+  dataBuilder.build().writeTo(new FileOutputStream(this.temp));
+  this.featureCollectionBuilder=Geobuf.Data.FeatureCollection.newBuilder();
+  this.geobufFeature=new GeobufFeature(new GeobufGeometry(precision,dimension));
+  this.delegate=new GeobufFeatureReader(state,query,precision,dimension);
+}

@@ -1,0 +1,27 @@
+{
+  if (dataBuilder == null) {
+    throw new IOException("FeatureWriter has been closed");
+  }
+  if (this.currentFeature != null) {
+    this.write();
+  }
+  try {
+    if (!appending) {
+      if (delegate.hasNext()) {
+        this.currentFeature=delegate.next();
+        return this.currentFeature;
+      }
+ else {
+        this.appending=true;
+      }
+    }
+    SimpleFeatureType featureType=state.getFeatureType();
+    String fid=featureType.getTypeName() + "." + nextRow;
+    Object values[]=DataUtilities.defaultValues(featureType);
+    this.currentFeature=SimpleFeatureBuilder.build(featureType,values,fid);
+    return this.currentFeature;
+  }
+ catch (  IllegalArgumentException invalid) {
+    throw new IOException("Unable to create feature:" + invalid.getMessage(),invalid);
+  }
+}

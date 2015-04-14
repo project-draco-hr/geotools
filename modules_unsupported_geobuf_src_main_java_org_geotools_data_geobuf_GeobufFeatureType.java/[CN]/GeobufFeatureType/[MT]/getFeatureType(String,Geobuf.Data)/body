@@ -1,0 +1,40 @@
+{
+  SimpleFeatureTypeBuilder featureTypeBuilder=new SimpleFeatureTypeBuilder();
+  featureTypeBuilder.setName(name);
+  if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.GEOMETRY) {
+    featureTypeBuilder.setDefaultGeometry("geom");
+    featureTypeBuilder.add("geom",getGeometryType(data.getGeometry()));
+  }
+ else   if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.FEATURE) {
+    featureTypeBuilder.setDefaultGeometry("geom");
+    featureTypeBuilder.add("geom",getGeometryType(data.getFeature().getGeometry()));
+    int keyCount=data.getKeysCount();
+    for (int i=0; i < keyCount; i++) {
+      String key=data.getKeys(i);
+      Class type=getType(data.getFeature().getValues(i).getValueTypeCase());
+      featureTypeBuilder.add(key,type);
+    }
+  }
+ else   if (data.getDataTypeCase() == Geobuf.Data.DataTypeCase.FEATURE_COLLECTION) {
+    featureTypeBuilder.setDefaultGeometry("geom");
+    if (data.getFeatureCollection().getFeaturesCount() == 0) {
+      featureTypeBuilder.add("geom",Geometry.class);
+    }
+ else {
+      featureTypeBuilder.add("geom",getGeometryType(data.getFeatureCollection().getFeatures(0).getGeometry()));
+    }
+    int keyCount=data.getKeysCount();
+    for (int i=0; i < keyCount; i++) {
+      String key=data.getKeys(i);
+      Class type=String.class;
+      if (data.getFeatureCollection().getFeaturesCount() > 0 && i < data.getFeatureCollection().getFeatures(0).getValuesCount()) {
+        type=getType(data.getFeatureCollection().getFeatures(0).getValues(i).getValueTypeCase());
+      }
+      featureTypeBuilder.add(key,type);
+    }
+  }
+ else {
+    throw new IOException("Unknown Data Type!");
+  }
+  return featureTypeBuilder.buildFeatureType();
+}

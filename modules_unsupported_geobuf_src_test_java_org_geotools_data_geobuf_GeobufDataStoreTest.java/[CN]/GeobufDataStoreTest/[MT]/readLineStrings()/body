@@ -1,0 +1,39 @@
+{
+  File file=DataUtilities.urlToFile(getClass().getClassLoader().getResource("org/geotools/data/geobuf/lines.pbf"));
+  Map<String,Serializable> params=new HashMap<>();
+  params.put("file",file);
+  DataStore store=DataStoreFinder.getDataStore(params);
+  assertEquals(1,store.getTypeNames().length);
+  assertEquals("lines",store.getTypeNames()[0]);
+  SimpleFeatureSource featureSource=store.getFeatureSource("lines");
+  assertEquals("geom:LineString,id:Integer,name:String",DataUtilities.encodeType(featureSource.getSchema()));
+  SimpleFeatureCollection featureCollection=featureSource.getFeatures();
+  assertEquals(3,featureCollection.size());
+  SimpleFeatureIterator it=featureCollection.features();
+  try {
+    int c=0;
+    while (it.hasNext()) {
+      SimpleFeature feature=it.next();
+      if (c == 0) {
+        assertEquals("LINESTRING (94.570313 63.233627, 70.3125 58.263287, 47.460937 57.515823, " + "24.609374 50.513427)",feature.getDefaultGeometry().toString());
+        assertEquals(1,feature.getAttribute("id"));
+        assertEquals("number 1",feature.getAttribute("name"));
+      }
+ else       if (c == 1) {
+        assertEquals("LINESTRING (-89.296875 40.446947, -61.171875 20.303417, -47.460938 44.339565, " + "-76.992188 58.447733, -107.226563 50.289339)",feature.getDefaultGeometry().toString());
+        assertEquals(2,feature.getAttribute("id"));
+        assertEquals("number 2",feature.getAttribute("name"));
+      }
+ else       if (c == 2) {
+        assertEquals("LINESTRING (-47.460938 -13.923404, 7.382812 8.407168)",feature.getDefaultGeometry().toString());
+        assertEquals(3,feature.getAttribute("id"));
+        assertEquals("number 3`",feature.getAttribute("name"));
+      }
+      c++;
+    }
+  }
+  finally {
+    it.close();
+  }
+  store.dispose();
+}
