@@ -8,7 +8,7 @@
   }
   Unit<?> linearUnit;
   try {
-    linearUnit=createUnit(GeoTiffPCSCodes.ProjLinearUnitsGeoKey,GeoTiffPCSCodes.ProjLinearUnitSizeGeoKey,SI.METER,metadata);
+    linearUnit=createUnit(GeoTiffPCSCodes.ProjLinearUnitsGeoKey,GeoTiffPCSCodes.ProjLinearUnitSizeGeoKey,SI.METER,SI.METER,metadata);
   }
  catch (  GeoTiffException e) {
     linearUnit=null;
@@ -21,7 +21,8 @@
       projCode="EPSG:" + projCode;
     }
     final ProjectedCRS pcrs=(ProjectedCRS)allAuthoritiesFactory.createCoordinateReferenceSystem(projCode.toString());
-    if (linearUnit == null || linearUnit.equals(pcrs.getCoordinateSystem().getAxis(0).getUnit())) {
+    boolean isDefaultUnit=metadata.getGeoKey(GeoTiffPCSCodes.ProjLinearUnitsGeoKey) == null && linearUnit != null && linearUnit.equals(SI.METER);
+    if (linearUnit == null || isDefaultUnit || linearUnit.equals(pcrs.getCoordinateSystem().getAxis(0).getUnit())) {
       return pcrs;
     }
     final Conversion conversionFromBase=new DefiningConversion(pcrs.getConversionFromBase().getName().getCode(),pcrs.getConversionFromBase().getParameterValues());
