@@ -1,0 +1,36 @@
+{
+  GMLWriter output=new GMLWriter(handler,namespaces,gml.getNumDecimals(),gml.forceDecimalEncoding(),gml.getGmlPrefix());
+  boolean featureBounds=!encoder.getConfiguration().hasProperty(GMLConfiguration.NO_FEATURE_BOUNDS);
+  try (SimpleFeatureIterator fi=features.features()){
+    if (!fi.hasNext()) {
+      return;
+    }
+    ObjectEncoder ee=gml.createEnvelopeEncoder(encoder);
+    ee=gml.createEnvelopeEncoder(encoder);
+    gml.startFeatures(output);
+    AttributesImpl idatts=new AttributesImpl();
+    gml.initFidAttribute(idatts);
+    SimpleFeature f=fi.next();
+    FeatureTypeContextCache ftCache=new FeatureTypeContextCache();
+    while (f != null) {
+      if (GMLEncodingUtils.isJoinedFeature(f) && gml.supportsTuples()) {
+        SimpleFeature[] splitted=GMLEncodingUtils.splitJoinedFeature(f);
+        gml.startTuple(output);
+        for (        SimpleFeature feature : splitted) {
+          encodeFeature(output,featureBounds,ee,idatts,feature,ftCache);
+        }
+        gml.endTuple(output);
+      }
+ else {
+        encodeFeature(output,featureBounds,ee,idatts,f,ftCache);
+      }
+      if (fi.hasNext()) {
+        f=fi.next();
+      }
+ else {
+        f=null;
+      }
+    }
+    gml.endFeatures(output);
+  }
+ }

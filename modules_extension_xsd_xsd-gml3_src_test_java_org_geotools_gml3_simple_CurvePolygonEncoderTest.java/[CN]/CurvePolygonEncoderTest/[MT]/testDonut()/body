@@ -1,0 +1,14 @@
+{
+  PolygonEncoder encoder=new PolygonEncoder(gtEncoder,"gml");
+  Geometry geometry=new WKTReader2().read("CURVEPOLYGON(CIRCULARSTRING(-7 -8, -5 -6, -3 -8, -5 -10, -7 -8),CIRCULARSTRING(-6 -8, -5 -7, -4 -8, -5 -9, -6 -8))");
+  Document doc=encode(encoder,geometry);
+  assertEquals(1,xpath.getMatchingNodes("//gml:Polygon",doc).getLength());
+  assertEquals(1,xpath.getMatchingNodes("//gml:Polygon/gml:exterior",doc).getLength());
+  assertEquals(1,xpath.getMatchingNodes("//gml:Polygon/gml:interior",doc).getLength());
+  String ext1="//gml:Polygon/gml:exterior/gml:Ring/gml:curveMember[1]";
+  assertEquals("circularArc3Points",xpath.evaluate(ext1 + "/gml:Curve/gml:segments/gml:ArcString/@interpolation",doc));
+  assertEquals("-7 -8 -5 -6 -3 -8 -5 -10 -7 -8",xpath.evaluate(ext1 + "/gml:Curve/gml:segments/gml:ArcString/gml:posList",doc));
+  String int1="//gml:Polygon/gml:interior/gml:Ring/gml:curveMember[1]";
+  assertEquals("circularArc3Points",xpath.evaluate(int1 + "/gml:Curve/gml:segments/gml:ArcString/@interpolation",doc));
+  assertEquals("-6 -8 -5 -7 -4 -8 -5 -9 -6 -8",xpath.evaluate(int1 + "/gml:Curve/gml:segments/gml:ArcString/gml:posList",doc));
+}

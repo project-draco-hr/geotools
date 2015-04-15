@@ -1,0 +1,26 @@
+{
+  gml.startFeature(output);
+  FeatureTypeContext ftContext=ftCache.getFeatureTypeContext(f);
+  idatts.setValue(0,f.getID());
+  output.startElement(ftContext.featureQualifiedName,idatts);
+  for (  AttributeContext attribute : ftContext.attributes) {
+    QualifiedName name=attribute.name;
+    Object value1=null;
+    AttributeDescriptor ad=null;
+    if (boundedBy.equals(name) && featureBounds) {
+      value1=f.getBounds();
+    }
+ else {
+      int idx=attribute.attributeIndex;
+      value1=f.getAttribute(idx);
+      ad=f.getFeatureType().getDescriptor(idx);
+    }
+    Object value=value1;
+    if (value == null) {
+      continue;
+    }
+    encodeValue(output,ee,value,attribute);
+  }
+  output.endElement(ftContext.featureQualifiedName);
+  gml.endFeature(output);
+}

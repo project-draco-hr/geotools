@@ -1,0 +1,52 @@
+{
+  ArrayList<AttributeContext> attributes=new ArrayList<AttributeContext>(properties.size());
+  List<AttributeDescriptor> attributeDescriptors=schema.getAttributeDescriptors();
+  for (Iterator p=properties.iterator(); p.hasNext(); ) {
+    Object[] o=(Object[])p.next();
+    XSDParticle particle=(XSDParticle)o[0];
+    XSDElementDeclaration content=(XSDElementDeclaration)particle.getContent();
+    if (content.isElementDeclarationReference()) {
+      content=content.getResolvedElementDeclaration();
+    }
+    String prefix=namespaces.getPrefix(content.getTargetNamespace());
+    QualifiedName contentName;
+    if (prefix != null) {
+      contentName=QualifiedName.build(content.getTargetNamespace(),content.getName(),prefix);
+    }
+ else {
+      contentName=new QualifiedName(content.getTargetNamespace(),content.getName());
+    }
+    AttributeContext attribute=new AttributeContext(contentName);
+    attributes.add(attribute);
+    int idx=getNameIndex(content.getName(),attributeDescriptors);
+    attribute.attributeIndex=idx;
+    if (idx != -1) {
+      attribute.descriptor=attributeDescriptors.get(idx);
+    }
+    if (name.equals(contentName)) {
+      attribute.binding=new XSStringBinding();
+    }
+ else     if (boundedBy.equals(contentName)) {
+    }
+ else {
+      XSDTypeDefinition contentType=content.getTypeDefinition();
+      if (contentType.getName() == null) {
+        while (contentType != null && contentType.getName() == null) {
+          XSDTypeDefinition baseType=contentType.getBaseType();
+          if (contentType.equals(baseType)) {
+            contentType=null;
+            continue;
+          }
+          contentType=baseType;
+        }
+      }
+      if (contentType == null || content.getName() == null) {
+        throw new IllegalArgumentException("Could not find non annonymous type");
+      }
+      QName contentTypeName=new QName(contentType.getTargetNamespace(),contentType.getName());
+      Binding binding=bindingLoader.loadBinding(contentTypeName,encoder.getContext());
+      attribute.binding=binding;
+    }
+  }
+  return attributes;
+}
