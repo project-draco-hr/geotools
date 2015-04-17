@@ -1,52 +1,9 @@
 {
-  FunctionFactory functionFactory=loadProcessFunctionFactory();
   if (functionFactory == null) {
     LOG.warning("Unable to load process factory, ignoring transform, ensure process modules installed");
     return;
   }
   YamlMap map=obj.map();
-  String name=map.str("name");
-  if (name == null) {
-    throw new IllegalArgumentException("transform must specify a name");
-  }
-  String input=map.strOr("input","data");
-  Name qName=processName(name);
-  Map<String,Parameter> processInfo=loadProcessInfo(qName);
-  if (processInfo == null) {
-    throw new IllegalArgumentException("No such process: " + name);
-  }
-  FilterFactory filterFactory=factory.filter;
-  List<Expression> processArgs=new ArrayList();
-  processArgs.add(filterFactory.function("parameter",filterFactory.literal(input)));
-  YamlMap params=map.map("params");
-  if (params != null) {
-    for (    Map.Entry<String,Object> e : params.raw().entrySet()) {
-      String key=e.getKey();
-      Object val=e.getValue();
-      List<Expression> paramArgs=new ArrayList<Expression>();
-      paramArgs.add(factory.filter.literal(key));
-      List<Expression> valueArgs=new ArrayList();
-      Parameter p=processInfo.get(key);
-      if (p != null) {
-        if (val instanceof String) {
-          Expression expr=Util.expression((String)val,true,factory);
-          if (expr != null) {
-            valueArgs.add(expr);
-          }
-        }
-        if (valueArgs.isEmpty()) {
-          convertAndAdd(val,p,valueArgs);
-        }
-      }
- else {
-        LOG.warning(String.format("unknown transform parameter: %s",key));
-      }
-      if (valueArgs.isEmpty()) {
-        valueArgs.add(factory.filter.literal(val));
-      }
-      paramArgs.addAll(valueArgs);
-      processArgs.add(filterFactory.function("parameter",paramArgs.toArray(new Expression[paramArgs.size()])));
-    }
-  }
-  featureStyle.setTransformation(functionFactory.function(processName(name),processArgs,null));
+  Function function=process(map);
+  featureStyle.setTransformation(function);
 }
