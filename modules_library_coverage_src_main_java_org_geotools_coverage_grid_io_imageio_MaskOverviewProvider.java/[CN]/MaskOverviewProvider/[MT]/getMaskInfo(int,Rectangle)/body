@@ -1,0 +1,67 @@
+{
+  MaskInfo info=null;
+  if (numInternalMasks + numExternalMasks > 0) {
+    info=new MaskInfo();
+    ImageReadParam readParam=new ImageReadParam();
+    readParam.setSourceSubsampling(1,1,0,0);
+    readParam.setSourceRegion(sourceRegion);
+    info.readParameters=readParam;
+    if (imageIndex > 0) {
+      if (imageIndex < numInternalMasks) {
+        info.file=DataUtilities.urlToFile(fileURL);
+        info.readerSpi=readerSpi;
+        info.streamSpi=streamSpi;
+        info.index=imageIndex != 0 ? layout.getInternalMaskImageIndex(imageIndex) - 1 : layout.getInternalMaskImageIndex(imageIndex);
+      }
+ else       if (hasExternalMasks) {
+        if (imageIndex < numExternalMasks) {
+          info.file=DataUtilities.urlToFile(maskURL);
+          info.readerSpi=maskReaderSpi;
+          info.streamSpi=maskStreamSpi;
+          info.index=imageIndex;
+        }
+ else         if (imageIndex < numExternalMasks + numExternalMasksOverviews) {
+          info.file=DataUtilities.urlToFile(maskOvrURL);
+          info.readerSpi=maskOvrReaderSpi;
+          info.streamSpi=maskOvrStreamSpi;
+          info.index=imageIndex - numExternalMasks;
+        }
+ else {
+          if (numExternalMasksOverviews > 0) {
+            info.file=DataUtilities.urlToFile(maskOvrURL);
+            info.readerSpi=maskOvrReaderSpi;
+            info.streamSpi=maskOvrStreamSpi;
+            info.index=numExternalMasksOverviews - 1;
+          }
+ else {
+            info.file=DataUtilities.urlToFile(maskURL);
+            info.readerSpi=maskReaderSpi;
+            info.streamSpi=maskStreamSpi;
+            info.index=numExternalMasks - 1;
+          }
+        }
+      }
+ else {
+        info.file=DataUtilities.urlToFile(fileURL);
+        info.readerSpi=readerSpi;
+        info.streamSpi=streamSpi;
+        info.index=numInternalMasks - 1;
+      }
+    }
+ else     if (imageIndex == 0) {
+      if (numInternalMasks == 0 && hasExternalMasks) {
+        info.file=DataUtilities.urlToFile(maskURL);
+        info.readerSpi=maskReaderSpi;
+        info.streamSpi=maskStreamSpi;
+        info.index=0;
+      }
+ else       if (numInternalMasks > 0) {
+        info.file=DataUtilities.urlToFile(fileURL);
+        info.readerSpi=readerSpi;
+        info.streamSpi=streamSpi;
+        info.index=layout.getInternalMaskImageIndex(0);
+      }
+    }
+  }
+  return info;
+}

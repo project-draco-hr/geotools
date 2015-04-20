@@ -1,0 +1,33 @@
+{
+  GridCoverage2D outputCoverage=inputCoverage;
+  final GeneralEnvelope coverageEnvelope=(GeneralEnvelope)inputCoverage.getEnvelope();
+  final CoordinateReferenceSystem coverageCRS=inputCoverage.getCoordinateReferenceSystem2D();
+  try {
+    GeneralEnvelope renderingEnvelopeInCoverageCRS=null;
+    if (doReprojection) {
+      renderingEnvelopeInCoverageCRS=GridCoverageRendererUtilities.reprojectEnvelopeWithWGS84Pivot(destinationEnvelope,coverageCRS);
+    }
+ else {
+      renderingEnvelopeInCoverageCRS=new GeneralEnvelope(destinationEnvelope);
+    }
+    final GeneralEnvelope cropEnvelope=new GeneralEnvelope(renderingEnvelopeInCoverageCRS);
+    cropEnvelope.intersect(coverageEnvelope);
+    if (cropEnvelope.isEmpty() || cropEnvelope.isNull()) {
+      if (LOGGER.isLoggable(Level.INFO)) {
+        LOGGER.info("The destination envelope does not intersect the envelope of the source coverage.");
+      }
+      return null;
+    }
+    outputCoverage=GridCoverageRendererUtilities.crop(inputCoverage,cropEnvelope,backgroundValues,hints);
+  }
+ catch (  Throwable t) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Crop Failed for reason: " + t.getLocalizedMessage(),t);
+    }
+    outputCoverage=inputCoverage;
+  }
+  if (DEBUG) {
+    writeRenderedImage(outputCoverage.getRenderedImage(),"crop");
+  }
+  return outputCoverage;
+}

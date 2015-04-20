@@ -1,0 +1,71 @@
+{
+  double[][] overviewsResolution=null;
+  if (numOverviews > 0) {
+    ImageInputStream stream=null;
+    ImageInputStream streamOvr=null;
+    ImageReader reader=null;
+    ImageReader readerOvr=null;
+    try {
+      stream=getInputStreamSpi().createInputStreamInstance(fileURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+      reader=getImageReaderSpi().createReaderInstance();
+      reader.setInput(stream,false,false);
+      if (ovrURL != null) {
+        streamOvr=getExternalOverviewInputStreamSpi().createInputStreamInstance(ovrURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+        readerOvr=getExternalOverviewReaderSpi().createReaderInstance();
+        readerOvr.setInput(streamOvr,false,false);
+      }
+      overviewsResolution=new double[numOverviews][2];
+      for (int i=0; i < numOverviews; i++) {
+        if (numExternalOverviews > 0 && i >= numInternalOverviews) {
+          int index=i - numInternalOverviews;
+          overviewsResolution[i][0]=span0 / readerOvr.getWidth(index);
+          overviewsResolution[i][1]=span1 / readerOvr.getHeight(index);
+        }
+ else {
+          int index=hasDatasetLayout ? layout.getInternalOverviewImageIndex(i + 1) : i + 1;
+          overviewsResolution[i][0]=span0 / reader.getWidth(index);
+          overviewsResolution[i][1]=span1 / reader.getHeight(index);
+        }
+      }
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,"Unable to create a Reader for File: " + fileURL,e);
+      }
+      throw new IllegalArgumentException(e);
+    }
+ finally {
+      if (stream != null) {
+        try {
+          stream.close();
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.SEVERE)) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+ finally {
+          if (reader != null) {
+            reader.dispose();
+          }
+        }
+      }
+      if (streamOvr != null) {
+        try {
+          streamOvr.close();
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.SEVERE)) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+ finally {
+          if (readerOvr != null) {
+            readerOvr.dispose();
+          }
+        }
+      }
+    }
+  }
+  return overviewsResolution;
+}

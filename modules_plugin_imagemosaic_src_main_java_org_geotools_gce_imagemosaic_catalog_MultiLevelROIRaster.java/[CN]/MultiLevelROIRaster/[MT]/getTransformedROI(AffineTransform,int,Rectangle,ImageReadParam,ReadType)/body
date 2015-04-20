@@ -1,0 +1,57 @@
+{
+  Rectangle sourceRegion=imgBounds;
+  if (params.getSourceRegion() != null) {
+    sourceRegion=params.getSourceRegion();
+  }
+  MaskInfo info=maskOvrProvider.getMaskInfo(imageIndex,sourceRegion);
+  File inFile=info.file;
+  int index=info.index;
+  if (inFile == null) {
+    throw new IllegalArgumentException("Unable to load Raster Footprint for granule: " + file.getAbsolutePath());
+  }
+  URL granuleUrl=DataUtilities.fileToURL(inFile);
+  ImageInputStream inStream=null;
+  ImageReader reader=null;
+  try {
+    inStream=info.streamSpi.createInputStreamInstance(granuleUrl,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+    reader=info.readerSpi.createReaderInstance();
+    reader.setInput(inStream,false,false);
+    RenderedImage raster=null;
+    if (readType.equals(ReadType.DIRECT_READ)) {
+      raster=reader.read(index,info.readParameters);
+    }
+ else {
+      inStream.seek(0);
+      raster=ImageReadDescriptor.create(inStream,index,false,false,false,null,null,info.readParameters,reader,null);
+    }
+    return MaskOverviewProvider.scaleROI(raster,imgBounds);
+  }
+ catch (  IOException e) {
+    if (LOGGER.isLoggable(Level.SEVERE)) {
+      LOGGER.log(Level.SEVERE,e.getMessage(),e);
+    }
+  }
+ finally {
+    if (readType != ReadType.JAI_IMAGEREAD && reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.log(Level.SEVERE,e.getMessage(),e);
+        }
+      }
+    }
+    if (readType != ReadType.JAI_IMAGEREAD && inStream != null) {
+      try {
+        inStream.close();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.log(Level.SEVERE,e.getMessage(),e);
+        }
+      }
+    }
+  }
+  return null;
+}
