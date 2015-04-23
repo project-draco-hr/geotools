@@ -11,12 +11,16 @@
     if (params.containsKey(Utils.Prop.HETEROGENEOUS)) {
       this.heterogeneous=(Boolean)params.get(Utils.Prop.HETEROGENEOUS);
     }
+    if (params.containsKey(Utils.Prop.WRAP_STORE)) {
+      this.wrapstore=(Boolean)params.get(Utils.Prop.WRAP_STORE);
+    }
     Map<String,Serializable> dastastoreParams=Utils.filterDataStoreParams(params,spi);
+    boolean isPostgis=Utils.isPostgisStore(spi);
     if (Utils.isH2Store(spi)) {
       Utils.fixH2DatabaseLocation(dastastoreParams,parentLocation);
       Utils.fixH2MVCCParam(dastastoreParams);
     }
-    if (Utils.isPostgisStore(spi)) {
+    if (isPostgis) {
       Utils.fixPostgisDBCreationParams(dastastoreParams);
     }
     if (!create) {
@@ -30,7 +34,10 @@
         tileIndexStore=spi.createDataStore(dastastoreParams);
       }
     }
-    if (Utils.isOracleStore(spi)) {
+    if (isPostgis && wrapstore) {
+      tileIndexStore=new PostgisDatastoreWrapper(tileIndexStore,FilenameUtils.getFullPath(parentLocation));
+    }
+ else     if (Utils.isOracleStore(spi)) {
       tileIndexStore=new OracleDatastoreWrapper(tileIndexStore,FilenameUtils.getFullPath(parentLocation));
     }
     if (create) {

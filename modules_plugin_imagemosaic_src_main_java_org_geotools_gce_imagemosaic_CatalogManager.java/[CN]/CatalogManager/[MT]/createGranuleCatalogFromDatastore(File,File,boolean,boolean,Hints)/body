@@ -1,0 +1,21 @@
+{
+  GranuleCatalog catalog=null;
+  Utilities.ensureNonNull("datastoreProperties",datastoreProperties);
+  Properties properties=createGranuleCatalogProperties(datastoreProperties);
+  final String SPIClass=properties.getProperty("SPI");
+  try {
+    final DataStoreFactorySpi spi=(DataStoreFactorySpi)Class.forName(SPIClass).newInstance();
+    properties.put("ParentLocation",DataUtilities.fileToURL(parent).toExternalForm());
+    if (wraps) {
+      properties.put(Utils.Prop.WRAP_STORE,wraps);
+    }
+    catalog=GranuleCatalogFactory.createGranuleCatalog(properties,false,create,spi,hints);
+    MultiLevelROIProvider rois=MultiLevelROIProviderFactory.createFootprintProvider(parent);
+    catalog.setMultiScaleROIProvider(rois);
+  }
+ catch (  Exception e) {
+    final IOException ioe=new IOException();
+    throw (IOException)ioe.initCause(e);
+  }
+  return catalog;
+}

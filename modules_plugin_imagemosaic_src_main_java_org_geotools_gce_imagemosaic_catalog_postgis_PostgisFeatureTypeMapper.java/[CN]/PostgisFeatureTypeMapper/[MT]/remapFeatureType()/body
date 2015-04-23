@@ -1,0 +1,32 @@
+{
+  final SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName(mappedName);
+  final List<AttributeDescriptor> descriptors=wrappedFeatureType.getAttributeDescriptors();
+  for (  AttributeDescriptor descriptor : descriptors) {
+    Name name=descriptor.getName();
+    Definition definition=definitionsMapping.get(name);
+    AttributeType type=descriptor.getType();
+    if (type instanceof GeometryType) {
+      coordinateReferenceSystem=((GeometryType)type).getCoordinateReferenceSystem();
+      Map<Object,Object> userData=descriptor.getUserData();
+      if (userData != null && !userData.isEmpty()) {
+        Set<Object> keys=userData.keySet();
+        for (        Object key : keys) {
+          Object value=userData.get(key);
+          tb.userData(key,value);
+          if (key instanceof String) {
+            String id=(String)key;
+            if (id.equalsIgnoreCase(JDBCDataStore.JDBC_NATIVE_SRID) && value != null) {
+              srID=(Integer)value;
+            }
+          }
+        }
+      }
+      tb.add(definition.getExpression().toString(),definition.getBinding(),coordinateReferenceSystem);
+    }
+ else {
+      tb.add(definition.getExpression().toString(),definition.getBinding());
+    }
+  }
+  postgisFeatureType=tb.buildFeatureType();
+}
