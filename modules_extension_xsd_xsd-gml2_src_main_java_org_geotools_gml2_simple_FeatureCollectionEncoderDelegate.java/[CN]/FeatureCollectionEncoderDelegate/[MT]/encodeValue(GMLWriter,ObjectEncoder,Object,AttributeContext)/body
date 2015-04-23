@@ -1,0 +1,23 @@
+{
+  output.startElement(attribute.name,null);
+  if (value instanceof Geometry) {
+    Geometry g=(Geometry)value;
+    Integer dimension=GML2EncodingUtils.getGeometryDimension(g,encoder.getConfiguration());
+    AttributesImpl atts=buildSrsAttributes(((GeometryDescriptor)attribute.descriptor).getCoordinateReferenceSystem(),dimension);
+    GeometryEncoder geometryEncoder=getGeometryEncoder(value);
+    geometryEncoder.encode(g,atts,output);
+  }
+ else   if (value instanceof Envelope) {
+    ReferencedEnvelope e=(ReferencedEnvelope)value;
+    Integer dimension=GML2EncodingUtils.getEnvelopeDimension(e,encoder.getConfiguration());
+    AttributesImpl atts=buildSrsAttributes(e.getCoordinateReferenceSystem(),dimension);
+    ee.encode(e,atts,output);
+  }
+ else   if (attribute.binding instanceof SimpleBinding) {
+    encodeSimpleBinding(output,value,attribute.binding);
+  }
+ else {
+    output.characters(value.toString());
+  }
+  output.endElement(attribute.name);
+}
