@@ -15,41 +15,44 @@
     String geomCol=schema.getGeometryDescriptor().getLocalName();
     colNames.add(geomCol);
   }
-  final SeQueryInfo qInfo=filters.getQueryInfo(colNames.toArray(new String[colNames.size()]));
+  final SeQueryInfo queryInfo=filters.getQueryInfo(colNames.toArray(new String[colNames.size()]));
   final SeFilter[] spatialFilters=filters.getSpatialFilters();
+  final boolean hasSpatialFilter=spatialFilters != null && spatialFilters.length > 0;
   final Command<Integer> countCmd=new Command<Integer>(){
+    final boolean calcMasks=true;
+    final short searchOrder=SeQuery.SE_OPTIMIZE;
     @Override public Integer execute(    ISession session,    SeConnection connection) throws SeException, IOException {
-      final SeQueryInfo queryInfo=qInfo;
       SeQuery query=new SeQuery(connection);
       try {
         versioningHandler.setUpStream(session,query);
-        if (spatialFilters != null && spatialFilters.length > 0) {
-          final boolean calcMasks=true;
-          final short searchOrder=SeQuery.SE_OPTIMIZE;
-          query.setSpatialConstraints(searchOrder,calcMasks,spatialFilters);
+        if (hasSpatialFilter) {
           final SeDBMSInfo dbmsInfo=connection.getDBMSInfo();
-          final boolean unsupported=versioningHandler != ArcSdeVersionHandler.NONVERSIONED_HANDLER && dbmsInfo.dbmsId == SeDBMSInfo.SE_DBMS_IS_ORACLE;
-          if (unsupported) {
-            LOGGER.fine("ArcSDE on Oracle can't calculate count statistics " + "on versioned layers with spatial filters");
-            query.prepareQueryInfo(queryInfo);
-            query.execute();
-            int count=0;
-            while (query.fetch() != null) {
-              count++;
-            }
-            return count;
+          final boolean isStatsUnsupportedOrSlow=dbmsInfo.dbmsId == SeDBMSInfo.SE_DBMS_IS_ORACLE;
+          if (isStatsUnsupportedOrSlow) {
+            LOGGER.fine("Calculating count statistics by running query");
+            return computeCountByQueryRun(query,queryInfo);
           }
+          query.setSpatialConstraints(searchOrder,calcMasks,spatialFilters);
         }
         final int defaultMaxDistinctValues=0;
-        final SeTable.SeTableStats tableStats;
         final String statsCol=colNames.get(0);
-        tableStats=query.calculateTableStatistics(statsCol,SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
-        int actualCount=tableStats.getCount();
-        return new Integer(actualCount);
+        final SeTable.SeTableStats tableStats=query.calculateTableStatistics(statsCol,SeTable.SeTableStats.SE_COUNT_STATS,queryInfo,defaultMaxDistinctValues);
+        int count=tableStats.getCount();
+        return new Integer(count);
       }
   finally {
         query.close();
       }
+    }
+    private int computeCountByQueryRun(    SeQuery query,    final SeQueryInfo queryInfo) throws SeException {
+      query.prepareQueryInfo(queryInfo);
+      query.setSpatialConstraints(searchOrder,calcMasks,spatialFilters);
+      query.execute();
+      int count=0;
+      while (query.fetch() != null) {
+        count++;
+      }
+      return count;
     }
   }
 ;
