@@ -1,0 +1,21 @@
+{
+  final double sinPhi=sin(phi);
+  final double cosPhi=cos(phi);
+  final double sinLam=sin(lambda);
+  final double cosLam=cos(lambda);
+  final double primeVert=1 / sqrt(1.0 - excentricitySquared * sinPhi * sinPhi);
+  final double projected_cylindrical_z=primeVert * sinPhi;
+  final double delta_projected_cylindrical_z=excentricitySquared * (projected_cylindrical_z - projectedCylindricalZ0);
+  final double z_factor=cosPhi0 * cosPhi * cosLam + sinPhi0 * sinPhi;
+  if (z_factor <= EPSILON) {
+    throw new ProjectionException(ErrorKeys.POINT_OUTSIDE_HEMISPHERE);
+  }
+  final double height=(primeVert0 + delta_projected_cylindrical_z * sinPhi0) / z_factor;
+  final double x=height * cosPhi * sinLam;
+  final double y=height * (cosPhi0 * sinPhi - sinPhi0 * cosPhi * cosLam) - delta_projected_cylindrical_z * cosPhi0;
+  if (ptDst != null) {
+    ptDst.setLocation(x,y);
+    return ptDst;
+  }
+  return new Point2D.Double(x,y);
+}
