@@ -29,10 +29,19 @@
     if (metadataAdapter.hasModelTrasformation() || (metadataAdapter.hasPixelScales() && metadataAdapter.hasTiePoints()))     return true;
     MathTransform raster2Model=GeoTiffReader.parseWorldFile(o);
     if (raster2Model == null) {
-      raster2Model=GeoTiffReader.parseMapInfoFile(o).getTransform();
+      MapInfoFileReader mif=GeoTiffReader.parseMapInfoFile(o);
+      if (mif != null) {
+        raster2Model=mif.getTransform();
+      }
     }
-    if (raster2Model != null)     return true;
+    if (raster2Model != null) {
+      return true;
+    }
  else {
+      TiePoint[] modelTiePoints=metadataAdapter.getModelTiePoints();
+      if (modelTiePoints != null && modelTiePoints.length > 1) {
+        return true;
+      }
       if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Unable to find georeferencing for this tif file");
       return false;
     }

@@ -51,7 +51,15 @@
       crs=AbstractGridFormat.getDefaultCRS();
     }
     if (this.raster2Model == null) {
-      throw new DataSourceException("Raster to Model Transformation is not available");
+      TiePoint[] modelTiePoints=metadata.getModelTiePoints();
+      if (modelTiePoints != null && modelTiePoints.length > 1) {
+        gcps=new GroundControlPoints(Arrays.asList(modelTiePoints),crs);
+        raster2Model=ProjectiveTransform.create(new AffineTransform());
+        crs=DefaultEngineeringCRS.GENERIC_2D;
+      }
+ else {
+        throw new DataSourceException("Raster to Model Transformation is not available");
+      }
     }
     final AffineTransform tempTransform=new AffineTransform((AffineTransform)raster2Model);
     tempTransform.concatenate(CoverageUtilities.CENTER_TO_CORNER);

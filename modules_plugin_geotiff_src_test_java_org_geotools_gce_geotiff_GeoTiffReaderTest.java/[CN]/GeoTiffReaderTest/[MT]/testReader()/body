@@ -17,13 +17,13 @@
       buffer.append("ACCEPTED").append("\n");
       GeoTiffReader reader=new GeoTiffReader(o,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
       if (reader != null) {
-        final GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+        final GridCoverage2D coverage=reader.read(null);
         if (TestData.isInteractiveTest()) {
           buffer.append("CRS: ").append(coverage.getCoordinateReferenceSystem2D().toWKT()).append("\n");
           buffer.append("GG: ").append(coverage.getGridGeometry().toString()).append("\n");
         }
         if (org.geotools.TestData.isExtensiveTest()) {
-          IIOMetadataDumper iIOMetadataDumper=new IIOMetadataDumper(((GeoTiffReader)reader).getMetadata().getRootNode());
+          IIOMetadataDumper iIOMetadataDumper=new IIOMetadataDumper(reader.getMetadata().getRootNode());
           buffer.append("TIFF metadata: ").append(iIOMetadataDumper.getMetadata()).append("\n");
         }
         final ImageLayout layout=reader.getImageLayout();
@@ -44,13 +44,16 @@
  else {
           PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getTiles();
         }
+        if (reader.getGroundControlPoints() != null) {
+          continue;
+        }
         final File destFile=File.createTempFile("test",".tif",writeDirectory);
         final GeoTiffWriter writer=new GeoTiffWriter(destFile);
         writer.write(coverage,null);
         writer.dispose();
         assertTrue(format.accepts(destFile));
         reader=new GeoTiffReader(destFile,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
-        final GridCoverage2D destCoverage=(GridCoverage2D)reader.read(null);
+        final GridCoverage2D destCoverage=reader.read(null);
         reader.dispose();
         final double eps=XAffineTransform.getScaleX0((AffineTransform)coverage.getGridGeometry().getGridToCRS()) * 1E-2;
         assertTrue("CRS comparison failed:" + o.toString(),CRS.findMathTransform(coverage.getCoordinateReferenceSystem(),destCoverage.getCoordinateReferenceSystem(),true).isIdentity());

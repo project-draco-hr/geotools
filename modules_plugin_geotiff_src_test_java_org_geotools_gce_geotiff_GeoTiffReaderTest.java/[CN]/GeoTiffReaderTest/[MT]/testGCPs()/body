@@ -1,0 +1,33 @@
+{
+  final File file=TestData.file(GeoTiffReaderTest.class,"box_gcp.tif");
+  assertNotNull(file);
+  final AbstractGridFormat format=new GeoTiffFormat();
+  assertTrue(format.accepts(file));
+  AbstractGridCoverage2DReader reader=format.getReader(file);
+  GridCoverage2D coverage=reader.read(null);
+  CoordinateReferenceSystem crs=coverage.getCoordinateReferenceSystem();
+  assertEquals(DefaultEngineeringCRS.GENERIC_2D,crs);
+  assertEquals(ProjectiveTransform.create(new AffineTransform()),coverage.getGridGeometry().getGridToCRS());
+  String crsDef=crs.toWKT();
+  assertTrue(crsDef.contains("UNIT[\"m\", 1.0]"));
+  GroundControlPoints gcps=reader.getGroundControlPoints();
+  assertNotNull(gcps);
+  GeographicCRS gcrs=(GeographicCRS)gcps.getCoordinateReferenceSystem();
+  Ellipsoid ellipsoid=gcrs.getDatum().getEllipsoid();
+  assertEquals(ellipsoid.getSemiMajorAxis(),DefaultGeographicCRS.WGS84.getDatum().getEllipsoid().getSemiMajorAxis(),1e-6);
+  assertEquals(ellipsoid.getInverseFlattening(),DefaultGeographicCRS.WGS84.getDatum().getEllipsoid().getInverseFlattening(),1e-6);
+  final double EPS=1e-9;
+  List<TiePoint> tiePoints=gcps.getTiePoints();
+  assertEquals(49.5005,tiePoints.get(0).getValueAt(0),EPS);
+  assertEquals(250.909,tiePoints.get(0).getValueAt(1),EPS);
+  assertEquals(-84,tiePoints.get(0).getValueAt(3),EPS);
+  assertEquals(33,tiePoints.get(0).getValueAt(4),EPS);
+  assertEquals(49.5005,tiePoints.get(1).getValueAt(0),EPS);
+  assertEquals(51.8182,tiePoints.get(1).getValueAt(1),EPS);
+  assertEquals(-84,tiePoints.get(1).getValueAt(3),EPS);
+  assertEquals(34,tiePoints.get(1).getValueAt(4),EPS);
+  assertEquals(248.824,tiePoints.get(2).getValueAt(0),EPS);
+  assertEquals(51.8182,tiePoints.get(2).getValueAt(1),EPS);
+  assertEquals(-83,tiePoints.get(2).getValueAt(3),EPS);
+  assertEquals(34,tiePoints.get(2).getValueAt(4),EPS);
+}
