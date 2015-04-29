@@ -4,43 +4,44 @@
   }
   final NumberFormat source=getNumberFormat(locale,false);
   final NumberFormat target=getNumberFormat(locale,true);
-  final TableWriter table=new TableWriter(out,TableWriter.SINGLE_VERTICAL_LINE);
-  table.setAlignment(TableWriter.ALIGN_CENTER);
-  table.writeHorizontalSeparator();
-  try {
-    final CoordinateSystem sourceCS=getSourceCRS().getCoordinateSystem();
-    final CoordinateSystem targetCS=getTargetCRS().getCoordinateSystem();
-    int dimension=sourceCS.getDimension();
-    for (int i=0; i < dimension; i++) {
-      table.write(sourceCS.getAxis(i).getName().getCode());
-      table.nextColumn();
+  try (TableWriter table=new TableWriter(out,TableWriter.SINGLE_VERTICAL_LINE)){
+    table.setAlignment(TableWriter.ALIGN_CENTER);
+    table.writeHorizontalSeparator();
+    try {
+      final CoordinateSystem sourceCS=getSourceCRS().getCoordinateSystem();
+      final CoordinateSystem targetCS=getTargetCRS().getCoordinateSystem();
+      int dimension=sourceCS.getDimension();
+      for (int i=0; i < dimension; i++) {
+        table.write(sourceCS.getAxis(i).getName().getCode());
+        table.nextColumn();
+      }
+      dimension=targetCS.getDimension();
+      for (int i=0; i < dimension; i++) {
+        table.write(targetCS.getAxis(i).getName().getCode());
+        table.nextColumn();
+      }
+      table.writeHorizontalSeparator();
     }
-    dimension=targetCS.getDimension();
-    for (int i=0; i < dimension; i++) {
-      table.write(targetCS.getAxis(i).getName().getCode());
-      table.nextColumn();
+ catch (    FactoryException e) {
+    }
+    table.setAlignment(TableWriter.ALIGN_RIGHT);
+    for (final Iterator<MappedPosition> it=getMappedPositions().iterator(); it.hasNext(); ) {
+      final MappedPosition mp=(MappedPosition)it.next();
+      DirectPosition point=mp.getSource();
+      int dimension=point.getDimension();
+      for (int i=0; i < dimension; i++) {
+        table.write(source.format(point.getOrdinate(i)));
+        table.nextColumn();
+      }
+      point=mp.getTarget();
+      dimension=point.getDimension();
+      for (int i=0; i < dimension; i++) {
+        table.write(target.format(point.getOrdinate(i)));
+        table.nextColumn();
+      }
+      table.nextLine();
     }
     table.writeHorizontalSeparator();
+    table.flush();
   }
- catch (  FactoryException e) {
-  }
-  table.setAlignment(TableWriter.ALIGN_RIGHT);
-  for (final Iterator<MappedPosition> it=getMappedPositions().iterator(); it.hasNext(); ) {
-    final MappedPosition mp=(MappedPosition)it.next();
-    DirectPosition point=mp.getSource();
-    int dimension=point.getDimension();
-    for (int i=0; i < dimension; i++) {
-      table.write(source.format(point.getOrdinate(i)));
-      table.nextColumn();
-    }
-    point=mp.getTarget();
-    dimension=point.getDimension();
-    for (int i=0; i < dimension; i++) {
-      table.write(target.format(point.getOrdinate(i)));
-      table.nextColumn();
-    }
-    table.nextLine();
-  }
-  table.writeHorizontalSeparator();
-  table.flush();
-}
+ }
