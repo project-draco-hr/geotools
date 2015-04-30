@@ -1,0 +1,24 @@
+{
+  int indexValue=external ? imageIndex : index;
+  if (reader == null)   throw new NullPointerException("Null reader passed to the internal GranuleOverviewLevelDescriptor method");
+synchronized (granuleLevels) {
+    if (granuleLevels.containsKey(Integer.valueOf(indexValue)))     return granuleLevels.get(Integer.valueOf(indexValue));
+ else {
+      try {
+        final Rectangle levelDimension=Utils.getDimension(index,reader);
+        final GranuleOverviewLevelDescriptor baseLevel=granuleLevels.get(0);
+        final double scaleX=baseLevel.width / (1.0 * levelDimension.width);
+        final double scaleY=baseLevel.height / (1.0 * levelDimension.height);
+        final GranuleOverviewLevelDescriptor newLevel=new GranuleOverviewLevelDescriptor(scaleX,scaleY,levelDimension.width,levelDimension.height);
+        this.granuleLevels.put(Integer.valueOf(indexValue),newLevel);
+        return newLevel;
+      }
+ catch (      IllegalStateException e) {
+        throw new IllegalArgumentException(e);
+      }
+catch (      IOException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+  }
+}

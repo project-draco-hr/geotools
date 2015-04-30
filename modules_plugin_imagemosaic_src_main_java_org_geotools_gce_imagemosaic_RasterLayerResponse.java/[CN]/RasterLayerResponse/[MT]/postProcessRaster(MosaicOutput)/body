@@ -3,7 +3,13 @@
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.fine("Support for alpha on final mosaic");
     }
-    return new MosaicOutput(new ImageWorker(mosaickedImage.image).makeColorTransparent(finalTransparentColor).getRenderedImage(),mosaickedImage.pamDataset);
+    ImageWorker imageWorker=new ImageWorker(mosaickedImage.image);
+    imageWorker.makeColorTransparent(finalTransparentColor);
+    RenderedOp image=imageWorker.getRenderedOperation();
+    if (imageWorker.getROI() != null) {
+      image.setProperty("ROI",imageWorker.getROI());
+    }
+    return new MosaicOutput(image,mosaickedImage.pamDataset);
   }
   return mosaickedImage;
 }

@@ -8,7 +8,7 @@
     properties=new Properties();
   }
   String source=(String)properties.get(SOURCE_PROPERTY);
-  FootprintGeometryProvider provider;
+  FootprintGeometryProvider provider=null;
   if (source == null) {
     File defaultShapefileFootprint=new File(mosaicFolder,"footprints.shp");
     if (defaultShapefileFootprint.exists()) {
@@ -24,10 +24,13 @@
  else   if (source.toLowerCase().endsWith(".shp")) {
     provider=buildShapefileSource(mosaicFolder,source,properties);
   }
+ else   if (TYPE_RASTER.equals(source)) {
+    return new MultiLevelROIRasterProvider(mosaicFolder);
+  }
  else {
     throw new IllegalArgumentException("Invalid source type, it should be a reference " + "to a shapefile or 'sidecar', but was '" + source + "' instead");
   }
   double inset=getInset(properties);
   FootprintInsetPolicy insetPolicy=getInsetPolicy(properties);
-  return new MultiLevelROIProvider(provider,inset,insetPolicy);
+  return new MultiLevelROIGeometryProvider(provider,inset,insetPolicy);
 }

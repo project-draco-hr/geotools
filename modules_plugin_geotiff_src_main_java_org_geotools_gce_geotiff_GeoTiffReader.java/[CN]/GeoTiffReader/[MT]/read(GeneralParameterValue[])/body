@@ -62,13 +62,26 @@
     newHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
   }
   final ParameterBlock pbjRead=new ParameterBlock();
-  if (extOvrImgChoice >= 0 && imageChoice >= extOvrImgChoice) {
-    pbjRead.add(ovrInStreamSPI.createInputStreamInstance(ovrSource,ImageIO.getUseCache(),ImageIO.getCacheDirectory()));
-    pbjRead.add(imageChoice - extOvrImgChoice);
+  if (maskOvrProvider != null) {
+    if (maskOvrProvider.isExternalOverview(imageChoice)) {
+      pbjRead.add(maskOvrProvider.getExternalOverviewInputStreamSpi().createInputStreamInstance(maskOvrProvider.getOvrURL(),ImageIO.getUseCache(),ImageIO.getCacheDirectory()));
+    }
+ else {
+      pbjRead.add(maskOvrProvider.getInputStreamSpi().createInputStreamInstance(maskOvrProvider.getFileURL(),ImageIO.getUseCache(),ImageIO.getCacheDirectory()));
+    }
+    pbjRead.add(maskOvrProvider.getOverviewIndex(imageChoice));
   }
  else {
-    pbjRead.add(inStreamSPI != null ? inStreamSPI.createInputStreamInstance(source,ImageIO.getUseCache(),ImageIO.getCacheDirectory()) : ImageIO.createImageInputStream(source));
-    pbjRead.add(imageChoice);
+    if (extOvrImgChoice >= 0 && imageChoice >= extOvrImgChoice) {
+      pbjRead.add(ovrInStreamSPI.createInputStreamInstance(ovrSource,ImageIO.getUseCache(),ImageIO.getCacheDirectory()));
+      pbjRead.add(imageChoice - extOvrImgChoice);
+    }
+ else {
+      pbjRead.add(inStreamSPI != null ? inStreamSPI.createInputStreamInstance(source,ImageIO.getUseCache(),ImageIO.getCacheDirectory()) : ImageIO.createImageInputStream(source));
+      int overviewImageIndex=dtLayout.getInternalOverviewImageIndex(imageChoice);
+      int index=overviewImageIndex >= 0 ? overviewImageIndex : 0;
+      pbjRead.add(index);
+    }
   }
   pbjRead.add(Boolean.FALSE);
   pbjRead.add(Boolean.FALSE);
@@ -86,12 +99,24 @@
   if (LOGGER.isLoggable(Level.FINE)) {
     LOGGER.log(Level.FINE,"Coverage read: width = " + ssWidth + " height = "+ ssHeight);
   }
+  ROI roi=null;
+  if (hasMaskOvrProvider) {
+    Rectangle sourceRegion=coverageRaster.getBounds();
+    if (readP.getSourceRegion() != null) {
+      sourceRegion=readP.getSourceRegion();
+    }
+    MaskInfo info=maskOvrProvider.getMaskInfo(imageChoice,sourceRegion);
+    if (info != null) {
+      RenderedOp roiRaster=readROIRaster(info.streamSpi,DataUtilities.fileToURL(info.file),info.index,newHints,info.readParameters);
+      roi=MaskOverviewProvider.scaleROI(roiRaster,coverageRaster.getBounds());
+    }
+  }
   final double scaleX=originalGridRange.getSpan(0) / (1.0 * ssWidth);
   final double scaleY=originalGridRange.getSpan(1) / (1.0 * ssHeight);
   final AffineTransform tempRaster2Model=new AffineTransform((AffineTransform)raster2Model);
   tempRaster2Model.concatenate(new AffineTransform(scaleX,0,0,scaleY,0,0));
   try {
-    return createCoverage(coverageRaster,ProjectiveTransform.create(tempRaster2Model));
+    return createCoverage(coverageRaster,ProjectiveTransform.create(tempRaster2Model),roi);
   }
  catch (  Exception e) {
     ImageUtilities.disposePlanarImageChain(coverageRaster);

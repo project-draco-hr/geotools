@@ -31,10 +31,13 @@
     java.awt.Polygon rasterSpaceROI=null;
     double[] background=destnodata != null ? destnodata : CoverageUtilities.getBackgroundValues(sourceCoverage);
     String operatioName=null;
-    if (!isSimpleTransform || cropROI != null) {
+    if (!isSimpleTransform || cropROI != null || nodata != null) {
       Polygon modelSpaceROI=FeatureUtilities.getPolygon(cropEnvelope,GFACTORY);
       final List<Point2D> points=new ArrayList<Point2D>(5);
       rasterSpaceROI=FeatureUtilities.convertPolygonToPointArray(modelSpaceROI,ProjectiveTransform.create(sourceWorldToGridTransform),points);
+      if (isSimpleTransform && cropROI == null) {
+        rasterSpaceROI=rectangleToPolygon(finalRasterArea);
+      }
       if (rasterSpaceROI == null || rasterSpaceROI.getBounds().isEmpty())       if (finalRasterArea.isEmpty())       throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
       final boolean doMosaic=forceMosaic ? true : decideJAIOperation(roiTolerance,rasterSpaceROI.getBounds2D(),points);
       if (doMosaic || cropROI != null || internalROI != null || nodata != null) {
@@ -79,6 +82,7 @@
     }
     if (operatioName == null) {
       worker.setImage(sourceImage);
+      worker.setNoData(null);
       worker.setRenderingHints(targetHints);
       worker.crop((float)minX,(float)minY,(float)width,(float)height);
       operatioName="Crop";

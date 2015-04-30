@@ -26,7 +26,24 @@
       noData=metadata.getNoData();
     }
     setLayout(reader);
-    numOverviews=reader.getNumImages(true) - 1;
+    dtLayout=TiffDatasetLayoutImpl.parseLayout(reader.getStreamMetadata());
+    File inputFile=null;
+    if (source instanceof File) {
+      inputFile=(File)source;
+    }
+ else     if (source instanceof URL && (((URL)source).getProtocol() == "file")) {
+      inputFile=DataUtilities.urlToFile((URL)source);
+    }
+    if (inputFile != null) {
+      maskOvrProvider=new MaskOverviewProvider(dtLayout,inputFile);
+      hasMaskOvrProvider=true;
+    }
+ else     if (dtLayout != null && dtLayout.getExternalMasks() != null) {
+      String path=dtLayout.getExternalMasks().getAbsolutePath();
+      maskOvrProvider=new MaskOverviewProvider(dtLayout,new File(path.substring(0,path.length() - 4)));
+      hasMaskOvrProvider=true;
+    }
+    numOverviews=hasMaskOvrProvider ? maskOvrProvider.getNumOverviews() : dtLayout.getNumInternalOverviews();
     int hrWidth=reader.getWidth(0);
     int hrHeight=reader.getHeight(0);
     final Rectangle actualDim=new Rectangle(0,0,hrWidth,hrHeight);
@@ -68,26 +85,41 @@
     highestRes=new double[2];
     highestRes[0]=XAffineTransform.getScaleX0(tempTransform);
     highestRes[1]=XAffineTransform.getScaleY0(tempTransform);
-    if (ovrInStreamSPI != null) {
-      ovrReader=READER_SPI.createReaderInstance();
-      ovrStream=ovrInStreamSPI.createInputStreamInstance(ovrSource,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
-      ovrReader.setInput(ovrStream);
-      extOvrImgChoice=numOverviews + 1;
-      numOverviews=numOverviews + ovrReader.getNumImages(true);
-      if (numOverviews < extOvrImgChoice)       extOvrImgChoice=-1;
+    if (maskOvrProvider != null) {
+      extOvrImgChoice=maskOvrProvider.getNumExternalOverviews() > 0 ? maskOvrProvider.getNumInternalOverviews() + 1 : -1;
+    }
+ else {
+      File extOvrFile=dtLayout.getExternalOverviews();
+      if (extOvrFile != null && extOvrFile.exists()) {
+        ovrSource=extOvrFile;
+        ovrInStreamSPI=ImageIOExt.getImageInputStreamSPI(extOvrFile);
+        ovrReader=READER_SPI.createReaderInstance();
+        ovrStream=ovrInStreamSPI.createInputStreamInstance(extOvrFile,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+        ovrReader.setInput(ovrStream);
+        extOvrImgChoice=numOverviews + 1;
+        numOverviews=numOverviews + dtLayout.getNumExternalOverviews();
+        if (numOverviews < extOvrImgChoice)         extOvrImgChoice=-1;
+      }
     }
     if (numOverviews >= 1) {
       overViewResolutions=new double[numOverviews][2];
       int firstExternalOverview=extOvrImgChoice == -1 ? numOverviews : extOvrImgChoice - 1;
       double spanRes0=highestRes[0] * this.originalGridRange.getSpan(0);
       double spanRes1=highestRes[1] * this.originalGridRange.getSpan(1);
-      for (int i=0; i < firstExternalOverview; i++) {
-        overViewResolutions[i][0]=spanRes0 / reader.getWidth(i + 1);
-        overViewResolutions[i][1]=spanRes1 / reader.getHeight(i + 1);
+      if (maskOvrProvider != null) {
+        overViewResolutions=maskOvrProvider.getOverviewResolutions(spanRes0,spanRes1);
       }
-      for (int i=firstExternalOverview; i < numOverviews; i++) {
-        overViewResolutions[i][0]=spanRes0 / ovrReader.getWidth(i - firstExternalOverview);
-        overViewResolutions[i][1]=spanRes1 / ovrReader.getHeight(i - firstExternalOverview);
+ else {
+        for (int i=0; i < firstExternalOverview; i++) {
+          int overviewImageIndex=dtLayout.getInternalOverviewImageIndex(i + 1);
+          int index=overviewImageIndex >= 0 ? overviewImageIndex : 0;
+          overViewResolutions[i][0]=spanRes0 / reader.getWidth(index);
+          overViewResolutions[i][1]=spanRes1 / reader.getHeight(index);
+        }
+        for (int i=firstExternalOverview; i < numOverviews; i++) {
+          overViewResolutions[i][0]=spanRes0 / ovrReader.getWidth(i - firstExternalOverview);
+          overViewResolutions[i][1]=spanRes1 / ovrReader.getHeight(i - firstExternalOverview);
+        }
       }
     }
  else     overViewResolutions=null;

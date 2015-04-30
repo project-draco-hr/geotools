@@ -1,0 +1,51 @@
+{
+  File mosaicSourceRaster=TestData.file(this,path);
+  FileUtils.copyDirectory(mosaicSourceRaster,testMosaicRaster);
+  URL testMosaicRasterUrl=DataUtilities.fileToURL(testMosaicRaster);
+  Properties p=new Properties();
+  p.put(MultiLevelROIProviderFactory.SOURCE_PROPERTY,"raster");
+  FileOutputStream fos=null;
+  try {
+    fos=new FileOutputStream(new File(testMosaicRaster,"footprints.properties"));
+    p.store(fos,null);
+  }
+  finally {
+    IOUtils.closeQuietly(fos);
+  }
+  final AbstractGridFormat format=TestUtils.getFormat(testMosaicRasterUrl);
+  final ImageMosaicReader reader=TestUtils.getReader(testMosaicRasterUrl,format);
+  GeneralParameterValue[] params=new GeneralParameterValue[3];
+  ParameterValue<String> footprintManagement=ImageMosaicFormat.FOOTPRINT_BEHAVIOR.createValue();
+  footprintManagement.setValue(FootprintBehavior.Transparent.name());
+  params[0]=footprintManagement;
+  ParameterValue<Boolean> jaiImageRead=ImageMosaicFormat.USE_JAI_IMAGEREAD.createValue();
+  jaiImageRead.setValue(false);
+  params[1]=jaiImageRead;
+  final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  final Rectangle rasterArea=((GridEnvelope2D)reader.getOriginalGridRange());
+  if (testOverviews) {
+    Dimension dim=new Dimension();
+    dim.setSize(8,8);
+    rasterArea.setSize(dim);
+    final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+    gg.setValue(new GridGeometry2D(range,reader.getOriginalEnvelope()));
+    params[2]=gg;
+  }
+ else {
+    final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+    gg.setValue(new GridGeometry2D(range,PixelInCell.CELL_CENTER,reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),reader.getCoordinateReferenceSystem(),null));
+    params[2]=gg;
+  }
+  GridCoverage2D coverage=reader.read(params);
+  reader.dispose();
+  assertNotNull(coverage);
+  ROI roi=CoverageUtilities.getROIProperty(coverage);
+  assertNotNull(roi);
+  Rectangle roiBounds=roi.getBounds();
+  Rectangle imgBounds=coverage.getGridGeometry().getGridRange2D();
+  assertEquals(imgBounds.x,roiBounds.x);
+  assertEquals(imgBounds.y,roiBounds.y);
+  assertEquals(imgBounds.width,roiBounds.width);
+  assertEquals(imgBounds.height,roiBounds.height);
+  return coverage;
+}
