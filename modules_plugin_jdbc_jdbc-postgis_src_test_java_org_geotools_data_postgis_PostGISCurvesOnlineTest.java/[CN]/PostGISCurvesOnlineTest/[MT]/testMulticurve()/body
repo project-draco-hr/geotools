@@ -1,0 +1,18 @@
+{
+  ContentFeatureSource fs=dataStore.getFeatureSource(tname("curves"));
+  FilterFactory ff=dataStore.getFilterFactory();
+  PropertyIsEqualTo filter=ff.equal(ff.property(aname("name")),ff.literal("Multicurve"),true);
+  ContentFeatureCollection fc=fs.getFeatures(filter);
+  assertEquals(1,fc.size());
+  SimpleFeature feature=DataUtilities.first(fc);
+  Geometry g=(Geometry)feature.getDefaultGeometry();
+  assertNotNull(g);
+  assertTrue(g instanceof MultiLineString);
+  MultiLineString mls=(MultiLineString)g;
+  LineString ls=(LineString)mls.getGeometryN(0);
+  assertEquals(2,ls.getNumPoints());
+  assertEquals(new Coordinate(0,0),ls.getCoordinateN(0));
+  assertEquals(new Coordinate(5,5),ls.getCoordinateN(1));
+  CircularString cs=(CircularString)mls.getGeometryN(1);
+  assertArrayEquals(new double[]{4,0,4,4,8,4},cs.getControlPoints(),0d);
+}

@@ -1,0 +1,18 @@
+{
+  byte byteOrderWKB=dis.readByte();
+  int byteOrder=byteOrderWKB == WKBConstants.wkbNDR ? ByteOrderValues.LITTLE_ENDIAN : ByteOrderValues.BIG_ENDIAN;
+  dis.setOrder(byteOrder);
+  int typeInt=dis.readInt();
+  int geometryType=typeInt & 0xff;
+  boolean hasZ=(typeInt & 0x80000000) != 0;
+  inputDimension=hasZ ? 3 : 2;
+  hasSRID=(typeInt & 0x20000000) != 0;
+  int SRID=0;
+  if (hasSRID) {
+    SRID=dis.readInt();
+  }
+  if (ordValues == null || ordValues.length < inputDimension)   ordValues=new double[inputDimension];
+  Geometry geom=readGeometry(geometryType);
+  setSRID(geom,SRID);
+  return geom;
+}
