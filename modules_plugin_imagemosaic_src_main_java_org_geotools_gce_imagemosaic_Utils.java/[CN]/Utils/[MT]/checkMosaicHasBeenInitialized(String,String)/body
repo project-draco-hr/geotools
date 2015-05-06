@@ -7,5 +7,27 @@
   if (Utils.checkFileReadable(mosaicFile)) {
     return true;
   }
+  File indexFile=new File(locationPath,INDEXER_XML);
+  if (Utils.checkFileReadable(indexFile)) {
+    String canBeEmpty=IndexerUtils.getParameter(Prop.CAN_BE_EMPTY,indexFile);
+    if (canBeEmpty != null) {
+      if (Boolean.parseBoolean(canBeEmpty)) {
+        return true;
+      }
+    }
+  }
+  indexFile=new File(locationPath,INDEXER_PROPERTIES);
+  if (Utils.checkFileReadable(indexFile)) {
+    URL url=DataUtilities.fileToURL(indexFile);
+    final Properties properties=loadPropertiesFromURL(url);
+    if (properties != null) {
+      String canBeEmpty=properties.getProperty(Prop.CAN_BE_EMPTY,null);
+      if (canBeEmpty != null) {
+        if (Boolean.parseBoolean(canBeEmpty)) {
+          return true;
+        }
+      }
+    }
+  }
   return false;
 }
