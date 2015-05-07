@@ -6,5 +6,13 @@
     if (!(g instanceof LineString))     throw new ParseException(INVALID_GEOM_TYPE_MSG + "CompoundCurve");
     geoms.add((LineString)g);
   }
-  return getCurvedGeometryFactory(factory).createCurvedGeometry(geoms);
+  if (insideCurvePolygon && !isStrict) {
+    Coordinate start=geoms.get(0).getCoordinateN(0);
+    LineString lastGeom=geoms.get(geoms.size() - 1);
+    Coordinate end=lastGeom.getCoordinateN((lastGeom.getNumPoints() - 1));
+    if (!start.equals(end)) {
+      geoms.add(factory.createLineString(new Coordinate[]{start,end}));
+    }
+  }
+  return factory.createCurvedGeometry(geoms);
 }

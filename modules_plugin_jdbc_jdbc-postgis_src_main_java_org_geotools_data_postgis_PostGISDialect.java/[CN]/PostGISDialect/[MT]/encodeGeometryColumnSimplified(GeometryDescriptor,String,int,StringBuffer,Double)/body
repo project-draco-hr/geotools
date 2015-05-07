@@ -10,9 +10,22 @@
       sql.append("),'base64')");
     }
  else {
-      sql.append("encode(ST_AsBinary(ST_Simplify(ST_Force_2D(");
-      encodeColumnName(prefix,gatt.getLocalName(),sql);
-      sql.append("), " + distance + ")),'base64')");
+      if (NON_CURVED_GEOMETRY_CLASSES.contains(gatt.getType().getBinding())) {
+        sql.append("encode(ST_AsBinary(ST_Simplify(ST_Force_2D(");
+        encodeColumnName(prefix,gatt.getLocalName(),sql);
+        sql.append("), " + distance + ")),'base64')");
+      }
+ else {
+        sql.append("encode(ST_AsBinary(");
+        sql.append("CASE WHEN ST_HasArc(");
+        encodeColumnName(prefix,gatt.getLocalName(),sql);
+        sql.append(") THEN ");
+        encodeColumnName(prefix,gatt.getLocalName(),sql);
+        sql.append(" ELSE ");
+        sql.append("ST_Simplify(ST_Force_2D(");
+        encodeColumnName(prefix,gatt.getLocalName(),sql);
+        sql.append("), " + distance + ") END),'base64')");
+      }
     }
   }
 }

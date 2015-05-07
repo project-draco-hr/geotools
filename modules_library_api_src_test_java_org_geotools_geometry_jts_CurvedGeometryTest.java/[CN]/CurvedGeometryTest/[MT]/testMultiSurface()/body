@@ -1,0 +1,17 @@
+{
+  CurvePolygon p1=buildCurvePolygon();
+  LinearRing shell=new LinearRing(new CoordinateArraySequence(new Coordinate[]{new Coordinate(20,20),new Coordinate(24,20),new Coordinate(24,24),new Coordinate(20,24),new Coordinate(20,20)}),GEOMETRY_FACTORY);
+  LinearRing hole=new LinearRing(new CoordinateArraySequence(new Coordinate[]{new Coordinate(22,22),new Coordinate(23,22),new Coordinate(23,23),new Coordinate(23,22),new Coordinate(22,22)}),GEOMETRY_FACTORY);
+  Polygon p2=new Polygon(shell,new LinearRing[]{hole},GEOMETRY_FACTORY);
+  MultiSurface ms=new MultiSurface(new Polygon[]{p1,p2},GEOMETRY_FACTORY,Double.MAX_VALUE);
+  Envelope env=ms.getEnvelopeInternal();
+  assertEnvelopeEquals(new Envelope(-10,24,-10,24),env);
+  assertEquals((CircularArc.BASE_SEGMENTS_QUADRANT * 4 + 1 + 5) + (5 + 5),ms.getNumPoints());
+  MultiSurface cloned=(MultiSurface)ms.clone();
+  assertEquals(ms,cloned);
+  assertEquals((2 * 10 * Math.PI + 8) + (16 + 4),ms.getLength(),1e-1);
+  assertTrue(ms.intersects(JTS.toGeometry(new Envelope(0,10,5,15))));
+  assertTrue(ms.intersects(JTS.toGeometry(new Envelope(8,12,-2,2))));
+  String wkt=ms.toCurvedText();
+  assertEquals("MULTISURFACE(CURVEPOLYGON(CIRCULARSTRING(-10.0 0.0, 0.0 10.0, 10.0 0.0, 0.0 -10.0, -10.0 0.0), " + "(-1.0 -1.0, -1.0 1.0, 1.0 1.0, 1.0 -1.0, -1.0 -1.0)), ((20.0 20.0, 24.0 20.0, 24.0 24.0, 20.0 24.0, 20.0 20.0), " + "(22.0 22.0, 23.0 22.0, 23.0 23.0, 23.0 22.0, 22.0 22.0)))",wkt);
+}
