@@ -1,0 +1,19 @@
+{
+  Parser p=new Parser(gml);
+  Object g=p.parse(GML3CurveParsingTest.class.getResourceAsStream("v3_2/compoundPolygon.xml"));
+  assertThat(g,instanceOf(CurvePolygon.class));
+  CurvePolygon cp=(CurvePolygon)g;
+  assertEquals(TOLERANCE,cp.getTolerance());
+  assertEquals(0,cp.getNumInteriorRing());
+  assertTrue(cp.getExteriorRing() instanceof CompoundCurvedGeometry<?>);
+  CompoundCurvedGeometry<?> compound=(CompoundCurvedGeometry<?>)cp.getExteriorRing();
+  List<LineString> components=compound.getComponents();
+  assertEquals(2,components.size());
+  LineString ls=components.get(0);
+  assertEquals(3,ls.getNumPoints());
+  assertEquals(new Coordinate(6,10),ls.getCoordinateN(0));
+  assertEquals(new Coordinate(10,1),ls.getCoordinateN(1));
+  assertEquals(new Coordinate(14,10),ls.getCoordinateN(2));
+  CircularString cs=(CircularString)components.get(1);
+  assertArrayEquals(new double[]{14,10,10,14,6,10},cs.getControlPoints(),0d);
+}

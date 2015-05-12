@@ -1,0 +1,29 @@
+{
+  Parser p=new Parser(gml);
+  Object g=p.parse(GML3CurveParsingTest.class.getResourceAsStream("v3_2/compoundPolygonWithHole.xml"));
+  assertThat(g,instanceOf(CurvePolygon.class));
+  CurvePolygon cp=(CurvePolygon)g;
+  assertEquals(TOLERANCE,cp.getTolerance());
+  assertEquals(1,cp.getNumInteriorRing());
+  assertTrue(cp.getExteriorRing() instanceof CompoundCurvedGeometry<?>);
+  CompoundCurvedGeometry<?> shell=(CompoundCurvedGeometry<?>)cp.getExteriorRing();
+  List<LineString> components=shell.getComponents();
+  assertEquals(2,components.size());
+  LineString ls=components.get(0);
+  assertEquals(7,ls.getNumPoints());
+  assertEquals(new Coordinate(20,30),ls.getCoordinateN(0));
+  assertEquals(new Coordinate(11,30),ls.getCoordinateN(1));
+  assertEquals(new Coordinate(7,22),ls.getCoordinateN(2));
+  assertEquals(new Coordinate(7,15),ls.getCoordinateN(3));
+  assertEquals(new Coordinate(11,10),ls.getCoordinateN(4));
+  assertEquals(new Coordinate(21,10),ls.getCoordinateN(5));
+  assertEquals(new Coordinate(27,30),ls.getCoordinateN(6));
+  CircularString cs=(CircularString)components.get(1);
+  assertArrayEquals(new double[]{27,30,25,27,20,30},cs.getControlPoints(),0d);
+  assertTrue(cp.getInteriorRingN(0) instanceof CircularRing);
+  CircularRing hole=(CircularRing)cp.getInteriorRingN(0);
+  assertTrue(CurvedGeometries.isCircle(hole));
+  CircularArc arc=hole.getArcN(0);
+  assertEquals(5,arc.getRadius(),0d);
+  assertEquals(new Coordinate(15,17),arc.getCenter());
+}

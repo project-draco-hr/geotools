@@ -1,26 +1,32 @@
 {
-  StringBuilder sb=new StringBuilder("MULTISURFACE(");
+  StringBuilder sb=new StringBuilder("MULTISURFACE ");
   int numGeometries=getNumGeometries();
-  for (int k=0; k < numGeometries; k++) {
-    Polygon component=(Polygon)getGeometryN(k);
-    if (component instanceof CurvedGeometry<?>) {
-      CurvedGeometry<?> curved=(CurvedGeometry<?>)component;
-      sb.append(curved.toCurvedText());
-    }
- else {
-      sb.append("(");
-      writeCoordinateSequence(sb,component.getExteriorRing().getCoordinateSequence());
-      int numHoles=component.getNumInteriorRing();
-      for (int i=0; i < numHoles; i++) {
-        sb.append(", ");
-        writeCoordinateSequence(sb,component.getInteriorRingN(i).getCoordinateSequence());
-      }
-      sb.append(")");
-    }
-    if (k < numGeometries - 1) {
-      sb.append(", ");
-    }
+  if (numGeometries == 0) {
+    sb.append("EMPTY");
   }
-  sb.append(")");
+ else {
+    sb.append("(");
+    for (int k=0; k < numGeometries; k++) {
+      Polygon component=(Polygon)getGeometryN(k);
+      if (component instanceof CurvedGeometry<?>) {
+        CurvedGeometry<?> curved=(CurvedGeometry<?>)component;
+        sb.append(curved.toCurvedText());
+      }
+ else {
+        sb.append("(");
+        writeCoordinateSequence(sb,component.getExteriorRing().getCoordinateSequence());
+        int numHoles=component.getNumInteriorRing();
+        for (int i=0; i < numHoles; i++) {
+          sb.append(", ");
+          writeCoordinateSequence(sb,component.getInteriorRingN(i).getCoordinateSequence());
+        }
+        sb.append(")");
+      }
+      if (k < numGeometries - 1) {
+        sb.append(", ");
+      }
+    }
+    sb.append(")");
+  }
   return sb.toString();
 }
