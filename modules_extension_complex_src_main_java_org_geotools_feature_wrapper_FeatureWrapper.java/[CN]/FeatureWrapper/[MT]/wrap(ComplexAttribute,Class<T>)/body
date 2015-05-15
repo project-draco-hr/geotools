@@ -1,0 +1,78 @@
+{
+  try {
+    T wrapper;
+    try {
+      wrapper=clazz.newInstance();
+    }
+ catch (    InstantiationException e) {
+      throw new InvalidClassException(String.format("Unable instantiate class of type '%s'.",clazz));
+    }
+    wrapper.setUnderlyingComplexAttribute(complexAttribute);
+    String defaultNamespace=null;
+    String defaultSeparator=null;
+    XSDMapping classLevelXSDMapping=clazz.getAnnotation(XSDMapping.class);
+    if (classLevelXSDMapping != null) {
+      defaultNamespace=classLevelXSDMapping.namespace();
+      defaultSeparator=classLevelXSDMapping.separator();
+    }
+    for (    Field field : clazz.getFields()) {
+      XSDMapping xsdMapping=field.getAnnotation(XSDMapping.class);
+      if (xsdMapping != null) {
+        Class<?> fieldType=field.getType();
+        String path=xsdMapping.path();
+        String namespace=xsdMapping.namespace().equals("") ? defaultNamespace : xsdMapping.namespace();
+        String separator=xsdMapping.separator().equals("") ? defaultSeparator : xsdMapping.separator();
+        Name xsdName=new NameImpl(namespace,separator,xsdMapping.local());
+        ComplexAttribute targetAttribute=complexAttribute;
+        if (!path.equals("")) {
+          String[] steps=path.split("/");
+          for (int i=0; i < steps.length; i++) {
+            if (targetAttribute == null) {
+              throw new InvalidClassException(String.format("Unable to wrap attribute in class '%s'. Reference to %s could not be found in the attribute.",clazz,xsdMapping.local()));
+            }
+            targetAttribute=(ComplexAttribute)targetAttribute.getProperty(steps[i]);
+          }
+        }
+        if (FeatureWrapper.class.isAssignableFrom(fieldType)) {
+          ComplexAttribute featureWrapperAttribute=(ComplexAttribute)targetAttribute.getProperty(xsdName);
+          if (featureWrapperAttribute == null) {
+            throw new InvalidClassException(String.format("Unable to wrap attribute in class '%s'. '%s' doesn't have required property '%s'.",clazz.getName(),targetAttribute.getName(),xsdName));
+          }
+          Name typeName=featureWrapperAttribute.getType().getName();
+          ComplexAttribute nestedComplexAttribute=(ComplexAttribute)featureWrapperAttribute.getProperty(typeName);
+          if (nestedComplexAttribute == null) {
+            throw new InvalidClassException(String.format("Unable to wrap attribute in class '%s'. '%s' doesn't have required property '%s'.",clazz.getName(),xsdName,typeName));
+          }
+          FeatureWrapper property=wrap(nestedComplexAttribute,(Class<FeatureWrapper>)fieldType);
+          field.set(wrapper,property);
+        }
+ else         if (ArrayList.class.isAssignableFrom(fieldType)) {
+          Class<?> collectionType=(Class<?>)((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
+          ArrayList<Object> collection=new ArrayList<Object>();
+          if (FeatureWrapper.class.isAssignableFrom(collectionType)) {
+            for (            Property property : targetAttribute.getProperties(xsdName)) {
+              collection.add(wrap((ComplexAttribute)property,(Class<FeatureWrapper>)collectionType));
+            }
+          }
+ else {
+            for (            Property property : targetAttribute.getProperties(xsdName)) {
+              collection.add(property.getValue());
+            }
+          }
+          field.set(wrapper,collection);
+        }
+ else {
+          Property property=targetAttribute.getProperty(xsdName);
+          if (property == null) {
+            throw new InvalidClassException(String.format("Unable to wrap attribute in class '%s'. %s could not be found in the attribute.",clazz,xsdName));
+          }
+          field.set(wrapper,property.getValue());
+        }
+      }
+    }
+    return wrapper;
+  }
+ catch (  IllegalAccessException iae) {
+    throw new InvalidClassException(String.format("Unable to wrap attribute in class '%s'. Exception of type: '%s' was thrown with message: '%s'",clazz,iae.getClass(),iae.getMessage()));
+  }
+}

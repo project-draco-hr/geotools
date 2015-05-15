@@ -1,0 +1,25 @@
+{
+  final String fid;
+  try {
+    if ((fid=seekFeature()) == null) {
+      return null;
+    }
+    ReturnAttribute nextAttribute;
+    while ((nextAttribute=parseNextAttribute(this.targetType)) != null) {
+      if (!Property.class.isAssignableFrom(nextAttribute.value.getClass())) {
+        featureBuilder.append(nextAttribute.name,new AttributeImpl(nextAttribute.value,(AttributeDescriptor)this.targetType.getDescriptor(nextAttribute.name),null));
+      }
+ else {
+        featureBuilder.append(nextAttribute.name,(Property)nextAttribute.value);
+      }
+    }
+  }
+ catch (  XmlPullParserException e) {
+    throw new DataSourceException(e);
+  }
+  Feature feature=featureBuilder.buildFeature(fid);
+  if (filter == null || filter.evaluate(feature)) {
+    return feature;
+  }
+  return null;
+}

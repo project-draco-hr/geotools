@@ -1,0 +1,34 @@
+{
+  Geometry geom;
+  parser.nextTag();
+  final QName memberTag=new QName(parser.getNamespace(),parser.getName());
+  List<Point> points=new ArrayList<Point>(4);
+  if (GML.pointMembers.equals(memberTag)) {
+    while (true) {
+      parser.nextTag();
+      if (END_TAG == parser.getEventType() && GML.pointMembers.getLocalPart().equals(parser.getName())) {
+        break;
+      }
+      Point p=parsePoint(dimension,crs);
+      points.add(p);
+    }
+    parser.nextTag();
+  }
+ else   if (GML.pointMember.equals(memberTag)) {
+    while (true) {
+      parser.nextTag();
+      parser.require(START_TAG,GML.NAMESPACE,GML.Point.getLocalPart());
+      Point p=parsePoint(dimension,crs);
+      points.add(p);
+      parser.nextTag();
+      parser.require(END_TAG,GML.NAMESPACE,GML.pointMember.getLocalPart());
+      parser.nextTag();
+      if (END_TAG == parser.getEventType() && GML.MultiPoint.getLocalPart().equals(parser.getName())) {
+        break;
+      }
+    }
+  }
+  parser.require(END_TAG,GML.NAMESPACE,GML.MultiPoint.getLocalPart());
+  geom=geomFac.createMultiPoint(points.toArray(new Point[points.size()]));
+  return geom;
+}
