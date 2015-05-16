@@ -1,0 +1,54 @@
+{
+  Polygon geom;
+  LinearRing shell;
+  List<LinearRing> holes=null;
+  parser.nextTag();
+  parser.require(START_TAG,GML.NAMESPACE,null);
+  QName name=new QName(parser.getNamespace(),parser.getName());
+  if (GML.exterior.equals(name)) {
+    parser.nextTag();
+    shell=parseLinearRing(dimension,crs);
+    parser.nextTag();
+    parser.require(END_TAG,GML.NAMESPACE,GML.exterior.getLocalPart());
+  }
+ else   if (GML.outerBoundaryIs.equals(name)) {
+    parser.nextTag();
+    parser.require(START_TAG,GML.NAMESPACE,GML.LinearRing.getLocalPart());
+    shell=parseLinearRing(dimension,crs);
+    parser.nextTag();
+    parser.require(END_TAG,GML.NAMESPACE,GML.outerBoundaryIs.getLocalPart());
+  }
+ else {
+    throw new IllegalStateException("Unknown polygon boundary element: " + name);
+  }
+  parser.nextTag();
+  name=new QName(parser.getNamespace(),parser.getName());
+  if (START_TAG == parser.getEventType()) {
+    if (GML.interior.equals(name) || GML.innerBoundaryIs.equals(name)) {
+      holes=new ArrayList<LinearRing>(2);
+      while (true) {
+        parser.require(START_TAG,GML.NAMESPACE,name.getLocalPart());
+        parser.nextTag();
+        parser.require(START_TAG,GML.NAMESPACE,GML.LinearRing.getLocalPart());
+        LinearRing hole=parseLinearRing(dimension,crs);
+        parser.require(END_TAG,GML.NAMESPACE,GML.LinearRing.getLocalPart());
+        holes.add(hole);
+        parser.nextTag();
+        parser.require(END_TAG,GML.NAMESPACE,name.getLocalPart());
+        parser.nextTag();
+        if (END_TAG == parser.getEventType()) {
+          parser.require(END_TAG,GML.NAMESPACE,GML.Polygon.getLocalPart());
+          break;
+        }
+      }
+    }
+  }
+  parser.require(END_TAG,GML.NAMESPACE,GML.Polygon.getLocalPart());
+  LinearRing[] holesArray=null;
+  if (holes != null) {
+    holesArray=holes.toArray(new LinearRing[holes.size()]);
+  }
+  geom=geomFac.createPolygon(shell,holesArray);
+  geom.setUserData(crs);
+  return geom;
+}

@@ -1,0 +1,72 @@
+{
+  int tagType;
+  do {
+    tagType=parser.next();
+  }
+ while (tagType != XmlPullParser.START_TAG && tagType != XmlPullParser.END_TAG && tagType != XmlPullParser.END_DOCUMENT);
+  if (tagType == XmlPullParser.START_TAG) {
+    Name currentTagName=new NameImpl(parser.getNamespace(),parser.getName());
+    PropertyDescriptor descriptor=complexType.getDescriptor(currentTagName);
+    if (descriptor != null) {
+      PropertyType type=descriptor.getType();
+      String id=parser.getAttributeValue(GML.id.getNamespaceURI(),GML.id.getLocalPart());
+      String href=parser.getAttributeValue("http://www.w3.org/1999/xlink","href");
+      if (href != null) {
+        Attribute hrefAttribute=resolveHref(href,(AttributeType)type);
+        while (parser.next() != XmlPullParser.END_TAG)         ;
+        return new ReturnAttribute(id,currentTagName,hrefAttribute);
+      }
+ else       if (type instanceof ComplexType) {
+        ReturnAttribute innerAttribute;
+        AttributeBuilder attributeBuilder=new AttributeBuilder(new LenientFeatureFactoryImpl());
+        attributeBuilder.setType((AttributeType)type);
+        if (type.getBinding() == Collection.class && Types.isSimpleContentType(type)) {
+          parser.next();
+          Object value=parser.getText();
+          ArrayList<Property> list=new ArrayList<Property>();
+          if (value != null || descriptor.isNillable()) {
+            AttributeType simpleContentType=getSimpleContentType((AttributeType)type);
+            FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
+            Object convertedValue=ff.literal(value).evaluate(value,simpleContentType.getBinding());
+            AttributeDescriptor simpleContentDescriptor=new AttributeDescriptorImpl(simpleContentType,ComplexFeatureConstants.SIMPLE_CONTENT,1,1,true,(Object)null);
+            list.add(new AttributeImpl(convertedValue,simpleContentDescriptor,null));
+          }
+          while (parser.next() != XmlPullParser.END_TAG)           ;
+          return new ReturnAttribute(id,currentTagName,list);
+        }
+        while ((innerAttribute=parseNextAttribute((ComplexType)type)) != null) {
+          if (ComplexAttribute.class.isAssignableFrom(innerAttribute.value.getClass())) {
+            ArrayList<Property> properties=new ArrayList<Property>();
+            properties.add((Property)innerAttribute.value);
+            attributeBuilder.add(innerAttribute.id,properties,innerAttribute.name);
+          }
+ else {
+            attributeBuilder.add(innerAttribute.id,getValue(innerAttribute),innerAttribute.name);
+          }
+        }
+        Attribute attribteValue;
+        if (type instanceof FeatureType) {
+          attribteValue=attributeBuilder.build(id);
+        }
+ else {
+          attribteValue=attributeBuilder.build();
+        }
+        if (id != null) {
+          this.registerGmlTarget(id,(ComplexAttribute)attribteValue);
+        }
+        return new ReturnAttribute(id,currentTagName,attribteValue);
+      }
+ else       if (type instanceof AttributeType || type instanceof GeometryType) {
+        Object attributeValue=super.parseAttributeValue((AttributeDescriptor)descriptor);
+        return new ReturnAttribute(id,currentTagName,attributeValue);
+      }
+    }
+ else {
+      throw new RuntimeException(String.format("WFS response structure unexpected. Could not find descriptor in type '%s' for '%s'.",complexType,currentTagName));
+    }
+  }
+ else   if (tagType == XmlPullParser.END_DOCUMENT) {
+    close();
+  }
+  return null;
+}

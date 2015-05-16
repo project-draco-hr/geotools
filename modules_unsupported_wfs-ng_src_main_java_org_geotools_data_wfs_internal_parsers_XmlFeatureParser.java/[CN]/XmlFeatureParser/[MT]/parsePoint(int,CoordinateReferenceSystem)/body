@@ -1,0 +1,29 @@
+{
+  parser.require(START_TAG,GML.NAMESPACE,GML.Point.getLocalPart());
+  crs=crs(crs);
+  Point geom;
+  parser.nextTag();
+  parser.require(START_TAG,GML.NAMESPACE,null);
+  Coordinate point;
+  if (GML.pos.getLocalPart().equals(parser.getName())) {
+    Coordinate[] coords=parseCoordList(dimension);
+    point=coords[0];
+    parser.nextTag();
+  }
+ else   if (GML.coordinates.getLocalPart().equals(parser.getName())) {
+    Coordinate[] coords=parseCoordinates(dimension);
+    point=coords[0];
+    parser.nextTag();
+  }
+ else   if (GML.coord.getLocalPart().equals(parser.getName())) {
+    point=parseCoord();
+    parser.nextTag();
+  }
+ else {
+    throw new IllegalStateException("Unknown coordinate element for Point: " + parser.getName());
+  }
+  parser.require(END_TAG,GML.NAMESPACE,GML.Point.getLocalPart());
+  geom=geomFac.createPoint(point);
+  geom.setUserData(crs);
+  return geom;
+}
