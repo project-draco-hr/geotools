@@ -23,12 +23,14 @@
   URL harvestSingleURL=DataUtilities.fileToURL(directory1);
   final AbstractGridFormat format=TestUtils.getFormat(harvestSingleURL);
   ImageMosaicReader reader=TestUtils.getReader(harvestSingleURL,format);
+  GranuleCatalog originalCatalog=reader.granuleCatalog;
   try {
     String[] metadataNames=reader.getMetadataNames();
     assertNotNull(metadataNames);
     assertEquals("true",reader.getMetadataValue("HAS_TIME_DOMAIN"));
     assertEquals("2004-02-01T00:00:00.000Z,2004-05-01T00:00:00.000Z",reader.getMetadataValue(metadataNames[0]));
     List<HarvestedSource> summary=reader.harvest(null,files,null);
+    assertSame(originalCatalog,reader.granuleCatalog);
     assertEquals(2,summary.size());
     for (    HarvestedSource hf : summary) {
       assertTrue(hf.success());

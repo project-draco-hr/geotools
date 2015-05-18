@@ -1,34 +1,10 @@
 {
-  Collection<File> files=(Collection<File>)source;
-  CatalogBuilderConfiguration configuration=new CatalogBuilderConfiguration();
-  configuration.setParameter(Prop.ABSOLUTE_PATH,Boolean.toString(true));
-  Iterator<File> it=files.iterator();
-  String indexingPath=it.next().getAbsolutePath();
-  configuration.setParameter(Prop.HARVEST_DIRECTORY,indexingPath);
-  if (defaultCoverage == null) {
-    String[] coverageNames=reader.getGridCoverageNames();
-    defaultCoverage=(coverageNames != null && coverageNames.length > 0) ? coverageNames[0] : Utils.DEFAULT_INDEX_NAME;
+  File directory;
+  if (source instanceof Collection<?>) {
+    directory=(File)((Collection<?>)source).iterator().next();
   }
-  configuration.setParameter(Prop.INDEX_NAME,defaultCoverage);
-  configuration.setHints(new Hints(Utils.MOSAIC_READER,reader));
-  File mosaicSource=DataUtilities.urlToFile(reader.sourceURL);
-  if (!mosaicSource.isDirectory()) {
-    mosaicSource=mosaicSource.getParentFile();
+ else {
+    directory=(File)source;
   }
-  configuration.setParameter(Prop.ROOT_MOSAIC_DIR,mosaicSource.getAbsolutePath());
-  ImageMosaicEventHandlers eventHandler=new ImageMosaicEventHandlers();
-  final ImageMosaicConfigHandler catalogHandler=new ImageMosaicConfigHandler(configuration,eventHandler);
-  ImageMosaicFileCollectionWalker walker=new ImageMosaicFileCollectionWalker(catalogHandler,eventHandler,files);
-  eventHandler.addProcessingEventListener(new ImageMosaicEventHandlers.ProcessingEventListener(){
-    @Override public void getNotification(    ProcessingEvent event){
-      if (event instanceof FileProcessingEvent) {
-        FileProcessingEvent fileEvent=(FileProcessingEvent)event;
-        result.add(new DefaultHarvestedSource(fileEvent.getFile(),fileEvent.isIngested(),fileEvent.getMessage()));
-      }
-    }
-    @Override public void exceptionOccurred(    ExceptionEvent event){
-    }
-  }
-);
-  walker.run();
+  harvestCalculation(defaultCoverage,result,reader,directory,null);
 }
