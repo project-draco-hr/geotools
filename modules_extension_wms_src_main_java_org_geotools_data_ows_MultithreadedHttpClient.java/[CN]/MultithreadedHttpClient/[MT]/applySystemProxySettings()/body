@@ -1,10 +1,25 @@
 {
   final String proxyHost=System.getProperty("http.proxyHost");
   final int proxyPort=Integer.parseInt(System.getProperty("http.proxyPort","80"));
+  String nonProxyHostProp=System.getProperty("http.nonProxyHosts");
   if (proxyHost != null) {
     LOGGER.fine("Found 'http.proxyHost' Java System property. Using it as proxy server. Port: " + proxyPort);
     HostConfiguration hostConfig=client.getHostConfiguration();
     hostConfig.setProxy(proxyHost,proxyPort);
+    if (nonProxyHostProp != null) {
+      if (nonProxyHostProp.startsWith("\"")) {
+        nonProxyHostProp=nonProxyHostProp.substring(1);
+      }
+      if (nonProxyHostProp.endsWith("\"")) {
+        nonProxyHostProp=nonProxyHostProp.substring(0,nonProxyHostProp.length() - 1);
+      }
+      hostConfigNoProxy=(HostConfiguration)hostConfig.clone();
+      StringTokenizer tokenizer=new StringTokenizer(nonProxyHostProp,"|");
+      while (tokenizer.hasMoreTokens()) {
+        nonProxyHosts.add(tokenizer.nextToken().trim().toLowerCase());
+      }
+      LOGGER.fine("Initialized with nonProxyHosts: " + nonProxyHosts);
+    }
   }
   final String proxyUser=System.getProperty("http.proxyUser");
   final String proxyPassword=System.getProperty("http.proxyPassword");
