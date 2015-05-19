@@ -30,14 +30,7 @@
     ColorModel defaultCM=cm;
     if (defaultCM instanceof IndexColorModel) {
       IndexColorModel icm=(IndexColorModel)defaultCM;
-      int numBands=defaultCM.getNumColorComponents();
-      byte[][] defaultPalette=new byte[3][icm.getMapSize()];
-      icm.getReds(defaultPalette[0]);
-      icm.getGreens(defaultPalette[0]);
-      icm.getBlues(defaultPalette[0]);
-      if (numBands == 4) {
-        icm.getAlphas(defaultPalette[0]);
-      }
+      byte[][] defaultPalette=Utils.extractPalette(icm);
       configBuilder.setPalette(defaultPalette);
     }
     configBuilder.setCrs(actualCRS);
@@ -119,8 +112,10 @@
     byte[][] palette=mosaicConfiguration.getPalette();
     ColorModel colorModel=mosaicConfiguration.getColorModel();
     if (colorModel == null) {
-      palette=rasterManager.getConfiguration().getPalette();
       colorModel=rasterManager.defaultCM;
+    }
+    if (palette == null) {
+      palette=rasterManager.defaultPalette;
     }
     if (Utils.checkColorModels(colorModel,palette,mosaicConfiguration,actualCM)) {
       eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipping image " + fileBeingProcessed + " because color models do not match.",(((fileIndex + 1) * 99.0) / numFiles));
