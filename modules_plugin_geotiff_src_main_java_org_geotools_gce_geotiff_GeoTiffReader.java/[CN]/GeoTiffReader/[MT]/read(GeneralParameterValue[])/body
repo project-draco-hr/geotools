@@ -94,11 +94,6 @@
   if (inputTransparentColor != null) {
     coverageRaster=new ImageWorker(coverageRaster).setRenderingHints(newHints).makeColorTransparent(inputTransparentColor).getRenderedOperation();
   }
-  final int ssWidth=coverageRaster.getWidth();
-  final int ssHeight=coverageRaster.getHeight();
-  if (LOGGER.isLoggable(Level.FINE)) {
-    LOGGER.log(Level.FINE,"Coverage read: width = " + ssWidth + " height = "+ ssHeight);
-  }
   ROI roi=null;
   if (hasMaskOvrProvider) {
     Rectangle sourceRegion=coverageRaster.getBounds();
@@ -111,12 +106,9 @@
       roi=MaskOverviewProvider.scaleROI(roiRaster,coverageRaster.getBounds());
     }
   }
-  final double scaleX=originalGridRange.getSpan(0) / (1.0 * ssWidth);
-  final double scaleY=originalGridRange.getSpan(1) / (1.0 * ssHeight);
-  final AffineTransform tempRaster2Model=new AffineTransform((AffineTransform)raster2Model);
-  tempRaster2Model.concatenate(new AffineTransform(scaleX,0,0,scaleY,0,0));
+  AffineTransform rasterToModel=getRescaledRasterToModel(coverageRaster);
   try {
-    return createCoverage(coverageRaster,ProjectiveTransform.create(tempRaster2Model),roi);
+    return createCoverage(coverageRaster,ProjectiveTransform.create(rasterToModel),roi);
   }
  catch (  Exception e) {
     ImageUtilities.disposePlanarImageChain(coverageRaster);
