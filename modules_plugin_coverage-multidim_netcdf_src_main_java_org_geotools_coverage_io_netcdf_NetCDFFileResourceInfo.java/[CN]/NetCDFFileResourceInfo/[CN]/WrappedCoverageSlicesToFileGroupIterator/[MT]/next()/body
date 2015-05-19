@@ -1,0 +1,41 @@
+{
+  CoverageSlice next=null;
+  if (cachedNext != null) {
+    next=cachedNext;
+    cachedNext=null;
+  }
+ else {
+    next=slicesIterator.next();
+  }
+  int groupedFeatures=0;
+  List<CoverageSlice> relevantSlices=new ArrayList<CoverageSlice>();
+  relevantSlices.add(next);
+  File file=null;
+  if (sourceURL != null) {
+    file=DataUtilities.urlToFile(sourceURL);
+    if (file != null && file.exists()) {
+      groupedFeatures++;
+    }
+  }
+  if (groupedFeatures == 0) {
+    return null;
+  }
+  while (slicesIterator.hasNext()) {
+    next=slicesIterator.next();
+    relevantSlices.add(next);
+    String nextLocation=(String)next.getOriginator().getAttribute(CoverageSlice.Attributes.LOCATION);
+    if (location.equalsIgnoreCase(nextLocation)) {
+      groupedFeatures++;
+    }
+ else {
+      cachedNext=next;
+      break;
+    }
+  }
+  try {
+    return buildFileGroup(relevantSlices);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Exception occurred while populating the fileGroup:",e);
+  }
+}
