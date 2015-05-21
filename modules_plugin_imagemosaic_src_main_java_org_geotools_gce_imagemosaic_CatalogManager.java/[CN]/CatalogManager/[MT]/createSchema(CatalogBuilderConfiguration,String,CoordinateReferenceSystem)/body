@@ -27,6 +27,16 @@
     try {
       indexSchema=DataUtilities.createType(name,schemaAttributes);
       indexSchema=DataUtilities.createSubType(indexSchema,DataUtilities.attributeNames(indexSchema),actualCRS);
+      if (actualCRS != null) {
+        Set<ReferenceIdentifier> identifiers=actualCRS.getIdentifiers();
+        if (identifiers == null || identifiers.isEmpty()) {
+          GeometryDescriptor geometryDescriptor=indexSchema.getGeometryDescriptor();
+          if (geometryDescriptor != null) {
+            Map<Object,Object> userData=geometryDescriptor.getUserData();
+            userData.put(JDBCDataStore.JDBC_NATIVE_SRID,0);
+          }
+        }
+      }
     }
  catch (    Throwable e) {
       if (LOGGER.isLoggable(Level.FINE))       LOGGER.log(Level.FINE,e.getLocalizedMessage(),e);
