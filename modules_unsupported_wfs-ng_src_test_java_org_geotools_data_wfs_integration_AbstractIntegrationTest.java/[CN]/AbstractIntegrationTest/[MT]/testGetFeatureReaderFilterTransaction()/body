@@ -1,31 +1,32 @@
 {
-  Transaction t=new DefaultTransaction();
-  SimpleFeatureType type=data.getSchema(first.typeName);
-  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
-  reader=data.getFeatureReader(new Query(first.typeName,Filter.EXCLUDE),t);
-  assertEquals(type,reader.getFeatureType());
-  assertEquals(0,count(reader));
-  reader=data.getFeatureReader(new Query(first.typeName),t);
-  assertTrue(reader instanceof DiffFeatureReader);
-  assertEquals(type,reader.getFeatureType());
-  assertEquals(first.features.length,count(reader));
-  reader=data.getFeatureReader(new Query(first.typeName,first.feat1Filter),t);
-  assertEquals(type,reader.getFeatureType());
-  assertEquals(1,count(reader));
-  SimpleFeatureStore store=(SimpleFeatureStore)data.getFeatureSource(first.typeName);
-  store.setTransaction(t);
-  store.removeFeatures(first.feat1Filter);
-  reader=data.getFeatureReader(new Query(first.typeName,Filter.EXCLUDE),t);
-  assertEquals(0,count(reader));
-  reader=data.getFeatureReader(new Query(first.typeName),t);
-  assertEquals(first.features.length - 1,count(reader));
-  reader=data.getFeatureReader(new Query(first.typeName,first.feat1Filter),t);
-  assertEquals(0,count(reader));
-  t.rollback();
-  reader=data.getFeatureReader(new Query(first.typeName,Filter.EXCLUDE),t);
-  assertEquals(0,count(reader));
-  reader=data.getFeatureReader(new Query(first.typeName),t);
-  assertEquals(first.features.length,count(reader));
-  reader=data.getFeatureReader(new Query(first.typeName,first.feat1Filter),t);
-  assertEquals(1,count(reader));
-}
+  try (Transaction t=new DefaultTransaction()){
+    SimpleFeatureType type=data.getSchema(first.typeName);
+    FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+    reader=data.getFeatureReader(new Query(first.typeName,Filter.EXCLUDE),t);
+    assertEquals(type,reader.getFeatureType());
+    assertEquals(0,count(reader));
+    reader=data.getFeatureReader(new Query(first.typeName),t);
+    assertTrue(reader instanceof DiffFeatureReader);
+    assertEquals(type,reader.getFeatureType());
+    assertEquals(first.features.length,count(reader));
+    reader=data.getFeatureReader(new Query(first.typeName,first.feat1Filter),t);
+    assertEquals(type,reader.getFeatureType());
+    assertEquals(1,count(reader));
+    SimpleFeatureStore store=(SimpleFeatureStore)data.getFeatureSource(first.typeName);
+    store.setTransaction(t);
+    store.removeFeatures(first.feat1Filter);
+    reader=data.getFeatureReader(new Query(first.typeName,Filter.EXCLUDE),t);
+    assertEquals(0,count(reader));
+    reader=data.getFeatureReader(new Query(first.typeName),t);
+    assertEquals(first.features.length - 1,count(reader));
+    reader=data.getFeatureReader(new Query(first.typeName,first.feat1Filter),t);
+    assertEquals(0,count(reader));
+    t.rollback();
+    reader=data.getFeatureReader(new Query(first.typeName,Filter.EXCLUDE),t);
+    assertEquals(0,count(reader));
+    reader=data.getFeatureReader(new Query(first.typeName),t);
+    assertEquals(first.features.length,count(reader));
+    reader=data.getFeatureReader(new Query(first.typeName,first.feat1Filter),t);
+    assertEquals(1,count(reader));
+  }
+ }
