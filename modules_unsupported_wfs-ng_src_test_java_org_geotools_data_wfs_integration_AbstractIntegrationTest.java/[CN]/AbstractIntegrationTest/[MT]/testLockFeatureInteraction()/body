@@ -1,59 +1,59 @@
 {
   FeatureLock lockA=new FeatureLock("LockA",3600);
   FeatureLock lockB=new FeatureLock("LockB",3600);
-  Transaction t1=new DefaultTransaction();
-  Transaction t2=new DefaultTransaction();
-  FeatureLocking<SimpleFeatureType,SimpleFeature> road1;
-  FeatureLocking<SimpleFeatureType,SimpleFeature> road2;
+  try (Transaction t1=new DefaultTransaction();Transaction t2=new DefaultTransaction()){
+    FeatureLocking<SimpleFeatureType,SimpleFeature> road1;
+    FeatureLocking<SimpleFeatureType,SimpleFeature> road2;
 {
-    SimpleFeatureSource source=data.getFeatureSource(first.typeName);
-    if (!(source instanceof FeatureLocking)) {
-      LOGGER.info("testLockFeatureInteraction ignored, store does not support locking");
-      return;
+      SimpleFeatureSource source=data.getFeatureSource(first.typeName);
+      if (!(source instanceof FeatureLocking)) {
+        LOGGER.info("testLockFeatureInteraction ignored, store does not support locking");
+        return;
+      }
+      road1=(FeatureLocking<SimpleFeatureType,SimpleFeature>)source;
+      source=data.getFeatureSource(first.typeName);
+      if (!(source instanceof FeatureLocking)) {
+        LOGGER.info("testLockFeatureInteraction ignored, store does not support locking");
+        return;
+      }
+      road2=(FeatureLocking<SimpleFeatureType,SimpleFeature>)source;
     }
-    road1=(FeatureLocking<SimpleFeatureType,SimpleFeature>)source;
-    source=data.getFeatureSource(first.typeName);
-    if (!(source instanceof FeatureLocking)) {
-      LOGGER.info("testLockFeatureInteraction ignored, store does not support locking");
-      return;
+    road1.setTransaction(t1);
+    road2.setTransaction(t2);
+    road1.setFeatureLock(lockA);
+    road2.setFeatureLock(lockB);
+    assertFalse(isLocked(first.typeName,first.features[0].getID()));
+    assertFalse(isLocked(first.typeName,first.features[1].getID()));
+    assertFalse(isLocked(first.typeName,first.features[2].getID()));
+    road1.lockFeatures(first.feat1Filter);
+    assertTrue(isLocked(first.typeName,first.features[0].getID()));
+    assertFalse(isLocked(first.typeName,first.features[1].getID()));
+    assertFalse(isLocked(first.typeName,first.features[2].getID()));
+    road2.lockFeatures(first.feat2Filter);
+    assertTrue(isLocked(first.typeName,first.features[0].getID()));
+    assertTrue(isLocked(first.typeName,first.features[1].getID()));
+    assertFalse(isLocked(first.typeName,first.features[2].getID()));
+    try {
+      road1.unLockFeatures(first.feat1Filter);
+      fail("need authorization");
     }
-    road2=(FeatureLocking<SimpleFeatureType,SimpleFeature>)source;
-  }
-  road1.setTransaction(t1);
-  road2.setTransaction(t2);
-  road1.setFeatureLock(lockA);
-  road2.setFeatureLock(lockB);
-  assertFalse(isLocked(first.typeName,first.features[0].getID()));
-  assertFalse(isLocked(first.typeName,first.features[1].getID()));
-  assertFalse(isLocked(first.typeName,first.features[2].getID()));
-  road1.lockFeatures(first.feat1Filter);
-  assertTrue(isLocked(first.typeName,first.features[0].getID()));
-  assertFalse(isLocked(first.typeName,first.features[1].getID()));
-  assertFalse(isLocked(first.typeName,first.features[2].getID()));
-  road2.lockFeatures(first.feat2Filter);
-  assertTrue(isLocked(first.typeName,first.features[0].getID()));
-  assertTrue(isLocked(first.typeName,first.features[1].getID()));
-  assertFalse(isLocked(first.typeName,first.features[2].getID()));
-  try {
+ catch (    IOException expected) {
+    }
+    t1.addAuthorization(lockA.getAuthorization());
+    try {
+      road1.unLockFeatures(first.feat2Filter);
+      fail("need correct authorization");
+    }
+ catch (    IOException expected) {
+    }
     road1.unLockFeatures(first.feat1Filter);
-    fail("need authorization");
+    assertFalse(isLocked(first.typeName,first.features[0].getID()));
+    assertTrue(isLocked(first.typeName,first.features[1].getID()));
+    assertFalse(isLocked(first.typeName,first.features[2].getID()));
+    t2.addAuthorization(lockB.getAuthorization());
+    road2.unLockFeatures(first.feat2Filter);
+    assertFalse(isLocked(first.typeName,first.features[0].getID()));
+    assertFalse(isLocked(first.typeName,first.features[1].getID()));
+    assertFalse(isLocked(first.typeName,first.features[2].getID()));
   }
- catch (  IOException expected) {
-  }
-  t1.addAuthorization(lockA.getAuthorization());
-  try {
-    road1.unLockFeatures(first.feat2Filter);
-    fail("need correct authorization");
-  }
- catch (  IOException expected) {
-  }
-  road1.unLockFeatures(first.feat1Filter);
-  assertFalse(isLocked(first.typeName,first.features[0].getID()));
-  assertTrue(isLocked(first.typeName,first.features[1].getID()));
-  assertFalse(isLocked(first.typeName,first.features[2].getID()));
-  t2.addAuthorization(lockB.getAuthorization());
-  road2.unLockFeatures(first.feat2Filter);
-  assertFalse(isLocked(first.typeName,first.features[0].getID()));
-  assertFalse(isLocked(first.typeName,first.features[1].getID()));
-  assertFalse(isLocked(first.typeName,first.features[2].getID()));
-}
+ }
