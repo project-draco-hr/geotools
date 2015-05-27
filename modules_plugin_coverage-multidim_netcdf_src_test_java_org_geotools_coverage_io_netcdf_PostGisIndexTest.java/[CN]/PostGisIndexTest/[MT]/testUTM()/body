@@ -1,0 +1,48 @@
+{
+  File file=TestData.file(this,"utm.nc");
+  final File dir=new File(TestData.file(this,"."),UTM_DIR);
+  if (!dir.mkdir()) {
+    FileUtils.deleteDirectory(dir);
+    assertTrue("Unable to create workdir:" + dir,dir.mkdir());
+  }
+  File destFile=new File(dir,"utm.nc");
+  FileUtils.copyFile(file,destFile);
+  createDatastoreProperties(dir,null);
+  final NetCDFImageReaderSpi unidataImageReaderSpi=new NetCDFImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(destFile));
+  NetCDFImageReader reader=null;
+  try {
+    reader=(NetCDFImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setInput(destFile);
+    int numImages=reader.getNumImages(true);
+    LOGGER.info("Found " + numImages + " images.");
+    for (int i=0; i < numImages; i++) {
+      Slice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    final String[] typeNames=cs.getTypeNames();
+    for (    String typeName : typeNames) {
+      final List<CoverageSlice> granules=cs.getGranules(new Query(typeName,Filter.INCLUDE));
+      checkGranules(granules);
+    }
+    reader.dispose();
+    reader.setInput(destFile);
+    cs=reader.getCatalog();
+    String typeName=cs.getTypeNames()[0];
+    assertNotNull(cs);
+    final List<CoverageSlice> granules=cs.getGranules(new Query(typeName,Filter.INCLUDE));
+    checkGranules(granules);
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  File nc1=TestData.file(this,"polyphemus_20130301_test.nc");
+  File mosaic=new File(TestData.file(this,"."),"mosaic");
+  if (mosaic.exists()) {
+    FileUtils.deleteDirectory(mosaic);
+  }
+  assertTrue(mosaic.mkdirs());
+  FileUtils.copyFileToDirectory(nc1,mosaic);
+  String indexer="TimeAttribute=time\n" + "Schema=the_geom:Polygon,location:String,imageindex:Integer,time:java.util.Date\n" + "AuxiliaryDatastoreFile=mddatastore.properties";
+  FileUtils.writeStringToFile(new File(mosaic,"indexer.properties"),indexer);
+  File dsp=TestData.file(this,"datastore.properties");
+  FileUtils.copyFileToDirectory(dsp,mosaic);
+  Map<String,String> overrideMap=new HashMap<String,String>();
+  overrideMap.put("database","lowlevelindex");
+  createDatastoreProperties(mosaic,overrideMap);
+  ImageMosaicFormat format=new ImageMosaicFormat();
+  ImageMosaicReader reader=format.getReader(mosaic);
+  SimpleFeatureIterator it=null;
+  assertNotNull(reader);
+  try {
+    String[] names=reader.getGridCoverageNames();
+    assertEquals(1,names.length);
+    assertEquals("O3",names[0]);
+    GranuleSource source=reader.getGranules("O3",true);
+    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+    Query q=new Query(Query.ALL);
+    q.setSortBy(new SortBy[]{ff.sort("time",SortOrder.ASCENDING)});
+    SimpleFeatureCollection granules=source.getGranules(q);
+    assertEquals(2,granules.size());
+    it=granules.features();
+    assertTrue(it.hasNext());
+    SimpleFeature f=it.next();
+    assertEquals("polyphemus_20130301_test.nc",f.getAttribute("location"));
+    assertEquals(0,f.getAttribute("imageindex"));
+    assertEquals("2013-03-01T00:00:00.000Z",ConvertersHack.convert(f.getAttribute("time"),String.class));
+    assertTrue(it.hasNext());
+    f=it.next();
+    assertEquals("polyphemus_20130301_test.nc",f.getAttribute("location"));
+    assertEquals(1,f.getAttribute("imageindex"));
+    assertEquals("2013-03-01T01:00:00.000Z",ConvertersHack.convert(f.getAttribute("time"),String.class));
+    it.close();
+    reader.dispose();
+    reader=format.getReader(mosaic);
+    source=reader.getGranules("O3",true);
+    Thread.sleep(1000);
+    File nc2=TestData.file(this,"polyphemus_20130302_test.nc");
+    File target=new File(mosaic,"polyphemus_20130302_test.nc");
+    FileUtils.copyFile(nc2,target,false);
+    File fileToHarvest=new File(mosaic,"polyphemus_20130302_test.nc");
+    List<HarvestedSource> harvestSummary=reader.harvest(null,fileToHarvest,null);
+    assertEquals(1,harvestSummary.size());
+    HarvestedSource hf=harvestSummary.get(0);
+    assertEquals("polyphemus_20130302_test.nc",((File)hf.getSource()).getName());
+    assertTrue(hf.success());
+    assertEquals(1,reader.getGridCoverageNames().length);
+    source=reader.getGranules("O3",true);
+    granules=source.getGranules(q);
+    assertEquals(4,granules.size());
+    assertNotNull(reader.read("O3",null));
+  }
+  finally {
+    if (it != null) {
+      it.close();
+    }
+    reader.dispose();
+  }
+}

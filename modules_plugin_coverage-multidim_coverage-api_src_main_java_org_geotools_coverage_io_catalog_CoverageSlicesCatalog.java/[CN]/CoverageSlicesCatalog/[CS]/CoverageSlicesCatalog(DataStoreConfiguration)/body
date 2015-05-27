@@ -1,0 +1,69 @@
+{
+  DataStoreFactorySpi spi=datastoreConfig.getDatastoreSpi();
+  final Map<String,Serializable> params=datastoreConfig.getParams();
+  Utilities.ensureNonNull("params",params);
+  try {
+    boolean isPostgis=Utils.isPostgisStore(spi);
+    boolean isH2=Utils.isH2Store(spi);
+    if (!(isH2 || isPostgis)) {
+      throw new IllegalArgumentException("Low level index for multidim granules only supports" + " H2 and PostGIS databases");
+    }
+    if (isPostgis) {
+      Utils.fixPostgisDBCreationParams(params);
+    }
+    slicesIndexStore=spi.createDataStore(params);
+    boolean wrapDatastore=false;
+    String parentLocation=(String)params.get(Utils.Prop.PARENT_LOCATION);
+    if (params.containsKey(Utils.Prop.WRAP_STORE)) {
+      wrapDatastore=(Boolean)params.get(Utils.Prop.WRAP_STORE);
+    }
+    if (isPostgis && wrapDatastore) {
+      slicesIndexStore=new PostgisDatastoreWrapper(slicesIndexStore,parentLocation,HIDDEN_FOLDER);
+    }
+    String typeName=null;
+    String[] typeNamesValues=null;
+    boolean scanForTypeNames=false;
+    if (params.containsKey(Utils.Prop.TYPENAME)) {
+      typeName=(String)params.get(Utils.Prop.TYPENAME);
+      if (typeName != null && typeName.contains(",")) {
+        typeNamesValues=typeName.split(",");
+      }
+    }
+    if (params.containsKey(Utils.SCAN_FOR_TYPENAMES)) {
+      scanForTypeNames=Boolean.valueOf((String)(params.get(Utils.SCAN_FOR_TYPENAMES)));
+    }
+    if (typeNamesValues == null && scanForTypeNames) {
+      typeNamesValues=slicesIndexStore.getTypeNames();
+    }
+    if (typeNamesValues != null) {
+      for (      String tn : typeNamesValues) {
+        this.typeNames.add(tn);
+      }
+    }
+ else     if (typeName != null) {
+      addTypeName(typeName,false);
+    }
+    if (this.typeNames.size() > 0) {
+      extractBasicProperties(typeNames.iterator().next());
+    }
+ else {
+      extractBasicProperties(typeName);
+    }
+  }
+ catch (  Throwable e) {
+    try {
+      if (slicesIndexStore != null) {
+        slicesIndexStore.dispose();
+      }
+    }
+ catch (    Throwable e1) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE,e1.getLocalizedMessage(),e1);
+      }
+    }
+ finally {
+      slicesIndexStore=null;
+    }
+    throw new IllegalArgumentException(e);
+  }
+}

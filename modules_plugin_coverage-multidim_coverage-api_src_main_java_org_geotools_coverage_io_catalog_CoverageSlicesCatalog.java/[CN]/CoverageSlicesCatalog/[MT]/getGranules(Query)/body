@@ -10,11 +10,17 @@
     if (featureSource == null) {
       throw new NullPointerException("The provided SimpleFeatureSource is null, it's impossible to create an index!");
     }
-    final SimpleFeatureCollection features=featureSource.getFeatures(q);
-    if (features == null)     throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
-    if (LOGGER.isLoggable(Level.FINE))     LOGGER.fine("Index Loaded");
-    final SimpleFeatureIterator it=features.features();
+    Transaction tx=null;
+    SimpleFeatureIterator it=null;
     try {
+      if (featureSource instanceof FeatureStore) {
+        tx=new DefaultTransaction("getGranulesTransaction" + System.nanoTime());
+        ((FeatureStore)featureSource).setTransaction(tx);
+      }
+      final SimpleFeatureCollection features=featureSource.getFeatures(q);
+      if (features == null)       throw new NullPointerException("The provided SimpleFeatureCollection is null, it's impossible to create an index!");
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("Index Loaded");
+      it=features.features();
       if (!it.hasNext()) {
         if (LOGGER.isLoggable(Level.FINE))         LOGGER.fine("The provided SimpleFeatureCollection  or empty, it's impossible to create an index!");
         return Collections.emptyList();
@@ -38,6 +44,9 @@ synchronized (coverageSliceDescriptorsCache) {
     }
   finally {
       it.close();
+      if (tx != null) {
+        tx.close();
+      }
     }
     return returnValue;
   }

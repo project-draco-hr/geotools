@@ -1,0 +1,28 @@
+{
+  DefaultTransaction transaction=null;
+  try {
+    transaction=new DefaultTransaction("CleanupTransaction" + System.nanoTime());
+    for (    String typeName : typeNames) {
+      removeGranules(typeName,filter,transaction);
+    }
+    transaction.commit();
+  }
+ catch (  Throwable e) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Rollback");
+    }
+    if (transaction != null) {
+      transaction.rollback();
+    }
+    throw new IOException(e);
+  }
+ finally {
+    try {
+      if (transaction != null) {
+        transaction.close();
+      }
+    }
+ catch (    Throwable t) {
+    }
+  }
+}

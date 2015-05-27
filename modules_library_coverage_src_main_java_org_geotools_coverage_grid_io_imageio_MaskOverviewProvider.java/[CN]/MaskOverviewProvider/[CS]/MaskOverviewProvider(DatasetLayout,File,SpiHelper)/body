@@ -1,0 +1,156 @@
+{
+  ImageReaderSpi suggestedSPI=spiProvider.getSuggestedSpi();
+  readerSpi=spiProvider.getReaderSpi();
+  streamSpi=spiProvider.getStreamSpi();
+  this.fileURL=spiProvider.getFileURL();
+  this.layout=layout;
+  File overviewFile=new File(inputFile.getAbsolutePath() + OVR_EXTENSION);
+  hasDatasetLayout=layout != null;
+  if (hasDatasetLayout && layout.getExternalOverviews() != null) {
+    overviewFile=layout.getExternalOverviews();
+  }
+  if (overviewFile.exists() && overviewFile.canRead()) {
+    ovrURL=DataUtilities.fileToURL(overviewFile);
+    overviewStreamSpi=getInputStreamSPIFromURL(ovrURL);
+    ImageInputStream ovrStream=null;
+    try {
+      ovrStream=overviewStreamSpi.createInputStreamInstance(ovrURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+      overviewReaderSpi=getReaderSpiFromStream(null,ovrStream);
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,"Unable to create a Reader for File: " + overviewFile.getCanonicalPath(),e);
+      }
+      throw new IllegalArgumentException(e);
+    }
+ finally {
+      if (ovrStream != null) {
+        try {
+          ovrStream.close();
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.SEVERE)) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+      }
+    }
+  }
+ else {
+    overviewStreamSpi=streamSpi;
+    overviewReaderSpi=readerSpi;
+  }
+  int numOverviews=0;
+  if (hasDatasetLayout) {
+    numInternalOverviews=layout.getNumInternalOverviews();
+    numExternalOverviews=layout.getNumExternalOverviews() > 0 ? layout.getNumExternalOverviews() : 0;
+    numOverviews=numInternalOverviews + numExternalOverviews;
+  }
+ else   if (!spiProvider.isMultidim()) {
+    ImageInputStream imageStream=null;
+    ImageReader reader=null;
+    try {
+      imageStream=streamSpi.createInputStreamInstance(fileURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+      reader=readerSpi.createReaderInstance();
+      reader.setInput(imageStream,false,false);
+      numOverviews=reader.getNumImages(true) - 1;
+      numInternalOverviews=numOverviews;
+    }
+ catch (    Exception e) {
+      if (LOGGER.isLoggable(Level.WARNING)) {
+        LOGGER.log(Level.WARNING,"Unable to create a Reader for File: " + inputFile.getCanonicalPath(),e);
+      }
+      throw new IllegalArgumentException(e);
+    }
+ finally {
+      if (imageStream != null) {
+        try {
+          imageStream.close();
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.SEVERE)) {
+            LOGGER.log(Level.SEVERE,e.getMessage(),e);
+          }
+        }
+ finally {
+          if (reader != null) {
+            reader.dispose();
+          }
+        }
+      }
+    }
+  }
+  if (numOverviews < 0) {
+    numOverviews=0;
+  }
+  this.numOverviews=numOverviews;
+  if (layout != null) {
+    numInternalMasks=layout.getNumInternalMasks();
+    numExternalMasks=layout.getNumExternalMasks() > 0 ? layout.getNumExternalMasks() : 0;
+    numExternalMasksOverviews=layout.getNumExternalMaskOverviews() > 0 ? layout.getNumExternalMaskOverviews() : 0;
+    hasExternalMasks=numExternalMasks > 0;
+    hasExternalMasksOverviews=hasExternalMasks && numExternalMasksOverviews > 0;
+    if (hasExternalMasks) {
+      maskURL=DataUtilities.fileToURL(layout.getExternalMasks());
+      maskStreamSpi=getInputStreamSPIFromURL(maskURL);
+      ImageInputStream maskStream=null;
+      try {
+        maskStream=maskStreamSpi.createInputStreamInstance(maskURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+        maskReaderSpi=getReaderSpiFromStream(suggestedSPI,maskStream);
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.WARNING)) {
+          LOGGER.log(Level.WARNING,"Unable to create a Reader for File: " + maskURL,e);
+        }
+        throw new IllegalArgumentException(e);
+      }
+ finally {
+        if (maskStream != null) {
+          try {
+            maskStream.close();
+          }
+ catch (          Exception e) {
+            if (LOGGER.isLoggable(Level.SEVERE)) {
+              LOGGER.log(Level.SEVERE,e.getMessage(),e);
+            }
+          }
+        }
+      }
+      if (hasExternalMasksOverviews) {
+        maskOvrURL=DataUtilities.fileToURL(layout.getExternalMaskOverviews());
+        maskOvrStreamSpi=getInputStreamSPIFromURL(maskOvrURL);
+        ImageInputStream maskOvrStream=null;
+        try {
+          maskOvrStream=maskOvrStreamSpi.createInputStreamInstance(maskOvrURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+          maskOvrReaderSpi=getReaderSpiFromStream(suggestedSPI,maskOvrStream);
+        }
+ catch (        Exception e) {
+          if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.log(Level.WARNING,"Unable to create a Reader for File: " + maskOvrURL,e);
+          }
+          throw new IllegalArgumentException(e);
+        }
+ finally {
+          if (maskOvrStream != null) {
+            try {
+              maskOvrStream.close();
+            }
+ catch (            Exception e) {
+              if (LOGGER.isLoggable(Level.SEVERE)) {
+                LOGGER.log(Level.SEVERE,e.getMessage(),e);
+              }
+            }
+          }
+        }
+      }
+ else {
+        maskOvrStreamSpi=maskStreamSpi;
+        maskOvrReaderSpi=maskReaderSpi;
+      }
+    }
+ else {
+      maskStreamSpi=streamSpi;
+      maskReaderSpi=readerSpi;
+    }
+  }
+}
