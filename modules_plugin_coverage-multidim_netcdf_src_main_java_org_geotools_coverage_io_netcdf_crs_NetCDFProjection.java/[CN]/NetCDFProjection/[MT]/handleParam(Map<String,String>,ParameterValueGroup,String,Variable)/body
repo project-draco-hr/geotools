@@ -1,0 +1,30 @@
+{
+  String netCDFattributeName=getInputAttribute(parametersMapping.get(ogcParameterKey));
+  Double value=null;
+  if (ogcParameterKey.equalsIgnoreCase(NetCDFUtilities.STANDARD_PARALLEL_1) || ogcParameterKey.equalsIgnoreCase(NetCDFUtilities.STANDARD_PARALLEL_2)) {
+    Attribute attribute=var.findAttribute(netCDFattributeName);
+    if (attribute != null) {
+      final int numValues=attribute.getLength();
+      if (numValues > 1) {
+        int index=ogcParameterKey.equalsIgnoreCase(NetCDFUtilities.STANDARD_PARALLEL_1) ? 0 : 1;
+        Number number=(Number)attribute.getValue(index);
+        value=number.doubleValue();
+      }
+ else {
+        value=attribute.getNumericValue().doubleValue();
+      }
+    }
+  }
+ else {
+    Attribute attribute=var.findAttribute(netCDFattributeName);
+    if (attribute != null) {
+      value=attribute.getNumericValue().doubleValue();
+      if (netCDFattributeName.contains("meridian") || netCDFattributeName.contains("longitude")) {
+        value=value - (360) * Math.floor(value / (360) + 0.5);
+      }
+    }
+  }
+  if (value != null) {
+    ogcParameters.parameter(ogcParameterKey).setValue(value);
+  }
+}

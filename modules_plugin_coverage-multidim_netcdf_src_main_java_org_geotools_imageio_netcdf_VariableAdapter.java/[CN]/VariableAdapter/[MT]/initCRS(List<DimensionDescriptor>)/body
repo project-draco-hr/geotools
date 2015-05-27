@@ -4,10 +4,9 @@
     throw new IllegalArgumentException("Provided CoordinateSystem is null");
   }
   coordinateSystem=new CoordinateSystemAdapter(coordinateSystem);
-  coordinateReferenceSystem=NetCDFCRSUtilities.WGS84;
   final List<CoordinateVariable<?>> otherAxes=new ArrayList<CoordinateVariable<?>>();
   for (  CoordinateAxis axis : coordinateSystem.getCoordinateAxes()) {
-    CoordinateVariable<?> cv=reader.coordinatesVariables.get(axis.getShortName());
+    CoordinateVariable<?> cv=reader.georeferencing.getCoordinateVariable(axis.getShortName());
 switch (cv.getAxisType()) {
 case Time:
 case RunTime:
@@ -33,5 +32,7 @@ default :
 otherAxes.add(cv);
 }
 }
+ReferencedEnvelope bbox=reader.georeferencing.getBoundingBox(variableDS.getShortName());
+coordinateReferenceSystem=bbox.getCoordinateReferenceSystem();
 return otherAxes;
 }

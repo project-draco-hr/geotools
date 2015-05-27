@@ -20,7 +20,7 @@
   final Rectangle srcRegion=new Rectangle();
   final Rectangle destRegion=new Rectangle();
   computeRegions(param,width,height,null,srcRegion,destRegion);
-  if (needsFlipping) {
+  if (georeferencing.isNeedsFlipping()) {
     flipVertically(param,height,srcRegion);
   }
   int destWidth=destRegion.x + destRegion.width;
@@ -55,7 +55,8 @@
   final WritableRaster raster=Raster.createWritableRaster(sampleModel,new Point(0,0));
   Hashtable<String,Object> properties=getNoDataProperties(wrapper);
   final BufferedImage image=new BufferedImage(colorModel,raster,colorModel.isAlphaPremultiplied(),properties);
-  CoordinateAxis axis=wrapper.variableDS.getCoordinateSystems().get(0).getLatAxis();
+  CoordinateSystem cs=wrapper.variableDS.getCoordinateSystems().get(0);
+  CoordinateAxis axis=georeferencing.isLonLat() ? cs.getLatAxis() : cs.getYaxis();
   boolean flipYAxis=false;
   try {
     Array yAxisStart=axis.read(new Section().appendRange(2));

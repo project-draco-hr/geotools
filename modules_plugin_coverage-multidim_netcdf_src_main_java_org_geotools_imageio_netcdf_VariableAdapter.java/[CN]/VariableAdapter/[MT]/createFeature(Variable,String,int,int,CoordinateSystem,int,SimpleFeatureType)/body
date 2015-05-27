@@ -3,17 +3,17 @@
   final Number verticalValue=getVerticalValueByIndex(variable,zIndex,cs);
   final int dimSize=variable.getDimensions().size();
   final SimpleFeature feature=DataUtilities.template(indexSchema);
-  feature.setAttribute(CoverageSlice.Attributes.GEOMETRY,NetCDFCRSUtilities.GEOM_FACTORY.toGeometry(reader.boundingBox));
+  feature.setAttribute(CoverageSlice.Attributes.GEOMETRY,NetCDFCRSUtilities.GEOM_FACTORY.toGeometry(reader.georeferencing.getBoundingBox(variable.getShortName())));
   feature.setAttribute(CoverageSlice.Attributes.INDEX,imageIndex);
   String timeAttribute=null;
   if (date != null) {
     timeAttribute=getTimeAttribute(cs);
     feature.setAttribute(timeAttribute,date);
   }
-  final String elevationCVName=reader.dimensionsMapping.get(NetCDFUtilities.ELEVATION_DIM);
   if (!Double.isNaN(verticalValue.doubleValue())) {
     List<AttributeDescriptor> descriptors=indexSchema.getAttributeDescriptors();
     String attribute=null;
+    final String elevationCVName=reader.georeferencing.getDimension(NetCDFUtilities.ELEVATION_DIM);
     for (    AttributeDescriptor descriptor : descriptors) {
       if (descriptor.getLocalName().equalsIgnoreCase(elevationCVName)) {
         attribute=elevationCVName;
