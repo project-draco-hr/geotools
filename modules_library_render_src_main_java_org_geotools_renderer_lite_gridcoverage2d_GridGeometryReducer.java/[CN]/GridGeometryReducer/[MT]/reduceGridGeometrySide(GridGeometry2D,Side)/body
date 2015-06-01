@@ -1,0 +1,53 @@
+{
+  Side curr=side;
+  for (int i=0; i <= 4; i++) {
+    GridEnvelope2D gridRange=gg.getGridRange2D();
+    Rectangle bounds=gridRange.getBounds();
+    GridEnvelope2D reducedRange=new GridEnvelope2D(gridRange);
+switch (curr) {
+case TOP:
+      reducedRange.setBounds(bounds.x,bounds.y + 1,bounds.width,bounds.height - 1);
+    break;
+case RIGHT:
+  reducedRange.setBounds(bounds.x,bounds.y,bounds.width - 1,bounds.height);
+break;
+case BOTTOM:
+reducedRange.setBounds(bounds.x,bounds.y,bounds.width,bounds.height - 1);
+break;
+case LEFT:
+reducedRange.setBounds(bounds.x + 1,bounds.y,bounds.width - 1,bounds.height);
+break;
+default :
+throw new RuntimeException("Unexpected side " + side);
+}
+GridGeometry2D reducedGeometry=new GridGeometry2D(reducedRange,gg.getGridToCRS(),gg.getCoordinateReferenceSystem());
+Envelope reducedEnvelope=reducedGeometry.getEnvelope();
+switch (side) {
+case TOP:
+if (reducedEnvelope.getMaximum(1) <= validArea.getMaximum(1)) {
+return reducedGeometry;
+}
+break;
+case RIGHT:
+if (reducedEnvelope.getMaximum(0) <= validArea.getMaximum(0)) {
+return reducedGeometry;
+}
+break;
+case BOTTOM:
+if (reducedEnvelope.getMinimum(1) >= validArea.getMinimum(1)) {
+return reducedGeometry;
+}
+break;
+case LEFT:
+if (reducedEnvelope.getMinimum(0) >= validArea.getMinimum(0)) {
+return reducedGeometry;
+}
+break;
+default :
+throw new RuntimeException("Unexpected side " + side);
+}
+curr=curr.next();
+}
+LOGGER.warning("Could not reduce the grid geometry inside the valid area bounds: " + validArea + "\nGrid geometry is"+ gg);
+return gg;
+}
