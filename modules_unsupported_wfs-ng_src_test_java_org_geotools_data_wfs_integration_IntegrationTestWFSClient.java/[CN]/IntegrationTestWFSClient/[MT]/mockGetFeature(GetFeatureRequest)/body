@@ -10,6 +10,28 @@
   }
   final GetFeatureResponse gfr=(GetFeatureResponse)response;
   final GetFeatureParser allFeatures=gfr.getFeatures();
+  if (allFeatures instanceof PullParserFeatureReader) {
+    ((PullParserFeatureReader)allFeatures).setContextCustomizer(new ContextCustomizer(){
+      @Override public void customizeContext(      MutablePicoContainer context){
+        QName key=new QName("http://www.openplans.org/spearfish","schemaLocationResolver");
+        context.registerComponentInstance(key,new XSDSchemaLocationResolver(){
+          @Override public String resolveSchemaLocation(          XSDSchema xsdSchema,          String namespaceURI,          String schemaLocationURI){
+            if (schemaLocationURI.startsWith("DescribeFeatureType")) {
+              try {
+                return new URL(baseDirectory,schemaLocationURI).toString();
+              }
+ catch (              MalformedURLException e) {
+                return null;
+              }
+            }
+            return schemaLocationURI;
+          }
+        }
+);
+      }
+    }
+);
+  }
   final List<SimpleFeature> originalFeatures=new ArrayList<SimpleFeature>();
 {
     SimpleFeature feature;
