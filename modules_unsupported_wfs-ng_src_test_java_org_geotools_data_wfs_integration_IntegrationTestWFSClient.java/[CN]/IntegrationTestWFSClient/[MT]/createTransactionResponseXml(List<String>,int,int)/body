@@ -1,27 +1,56 @@
 {
-  WfsFactory factory=WfsFactory.eINSTANCE;
-  TransactionResponseType tr=factory.createTransactionResponseType();
-  tr.setVersion(getStrategy().getVersion());
-  tr.setTransactionSummary(factory.createTransactionSummaryType());
-  tr.getTransactionSummary().setTotalInserted(BigInteger.valueOf(added.size()));
-  tr.getTransactionSummary().setTotalUpdated(BigInteger.valueOf(updated));
-  tr.getTransactionSummary().setTotalDeleted(BigInteger.valueOf(deleted));
-  tr.setTransactionResults(factory.createTransactionResultsType());
-  tr.setInsertResults(factory.createInsertResultsType());
-  if (!added.isEmpty()) {
-    FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
-    InsertedFeatureType inserted=factory.createInsertedFeatureType();
-    tr.getInsertResults().getFeature().add(inserted);
-    for (    String addedId : added) {
-      FeatureId featureId=ff.featureId(addedId);
-      inserted.getFeatureId().add(featureId);
+  if ("2.0.0".equals(getStrategy().getVersion())) {
+    Wfs20Factory factory=Wfs20Factory.eINSTANCE;
+    net.opengis.wfs20.TransactionResponseType tr=factory.createTransactionResponseType();
+    tr.setVersion(getStrategy().getVersion());
+    tr.setTransactionSummary(factory.createTransactionSummaryType());
+    tr.getTransactionSummary().setTotalInserted(BigInteger.valueOf(added.size()));
+    tr.getTransactionSummary().setTotalUpdated(BigInteger.valueOf(updated));
+    tr.getTransactionSummary().setTotalDeleted(BigInteger.valueOf(deleted));
+    tr.setInsertResults(factory.createActionResultsType());
+    tr.setUpdateResults(factory.createActionResultsType());
+    if (!added.isEmpty()) {
+      FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+      CreatedOrModifiedFeatureType inserted=factory.createCreatedOrModifiedFeatureType();
+      for (      String addedId : added) {
+        FeatureId featureId=ff.featureId(addedId);
+        inserted.getResourceId().add(featureId);
+      }
+      tr.getInsertResults().getFeature().add(inserted);
     }
+    Configuration configuration=getStrategy().getWfsConfiguration();
+    Encoder enc=new Encoder(configuration);
+    enc.setEncoding(Charset.forName("UTF-8"));
+    enc.setIndenting(true);
+    enc.setIndentSize(1);
+    String encodedTransactionResponse=enc.encodeAsString(tr,org.geotools.wfs.v2_0.WFS.TransactionResponse);
+    return encodedTransactionResponse;
   }
-  Configuration configuration=getStrategy().getWfsConfiguration();
-  Encoder enc=new Encoder(configuration);
-  enc.setEncoding(Charset.forName("UTF-8"));
-  enc.setIndenting(true);
-  enc.setIndentSize(1);
-  String encodedTransactionResponse=enc.encodeAsString(tr,"1.0.0".equals(getStrategy().getVersion()) ? org.geotools.wfs.v1_0.WFS.WFS_TransactionResponse : WFS.TransactionResponse);
-  return encodedTransactionResponse;
+ else {
+    WfsFactory factory=WfsFactory.eINSTANCE;
+    TransactionResponseType tr=factory.createTransactionResponseType();
+    tr.setVersion(getStrategy().getVersion());
+    tr.setTransactionSummary(factory.createTransactionSummaryType());
+    tr.getTransactionSummary().setTotalInserted(BigInteger.valueOf(added.size()));
+    tr.getTransactionSummary().setTotalUpdated(BigInteger.valueOf(updated));
+    tr.getTransactionSummary().setTotalDeleted(BigInteger.valueOf(deleted));
+    tr.setTransactionResults(factory.createTransactionResultsType());
+    tr.setInsertResults(factory.createInsertResultsType());
+    if (!added.isEmpty()) {
+      FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+      InsertedFeatureType inserted=factory.createInsertedFeatureType();
+      tr.getInsertResults().getFeature().add(inserted);
+      for (      String addedId : added) {
+        FeatureId featureId=ff.featureId(addedId);
+        inserted.getFeatureId().add(featureId);
+      }
+    }
+    Configuration configuration=getStrategy().getWfsConfiguration();
+    Encoder enc=new Encoder(configuration);
+    enc.setEncoding(Charset.forName("UTF-8"));
+    enc.setIndenting(true);
+    enc.setIndentSize(1);
+    String encodedTransactionResponse=enc.encodeAsString(tr,"1.0.0".equals(getStrategy().getVersion()) ? org.geotools.wfs.v1_0.WFS.WFS_TransactionResponse : WFS.TransactionResponse);
+    return encodedTransactionResponse;
+  }
 }
