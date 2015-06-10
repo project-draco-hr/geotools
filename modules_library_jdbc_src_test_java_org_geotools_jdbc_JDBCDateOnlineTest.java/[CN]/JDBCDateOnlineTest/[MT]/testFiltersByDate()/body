@@ -1,8 +1,16 @@
 {
+  boolean simple=false;
+  if (dataStore.dialect instanceof PreparedStatementSQLDialect) {
+    simple=true;
+  }
   FilterFactory ff=dataStore.getFilterFactory();
   DateFormat df=new SimpleDateFormat("yyyy-dd-MM");
   TimeZone originalTimeZone=TimeZone.getDefault();
   TimeZone[] zones={TimeZone.getTimeZone("Etc/GMT+12"),TimeZone.getTimeZone("PST"),TimeZone.getTimeZone("EST"),TimeZone.getTimeZone("GMT"),TimeZone.getTimeZone("CET"),TimeZone.getTimeZone("Etc/GMT-12"),TimeZone.getTimeZone("Etc/GMT-14")};
+  if (simple) {
+    zones=new TimeZone[1];
+    zones[0]=originalTimeZone;
+  }
   try {
     for (    TimeZone zone : zones) {
       FeatureSource fs=dataStore.getFeatureSource(tname("dates"));
@@ -10,8 +18,7 @@
       setup.setUpData();
       df.setTimeZone(zone);
       Filter f=ff.lessOrEqual(ff.property(aname("d")),ff.literal(df.parse("2009-28-06")));
-      assertEquals("wrong number of records for " + zone.getDisplayName(),2,fs.getCount(new DefaultQuery(tname("dates"),f)));
-      f=ff.lessOrEqual(ff.property(aname("d")),ff.literal(df.parse("2009-28-06")));
+      System.out.println(f);
       assertEquals("wrong number of records for " + zone.getDisplayName(),2,fs.getCount(new DefaultQuery(tname("dates"),f)));
     }
   }

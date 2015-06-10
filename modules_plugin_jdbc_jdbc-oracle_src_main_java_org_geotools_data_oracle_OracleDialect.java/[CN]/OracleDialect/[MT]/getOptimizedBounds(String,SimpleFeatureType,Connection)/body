@@ -1,56 +1,67 @@
 {
-  if (!estimatedExtentsEnabled || dataStore.getVirtualTables().get(featureType.getTypeName()) != null)   return null;
-  String tableName;
-  if (schema != null && !"".equals(schema)) {
-    tableName=schema + "." + featureType.getTypeName();
-  }
- else {
-    tableName=featureType.getTypeName();
-  }
-  Statement st=null;
-  ResultSet rs=null;
-  List<ReferencedEnvelope> result=new ArrayList<ReferencedEnvelope>();
-  Savepoint savePoint=null;
-  try {
-    st=cx.createStatement();
-    if (!cx.getAutoCommit()) {
-      savePoint=cx.setSavepoint();
-    }
-    for (    AttributeDescriptor att : featureType.getAttributeDescriptors()) {
-      if (att instanceof GeometryDescriptor) {
-        StringBuffer sql=new StringBuffer();
-        sql.append("select SDO_TUNE.EXTENT_OF('");
-        sql.append(tableName);
-        sql.append("', '");
-        sql.append(att.getName().getLocalPart());
-        sql.append("') FROM DUAL");
-        LOGGER.log(Level.FINE,"Getting the full extent of the table using optimized search: {0}",sql);
-        rs=st.executeQuery(sql.toString());
-        if (rs.next()) {
-          GeometryDescriptor descriptor=(GeometryDescriptor)att;
-          Geometry geometry=readGeometry(rs,1,new GeometryFactory(),cx);
-          ReferencedEnvelope env=JTS.bounds(geometry,descriptor.getCoordinateReferenceSystem());
-          if (env != null && !env.isNull()) {
-            result.add(env);
+  if (dataStore.getVirtualTables().get(featureType.getTypeName()) != null)   return null;
+  if (metadataBboxEnabled) {
+    String tableName=featureType.getTypeName();
+    Statement st=null;
+    ResultSet rs=null;
+    List<ReferencedEnvelope> result=new ArrayList<ReferencedEnvelope>();
+    Savepoint savePoint=null;
+    try {
+      st=cx.createStatement();
+      if (!cx.getAutoCommit()) {
+        savePoint=cx.setSavepoint();
+      }
+      for (      AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+        if (att instanceof GeometryDescriptor) {
+          String columnName=att.getName().getLocalPart();
+          StringBuffer sql=new StringBuffer();
+          if (canAccessUserViews(cx)) {
+            sql.append("SELECT DIMINFO FROM MDSYS.USER_SDO_GEOM_METADATA WHERE ");
+            sql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
+            sql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
+            rs=st.executeQuery(sql.toString());
+            if (rs.next()) {
+              Envelope env=decodeDiminfoEnvelope(rs,1);
+              if (env != null && !env.isNull()) {
+                CoordinateReferenceSystem crs=((GeometryDescriptor)att).getCoordinateReferenceSystem();
+                result.add(new ReferencedEnvelope(env,crs));
+                rs.close();
+                continue;
+              }
+            }
+            rs.close();
           }
+          sql=new StringBuffer("SELECT DIMINFO FROM MDSYS.ALL_SDO_GEOM_METADATA WHERE ");
+          sql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
+          sql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
+          if (schema != null)           sql.append(" AND OWNER='" + schema + "'");
+          rs=st.executeQuery(sql.toString());
+          if (rs.next()) {
+            Envelope env=decodeDiminfoEnvelope(rs,1);
+            if (env != null && !env.isNull()) {
+              CoordinateReferenceSystem crs=((GeometryDescriptor)att).getCoordinateReferenceSystem();
+              result.add(new ReferencedEnvelope(env,crs));
+            }
+          }
+          rs.close();
         }
-        rs.close();
       }
     }
-  }
- catch (  SQLException e) {
-    if (savePoint != null) {
-      cx.rollback(savePoint);
+ catch (    SQLException e) {
+      if (savePoint != null) {
+        cx.rollback(savePoint);
+      }
+      LOGGER.log(Level.WARNING,"Failed to use METADATA DIMINFO, falling back on SDO_TUNE.EXTENT_OF",e);
+      return getOptimizedBoundsSDO_TUNE(schema,featureType,cx);
     }
-    LOGGER.log(Level.WARNING,"Failed to use SDO_TUNE.EXTENT_OF, falling back on envelope aggregation",e);
-    return null;
-  }
  finally {
-    if (savePoint != null) {
-      cx.rollback(savePoint);
+      if (savePoint != null) {
+        cx.rollback(savePoint);
+      }
+      dataStore.closeSafe(rs);
+      dataStore.closeSafe(st);
     }
-    dataStore.closeSafe(rs);
-    dataStore.closeSafe(st);
+    return result;
   }
-  return result;
+  return getOptimizedBoundsSDO_TUNE(schema,featureType,cx);
 }
