@@ -1,0 +1,27 @@
+{
+  if (dbo == null) {
+    return Collections.emptyMap();
+  }
+  Map<String,Class<?>> map=new LinkedHashMap<String,Class<?>>();
+  for (  Map.Entry<?,?> e : ((Map<?,?>)dbo.toMap()).entrySet()) {
+    Object k=e.getKey();
+    if (k instanceof String) {
+      String field=(String)k;
+      Object v=e.getValue();
+      if (v instanceof DBObject) {
+        for (        Map.Entry<String,Class<?>> childEntry : doFindMappableFields((DBObject)v).entrySet()) {
+          map.put(field + "." + childEntry.getKey(),childEntry.getValue());
+        }
+      }
+ else       if (v instanceof List) {
+      }
+ else {
+        Class<?> binding=mapBSONObjectToJavaType(v);
+        if (binding != null) {
+          map.put(field,binding);
+        }
+      }
+    }
+  }
+  return map;
+}

@@ -1,0 +1,65 @@
+{
+  SimpleFeatureTypeBuilder ftBuilder=new SimpleFeatureTypeBuilder();
+  if (name == null) {
+    ftBuilder.setName(extractString(ftDBO,KEY_typeName));
+  }
+ else {
+    ftBuilder.setName(name);
+  }
+  DBObject gdDBO=extractDBObject(ftDBO,KEY_geometryDescriptor);
+  String gdLocalName=extractString(gdDBO,KEY_localName);
+  DBObject crsDBO=extractDBObject(gdDBO,KEY_crs,false);
+  CoordinateReferenceSystem crs=decodeCRSFromGeoJSON(crsDBO);
+  if (crs == null) {
+    crs=DefaultGeographicCRS.WGS84;
+  }
+  AttributeTypeBuilder atBuilder=new AttributeTypeBuilder();
+  List<?> adDBL=extractDBList(ftDBO,KEY_attributeDescriptors);
+  for (  Object adO : adDBL) {
+    if (adO instanceof DBObject) {
+      DBObject adDBO=(DBObject)adO;
+      String adLocalName=extractString(adDBO,KEY_localName);
+      String bindingName=extractString(extractDBObject(adDBO,KEY_type),KEY_binding);
+      try {
+        atBuilder.binding(Class.forName(bindingName));
+      }
+ catch (      ClassNotFoundException ex) {
+        throw new RuntimeException("Unable to generate Class instance for binding " + bindingName);
+      }
+      BasicDBObject adUserDataDBO=extractDBObject(adDBO,KEY_userData,false);
+      if (adUserDataDBO != null) {
+        for (        Map.Entry<?,?> entry : ((Map<?,?>)adUserDataDBO.toMap()).entrySet()) {
+          atBuilder.userData(entry.getKey(),entry.getValue());
+        }
+      }
+      if (gdLocalName.equals(adLocalName)) {
+        atBuilder.crs(crs);
+        ftBuilder.add(atBuilder.buildDescriptor(adLocalName,atBuilder.buildGeometryType()));
+      }
+ else {
+        Integer min=extractInteger(adDBO,KEY_minOccurs,false);
+        if (min != null) {
+          atBuilder.minOccurs(min);
+        }
+        Integer max=extractInteger(adDBO,KEY_maxOccurs,false);
+        if (max != null) {
+          atBuilder.maxOccurs(max);
+        }
+        Object dv=adDBO.get(KEY_defaultValue);
+        if (dv != null) {
+          atBuilder.defaultValue(dv);
+        }
+        ftBuilder.add(atBuilder.buildDescriptor(adLocalName));
+      }
+    }
+  }
+  SimpleFeatureType ft=ftBuilder.buildFeatureType();
+  BasicDBObject ftUserDataDBO=extractDBObject(ftDBO,KEY_userData,false);
+  if (ftUserDataDBO != null) {
+    Map<Object,Object> ftUserData=ft.getUserData();
+    for (    Map.Entry<?,?> entry : ((Map<?,?>)ftUserDataDBO.toMap()).entrySet()) {
+      ftUserData.put(entry.getKey(),entry.getValue());
+    }
+  }
+  return ft;
+}

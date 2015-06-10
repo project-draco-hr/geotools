@@ -1,0 +1,46 @@
+{
+  DBObject query=new BasicDBObject();
+  Filter f=q.getFilter();
+  if (!isAll(f)) {
+    Filter[] split=splitFilter(f);
+    query=toQuery(split[0]);
+    if (!isAll(split[1])) {
+      postFilter.add(split[1]);
+    }
+  }
+  DBCursor c;
+  if (q.getPropertyNames() != Query.ALL_NAMES) {
+    BasicDBObject keys=new BasicDBObject();
+    for (    String p : q.getPropertyNames()) {
+      keys.put(mapper.getPropertyPath(p),1);
+    }
+    if (!keys.containsField(mapper.getGeometryPath())) {
+      keys.put(mapper.getGeometryPath(),1);
+    }
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.fine(String.format("find(%s, %s)",query,keys));
+    }
+    c=collection.find(query,keys);
+  }
+ else {
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.fine(String.format("find(%s)",query));
+    }
+    c=collection.find(query);
+  }
+  if (q.getStartIndex() != null && q.getStartIndex() != 0) {
+    c=c.skip(q.getStartIndex());
+  }
+  if (q.getMaxFeatures() != Integer.MAX_VALUE) {
+    c=c.limit(q.getMaxFeatures());
+  }
+  if (q.getSortBy() != null) {
+    BasicDBObject orderBy=new BasicDBObject();
+    for (    SortBy sortBy : q.getSortBy()) {
+      String propName=sortBy.getPropertyName().getPropertyName();
+      orderBy.append(propName,sortBy.getSortOrder() == SortOrder.ASCENDING ? 1 : -1);
+    }
+    c=c.sort(orderBy);
+  }
+  return c;
+}

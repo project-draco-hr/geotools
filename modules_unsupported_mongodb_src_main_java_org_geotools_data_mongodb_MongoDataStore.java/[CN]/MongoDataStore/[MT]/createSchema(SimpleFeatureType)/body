@@ -1,0 +1,31 @@
+{
+  final String geometryMapping="geometry";
+  CoordinateReferenceSystem incomingCRS=incoming.getCoordinateReferenceSystem();
+  if (incomingCRS == null) {
+    incoming.getGeometryDescriptor().getCoordinateReferenceSystem();
+  }
+  if (!CRS.equalsIgnoreMetadata(incomingCRS,DefaultGeographicCRS.WGS84)) {
+    throw new IllegalArgumentException("Unsupported coordinate reference system, only WGS84 supported");
+  }
+  SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+  builder.init(incoming);
+  builder.setName(name(incoming.getTypeName()));
+  incoming=builder.buildFeatureType();
+  String gdName=incoming.getGeometryDescriptor().getLocalName();
+  for (  AttributeDescriptor ad : incoming.getAttributeDescriptors()) {
+    String adName=ad.getLocalName();
+    if (gdName.equals(adName)) {
+      ad.getUserData().put(KEY_mapping,geometryMapping);
+      ad.getUserData().put(KEY_encoding,"GeoJSON");
+    }
+ else {
+      ad.getUserData().put(KEY_mapping,"properties." + adName);
+    }
+  }
+  incoming.getUserData().put(KEY_collection,incoming.getTypeName());
+  dataStoreDB.createCollection(incoming.getTypeName(),new BasicDBObject()).ensureIndex(new BasicDBObject(geometryMapping,"2dsphere"));
+  ContentEntry entry=entry(incoming.getName());
+  ContentState state=entry.getState(null);
+  state.setFeatureType(incoming);
+  schemaStore.storeSchema(incoming);
+}

@@ -1,0 +1,25 @@
+{
+  SimpleFeatureTypeBuilder ftBuilder=new SimpleFeatureTypeBuilder();
+  ftBuilder.setName(name);
+  ftBuilder.userData(MongoDataStore.KEY_mapping,"geometry");
+  ftBuilder.userData(MongoDataStore.KEY_encoding,"GeoJSON");
+  ftBuilder.add("geometry",Geometry.class,DefaultGeographicCRS.WGS84);
+  DBObject rootDBO=collection.findOne();
+  if (rootDBO != null && rootDBO.containsField("properties")) {
+    DBObject propertiesDBO=(DBObject)rootDBO.get("properties");
+    for (    String key : propertiesDBO.keySet()) {
+      Object v=propertiesDBO.get(key);
+      Class<?> binding=MongoUtil.mapBSONObjectToJavaType(v);
+      if (binding != null) {
+        ftBuilder.userData(MongoDataStore.KEY_mapping,"properties." + key);
+        ftBuilder.add(key,binding);
+      }
+ else {
+        System.err.println("unmapped key, " + key + " with type of "+ v.getClass().getName());
+      }
+    }
+  }
+  SimpleFeatureType ft=ftBuilder.buildFeatureType();
+  ft.getUserData().put(KEY_collection,ft.getTypeName());
+  return ft;
+}
