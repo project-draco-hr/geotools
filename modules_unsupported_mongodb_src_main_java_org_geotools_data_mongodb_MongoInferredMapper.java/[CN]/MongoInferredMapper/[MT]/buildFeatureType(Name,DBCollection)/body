@@ -1,0 +1,41 @@
+{
+  Set<String> indexedGeometries=MongoUtil.findIndexedGeometries(collection);
+  Set<String> indexedFields=MongoUtil.findIndexedFields(collection);
+  Map<String,Class<?>> mappedFields=MongoUtil.findMappableFields(collection);
+  indexedFields.removeAll(mappedFields.keySet());
+  indexedFields.removeAll(indexedGeometries);
+  for (  String mappedProperty : new ArrayList<String>(mappedFields.keySet())) {
+    for (    String indexedGeometry : indexedGeometries) {
+      if (mappedProperty.startsWith(indexedGeometry)) {
+        mappedFields.remove(mappedProperty);
+        break;
+      }
+    }
+  }
+  SimpleFeatureTypeBuilder ftBuilder=new SimpleFeatureTypeBuilder();
+  ftBuilder.setName(name);
+  String geometryField=indexedGeometries.iterator().next();
+  if (indexedGeometries.size() > 1) {
+    LOG.log(Level.WARNING,"More than one indexed geometry field found for type {0}, selecting {1} (first one encountered with index search of collection {2})",new Object[]{name,geometryField,collection.getFullName()});
+  }
+  ftBuilder.userData(MongoDataStore.KEY_mapping,geometryField);
+  ftBuilder.userData(MongoDataStore.KEY_encoding,"GeoJSON");
+  ftBuilder.add(geometryField,Geometry.class,DefaultGeographicCRS.WGS84);
+  LOG.log(Level.INFO,"building type {0}: mapping geometry field {1} from collection {2}",new Object[]{name,geometryField,collection.getFullName()});
+  for (  Map.Entry<String,Class<?>> mappedField : mappedFields.entrySet()) {
+    String field=mappedField.getKey();
+    Class<?> binding=mappedField.getValue();
+    ftBuilder.userData(MongoDataStore.KEY_mapping,field);
+    ftBuilder.add(field,binding);
+    LOG.log(Level.INFO,"building type \"{0}\": mapping field \"{1}\" with binding {2} from collection {3}",new Object[]{name,field,binding.getName(),collection.getFullName()});
+  }
+  for (  String field : indexedFields) {
+    ftBuilder.userData(MongoDataStore.KEY_mapping,field);
+    ftBuilder.add(field,String.class);
+    LOG.log(Level.INFO,"building type \"{0}\": mapping indexed field \"{1}\" with default binding, {2}, from collection {3}",new Object[]{name,field,String.class.getName(),collection.getFullName()});
+  }
+  SimpleFeatureType featureType=ftBuilder.buildFeatureType();
+  featureType.getUserData().put(MongoDataStore.KEY_collection,collection.getName());
+  this.schema=featureType;
+  return featureType;
+}

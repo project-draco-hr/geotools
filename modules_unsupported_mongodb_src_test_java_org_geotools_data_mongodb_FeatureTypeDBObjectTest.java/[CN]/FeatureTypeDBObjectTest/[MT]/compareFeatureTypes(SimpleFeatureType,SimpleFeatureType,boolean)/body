@@ -1,0 +1,36 @@
+{
+  assertThat(right.getTypeName(),is(equalTo(left.getTypeName())));
+  Map<?,?> resultUserData=right.getUserData();
+  Map<?,?> originalUserData=left.getUserData();
+  assertThat(resultUserData.size(),is(equalTo(originalUserData.size())));
+  for (  Map.Entry entry : resultUserData.entrySet()) {
+    assertThat(entry.getValue(),(Matcher)is(equalTo(originalUserData.get(entry.getKey()))));
+  }
+  assertThat(right.getAttributeCount(),is(equalTo(left.getAttributeCount())));
+  String rgdName=right.getGeometryDescriptor().getLocalName();
+  assertThat(rgdName,is(equalTo(left.getGeometryDescriptor().getLocalName())));
+  assertTrue("CRS are equal",CRS.equalsIgnoreMetadata(right.getCoordinateReferenceSystem(),left.getCoordinateReferenceSystem()));
+  if (strictGeometryClass) {
+    assertThat(right.getGeometryDescriptor().getType().getBinding().getSimpleName(),is(equalTo(left.getGeometryDescriptor().getType().getBinding().getSimpleName())));
+  }
+ else {
+    assertThat(Geometry.class.isAssignableFrom(right.getGeometryDescriptor().getType().getBinding()),is(equalTo(true)));
+    assertThat(Geometry.class.isAssignableFrom(left.getGeometryDescriptor().getType().getBinding()),is(equalTo(true)));
+  }
+  for (  AttributeDescriptor rad : right.getAttributeDescriptors()) {
+    String radName=rad.getLocalName();
+    AttributeDescriptor oad=left.getDescriptor(radName);
+    assertThat(rad.getMinOccurs(),is(equalTo(oad.getMinOccurs())));
+    assertThat(rad.getMaxOccurs(),is(equalTo(oad.getMaxOccurs())));
+    assertThat(rad.getDefaultValue(),is(equalTo(oad.getDefaultValue())));
+    if (!radName.equals(rgdName)) {
+      assertThat(rad.getType().getBinding().getSimpleName(),is(equalTo(oad.getType().getBinding().getSimpleName())));
+    }
+    Map<?,?> radUserData=rad.getUserData();
+    Map<?,?> oadUserData=oad.getUserData();
+    assertThat(radUserData.size(),is(equalTo(oadUserData.size())));
+    for (    Map.Entry entry : radUserData.entrySet()) {
+      assertThat(entry.getValue(),(Matcher)is(equalTo(oadUserData.get(entry.getKey()))));
+    }
+  }
+}

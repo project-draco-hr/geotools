@@ -1,0 +1,27 @@
+{
+  if (name == null) {
+    return null;
+  }
+  File schemaFile=schemaFile(name);
+  if (!schemaFile.canRead()) {
+    return null;
+  }
+  BufferedReader reader=new BufferedReader(new FileReader(schemaFile));
+  try {
+    String lineSeparator=System.getProperty("line.separator");
+    StringBuilder jsonBuilder=new StringBuilder();
+    String line;
+    while ((line=reader.readLine()) != null) {
+      jsonBuilder.append(line);
+      jsonBuilder.append(lineSeparator);
+    }
+    Object o=JSON.parse(jsonBuilder.toString());
+    if (o instanceof DBObject) {
+      return FeatureTypeDBObject.convert((DBObject)o,name);
+    }
+  }
+  finally {
+    reader.close();
+  }
+  return null;
+}

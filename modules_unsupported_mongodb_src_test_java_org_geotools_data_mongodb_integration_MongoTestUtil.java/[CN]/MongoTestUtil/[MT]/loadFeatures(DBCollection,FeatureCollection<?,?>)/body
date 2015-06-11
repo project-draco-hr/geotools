@@ -1,0 +1,24 @@
+{
+  MongoGeometryBuilder gBuilder=new MongoGeometryBuilder();
+  FeatureIterator<?> iterator=collection.features();
+  while (iterator.hasNext()) {
+    Feature f=iterator.next();
+    Set<Property> pSet=new LinkedHashSet<Property>(f.getProperties());
+    BasicDBObjectBuilder bdoBuilder=BasicDBObjectBuilder.start();
+    GeometryAttribute gAttr=f.getDefaultGeometryProperty();
+    bdoBuilder.add("type","feature");
+    bdoBuilder.add("geometry",gBuilder.toObject((Geometry)gAttr.getValue()));
+    boolean removed=pSet.remove(gAttr);
+    bdoBuilder.push("properties");
+    for (    Property p : pSet) {
+      if (p instanceof GeometryAttribute) {
+      }
+ else {
+        bdoBuilder.add(p.getName().getLocalPart(),p.getValue());
+      }
+    }
+    bdoBuilder.pop();
+    coll.insert(bdoBuilder.get());
+    coll.ensureIndex(new BasicDBObject("geometry","2dsphere"));
+  }
+}

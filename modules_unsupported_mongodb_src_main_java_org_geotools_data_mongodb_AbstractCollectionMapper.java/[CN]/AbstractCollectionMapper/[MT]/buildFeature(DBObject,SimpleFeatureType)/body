@@ -1,0 +1,17 @@
+{
+  String gdLocalName=featureType.getGeometryDescriptor().getLocalName();
+  List<AttributeDescriptor> adList=featureType.getAttributeDescriptors();
+  List<Object> values=new ArrayList<Object>(adList.size());
+  for (  AttributeDescriptor descriptor : adList) {
+    String adLocalName=descriptor.getLocalName();
+    if (gdLocalName.equals(adLocalName)) {
+      values.add(getGeometry(rootDBO));
+    }
+ else {
+      String path=getPropertyPath(adLocalName);
+      Object o=path == null ? null : MongoUtil.getDBOValue(rootDBO,path);
+      values.add(o == null ? null : Converters.convert(o,descriptor.getType().getBinding()));
+    }
+  }
+  return new MongoFeature(values.toArray(),featureType,rootDBO.get("_id").toString());
+}
