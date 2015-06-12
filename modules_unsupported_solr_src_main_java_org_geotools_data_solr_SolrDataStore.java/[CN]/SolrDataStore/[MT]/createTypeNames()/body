@@ -1,15 +1,20 @@
 {
   try {
-    if (typeNames == null || typeNames.isEmpty()) {
-      List<Name> names=new ArrayList<>();
+    if (nativeTypeNames == null || nativeTypeNames.isEmpty()) {
+      List<Name> temp=new ArrayList<>();
       for (      String name : layerMapper.createTypeNames(solrServer)) {
-        names.add(new NameImpl(namespaceURI,name));
+        temp.add(new NameImpl(namespaceURI,name));
       }
-      typeNames=names;
+      nativeTypeNames=temp;
     }
   }
  catch (  Exception ex) {
     LOGGER.log(Level.SEVERE,ex.getMessage(),ex);
   }
-  return typeNames;
+  Set<Name> names=new TreeSet<>(nativeTypeNames);
+  for (  SolrLayerConfiguration conf : solrConfigurations.values()) {
+    String name=conf.getLayerName();
+    names.add(new NameImpl(namespaceURI,name));
+  }
+  return new ArrayList<>(names);
 }
