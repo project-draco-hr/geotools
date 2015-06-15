@@ -9,20 +9,23 @@
   if (destinationToSourceTransform != null && destinationToSourceTransform.isIdentity()) {
     destinationToSourceTransform=null;
   }
- else   if (destinationToSourceTransform instanceof AffineTransform) {
+ else {
     needsReprojection=true;
-    AffineTransform mutableTransform=(AffineTransform)requestedGridToWorld.clone();
-    mutableTransform.preConcatenate((AffineTransform)destinationToSourceTransform);
-    try {
-      final MathTransform tempTransform=PixelTranslation.translate(ProjectiveTransform.create(mutableTransform),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER);
-      requestedBBox=new ReferencedEnvelope(CRS.transform(tempTransform,new GeneralEnvelope(requestedRasterArea)));
+    if (destinationToSourceTransform instanceof AffineTransform) {
+      AffineTransform mutableTransform=(AffineTransform)requestedGridToWorld.clone();
+      mutableTransform.preConcatenate((AffineTransform)destinationToSourceTransform);
+      try {
+        final MathTransform tempTransform=PixelTranslation.translate(ProjectiveTransform.create(mutableTransform),PixelInCell.CELL_CENTER,PixelInCell.CELL_CORNER);
+        requestedBBox=new ReferencedEnvelope(CRS.transform(tempTransform,new GeneralEnvelope(requestedRasterArea)));
+      }
+ catch (      MismatchedDimensionException e) {
+        throw new DataSourceException("Unable to inspect request CRS",e);
+      }
+catch (      TransformException e) {
+        throw new DataSourceException("Unable to inspect request CRS",e);
+      }
+      destinationToSourceTransform=null;
+      needsReprojection=false;
     }
- catch (    MismatchedDimensionException e) {
-      throw new DataSourceException("Unable to inspect request CRS",e);
-    }
-catch (    TransformException e) {
-      throw new DataSourceException("Unable to inspect request CRS",e);
-    }
-    destinationToSourceTransform=null;
   }
 }
