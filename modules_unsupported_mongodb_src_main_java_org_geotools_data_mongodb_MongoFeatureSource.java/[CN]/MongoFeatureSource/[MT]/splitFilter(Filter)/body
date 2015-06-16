@@ -1,5 +1,28 @@
 {
-  PostPreProcessFilterSplittingVisitor splitter=new PostPreProcessFilterSplittingVisitor(getDataStore().getFilterCapabilities(),null,null);
+  PostPreProcessFilterSplittingVisitor splitter=new PostPreProcessFilterSplittingVisitor(getDataStore().getFilterCapabilities(),null,null){
+    public Object visit(    PropertyIsLike filter,    Object notUsed){
+      if (original == null)       original=filter;
+      if (!fcs.supports(PropertyIsLike.class)) {
+        postStack.push(filter);
+        return null;
+      }
+      if (!(filter.getExpression() instanceof PropertyName)) {
+        postStack.push(filter);
+        return null;
+      }
+      int i=postStack.size();
+      filter.getExpression().accept(this,null);
+      if (i < postStack.size()) {
+        postStack.pop();
+        postStack.push(filter);
+        return null;
+      }
+      preStack.pop();
+      preStack.push(filter);
+      return null;
+    }
+  }
+;
   f.accept(splitter,null);
   return new Filter[]{splitter.getFilterPre(),splitter.getFilterPost()};
 }
