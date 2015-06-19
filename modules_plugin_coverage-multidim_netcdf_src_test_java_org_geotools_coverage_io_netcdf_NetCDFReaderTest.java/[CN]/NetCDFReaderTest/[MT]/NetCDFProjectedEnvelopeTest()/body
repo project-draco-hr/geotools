@@ -1,0 +1,46 @@
+{
+  File mosaic=new File(TestData.file(this,"."),"NetCDFProjection");
+  if (mosaic.exists()) {
+    FileUtils.deleteDirectory(mosaic);
+  }
+  assertTrue(mosaic.mkdirs());
+  File file=TestData.file(this,"wind.nc");
+  FileUtils.copyFileToDirectory(file,mosaic);
+  file=new File(mosaic,"wind.nc");
+  final NetCDFReader reader=new NetCDFReader(file,null);
+  try {
+    String[] names=reader.getGridCoverageNames();
+    String coverageName=names[0];
+    final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+    final GeneralEnvelope originalEnvelope=reader.getOriginalEnvelope(coverageName);
+    final CoordinateReferenceSystem epsg3857=CRS.decode("EPSG:3857",true);
+    final GeneralEnvelope projectedEnvelope=CRS.transform(originalEnvelope,epsg3857);
+    gg.setValue(new GridGeometry2D(new GridEnvelope2D(new Rectangle(0,0,30,30)),projectedEnvelope));
+    GeneralParameterValue[] values=new GeneralParameterValue[]{gg};
+    GridCoverage2D coverage=reader.read(coverageName,values);
+    CoordinateReferenceSystem coverageCRS=coverage.getCoordinateReferenceSystem();
+    final int code=CRS.lookupEpsgCode(coverageCRS,false);
+    assertEquals(4326,code);
+    Extent extent=coverageCRS.getDomainOfValidity();
+    Collection<? extends GeographicExtent> geoElements=extent.getGeographicElements();
+    GeographicExtent geographicExtent=geoElements.iterator().next();
+    GeographicBoundingBoxImpl impl=(GeographicBoundingBoxImpl)geographicExtent;
+    Envelope coverageEnvelope=coverage.getEnvelope();
+    assertTrue(impl.getEastBoundLongitude() >= coverageEnvelope.getMaximum(0));
+    assertTrue(impl.getWestBoundLongitude() <= coverageEnvelope.getMinimum(0));
+    assertTrue(impl.getNorthBoundLatitude() >= coverageEnvelope.getMaximum(1));
+    assertTrue(impl.getSouthBoundLatitude() <= coverageEnvelope.getMinimum(1));
+  }
+ catch (  Throwable t) {
+    throw new RuntimeException(t);
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}
