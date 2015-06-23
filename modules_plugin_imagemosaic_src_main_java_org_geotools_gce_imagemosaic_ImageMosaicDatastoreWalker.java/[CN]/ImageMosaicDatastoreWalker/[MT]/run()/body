@@ -4,7 +4,12 @@
     configHandler.indexingPreamble();
     startTransaction();
     final GranuleCatalog catalog=configHandler.getCatalog();
+    String locationAttrName=configHandler.getRunConfiguration().getParameter(Prop.LOCATION_ATTRIBUTE);
+    String requestedTypeName=configHandler.getRunConfiguration().getParameter(Prop.TYPENAME);
     for (    String typeName : catalog.getTypeNames()) {
+      if (requestedTypeName != null && !requestedTypeName.equals(typeName)) {
+        continue;
+      }
       final Query query=new Query(typeName);
       int numFiles=catalog.getGranulesCount(query);
       if (numFiles <= 0) {
@@ -13,10 +18,18 @@
       }
       setNumFiles(numFiles);
       final SimpleFeatureCollection coll=catalog.getGranules(query);
+      SimpleFeatureType schema=coll.getSchema();
+      if (schema.getDescriptor(locationAttrName) == null) {
+        LOGGER.fine("Skipping feature type " + typeName + " as the location attribute "+ locationAttrName+ " is not part of the schema");
+        continue;
+      }
+ else       if (schema.getGeometryDescriptor() == null) {
+        LOGGER.fine("Skipping feature type " + typeName + " as it does not have a footprint column");
+        continue;
+      }
       it=coll.features();
       while (it.hasNext()) {
         final SimpleFeature feature=it.next();
-        String locationAttrName=configHandler.getRunConfiguration().getParameter(Prop.LOCATION_ATTRIBUTE);
         Object locationAttrObj=feature.getAttribute(locationAttrName);
         File file=null;
         if (locationAttrObj instanceof String) {

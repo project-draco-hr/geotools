@@ -3,7 +3,12 @@
   GranuleCatalog catalog;
   final File datastoreProperties=new File(parent,"datastore.properties");
   if (Utils.checkFileReadable(datastoreProperties)) {
-    catalog=createGranuleCatalogFromDatastore(parent,datastoreProperties,create,Boolean.parseBoolean(runConfiguration.getParameter(Utils.Prop.WRAP_STORE)),runConfiguration.getHints());
+    Properties properties=createGranuleCatalogProperties(datastoreProperties);
+    String indexerTypeName=runConfiguration.getParameter(Utils.Prop.TYPENAME);
+    if (indexerTypeName != null && properties.getProperty(Utils.Prop.TYPENAME) == null) {
+      properties.put(Utils.Prop.TYPENAME,indexerTypeName);
+    }
+    catalog=createGranuleCatalogFromDatastore(parent,properties,create,Boolean.parseBoolean(runConfiguration.getParameter(Utils.Prop.WRAP_STORE)),runConfiguration.getHints());
   }
  else {
     final URL file=new File(parent,runConfiguration.getParameter(Utils.Prop.INDEX_NAME) + ".shp").toURI().toURL();

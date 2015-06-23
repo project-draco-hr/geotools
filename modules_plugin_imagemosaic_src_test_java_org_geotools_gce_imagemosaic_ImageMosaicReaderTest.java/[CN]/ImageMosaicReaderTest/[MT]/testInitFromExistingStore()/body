@@ -1,0 +1,41 @@
+{
+  File testMosaic=new File(TestData.file(this,"."),"existingStore");
+  if (testMosaic.exists()) {
+    FileUtils.deleteDirectory(testMosaic);
+  }
+  File mosaicSource=TestData.file(this,"rgb");
+  FileUtils.copyDirectory(mosaicSource,testMosaic);
+  cleanConfigurationFiles(testMosaic,"rgb");
+  URL testMosaicUrl=DataUtilities.fileToURL(testMosaic);
+  File dataStoreProperties=new File(testMosaic,"datastore.properties");
+  try (FileWriter out=new FileWriter(dataStoreProperties)){
+    out.write("database=imagemosaic\n");
+    out.write(H2_SAMPLE_PROPERTIES);
+    out.flush();
+  }
+   final AbstractGridFormat format=TestUtils.getFormat(testMosaicUrl);
+  final ImageMosaicReader reader=TestUtils.getReader(testMosaicUrl,format);
+  reader.dispose();
+  cleanConfigurationFiles(testMosaic,"existingStore");
+  Properties h2Connection=new Properties();
+  try (FileReader fr=new FileReader(dataStoreProperties)){
+    h2Connection.load(fr);
+  }
+   h2Connection.put("database",new File(testMosaic,"imagemosaic").getCanonicalPath());
+  JDBCDataStore store=(JDBCDataStore)DataStoreFinder.getDataStore(h2Connection);
+  try (Connection c=store.getConnection(Transaction.AUTO_COMMIT);Statement st=c.createStatement()){
+    st.execute("ALTER TABLE \"existingStore\" RENAME TO \"testMosaic\"");
+    st.execute("UPDATE GEOMETRY_COLUMNS SET F_TABLE_NAME = 'testMosaic'");
+  }
+   store.dispose();
+  Properties indexer=new Properties();
+  indexer.put(Utils.Prop.USE_EXISTING_SCHEMA,"true");
+  indexer.put(Utils.Prop.TYPENAME,"testMosaic");
+  try (FileOutputStream fos=new FileOutputStream(new File(testMosaic,"indexer.properties"))){
+    indexer.store(fos,null);
+  }
+   final ImageMosaicReader reader2=TestUtils.getReader(testMosaicUrl,format);
+  GridCoverage2D coverage=reader2.read(null);
+  coverage.dispose(true);
+  reader2.dispose();
+}
