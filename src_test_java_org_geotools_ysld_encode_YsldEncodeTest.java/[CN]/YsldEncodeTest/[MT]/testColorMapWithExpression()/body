@@ -7,7 +7,7 @@
   e1.setQuantity(filterFactory.literal(0.0d));
   ColorMapEntry e2=styleFactory.createColorMapEntry();
   e2.setColor(filterFactory.literal("#0000EE"));
-  e2.setQuantity(filterFactory.literal(1.0d));
+  e2.setQuantity(filterFactory.function("pow",filterFactory.literal(1.2d),filterFactory.literal(2.0d)));
   symb.getColorMap().addColorMapEntry(e1);
   symb.getColorMap().addColorMapEntry(e2);
   StyledLayerDescriptor sld=sld(symb);
@@ -15,5 +15,5 @@
   Ysld.encode(sld,out);
   YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
   YamlMap symbMap=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("raster");
-  assertThat(symbMap,yHasEntry("color-map",yHasEntry("entries",allOf(yHasItem(0,yTuple(fakeString("#000011"),lexEqualTo(""),numEqualTo(0.0,EPSILON),lexEqualTo(""))),yHasItem(1,yTuple(fakeString("#0000EE"),lexEqualTo(""),numEqualTo(1.0,EPSILON),lexEqualTo("")))))));
+  assertThat(symbMap,yHasEntry("color-map",yHasEntry("entries",allOf(yHasItem(0,yTuple(fakeString("#000011"),lexEqualTo(""),numEqualTo(0.0,EPSILON),lexEqualTo(""))),yHasItem(1,yTuple(fakeString("#0000EE"),lexEqualTo(""),equalTo("${pow(1.2,2.0)}"),lexEqualTo("")))))));
 }
