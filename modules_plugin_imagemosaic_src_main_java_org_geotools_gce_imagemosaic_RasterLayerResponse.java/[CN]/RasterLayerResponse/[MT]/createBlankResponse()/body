@@ -48,7 +48,21 @@
     w.mosaic(new RenderedImage[0],MosaicDescriptor.MOSAIC_TYPE_OVERLAY,null,null,new double[][]{{CoverageUtilities.getMosaicThreshold(il.getSampleModel(null).getDataType())}},new Range[]{RangeFactory.create(0,0)});
     finalImage=w.getRenderedImage();
   }
-  if (footprintBehavior != null) {
+  Color inputTransparentColor=request.getInputTransparentColor();
+  boolean hasAlpha;
+  if (inputTransparentColor != null && (footprintBehavior == null || !footprintBehavior.handleFootprints())) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Support for alpha on blank image");
+    }
+    finalImage=new ImageWorker(finalImage).makeColorTransparent(inputTransparentColor).getRenderedImage();
+    hasAlpha=finalImage.getColorModel().hasAlpha();
+    if (!hasAlpha) {
+      finalImage=new ImageWorker(finalImage).forceComponentColorModel(true).makeColorTransparent(inputTransparentColor).getRenderedImage();
+      hasAlpha=finalImage.getColorModel().hasAlpha();
+    }
+    assert hasAlpha;
+  }
+ else   if (footprintBehavior != null && !footprintBehavior.handleFootprints()) {
     finalImage=footprintBehavior.postProcessBlankResponse(finalImage,renderingHints);
   }
   return new MosaicOutput(finalImage,null);
