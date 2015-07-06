@@ -2,24 +2,24 @@
   if (dataStore.getVirtualTables().get(featureType.getTypeName()) != null)   return null;
   if (metadataBboxEnabled) {
     String tableName=featureType.getTypeName();
-    Statement st=null;
+    PreparedStatement st=null;
     ResultSet rs=null;
+    String sql;
     List<ReferencedEnvelope> result=new ArrayList<ReferencedEnvelope>();
     Savepoint savePoint=null;
     try {
-      st=cx.createStatement();
       if (!cx.getAutoCommit()) {
         savePoint=cx.setSavepoint();
       }
       for (      AttributeDescriptor att : featureType.getAttributeDescriptors()) {
         if (att instanceof GeometryDescriptor) {
           String columnName=att.getName().getLocalPart();
-          StringBuffer sql=new StringBuffer();
           if (canAccessUserViews(cx)) {
-            sql.append("SELECT DIMINFO FROM MDSYS.USER_SDO_GEOM_METADATA WHERE ");
-            sql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
-            sql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
-            rs=st.executeQuery(sql.toString());
+            sql="SELECT DIMINFO FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = ? AND COLUMN_NAME = ?";
+            st=cx.prepareStatement(sql);
+            st.setString(1,tableName.toUpperCase());
+            st.setString(2,columnName.toUpperCase());
+            rs=st.executeQuery();
             if (rs.next()) {
               Envelope env=decodeDiminfoEnvelope(rs,1);
               if (env != null && !env.isNull()) {
@@ -29,13 +29,20 @@
                 continue;
               }
             }
-            rs.close();
+            dataStore.closeSafe(rs);
+            dataStore.closeSafe(st);
           }
-          sql=new StringBuffer("SELECT DIMINFO FROM MDSYS.ALL_SDO_GEOM_METADATA WHERE ");
-          sql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
-          sql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
-          if (schema != null)           sql.append(" AND OWNER='" + schema + "'");
-          rs=st.executeQuery(sql.toString());
+          sql="SELECT DIMINFO FROM MDSYS.ALL_SDO_GEOM_METADATA WHERE TABLE_NAME = ? AND COLUMN_NAME = ?";
+          if (schema != null) {
+            sql+=" AND OWNER = ?";
+          }
+          st=cx.prepareStatement(sql);
+          st.setString(1,tableName.toUpperCase());
+          st.setString(2,columnName.toUpperCase());
+          if (schema != null) {
+            st.setString(3,schema);
+          }
+          rs=st.executeQuery();
           if (rs.next()) {
             Envelope env=decodeDiminfoEnvelope(rs,1);
             if (env != null && !env.isNull()) {
@@ -43,7 +50,8 @@
               result.add(new ReferencedEnvelope(env,crs));
             }
           }
-          rs.close();
+          dataStore.closeSafe(rs);
+          dataStore.closeSafe(st);
         }
       }
     }
