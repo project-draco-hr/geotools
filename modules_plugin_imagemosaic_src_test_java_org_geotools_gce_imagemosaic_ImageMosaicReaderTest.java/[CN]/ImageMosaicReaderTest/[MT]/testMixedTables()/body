@@ -1,0 +1,52 @@
+{
+  String mosaicName="water_temp6";
+  final File workDir=new File(TestData.file(this,"."),mosaicName);
+  if (!workDir.mkdir()) {
+    FileUtils.deleteDirectory(workDir);
+    assertTrue("Unable to create workdir:" + workDir,workDir.mkdir());
+  }
+  FileUtils.copyFile(TestData.file(this,"watertemp.zip"),new File(workDir,"watertemp.zip"));
+  TestData.unzipFile(this,mosaicName + "/watertemp.zip");
+  final URL timeElevURL=TestData.url(this,mosaicName);
+  File datastoreProperties=new File(workDir,"datastore.properties");
+  try (FileWriter out=new FileWriter(datastoreProperties)){
+    out.write("database=imagemosaic\n");
+    out.write(H2_SAMPLE_PROPERTIES);
+    out.flush();
+  }
+   AbstractGridFormat format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  ImageMosaicReader reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  reader.dispose();
+  format=null;
+  File indexerProperties=new File(workDir,"indexer.properties");
+  Properties indexer=new Properties();
+  indexer.put("UseExistingSchema","true");
+  indexer.put("TypeName","customIndex");
+  try (OutputStream os=new FileOutputStream(indexerProperties)){
+    indexer.store(os,null);
+  }
+   Properties props=new Properties();
+  try (InputStream is=new FileInputStream(datastoreProperties)){
+    props.load(is);
+  }
+   props.put("database",new File(workDir,"imagemosaic").getPath());
+  JDBCDataStore store=(JDBCDataStore)DataStoreFinder.getDataStore(props);
+  store.createSchema(DataUtilities.createType("aaa_noFootprint","a:String,b:Integer"));
+  store.createSchema(DataUtilities.createType("bbb_noLocation","geom:Polygon,b:String"));
+  try (Connection conn=store.getConnection(Transaction.AUTO_COMMIT);Statement st=conn.createStatement()){
+    st.execute("alter table \"" + mosaicName + "\" rename to \"customIndex\"");
+    st.execute("UPDATE GEOMETRY_COLUMNS SET F_TABLE_NAME = 'customIndex'");
+  }
+   store.dispose();
+  for (  File file : FileUtils.listFiles(workDir,new RegexFileFilter(mosaicName + ".*"),null)) {
+    assertTrue(file.delete());
+  }
+  format=TestUtils.getFormat(timeElevURL);
+  assertNotNull(format);
+  reader=TestUtils.getReader(timeElevURL,format);
+  assertNotNull(reader);
+  reader.dispose();
+  format=null;
+}

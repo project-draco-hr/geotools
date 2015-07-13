@@ -55,15 +55,41 @@
       String[] typeNames=tileIndexStore.getTypeNames();
       if (typeNames != null) {
         for (        String tn : typeNames) {
-          this.typeNames.add(tn);
+          if (isValidMosaicSchema(tn)) {
+            this.typeNames.add(tn);
+          }
         }
       }
     }
  else     if (typeName != null) {
+      checkMosaicSchema(typeName);
       addTypeName(typeName,false);
+    }
+ else {
+      String[] typeNames=tileIndexStore.getTypeNames();
+      if (typeNames != null) {
+        for (        String tn : typeNames) {
+          if (isValidMosaicSchema(tn)) {
+            addTypeName(tn,false);
+            break;
+          }
+        }
+      }
+    }
+    if (this.typeNames.size() == 0) {
+      throw new IllegalArgumentException("Could not find a suitable mosaic type " + "(with a footprint and a location attribute named " + getLocationAttributeName() + " in the store");
     }
     if (this.typeNames.size() > 0) {
       extractBasicProperties(typeNames.iterator().next());
+    }
+ else     if (typeName != null && typeName.contains(",")) {
+      String[] typeNames=typeName.split(",");
+      for (      String tn : typeNames) {
+        extractBasicProperties(tn);
+      }
+    }
+ else     if (typeName != null) {
+      extractBasicProperties(typeName);
     }
  else {
       extractBasicProperties(typeName);
