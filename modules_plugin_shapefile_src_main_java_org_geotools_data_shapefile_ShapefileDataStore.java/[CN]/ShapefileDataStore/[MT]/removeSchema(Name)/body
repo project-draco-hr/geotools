@@ -1,0 +1,23 @@
+{
+  ContentEntry entry=ensureEntry(typeName);
+  org.geotools.data.shapefile.files.FileWriter writer=new org.geotools.data.shapefile.files.FileWriter(){
+    @Override public String id(){
+      return "TheShapefileRemover";
+    }
+  }
+;
+  for (  ShpFileType type : ShpFileType.values()) {
+    File file=shpFiles.acquireWriteFile(type,writer);
+    try {
+      if (file.exists()) {
+        if (!file.delete()) {
+          throw new IOException("Failed to delete " + file.getAbsolutePath());
+        }
+      }
+    }
+  finally {
+      shpFiles.unlockWrite(file,writer);
+    }
+  }
+  removeEntry(entry.getName());
+}
