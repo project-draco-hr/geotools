@@ -1,0 +1,26 @@
+{
+  List old=expression.getParameters();
+  FunctionName functionName=expression.getFunctionName();
+  List<Parameter<?>> arguments=null;
+  if (functionName != null) {
+    arguments=functionName.getArguments();
+  }
+  Expression[] args=new Expression[old.size()];
+  for (int i=0; i < old.size(); i++) {
+    Expression exp=(Expression)old.get(i);
+    if (arguments != null && i < arguments.size()) {
+      args[i]=optimize(exp,extraData,arguments.get(i).getType());
+    }
+ else {
+      args[i]=visit(exp,extraData);
+    }
+  }
+  Function duplicate;
+  if (expression instanceof InternalFunction) {
+    duplicate=((InternalFunction)expression).duplicate(args);
+  }
+ else {
+    duplicate=getFactory(extraData).function(expression.getName(),args);
+  }
+  return duplicate;
+}
