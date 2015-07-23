@@ -1,0 +1,14 @@
+{
+  FilterFactory ff=dataStore.getFilterFactory();
+  Query q=new Query(tname("ft1"));
+  Join join=new Join(tname("ftjoin"),ff.equal(ff.property(aname("stringProperty")),ff.property(aname("name")),true));
+  join.setAlias("b");
+  q.getJoins().add(join);
+  SimpleFeatureCollection features=dataStore.getFeatureSource(tname("ft1")).getFeatures(q);
+  SimpleFeatureType schema=features.getSchema();
+  AttributeDescriptor ad=schema.getDescriptor("b");
+  assertNotNull(ad);
+  assertEquals(SimpleFeature.class,ad.getType().getBinding());
+  SimpleFeatureType joinedSchema=(SimpleFeatureType)ad.getUserData().get(ContentDataStore.JOINED_FEATURE_TYPE);
+  assertEquals(dataStore.getSchema(tname("ftjoin")),joinedSchema);
+}
