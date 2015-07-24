@@ -1,0 +1,46 @@
+{
+  File source=DataUtilities.urlToFile(rgbURL);
+  File testDataDir=TestData.file(this,".");
+  File directory1=new File(testDataDir,"rgbHarvest1");
+  File directory2=new File(testDataDir,"rgbHarvest2");
+  if (directory1.exists()) {
+    FileUtils.deleteDirectory(directory1);
+  }
+  FileUtils.copyDirectory(source,directory1);
+  for (  File file : FileUtils.listFiles(directory1,new RegexFileFilter("rgb.*"),null)) {
+    assertTrue(file.delete());
+  }
+  directory2.mkdirs();
+  for (  File file : FileUtils.listFiles(directory1,new RegexFileFilter("global_mosaic_[^0].*"),null)) {
+    assertTrue(file.renameTo(new File(directory2,file.getName())));
+  }
+  URL harvestSingleURL=DataUtilities.fileToURL(directory1);
+  final AbstractGridFormat format=TestUtils.getFormat(harvestSingleURL);
+  ImageMosaicReader reader=TestUtils.getReader(harvestSingleURL,format);
+  GeneralEnvelope singleGranuleEnvelope=reader.getOriginalEnvelope();
+  for (  File file : directory2.listFiles()) {
+    assertTrue(file.renameTo(new File(directory1,file.getName())));
+  }
+  reader.harvest(null,directory1,null);
+  GeneralEnvelope fullEnvelope=reader.getOriginalEnvelope();
+  assertTrue(fullEnvelope.contains(singleGranuleEnvelope,true));
+  assertTrue(fullEnvelope.getSpan(0) > singleGranuleEnvelope.getSpan(0));
+  assertTrue(fullEnvelope.getSpan(1) > singleGranuleEnvelope.getSpan(1));
+  MathTransform mt=reader.getOriginalGridToWorld(PixelInCell.CELL_CORNER);
+  Envelope env=new Envelope2D(DefaultGeographicCRS.WGS84,10,40,15,45);
+  GridEnvelope2D rasterEnvelope=new GridEnvelope2D(new Envelope2D(CRS.transform(mt.inverse(),env)),PixelInCell.CELL_CORNER);
+  GridGeometry2D gg=new GridGeometry2D(rasterEnvelope,env);
+  final ParameterValue<GridGeometry2D> ggParameter=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  ggParameter.setValue(gg);
+  GridCoverage2D coverage=reader.read(new GeneralParameterValue[]{ggParameter});
+  assertNotNull(coverage);
+  coverage.dispose(true);
+  GranuleStore store=(GranuleStore)reader.getGranules(null,false);
+  store.removeGranules(ECQL.toFilter("location = 'global_mosaic_19.png' " + "OR location = 'global_mosaic_14.png' " + "OR location = 'global_mosaic_9.png' "+ "OR location = 'global_mosaic_4.png'"));
+  GeneralEnvelope reducedEnvelope=reader.getOriginalEnvelope();
+  assertTrue(fullEnvelope.contains(reducedEnvelope,true));
+  assertTrue(reducedEnvelope.contains(singleGranuleEnvelope,true));
+  assertTrue(fullEnvelope.getSpan(0) > reducedEnvelope.getSpan(0));
+  assertEquals(fullEnvelope.getSpan(1),reducedEnvelope.getSpan(1),0d);
+  reader.dispose();
+}
