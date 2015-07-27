@@ -1,0 +1,14 @@
+{
+  ((PostGISDialect)((JDBCDataStore)dataStore).getSQLDialect()).setEncodeBBOXFilterAsEnvelope(true);
+  GeometryFactory gf=dataStore.getGeometryFactory();
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  Intersects filter=ff.intersects(ff.property("geometry"),ff.literal(gf.createPolygon(gf.createLinearRing(new Coordinate[]{new Coordinate(0,0),new Coordinate(0,2),new Coordinate(2,2),new Coordinate(2,0),new Coordinate(0,0)}))));
+  DefaultQuery query=new DefaultQuery();
+  query.setFilter(filter);
+  ReferencedEnvelope bounds=dataStore.getFeatureSource(tname("ft1")).getBounds(query);
+  assertEquals(0l,Math.round(bounds.getMinX()));
+  assertEquals(0l,Math.round(bounds.getMinY()));
+  assertEquals(2l,Math.round(bounds.getMaxX()));
+  assertEquals(2l,Math.round(bounds.getMaxY()));
+  assertTrue(areCRSEqual(CRS.decode("EPSG:4326"),bounds.getCoordinateReferenceSystem()));
+}
