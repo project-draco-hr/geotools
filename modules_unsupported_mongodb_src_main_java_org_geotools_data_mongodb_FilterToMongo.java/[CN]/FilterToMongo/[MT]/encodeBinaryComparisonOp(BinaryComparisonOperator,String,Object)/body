@@ -1,12 +1,15 @@
 {
   BasicDBObject output=asDBObject(extraData);
-  Object expr1=filter.getExpression1().accept(this,null);
-  Object expr2=filter.getExpression2().accept(this,null);
-  if (expr2 instanceof String && !(expr1 instanceof String)) {
-    Object tmp=expr1;
-    expr1=expr2;
-    expr2=tmp;
+  Expression left=filter.getExpression1();
+  Expression right=filter.getExpression2();
+  Class<?> leftValueType=getValueType(right), rightValueType=getValueType(left);
+  Object leftValue=filter.getExpression1().accept(this,leftValueType);
+  Object rightValue=filter.getExpression2().accept(this,rightValueType);
+  if (rightValue instanceof String && !(leftValue instanceof String)) {
+    Object tmp=leftValue;
+    leftValue=rightValue;
+    rightValue=tmp;
   }
-  output.put((String)expr1,op == null ? expr2 : new BasicDBObject(op,expr2));
+  output.put((String)leftValue,op == null ? rightValue : new BasicDBObject(op,rightValue));
   return output;
 }

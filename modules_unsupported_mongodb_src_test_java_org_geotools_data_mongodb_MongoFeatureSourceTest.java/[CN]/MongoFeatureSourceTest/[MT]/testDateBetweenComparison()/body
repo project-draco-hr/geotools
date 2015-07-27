@@ -1,0 +1,20 @@
+{
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2();
+  PropertyIsBetween lt=ff.between(ff.property("properties.dateProperty"),ff.literal("2014-12-31T23:59:00.000Z"),ff.literal("2015-01-01T00:01:00.000Z"));
+  SimpleFeatureSource source=dataStore.getFeatureSource("ft1");
+  Query q=new Query("ft1",lt);
+  assertEquals(1,source.getCount(q));
+  assertEquals(new ReferencedEnvelope(0d,0d,0d,0d,DefaultGeographicCRS.WGS84),source.getBounds(q));
+  SimpleFeatureCollection features=source.getFeatures(q);
+  SimpleFeatureIterator it=features.features();
+  try {
+    assertTrue(it.hasNext());
+    assertFeature(it.next(),0);
+  }
+  finally {
+    it.close();
+  }
+  lt=ff.between(ff.property("properties.dateProperty"),ff.literal("2014-12-31T23:59:00.000Z"),ff.literal("2014-12-31T23:59:59.000Z"));
+  q=new Query("ft1",lt);
+  assertEquals(0,source.getCount(q));
+}

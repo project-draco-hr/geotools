@@ -1,0 +1,28 @@
+{
+  if (literal instanceof Envelope) {
+    return geometryBuilder.toObject((Envelope)literal);
+  }
+ else   if (literal instanceof Geometry) {
+    return geometryBuilder.toObject((Geometry)literal);
+  }
+ else   if (literal instanceof Date) {
+    if (targetType != null && Date.class.isAssignableFrom(targetType)) {
+      return literal;
+    }
+    return ISO8601_SDF.format((Date)literal);
+  }
+ else   if (literal instanceof String) {
+    if (targetType != null && Date.class.isAssignableFrom(targetType)) {
+      try {
+        return ISO8601_SDF.parse((String)literal);
+      }
+ catch (      ParseException e) {
+        LOGGER.log(Level.WARNING,"Could not parse String literal as ISO-8601 date",e);
+      }
+    }
+    return literal;
+  }
+ else {
+    return literal.toString();
+  }
+}
