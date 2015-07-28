@@ -1,0 +1,29 @@
+{
+  DataStoreConfiguration datastoreConfiguration=null;
+  if (datastoreIndexFile != null) {
+    URL datastoreURL=DataUtilities.fileToURL(datastoreIndexFile);
+    Properties properties=Utils.loadPropertiesFromURL(datastoreURL);
+    if (properties != null) {
+      final String SPIClass=properties.getProperty("SPI");
+      try {
+        final DataStoreFactorySpi spi=(DataStoreFactorySpi)Class.forName(SPIClass).newInstance();
+        Map<String,Serializable> datastoreParams=Utils.filterDataStoreParams(properties,spi);
+        datastoreConfiguration=new DataStoreConfiguration(spi,datastoreParams);
+        datastoreConfiguration.setDatastoreSpi(spi);
+        datastoreConfiguration.setParams(datastoreParams);
+        datastoreConfiguration.setShared(true);
+        checkStoreWrapping(datastoreConfiguration);
+      }
+ catch (      Exception e) {
+        final IOException ioe=new IOException();
+        throw (IOException)ioe.initCause(e);
+      }
+    }
+  }
+ else {
+    File parentFile=slicesIndexFile.getParentFile();
+    String database=FilenameUtils.removeExtension(FilenameUtils.getName(slicesIndexFile.getCanonicalPath())).replace(".","");
+    datastoreConfiguration=new DataStoreConfiguration(DataStoreConfiguration.getDefaultParams(database,parentFile));
+  }
+  return datastoreConfiguration;
+}

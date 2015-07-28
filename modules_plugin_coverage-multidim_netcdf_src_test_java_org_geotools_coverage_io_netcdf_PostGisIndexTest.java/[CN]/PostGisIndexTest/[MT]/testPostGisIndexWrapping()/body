@@ -1,0 +1,51 @@
+{
+  final String auxName="O3NO2wrapped.xml";
+  File file=TestData.file(this,GOME_FILE);
+  File auxFile=TestData.file(this,auxName);
+  final File dir=new File(TestData.file(this,"."),GOME_DIR);
+  if (!dir.mkdir()) {
+    FileUtils.deleteDirectory(dir);
+    assertTrue("Unable to create workdir:" + dir,dir.mkdir());
+  }
+  File destFile=new File(dir,GOME_FILE);
+  File destAuxFile=new File(dir,auxName);
+  FileUtils.copyFile(file,destFile);
+  FileUtils.copyFile(auxFile,destAuxFile);
+  createDatastoreProperties(dir,null);
+  final NetCDFImageReaderSpi unidataImageReaderSpi=new NetCDFImageReaderSpi();
+  assertTrue(unidataImageReaderSpi.canDecodeInput(file));
+  NetCDFImageReader reader=null;
+  try {
+    reader=(NetCDFImageReader)unidataImageReaderSpi.createReaderInstance();
+    reader.setAuxiliaryFilesPath(destAuxFile.getCanonicalPath());
+    reader.setInput(destFile);
+    int numImages=reader.getNumImages(true);
+    assertEquals(8,numImages);
+    for (int i=0; i < numImages; i++) {
+      Slice2DIndex sliceIndex=reader.getSlice2DIndex(i);
+      assertNotNull(sliceIndex);
+      spitOutSliceInformation(i,sliceIndex);
+    }
+    final List<Name> names=reader.getCoveragesNames();
+    assertNotNull(names);
+    assertTrue(!names.isEmpty());
+    assertTrue(2 == names.size());
+    assertTrue(names.contains(new NameImpl("O3")));
+    final CoverageSlicesCatalog cs=reader.getCatalog();
+    assertNotNull(cs);
+    final String[] typeNames=cs.getTypeNames();
+    for (    String typeName : typeNames) {
+      final List<CoverageSlice> granules=cs.getGranules(new Query(typeName));
+      checkGranules(granules);
+    }
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

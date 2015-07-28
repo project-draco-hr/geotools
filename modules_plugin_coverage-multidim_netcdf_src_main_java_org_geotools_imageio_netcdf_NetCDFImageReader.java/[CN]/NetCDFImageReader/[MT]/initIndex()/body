@@ -2,8 +2,9 @@
   DefaultTransaction transaction=new DefaultTransaction("indexTransaction" + System.nanoTime());
   int numImages=0;
   try {
-    final File sliceIndexFile=ancillaryFileManager.getSlicesIndexFile();
-    initCatalog(sliceIndexFile.getParentFile(),FilenameUtils.removeExtension(FilenameUtils.getName(sliceIndexFile.getCanonicalPath())).replace(".",""));
+    DataStoreConfiguration datastoreConfig=ancillaryFileManager.getDatastoreConfiguration();
+    boolean isShared=datastoreConfig.isShared();
+    initCatalog(datastoreConfig);
     final List<Variable> variables=dataset.getVariables();
     if (variables != null) {
       for (      final Variable var_ : variables) {
@@ -18,7 +19,7 @@
           }
           final Name coverageName=getCoverageName(varName);
           final CoordinateSystem cs=NetCDFCRSUtilities.getCoordinateSystem(variable);
-          final SimpleFeatureType indexSchema=getIndexSchema(coverageName,cs);
+          final SimpleFeatureType indexSchema=getIndexSchema(coverageName,cs,isShared);
           final VariableAdapter vaAdapter=getCoverageDescriptor(coverageName);
           if (indexSchema == null) {
             throw new IllegalStateException("Unable to created index schema for coverage:" + coverageName);
@@ -32,8 +33,8 @@
           int writtenFeatures=0;
           while (writtenFeatures < numberOfSlices) {
             vaAdapter.getFeatures(startPagingIndex,limit,collection);
-            if (variableImageStartIndex != 0) {
-              updateFeaturesIndex(collection,variableImageStartIndex);
+            if (variableImageStartIndex != 0 || isShared) {
+              updateFeaturesIndex(collection,variableImageStartIndex,isShared);
             }
             final int features=collection.size();
             if (features > 0) {

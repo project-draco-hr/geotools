@@ -1,0 +1,29 @@
+{
+  this.suggestedSpi=suggestedSPI;
+  this.fileURL=DataUtilities.fileToURL(inputFile);
+  streamSpi=getInputStreamSPIFromURL(fileURL);
+  ImageInputStream stream=null;
+  try {
+    stream=streamSpi.createInputStreamInstance(fileURL,ImageIO.getUseCache(),ImageIO.getCacheDirectory());
+    readerSpi=getReaderSpiFromStream(suggestedSPI,stream);
+    isMultidim=readerSpi != null && MULTIDIM_SERVICE_PROVIDERS.contains(readerSpi.getClass().getName());
+  }
+ catch (  Exception e) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,"Unable to create a Reader for File: " + inputFile.getCanonicalPath(),e);
+    }
+    throw new IllegalArgumentException(e);
+  }
+ finally {
+    if (stream != null) {
+      try {
+        stream.close();
+      }
+ catch (      Exception e) {
+        if (LOGGER.isLoggable(Level.SEVERE)) {
+          LOGGER.log(Level.SEVERE,e.getMessage(),e);
+        }
+      }
+    }
+  }
+}

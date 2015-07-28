@@ -16,6 +16,7 @@
   Indexer indexer=null;
   Hints hints=configuration.getHints();
   String ancillaryFile=null;
+  String datastoreFile=null;
   if (Utils.checkFileReadable(indexerFile)) {
     try {
       indexer=Utils.unmarshal(indexerFile);
@@ -36,16 +37,22 @@
   }
   if (indexer != null) {
     configuration.setIndexer(indexer);
-    String param=IndexerUtils.getParameter(Utils.Prop.AUXILIARY_FILE,indexer);
-    if (param != null) {
-      ancillaryFile=param;
+    String auxiliaryFileParam=IndexerUtils.getParameter(Utils.Prop.AUXILIARY_FILE,indexer);
+    if (auxiliaryFileParam != null) {
+      ancillaryFile=auxiliaryFileParam;
+    }
+    String datastoreFileParam=IndexerUtils.getParameter(Utils.Prop.AUXILIARY_DATASTORE_FILE,indexer);
+    if (datastoreFileParam != null) {
+      datastoreFile=datastoreFileParam;
+    }
+    if (datastoreFileParam != null || auxiliaryFileParam != null) {
       setReader(hints,false);
     }
     if (IndexerUtils.getParameterAsBoolean(Utils.Prop.USE_EXISTING_SCHEMA,indexer)) {
       this.useExistingSchema=true;
     }
   }
-  updateConfigurationHints(configuration,hints,ancillaryFile,IndexerUtils.getParam(params,Prop.ROOT_MOSAIC_DIR));
+  updateConfigurationHints(configuration,hints,ancillaryFile,datastoreFile,IndexerUtils.getParam(params,Prop.ROOT_MOSAIC_DIR));
   configuration.check();
   this.runConfiguration=new CatalogBuilderConfiguration(configuration);
 }
