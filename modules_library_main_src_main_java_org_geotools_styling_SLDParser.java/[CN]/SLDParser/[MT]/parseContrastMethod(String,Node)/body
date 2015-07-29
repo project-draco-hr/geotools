@@ -1,0 +1,41 @@
+{
+  ContrastMethod ret=null;
+  if (NORMALIZE.equalsIgnoreCase(name)) {
+    ret=new Normalize();
+  }
+ else   if (HISTOGRAM.equalsIgnoreCase(name)) {
+    ret=new Histogram();
+  }
+ else   if (LOGARITHMIC.equalsIgnoreCase(name)) {
+    ret=new Logarithmic();
+  }
+ else   if (EXPONENTIAL.equalsIgnoreCase(name)) {
+    ret=new Exponential();
+  }
+  if (ret == null) {
+    return null;
+  }
+  NodeList children=root.getChildNodes();
+  final int length=children.getLength();
+  for (int i=0; i < length; i++) {
+    Node child=children.item(i);
+    if ((child == null) || (child.getNodeType() != Node.ELEMENT_NODE)) {
+      continue;
+    }
+    String childName=child.getLocalName();
+    if (childName == null) {
+      childName=child.getNodeName();
+    }
+    if ("Parameter".equalsIgnoreCase(childName)) {
+      String key=getAttribute(child,"name");
+      if (key == null)       continue;
+      Expression value=parseCssParameter(child);
+      if (value == null)       continue;
+      ret.addParameter(key,value);
+    }
+    if ("Algorithm".equalsIgnoreCase(childName)) {
+      ret.setAlgorithm(parseCssParameter(child));
+    }
+  }
+  return ret;
+}
