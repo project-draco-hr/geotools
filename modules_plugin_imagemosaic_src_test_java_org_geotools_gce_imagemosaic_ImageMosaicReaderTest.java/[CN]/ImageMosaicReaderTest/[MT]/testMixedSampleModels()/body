@@ -1,0 +1,25 @@
+{
+  File mosaicFolder=DataUtilities.urlToFile(mixedSampleModelURL);
+  cleanConfigurationFiles(mosaicFolder,mosaicFolder.getName());
+  final AbstractGridFormat format=TestUtils.getFormat(mixedSampleModelURL);
+  ImageMosaicReader reader=TestUtils.getReader(mixedSampleModelURL,format);
+  GridCoverage2D coverage=reader.read(null);
+  assertNotNull(coverage);
+  RenderedImage ri=coverage.getRenderedImage();
+  assertThat(ri.getSampleModel(),instanceOf(ComponentSampleModel.class));
+  assertThat(ri.getColorModel(),instanceOf(ComponentColorModel.class));
+  File sample=new File("src/test/resources/org/geotools/gce/imagemosaic/test-data/mixed-mosaic.png");
+  ImageAssert.assertEquals(sample,ri,100);
+  coverage.dispose(true);
+  checkColorModel(IndexColorModel.class,1,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(10,10.1,43,43.1,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(IndexColorModel.class,1,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(13.5,13.6,43.5,43.6,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,1,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(8,8.1,45.5,45.6,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,1,DataBuffer.TYPE_USHORT,new ReferencedEnvelope(10.5,10.6,45.5,45.6,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,3,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(13.5,13.6,45.5,45.6,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,1,DataBuffer.TYPE_USHORT,new ReferencedEnvelope(8,10,45,46,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,3,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(7,8,43,45,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,3,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(11,13,45,46,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,3,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(10,11,43,45,DefaultGeographicCRS.WGS84),reader);
+  checkColorModel(ComponentColorModel.class,3,DataBuffer.TYPE_BYTE,new ReferencedEnvelope(7,11,43,44,DefaultGeographicCRS.WGS84),reader);
+  reader.dispose();
+}

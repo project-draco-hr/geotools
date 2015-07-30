@@ -1,0 +1,13 @@
+{
+  final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  MathTransform mt=reader.getOriginalGridToWorld(PixelInCell.CELL_CORNER);
+  GeneralEnvelope ge=CRS.transform(mt.inverse(),box);
+  GridEnvelope2D range=new GridEnvelope2D(new Envelope2D(ge),PixelInCell.CELL_CENTER);
+  gg.setValue(new GridGeometry2D(range,mt,box.getCoordinateReferenceSystem()));
+  GridCoverage2D coverage=reader.read(new GeneralParameterValue[]{gg});
+  RenderedImage ri=coverage.getRenderedImage();
+  assertThat(ri.getColorModel(),instanceOf(clazz));
+  assertEquals(bands,ri.getSampleModel().getNumBands());
+  assertEquals(dataType,ri.getSampleModel().getDataType());
+  coverage.dispose(true);
+}
