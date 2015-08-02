@@ -1,9 +1,11 @@
 {
-  StringBuffer allSdoSql=new StringBuffer("SELECT DIMINFO FROM MDSYS.ALL_SDO_GEOM_METADATA USGM, table(USGM.DIMINFO) WHERE ");
-  allSdoSql.append("TABLE_NAME='").append(tableName.toUpperCase()).append("' AND ");
-  allSdoSql.append("COLUMN_NAME='").append(columnName.toUpperCase()).append("'");
+  List<String> parameters=new ArrayList<String>();
+  String allSdoSql="SELECT DIMINFO FROM MDSYS.ALL_SDO_GEOM_METADATA USGM, table(USGM.DIMINFO) " + "WHERE TABLE_NAME = ? AND COLUMN_NAME= ?";
+  parameters.add(tableName.toUpperCase());
+  parameters.add(columnName.toUpperCase());
   if (schemaName != null) {
-    allSdoSql.append(" AND OWNER='" + schemaName + "'");
+    allSdoSql+=" AND OWNER = ?";
+    parameters.add(schemaName);
   }
-  return readIntegerFromStatement(cx,allSdoSql.toString());
+  return readIntegerFromStatement(cx,allSdoSql,parameters);
 }

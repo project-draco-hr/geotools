@@ -2,9 +2,13 @@
   if (geometryMetadataTable == null) {
     return null;
   }
-  String metadataTableStatement="SELECT COORD_DIMENSION FROM " + geometryMetadataTable + " WHERE F_TABLE_NAME = '"+ tableName+ "'"+ " AND F_GEOMETRY_COLUMN = '"+ columnName+ "'";
+  List<String> parameters=new ArrayList<String>();
+  String metadataTableStatement="SELECT COORD_DIMENSION FROM " + geometryMetadataTable + " WHERE F_TABLE_NAME = ?"+ " AND F_GEOMETRY_COLUMN = ?";
+  parameters.add(tableName);
+  parameters.add(columnName);
   if (schema != null && !"".equals(schema)) {
-    metadataTableStatement+=" AND F_TABLE_SCHEMA = '" + schema + "'";
+    metadataTableStatement+=" AND F_TABLE_SCHEMA = ?";
+    parameters.add(schema);
   }
-  return readIntegerFromStatement(cx,metadataTableStatement);
+  return readIntegerFromStatement(cx,metadataTableStatement,parameters);
 }
