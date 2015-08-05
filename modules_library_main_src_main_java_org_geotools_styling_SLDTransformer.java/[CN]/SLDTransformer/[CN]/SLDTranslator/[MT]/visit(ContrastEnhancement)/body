@@ -2,8 +2,17 @@
   if (ce == null)   return;
   start("ContrastEnhancement");
   ContrastMethod method=ce.getMethod();
-  if (method != null) {
-    visit(method);
+  if (method != null && method != ContrastMethod.NONE) {
+    String val=method.name();
+    val=val.substring(0,1).toUpperCase() + val.substring(1).toLowerCase();
+    start(val);
+    Map<String,Expression> opts=ce.getOptions();
+    for (    Entry<String,Expression> entry : opts.entrySet()) {
+      AttributesImpl atts=new AttributesImpl();
+      atts.addAttribute("","name","name","",entry.getKey());
+      element("VendorOption",entry.getValue().evaluate(null).toString(),atts);
+    }
+    end(val);
   }
   Expression exp=ce.getGammaValue();
   if (exp != null) {

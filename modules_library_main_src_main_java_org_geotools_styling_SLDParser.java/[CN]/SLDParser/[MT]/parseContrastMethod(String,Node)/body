@@ -1,20 +1,23 @@
 {
-  ContrastMethod ret=null;
+  ContrastMethod met=ContrastMethod.NONE;
+  ContrastEnhancementMethod ret=new ContrastEnhancementMethod();
   if (NORMALIZE.equalsIgnoreCase(name)) {
+    met=ContrastMethod.NORMALIZE;
     ret=new Normalize();
   }
  else   if (HISTOGRAM.equalsIgnoreCase(name)) {
+    met=ContrastMethod.HISTOGRAM;
     ret=new Histogram();
   }
  else   if (LOGARITHMIC.equalsIgnoreCase(name)) {
+    met=ContrastMethod.LOGARITHMIC;
     ret=new Logarithmic();
   }
  else   if (EXPONENTIAL.equalsIgnoreCase(name)) {
+    met=ContrastMethod.EXPONENTIAL;
     ret=new Exponential();
   }
-  if (ret == null) {
-    return null;
-  }
+  ret.setMethod(met);
   NodeList children=root.getChildNodes();
   final int length=children.getLength();
   for (int i=0; i < length; i++) {
@@ -26,15 +29,12 @@
     if (childName == null) {
       childName=child.getNodeName();
     }
-    if ("Parameter".equalsIgnoreCase(childName)) {
+    if ("VendorOption".equalsIgnoreCase(childName)) {
       String key=getAttribute(child,"name");
       if (key == null)       continue;
       Expression value=parseCssParameter(child);
       if (value == null)       continue;
-      ret.addParameter(key,value);
-    }
-    if ("Algorithm".equalsIgnoreCase(childName)) {
-      ret.setAlgorithm(parseCssParameter(child));
+      ret.addOption(key,value);
     }
   }
   return ret;
