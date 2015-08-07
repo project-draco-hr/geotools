@@ -1,0 +1,85 @@
+{
+  String text=labelItem.getLabel();
+  Font[] fonts=labelItem.getTextStyle().getFonts();
+  int textLength=text.length();
+  boolean singleFont=fonts.length == 1 || textLength == fonts[0].canDisplayUpTo(text.toCharArray(),0,textLength);
+  if (!(text.contains("\n") || labelItem.getAutoWrap() > 0) && singleFont) {
+    FontRenderContext frc=graphics.getFontRenderContext();
+    TextLayout layout=new TextLayout(text,fonts[0],frc);
+    LineComponent component=new LineComponent(text,layoutSentence(text,labelItem,graphics,fonts[0]),layout);
+    LineInfo line=new LineInfo(component);
+    return Collections.singletonList(line);
+  }
+  String[] splitted=text.split("\\n");
+  List<LineInfo> lines=new ArrayList<LineInfo>();
+  if (labelItem.getAutoWrap() <= 0) {
+    for (    String line : splitted) {
+      line=checkForEmptyLine(line);
+      LineInfo lineInfo=new LineInfo();
+      List<FontRange> ranges=buildFontRanges(line,fonts);
+      for (      FontRange range : ranges) {
+        graphics.setFont(range.font);
+        FontRenderContext frc=graphics.getFontRenderContext();
+        TextLayout layout=new TextLayout(range.text,range.font,frc);
+        LineComponent component=new LineComponent(range.text,layoutSentence(range.text,labelItem,graphics,range.font),layout);
+        lineInfo.add(component);
+      }
+      lines.add(lineInfo);
+    }
+  }
+ else {
+    Map<TextAttribute,Object> map=new HashMap<TextAttribute,Object>();
+    map.put(TextAttribute.FONT,fonts[0]);
+    for (int i=0; i < splitted.length; i++) {
+      String lineText=checkForEmptyLine(splitted[i]);
+      List<FontRange> ranges=buildFontRanges(lineText,fonts);
+      AttributedString attributed=buildAttributedLine(lineText,ranges);
+      AttributedCharacterIterator iter=attributed.getIterator();
+      LineBreakMeasurer lineMeasurer=new LineBreakMeasurer(iter,BreakIterator.getLineInstance(),graphics.getFontRenderContext());
+      BreakIterator breaks=BreakIterator.getLineInstance();
+      breaks.setText(lineText);
+      int prevPosition=0;
+      while (lineMeasurer.getPosition() < iter.getEndIndex()) {
+        TextLayout layout=lineMeasurer.nextLayout(labelItem.getAutoWrap(),lineText.length(),true);
+        int newPosition=prevPosition;
+        if (layout != null) {
+          newPosition=lineMeasurer.getPosition();
+        }
+ else {
+          int nextBoundary=breaks.following(prevPosition);
+          if (nextBoundary == BreakIterator.DONE) {
+            newPosition=lineText.length();
+          }
+ else {
+            newPosition=nextBoundary;
+          }
+          AttributedCharacterIterator subIter=attributed.getIterator(null,prevPosition,newPosition);
+          layout=new TextLayout(subIter,graphics.getFontRenderContext());
+          lineMeasurer.setPosition(newPosition);
+        }
+        List<FontRange> lineRanges=getLineRanges(ranges,prevPosition,newPosition);
+        LineInfo lineInfo=new LineInfo();
+        int lastLineRange=lineRanges.size() - 1;
+        int currentLineRange=0;
+        for (        FontRange range : lineRanges) {
+          String extracted=lineText.substring(Math.max(prevPosition,range.startChar),Math.min(newPosition,range.endChar));
+          if (currentLineRange == 0 && currentLineRange == lastLineRange) {
+            extracted=extracted.trim();
+          }
+ else           if (currentLineRange == 0) {
+            extracted=extracted.replaceAll("^\\s+","");
+          }
+ else           if (currentLineRange == lastLineRange) {
+            extracted=extracted.replaceAll("\\s+$","");
+          }
+          currentLineRange++;
+          LineComponent component=new LineComponent(extracted,layoutSentence(extracted,labelItem,graphics,range.font),layout);
+          lineInfo.add(component);
+        }
+        lines.add(lineInfo);
+        prevPosition=newPosition;
+      }
+    }
+  }
+  return lines;
+}

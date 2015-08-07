@@ -17,21 +17,23 @@
       graphic=resizeGraphic(graphic);
       AffineTransform graphicTx=new AffineTransform(transform);
       LineInfo lastLine=lines.get(lines.size() - 1);
-      graphicTx.translate(lastLine.x,lastLine.y);
+      graphicTx.translate(lastLine.getComponents().get(0).getX(),lastLine.getY());
       graphics.setTransform(graphicTx);
       shapePainter.paint(graphics,tempShape,graphic,graphic.getMaxScale());
     }
     if (labelItem.getTextStyle().getFont().getSize() == 0)     return;
-    if (lines.size() == 1) {
-      drawGlyphVector(lines.get(0).gv);
+    if (lines.size() == 1 && lines.get(0).getComponents().size() == 1) {
+      drawGlyphVector(lines.get(0).getComponents().get(0).getGlyphVector());
     }
  else {
       AffineTransform lineTx=new AffineTransform(transform);
       for (      LineInfo line : lines) {
-        lineTx.setTransform(transform);
-        lineTx.translate(line.x,line.y);
-        graphics.setTransform(lineTx);
-        drawGlyphVector(line.gv);
+        for (        LineComponent component : line.getComponents()) {
+          lineTx.setTransform(transform);
+          lineTx.translate(component.getX(),line.getY());
+          graphics.setTransform(lineTx);
+          drawGlyphVector(component.getGlyphVector());
+        }
       }
     }
   }
