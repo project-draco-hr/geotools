@@ -1,0 +1,56 @@
+{
+  if (fonts.length == 1) {
+    return Arrays.asList(new FontRange(text,0,text.length(),fonts[0]));
+  }
+  List<FontRange> result=new ArrayList<>();
+  int start=0;
+  int lastSupportedChar=0;
+  char[] chars=text.toCharArray();
+  while (start < chars.length) {
+    for (int i=0; i < fonts.length; ) {
+      Font font=fonts[i];
+      int newPosition=font.canDisplayUpTo(chars,start,chars.length);
+      if (newPosition == -1) {
+        result.add(new FontRange(text,start,chars.length,font));
+        start=chars.length;
+        lastSupportedChar=start;
+        break;
+      }
+ else       if (newPosition > start) {
+        result.add(new FontRange(text,start,newPosition,font));
+        start=newPosition;
+        lastSupportedChar=start;
+        ;
+        if (i > 0) {
+          i=0;
+        }
+      }
+ else {
+        i++;
+      }
+    }
+    if (start < chars.length) {
+      int base=start;
+      start++;
+      boolean foundFont=false;
+      while (start < chars.length && !foundFont) {
+        char curr=chars[start];
+        for (int i=0; i < fonts.length; i++) {
+          Font font=fonts[i];
+          if (font.canDisplay(curr)) {
+            foundFont=true;
+            result.add(new FontRange(text,base,start,fonts[0]));
+            break;
+          }
+ else {
+            start++;
+          }
+        }
+      }
+    }
+  }
+  if (lastSupportedChar < chars.length) {
+    result.add(new FontRange(text,lastSupportedChar,chars.length,fonts[0]));
+  }
+  return result;
+}

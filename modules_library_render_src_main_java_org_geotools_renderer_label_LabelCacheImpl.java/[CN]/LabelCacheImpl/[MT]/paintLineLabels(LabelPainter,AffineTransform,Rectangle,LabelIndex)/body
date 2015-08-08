@@ -1,6 +1,6 @@
 {
   final LabelCacheItem labelItem=painter.getLabel();
-  List<LineString> lines=(List<LineString>)getLineSetRepresentativeLocation(labelItem.getGeoms(),displayArea,labelItem.removeGroupOverlaps(),labelItem.isPartialsEnabled());
+  List<LineString> lines=getLineSetRepresentativeLocation(labelItem.getGeoms(),displayArea,labelItem.removeGroupOverlaps(),labelItem.isPartialsEnabled());
   if (lines == null || lines.size() == 0)   return false;
   if (!labelItem.labelAllGroup() && lines.size() > 1) {
     lines=Collections.singletonList(lines.get(0));
@@ -67,7 +67,9 @@
           if (labelItem.isFollowLineEnabled()) {
             if ((startOrdinate > 0 && endOrdinate <= cursor.getLineStringLength())) {
               if (maxAngleChange < maxAngleDelta) {
-                if (maxAngleChange < MIN_CURVED_DELTA)                 painter.paintStraightLabel(tx);
+                if (maxAngleChange == 0 || cursor.getMaxDistanceFromStraightLine(startOrdinate,endOrdinate) < painter.getLineHeight() / 2) {
+                  painter.paintStraightLabel(tx);
+                }
  else {
                   painter.paintCurvedLabel(cursor);
                 }
