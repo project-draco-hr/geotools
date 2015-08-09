@@ -9,7 +9,25 @@
   if (!query.getJoins().isEmpty() && getQueryCapabilities().isJoiningSupported()) {
     throw new IOException("Feature source does not support joins");
   }
-  FeatureReader<SimpleFeatureType,SimpleFeature> reader=getReaderInternal(query);
+  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
+  boolean postRetypeRequired=!canSort() && canRetype() && query.getSortBy() != null && query.getPropertyNames() != Query.ALL_NAMES;
+  if (postRetypeRequired) {
+    List<String> requestedProperties=new ArrayList<>(Arrays.asList(query.getPropertyNames()));
+    Set<String> sortProperties=getSortPropertyNames(query.getSortBy());
+    if (requestedProperties.containsAll(sortProperties)) {
+      reader=getReaderInternal(query);
+    }
+ else {
+      Query loadingQuery=new Query(query);
+      sortProperties.removeAll(requestedProperties);
+      requestedProperties.addAll(sortProperties);
+      loadingQuery.setPropertyNames(requestedProperties);
+      reader=getReaderInternal(loadingQuery);
+    }
+  }
+ else {
+    reader=getReaderInternal(query);
+  }
   if (!canTransact() && transaction != null && transaction != Transaction.AUTO_COMMIT) {
     DiffTransactionState state=(DiffTransactionState)getTransaction().getState(getEntry());
     reader=new DiffFeatureReader<SimpleFeatureType,SimpleFeature>(reader,state.getDiff());
@@ -19,17 +37,17 @@
       reader=new FilteringFeatureReader<SimpleFeatureType,SimpleFeature>(reader,query.getFilter());
     }
   }
-  if (!canRetype()) {
+  if (query.getSortBy() != null && query.getSortBy().length != 0) {
+    if (!canSort()) {
+      reader=new SortedFeatureReader(DataUtilities.simple(reader),query);
+    }
+  }
+  if (!canRetype() || postRetypeRequired) {
     if (query.getPropertyNames() != Query.ALL_NAMES) {
       SimpleFeatureType target=SimpleFeatureTypeBuilder.retype(reader.getFeatureType(),query.getPropertyNames());
       if (!target.equals(reader.getFeatureType())) {
         reader=new ReTypeFeatureReader(reader,target,false);
       }
-    }
-  }
-  if (query.getSortBy() != null && query.getSortBy().length != 0) {
-    if (!canSort()) {
-      reader=new SortedFeatureReader(DataUtilities.simple(reader),query);
     }
   }
   int offset=query.getStartIndex() != null ? query.getStartIndex() : 0;
