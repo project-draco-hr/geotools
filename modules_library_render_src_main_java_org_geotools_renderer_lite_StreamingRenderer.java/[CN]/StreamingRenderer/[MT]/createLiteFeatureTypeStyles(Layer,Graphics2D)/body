@@ -1,0 +1,34 @@
+{
+  if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine("creating rules for scale denominator - " + NumberFormat.getNumberInstance().format(scaleDenominator));
+  ArrayList<LiteFeatureTypeStyle> result=new ArrayList<LiteFeatureTypeStyle>();
+  LiteFeatureTypeStyle lfts;
+  boolean foundComposite=false;
+  for (  FeatureTypeStyle fts : layer.getStyle().featureTypeStyles()) {
+    if (isFeatureTypeStyleActive(layer.getFeatureSource().getSchema(),fts)) {
+      List<List<Rule>> splittedRules=splitRules(fts);
+      List<Rule> ruleList=splittedRules.get(0);
+      List<Rule> elseRuleList=splittedRules.get(1);
+      if ((ruleList.isEmpty()) && (elseRuleList.isEmpty()))       continue;
+      Composite composite=styleFactory.getComposite(fts.getOptions());
+      foundComposite|=composite != null;
+      if (!foundComposite && (result.isEmpty() || !isOptimizedFTSRenderingEnabled())) {
+        lfts=new LiteFeatureTypeStyle(layer,graphics,ruleList,elseRuleList,fts.getTransformation());
+      }
+ else {
+        lfts=new LiteFeatureTypeStyle(layer,new DelayedBackbufferGraphic(graphics,screenSize),ruleList,elseRuleList,fts.getTransformation());
+      }
+      lfts.composite=composite;
+      if (FeatureTypeStyle.VALUE_EVALUATION_MODE_FIRST.equals(fts.getOptions().get(FeatureTypeStyle.KEY_EVALUATION_MODE))) {
+        lfts.matchFirst=true;
+      }
+      SortBy[] sortBy=styleFactory.getSortBy(fts.getOptions());
+      lfts.sortBy=sortBy;
+      if (screenMapEnabled(lfts)) {
+        int renderingBuffer=getRenderingBuffer();
+        lfts.screenMap=new ScreenMap(screenSize.x - renderingBuffer,screenSize.y - renderingBuffer,screenSize.width + renderingBuffer * 2,screenSize.height + renderingBuffer * 2);
+      }
+      result.add(lfts);
+    }
+  }
+  return result;
+}

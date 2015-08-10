@@ -1,0 +1,37 @@
+{
+  final FeatureSource featureSource=layer.getFeatureSource();
+  final CoordinateReferenceSystem sourceCrs;
+  final ArrayList<LiteFeatureTypeStyle> lfts;
+  if (featureSource == null) {
+    throw new IllegalArgumentException("The layer does not contain a feature source");
+  }
+  final FeatureType schema=featureSource.getSchema();
+  final GeometryDescriptor geometryAttribute=schema.getGeometryDescriptor();
+  if (geometryAttribute != null && geometryAttribute.getType() != null) {
+    sourceCrs=geometryAttribute.getType().getCoordinateReferenceSystem();
+  }
+ else {
+    sourceCrs=null;
+  }
+  lfts=createLiteFeatureTypeStyles(layer,graphics);
+  if (lfts.isEmpty()) {
+    return;
+  }
+ else {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Processing " + lfts.size() + " stylers for "+ featureSource.getSchema().getName());
+    }
+  }
+  reprojectSpatialFilters(lfts,featureSource);
+  applyUnitRescale(lfts);
+  List<List<LiteFeatureTypeStyle>> txClassified=classifyByFeatureProduction(lfts);
+  for (  List<LiteFeatureTypeStyle> uniform : txClassified) {
+    FeatureCollection features=getFeatures(layer,featureSource,sourceCrs,schema,geometryAttribute,uniform);
+    if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
+      drawOptimized(graphics,layerId,features,uniform);
+    }
+ else {
+      drawPlain(graphics,layerId,features,uniform);
+    }
+  }
+}

@@ -1,26 +1,25 @@
 {
   Query query=new Query(Query.ALL);
   Filter filter=null;
-  LiteFeatureTypeStyle[] styles=styleList.toArray(new LiteFeatureTypeStyle[styleList.size()]);
   if (getRenderingBuffer() == 0) {
-    metaBuffer=findRenderingBuffer(styles);
+    metaBuffer=findRenderingBuffer(styleList);
     if (metaBuffer > 0) {
       mapArea=expandEnvelope(mapArea,worldToScreenTransform,metaBuffer);
       LOGGER.fine("Expanding rendering area by " + metaBuffer + " pixels to consider stroke width");
-      for (      LiteFeatureTypeStyle lfts : styles) {
+      for (      LiteFeatureTypeStyle lfts : styleList) {
         if (lfts.screenMap != null) {
           lfts.screenMap=new ScreenMap(lfts.screenMap,metaBuffer);
         }
       }
     }
   }
-  mapArea=expandEnvelopeByTransformations(styles,new ReferencedEnvelope(mapArea,mapCRS));
+  mapArea=expandEnvelopeByTransformations(styleList,new ReferencedEnvelope(mapArea,mapCRS));
   List<PropertyName> attributes;
-  if (styles == null) {
+  if (styleList == null) {
     attributes=null;
   }
  else {
-    attributes=findStyleAttributes(styles,schema);
+    attributes=findStyleAttributes(styleList,schema);
   }
   ReferencedEnvelope envelope=new ReferencedEnvelope(mapArea,mapCRS);
   try {
@@ -44,8 +43,8 @@
     query=new Query(schema.getName().getLocalPart());
     query.setFilter(filter);
     query.setProperties(attributes);
-    processRuleForQuery(styles,query);
-    SortBy[] sortBy=getSortByFromLiteStyles(styles);
+    processRuleForQuery(styleList,query);
+    SortBy[] sortBy=getSortByFromLiteStyles(styleList);
     query.setSortBy(sortBy);
   }
  catch (  Exception e) {
@@ -66,7 +65,7 @@
       LOGGER.log(Level.WARNING,"Got a tranform exception while trying to de-project the current " + "envelope, falling back on full data loading (no bbox query)",e);
       query.setFilter(Filter.INCLUDE);
     }
-    processRuleForQuery(styles,query);
+    processRuleForQuery(styleList,query);
   }
   LiteCoordinateSequenceFactory csFactory=new LiteCoordinateSequenceFactory();
   GeometryFactory gFactory=new SimpleGeometryFactory(csFactory);
@@ -81,7 +80,7 @@
       MathTransform mt=buildFullTransform(crs2D,mapCRS,worldToScreenTransform);
       double[] spans=Decimator.computeGeneralizationDistances(mt.inverse(),screenSize,generalizationDistance);
       double distance=spans[0] < spans[1] ? spans[0] : spans[1];
-      for (      LiteFeatureTypeStyle fts : styles) {
+      for (      LiteFeatureTypeStyle fts : styleList) {
         if (fts.screenMap != null) {
           fts.screenMap.setTransform(mt);
           fts.screenMap.setSpans(spans[0],spans[1]);

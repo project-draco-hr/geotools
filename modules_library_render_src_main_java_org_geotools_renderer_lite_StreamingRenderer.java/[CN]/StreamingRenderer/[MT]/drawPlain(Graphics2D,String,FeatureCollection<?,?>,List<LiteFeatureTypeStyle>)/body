@@ -1,0 +1,30 @@
+{
+  for (  LiteFeatureTypeStyle liteFeatureTypeStyle : lfts) {
+    try (FeatureIterator<?> featureIterator=((FeatureCollection<?,?>)features).features()){
+      if (featureIterator == null) {
+        return;
+      }
+      boolean clone=isCloningRequired(lfts);
+      RenderableFeature rf=new RenderableFeature(layerId,clone);
+      rf.layer=liteFeatureTypeStyle.layer;
+      rf.setScreenMap(liteFeatureTypeStyle.screenMap);
+      while (featureIterator.hasNext() && !renderingStopRequested) {
+        try {
+          rf.setFeature(featureIterator.next());
+          processFeature(rf,liteFeatureTypeStyle);
+        }
+ catch (        Throwable tr) {
+          fireErrorEvent(tr);
+        }
+      }
+    }
+     if (liteFeatureTypeStyle.composite != null) {
+      try {
+        requests.put(new MergeLayersRequest(graphics,Collections.singletonList(liteFeatureTypeStyle)));
+      }
+ catch (      InterruptedException e) {
+        fireErrorEvent(e);
+      }
+    }
+  }
+}

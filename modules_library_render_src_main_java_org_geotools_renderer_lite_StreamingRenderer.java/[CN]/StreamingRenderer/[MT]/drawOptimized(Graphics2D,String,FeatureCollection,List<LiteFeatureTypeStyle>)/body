@@ -1,0 +1,24 @@
+{
+  try (FeatureIterator<?> iterator=features.features()){
+    if (iterator == null)     return;
+    boolean clone=isCloningRequired(lfts);
+    RenderableFeature rf=new RenderableFeature(layerId,clone);
+    while (iterator.hasNext() && !renderingStopRequested) {
+      try {
+        rf.setFeature(iterator.next());
+        for (        LiteFeatureTypeStyle liteFeatureTypeStyle : lfts) {
+          rf.setScreenMap(liteFeatureTypeStyle.screenMap);
+          rf.layer=liteFeatureTypeStyle.layer;
+          processFeature(rf,liteFeatureTypeStyle);
+        }
+      }
+ catch (      Throwable tr) {
+        fireErrorEvent(tr);
+      }
+    }
+    requests.put(new MergeLayersRequest(graphics,lfts));
+  }
+ catch (  InterruptedException e) {
+    fireErrorEvent(e);
+  }
+}
