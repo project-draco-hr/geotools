@@ -1,0 +1,20 @@
+{
+  List<Layer> splitLayers=new ArrayList<>();
+  if (previousGroup != null) {
+    splitLayers.add(previousGroup);
+  }
+  String currentGroupId=previousGroup != null ? previousGroup.groupId : null;
+  List<FeatureTypeStyle> featureTypeStyles=new ArrayList<>();
+  for (  FeatureTypeStyle fts : layer.getStyle().featureTypeStyles()) {
+    String groupName=fts.getOptions().get(FeatureTypeStyle.SORT_BY_GROUP);
+    if (!(groupName == currentGroupId || (groupName != null && groupName.equals(currentGroupId))) && !featureTypeStyles.isEmpty()) {
+      addToSplitLayers(layer,previousGroup,splitLayers,currentGroupId,featureTypeStyles);
+    }
+    featureTypeStyles.add(fts);
+    currentGroupId=groupName;
+  }
+  if (featureTypeStyles != null) {
+    addToSplitLayers(layer,previousGroup,splitLayers,currentGroupId,featureTypeStyles);
+  }
+  return splitLayers;
+}

@@ -1,27 +1,37 @@
 {
-  boolean doElse=true;
-  Rule[] elseRuleList=fts.elseRules;
-  Rule[] ruleList=fts.ruleList;
-  Rule r;
-  Filter filter;
-  Graphics2D graphics=fts.graphics;
-  final int length=ruleList.length;
-  for (int t=0; t < length; t++) {
-    r=ruleList[t];
-    filter=r.getFilter();
-    if (filter == null || filter.evaluate(rf.feature)) {
-      doElse=false;
-      processSymbolizers(graphics,rf,r.symbolizers());
-      if (fts.matchFirst) {
-        break;
+  try {
+    rf.inMemoryGeneralization=fts.inMemoryGeneralization;
+    rf.projectionHandler=fts.projectionHandler;
+    rf.setScreenMap(fts.screenMap);
+    rf.layer=fts.layer;
+    rf.metaBuffer=fts.metaBuffer;
+    boolean doElse=true;
+    Rule[] elseRuleList=fts.elseRules;
+    Rule[] ruleList=fts.ruleList;
+    Rule r;
+    Filter filter;
+    Graphics2D graphics=fts.graphics;
+    final int length=ruleList.length;
+    for (int t=0; t < length; t++) {
+      r=ruleList[t];
+      filter=r.getFilter();
+      if (filter == null || filter.evaluate(rf.feature)) {
+        doElse=false;
+        processSymbolizers(graphics,rf,r.symbolizers());
+        if (fts.matchFirst) {
+          break;
+        }
+      }
+    }
+    if (doElse) {
+      final int elseLength=elseRuleList.length;
+      for (int tt=0; tt < elseLength; tt++) {
+        r=elseRuleList[tt];
+        processSymbolizers(graphics,rf,r.symbolizers());
       }
     }
   }
-  if (doElse) {
-    final int elseLength=elseRuleList.length;
-    for (int tt=0; tt < elseLength; tt++) {
-      r=elseRuleList[tt];
-      processSymbolizers(graphics,rf,r.symbolizers());
-    }
+ catch (  Throwable tr) {
+    fireErrorEvent(tr);
   }
 }

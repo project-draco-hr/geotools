@@ -51,7 +51,8 @@
     if (mapContent == null) {
       throw new IllegalStateException("Cannot call paint, you did not set a MapContent in this renderer");
     }
-    List<CompositingGroup> compositingGroups=CompositingGroup.splitOnCompositingBase(graphics,paintArea,mapContent);
+    MapContent zGroupedMapContent=ZGroupLayerFactory.filter(mapContent);
+    List<CompositingGroup> compositingGroups=CompositingGroup.splitOnCompositingBase(graphics,paintArea,zGroupedMapContent);
     int layerCounter=0;
     for (    CompositingGroup compositingGroup : compositingGroups) {
       MapContent currentMapContent=compositingGroup.mapContent;
@@ -77,6 +78,15 @@
           }
  catch (          InterruptedException e) {
             fireErrorEvent(e);
+          }
+        }
+ else         if (layer instanceof ZGroupLayer) {
+          try {
+            ZGroupLayer zGroup=(ZGroupLayer)layer;
+            zGroup.drawFeatures(compositingGraphic,this,layerId);
+          }
+ catch (          Throwable t) {
+            fireErrorEvent(t);
           }
         }
  else {
