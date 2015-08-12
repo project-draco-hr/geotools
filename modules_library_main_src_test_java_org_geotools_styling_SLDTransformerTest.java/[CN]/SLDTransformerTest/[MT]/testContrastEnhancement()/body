@@ -1,0 +1,34 @@
+{
+  StyleBuilder sb=new StyleBuilder();
+  ContrastEnhancement ce=new ContrastEnhancementImpl();
+  NormalizeContrastMethodStrategy normal=new NormalizeContrastMethodStrategy();
+  normal.setAlgorithm(ff.literal("ClipToMinimumMaximum"));
+  normal.addParameter("p1",ff.literal(false));
+  normal.addParameter("p2",ff.literal(23.5d));
+  ce.setMethod(normal);
+  SLDTransformer st=new SLDTransformer();
+  String xml=st.transform(ce);
+  Document doc=buildTestDocument(xml);
+  assertXpathExists("//sld:ContrastEnhancement/sld:Normalize",doc);
+  assertXpathEvaluatesTo("false","//sld:ContrastEnhancement/sld:Normalize/sld:VendorOption[@name='p1']",doc);
+  assertXpathEvaluatesTo("ClipToMinimumMaximum","//sld:ContrastEnhancement/sld:Normalize/sld:VendorOption[@name='algorithm']",doc);
+  HistogramContrastMethodStrategy hist=new HistogramContrastMethodStrategy();
+  ce.setMethod(hist);
+  xml=st.transform(ce);
+  String skeleton="<?xml version=\"1.0\" encoding=\"UTF-8\"?><sld:ContrastEnhancement xmlns=\"http://www.opengis.net/sld\" xmlns:sld=\"http://www.opengis.net/sld\" xmlns:ogc=\"http://www.opengis.net/ogc\" xmlns:gml=\"http://www.opengis.net/gml\"><sld:Histogram/></sld:ContrastEnhancement>";
+  System.out.println(xml);
+  Diff myDiff=new Diff(skeleton,xml);
+  assertTrue("test XML matches control skeleton XML " + myDiff,myDiff.similar());
+  LogarithmicContrastMethodStrategy log=new LogarithmicContrastMethodStrategy();
+  ce.setMethod(log);
+  xml=st.transform(ce);
+  skeleton=skeleton.replace("Histogram","Logarithmic");
+  myDiff=new Diff(skeleton,xml);
+  assertTrue("test XML matches control skeleton XML " + myDiff,myDiff.similar());
+  ExponentialContrastMethodStrategy exp=new ExponentialContrastMethodStrategy();
+  ce.setMethod(exp);
+  xml=st.transform(ce);
+  skeleton=skeleton.replace("Logarithmic","Exponential");
+  myDiff=new Diff(skeleton,xml);
+  assertTrue("test XML matches control skeleton XML " + myDiff,myDiff.similar());
+}
