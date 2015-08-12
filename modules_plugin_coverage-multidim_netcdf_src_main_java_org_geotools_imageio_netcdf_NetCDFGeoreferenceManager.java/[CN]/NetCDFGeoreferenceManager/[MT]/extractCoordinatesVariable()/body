@@ -1,7 +1,7 @@
 {
   Map<String,CoordinateVariable<?>> coordinates=new HashMap<String,CoordinateVariable<?>>();
   for (  CoordinateAxis axis : dataset.getCoordinateAxes()) {
-    if (axis instanceof CoordinateAxis1D && axis.getAxisType() != null) {
+    if (axis instanceof CoordinateAxis1D && axis.getAxisType() != null && !"reftime".equalsIgnoreCase(axis.getFullName())) {
       coordinates.put(axis.getFullName(),CoordinateVariable.create((CoordinateAxis1D)axis));
     }
  else {
@@ -14,6 +14,11 @@
         LOGGER.warning("Detected unparseable unit string in time axis: '" + axis.getUnitsString() + "'.");
         axis.setAxisType(AxisType.Time);
         coordinates.put(axis.getFullName(),CoordinateVariable.create((CoordinateAxis1D)axis));
+      }
+ else       if ("reftime".equals(axis.getFullName())) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Unable to support reftime which is not a CoordinateAxis1D");
+        }
       }
  else {
         LOGGER.warning("Unsupported axis: " + axis + " in input: "+ dataset.getLocation()+ " has been found");

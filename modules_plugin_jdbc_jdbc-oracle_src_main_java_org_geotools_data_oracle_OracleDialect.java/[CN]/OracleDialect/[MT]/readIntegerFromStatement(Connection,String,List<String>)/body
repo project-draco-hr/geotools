@@ -1,0 +1,23 @@
+{
+  PreparedStatement userSdoStatement=null;
+  ResultSet userSdoResult=null;
+  try {
+    LOGGER.log(Level.FINE,"SRID check; {0} [ parameters = {1} ]",new Object[]{sql,parameters});
+    userSdoStatement=cx.prepareStatement(sql);
+    for (int i=0; i < parameters.size(); i++) {
+      userSdoStatement.setString(i + 1,parameters.get(i));
+    }
+    userSdoResult=userSdoStatement.executeQuery();
+    if (userSdoResult.next()) {
+      Object intValue=userSdoResult.getObject(1);
+      if (intValue != null) {
+        return ((Number)intValue).intValue();
+      }
+    }
+  }
+  finally {
+    dataStore.closeSafe(userSdoResult);
+    dataStore.closeSafe(userSdoStatement);
+  }
+  return null;
+}

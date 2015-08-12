@@ -1,0 +1,45 @@
+{
+  DataStore store=new ContentDataStore(){
+{
+      namespaceURI=TYPE.getName().getNamespaceURI();
+    }
+    @SuppressWarnings("serial") @Override protected List<Name> createTypeNames() throws IOException {
+      return new ArrayList<Name>(){
+{
+          add(TYPENAME);
+        }
+      }
+;
+    }
+    @Override protected ContentFeatureSource createFeatureSource(    ContentEntry entry) throws IOException {
+      return new ContentFeatureSource(entry,null){
+        @Override protected ReferencedEnvelope getBoundsInternal(        Query query) throws IOException {
+          throw new RuntimeException("Unexpected call");
+        }
+        @Override protected int getCountInternal(        Query query) throws IOException {
+          throw new RuntimeException("Unexpected call");
+        }
+        @Override protected FeatureReader<SimpleFeatureType,SimpleFeature> getReaderInternal(        Query query) throws IOException {
+          assertEquals(expected,query);
+          return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(TYPE);
+        }
+        @Override protected SimpleFeatureType buildFeatureType() throws IOException {
+          return TYPE;
+        }
+        @Override protected boolean canRetype(){
+          return true;
+        }
+        @Override protected boolean canSort(){
+          return false;
+        }
+      }
+;
+    }
+  }
+;
+  SimpleFeatureSource fs=store.getFeatureSource(TYPE.getName());
+  SimpleFeatureCollection features=fs.getFeatures(query);
+  try (SimpleFeatureIterator fi=features.features()){
+    assertFalse(fi.hasNext());
+  }
+ }

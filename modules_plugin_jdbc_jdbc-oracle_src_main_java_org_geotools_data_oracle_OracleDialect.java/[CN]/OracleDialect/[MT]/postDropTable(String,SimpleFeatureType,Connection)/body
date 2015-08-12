@@ -1,10 +1,12 @@
 {
-  Statement st=cx.createStatement();
+  PreparedStatement st=null;
   String tableName=featureType.getTypeName();
   try {
-    String sql="DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" + tableName + "'";
-    LOGGER.fine(sql);
-    st.execute(sql);
+    String sql="DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = ?";
+    st=cx.prepareStatement(sql);
+    st.setString(1,tableName);
+    LOGGER.log(Level.FINE,"Post drop table: {0} [ TABLE_NAME = {1} ]",new Object[]{sql,tableName});
+    st.execute();
   }
   finally {
     dataStore.closeSafe(st);
