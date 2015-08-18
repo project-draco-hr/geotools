@@ -1,0 +1,26 @@
+{
+  final FeatureSource featureSource=layer.getFeatureSource();
+  if (featureSource == null) {
+    throw new IllegalArgumentException("The layer does not contain a feature source: " + layer.getTitle());
+  }
+  final FeatureType schema=featureSource.getSchema();
+  final ArrayList<LiteFeatureTypeStyle> lfts=createLiteFeatureTypeStyles(layer,graphics,isOptimizedFTSRenderingEnabled());
+  if (lfts.isEmpty()) {
+    return;
+  }
+ else {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Processing " + lfts.size() + " stylers for "+ schema.getName());
+    }
+  }
+  List<List<LiteFeatureTypeStyle>> txClassified=classifyByFeatureProduction(lfts);
+  for (  List<LiteFeatureTypeStyle> uniform : txClassified) {
+    FeatureCollection features=getFeatures(layer,schema,uniform);
+    if (isOptimizedFTSRenderingEnabled() && lfts.size() > 1) {
+      drawOptimized(graphics,layerId,features,uniform);
+    }
+ else {
+      drawPlain(graphics,layerId,features,uniform);
+    }
+  }
+}

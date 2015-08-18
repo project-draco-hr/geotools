@@ -1,0 +1,20 @@
+{
+  FeatureType schema=f.getType();
+  Expression geometry=s.getGeometry();
+  if (geometry instanceof PropertyName) {
+    return getAttributeCRS((PropertyName)geometry,schema);
+  }
+ else   if (geometry == null) {
+    return getAttributeCRS(null,schema);
+  }
+ else {
+    StyleAttributeExtractor attExtractor=new StyleAttributeExtractor();
+    geometry.accept(attExtractor,null);
+    for (    PropertyName name : attExtractor.getAttributes()) {
+      if (name.evaluate(schema) instanceof GeometryDescriptor) {
+        return getAttributeCRS(name,schema);
+      }
+    }
+  }
+  return null;
+}

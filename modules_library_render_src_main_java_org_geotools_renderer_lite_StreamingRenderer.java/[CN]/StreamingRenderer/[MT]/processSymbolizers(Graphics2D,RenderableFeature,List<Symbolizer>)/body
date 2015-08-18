@@ -1,0 +1,63 @@
+{
+  int paintCommands=0;
+  for (  Symbolizer symbolizer : symbolizers) {
+    if (symbolizer instanceof RasterSymbolizer) {
+      GridCoverage2D coverage=null;
+      boolean disposeCoverage=false;
+      try {
+        final Object grid=gridPropertyName.evaluate(drawMe.feature);
+        if (grid instanceof GridCoverage2D) {
+          coverage=(GridCoverage2D)grid;
+          if (coverage != null) {
+            disposeCoverage=grid instanceof DisposableGridCoverage;
+            requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,(RasterSymbolizer)symbolizer,destinationCrs,worldToScreenTransform));
+            paintCommands++;
+          }
+        }
+ else         if (grid instanceof GridCoverage2DReader) {
+          final GeneralParameterValue[] params=(GeneralParameterValue[])paramsPropertyName.evaluate(drawMe.feature);
+          GridCoverage2DReader reader=(GridCoverage2DReader)grid;
+          requests.put(new RenderCoverageReaderRequest(graphics,reader,params,(RasterSymbolizer)symbolizer,destinationCrs,worldToScreenTransform,getRenderingInterpolation(drawMe.layer)));
+        }
+      }
+ catch (      IllegalArgumentException e) {
+        LOGGER.log(Level.WARNING,e.getLocalizedMessage(),e);
+        fireErrorEvent(e);
+      }
+    }
+ else {
+      LiteShape2 shape=drawMe.getShape(symbolizer,worldToScreenTransform);
+      if (shape == null) {
+        continue;
+      }
+      if (symbolizer instanceof TextSymbolizer && drawMe.feature instanceof Feature) {
+        labelCache.put(drawMe.layerId,(TextSymbolizer)symbolizer,drawMe.feature,shape,null);
+        paintCommands++;
+      }
+ else {
+        Style2D style=styleFactory.createStyle(drawMe.feature,symbolizer);
+        double size=RendererUtilities.getStyle2DSize(style);
+        double clipBuffer=Math.max(size / 2,drawMe.metaBuffer) + 10;
+        Envelope env=new Envelope(screenSize.getMinX(),screenSize.getMaxX(),screenSize.getMinY(),screenSize.getMaxY());
+        env.expandBy(clipBuffer);
+        final GeometryClipper clipper=new GeometryClipper(env);
+        Geometry g=clipper.clip(shape.getGeometry(),false);
+        if (g == null) {
+          continue;
+        }
+        if (g != shape.getGeometry()) {
+          shape=new LiteShape2(g,null,null,false);
+        }
+        PaintShapeRequest paintShapeRequest=new PaintShapeRequest(graphics,shape,style,scaleDenominator);
+        if (symbolizer.hasOption("labelObstacle")) {
+          paintShapeRequest.setLabelObstacle(true);
+        }
+        requests.put(paintShapeRequest);
+        paintCommands++;
+      }
+    }
+  }
+  if (paintCommands > 0) {
+    requests.put(new FeatureRenderedRequest(drawMe.feature));
+  }
+}

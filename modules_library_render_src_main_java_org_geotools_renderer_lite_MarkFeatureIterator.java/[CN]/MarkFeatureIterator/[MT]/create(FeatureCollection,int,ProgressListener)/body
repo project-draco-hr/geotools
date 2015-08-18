@@ -1,0 +1,26 @@
+{
+  List<Feature> features=new ArrayList<>();
+  int count=0;
+  if (listener == null) {
+    listener=new DefaultProgressListener();
+  }
+  try (FeatureIterator fi=fc.features()){
+    while (fi.hasNext()) {
+      if (listener.isCanceled()) {
+        return null;
+      }
+      Feature f=fi.next();
+      features.add(f);
+      count++;
+      if (count >= maxFeaturesInMemory) {
+        if (fc.getSchema() instanceof SimpleFeatureIO) {
+          return new DiskMarkFeatureIterator(features,fi,(SimpleFeatureType)fc.getSchema(),listener);
+        }
+ else {
+          throw new IllegalArgumentException("Cannot offload to disk complex features " + "and reached the max number of feature in memory: " + maxFeaturesInMemory);
+        }
+      }
+    }
+    return new MemoryMarkFeatureIterator(features);
+  }
+ }

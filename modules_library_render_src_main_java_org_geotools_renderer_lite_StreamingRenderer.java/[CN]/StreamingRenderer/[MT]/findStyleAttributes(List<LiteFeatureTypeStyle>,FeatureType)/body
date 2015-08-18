@@ -1,0 +1,34 @@
+{
+  final StyleAttributeExtractor sae=new StyleAttributeExtractor();
+  for (  LiteFeatureTypeStyle lfts : styles) {
+    for (    Rule rule : lfts.elseRules) {
+      sae.visit(rule);
+    }
+    for (    Rule rule : lfts.ruleList) {
+      sae.visit(rule);
+    }
+  }
+  if (sae.isUsingDynamincProperties()) {
+    return null;
+  }
+  Set<PropertyName> attributes=sae.getAttributes();
+  Set<String> attributeNames=sae.getAttributeNameSet();
+  List<PropertyName> atts=new ArrayList<PropertyName>(attributes);
+  Collection<PropertyDescriptor> attTypes=schema.getDescriptors();
+  Name attName;
+  for (  PropertyDescriptor pd : attTypes) {
+    attName=pd.getName();
+    if ((attName.getLocalPart().equalsIgnoreCase("grid")) && !attributeNames.contains(attName.getLocalPart()) || (attName.getLocalPart().equalsIgnoreCase("params")) && !attributeNames.contains(attName.getLocalPart())) {
+      atts.add(filterFactory.property(attName));
+      if (LOGGER.isLoggable(Level.FINE))       LOGGER.fine("added attribute " + attName);
+    }
+  }
+  try {
+    if (sae.getDefaultGeometryUsed() && (!attributeNames.contains(schema.getGeometryDescriptor().getName().toString()))) {
+      atts.add(filterFactory.property(schema.getGeometryDescriptor().getName()));
+    }
+  }
+ catch (  Exception e) {
+  }
+  return atts;
+}

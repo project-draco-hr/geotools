@@ -1,0 +1,40 @@
+{
+  if (!hasZGroup(mapContent,false)) {
+    return mapContent;
+  }
+  MapContent result=new MapContent();
+  result.getViewport().setCoordinateReferenceSystem(mapContent.getViewport().getCoordinateReferenceSystem());
+  result.getViewport().setBounds(mapContent.getViewport().getBounds());
+  ZGroupLayer currentGroup=null;
+  for (  Layer layer : mapContent.layers()) {
+    if (layer instanceof DirectLayer) {
+      result.layers().add(layer);
+      currentGroup=null;
+    }
+ else {
+      if (!hasZGroup(layer,true)) {
+        if (currentGroup != null) {
+          result.layers().add(currentGroup);
+          currentGroup=null;
+        }
+        result.layers().add(layer);
+      }
+ else {
+        List<Layer> zGroupLayers=arrangeOnZGroups(layer,currentGroup);
+        if (zGroupLayers.get(zGroupLayers.size() - 1) instanceof ZGroupLayer) {
+          currentGroup=(ZGroupLayer)zGroupLayers.remove(zGroupLayers.size() - 1);
+        }
+ else {
+          currentGroup=null;
+        }
+        for (        Layer l : zGroupLayers) {
+          result.layers().add(l);
+        }
+      }
+    }
+  }
+  if (currentGroup != null) {
+    result.layers().add(currentGroup);
+  }
+  return result;
+}

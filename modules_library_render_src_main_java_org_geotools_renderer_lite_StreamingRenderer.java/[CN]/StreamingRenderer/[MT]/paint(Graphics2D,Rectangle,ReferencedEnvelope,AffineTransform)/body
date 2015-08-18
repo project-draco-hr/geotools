@@ -51,8 +51,9 @@
     if (mapContent == null) {
       throw new IllegalStateException("Cannot call paint, you did not set a MapContent in this renderer");
     }
-    List<CompositingGroup> compositingGroups=CompositingGroup.splitOnCompositingBase(graphics,paintArea,mapContent);
-    int layerId=0;
+    MapContent zGroupedMapContent=ZGroupLayerFactory.filter(mapContent);
+    List<CompositingGroup> compositingGroups=CompositingGroup.splitOnCompositingBase(graphics,paintArea,zGroupedMapContent);
+    int layerCounter=0;
     for (    CompositingGroup compositingGroup : compositingGroups) {
       MapContent currentMapContent=compositingGroup.mapContent;
       Graphics2D compositingGraphic=compositingGroup.graphics;
@@ -61,14 +62,15 @@
         ((LabelCacheImpl)labelCache).setLabelRenderingMode(LabelRenderingMode.valueOf(getTextRenderingMethod()));
       }
       for (      Layer layer : currentMapContent.layers()) {
-        layerId++;
+        layerCounter++;
+        String layerId=String.valueOf(layerCounter);
         if (!layer.isVisible()) {
           continue;
         }
         if (renderingStopRequested) {
           return;
         }
-        labelCache.startLayer(String.valueOf(layerId));
+        labelCache.startLayer(layerId);
         if (layer instanceof DirectLayer) {
           RenderingRequest request=new RenderDirectLayerRequest(compositingGraphic,(DirectLayer)layer);
           try {
@@ -78,15 +80,24 @@
             fireErrorEvent(e);
           }
         }
- else {
+ else         if (layer instanceof ZGroupLayer) {
           try {
-            processStylers(compositingGraphic,layer,worldToScreenTransform,destinationCrs,mapExtent,screenSize,layerId + "");
+            ZGroupLayer zGroup=(ZGroupLayer)layer;
+            zGroup.drawFeatures(compositingGraphic,this,layerId);
           }
  catch (          Throwable t) {
             fireErrorEvent(t);
           }
         }
-        labelCache.endLayer(String.valueOf(layerId),graphics,screenSize);
+ else {
+          try {
+            processStylers(compositingGraphic,layer,layerId);
+          }
+ catch (          Throwable t) {
+            fireErrorEvent(t);
+          }
+        }
+        labelCache.endLayer(layerId,graphics,screenSize);
       }
       if (compositingGraphic instanceof DelayedBackbufferGraphic) {
         DelayedBackbufferGraphic delayedGraphic=(DelayedBackbufferGraphic)compositingGraphic;

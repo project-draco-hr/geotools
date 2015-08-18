@@ -12,7 +12,7 @@
   }
   int count=0;
   File file=null;
-  RandomAccessFile raf=null;
+  SimpleFeatureIO io=null;
   List<SimpleFeature> features=new ArrayList<SimpleFeature>();
   List<FeatureBlockReader> readers=new ArrayList<FeatureBlockReader>();
   boolean cleanFile=true;
@@ -23,30 +23,30 @@
       count++;
       if (count > maxFeatures) {
         Collections.sort(features,comparator);
-        if (raf == null) {
+        if (io == null) {
           file=File.createTempFile("sorted",".features");
           file.delete();
-          raf=new RandomAccessFile(file,"rw");
+          io=new SimpleFeatureIO(file,schema);
         }
-        FeatureBlockReader fbr=storeToFile(raf,features,schema);
+        FeatureBlockReader fbr=storeToFile(io,features);
         readers.add(fbr);
         count=0;
         features.clear();
       }
     }
-    if (raf == null) {
+    if (io == null) {
       Collections.sort(features,comparator);
       SimpleFeatureIterator fi=new ListFeatureCollection(schema,features).features();
       return new DelegateSimpleFeatureReader(schema,fi);
     }
  else {
       cleanFile=false;
-      return new MergeSortReader(schema,raf,file,readers,comparator);
+      return new MergeSortReader(schema,io,readers,comparator);
     }
   }
   finally {
-    if (cleanFile && raf != null) {
-      raf.close();
+    if (cleanFile && io != null) {
+      io.close(true);
       file.delete();
     }
     reader.close();
