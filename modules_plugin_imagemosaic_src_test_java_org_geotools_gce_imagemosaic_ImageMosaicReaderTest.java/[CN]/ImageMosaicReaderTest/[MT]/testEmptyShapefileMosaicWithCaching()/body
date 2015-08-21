@@ -1,0 +1,29 @@
+{
+  final File testMosaic=TestData.file(this,"/empty_mosaic/empty_mosaic_with_caching.shp");
+  assertTrue(testMosaic.exists());
+  final ImageMosaicReader reader=(ImageMosaicReader)new ImageMosaicFormat().getReader(testMosaic);
+  final RasterManager manager=reader.getRasterManager(reader.getGridCoverageNames()[0]);
+  assertTrue(manager.spatialDomainManager.coverageBBox.isEmpty());
+  ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  GeneralEnvelope envelope=reader.getOriginalEnvelope();
+  Rectangle rasterArea=((GridEnvelope2D)reader.getOriginalGridRange());
+  GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+  gg.setValue(new GridGeometry2D(range,envelope));
+  GridCoverage2D coverage=reader.read(new GeneralParameterValue[]{gg});
+  assertNull(coverage);
+  coverage=reader.read(null);
+  assertNull(coverage);
+  final ParameterValue<Boolean> useJai=AbstractGridFormat.USE_JAI_IMAGEREAD.createValue();
+  useJai.setValue(false);
+  final ParameterValue<String> tileSize=AbstractGridFormat.SUGGESTED_TILE_SIZE.createValue();
+  tileSize.setValue("128,128");
+  final ParameterValue<double[]> bkg=ImageMosaicFormat.BACKGROUND_VALUES.createValue();
+  bkg.setValue(new double[]{-9999.0});
+  gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  Envelope2D env=new Envelope2D(reader.getCoordinateReferenceSystem(),0,0,1000,1000);
+  GridGeometry2D gg2D=new GridGeometry2D(new GridEnvelope2D(0,0,100,100),(Envelope)env);
+  gg.setValue(gg2D);
+  coverage=reader.read(new GeneralParameterValue[]{bkg,gg,useJai,tileSize});
+  assertNull(coverage);
+  reader.dispose();
+}

@@ -5,9 +5,12 @@
     return geometry;
   }
   Geometry mask;
+  ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
+  ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
+  if (geWGS84.getWidth() < EPS || geWGS84.getHeight() < EPS) {
+    geWGS84.expandBy(EPS);
+  }
   if (validArea == null) {
-    ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
-    ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
     if (validAreaBounds.contains((Envelope)geWGS84)) {
       return geometry;
     }
@@ -19,8 +22,6 @@
     mask=JTS.toGeometry((Envelope)envInt);
   }
  else {
-    ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),geometryCRS);
-    ReferencedEnvelope geWGS84=ge.transform(WGS84,true);
     if (validaAreaTester.contains(JTS.toGeometry(geWGS84))) {
       return geometry;
     }

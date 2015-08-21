@@ -1,0 +1,47 @@
+{
+  List<ZGroupLayerPainter> painters=new ArrayList<>();
+  boolean closePainters=true;
+  try {
+    for (    Layer layer : layers) {
+      final FeatureSource featureSource=layer.getFeatureSource();
+      if (featureSource == null) {
+        throw new IllegalArgumentException("The layer does not contain a feature source");
+      }
+      final FeatureType schema=featureSource.getSchema();
+      final ArrayList<LiteFeatureTypeStyle> lfts=renderer.createLiteFeatureTypeStyles(layer,graphics,false);
+      if (lfts.isEmpty()) {
+        continue;
+      }
+ else {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Processing " + lfts.size() + " stylers for "+ schema.getName());
+        }
+      }
+      FeatureCollection features=renderer.getFeatures(layer,schema,lfts);
+      int maxFeatures=SortedFeatureReader.getMaxFeaturesInMemory(layer.getQuery());
+      MarkFeatureIterator fi=MarkFeatureIterator.create(features,maxFeatures,cancellationListener);
+      if (fi.hasNext()) {
+        ZGroupLayerPainter painter=new ZGroupLayerPainter(fi,lfts,renderer,layerId);
+        painters.add(painter);
+      }
+ else {
+        fi.close();
+      }
+    }
+    closePainters=false;
+  }
+  finally {
+    if (closePainters) {
+      for (      ZGroupLayerPainter painter : painters) {
+        try {
+          painter.close();
+        }
+ catch (        Exception e) {
+          LOGGER.log(Level.FINE,"Failed to close cleanly layer painter " + painter,e);
+        }
+      }
+    }
+  }
+  validateSortBy(painters);
+  return painters;
+}

@@ -1,0 +1,41 @@
+{
+  ProgressListener cancellationListener=new DefaultProgressListener(){
+    public boolean isCanceled(){
+      return renderer.renderingStopRequested;
+    }
+  }
+;
+  List<ZGroupLayerPainter> painters=null;
+  try {
+    painters=buildLayerPainters(graphics,renderer,layerId,cancellationListener);
+    if (painters.isEmpty()) {
+      return;
+    }
+    Comparator<SortKey> comparator=SortKey.buildComparator(painters.get(0).sortBy);
+    SortKey previousKey=null;
+    while (!painters.isEmpty()) {
+      SortKey smallestKey=getSmallestKey(painters,comparator);
+      if (previousKey == null) {
+        previousKey=smallestKey;
+      }
+ else       if (comparator.compare(previousKey,smallestKey) >= 0) {
+        throw new IllegalStateException("The sorted rendering moved from a set of " + "sort attributes, to one that's equal or greater, this is unexpected, " + "bailing out to avoid an infinite loop");
+      }
+      for (Iterator it=painters.iterator(); it.hasNext(); ) {
+        ZGroupLayerPainter painter=(ZGroupLayerPainter)it.next();
+        painter.paintKey(smallestKey);
+        if (painter.complete()) {
+          painter.close();
+          it.remove();
+        }
+      }
+    }
+  }
+  finally {
+    if (painters != null) {
+      for (      ZGroupLayerPainter painter : painters) {
+        painter.close();
+      }
+    }
+  }
+}

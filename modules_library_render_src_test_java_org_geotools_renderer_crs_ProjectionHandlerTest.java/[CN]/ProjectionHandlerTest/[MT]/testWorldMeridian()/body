@@ -1,0 +1,12 @@
+{
+  ReferencedEnvelope requestWgs84=new ReferencedEnvelope(-180,180,-85,85,WGS84);
+  ReferencedEnvelope requestWebMercator=requestWgs84.transform(OSM,true);
+  Geometry g=new WKTReader().read("LINESTRING(0 -90, 0 90)");
+  Geometry expected=new WKTReader().read("LINESTRING(0 -85, 0 85)");
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(requestWebMercator,WGS84,true);
+  assertTrue(handler.requiresProcessing(g));
+  Geometry preProcessed=handler.preProcess(g);
+  assertEquals(expected,preProcessed);
+  Geometry postProcessed=handler.postProcess(CRS.findMathTransform(WGS84,WGS84),expected);
+  assertEquals(expected,postProcessed);
+}

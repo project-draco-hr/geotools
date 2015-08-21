@@ -1,0 +1,19 @@
+{
+  SortBy[] sb=style.sortBy;
+  FeatureType schema=style.layer.getFeatureSource().getSchema();
+  Class[] classes=new Class[sb.length];
+  for (int i=0; i < classes.length; i++) {
+    PropertyName property=sb[i].getPropertyName();
+    if (property == null) {
+      classes[i]=String.class;
+    }
+ else {
+      PropertyDescriptor pd=property.evaluate(schema,null);
+      if (pd == null) {
+        throw new IllegalArgumentException("Property " + property + " could not be found in feature type "+ schema.getName()+ " in layer "+ style.layer.getTitle());
+      }
+      classes[i]=pd.getType().getBinding();
+    }
+  }
+  return classes;
+}
