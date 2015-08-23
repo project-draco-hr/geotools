@@ -14,6 +14,17 @@
   xsdMainResource.setURI(uri);
 synchronized (Schemas.class) {
     xsdMainResource.load(resourceSet.getLoadOptions());
-    return xsdMainResource.getSchema();
+    XSDSchema schema=xsdMainResource.getSchema();
+    if (schema != null) {
+      String forceSchemaImport=System.getProperty(FORCE_SCHEMA_IMPORT);
+      boolean alwaysForce=false;
+      if (forceSchemaImport != null) {
+        alwaysForce=forceSchemaImport.equalsIgnoreCase("true");
+      }
+      if (alwaysForce || hasNoElementsNorTypes(schema)) {
+        forceImport((XSDSchemaImpl)schema);
+      }
+    }
+    return schema;
   }
 }
