@@ -9,19 +9,12 @@
   if (!destinationValid) {
     computeDestinationPoint();
   }
-  final double long2=this.long2;
-  final double lat2=this.lat2;
-  final double distance=this.distance;
   final double delta=distance / (numPoints + 1);
-  points.add(new Point2D.Double(toDegrees(long1),toDegrees(lat1)));
-  for (int i=1; i <= numPoints; i++) {
-    this.distance=i * delta;
-    computeDestinationPoint();
-    points.add(new Point2D.Double(toDegrees(this.long2),toDegrees(this.lat2)));
+  points.add(new Point2D.Double(long1,lat1));
+  GeodesicLine line=geod.Line(lat1,long1,azimuth);
+  for (int i=1; i <= numPoints + 1; i++) {
+    GeodesicData g=line.Position(i * delta,GeodesicMask.LATITUDE | GeodesicMask.LONGITUDE | GeodesicMask.LONG_UNROLL);
+    points.add(new Point2D.Double(g.lon2,g.lat2));
   }
-  points.add(new Point2D.Double(toDegrees(long2),toDegrees(lat2)));
-  this.long2=long2;
-  this.lat2=lat2;
-  this.distance=distance;
   return points;
 }

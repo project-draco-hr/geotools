@@ -3,8 +3,9 @@
     throw new IllegalArgumentException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"ellipsoid"));
   }
   this.ellipsoid=ellipsoid;
-  this.semiMajorAxis=ellipsoid.getSemiMajorAxis();
-  this.semiMinorAxis=ellipsoid.getSemiMinorAxis();
+  semiMajorAxis=ellipsoid.getSemiMajorAxis();
+  flattening=1 / ellipsoid.getInverseFlattening();
+  geod=new Geodesic(semiMajorAxis,flattening);
   if (crs != null) {
     coordinateReferenceSystem=crs;
     geographicCRS=getGeographicCRS(crs);
@@ -13,36 +14,4 @@
  else {
     userToGeodetic=null;
   }
-  f=(semiMajorAxis - semiMinorAxis) / semiMajorAxis;
-  fo=1.0 - f;
-  f2=f * f;
-  f3=f * f2;
-  f4=f * f3;
-  eccentricitySquared=f * (2.0 - f);
-  final double E2=eccentricitySquared;
-  final double E4=E2 * E2;
-  final double E6=E4 * E2;
-  final double E8=E6 * E2;
-  final double EX=E8 * E2;
-  A=1.0 + 0.75 * E2 + 0.703125 * E4 + 0.68359375 * E6 + 0.67291259765625 * E8 + 0.6661834716796875 * EX;
-  B=0.75 * E2 + 0.9375 * E4 + 1.025390625 * E6 + 1.07666015625 * E8 + 1.1103057861328125 * EX;
-  C=0.234375 * E4 + 0.41015625 * E6 + 0.538330078125 * E8 + 0.63446044921875 * EX;
-  D=0.068359375 * E6 + 0.15380859375 * E8 + 0.23792266845703125 * EX;
-  E=0.01922607421875 * E8 + 0.0528717041015625 * EX;
-  F=0.00528717041015625 * EX;
-  maxOrthodromicDistance=semiMajorAxis * (1.0 - E2) * PI* A - 1.0;
-  T1=1.0;
-  T2=-0.25 * f * (1.0 + f + f2);
-  T4=0.1875 * f2 * (1.0 + 2.25 * f);
-  T6=0.1953125 * f3;
-  final double a=f3 * (1.0 + 2.25 * f);
-  a01=-f2 * (1.0 + f + f2) / 4.0;
-  a02=0.1875 * a;
-  a03=-0.1953125 * f4;
-  a21=-a01;
-  a22=-0.25 * a;
-  a23=0.29296875 * f4;
-  a42=0.03125 * a;
-  a43=0.05859375 * f4;
-  a63=5.0 * f4 / 768.0;
 }

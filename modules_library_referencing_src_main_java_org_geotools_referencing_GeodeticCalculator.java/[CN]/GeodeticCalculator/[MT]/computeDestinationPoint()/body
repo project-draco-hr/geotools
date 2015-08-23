@@ -2,46 +2,8 @@
   if (!directionValid) {
     throw new IllegalStateException(Errors.format(ErrorKeys.DIRECTION_NOT_SET));
   }
-  final double lat1=this.lat1;
-  final double long1=this.long1;
-  final double azimuth=this.azimuth;
-  final double distance=this.distance;
-  double TU=fo * sin(lat1) / cos(lat1);
-  double SF=sin(azimuth);
-  double CF=cos(azimuth);
-  double BAZ=(CF != 0) ? atan2(TU,CF) * 2.0 : 0;
-  double CU=1 / sqrt(TU * TU + 1.0);
-  double SU=TU * CU;
-  double SA=CU * SF;
-  double C2A=1.0 - SA * SA;
-  double X=sqrt((1.0 / fo / fo - 1) * C2A + 1.0) + 1.0;
-  X=(X - 2.0) / X;
-  double C=1.0 - X;
-  C=(X * X / 4.0 + 1.0) / C;
-  double D=(0.375 * X * X - 1.0) * X;
-  TU=distance / fo / semiMajorAxis/ C;
-  double Y=TU;
-  double SY, CY, CZ, E;
-  do {
-    SY=sin(Y);
-    CY=cos(Y);
-    CZ=cos(BAZ + Y);
-    E=CZ * CZ * 2.0 - 1.0;
-    C=Y;
-    X=E * CY;
-    Y=E + E - 1.0;
-    Y=(((SY * SY * 4.0 - 3.0) * Y * CZ* D / 6.0 + X) * D / 4.0 - CZ) * SY * D + TU;
-  }
- while (abs(Y - C) > TOLERANCE_1);
-  BAZ=CU * CY * CF - SU * SY;
-  C=fo * hypot(SA,BAZ);
-  D=SU * CY + CU * SY * CF;
-  lat2=atan2(D,C);
-  C=CU * CY - SU * SY * CF;
-  X=atan2(SY * SF,C);
-  C=((-3.0 * C2A + 4.0) * f + 4.0) * C2A * f / 16.0;
-  D=((E * CY * C + CZ) * SY * C + Y) * SA;
-  long2=long1 + X - (1.0 - C) * D * f;
-  long2=castToAngleRange(long2);
+  GeodesicData g=geod.Direct(lat1,long1,azimuth,distance);
+  lat2=g.lat2;
+  long2=g.lon2;
   destinationValid=true;
 }
