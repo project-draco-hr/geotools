@@ -1,0 +1,17 @@
+{
+  final GeometryFactory gf=new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING),1234);
+  SimpleFeatureSource road=store.getFeatureSource("road");
+  FeatureId fid1=ff.featureId("fid1");
+  Filter select=ff.id(Collections.singleton(fid1));
+  Query q=new Query(road.getSchema().getTypeName(),select);
+  q.getHints().put(Hints.JTS_GEOMETRY_FACTORY,gf);
+  SimpleFeatureCollection featureCollection=road.getFeatures(q);
+  featureCollection.accepts(new FeatureVisitor(){
+    public void visit(    Feature f){
+      SimpleFeature feature=(SimpleFeature)f;
+      Geometry g=(Geometry)feature.getDefaultGeometry();
+      assertEquals(1234,g.getSRID());
+    }
+  }
+,null);
+}

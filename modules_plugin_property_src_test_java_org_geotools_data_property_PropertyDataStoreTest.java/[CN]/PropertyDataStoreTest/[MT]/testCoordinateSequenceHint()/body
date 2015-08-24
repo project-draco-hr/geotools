@@ -1,0 +1,17 @@
+{
+  CoordinateSequenceFactory csFactory=new PackedCoordinateSequenceFactory();
+  SimpleFeatureSource road=store.getFeatureSource("road");
+  FeatureId fid1=ff.featureId("fid1");
+  Filter select=ff.id(Collections.singleton(fid1));
+  Query q=new Query(road.getSchema().getTypeName(),select);
+  q.getHints().put(Hints.JTS_COORDINATE_SEQUENCE_FACTORY,csFactory);
+  SimpleFeatureCollection featureCollection=road.getFeatures(q);
+  featureCollection.accepts(new FeatureVisitor(){
+    public void visit(    Feature f){
+      SimpleFeature feature=(SimpleFeature)f;
+      Point p=(Point)feature.getDefaultGeometry();
+      assertThat(p.getCoordinateSequence(),instanceOf(PackedCoordinateSequence.class));
+    }
+  }
+,null);
+}
