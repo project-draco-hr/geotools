@@ -6,8 +6,6 @@
   if (q.getFilter() != null) {
     bbox=(Envelope)q.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR,bbox);
   }
-  boolean usingBoundingBox=false;
-  boolean usingFidIndex=false;
   Filter filter=q != null ? q.getFilter() : null;
   IndexManager indexManager=getDataStore().indexManager;
   CloseableIterator<Data> goodRecs=null;
@@ -16,14 +14,12 @@
     List<Data> records=indexManager.queryFidIndex(fidFilter);
     if (records != null) {
       goodRecs=new CloseableIteratorWrapper<Data>(records.iterator());
-      usingFidIndex=true;
     }
   }
  else   if (getDataStore().isIndexed() && !bbox.isNull() && !Double.isInfinite(bbox.getWidth())&& !Double.isInfinite(bbox.getHeight())) {
     try {
       if (indexManager.isSpatialIndexAvailable() || getDataStore().isIndexCreationEnabled()) {
         goodRecs=indexManager.querySpatialIndex(bbox);
-        usingBoundingBox=true;
       }
     }
  catch (    TreeException e) {
@@ -34,19 +30,6 @@
     LOGGER.log(Level.FINE,"Empty results for " + resultSchema.getName().getLocalPart() + ", skipping read");
     goodRecs.close();
     return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(resultSchema);
-  }
-  if (!usingBoundingBox && !usingFidIndex && getDataStore().isOdbcFilteringEnabled()) {
-    try {
-      goodRecs=RecnoIndexManager.queryRecnoIndex(getDataStore(),filter,q.getMaxFeatures(),goodRecs);
-      if (goodRecs != null && !goodRecs.hasNext()) {
-        LOGGER.log(Level.FINE,"Empty results for " + resultSchema.getName().getLocalPart() + ", skipping read");
-        goodRecs.close();
-        return new EmptyFeatureReader<SimpleFeatureType,SimpleFeature>(resultSchema);
-      }
-    }
- catch (    Exception error) {
-      LOGGER.log(Level.WARNING,"Error querying renco field. msg='" + error.getMessage() + "'.");
-    }
   }
   IndexedFidReader fidReader=null;
   if (getDataStore().isFidIndexed() && filter instanceof Id && indexManager.hasFidIndex(false)) {
