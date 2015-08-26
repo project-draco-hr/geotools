@@ -96,11 +96,15 @@
   }
   ROI roi=null;
   if (hasMaskOvrProvider) {
-    Rectangle sourceRegion=coverageRaster.getBounds();
+    GridEnvelope ogr=getOriginalGridRange();
+    Rectangle sourceRegion;
     if (readP.getSourceRegion() != null) {
       sourceRegion=readP.getSourceRegion();
     }
-    MaskInfo info=maskOvrProvider.getMaskInfo(imageChoice,sourceRegion);
+ else {
+      sourceRegion=new Rectangle(ogr.getSpan(0),ogr.getSpan(1));
+    }
+    MaskInfo info=maskOvrProvider.getMaskInfo(imageChoice,sourceRegion,readP);
     if (info != null) {
       RenderedOp roiRaster=readROIRaster(info.streamSpi,DataUtilities.fileToURL(info.file),info.index,newHints,info.readParameters);
       roi=MaskOverviewProvider.scaleROI(roiRaster,coverageRaster.getBounds());
