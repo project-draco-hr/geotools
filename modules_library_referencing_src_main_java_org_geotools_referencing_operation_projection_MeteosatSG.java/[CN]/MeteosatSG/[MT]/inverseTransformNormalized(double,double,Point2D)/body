@@ -1,0 +1,44 @@
+{
+  double s1=0.0, s2=0.0, s3=0.0, sn=0.0, sd=0.0, sxy=0.0, sa=0.0;
+  double x1=0.0, y1=0.0;
+  double lat, lon;
+  long coff, loff;
+  double cfac, lfac;
+  double sin_y1, cos_x1, cos_y1;
+  lfac=LFAC_NONHRV;
+  cfac=CFAC_NONHRV;
+  coff=COFF_NONHRV;
+  loff=LOFF_NONHRV;
+  x=x * SCALE_FACTOR;
+  y=y * SCALE_FACTOR;
+  x1=65536 * (x - coff) / cfac;
+  y1=65536 * (y - loff) / lfac;
+  sin_y1=sin(y1);
+  cos_x1=cos(x1);
+  cos_y1=cos(y1);
+  sa=pow(SAT_HEIGHT * cos_x1 * cos_y1,2) - (cos_y1 * cos_y1 + 1.006803 * sin_y1 * sin_y1) * 1737121856.;
+  if (sa <= 0.0) {
+    lat=0;
+    lon=1.2998982273;
+    if (ptDst != null) {
+      ptDst.setLocation(lat,lon);
+      LOGGER.log(Level.INFO,"MeteosatSG inverse transform: Column/row outside vaild range, x=" + x + " y="+ y+ " Lat/lon set to (0N, 74.48E)");
+      return ptDst;
+    }
+    return new Point2D.Double(lon,lat);
+  }
+  sd=sqrt(pow((SAT_HEIGHT * cos_x1 * cos_y1),2) - (cos_y1 * cos_y1 + (double)1.006803 * sin_y1 * sin_y1) * (double)1737121856.);
+  sn=(SAT_HEIGHT * cos_x1 * cos_y1 - sd) / (cos_y1 * cos_y1 + (double)1.006803 * sin_y1 * sin_y1);
+  s1=SAT_HEIGHT - sn * cos_x1 * cos_y1;
+  s2=sn * sin(x1) * cos_y1;
+  s3=-sn * sin_y1;
+  sxy=sqrt(s1 * s1 + s2 * s2);
+  lon=atan(s2 / s1) + SUB_LON;
+  lat=atan(((double)1.006803 * s3) / sxy);
+  if (ptDst != null) {
+    ptDst.setLocation(lon,lat);
+    LOGGER.log(Level.FINE,"MeteosatSG inverse transform: col=" + x + " row="+ y);
+    return ptDst;
+  }
+  return new Point2D.Double(lon,lat);
+}
