@@ -1,14 +1,18 @@
 {
-  float[] ret=null;
-  if (dashArray != null) {
-    ret=new float[dashArray.length];
-    System.arraycopy(dashArray,0,ret,0,dashArray.length);
+  if (dashArray == null) {
+    return Stroke.DEFAULT.getDashArray();
   }
+  float[] values=new float[dashArray.size()];
+  int index=0;
+  for (  Expression expression : dashArray) {
+    if (expression instanceof Literal) {
+      Literal literal=(Literal)expression;
+      values[index]=literal.evaluate(null,Float.class);
+    }
  else {
-    final float[] defaultDashArray=Stroke.DEFAULT.getDashArray();
-    if (defaultDashArray == null)     return null;
-    ret=new float[defaultDashArray.length];
-    System.arraycopy(defaultDashArray,0,ret,0,defaultDashArray.length);
+      throw new RuntimeException("Dash array is not literal: '" + expression + "'.");
+    }
+    index++;
   }
-  return ret;
+  return values;
 }

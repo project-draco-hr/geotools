@@ -11,7 +11,15 @@
   int capCode;
   capType=evaluateExpression(stroke.getLineCap(),feature,"square");
   capCode=SLDStyleFactory.lookUpCap(capType);
-  float[] dashes=stroke.getDashArray();
+  float[] dashes=null;
+  if (stroke.dashArray() != null) {
+    dashes=new float[stroke.dashArray().size()];
+    int index=0;
+    for (    Expression expression : stroke.dashArray()) {
+      dashes[index]=expression.evaluate(feature,Float.class);
+      index++;
+    }
+  }
   float width=((Float)stroke.getWidth().evaluate(feature,Float.class)).floatValue();
   float dashOffset=((Float)stroke.getDashOffset().evaluate(feature,Float.class)).floatValue();
   if (width <= 1) {
