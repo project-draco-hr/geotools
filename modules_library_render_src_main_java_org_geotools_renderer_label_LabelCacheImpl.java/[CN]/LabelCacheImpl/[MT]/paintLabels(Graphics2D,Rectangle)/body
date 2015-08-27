@@ -4,6 +4,9 @@
   }
   LabelIndex glyphs=new LabelIndex();
   glyphs.reserveArea(reserved);
+  boolean painted;
+  int nonPaintedLineLabels=0;
+  int paintedLineLabels=0;
   displayArea=new Rectangle(displayArea);
   displayArea.width-=1;
   displayArea.height-=1;
@@ -23,7 +26,14 @@
       AffineTransform tempTransform=new AffineTransform();
       Geometry geom=labelItem.getGeometry();
       if ((geom instanceof Point) || (geom instanceof MultiPoint))       paintPointLabel(painter,tempTransform,displayArea,glyphs);
- else       if (((geom instanceof LineString) && !(geom instanceof LinearRing)) || (geom instanceof MultiLineString))       paintLineLabels(painter,tempTransform,displayArea,glyphs);
+ else       if (((geom instanceof LineString) && !(geom instanceof LinearRing)) || (geom instanceof MultiLineString)) {
+        if (!DISABLE_LETTER_LEVEL_CONFLICT)         painted=paintLineLabelsWithLetterConflict(painter,tempTransform,displayArea,glyphs);
+ else         painted=paintLineLabels(painter,tempTransform,displayArea,glyphs);
+        if (!painted) {
+          nonPaintedLineLabels++;
+        }
+ else         paintedLineLabels++;
+      }
  else       if (geom instanceof Polygon || geom instanceof MultiPolygon || geom instanceof LinearRing)       paintPolygonLabel(painter,tempTransform,displayArea,glyphs);
     }
  catch (    Exception e) {
@@ -31,4 +41,7 @@
       e.printStackTrace();
     }
   }
+  LOGGER.log(Level.FINE,"TOTAL LINE LABELS : {0}",items.size());
+  LOGGER.log(Level.FINE,"PAINTED LINE LABELS : {0}",paintedLineLabels);
+  LOGGER.log(Level.FINE,"REMAINING LINE LABELS : {0}",nonPaintedLineLabels);
 }

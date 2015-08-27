@@ -1,0 +1,45 @@
+{
+synchronized (LabelCacheImpl.class) {
+    LabelCacheImpl.DISABLE_LETTER_LEVEL_CONFLICT=true;
+    Style style=RendererBaseTest.loadStyle(this,"letterConflict6.sld");
+    DefaultMapContext mc=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+    mc.addLayer(fs_line4,style);
+    StreamingRenderer renderer=getNewRenderer(mc);
+    BufferedImage image1=RendererBaseTest.renderImage(renderer,bounds2,null);
+    long t0, t1, t2, t3;
+    long ta=0;
+    for (int i=0; i < 10; i++) {
+      renderer=getNewRenderer(mc);
+      t0=System.nanoTime();
+      image1=RendererBaseTest.renderImage(renderer,bounds2,null);
+      t1=System.nanoTime();
+      ta+=(t1 - t0);
+    }
+    System.out.println("time false " + ta / 10000000);
+    LabelCacheImpl.DISABLE_LETTER_LEVEL_CONFLICT=false;
+    mc=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+    mc.addLayer(fs_line4,style);
+    renderer=getNewRenderer(mc);
+    BufferedImage image2=RendererBaseTest.renderImage(renderer,bounds2,null);
+    ta=0;
+    for (int i=0; i < 10; i++) {
+      renderer=getNewRenderer(mc);
+      t2=System.nanoTime();
+      image2=RendererBaseTest.renderImage(renderer,bounds2,null);
+      t3=System.nanoTime();
+      ta+=(t3 - t2);
+    }
+    System.out.println("time true " + ta / 10000000);
+    assertTrue("More labels in image2 than image1",countDarkPixels(image2) > countDarkPixels(image1));
+    if (OUTPUT_IMAGE) {
+      File tmpFile=File.createTempFile("geotools",".png");
+      ImageIO.write(image1,"png",tmpFile);
+      tmpFile=File.createTempFile("geotools",".png");
+      ImageIO.write(image2,"png",tmpFile);
+    }
+    if (SHOW_RESULT) {
+      showImage("letterConflictEnabled false",TIME,image1);
+      showImage("letterConflictEnabled true",TIME,image2);
+    }
+  }
+}
