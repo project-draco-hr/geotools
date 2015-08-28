@@ -1,0 +1,49 @@
+{
+  Polygon polygon=JTS.toGeometry(envelope);
+  CoordinateReferenceSystem readerCRS=reader.getCoordinateReferenceSystem();
+  GridGeometry2D gg=new GridGeometry2D(new GridEnvelope2D(mapRasterArea),mapExtent);
+  GridGeometry2D readingGridGeometry=computeReadingGeometry(gg,readerCRS,polygon,handler);
+  if (readingGridGeometry == null) {
+    return null;
+  }
+  if (paddingRequired) {
+    readingGridGeometry=applyReadGutter(readingGridGeometry);
+  }
+  GridCoverage2D coverage=readSingleCoverage(readParams,readingGridGeometry);
+  if (coverage == null) {
+    return null;
+  }
+  ReferencedEnvelope readingEnvelope=ReferencedEnvelope.reference(readingGridGeometry.getEnvelope2D());
+  ReferencedEnvelope coverageEnvelope=ReferencedEnvelope.reference(coverage.getEnvelope2D());
+  Polygon coverageFootprint=JTS.toGeometry(coverageEnvelope);
+  Geometry preProcessed=handler.preProcess(coverageFootprint);
+  if (preProcessed != null && !preProcessed.isEmpty()) {
+    if (coverageFootprint.equals(preProcessed)) {
+      if (!readingEnvelope.contains((Envelope)coverageEnvelope)) {
+        ReferencedEnvelope cropEnvelope=new ReferencedEnvelope(readingEnvelope.intersection(coverageEnvelope),readerCRS);
+        if (isNotEmpty(cropEnvelope)) {
+          GridCoverage2D cropped=cropCoverage(coverage,cropEnvelope);
+          return Collections.singletonList(cropped);
+        }
+      }
+ else {
+        return Collections.singletonList(coverage);
+      }
+    }
+ else {
+      final List<Polygon> polygons=PolygonExtractor.INSTANCE.getPolygons(preProcessed);
+      final List<GridCoverage2D> coverages=new ArrayList<>();
+      for (      Polygon p : polygons) {
+        ReferencedEnvelope cropEnvelope=new ReferencedEnvelope(p.getEnvelopeInternal(),readerCRS);
+        cropEnvelope=new ReferencedEnvelope(cropEnvelope.intersection(coverageEnvelope),readerCRS);
+        cropEnvelope=new ReferencedEnvelope(cropEnvelope.intersection(readingEnvelope),readerCRS);
+        if (isNotEmpty(cropEnvelope)) {
+          GridCoverage2D cropped=cropCoverage(coverage,cropEnvelope);
+          coverages.add(cropped);
+        }
+      }
+      return coverages;
+    }
+  }
+  return null;
+}
