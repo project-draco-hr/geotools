@@ -2,8 +2,9 @@
 synchronized (LabelCacheImpl.class) {
     LabelCacheImpl.DISABLE_LETTER_LEVEL_CONFLICT=true;
     Style style=RendererBaseTest.loadStyle(this,"letterConflict6.sld");
-    DefaultMapContext mc=new DefaultMapContext(DefaultGeographicCRS.WGS84);
-    mc.addLayer(fs_line4,style);
+    MapContent mc=new MapContent();
+    mc.getViewport().setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+    mc.addLayer(new FeatureLayer(fs_line4,style));
     StreamingRenderer renderer=getNewRenderer(mc);
     BufferedImage image1=RendererBaseTest.renderImage(renderer,bounds2,null);
     long t0, t1, t2, t3;
@@ -15,10 +16,12 @@ synchronized (LabelCacheImpl.class) {
       t1=System.nanoTime();
       ta+=(t1 - t0);
     }
-    System.out.println("time false " + ta / 10000000);
+    LOGGER.fine("time false " + ta / 10000000);
+    mc.dispose();
     LabelCacheImpl.DISABLE_LETTER_LEVEL_CONFLICT=false;
-    mc=new DefaultMapContext(DefaultGeographicCRS.WGS84);
-    mc.addLayer(fs_line4,style);
+    mc=new MapContent();
+    mc.getViewport().setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+    mc.addLayer(new FeatureLayer(fs_line4,style));
     renderer=getNewRenderer(mc);
     BufferedImage image2=RendererBaseTest.renderImage(renderer,bounds2,null);
     ta=0;
@@ -29,17 +32,12 @@ synchronized (LabelCacheImpl.class) {
       t3=System.nanoTime();
       ta+=(t3 - t2);
     }
-    System.out.println("time true " + ta / 10000000);
+    LOGGER.fine("time true " + ta / 10000000);
+    mc.dispose();
     assertTrue("More labels in image2 than image1",countDarkPixels(image2) > countDarkPixels(image1));
-    if (OUTPUT_IMAGE) {
-      File tmpFile=File.createTempFile("geotools",".png");
-      ImageIO.write(image1,"png",tmpFile);
-      tmpFile=File.createTempFile("geotools",".png");
-      ImageIO.write(image2,"png",tmpFile);
-    }
-    if (SHOW_RESULT) {
-      showImage("letterConflictEnabled false",TIME,image1);
-      showImage("letterConflictEnabled true",TIME,image2);
-    }
+    writeImage("letterConflictEnabledPerfFalse",image1);
+    writeImage("letterConflictEnabledPerfTrue",image2);
+    showImage("letterConflictEnabledPref false",TIME,image1);
+    showImage("letterConflictEnabledPerf true",TIME,image2);
   }
 }

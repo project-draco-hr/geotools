@@ -1,25 +1,23 @@
 {
   LabelCacheImpl.DISABLE_LETTER_LEVEL_CONFLICT=true;
   Style style=RendererBaseTest.loadStyle(this,"letterConflict20.sld");
-  DefaultMapContext mc=new DefaultMapContext(DefaultGeographicCRS.WGS84);
-  mc.addLayer(fs_line1,style);
+  MapContent mc=new MapContent();
+  mc.getViewport().setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+  mc.addLayer(new FeatureLayer(fs_line1,style));
   StreamingRenderer renderer=getNewRenderer(mc);
   final BufferedImage image1=RendererBaseTest.renderImage(renderer,bounds1,null);
+  mc.dispose();
   LabelCacheImpl.DISABLE_LETTER_LEVEL_CONFLICT=false;
   style=RendererBaseTest.loadStyle(this,"letterConflict20.sld");
-  mc=new DefaultMapContext(DefaultGeographicCRS.WGS84);
-  mc.addLayer(fs_line1,style);
+  mc=new MapContent();
+  mc.getViewport().setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+  mc.addLayer(new FeatureLayer(fs_line1,style));
   renderer=getNewRenderer(mc);
   final BufferedImage image2=RendererBaseTest.renderImage(renderer,bounds1,null);
+  mc.dispose();
   assertTrue("More labels in image2 than image1",countPixels(image2,Color.BLACK) > countPixels(image1,Color.BLACK));
-  if (OUTPUT_IMAGE) {
-    File tmpFile=File.createTempFile("geotools",".png");
-    ImageIO.write(image1,"png",tmpFile);
-    tmpFile=File.createTempFile("geotools",".png");
-    ImageIO.write(image2,"png",tmpFile);
-  }
-  if (SHOW_RESULT) {
-    showImage("letterConflictEnabled false",TIME,image1);
-    showImage("letterConflictEnabled true",TIME,image2);
-  }
+  writeImage("letterConflictEnabledFalse",image1);
+  writeImage("letterConflictEnabledTrue",image2);
+  showImage("letterConflictEnabled false",TIME,image1);
+  showImage("letterConflictEnabled true",TIME,image2);
 }
