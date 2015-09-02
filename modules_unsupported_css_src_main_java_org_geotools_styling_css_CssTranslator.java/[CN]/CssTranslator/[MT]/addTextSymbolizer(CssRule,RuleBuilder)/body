@@ -80,22 +80,25 @@
     }
     Map<String,List<Value>> fontLikeProperties=cssRule.getPropertyValues(PseudoClass.ROOT,"font");
     if (!fontLikeProperties.isEmpty() && (fontLikeProperties.size() > 1 || fontLikeProperties.get("font-fill") == null)) {
-      FontBuilder fb=tb.newFont();
-      Expression fontFamily=getExpression(values,"font-family",i);
-      if (fontFamily != null) {
-        fb.family(fontFamily);
-      }
-      Expression fontStyle=getExpression(values,"font-style",i);
-      if (fontStyle != null) {
-        fb.style(fontStyle);
-      }
-      Expression fontWeight=getExpression(values,"font-weight",i);
-      if (fontWeight != null) {
-        fb.weight(fontWeight);
-      }
-      Expression fontSize=getMeasureExpression(values,"font-size",i,"px");
-      if (fontSize != null) {
-        fb.size(fontSize);
+      int maxSize=getMaxMultiValueSize(values,i,"font-family","font-style","font-weight","font-family");
+      for (int j=0; j < maxSize; j++) {
+        FontBuilder fb=tb.newFont();
+        Expression fontFamily=getExpression(getValueInMulti(values,"font-family",i,j));
+        if (fontFamily != null) {
+          fb.family(fontFamily);
+        }
+        Expression fontStyle=getExpression(getValueInMulti(values,"font-style",i,j));
+        if (fontStyle != null) {
+          fb.style(fontStyle);
+        }
+        Expression fontWeight=getExpression(getValueInMulti(values,"font-weight",i,j));
+        if (fontWeight != null) {
+          fb.weight(fontWeight);
+        }
+        Expression fontSize=getExpression(getValueInMulti(values,"font-size",i,j));
+        if (fontSize != null) {
+          fb.size(fontSize);
+        }
       }
     }
     if (!cssRule.getPropertyValues(PseudoClass.ROOT,"halo").isEmpty()) {
