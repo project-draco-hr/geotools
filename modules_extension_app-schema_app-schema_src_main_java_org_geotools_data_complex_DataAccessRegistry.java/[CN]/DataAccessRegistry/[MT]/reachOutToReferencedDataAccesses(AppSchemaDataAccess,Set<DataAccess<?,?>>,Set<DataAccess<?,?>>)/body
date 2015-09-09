@@ -1,0 +1,37 @@
+{
+  reachedDataAccessInstances.add(asda);
+  for (  Name typeName : asda.getNames()) {
+    FeatureTypeMapping ftm=asda.getMappingByNameOrElement(typeName);
+    List<NestedAttributeMapping> nestedMappings=ftm.getNestedMappings();
+    if (nestedMappings != null) {
+      for (      NestedAttributeMapping nestedAttr : nestedMappings) {
+        if (!nestedAttr.isConditional()) {
+          String nestedTypeNameAsString=nestedAttr.nestedFeatureType.toString();
+          Name nestedTypeName=Types.degloseName(nestedTypeNameAsString,nestedAttr.getNamespaces());
+          try {
+            DataAccess<FeatureType,Feature> refDA=getDataAccess(nestedTypeName);
+            if (refDA instanceof AppSchemaDataAccess) {
+              AppSchemaDataAccess refASDA=(AppSchemaDataAccess)refDA;
+              if (refASDA.hidden) {
+                stillReferencedDataAccessInstances.add(refASDA);
+              }
+              if (!reachedDataAccessInstances.contains(refASDA)) {
+                if (!reachOutToReferencedDataAccesses(refASDA,stillReferencedDataAccessInstances,reachedDataAccessInstances)) {
+                  return false;
+                }
+              }
+            }
+          }
+ catch (          DataSourceException dse) {
+            LOGGER.log(Level.FINER,"Referenced data access not found: " + "probably it has been removed already, moving on...",dse);
+          }
+        }
+ else {
+          LOGGER.finer("Polymorphic mapping found, disabling automatic disposal of hidden data accesses");
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}

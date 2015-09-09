@@ -1,0 +1,26 @@
+{
+  this.hidden=hidden;
+  try {
+    for (    FeatureTypeMapping mapping : mappings) {
+      Name name=mapping.getMappingName();
+      if (name == null) {
+        name=mapping.getTargetFeature().getName();
+      }
+      if (this.mappings.containsKey(name) || DataAccessRegistry.hasName(name)) {
+        throw new DataSourceException("Duplicate mappingName or targetElement across FeatureTypeMapping instances detected.\n" + "They have to be unique, or app-schema doesn't know which one to get.\n" + "Please check your mapping file(s) with mappingName or targetElement of: "+ name);
+      }
+      this.mappings.put(name,mapping);
+      AttributeType type=mapping.getTargetFeature().getType();
+      if (!(type instanceof FeatureType)) {
+        new NonFeatureTypeProxy(type,mapping);
+      }
+    }
+  }
+ catch (  RuntimeException e) {
+    for (    FeatureTypeMapping mapping : mappings) {
+      mapping.getSource().getDataStore().dispose();
+    }
+    throw e;
+  }
+  register();
+}
