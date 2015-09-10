@@ -1,0 +1,27 @@
+{
+  boolean canSafelyRemove=true;
+  Set<DataAccess<?,?>> stillReferencedHiddenDataAccesses=new HashSet<DataAccess<?,?>>();
+  for (  DataAccess<FeatureType,Feature> da : registry) {
+    if (da instanceof AppSchemaDataAccess) {
+      AppSchemaDataAccess asda=(AppSchemaDataAccess)da;
+      if (!asda.hidden) {
+        Set<DataAccess<?,?>> reachedDataAccesses=new HashSet<DataAccess<?,?>>();
+        canSafelyRemove=canSafelyRemove && reachOutToReferencedDataAccesses(asda,stillReferencedHiddenDataAccesses,reachedDataAccesses);
+        if (!canSafelyRemove) {
+          break;
+        }
+      }
+    }
+  }
+  if (canSafelyRemove) {
+    List<DataAccess<FeatureType,Feature>> copyRegistry=new ArrayList<DataAccess<FeatureType,Feature>>(registry);
+    for (    DataAccess<FeatureType,Feature> da : copyRegistry) {
+      if (da instanceof AppSchemaDataAccess) {
+        AppSchemaDataAccess asda=(AppSchemaDataAccess)da;
+        if (asda.hidden && !stillReferencedHiddenDataAccesses.contains(asda)) {
+          asda.dispose();
+        }
+      }
+    }
+  }
+}
