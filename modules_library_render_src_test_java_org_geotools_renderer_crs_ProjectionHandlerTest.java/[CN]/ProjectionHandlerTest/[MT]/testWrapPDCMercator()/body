@@ -1,0 +1,22 @@
+{
+  CoordinateReferenceSystem pdc=CRS.decode("EPSG:3832",true);
+  ReferencedEnvelope world=new ReferencedEnvelope(-20000000,20000000,-20000000,20000000,pdc);
+  Geometry g=new WKTReader().read("MULTIPOLYGON(((-73 60, -73 83, -11 83, -11 60, -73 60)),((-10 60, -10 61, -11 61, -11 60, -10 60)))");
+  Geometry original=(Geometry)g.clone();
+  ProjectionHandler handler=ProjectionHandlerFinder.getHandler(world,WGS84,true);
+  assertTrue(handler.requiresProcessing(g));
+  Geometry preProcessed=handler.preProcess(g);
+  assertEquals(original,preProcessed);
+  MathTransform mt=CRS.findMathTransform(WGS84,pdc,true);
+  Geometry transformed=JTS.transform(g,mt);
+  final Geometry postProcessed=handler.postProcess(mt,transformed);
+  assertEquals(3,postProcessed.getNumGeometries());
+  postProcessed.apply(new GeometryComponentFilter(){
+    @Override public void filter(    Geometry geom){
+      if (geom != postProcessed && geom.getEnvelopeInternal().getWidth() > 40000000) {
+        fail("The geometry did not get rewrapped properly");
+      }
+    }
+  }
+);
+}

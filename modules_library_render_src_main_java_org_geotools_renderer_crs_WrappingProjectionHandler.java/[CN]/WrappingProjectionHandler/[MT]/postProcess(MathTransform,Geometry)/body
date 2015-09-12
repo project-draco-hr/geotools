@@ -15,13 +15,11 @@
     return geometry;
   }
   if (datelineWrappingCheckEnabled && width > radius && width < radius * 2) {
-    Geometry wrapped=(Geometry)geometry.clone();
+    final Geometry wrapped=(Geometry)geometry.clone();
     wrapped.apply(new WrappingCoordinateFilter(radius,radius * 2,mt,northEast));
     wrapped.geometryChanged();
-    if (wrapped.getEnvelopeInternal().getWidth() < radius) {
-      geometry=wrapped;
-      env=geometry.getEnvelopeInternal();
-    }
+    geometry=wrapped;
+    env=geometry.getEnvelopeInternal();
   }
   List<Geometry> geoms=new ArrayList<Geometry>();
   Class geomType=null;
@@ -35,8 +33,9 @@
  else {
     base=env.getMinX();
     curr=env.getMinX();
-    lowLimit=Math.max(renderingEnvelope.getMinX(),renderingEnvelope.getMedian(0) - maxWraps * radius * 2);
-    highLimit=Math.min(renderingEnvelope.getMaxX(),renderingEnvelope.getMedian(0) + maxWraps * radius * 2);
+    double geometryWidth=geometry.getEnvelopeInternal().getWidth();
+    lowLimit=Math.max(renderingEnvelope.getMinX() - geometryWidth,renderingEnvelope.getMedian(0) - maxWraps * radius * 2);
+    highLimit=Math.min(renderingEnvelope.getMaxX() + geometryWidth,renderingEnvelope.getMedian(0) + maxWraps * radius * 2);
   }
   while (curr > lowLimit) {
     curr-=radius * 2;
