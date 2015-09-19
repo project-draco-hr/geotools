@@ -1,0 +1,20 @@
+{
+  Style style=RendererBaseTest.loadStyle(this,"textWrapEnabled.sld");
+  MapContent mc=new MapContent();
+  mc.getViewport().setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+  mc.addLayer(new FeatureLayer(fs,style));
+  mc.addLayer(new DirectLayer(){
+    @Override public ReferencedEnvelope getBounds(){
+      return null;
+    }
+    @Override public void draw(    Graphics2D graphics,    MapContent map,    MapViewport viewport){
+    }
+  }
+);
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setJava2DHints(new RenderingHints(KEY_ANTIALIASING,VALUE_ANTIALIAS_ON));
+  renderer.setMapContent(mc);
+  BufferedImage image=RendererBaseTest.showRender("Label and direct layers",renderer,TIME,bounds);
+  String refPath="./src/test/resources/org/geotools/renderer/lite/test-data/textWrapEnabled.png";
+  ImageAssert.assertEquals(new File(refPath),image,1200);
+}
