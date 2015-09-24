@@ -9,8 +9,13 @@
     final GridCoverage2D sourceCoverage=(GridCoverage2D)source.getOutput();
     GridCoverageRendererUtilities.ensureSourceNotNull(sourceCoverage,"ColorMapNode");
     final int numSD=sourceCoverage.getNumSampleDimensions();
-    if (numSD > 1)     throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_BAND_NUMBER_$1,Integer.valueOf(numSD)));
-    final GridSampleDimension candidateSD=(GridSampleDimension)sourceCoverage.getSampleDimension(0);
+    if (numSD > 1) {
+      ColorModel cm=sourceCoverage.getRenderedImage().getColorModel();
+      if (!cm.hasAlpha() && cm.getNumColorComponents() != 2) {
+        throw new IllegalArgumentException(Errors.format(ErrorKeys.BAD_BAND_NUMBER_$1,Integer.valueOf(numSD)));
+      }
+    }
+    final GridSampleDimension candidateSD=sourceCoverage.getSampleDimension(0);
     double[] candidateNoDataValues=preparaNoDataValues(candidateSD);
     final SLDColorMapBuilder builder=new SLDColorMapBuilder();
     builder.setExtendedColors(this.extendedColors).setLinearColorMapType(this.type).setNumberColorMapEntries(cmEntries.length).setColorForValuesToPreserve(new Color(0,0,0,0)).setGapsColor(new Color(0,0,0,0));

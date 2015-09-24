@@ -1,0 +1,21 @@
+{
+  final int width=500;
+  final int height=500;
+  final WritableRaster raster=RasterFactory.createBandedRaster(DataBuffer.TYPE_BYTE,width,height,2,null);
+  final Random random=new Random();
+  for (int y=0; y < height; y++) {
+    for (int x=0; x < width; x++) {
+      if (random.nextFloat() > 0.9) {
+        raster.setSample(x,y,0,0);
+      }
+ else {
+        raster.setSample(x,y,0,(x + y));
+      }
+      raster.setSample(x,y,1,255);
+    }
+  }
+  final ColorModel cm=new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_GRAY),true,false,Transparency.TRANSLUCENT,DataBuffer.TYPE_BYTE);
+  final BufferedImage image=new BufferedImage(cm,raster,false,null);
+  GridCoverage2D gc=CoverageFactoryFinder.getGridCoverageFactory(null).create("name",PlanarImage.wrapRenderedImage(image),new GeneralEnvelope(new double[]{-90,-180},new double[]{90,180}),new GridSampleDimension[]{new GridSampleDimension("sd",new Category[]{new Category("",Color.BLACK,0)},null),new GridSampleDimension("sd-alpha",new Category[]{new Category("",Color.BLACK,0)},null)},null,null);
+  testColorMap(gc);
+}
