@@ -1,0 +1,31 @@
+{
+  final List<Filter> filters=new ArrayList<Filter>();
+  SimpleFeatureSource testSource=new CollectionFeatureSource(createLineCollection()){
+    @Override public SimpleFeatureCollection getFeatures(    Query query){
+      filters.add(query.getFilter());
+      return super.getFeatures(query);
+    }
+  }
+;
+  Style style=createPointStyle();
+  MapContent mc=new MapContent();
+  FeatureLayer layer=new FeatureLayer(testSource,style);
+  mc.addLayer(layer);
+  StreamingRenderer sr=new StreamingRenderer();
+  sr.setMapContent(mc);
+  ReferencedEnvelope envelope=new ReferencedEnvelope(0,100,0,100,DefaultGeographicCRS.WGS84);
+  BBOX bbox=StreamingRenderer.filterFactory.bbox("",30,60,30,60,"WGS84");
+  StyleFactoryImpl sf=new StyleFactoryImpl();
+  Rule bboxRule=sf.createRule(new Symbolizer[0],new DescriptionImpl(),new Graphic[0],"bbox",bbox,false,1e12,0);
+  style.featureTypeStyles().get(0).rules().add(bboxRule);
+  BufferedImage bi=new BufferedImage(100,100,BufferedImage.TYPE_3BYTE_BGR);
+  Graphics2D graphics=bi.createGraphics();
+  try {
+    sr.paint(graphics,new Rectangle(5,5,7,7),envelope);
+  }
+  finally {
+    graphics.dispose();
+  }
+  assertEquals(1,filters.size());
+  assertEquals(FastBBOX.class,filters.get(0).getClass());
+}
