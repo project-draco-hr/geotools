@@ -90,7 +90,8 @@
       spanx=-1;
       spany=-1;
     }
-    LiteCoordinateSequence seq=LiteCoordinateSequenceFactory.lite(ls.getCoordinateSequence());
+    CoordinateSequence originalSequence=ls.getCoordinateSequence();
+    LiteCoordinateSequence seq=LiteCoordinateSequenceFactory.lite(originalSequence);
     boolean loop=ls instanceof LinearRing;
     if (!loop && seq.size() > 1) {
       double x0=seq.getOrdinate(0,0);
@@ -100,6 +101,14 @@
       loop=Math.abs(x0 - x1) < EPS && Math.abs(y0 - y1) < EPS;
     }
     decimateTransformGeneralize(seq,transform,loop,spanx,spany);
+    if (seq != originalSequence) {
+      if (loop) {
+        ls=ls.getFactory().createLinearRing(seq);
+      }
+ else {
+        ls=ls.getFactory().createLineString(seq);
+      }
+    }
     return ls;
   }
  else {

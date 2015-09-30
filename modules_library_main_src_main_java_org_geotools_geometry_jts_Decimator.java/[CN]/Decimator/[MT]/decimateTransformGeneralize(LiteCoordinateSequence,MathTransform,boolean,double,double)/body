@@ -1,8 +1,10 @@
 {
   int ncoords=seq.size();
   double coords[]=null;
+  int sourceDimensions=2;
   if (transform != null) {
-    coords=seq.getOrdinateArray(transform.getSourceDimensions());
+    sourceDimensions=transform.getSourceDimensions();
+    coords=seq.getOrdinateArray(sourceDimensions);
   }
  else {
     coords=seq.getXYArray();
@@ -11,7 +13,17 @@
     if (ncoords == 1) {
       if (transform != null) {
         transform.transform(coords,0,coords,0,1);
-        seq.setArray(coords,2);
+        if (sourceDimensions > 2) {
+          double[] flatCoords=new double[seq.size() * 2];
+          for (int i=0; i < seq.size(); i++) {
+            flatCoords[i * 2]=coords[i * sourceDimensions];
+            flatCoords[i * 2 + 1]=coords[i * sourceDimensions + 1];
+          }
+          seq.setArray(flatCoords,2);
+        }
+ else {
+          seq.setArray(coords,2);
+        }
       }
       return;
     }

@@ -1,0 +1,44 @@
+{
+  if (abs(offset) < EPS) {
+    return g;
+  }
+  if (g == null) {
+    return null;
+  }
+  double threshold=abs(offset) / 10;
+  final List<LineString> lines=extractLineStrings(g);
+  List<LineString> offsets=new ArrayList<>();
+  for (  LineString ls : lines) {
+    LineString simplified=(LineString)DouglasPeuckerSimplifier.simplify(ls,threshold);
+    if (simplified == null) {
+      return null;
+    }
+    if (ls.isClosed() && !simplified.isClosed()) {
+      CoordinateSequence source=simplified.getCoordinateSequence();
+      int numCoordinates=source.size();
+      LiteCoordinateSequence dest=new LiteCoordinateSequence(numCoordinates + 1,2);
+      for (int i=0; i < numCoordinates; i++) {
+        dest.setOrdinate(i,0,source.getOrdinate(i,0));
+        dest.setOrdinate(i,1,source.getOrdinate(i,1));
+      }
+      dest.setOrdinate(numCoordinates,0,source.getOrdinate(0,0));
+      dest.setOrdinate(numCoordinates,1,source.getOrdinate(0,1));
+      simplified=simplified.getFactory().createLinearRing(dest);
+    }
+    LineString offsetLine=(LineString)offset(simplified);
+    if (offsetLine != null) {
+      offsets.add(offsetLine);
+    }
+  }
+  if (offsets.isEmpty()) {
+    return null;
+  }
+ else   if (offsets.size() == 1) {
+    return offsets.get(0);
+  }
+ else {
+    GeometryFactory factory=offsets.get(0).getFactory();
+    MultiLineString result=factory.createMultiLineString(offsets.toArray(new LineString[offsets.size()]));
+    return result;
+  }
+}

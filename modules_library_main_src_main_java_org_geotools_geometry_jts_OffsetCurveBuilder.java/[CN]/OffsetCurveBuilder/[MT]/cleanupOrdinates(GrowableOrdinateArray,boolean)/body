@@ -1,0 +1,78 @@
+{
+  final int max=ordinates.size();
+  if (max <= 8 && closed || (max < 8 && !closed)) {
+    return ordinates;
+  }
+  double[] data=ordinates.getDataRaw();
+  if (max > data.length) {
+    throw new ArrayIndexOutOfBoundsException(max);
+  }
+  GrowableOrdinateArray result=ordinates;
+  Coordinate c1=new Coordinate();
+  Coordinate c2=new Coordinate();
+  Coordinate c3=new Coordinate();
+  Coordinate c4=new Coordinate();
+  LineIntersector intersector=new RobustLineIntersector();
+  c1.x=data[0];
+  c1.y=data[1];
+  boolean lastCurlEliminated=false;
+  for (int i=2; i < (max - 3); i+=2) {
+    c2.x=data[i];
+    c2.y=data[i + 1];
+    c3.x=data[i + 2];
+    c3.y=data[i + 3];
+    for (int j=i + 4; j < (max - 1); j+=2) {
+      c4.x=data[j];
+      c4.y=data[j + 1];
+      if (squaredDistance(c1,c3) > maxSearchDistanceSquared && squaredDistance(c1,c4) > maxSearchDistanceSquared && squaredDistance(c2,c3) > maxSearchDistanceSquared && squaredDistance(c2,c4) > maxSearchDistanceSquared) {
+        break;
+      }
+      intersector.computeIntersection(c1,c2,c3,c4);
+      if (intersector.hasIntersection()) {
+        Coordinate intersection=intersector.getIntersection(0);
+        c2.x=intersection.x;
+        c2.y=intersection.y;
+        if (result == ordinates) {
+          result=new GrowableOrdinateArray();
+          if (i > 3) {
+            result.copy(ordinates,0,i - 3);
+          }
+        }
+        i=j - 2;
+        break;
+      }
+ else       if (j == max - 2 && !closed) {
+        double distancePointLine=CGAlgorithms.distancePointLine(c4,c1,c2);
+        if (distancePointLine < abs(offset) / 10) {
+          c2.x=c4.x;
+          c2.y=c4.y;
+          if (result == ordinates) {
+            result=new GrowableOrdinateArray();
+            if (i > 3) {
+              result.copy(ordinates,0,i - 3);
+            }
+          }
+          i=j - 2;
+          lastCurlEliminated=true;
+          break;
+        }
+      }
+      c3.x=c4.x;
+      c3.y=c4.y;
+    }
+    if (result != ordinates) {
+      result.add(c1.x,c1.y);
+    }
+    c1.x=c2.x;
+    c1.y=c2.y;
+  }
+  if (result != ordinates) {
+    result.add(c1.x);
+    result.add(c1.y);
+    if (!lastCurlEliminated) {
+      result.add(data[max - 2]);
+      result.add(data[max - 1]);
+    }
+  }
+  return result;
+}

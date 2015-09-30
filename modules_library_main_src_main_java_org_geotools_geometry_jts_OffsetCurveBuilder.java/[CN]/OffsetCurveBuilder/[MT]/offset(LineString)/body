@@ -1,0 +1,55 @@
+{
+  boolean closed=ls instanceof LinearRing;
+  CoordinateSequence cs=ls.getCoordinateSequence();
+  int numPoints=cs.size();
+  GrowableOrdinateArray ordinates=new GrowableOrdinateArray(numPoints * 2);
+  double c0x, c0y, c1x, c1y;
+  if (closed) {
+    c0x=cs.getOrdinate(cs.size() - 2,0);
+    c0y=cs.getOrdinate(cs.size() - 2,1);
+    c1x=cs.getOrdinate(0,0);
+    c1y=cs.getOrdinate(0,1);
+  }
+ else {
+    c0x=cs.getOrdinate(0,0);
+    c0y=cs.getOrdinate(0,1);
+    c1x=c0x;
+    c1y=c0y;
+  }
+  double c2x=cs.getOrdinate(1,0);
+  double c2y=cs.getOrdinate(1,1);
+  double dx10=c0x - c1x;
+  double dy10=c0y - c1y;
+  double dx12=c2x - c1x;
+  double dy12=c2y - c1y;
+  double angle10=atan2(-dy10,-dx10);
+  double angle12=atan2(dy12,dx12);
+  if (closed) {
+    addPoint(ordinates,c1x,c1y,dx10,dy10,dx12,dy12,angle10,angle12);
+  }
+ else {
+    appendPerpendicular(c1x,c1y,angle12,ordinates);
+  }
+  for (int i=2; i < numPoints; i++) {
+    c1x=c2x;
+    c1y=c2y;
+    c2x=cs.getOrdinate(i,0);
+    c2y=cs.getOrdinate(i,1);
+    dx10=-dx12;
+    dy10=-dy12;
+    angle10=angle12;
+    dx12=c2x - c1x;
+    dy12=c2y - c1y;
+    angle12=atan2(dy12,dx12);
+    addPoint(ordinates,c1x,c1y,dx10,dy10,dx12,dy12,angle10,angle12);
+  }
+  if (closed) {
+    ordinates.close();
+  }
+ else {
+    appendPerpendicular(c2x,c2y,angle12,ordinates);
+  }
+  ordinates=cleanupOrdinates(ordinates,closed);
+  LineString result=buildLineString(ls,ordinates);
+  return result;
+}
