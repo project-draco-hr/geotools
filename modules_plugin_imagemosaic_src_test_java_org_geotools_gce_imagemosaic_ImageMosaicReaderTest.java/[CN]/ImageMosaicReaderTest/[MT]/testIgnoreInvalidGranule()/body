@@ -1,0 +1,13 @@
+{
+  final AbstractGridFormat format=TestUtils.getFormat(rgbURL);
+  final ImageMosaicReader reader=TestUtils.getReader(rgbURL,format);
+  GranuleStore granules=(GranuleStore)reader.getGranules(reader.getGridCoverageNames()[0],false);
+  SimpleFeature first=DataUtilities.first(granules.getGranules(Query.ALL));
+  first.setAttribute("location","global_mosaic_11-invalid.png");
+  Transaction t=new DefaultTransaction();
+  granules.setTransaction(t);
+  granules.addGranules(DataUtilities.collection(first));
+  t.commit();
+  t.close();
+  TestUtils.checkCoverage(reader,new GeneralParameterValue[0],"Ignore invalid granule");
+}
