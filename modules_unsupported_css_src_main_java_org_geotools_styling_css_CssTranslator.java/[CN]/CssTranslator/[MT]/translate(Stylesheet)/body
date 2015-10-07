@@ -1,2 +1,24 @@
 {
+  int maxCombinations=getMaxCombinations(stylesheet);
+  final TranslationMode mode=getTranslationMode(stylesheet);
+  int autoThreshold=getAutoThreshold(stylesheet);
+  List<CssRule> allRules=stylesheet.getRules();
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Starting with " + allRules.size() + "  rules in the stylesheet");
+  }
+  StyleBuilder styleBuilder=new StyleBuilder();
+  styleBuilder.name("Default Styler");
+  styleBuilder.title(stylesheet.getDirectiveValue(DIRECTIVE_STYLE_TITLE));
+  styleBuilder.styleAbstract(stylesheet.getDirectiveValue(DIRECTIVE_STYLE_ABSTRACT));
+  int translatedRuleCount=0;
+  if (mode == TranslationMode.Flat) {
+    translatedRuleCount=translateFlat(allRules,styleBuilder);
+  }
+ else {
+    translatedRuleCount=translateCss(mode,allRules,styleBuilder,maxCombinations,autoThreshold);
+  }
+  if (translatedRuleCount == 0) {
+    throw new IllegalArgumentException("Invalid CSS style, no rule seems to activate " + "any symbolization. The properties activating the symbolizers are fill, " + "stroke, mark, label, raster-channels, have any been used in a rule matching any feature?");
+  }
+  return styleBuilder.build();
 }
