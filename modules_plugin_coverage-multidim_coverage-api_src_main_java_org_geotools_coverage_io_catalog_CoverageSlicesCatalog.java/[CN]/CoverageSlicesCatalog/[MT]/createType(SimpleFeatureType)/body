@@ -5,7 +5,24 @@
   try {
     lock.lock();
     checkStore();
-    slicesIndexStore.createSchema(featureType);
+    SimpleFeatureType existing=null;
+    Name name=featureType.getName();
+    try {
+      existing=slicesIndexStore.getSchema(name);
+    }
+ catch (    IOException ioe) {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer(ioe.getLocalizedMessage());
+      }
+    }
+    if (existing == null) {
+      slicesIndexStore.createSchema(featureType);
+    }
+ else {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("schema " + name + " already exists");
+      }
+    }
     typeName=featureType.getTypeName();
     if (typeName != null) {
       addTypeName(typeName,true);
