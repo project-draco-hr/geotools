@@ -7,6 +7,7 @@
   }
   try {
     Connection testCon=cx;
+    Connection toUnwrap;
     do {
       UnWrapper unwrapper=uwMap.get(testCon.getClass());
       if (unwrapper == null) {
@@ -19,12 +20,13 @@
       if (unwrapper == UNWRAPPER_NOT_FOUND) {
         break;
       }
+      toUnwrap=testCon;
       testCon=unwrapper.unwrap(testCon);
       if (testCon instanceof OracleConnection) {
         return (OracleConnection)testCon;
       }
     }
- while (testCon != null);
+ while (testCon != null && testCon != toUnwrap);
     if (cx instanceof Wrapper) {
       try {
         Wrapper w=cx;
