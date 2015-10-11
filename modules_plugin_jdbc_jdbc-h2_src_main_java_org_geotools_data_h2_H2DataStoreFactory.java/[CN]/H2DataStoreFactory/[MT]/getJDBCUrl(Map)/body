@@ -1,0 +1,27 @@
+{
+  String database=(String)DATABASE.lookUp(params);
+  String host=(String)HOST.lookUp(params);
+  Boolean mvcc=(Boolean)MVCC.lookUp(params);
+  if (host != null && !host.equals("")) {
+    Integer port=(Integer)PORT.lookUp(params);
+    if (port != null && !port.equals("")) {
+      return "jdbc:h2:tcp://" + host + ":"+ port+ "/"+ database;
+    }
+ else {
+      return "jdbc:h2:tcp://" + host + "/"+ database;
+    }
+  }
+ else   if (baseDirectory == null) {
+    return "jdbc:h2:" + database + ";AUTO_SERVER=TRUE"+ (mvcc != null ? (";MVCC=" + mvcc) : "");
+  }
+ else {
+    String location;
+    if (!new File(database).isAbsolute()) {
+      location=new File(baseDirectory,database).getAbsolutePath();
+    }
+ else {
+      location=database;
+    }
+    return "jdbc:h2:file:" + location + ";AUTO_SERVER=TRUE"+ (mvcc != null ? (";MVCC=" + mvcc) : "");
+  }
+}
