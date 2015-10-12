@@ -1,0 +1,28 @@
+{
+  final double tolerance=1;
+  String wkt="LINESTRING (809 2365, 796 2165, 820 2146, 863 2159, 904 2174, 930 2174, 939 2157, 931 1895)";
+  Geometry geom=new WKTReader().read(wkt);
+  Envelope envelope=geom.getEnvelopeInternal();
+  final double minx=envelope.getMinX();
+  final double miny=envelope.getMinY();
+  geom.apply(new CoordinateSequenceFilter(){
+    @Override public boolean isGeometryChanged(){
+      return true;
+    }
+    @Override public boolean isDone(){
+      return false;
+    }
+    @Override public void filter(    CoordinateSequence seq,    int i){
+      double x=seq.getOrdinate(i,0);
+      double y=seq.getOrdinate(i,1);
+      x-=minx;
+      y-=miny;
+      x=Math.round(x / tolerance) * tolerance;
+      y=Math.round(y / tolerance) * tolerance;
+      seq.setOrdinate(i,0,x);
+      seq.setOrdinate(i,1,y);
+    }
+  }
+);
+  System.out.println(geom.toText());
+}

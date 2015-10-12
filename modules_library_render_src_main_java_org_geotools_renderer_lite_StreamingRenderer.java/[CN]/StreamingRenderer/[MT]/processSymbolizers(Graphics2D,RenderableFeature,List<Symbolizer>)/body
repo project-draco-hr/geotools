@@ -41,11 +41,32 @@
         Envelope env=new Envelope(screenSize.getMinX(),screenSize.getMaxX(),screenSize.getMinY(),screenSize.getMaxY());
         env.expandBy(clipBuffer);
         final GeometryClipper clipper=new GeometryClipper(env);
-        Geometry g=clipper.clip(shape.getGeometry(),false);
+        Geometry source=shape.getGeometry();
+        boolean preserveTopology=style instanceof LineStyle2D && ((LineStyle2D)style).getPerpendicularOffset() != 0 && (source instanceof Polygon || source instanceof MultiPolygon);
+        Geometry g=clip(shape.getGeometry(),clipper,preserveTopology);
+        if (style instanceof LineStyle2D && ((LineStyle2D)style).getPerpendicularOffset() != 0) {
+          LineStyle2D ls=(LineStyle2D)style;
+          double offset=ls.getPerpendicularOffset();
+          if (source instanceof Polygon || source instanceof MultiPolygon && abs(offset) > 3) {
+            Geometry simplified=TopologyPreservingSimplifier.simplify(source,Math.max(abs(offset) / 10,1));
+            try {
+              g=simplified.buffer(offset);
+            }
+ catch (            Exception e) {
+              LOGGER.log(Level.FINE,"Failed to apply JTS buffer to the geometry, falling back on the offset curve builder",e);
+              OffsetCurveBuilder offseter=new OffsetCurveBuilder(offset);
+              g=offseter.offset(g);
+            }
+          }
+ else {
+            OffsetCurveBuilder offseter=new OffsetCurveBuilder(offset);
+            g=offseter.offset(g);
+          }
+        }
         if (g == null) {
           continue;
         }
-        if (g != shape.getGeometry()) {
+ else {
           shape=new LiteShape2(g,null,null,false);
         }
         PaintShapeRequest paintShapeRequest=new PaintShapeRequest(graphics,shape,style,scaleDenominator);

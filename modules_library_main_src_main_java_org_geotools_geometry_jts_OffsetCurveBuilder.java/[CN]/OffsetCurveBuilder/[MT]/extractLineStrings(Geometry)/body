@@ -1,0 +1,30 @@
+{
+  if (g instanceof Polygon) {
+    ((Polygon)g).normalize();
+  }
+ else   if (g instanceof GeometryCollection) {
+    g.apply(new GeometryFilter(){
+      @Override public void filter(      Geometry geom){
+        if (geom instanceof Polygon) {
+          ((Polygon)geom).normalize();
+        }
+      }
+    }
+);
+  }
+  final List<LineString> lines=new ArrayList<>();
+  if (g instanceof LineString) {
+    lines.add((LineString)g);
+  }
+ else {
+    g.apply(new GeometryComponentFilter(){
+      @Override public void filter(      Geometry geom){
+        if (geom instanceof LineString) {
+          lines.add((LineString)geom);
+        }
+      }
+    }
+);
+  }
+  return lines;
+}
