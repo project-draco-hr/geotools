@@ -1,0 +1,19 @@
+{
+  SimpleFeatureType featureType=buildType();
+  Collection<SimpleFeature> features=new ArrayList<>();
+  SimpleFeature f2=createFeature(featureType,"toto",createLineString(),createPolygon());
+  f2.getUserData().put(Hints.USE_PROVIDED_FID,true);
+  features.add(f2);
+  features.add(createFeature(featureType,"tutu",createLineString(),createPolygon()));
+  Map<InsertionClassifier,Collection<SimpleFeature>> actual=InsertionClassifier.classify(featureType,features);
+  assertEquals(2,actual.size());
+  Set<Boolean> uses=new HashSet<>();
+  for (  InsertionClassifier kind : actual.keySet()) {
+    uses.add(kind.useExisting);
+    assertEquals(2,kind.geometryTypes.size());
+    assertEquals(LineString.class,kind.geometryTypes.get("geom1"));
+    assertEquals(Polygon.class,kind.geometryTypes.get("geom2"));
+    assertEquals(1,actual.get(kind).size());
+  }
+  assertEquals(new HashSet<>(Arrays.asList(Boolean.FALSE,Boolean.TRUE)),uses);
+}

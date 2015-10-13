@@ -1,0 +1,26 @@
+{
+  PrimaryKey key=getPrimaryKey(featureType);
+synchronized (this) {
+    try {
+      if (dialect instanceof PreparedStatementSQLDialect) {
+        Map<InsertionClassifier,Collection<SimpleFeature>> kinds=InsertionClassifier.classify(featureType,features);
+        for (        InsertionClassifier kind : kinds.keySet()) {
+          insertPS(kinds.get(kind),kind,featureType,cx,key);
+        }
+      }
+ else {
+        Collection<SimpleFeature> useExistings=new ArrayList<>();
+        Collection<SimpleFeature> notUseExistings=new ArrayList<>();
+        for (        SimpleFeature cur : features) {
+          (InsertionClassifier.useExisting(cur) ? useExistings : notUseExistings).add(cur);
+        }
+        insertNonPS(useExistings,featureType,cx,key,true);
+        insertNonPS(notUseExistings,featureType,cx,key,false);
+      }
+    }
+ catch (    SQLException e) {
+      String msg="Error inserting features";
+      throw (IOException)new IOException(msg).initCause(e);
+    }
+  }
+}

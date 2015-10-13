@@ -1,0 +1,35 @@
+{
+  StringBuffer sql=new StringBuffer();
+  sql.append("INSERT INTO ");
+  encodeTableName(featureType.getTypeName(),sql,null);
+  sql.append(" ( ");
+  for (int i=0; i < featureType.getAttributeCount(); i++) {
+    String colName=featureType.getDescriptor(i).getLocalName();
+    if (keysFetcher.isKey(colName)) {
+      continue;
+    }
+    dialect.encodeColumnName(null,colName,sql);
+    sql.append(",");
+  }
+  keysFetcher.addKeyColumns(sql);
+  sql.setLength(sql.length() - 1);
+  sql.append(" ) VALUES ( ");
+  for (  AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+    String colName=att.getLocalName();
+    if (keysFetcher.isKey(colName)) {
+      continue;
+    }
+    if (att instanceof GeometryDescriptor) {
+      Class<? extends Geometry> geometryClass=kind.geometryTypes.get(att.getName().getLocalPart());
+      dialect.prepareGeometryValue(geometryClass,getDescriptorDimension(att),getDescriptorSRID(att),att.getType().getBinding(),sql);
+    }
+ else {
+      sql.append("?");
+    }
+    sql.append(",");
+  }
+  keysFetcher.addKeyBindings(sql);
+  sql.setLength(sql.length() - 1);
+  sql.append(")");
+  return sql.toString();
+}

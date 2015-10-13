@@ -1,0 +1,15 @@
+{
+  final List<Object> keyValues=getNextValues(cx,feature);
+  for (int i=0; i < key.getColumns().size(); i++) {
+    final PrimaryKeyColumn col=key.getColumns().get(i);
+    final Object value=keyValues.get(i);
+    if (value != NOT_SET_BEFORE_INSERT) {
+      dialect.setValue(value,col.getType(),ps,curFieldPos++,cx);
+    }
+  }
+  if (!isPostInsert()) {
+    String fid=featureType.getTypeName() + "." + JDBCDataStore.encodeFID(keyValues);
+    feature.getUserData().put("fid",fid);
+  }
+  return curFieldPos;
+}
