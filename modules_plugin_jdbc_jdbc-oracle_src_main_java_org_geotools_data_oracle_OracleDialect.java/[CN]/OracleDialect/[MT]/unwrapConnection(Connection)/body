@@ -6,22 +6,28 @@
     return (OracleConnection)cx;
   }
   try {
-    if (uw == null) {
-      UnWrapper unwrapper=DataSourceFinder.getUnWrapper(cx);
+    Connection testCon=cx;
+    Connection toUnwrap;
+    do {
+      UnWrapper unwrapper=uwMap.get(testCon.getClass());
       if (unwrapper == null) {
-        uw=UNWRAPPER_NOT_FOUND;
+        unwrapper=DataSourceFinder.getUnWrapper(testCon);
+        if (unwrapper == null) {
+          unwrapper=UNWRAPPER_NOT_FOUND;
+        }
+        uwMap.put(testCon.getClass(),unwrapper);
       }
- else {
-        uw=unwrapper;
+      if (unwrapper == UNWRAPPER_NOT_FOUND) {
+        break;
+      }
+      toUnwrap=testCon;
+      testCon=unwrapper.unwrap(testCon);
+      if (testCon instanceof OracleConnection) {
+        return (OracleConnection)testCon;
       }
     }
-    if (uw != null && uw != UNWRAPPER_NOT_FOUND) {
-      Connection uwcx=uw.unwrap(cx);
-      if (uwcx != null && uwcx instanceof OracleConnection) {
-        return (OracleConnection)uwcx;
-      }
-    }
- else     if (cx instanceof Wrapper) {
+ while (testCon != null && testCon != toUnwrap);
+    if (cx instanceof Wrapper) {
       try {
         Wrapper w=cx;
         if (w.isWrapperFor(OracleConnection.class)) {
