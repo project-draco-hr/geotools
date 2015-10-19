@@ -5,19 +5,25 @@
  catch (  Exception e) {
     LOGGER.fine("Failed to reproject the envelope " + envelope + " to "+ targetCRS+ " trying an area restriction");
     ReferencedEnvelope envWGS84=envelope.transform(DefaultGeographicCRS.WGS84,true);
-    ProjectionHandler handler=ProjectionHandlerFinder.getHandler(envelope,envelope.getCoordinateReferenceSystem(),false);
+    ProjectionHandler handler=ProjectionHandlerFinder.getHandler(new ReferencedEnvelope(targetCRS),DefaultGeographicCRS.WGS84,false);
     if (handler != null && handler.validAreaBounds != null) {
-      Envelope intersection=envWGS84.intersection(validAreaBounds);
-      if (intersection.isNull()) {
-        return null;
-      }
+      ReferencedEnvelope validAreaBounds=handler.validAreaBounds;
+      envWGS84=envWGS84.intersection(validAreaBounds);
+    }
+    handler=ProjectionHandlerFinder.getHandler(envelope,envelope.getCoordinateReferenceSystem(),false);
+    if (handler != null && handler.validAreaBounds != null) {
+      ReferencedEnvelope validAreaBounds=handler.validAreaBounds;
+      envWGS84=envWGS84.intersection(validAreaBounds);
+    }
+    if (envWGS84.isNull()) {
+      return null;
+    }
  else {
-        try {
-          return ReferencedEnvelope.reference(intersection).transform(targetCRS,true);
-        }
- catch (        Exception e2) {
-          LOGGER.fine("Failed to reproject the restricted envelope " + intersection + " to "+ targetCRS);
-        }
+      try {
+        return ReferencedEnvelope.reference(envWGS84).transform(targetCRS,true);
+      }
+ catch (      Exception e2) {
+        LOGGER.fine("Failed to reproject the restricted envelope " + envWGS84 + " to "+ targetCRS);
       }
     }
     GeographicBoundingBox bbox=CRS.getGeographicBoundingBox(targetCRS);
