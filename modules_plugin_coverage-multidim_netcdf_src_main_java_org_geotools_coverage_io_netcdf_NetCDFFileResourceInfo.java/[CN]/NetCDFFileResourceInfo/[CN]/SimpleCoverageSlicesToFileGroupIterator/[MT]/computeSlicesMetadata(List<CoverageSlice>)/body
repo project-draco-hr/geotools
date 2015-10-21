@@ -1,0 +1,29 @@
+{
+  Map<String,Object> metadataMap=null;
+  List<DimensionDescriptor> dimensionDescriptors=reader.getDimensionDescriptors(coverageName);
+  if (dimensionDescriptors != null && !dimensionDescriptors.isEmpty()) {
+    metadataMap=new HashMap<String,Object>();
+    for (    DimensionDescriptor descriptor : dimensionDescriptors) {
+      String attribute=descriptor.getStartAttribute();
+      String name=descriptor.getName();
+      Comparable max=null;
+      Comparable min=null;
+      Comparable val=null;
+      for (      CoverageSlice slice : slices) {
+        val=(Comparable)slice.getOriginator().getAttribute(attribute);
+        if (min == null) {
+          min=val;
+        }
+        if (max == null) {
+          max=val;
+        }
+        int minCheck=min.compareTo(val);
+        int maxCheck=max.compareTo(val);
+        min=minCheck < 0 ? min : val;
+        max=maxCheck > 0 ? max : val;
+      }
+      addMetadaElement(name,min,max,metadataMap);
+    }
+  }
+  return metadataMap;
+}

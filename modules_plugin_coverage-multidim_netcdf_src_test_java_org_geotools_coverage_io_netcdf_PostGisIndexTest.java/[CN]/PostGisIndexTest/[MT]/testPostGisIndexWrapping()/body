@@ -11,7 +11,7 @@
   File destAuxFile=new File(dir,auxName);
   FileUtils.copyFile(file,destFile);
   FileUtils.copyFile(auxFile,destAuxFile);
-  createDatastoreProperties(dir,null);
+  File datastoreFile=createDatastoreProperties(dir,null);
   final NetCDFImageReaderSpi unidataImageReaderSpi=new NetCDFImageReaderSpi();
   assertTrue(unidataImageReaderSpi.canDecodeInput(file));
   NetCDFImageReader reader=null;
@@ -37,6 +37,57 @@
     for (    String typeName : typeNames) {
       final List<CoverageSlice> granules=cs.getGranules(new Query(typeName));
       checkGranules(granules);
+    }
+    Hints hints=new Hints(Utils.AUXILIARY_FILES_PATH,destAuxFile.getCanonicalPath());
+    hints.add(new Hints(Utils.AUXILIARY_DATASTORE_PATH,datastoreFile.getCanonicalPath()));
+    NetCDFReader gtReader=new NetCDFReader(destFile,hints);
+    String coverageName=gtReader.getGridCoverageNames()[1];
+    CloseableIterator<FileGroup> files=null;
+    try {
+      final String[] metadataNames=gtReader.getMetadataNames(coverageName);
+      assertNotNull(metadataNames);
+      assertEquals(metadataNames.length,12);
+      ResourceInfo info=gtReader.getInfo(coverageName);
+      assertTrue(info instanceof FileResourceInfo);
+      FileResourceInfo fileInfo=(FileResourceInfo)info;
+      files=fileInfo.getFiles(null);
+      int fileGroups=0;
+      FileGroup fg=null;
+      while (files.hasNext()) {
+        fg=files.next();
+        fileGroups++;
+      }
+      assertEquals(1,fileGroups);
+      File mainFile=fg.getMainFile();
+      assertEquals("O3-NO2",FilenameUtils.getBaseName(mainFile.getAbsolutePath()));
+      Map<String,Object> metadata=fg.getMetadata();
+      assertNotNull(metadata);
+      assertFalse(metadata.isEmpty());
+      Set<String> keys=metadata.keySet();
+      assertEquals(3,keys.size());
+      final SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss'Z'");
+      sdf.setTimeZone(TimeZone.getTimeZone("GMT+0"));
+      Date start=sdf.parse("2012-04-01T00:00:00.000Z");
+      Date end=sdf.parse("2012-04-01T01:00:00.000Z");
+      DateRange timeRange=new DateRange(start,end);
+      assertEquals(timeRange,metadata.get(Utils.TIME_DOMAIN));
+      NumberRange<Double> elevationRange=NumberRange.create(10.0,450.0);
+      assertEquals(elevationRange,metadata.get(Utils.ELEVATION_DOMAIN));
+    }
+ catch (    Throwable t) {
+      throw new RuntimeException(t);
+    }
+ finally {
+      if (files != null) {
+        files.close();
+      }
+      if (reader != null) {
+        try {
+          reader.dispose();
+        }
+ catch (        Throwable t) {
+        }
+      }
     }
   }
   finally {

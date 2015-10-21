@@ -1,0 +1,31 @@
+{
+  final AbstractGridFormat format=TestUtils.getFormat(indexURL);
+  ImageMosaicReader reader=TestUtils.getReader(indexURL,format);
+  ResourceInfo info=reader.getInfo(reader.getGridCoverageNames()[0]);
+  assertTrue(info instanceof FileResourceInfo);
+  FileResourceInfo fileInfo=(FileResourceInfo)info;
+  CloseableIterator<FileGroup> files=fileInfo.getFiles(null);
+  List<FileGroup> fileGroups=new ArrayList<FileGroup>();
+  Set<File> mainFiles=new HashSet<File>();
+  Set<File> supportFiles=new HashSet<File>();
+  while (files.hasNext()) {
+    FileGroup group=files.next();
+    fileGroups.add(group);
+    mainFiles.add(group.getMainFile());
+    supportFiles.addAll(group.getSupportFiles());
+  }
+  assertEquals(3,fileGroups.size());
+  assertEquals(3,mainFiles.size());
+  assertEquals(IS_MAC ? 12 : 6,supportFiles.size());
+  File dir=DataUtilities.urlToFile(indexURL);
+  String[] mainFilesPaths=dir.list(FileFilterUtils.suffixFileFilter(".gif"));
+  String[] supportFilesPaths=dir.list(FileFilterUtils.and(FileFilterUtils.or(FileFilterUtils.suffixFileFilter(".prj"),FileFilterUtils.suffixFileFilter(".wld")),FileFilterUtils.notFileFilter(FileFilterUtils.prefixFileFilter("index"))));
+  for (  String filePath : mainFilesPaths) {
+    final File myFile=new File(dir,filePath);
+    assertTrue(mainFiles.contains(myFile));
+  }
+  for (  String filePath : supportFilesPaths) {
+    final File myFile=new File(dir,filePath);
+    assertTrue(supportFiles.contains(myFile));
+  }
+}

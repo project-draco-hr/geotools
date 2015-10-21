@@ -62,6 +62,38 @@
   direct.setValue(false);
   final ParameterValue<List> elevation=ImageMosaicFormat.ELEVATION.createValue();
   elevation.setValue(Arrays.asList(100.0));
+  ResourceInfo info=reader.getInfo(reader.getGridCoverageNames()[0]);
+  assertTrue(info instanceof FileResourceInfo);
+  FileResourceInfo fileInfo=(FileResourceInfo)info;
+  int groups=0;
+  CloseableIterator<FileGroup> filesIterator=null;
+  try {
+    Query query=new Query("water_temp3");
+    query.setFilter(FF.like(FF.property("location"),"*100_20081031T00*"));
+    filesIterator=fileInfo.getFiles(query);
+    while (filesIterator.hasNext()) {
+      FileGroup group=filesIterator.next();
+      if (groups == 0) {
+        Map<String,Object> md=group.getMetadata();
+        DateRange metadataTime=(DateRange)md.get(Utils.TIME_DOMAIN);
+        NumberRange metadataElevation=(NumberRange)md.get(Utils.ELEVATION_DOMAIN);
+        ReferencedEnvelope metadataBBOX=(ReferencedEnvelope)md.get(Utils.BBOX);
+        assertEquals(metadataTime.getMinValue().getTime(),date.getTime());
+        assertEquals((Double)metadataElevation.getMinValue(),100.0,DELTA);
+        assertEquals(envelope.getMinimum(0),metadataBBOX.getMinX(),DELTA);
+        assertEquals(envelope.getMinimum(1),metadataBBOX.getMinY(),DELTA);
+        assertEquals(envelope.getMaximum(0),metadataBBOX.getMaxX(),DELTA);
+        assertEquals(envelope.getMaximum(1),metadataBBOX.getMaxY(),DELTA);
+      }
+      groups++;
+    }
+  }
+  finally {
+    if (filesIterator != null) {
+      filesIterator.close();
+    }
+  }
+  assertEquals(1,groups);
   TestUtils.checkCoverage(reader,new GeneralParameterValue[]{gg,time,bkg,elevation,direct},"Time-Elevation Test");
   reader.dispose();
   reader=TestUtils.getReader(timeElevURL,format);
