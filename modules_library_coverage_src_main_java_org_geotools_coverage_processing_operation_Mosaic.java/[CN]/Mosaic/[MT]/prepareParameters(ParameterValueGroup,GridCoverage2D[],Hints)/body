@@ -32,8 +32,22 @@
     throw new CoverageProcessingException("No final GridGeometry found");
   }
   int numSources=rasters.length;
-  for (int i=0; i < numSources; i++) {
-    block.setSource(rasters[i],i);
+  if (Boolean.TRUE.equals(hints.get(JAI.KEY_REPLACE_INDEX_COLOR_MODEL))) {
+    for (int i=0; i < numSources; i++) {
+      RenderedImage source=rasters[i];
+      if (source.getColorModel() instanceof IndexColorModel) {
+        source=new ImageWorker(source).forceComponentColorModel().getRenderedImage();
+      }
+      block.setSource(source,i);
+    }
+    hints=new Hints(hints);
+    hints.add(new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.FALSE));
+    hints.add(new RenderingHints(JAI.KEY_TRANSFORM_ON_COLORMAP,Boolean.TRUE));
+  }
+ else {
+    for (int i=0; i < numSources; i++) {
+      block.setSource(rasters[i],i);
+    }
   }
   double[] nodata=null;
   Object outputNodata=parameters.parameter(OUTNODATA_NAME).getValue();
