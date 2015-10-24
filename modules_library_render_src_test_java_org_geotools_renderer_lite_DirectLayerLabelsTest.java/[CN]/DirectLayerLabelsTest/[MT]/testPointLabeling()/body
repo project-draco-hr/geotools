@@ -1,0 +1,25 @@
+{
+  FeatureCollection collection=createPointFeatureCollection();
+  Style style=loadStyle("PointStyle.sld");
+  assertNotNull(style);
+  MapContext map=new DefaultMapContext(DefaultGeographicCRS.WGS84);
+  map.addLayer(collection,style);
+  DirectLayer dl=new DirectLayer(){
+    @Override public ReferencedEnvelope getBounds(){
+      return null;
+    }
+    @Override public void draw(    Graphics2D graphics,    MapContent map,    MapViewport viewport){
+      graphics.setColor(Color.BLACK);
+      graphics.drawString("DirectLayer",10,10);
+    }
+  }
+;
+  map.addLayer(dl);
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setContext(map);
+  ReferencedEnvelope env=map.getLayerBounds();
+  int boundary=10;
+  env=new ReferencedEnvelope(env.getMinX() - boundary,env.getMaxX() + boundary,env.getMinY() - boundary,env.getMaxY() + boundary,null);
+  RendererBaseTest.showRender("testDirectLabeling",renderer,timout,env);
+  map.dispose();
+}
