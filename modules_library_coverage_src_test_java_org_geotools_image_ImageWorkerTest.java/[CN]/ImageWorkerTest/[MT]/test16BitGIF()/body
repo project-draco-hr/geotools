@@ -1,0 +1,34 @@
+{
+  InputStream gzippedStream=ImageWorkerTest.class.getResource("test-data/sf-sfdem.tif.gz").openStream();
+  GZIPInputStream is=new GZIPInputStream(gzippedStream);
+  try {
+    ImageInputStream iis=ImageIO.createImageInputStream(is);
+    ImageReader reader=new TIFFImageReaderSpi().createReaderInstance(iis);
+    reader.setInput(iis);
+    BufferedImage bi=reader.read(0);
+    if (TestData.isInteractiveTest()) {
+      ImageIOUtilities.visualize(bi,"before");
+    }
+    reader.dispose();
+    iis.close();
+    IndexColorModel icm=(IndexColorModel)bi.getColorModel();
+    assertEquals(65536,icm.getMapSize());
+    final File outFile=TestData.temp(this,"temp.gif");
+    ImageWorker worker=new ImageWorker(bi);
+    worker.writeGIF(outFile,"LZW",0.75f);
+    bi=ImageIO.read(outFile);
+    if (TestData.isInteractiveTest()) {
+      ImageIOUtilities.visualize(bi,"after");
+    }
+    ColorModel cm=bi.getColorModel();
+    assertTrue("wrong color model",cm instanceof IndexColorModel);
+    assertEquals("wrong transparency model",Transparency.OPAQUE,cm.getTransparency());
+    final IndexColorModel indexColorModel=(IndexColorModel)cm;
+    assertEquals("wrong transparent color index",-1,indexColorModel.getTransparentPixel());
+    assertEquals("wrong component size",8,indexColorModel.getComponentSize(0));
+    outFile.delete();
+  }
+  finally {
+    is.close();
+  }
+}

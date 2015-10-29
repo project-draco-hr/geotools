@@ -1,0 +1,59 @@
+{
+  assertTrue("Assertions should be enabled.",ImageWorker.class.desiredAssertionStatus());
+  final RenderedImage test1=ConstantDescriptor.create(128.0f,128.0f,new Double[]{20000.0},null);
+  final RenderedImage test2=ConstantDescriptor.create(128.0f,128.0f,new Double[]{255.0},null);
+  final RenderedImage test3=getSynthetic(20000);
+  final RenderedImage test4=getSynthetic(255);
+  final ImageWorker test1I=new ImageWorker(test1).rescaleToBytes();
+  Assert.assertEquals("Format",test1I.getRenderedOperation().getOperationName());
+  final double[] maximums1=test1I.getMaximums();
+  Assert.assertTrue(maximums1.length == 1);
+  Assert.assertEquals(255.0,maximums1[0],1E-10);
+  final double[] minimums1=test1I.getMinimums();
+  Assert.assertTrue(minimums1.length == 1);
+  Assert.assertEquals(255.0,minimums1[0],1E-10);
+  final ImageWorker test2I=new ImageWorker(test2).rescaleToBytes();
+  Assert.assertEquals("Format",test2I.getRenderedOperation().getOperationName());
+  final double[] maximums2=test1I.getMaximums();
+  Assert.assertTrue(maximums2.length == 1);
+  Assert.assertEquals(255.0,maximums2[0],1E-10);
+  final double[] minimums2=test1I.getMinimums();
+  Assert.assertTrue(minimums2.length == 1);
+  Assert.assertEquals(255.0,minimums2[0],1E-10);
+  ImageWorker test3I=new ImageWorker(test3);
+  final double[] maximums3a=test3I.getMaximums();
+  final double[] minimums3a=test3I.getMinimums();
+  test3I.rescaleToBytes();
+  Assert.assertEquals("Rescale",test3I.getRenderedOperation().getOperationName());
+  final double[] maximums3b=test3I.getMaximums();
+  final double[] minimums3b=test3I.getMinimums();
+  if (maximums3a[0] > 255) {
+    Assert.assertTrue(Math.abs(maximums3a[0] - maximums3b[0]) > 1E-10);
+    Assert.assertTrue(Math.abs(255.0 - maximums3b[0]) >= 0);
+  }
+  if (minimums3a[0] < 0) {
+    Assert.assertTrue(minimums3b[0] >= 0);
+  }
+  ImageWorker test4I=new ImageWorker(test4);
+  final double[] maximums4a=test4I.getMaximums();
+  final double[] minimums4a=test4I.getMinimums();
+  test4I.rescaleToBytes();
+  Assert.assertEquals("Format",test4I.getRenderedOperation().getOperationName());
+  final double[] maximums4b=test4I.getMaximums();
+  final double[] minimums4b=test4I.getMinimums();
+  Assert.assertEquals(maximums4a[0],maximums4b[0],1E-10);
+  Assert.assertEquals(minimums4a[0],minimums4b[0],1E-10);
+  ParameterBlock pb=new ParameterBlock();
+  pb.addSource(test2).addSource(test3);
+  final RenderedImage multiband=JAI.create("BandMerge",pb,null);
+  ImageWorker testmultibandI=new ImageWorker(multiband);
+  final double[] maximums5a=testmultibandI.getMaximums();
+  final double[] minimums5a=testmultibandI.getMinimums();
+  testmultibandI.rescaleToBytes().setNoData(null);
+  final double[] maximums5b=testmultibandI.getMaximums();
+  final double[] minimums5b=testmultibandI.getMinimums();
+  Assert.assertEquals(maximums5a[0],maximums5b[0],1E-10);
+  Assert.assertEquals(minimums5a[0],minimums5b[0],1E-10);
+  Assert.assertTrue(Math.abs(maximums5a[1] - maximums5b[1]) > 1E-10);
+  Assert.assertTrue(Math.abs(minimums5a[1] - minimums5b[1]) > 1E-10);
+}

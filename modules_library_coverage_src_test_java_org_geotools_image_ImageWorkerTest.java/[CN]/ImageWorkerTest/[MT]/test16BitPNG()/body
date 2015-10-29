@@ -1,0 +1,31 @@
+{
+  InputStream gzippedStream=ImageWorkerTest.class.getResource("test-data/sf-sfdem.tif.gz").openStream();
+  GZIPInputStream is=new GZIPInputStream(gzippedStream);
+  try {
+    ImageInputStream iis=ImageIO.createImageInputStream(is);
+    ImageReader reader=new TIFFImageReaderSpi().createReaderInstance(iis);
+    reader.setInput(iis);
+    BufferedImage bi=reader.read(0);
+    reader.dispose();
+    iis.close();
+    IndexColorModel icm=(IndexColorModel)bi.getColorModel();
+    assertEquals(65536,icm.getMapSize());
+    final File outFile=TestData.temp(this,"temp.png");
+    ImageWorker worker=new ImageWorker(bi);
+    worker.writePNG(outFile,"FILTERED",0.75f,true,false);
+    worker.dispose();
+    BufferedImage back=ImageIO.read(outFile);
+    ComponentColorModel ccm=(ComponentColorModel)back.getColorModel();
+    assertEquals(3,ccm.getNumColorComponents());
+    worker=new ImageWorker(bi);
+    worker.writePNG(outFile,"FILTERED",0.75f,true,true);
+    worker.dispose();
+    back=ImageIO.read(outFile);
+    icm=(IndexColorModel)back.getColorModel();
+    assertEquals(3,icm.getNumColorComponents());
+    assertTrue(icm.getMapSize() <= 256);
+  }
+  finally {
+    is.close();
+  }
+}
