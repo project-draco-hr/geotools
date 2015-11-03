@@ -43,37 +43,15 @@
   pb.add(thresholds);
   pb.add(background);
   pb.add(nodataNew);
-  Range nod=null;
-  if (background != null && background.length > 0) {
-    nod=(RangeFactory.create(background[0],background[0]));
-  }
-  if (roisNew != null) {
-    int numROI=roisNew.length;
-    ROI roi2=roisNew[0];
-    ROI finalROI=roi2 != null ? new ROI(roi2.getAsImage()) : null;
-    for (int i=1; i < numROI; i++) {
-      ROI added=roisNew[i];
-      if (added != null) {
-        if (finalROI != null) {
-          finalROI.add(added);
-        }
- else {
-          finalROI=new ROI(added.getAsImage());
-        }
-      }
-    }
-    if (numROI != srcNum) {
-      for (int i=numROI; i < srcNum; i++) {
-        RenderedImage img=(RenderedImage)pb.getSource(i);
-        ROI r=new ROIShape(new Rectangle(img.getMinX(),img.getMinY(),img.getWidth(),img.getHeight()));
-        finalROI.add(r);
-      }
-    }
-    setROI(finalROI);
-  }
   image=JAI.create("Mosaic",pb,getRenderingHints());
-  if (nodata != null || (!noInternalNoData && nodataNew != null)) {
-    setNoData(nod);
+  if (background == null) {
+    if (roisNew != null) {
+      ROI finalROI=mosaicROIs(pb.getSources(),roisNew);
+      setROI(finalROI);
+    }
+  }
+ else {
+    setROI(null);
   }
   return this;
 }
