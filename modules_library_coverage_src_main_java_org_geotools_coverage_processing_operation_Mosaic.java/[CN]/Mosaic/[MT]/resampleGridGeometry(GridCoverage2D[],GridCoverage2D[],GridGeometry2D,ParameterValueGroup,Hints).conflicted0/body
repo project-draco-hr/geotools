@@ -1,6 +1,20 @@
 {
-  if (external == null) {
-    throw new CoverageProcessingException("No input GridGeometry found");
+  int numSources=sources.length;
+  GridGeometry2D grid=sources[0].getGridGeometry();
+  Envelope2D env=grid.getEnvelope2D();
+  GridEnvelope2D gridEnv=grid.getGridRange2D();
+  double res=env.width / gridEnv.width;
+  int index=PRIMARY_SOURCE_INDEX;
+  for (int i=1; i < numSources; i++) {
+    GridGeometry2D gridI=sources[i].getGridGeometry();
+    Envelope2D envI=gridI.getEnvelope2D();
+    GridEnvelope2D gridEnvI=gridI.getGridRange2D();
+    double resValue=envI.width / gridEnvI.width;
+    if (resValue < res) {
+      res=resValue;
+      index=i;
+    }
   }
-  return resampleCoverages(sources,alphas,external,parameters,hints);
+  GridGeometry2D finalGG=extractFinalGridGeometry(sources,index);
+  return resampleCoverages(sources,alphas,finalGG,parameters,hints);
 }
