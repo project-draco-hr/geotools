@@ -1,0 +1,50 @@
+{
+  if (fc.getSchema().getGeometryDescriptor() == null) {
+    throw new DataSourceException("Cannot write geometryless shapefiles, yet " + fc.getSchema() + " has no geometry field");
+  }
+  fc=RemappingFeatureCollection.getShapefileCompatibleCollection(fc);
+  SimpleFeatureType schema=fc.getSchema();
+  Map<Class,StoreWriter> writers=new HashMap<Class,StoreWriter>();
+  boolean shapefileCreated=false;
+  Class geomType=schema.getGeometryDescriptor().getType().getBinding();
+  boolean multiWriter=GeometryCollection.class.equals(geomType) || Geometry.class.equals(geomType);
+  try (SimpleFeatureIterator it=fc.features()){
+    while (it.hasNext()) {
+      SimpleFeature f=it.next();
+      StoreWriter storeWriter=getStoreWriter(f,writers,multiWriter);
+      try {
+        writeToShapefile(f,storeWriter.writer);
+      }
+ catch (      ShapefileSizeException e) {
+        storeWriter.nextWriter();
+        writeToShapefile(f,storeWriter.writer);
+      }
+      shapefileCreated=true;
+    }
+  }
+ catch (  ShapefileSizeException e) {
+    throw e;
+  }
+catch (  IOException ioe) {
+    LOGGER.log(Level.WARNING,"Error while writing featuretype '" + schema.getTypeName() + "' to shapefile.",ioe);
+    throw new IOException(ioe);
+  }
+ finally {
+    IOException stored=null;
+    for (    StoreWriter sw : writers.values()) {
+      try {
+        SimpleFeatureType writerSchema=sw.dstore.getSchema();
+        sw.writer.close();
+        sw.dstore.dispose();
+        shapefileDumped(writerSchema.getTypeName(),writerSchema);
+      }
+ catch (      IOException e) {
+        stored=e;
+      }
+    }
+    if (stored != null) {
+      throw new IOException(stored);
+    }
+  }
+  return shapefileCreated;
+}

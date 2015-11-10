@@ -3,7 +3,7 @@
     throw new IllegalArgumentException("no write flags set");
   }
   ShapefileFeatureReader reader=(ShapefileFeatureReader)delegate.getReaderInternal(Query.ALL);
-  FeatureWriter<SimpleFeatureType,SimpleFeature> writer;
+  ShapefileFeatureWriter writer;
   ShapefileDataStore ds=getDataStore();
   if (ds.indexManager.hasFidIndex(false) || ds.isFidIndexed() && ds.indexManager.hasFidIndex(true)) {
     writer=new IndexedShapefileFeatureWriter(ds.indexManager,reader,ds.getCharset(),ds.getTimeZone());
@@ -11,6 +11,8 @@
  else {
     writer=new ShapefileFeatureWriter(delegate.shpFiles,reader,ds.getCharset(),ds.getTimeZone());
   }
+  writer.setMaxShpSize(getDataStore().getMaxShpSize());
+  writer.setMaxDbfSize(getDataStore().getMaxDbfSize());
   if ((flags | WRITER_ADD) == WRITER_ADD) {
     while (writer.hasNext()) {
       writer.next();
@@ -18,7 +20,9 @@
   }
   Filter filter=query.getFilter();
   if (filter != null && !Filter.INCLUDE.equals(filter)) {
-    writer=new FilteringFeatureWriter(writer,filter);
+    return new FilteringFeatureWriter(writer,filter);
   }
-  return writer;
+ else {
+    return writer;
+  }
 }
