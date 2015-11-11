@@ -89,7 +89,6 @@
     }
   }
   List<GridCoverage2D> reprojectedCoverages=new ArrayList<GridCoverage2D>();
-  int index=0;
   for (  GridCoverage2D coverage : coverages) {
     if (coverage == null) {
       continue;
@@ -110,9 +109,7 @@
     Envelope testEnvelope=ReferencedEnvelope.reference(destinationEnvelope);
     MathTransform mt=CRS.findMathTransform(sourceCRS,targetCRS);
     PolygonExtractor polygonExtractor=new PolygonExtractor();
-    int i=0;
     for (    GridCoverage2D coverage : reprojectedCoverages) {
-      GridCoverage2D alpha=null;
       Polygon polygon=JTS.toGeometry((BoundingBox)coverage.getEnvelope2D());
       Geometry postProcessed=handler.postProcess(mt,polygon);
       List<Polygon> polygons=polygonExtractor.getPolygons(postProcessed);
@@ -132,11 +129,24 @@
           }
         }
       }
-      i++;
     }
   }
  else {
     displacedCoverages.addAll(reprojectedCoverages);
+  }
+  for (Iterator<GridCoverage2D> it=displacedCoverages.iterator(); it.hasNext(); ) {
+    GridCoverage2D coverage=it.next();
+    ReferencedEnvelope re=ReferencedEnvelope.reference(coverage.getEnvelope2D());
+    MathTransform2D gridToWorld=coverage.getGridGeometry().getGridToCRS2D();
+    if (gridToWorld instanceof AffineTransform2D) {
+      double[] resolutions=CoverageUtilities.getResolution((AffineTransform2D)gridToWorld);
+      if (resolutions != null) {
+        re.expandBy(-resolutions[0] / 2,-resolutions[1] / 2);
+      }
+    }
+    if (!destinationEnvelope.intersects(re,false)) {
+      it.remove();
+    }
   }
   List<GridCoverage2D> symbolizedCoverages=new ArrayList<>();
   int ii=0;
