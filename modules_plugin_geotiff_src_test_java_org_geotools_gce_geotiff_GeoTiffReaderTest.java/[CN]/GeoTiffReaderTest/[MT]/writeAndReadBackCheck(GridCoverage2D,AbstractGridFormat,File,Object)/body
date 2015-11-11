@@ -1,0 +1,18 @@
+{
+  final File destFile=File.createTempFile("test",".tif",writeDirectory);
+  final GeoTiffWriter writer=new GeoTiffWriter(destFile);
+  writer.write(coverage,null);
+  writer.dispose();
+  assertTrue(format.accepts(destFile));
+  GeoTiffReader reader=new GeoTiffReader(destFile,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
+  final GridCoverage2D destCoverage=reader.read(null);
+  reader.dispose();
+  final double eps=XAffineTransform.getScaleX0((AffineTransform)coverage.getGridGeometry().getGridToCRS()) * 1E-2;
+  String toString=o.toString();
+  assertTrue("CRS comparison failed:" + toString,CRS.findMathTransform(coverage.getCoordinateReferenceSystem(),destCoverage.getCoordinateReferenceSystem(),true).isIdentity());
+  assertTrue("CRS comparison failed:" + toString,CRS.equalsIgnoreMetadata(coverage.getCoordinateReferenceSystem(),destCoverage.getCoordinateReferenceSystem()));
+  assertTrue("GridRange comparison failed:" + toString,coverage.getGridGeometry().getGridRange().equals(destCoverage.getGridGeometry().getGridRange()));
+  assertTrue("Envelope comparison failed:" + toString,((GeneralEnvelope)coverage.getGridGeometry().getEnvelope()).equals(destCoverage.getGridGeometry().getEnvelope(),eps,false));
+  coverage.dispose(true);
+  destCoverage.dispose(true);
+}
