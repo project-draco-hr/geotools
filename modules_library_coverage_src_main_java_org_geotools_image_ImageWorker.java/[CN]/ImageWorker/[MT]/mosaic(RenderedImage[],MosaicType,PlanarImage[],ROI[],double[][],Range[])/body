@@ -1,4 +1,28 @@
 {
+  double[] background=this.background;
+  if (images != null && images.length > 0) {
+    ColorModel cmref=images[0].getColorModel();
+    Color backgroundColor=getBackgroundColor();
+    if (cmref instanceof IndexColorModel && (cmref.getTransparency() != IndexColorModel.OPAQUE || images[0].getProperty("ROI") instanceof ROI) && backgroundColor != null) {
+      IndexColorModel icm=(IndexColorModel)cmref;
+      int index=ColorUtilities.getColorIndex(icm,backgroundColor,-1);
+      Color color;
+      if (icm.hasAlpha()) {
+        color=new Color(icm.getRed(index),icm.getGreen(index),icm.getBlue(index));
+      }
+ else {
+        color=new Color(icm.getRed(index),icm.getGreen(index),icm.getBlue(index),icm.getAlpha(index));
+      }
+      if (color.equals(backgroundColor)) {
+        background=new double[]{index};
+      }
+ else {
+        for (int i=0; i < images.length; i++) {
+          images[i]=new ImageWorker(images[i]).forceComponentColorModel().getRenderedImage();
+        }
+      }
+    }
+  }
   ParameterBlock pb=new ParameterBlock();
   int srcNum=0;
   if (images != null && images.length > 0) {
