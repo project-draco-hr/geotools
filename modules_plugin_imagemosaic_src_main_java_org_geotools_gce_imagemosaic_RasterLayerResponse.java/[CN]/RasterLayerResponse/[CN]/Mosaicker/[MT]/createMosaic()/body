@@ -68,11 +68,8 @@
     rois=null;
   }
   final RenderedImage mosaic=mergeBehavior.process(sources,backgroundValues,sourceThreshold,(hasAlpha || doInputTransparency) ? alphas : null,rois,request.isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,localHints);
-  ROI overallROI=mosaicROIs(rois);
-  if (footprintBehavior != FootprintBehavior.None) {
-    RenderedOp rop=(RenderedOp)mosaic;
-    rop.setProperty("ROI",overallROI);
-  }
+  Object property=mosaic.getProperty("ROI");
+  ROI overallROI=(property instanceof ROI) ? (ROI)property : null;
   final RenderedImage postProcessed=footprintBehavior.postProcessMosaic(mosaic,overallROI,localHints);
   if (hasAlpha || doInputTransparency) {
     return new MosaicElement(new ImageWorker(postProcessed).retainLastBand().getPlanarImage(),overallROI,postProcessed,Utils.mergePamDatasets(pams));
