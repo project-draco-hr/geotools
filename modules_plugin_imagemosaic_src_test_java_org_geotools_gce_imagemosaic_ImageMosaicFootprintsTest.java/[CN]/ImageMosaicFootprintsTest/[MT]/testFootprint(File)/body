@@ -1,0 +1,23 @@
+{
+  ImageMosaicReader reader=(ImageMosaicReader)new ImageMosaicFormatFactory().createFormat().getReader(mosaic);
+  GeneralParameterValue[] params=new GeneralParameterValue[1];
+  ParameterValue<String> footprintManagement=ImageMosaicFormat.FOOTPRINT_BEHAVIOR.createValue();
+  footprintManagement.setValue(FootprintBehavior.Transparent.name());
+  params[0]=footprintManagement;
+  GridCoverage2D coverage=reader.read(params);
+  byte[] result=new byte[4];
+  DirectPosition2D position=new DirectPosition2D();
+  position.setLocation(1,1);
+  coverage.evaluate(position,result);
+  assertTrue(0 != result[0]);
+  assertEquals(0,result[1]);
+  assertEquals(0,result[2]);
+  assertTrue(0 != result[3]);
+  position=new DirectPosition2D();
+  position.setLocation(-1,-1);
+  coverage.evaluate(position,result);
+  assertEquals(0,result[0]);
+  assertEquals(0,result[1]);
+  assertTrue(0 != result[2]);
+  assertTrue(0 != result[3]);
+}
