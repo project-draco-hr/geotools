@@ -1,0 +1,51 @@
+{
+  final PreparedStatementSQLDialect dialect=(PreparedStatementSQLDialect)getSQLDialect();
+  final KeysFetcher keysFetcher=KeysFetcher.create(this,cx,kind.useExisting,key);
+  final String sql=buildInsertPS(kind,featureType,keysFetcher,dialect);
+  LOGGER.log(Level.FINE,"Inserting new features with ps: {0}",sql);
+  final PreparedStatement ps;
+  if (keysFetcher.isPostInsert()) {
+    ps=cx.prepareStatement(sql,keysFetcher.getColumnNames());
+  }
+ else {
+    ps=cx.prepareStatement(sql);
+  }
+  try {
+    for (    SimpleFeature feature : features) {
+      int i=1;
+      for (      AttributeDescriptor att : featureType.getAttributeDescriptors()) {
+        String colName=att.getLocalName();
+        if (keysFetcher.isKey(colName)) {
+          continue;
+        }
+        Class binding=att.getType().getBinding();
+        Object value=feature.getAttribute(colName);
+        if (value == null && !att.isNillable()) {
+          throw new IOException("Cannot set a NULL value on the not null column " + colName);
+        }
+        if (Geometry.class.isAssignableFrom(binding)) {
+          Geometry g=(Geometry)value;
+          int srid=getGeometrySRID(g,att);
+          int dimension=getGeometryDimension(g,att);
+          dialect.setGeometryValue(g,dimension,srid,binding,ps,i);
+        }
+ else {
+          dialect.setValue(value,binding,ps,i,cx);
+        }
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine((i) + " = " + value);
+        }
+        i++;
+      }
+      keysFetcher.setKeyValues(dialect,ps,cx,featureType,feature,i);
+      dialect.onInsert(ps,cx,featureType);
+      ps.addBatch();
+    }
+    int[] inserts=ps.executeBatch();
+    checkAllInserted(inserts,features.size());
+    keysFetcher.postInsert(featureType,features,ps);
+  }
+  finally {
+    closeSafe(ps);
+  }
+}

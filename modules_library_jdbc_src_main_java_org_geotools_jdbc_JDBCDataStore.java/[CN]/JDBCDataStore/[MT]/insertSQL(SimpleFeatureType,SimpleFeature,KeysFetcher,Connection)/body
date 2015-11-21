@@ -1,0 +1,54 @@
+{
+  BasicSQLDialect dialect=(BasicSQLDialect)getSQLDialect();
+  StringBuffer sql=new StringBuffer();
+  sql.append("INSERT INTO ");
+  encodeTableName(featureType.getTypeName(),sql,null);
+  sql.append(" ( ");
+  for (int i=0; i < featureType.getAttributeCount(); i++) {
+    String colName=featureType.getDescriptor(i).getLocalName();
+    if (keysFetcher.isKey(colName)) {
+      continue;
+    }
+    dialect.encodeColumnName(null,colName,sql);
+    sql.append(",");
+  }
+  keysFetcher.addKeyColumns(sql);
+  sql.setLength(sql.length() - 1);
+  sql.append(" ) VALUES ( ");
+  for (int i=0; i < featureType.getAttributeCount(); i++) {
+    AttributeDescriptor att=featureType.getDescriptor(i);
+    String colName=att.getLocalName();
+    if (keysFetcher.isKey(colName)) {
+      continue;
+    }
+    Class binding=att.getType().getBinding();
+    Object value=feature.getAttribute(colName);
+    if (value == null) {
+      if (!att.isNillable()) {
+        throw new IOException("Cannot set a NULL value on the not null column " + colName);
+      }
+      sql.append("null");
+    }
+ else {
+      if (Geometry.class.isAssignableFrom(binding)) {
+        try {
+          Geometry g=(Geometry)value;
+          int srid=getGeometrySRID(g,att);
+          int dimension=getGeometryDimension(g,att);
+          dialect.encodeGeometryValue(g,dimension,srid,sql);
+        }
+ catch (        IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+ else {
+        dialect.encodeValue(value,binding,sql);
+      }
+    }
+    sql.append(",");
+  }
+  keysFetcher.setKeyValues(this,cx,featureType,feature,sql);
+  sql.setLength(sql.length() - 1);
+  sql.append(")");
+  return sql.toString();
+}

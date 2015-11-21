@@ -1,0 +1,25 @@
+{
+  super(ds,col);
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT MAX(");
+  ds.getSQLDialect().encodeColumnName(null,col.getName(),sql);
+  sql.append(") + 1 FROM ");
+  ds.encodeTableName(key.getTableName(),sql,null);
+  Statement st=cx.createStatement();
+  try {
+    ResultSet rs=st.executeQuery(sql.toString());
+    try {
+      rs.next();
+      next=rs.getObject(1);
+      if (next == null) {
+        next=1;
+      }
+    }
+  finally {
+      rs.close();
+    }
+  }
+  finally {
+    st.close();
+  }
+}
