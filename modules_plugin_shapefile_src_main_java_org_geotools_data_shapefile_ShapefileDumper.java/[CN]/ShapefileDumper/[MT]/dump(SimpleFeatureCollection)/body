@@ -5,7 +5,7 @@
   fc=RemappingFeatureCollection.getShapefileCompatibleCollection(fc);
   SimpleFeatureType schema=fc.getSchema();
   Map<Class,StoreWriter> writers=new HashMap<Class,StoreWriter>();
-  boolean shapefileCreated=false;
+  boolean featuresWritten=false;
   Class geomType=schema.getGeometryDescriptor().getType().getBinding();
   boolean multiWriter=GeometryCollection.class.equals(geomType) || Geometry.class.equals(geomType);
   try (SimpleFeatureIterator it=fc.features()){
@@ -19,7 +19,15 @@
         storeWriter.nextWriter();
         writeToShapefile(f,storeWriter.writer);
       }
-      shapefileCreated=true;
+      featuresWritten=true;
+    }
+    if (!featuresWritten && emptyShapefileAllowed) {
+      if (multiWriter) {
+        getStoreWriter(fc.getSchema(),writers,true,Point.class,null);
+      }
+ else {
+        getStoreWriter(fc.getSchema(),writers,false,geomType,null);
+      }
     }
   }
  catch (  ShapefileSizeException e) {
@@ -46,5 +54,5 @@ catch (  IOException ioe) {
       throw new IOException(stored);
     }
   }
-  return shapefileCreated;
+  return featuresWritten;
 }

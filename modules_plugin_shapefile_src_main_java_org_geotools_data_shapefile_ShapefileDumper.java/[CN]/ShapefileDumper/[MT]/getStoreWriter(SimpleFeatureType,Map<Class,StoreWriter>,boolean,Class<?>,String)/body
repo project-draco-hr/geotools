@@ -1,0 +1,29 @@
+{
+  StoreWriter storeWriter=writers.get(target);
+  if (storeWriter == null) {
+    SimpleFeatureTypeBuilder builder=new SimpleFeatureTypeBuilder();
+    for (    AttributeDescriptor d : original.getAttributeDescriptors()) {
+      if (Geometry.class.isAssignableFrom(d.getType().getBinding()) && multiWriter) {
+        GeometryDescriptor gd=(GeometryDescriptor)d;
+        builder.add(gd.getLocalName(),target,gd.getCoordinateReferenceSystem());
+        builder.setDefaultGeometry(gd.getLocalName());
+      }
+ else {
+        builder.add(d);
+      }
+    }
+    builder.setNamespaceURI(original.getName().getURI());
+    String fileName;
+    if (multiWriter) {
+      fileName=getShapeName(original,geometryType);
+    }
+ else {
+      fileName=getShapeName(original,null);
+    }
+    builder.setName(fileName);
+    SimpleFeatureType retyped=builder.buildFeatureType();
+    storeWriter=new StoreWriter(retyped);
+    writers.put(target,storeWriter);
+  }
+  return storeWriter;
+}
