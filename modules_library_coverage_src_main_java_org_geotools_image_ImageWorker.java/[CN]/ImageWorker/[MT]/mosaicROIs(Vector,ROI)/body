@@ -39,6 +39,9 @@
   if (rasterROIs.size() == 0) {
     return vectorReference;
   }
+ else   if (rasterROIs.size() == 1 && vectorReference == null) {
+    return rasterROIs.get(0);
+  }
   ParameterBlock pb=new ParameterBlock();
   if (vectorReference != null) {
     pb.addSource(vectorReference.getAsImage());
@@ -47,6 +50,11 @@
     pb.addSource(rasterROI.getAsImage());
   }
   pb.add(javax.media.jai.operator.MosaicDescriptor.MOSAIC_TYPE_OVERLAY);
+  pb.add(null);
+  pb.add(null);
+  pb.add(ROI_THRESHOLDS);
+  pb.add(ROI_BACKGROUND);
+  pb.add(handleMosaicThresholds(ROI_THRESHOLDS,rasterROIs.size() + (vectorReference != null ? 1 : 0)));
   RenderedImage roiMosaic=JAI.create("Mosaic",pb,getRenderingHints());
   return new ROI(roiMosaic);
 }
