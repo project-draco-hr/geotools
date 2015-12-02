@@ -1,0 +1,16 @@
+{
+  ISession session=dstore.getSession(Transaction.AUTO_COMMIT);
+  FeatureTypeInfo fti=ArcSDEAdapter.fetchSchema(typeName,null,session);
+  Filter filter=toFilter("BBOX(SHAPE, 49, -4, 60, 1)");
+  filteringQuery=new Query(typeName,filter);
+  ArcSDEQuery q=ArcSDEQuery.createQuery(session,ftype,filteringQuery,fti.getFidStrategy(),new AutoCommitVersionHandler(SeVersion.SE_QUALIFIED_DEFAULT_VERSION_NAME));
+  int calculated;
+  try {
+    calculated=q.calculateResultCount();
+  }
+  finally {
+    q.session.dispose();
+    q.close();
+  }
+  Assert.assertEquals(0,calculated);
+}
