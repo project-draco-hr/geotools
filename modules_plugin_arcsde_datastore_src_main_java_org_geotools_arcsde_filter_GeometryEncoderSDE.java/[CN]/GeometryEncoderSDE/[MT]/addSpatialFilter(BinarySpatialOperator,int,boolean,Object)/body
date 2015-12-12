@@ -49,15 +49,20 @@
     seExtent=new SeExtent(seExtent.getMinX(),seExtent.getMinY() - 100,seExtent.getMaxX(),seExtent.getMaxY() + 100);
   }
   try {
-    SeShape extent=new SeShape(this.sdeLayer.getCoordRef());
-    extent.generateRectangle(seExtent);
     SeShape filterShape;
-    if (geom.getClass() == GeometryCollection.class) {
+    if (seExtent.isEmpty() == true) {
       filterShape=new SeShape(this.sdeLayer.getCoordRef());
     }
  else {
-      gb=ArcSDEGeometryBuilder.builderFor(geom.getClass());
-      filterShape=gb.constructShape(geom,this.sdeLayer.getCoordRef());
+      SeShape extent=new SeShape(this.sdeLayer.getCoordRef());
+      extent.generateRectangle(seExtent);
+      if (geom.getClass() == GeometryCollection.class) {
+        filterShape=new SeShape(this.sdeLayer.getCoordRef());
+      }
+ else {
+        gb=ArcSDEGeometryBuilder.builderFor(geom.getClass());
+        filterShape=gb.constructShape(geom,this.sdeLayer.getCoordRef());
+      }
     }
     SeShapeFilter shapeFilter=new SeShapeFilter(getLayerName(),this.sdeLayer.getSpatialColumn(),filterShape,sdeMethod,appliedTruth);
     this.sdeSpatialFilters.add(shapeFilter);
