@@ -1,0 +1,35 @@
+{
+  AbstractGridFormat format=GridFormatFinder.findFormat(this.getInputFile());
+  String fileExtension=this.getFileExtension(this.getInputFile());
+  Hints hints=null;
+  if (format instanceof GeoTiffFormat) {
+    hints=new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE);
+  }
+  GridCoverage2DReader gridReader=format.getReader(this.getInputFile(),hints);
+  GridCoverage2D gridCoverage=gridReader.read(null);
+  Envelope2D coverageEnvelope=gridCoverage.getEnvelope2D();
+  double coverageMinX=coverageEnvelope.getBounds().getMinX();
+  double coverageMaxX=coverageEnvelope.getBounds().getMaxX();
+  double coverageMinY=coverageEnvelope.getBounds().getMinY();
+  double coverageMaxY=coverageEnvelope.getBounds().getMaxY();
+  int htc=this.getNumberOfHorizontalTiles() != null ? this.getNumberOfHorizontalTiles() : NUM_HORIZONTAL_TILES;
+  int vtc=this.getNumberOfVerticalTiles() != null ? this.getNumberOfVerticalTiles() : NUM_VERTICAL_TILES;
+  double geographicTileWidth=(coverageMaxX - coverageMinX) / (double)htc;
+  double geographicTileHeight=(coverageMaxY - coverageMinY) / (double)vtc;
+  CoordinateReferenceSystem targetCRS=gridCoverage.getCoordinateReferenceSystem();
+  File tileDirectory=this.getOutputDirectory();
+  if (!tileDirectory.exists()) {
+    tileDirectory.mkdirs();
+  }
+  for (int i=0; i < htc; i++) {
+    for (int j=0; j < vtc; j++) {
+      Envelope envelope=getTileEnvelope(coverageMinX,coverageMinY,geographicTileWidth,geographicTileHeight,targetCRS,i,j);
+      GridCoverage2D finalCoverage=cropCoverage(gridCoverage,envelope);
+      if (this.getTileScale() != null) {
+        finalCoverage=scaleCoverage(finalCoverage);
+      }
+      File tileFile=new File(tileDirectory,i + "_" + j+ "."+ fileExtension);
+      format.getWriter(tileFile).write(finalCoverage,null);
+    }
+  }
+}
