@@ -1,0 +1,34 @@
+{
+  try {
+    return clip(g,ensureValid);
+  }
+ catch (  TopologyException e) {
+    try {
+      if (((g instanceof Polygon) || (g instanceof MultiPolygon)) && (!g.isValid())) {
+        return clip(g.buffer(0),ensureValid);
+      }
+    }
+ catch (    TopologyException e2) {
+    }
+    if (scale != 0) {
+      try {
+        GeometryPrecisionReducer reducer=new GeometryPrecisionReducer(new PrecisionModel(scale));
+        Geometry reduced=reducer.reduce(g);
+        if (reduced.isEmpty()) {
+          throw new TopologyException("Could not snap geometry to precision model");
+        }
+        return clip(reduced,ensureValid);
+      }
+ catch (      TopologyException e3) {
+      }
+    }
+    if (ensureValid) {
+      try {
+        return clip(g,false);
+      }
+ catch (      TopologyException e3) {
+      }
+    }
+    return g;
+  }
+}
