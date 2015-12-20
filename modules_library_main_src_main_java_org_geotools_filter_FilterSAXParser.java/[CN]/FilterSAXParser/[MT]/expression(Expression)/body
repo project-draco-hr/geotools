@@ -63,8 +63,8 @@
       curState="pattern";
     }
  else     if (curState.equals("pattern")) {
-      if (attributes.size() != NUM_LIKE_ATTS) {
-        throw new IllegalFilterException("Got wrong number of attributes (expecting 3): " + attributes.size() + "\n"+ attributes);
+      if (attributes.size() < NUM_LIKE_ATTS) {
+        throw new IllegalFilterException("Got wrong number of attributes (expecting minimum 3): " + attributes.size() + "\n"+ attributes);
       }
       String wildcard=(String)attributes.get("wildCard");
       if ((wildcard == null) || (wildcard.length() != 1)) {
@@ -80,6 +80,10 @@
         throw new IllegalFilterException("like filter -- required attribute 'escape' missing  or not exactly 1 char long.  Capitalization?");
       }
       LOGGER.fine("escape char is " + escapeChar);
+      String matchCase=(String)attributes.get("matchCase");
+      if (matchCase != null) {
+        ((LikeFilterImpl)curFilter).setMatchingCase(Boolean.parseBoolean(matchCase));
+      }
       ((LikeFilterImpl)curFilter).setPattern(expression,wildcard,singleChar,escapeChar);
       curState="complete";
     }
