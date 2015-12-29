@@ -1,0 +1,18 @@
+{
+  this.state=state;
+  String typeName=query.getTypeName();
+  URL url=((GeoJSONDataStore)state.getEntry().getDataStore()).url;
+  file=DataUtilities.urlToFile(url);
+  File directory=file.getParentFile();
+  LOGGER.fine("Opening writer for " + url);
+  if (directory == null) {
+    throw new IOException("Unable to find parent direcotry of file " + file + " from url "+ url);
+  }
+  if (!directory.canWrite()) {
+    throw new IOException("Directory " + directory + " is not writable.");
+  }
+  this.temp=File.createTempFile(typeName + System.currentTimeMillis(),"geojson",directory);
+  LOGGER.fine("Writing to " + temp.getAbsolutePath());
+  this.geoJSONWriter=new GeoJSONWriter(new FileOutputStream(this.temp));
+  this.delegate=new GeoJSONFeatureReader(state,query);
+}
