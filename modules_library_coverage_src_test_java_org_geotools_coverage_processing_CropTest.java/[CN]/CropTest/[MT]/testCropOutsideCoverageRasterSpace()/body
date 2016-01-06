@@ -1,0 +1,27 @@
+{
+  final int width=450;
+  final int height=225;
+  final BufferedImage image=new BufferedImage(width,height,BufferedImage.TYPE_USHORT_GRAY);
+  final WritableRaster raster=(WritableRaster)image.getData();
+  for (int y=0; y < height; y++) {
+    for (int x=0; x < width; x++) {
+      raster.setSample(x,y,0,(int)(1 + (x + y) * 65534.0 / 1000.0));
+    }
+  }
+  image.setData(raster);
+  final GridCoverageFactory factory=CoverageFactoryFinder.getGridCoverageFactory(null);
+  GridGeometry2D gg=new GridGeometry2D(new GridEnvelope2D(0,0,450,225),new AffineTransform2D(0.8,0,0,-0.8,-179.6,89.6),DefaultGeographicCRS.WGS84);
+  GridCoverage2D coverage=factory.create("UInt16 coverage",image,gg,null,null,null);
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  ReferencedEnvelope re=new ReferencedEnvelope(-180,0,-270,-90,DefaultGeographicCRS.WGS84);
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("Envelope").setValue(re);
+  try {
+    processor.doOperation(param);
+    fail("Should have thrown an exception here, there is no overlap");
+  }
+ catch (  EmptyIntersectionException e) {
+    assertEquals("Crop envelope intersects in model space, but not in raster space",e.getMessage());
+  }
+}
