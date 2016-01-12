@@ -1,0 +1,23 @@
+{
+  String featureTypeName=tname("recreated");
+  CoordinateReferenceSystem crs=CRS.decode("EPSG:4326");
+  SimpleFeatureTypeBuilder ftb=new SimpleFeatureTypeBuilder();
+  ftb.setName(featureTypeName);
+  ftb.add(aname("id"),Integer.class);
+  ftb.add(aname("name"),String.class);
+  ftb.add(aname("the_geom"),Point.class,crs);
+  SimpleFeatureType newFT=ftb.buildFeatureType();
+  dataStore.createSchema(newFT);
+  SimpleFeatureType newSchema=dataStore.getSchema(featureTypeName);
+  assertNotNull(newSchema);
+  dataStore.removeSchema(newFT.getTypeName());
+  try {
+    dataStore.getSchema(featureTypeName);
+    fail("Should have thrown an IOException because featureTypeName shouldn't exist");
+  }
+ catch (  IOException e) {
+  }
+  dataStore.createSchema(newFT);
+  SimpleFeatureType recreatedSchema=dataStore.getSchema(featureTypeName);
+  assertNotNull(recreatedSchema);
+}
