@@ -1,0 +1,37 @@
+{
+  File input=TestData.file(ContourProcessTest.class,"contoursample.tif");
+  AbstractGridFormat format=GridFormatFinder.findFormat(input);
+  AbstractGridCoverage2DReader reader=null;
+  boolean success=true;
+  try {
+    reader=format.getReader(input);
+    GridCoverage2D coverage=(GridCoverage2D)reader.read(null);
+    CoordinateReferenceSystem wgs84=CRS.decode("EPSG:4326",true);
+    double[] levels=new double[40];
+    double start=-2.0;
+    for (int i=0; i < levels.length; i++) {
+      levels[i]=start + (0.2 * i);
+    }
+    SimpleFeatureCollection fc=process.execute(coverage,0,levels,null,null,null,null,null);
+    SimpleFeatureIterator features=fc.features();
+    while (features.hasNext()) {
+      SimpleFeature feature=features.next();
+      Geometry geometry=(Geometry)feature.getDefaultGeometry();
+      ReferencedEnvelope ge=new ReferencedEnvelope(geometry.getEnvelopeInternal(),wgs84);
+      JTS.toGeometry((Envelope)ge);
+    }
+  }
+ catch (  IllegalArgumentException iae) {
+    success=false;
+  }
+ finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+  assertTrue(success);
+}
