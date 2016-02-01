@@ -1,0 +1,26 @@
+{
+  QuantileClassification qc=(QuantileClassification)c;
+  int nvalues=qc.getCount(band);
+  int size=(int)Math.ceil(nvalues / (double)numClasses);
+  Iterator<Map.Entry<Double,Integer>> it=qc.getTable(band).entrySet().iterator();
+  TreeSet<Double> set=new TreeSet<Double>();
+  Map.Entry<Double,Integer> e=it.next();
+  while (nvalues > 0) {
+    set.add(e.getKey());
+    for (int i=0; i < size && nvalues > 0; i++) {
+      int count=e.getValue();
+      e.setValue(--count);
+      nvalues--;
+      if (count == 0) {
+        if (!it.hasNext()) {
+          break;
+        }
+        e=it.next();
+      }
+    }
+    if (nvalues == 0) {
+      set.add(e.getKey());
+    }
+  }
+  qc.setBreaks(band,set.toArray(new Double[set.size()]));
+}
