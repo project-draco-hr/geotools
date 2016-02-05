@@ -1,0 +1,16 @@
+{
+  final TimeZone tz=TimeZone.getTimeZone("GMT");
+  final Calendar c=Calendar.getInstance(tz);
+  final Date now=c.getTime();
+  final String dateFomratString="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+  final SimpleDateFormat sdf=new SimpleDateFormat(dateFomratString);
+  sdf.setTimeZone(tz);
+  try (Connection cx=geopkg.getDataSource().getConnection();Statement st=cx.createStatement();ResultSet rs=st.executeQuery(String.format("SELECT last_change FROM %s;",GeoPackage.GEOPACKAGE_CONTENTS))){
+    if (rs.next()) {
+      final String dateString=rs.getString(1);
+      Date parsedDate=sdf.parse(dateString);
+      assertEquals("Month value does not match",new SimpleDateFormat("MMMM").format(now),new SimpleDateFormat("MMMM").format(parsedDate));
+      assertEquals("Minutes value does not match",new SimpleDateFormat("mm").format(now),new SimpleDateFormat("mm").format(parsedDate));
+    }
+  }
+ }
