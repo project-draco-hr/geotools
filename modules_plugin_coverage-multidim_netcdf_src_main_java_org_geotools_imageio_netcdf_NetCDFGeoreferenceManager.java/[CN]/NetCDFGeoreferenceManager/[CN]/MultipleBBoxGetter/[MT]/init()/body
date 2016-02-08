@@ -1,0 +1,33 @@
+{
+  isLonLat=false;
+  CoordinatesManager manager=new CoordinatesManager();
+  for (  CoordinateVariable<?> cv : getCoordinatesVariables()) {
+    if (cv.isNumeric()) {
+      AxisType type=cv.getAxisType();
+switch (type) {
+case GeoY:
+case Lat:
+        manager.setYLat(cv);
+      break;
+case GeoX:
+case Lon:
+    manager.setXlon(cv);
+  break;
+default :
+break;
+}
+}
+}
+CoordinateReferenceSystem crs=NetCDFCRSUtilities.WGS84;
+List<Variable> variables=dataset.getVariables();
+for (Variable var : variables) {
+Attribute gridMappingAttribute=var.findAttribute(NetCDFUtilities.GRID_MAPPING);
+String coordinates=manager.getCoordinateNames(var);
+if (coordinates != null && !boundingBoxes.containsKey(coordinates)) {
+crs=lookForCrs(crs,gridMappingAttribute,var);
+ReferencedEnvelope boundingBox=manager.computeEnvelope(coordinates,crs);
+boundingBoxes.put(coordinates,boundingBox);
+}
+}
+manager.dispose();
+}
