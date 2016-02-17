@@ -1,0 +1,19 @@
+{
+  if (!isCompatible(newResult)) {
+    throw new IllegalArgumentException(String.format("Feature calculation result '%s' is not compatible it this result '%s'.",newResult.getClass().getSimpleName(),GroupByResult.class.getSimpleName()));
+  }
+  if (newResult == CalcResult.NULL_RESULT) {
+    return new GroupByResult(results,aggregateVisitor,groupByAttributes);
+  }
+  Map<List<Object>,CalcResult> mergedResults=new HashMap<>(results);
+  for (  Map.Entry<List<Object>,CalcResult> entry : ((GroupByResult)newResult).getResults().entrySet()) {
+    CalcResult existingResult=mergedResults.get(entry.getKey());
+    if (existingResult != null) {
+      mergedResults.put(entry.getKey(),existingResult.merge(entry.getValue()));
+    }
+ else {
+      mergedResults.put(entry.getKey(),entry.getValue());
+    }
+  }
+  return new GroupByResult(mergedResults,aggregateVisitor,groupByAttributes);
+}
