@@ -1,0 +1,29 @@
+{
+  WebMapServer wms=new WebMapServer(serverWithSpacedLayerNamesURL);
+  WMSCapabilities capabilities=wms.getCapabilities();
+  GetMapRequest request=wms.createGetMapRequest();
+  Layer[] layers=WMSUtils.getNamedLayers(capabilities);
+  Iterator<?> iter=Arrays.asList(layers).iterator();
+  boolean atLeastOneLayerNameContainsSpaces=false;
+  while (iter.hasNext()) {
+    Layer layer=(Layer)iter.next();
+    if (layer.getName().contains(" ")) {
+      atLeastOneLayerNameContainsSpaces=true;
+      request.addLayer(layer);
+    }
+  }
+  assertTrue(atLeastOneLayerNameContainsSpaces);
+  Set<?> srss=WMSUtils.getSRSs(capabilities);
+  request.setSRS((String)srss.iterator().next());
+  request.setDimensions("400","300");
+  String format="image/gif";
+  List<String> formats=wms.getCapabilities().getRequest().getGetMap().getFormats();
+  if (!formats.contains("image/gif")) {
+    format=(String)formats.get(0);
+  }
+  request.setFormat(format);
+  request.setBBox("-93.239328320802,44.8440037593985,-92.976671679198,45.0409962406015");
+  GetMapResponse response=(GetMapResponse)wms.issueRequest(request);
+  BufferedImage image=ImageIO.read(response.getInputStream());
+  assertNotNull(image);
+}
