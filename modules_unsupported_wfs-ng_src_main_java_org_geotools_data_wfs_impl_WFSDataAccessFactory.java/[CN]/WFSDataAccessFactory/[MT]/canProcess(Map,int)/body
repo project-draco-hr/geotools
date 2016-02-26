@@ -1,0 +1,38 @@
+{
+  boolean canProcess=DataUtilities.canProcess(params,getParametersInfo());
+  if (!canProcess) {
+    return false;
+  }
+  try {
+    URL url=(URL)URL.lookUp(params);
+    if (!"http".equalsIgnoreCase(url.getProtocol()) && !"https".equalsIgnoreCase(url.getProtocol())) {
+      if (!Boolean.TRUE.equals(params.get("TESTING"))) {
+        Loggers.MODULE.finest("Can't process non http or https GetCapabilities URLs");
+        return false;
+      }
+    }
+  }
+ catch (  Exception e) {
+    return false;
+  }
+  if (params.containsKey(USERNAME.key)) {
+    if (!params.containsKey(PASSWORD.key)) {
+      return false;
+    }
+  }
+ else {
+    if (params.containsKey(PASSWORD.key)) {
+      return false;
+    }
+  }
+  try {
+    Integer complianceLevel=(Integer)GML_COMPLIANCE_LEVEL.lookUp(params);
+    if (complianceLevel != null && complianceLevel > maximumGmlComplianceLevel) {
+      return false;
+    }
+  }
+ catch (  Exception e) {
+    return false;
+  }
+  return true;
+}
