@@ -1,0 +1,47 @@
+{
+  Callable<Void> callable=new Callable<Void>(){
+    @Override public Void call() throws Exception {
+      final File baseDirectory=TestData.file(GeoTiffReaderTest.class,".");
+      final File files[]=baseDirectory.listFiles(new FilenameFilter(){
+        @Override public boolean accept(        File dir,        String name){
+          String lcName=name.toLowerCase();
+          return lcName.endsWith("tif") || lcName.endsWith("tiff");
+        }
+      }
+);
+      final AbstractGridFormat format=new GeoTiffFormat();
+      for (      File file : files) {
+        AbstractGridCoverage2DReader reader=null;
+        try {
+          reader=format.getReader(file);
+          if (reader != null) {
+            GridCoverage2D coverage=reader.read(null);
+            ImageIOUtilities.disposeImage(coverage.getRenderedImage());
+            coverage.dispose(true);
+          }
+        }
+  finally {
+          if (reader != null) {
+            reader.dispose();
+          }
+        }
+      }
+      return null;
+    }
+  }
+;
+  ExecutorService executor=Executors.newCachedThreadPool();
+  try {
+    List<Future<Void>> futures=new ArrayList<>();
+    for (int i=0; i < 8; i++) {
+      Future<Void> f=executor.submit(callable);
+      futures.add(f);
+    }
+    for (    Future<Void> f : futures) {
+      f.get();
+    }
+  }
+  finally {
+    executor.shutdown();
+  }
+}
