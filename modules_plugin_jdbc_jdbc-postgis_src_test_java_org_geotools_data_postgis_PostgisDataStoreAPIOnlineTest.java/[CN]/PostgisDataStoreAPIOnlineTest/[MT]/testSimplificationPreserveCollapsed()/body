@@ -1,0 +1,37 @@
+{
+  Connection cx=dataStore.getDataSource().getConnection();
+  PostGISDialect dialect=((PostGISDialect)dataStore.getSQLDialect());
+  Version version=dialect.getVersion(cx);
+  dataStore.closeSafe(cx);
+  if (version.compareTo(PostGISDialect.V_2_2_0) < 0) {
+    return;
+  }
+  SimpleFeatureSource fs=dataStore.getFeatureSource(tname("simplify_polygon"));
+  if (fs.getSupportedHints().contains(Hints.GEOMETRY_SIMPLIFICATION) == false)   return;
+  SimpleFeatureCollection fColl=fs.getFeatures();
+  SimpleFeatureIterator iterator=fColl.features();
+  Geometry original=null;
+  try {
+    if (iterator.hasNext()) {
+      original=(Geometry)iterator.next().getDefaultGeometry();
+    }
+  }
+  finally {
+    iterator.close();
+  }
+  double width=original.getEnvelope().getEnvelopeInternal().getWidth();
+  Query query=new Query();
+  Hints hints=new Hints(Hints.GEOMETRY_SIMPLIFICATION,width * 2);
+  query.setHints(hints);
+  Geometry simplified=null;
+  fColl=fs.getFeatures(query);
+  iterator=fColl.features();
+  try {
+    if (iterator.hasNext())     simplified=(Geometry)iterator.next().getDefaultGeometry();
+  }
+  finally {
+    iterator.close();
+  }
+  assertNotNull("Simplified geometry is null",simplified);
+  assertTrue(original.getNumPoints() >= simplified.getNumPoints());
+}

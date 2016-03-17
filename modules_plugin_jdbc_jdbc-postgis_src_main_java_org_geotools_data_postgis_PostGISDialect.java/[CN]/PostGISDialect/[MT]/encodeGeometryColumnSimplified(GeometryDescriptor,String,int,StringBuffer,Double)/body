@@ -3,6 +3,7 @@
     super.encodeGeometryColumnSimplified(gatt,prefix,srid,sql,distance);
   }
  else {
+    String preserveCollapsed=version.compareTo(V_2_2_0) >= 0 ? ", true" : "";
     boolean geography="geography".equals(gatt.getUserData().get(JDBCDataStore.JDBC_NATIVE_TYPENAME));
     if (geography) {
       sql.append("encode(ST_AsBinary(");
@@ -13,7 +14,7 @@
       if (NON_CURVED_GEOMETRY_CLASSES.contains(gatt.getType().getBinding())) {
         sql.append("encode(ST_AsBinary(ST_Simplify(ST_Force_2D(");
         encodeColumnName(prefix,gatt.getLocalName(),sql);
-        sql.append("), " + distance + ")),'base64')");
+        sql.append("), " + distance + preserveCollapsed+ ")),'base64')");
       }
  else {
         sql.append("encode(ST_AsBinary(");
@@ -24,7 +25,7 @@
         sql.append(" ELSE ");
         sql.append("ST_Simplify(ST_Force_2D(");
         encodeColumnName(prefix,gatt.getLocalName(),sql);
-        sql.append("), " + distance + ") END),'base64')");
+        sql.append("), " + distance + preserveCollapsed+ ") END),'base64')");
       }
     }
   }
