@@ -1,0 +1,21 @@
+{
+  String dimFunction=getVersion(cx).compareTo(V_2_0_0) >= 0 ? "ST_DIMENSION" : "DIMENSION";
+  Statement statement=null;
+  ResultSet result=null;
+  try {
+    String sqlStatement="SELECT " + dimFunction + "(\""+ columnName+ "\"::geometry) "+ "FROM \""+ schemaName+ "\".\""+ tableName+ "\" "+ "WHERE "+ columnName+ " IS NOT NULL "+ "LIMIT 1";
+    statement=cx.createStatement();
+    result=statement.executeQuery(sqlStatement);
+    if (result.next()) {
+      return result.getInt(1);
+    }
+  }
+ catch (  SQLException e) {
+    LOGGER.log(Level.WARNING,"Failed to retrieve information about " + schemaName + "."+ tableName+ "."+ columnName+ " by examining the first sample geometry",e);
+  }
+ finally {
+    dataStore.closeSafe(result);
+    dataStore.closeSafe(statement);
+  }
+  return null;
+}
