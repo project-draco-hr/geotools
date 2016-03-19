@@ -1,0 +1,32 @@
+{
+  ByteArrayOutputStream out=new ByteArrayOutputStream();
+  SAXTransformerFactory txFactory=(SAXTransformerFactory)SAXTransformerFactory.newInstance();
+  TransformerHandler xmls;
+  try {
+    xmls=txFactory.newTransformerHandler();
+  }
+ catch (  TransformerConfigurationException e) {
+    throw new IOException(e);
+  }
+  Properties outputProps=new Properties();
+  outputProps.setProperty(INDENT_AMOUNT_KEY,"2");
+  xmls.getTransformer().setOutputProperties(outputProps);
+  xmls.getTransformer().setOutputProperty(OutputKeys.METHOD,"XML");
+  xmls.setResult(new StreamResult(out));
+  GMLWriter handler=new GMLWriter(xmls,gtEncoder.getNamespaces(),6,false,"gml");
+  Enumeration thing=gtEncoder.getNamespaces().getPrefixes();
+  while (thing.hasMoreElements()) {
+    System.out.println(thing.nextElement().toString());
+  }
+  handler.startDocument();
+  handler.startPrefixMapping("gml",GML.NAMESPACE);
+  handler.endPrefixMapping("gml");
+  encoder.encode(geometry,new AttributesImpl(),handler);
+  handler.endDocument();
+  ByteArrayInputStream in=new ByteArrayInputStream(out.toByteArray());
+  DOMResult result=new DOMResult();
+  Transformer tx=TransformerFactory.newInstance().newTransformer();
+  tx.transform(new StreamSource(in),result);
+  Document d=(Document)result.getNode();
+  return d;
+}
