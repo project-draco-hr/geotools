@@ -1,0 +1,25 @@
+{
+  ZoomContext result=null;
+  if (map.has("name")) {
+    result=Util.getNamedZoomContext(map.str("name"),zCtxtFinders);
+  }
+  if (result == null && map.has("scales")) {
+    final List<?> raw=map.seq("scales").raw();
+    final List<Double> scaleDenoms=new ArrayList<>(raw.size());
+    for (    Number s : (List<Number>)raw) {
+      scaleDenoms.add(s.doubleValue());
+    }
+    final int initialLevel=map.intOr("initial-level",0);
+    result=new ListZoomContext(scaleDenoms,initialLevel);
+  }
+  if (result == null && map.has("initial-scale")) {
+    final double initialScale=map.doub("initial-scale");
+    final double ratio=map.doubOr("ratio",2d);
+    final int initialLevel=map.intOr("initial-level",0);
+    result=new RatioZoomContext(initialLevel,initialScale,ratio);
+  }
+  if (result == null) {
+    throw new IllegalArgumentException();
+  }
+  return result;
+}

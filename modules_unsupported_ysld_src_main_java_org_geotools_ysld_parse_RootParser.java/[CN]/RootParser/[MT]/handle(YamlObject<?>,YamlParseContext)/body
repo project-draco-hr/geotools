@@ -1,0 +1,32 @@
+{
+  sld=factory.style.createStyledLayerDescriptor();
+  NamedLayer layer=factory.style.createNamedLayer();
+  sld.layers().add(layer);
+  layer.styles().add(style=factory.style.createStyle());
+  YamlMap root=obj.map();
+  if (root.has("grid")) {
+    context.setDocHint(ZoomContext.HINT_ID,getZoomContext(root.map("grid")));
+  }
+  style.setName(root.str("name"));
+  if (root.has("title")) {
+    style.setTitle(root.str("title"));
+  }
+  if (root.has("abstract")) {
+    style.setAbstract(root.str("abstract"));
+  }
+  style.setTitle(root.str("title"));
+  style.setAbstract(root.str("abstract"));
+  style.setName(root.str("name"));
+  if (root.has("feature-styles")) {
+    context.push("feature-styles",new FeatureStyleParser(style,factory));
+  }
+ else   if (root.has("rules")) {
+    context.push("rules",new RuleParser(newFeatureTypeStyle(),factory));
+  }
+ else   if (root.has("symbolizers")) {
+    context.push("symbolizers",new SymbolizersParser(newRule(),factory));
+  }
+ else   if (root.has("point") || root.has("line") || root.has("polygon")|| root.has("text")|| root.has("raster")) {
+    context.push(new SymbolizersParser(newRule(),factory));
+  }
+}

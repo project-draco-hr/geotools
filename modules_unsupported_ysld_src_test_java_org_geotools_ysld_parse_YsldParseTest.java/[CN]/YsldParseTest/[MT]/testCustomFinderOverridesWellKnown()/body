@@ -1,0 +1,13 @@
+{
+  String yaml="grid:\n" + "  name: WebMercator\n" + "feature-styles: \n"+ "- name: name\n"+ "  rules:\n"+ "  - zoom: "+ tuple(0,0);
+  ZoomContextFinder finder=createMock(ZoomContextFinder.class);
+  ZoomContext context=createMock(ZoomContext.class);
+  expect(finder.get("WebMercator")).andReturn(context);
+  expect(context.getRange(0,0)).andReturn(new ScaleRange(42,64));
+  replay(finder,context);
+  StyledLayerDescriptor sld=Ysld.parse(yaml,Arrays.asList(finder),(ResourceLocator)null);
+  FeatureTypeStyle fs=SLD.defaultStyle(sld).featureTypeStyles().get(0);
+  fs.rules().get(0).getMaxScaleDenominator();
+  assertThat((Iterable<Rule>)fs.rules(),hasItems(allOf(Matchers.<Rule>hasProperty("maxScaleDenominator",Matchers.closeTo(64,0.0000001d)),Matchers.<Rule>hasProperty("minScaleDenominator",Matchers.closeTo(42,0.0000001d)))));
+  verify(finder,context);
+}

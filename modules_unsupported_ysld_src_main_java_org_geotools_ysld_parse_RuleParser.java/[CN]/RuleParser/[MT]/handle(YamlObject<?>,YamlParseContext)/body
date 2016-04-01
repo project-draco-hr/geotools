@@ -1,0 +1,31 @@
+{
+  YamlSeq seq=obj.seq();
+  for (  YamlObject o : seq) {
+    YamlMap r=o.map();
+    Rule rule=factory.style.createRule();
+    featureStyle.rules().add(rule);
+    rule.setName(r.str("name"));
+    if (r.has("title")) {
+      rule.setTitle(r.str("title"));
+    }
+    if (r.has("abstract")) {
+      rule.setAbstract(r.str("abstract"));
+    }
+    rule.setTitle(r.str("title"));
+    rule.setAbstract(r.str("abstract"));
+    if (r.has("filter")) {
+      try {
+        rule.setFilter(ECQL.toFilter(Util.removeExpressionBrackets(r.str("filter"))));
+      }
+ catch (      CQLException e) {
+        throw new RuntimeException("Error parsing filter",e);
+      }
+    }
+    rule.setElseFilter(r.boolOr("else",false));
+    @Nullable ScaleRange range=Util.defaultForNull(parseScale(r),parseZoom(r,context));
+    if (range != null) {
+      range.applyTo(rule);
+    }
+    context.push(r,"symbolizers",new SymbolizersParser(rule,factory));
+  }
+}
