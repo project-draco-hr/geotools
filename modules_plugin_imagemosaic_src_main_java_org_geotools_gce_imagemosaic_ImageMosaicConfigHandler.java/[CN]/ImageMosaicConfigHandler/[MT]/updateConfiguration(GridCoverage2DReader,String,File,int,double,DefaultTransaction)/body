@@ -84,30 +84,28 @@
     catalogConfig.setParameter(Prop.ABSOLUTE_PATH,Boolean.toString(bean.isAbsolutePath()));
     catalogConfig.setParameter(Prop.ROOT_MOSAIC_DIR,getRunConfiguration().getParameter(Prop.ROOT_MOSAIC_DIR));
     CatalogConfigurationBean catalogConfigurationBean=bean;
-    if (!catalogConfigurationBean.isHeterogeneous()) {
-      numberOfLevels=coverageReader.getNumOverviews(inputCoverageName) + 1;
-      boolean needUpdate=false;
-      if (numberOfLevels != mosaicConfiguration.getLevelsNum()) {
+    numberOfLevels=coverageReader.getNumOverviews(inputCoverageName) + 1;
+    resolutionLevels=coverageReader.getResolutionLevels(inputCoverageName);
+    int originalNumberOfLevels=mosaicConfiguration.getLevelsNum();
+    boolean needUpdate=false;
+    if (Utils.homogeneousCheck(Math.min(numberOfLevels,originalNumberOfLevels),resolutionLevels,mosaicConfiguration.getLevels())) {
+      if (numberOfLevels != originalNumberOfLevels) {
         catalogConfigurationBean.setHeterogeneous(true);
-        if (numberOfLevels > mosaicConfiguration.getLevelsNum()) {
-          resolutionLevels=coverageReader.getResolutionLevels(inputCoverageName);
-          mosaicConfiguration.setLevels(resolutionLevels);
-          mosaicConfiguration.setLevelsNum(numberOfLevels);
+        if (numberOfLevels > originalNumberOfLevels) {
           needUpdate=true;
         }
       }
+    }
  else {
-        final double[][] mosaicLevels=mosaicConfiguration.getLevels();
-        resolutionLevels=coverageReader.getResolutionLevels(inputCoverageName);
-        final boolean homogeneousLevels=Utils.homogeneousCheck(numberOfLevels,resolutionLevels,mosaicLevels);
-        if (!homogeneousLevels) {
-          catalogConfigurationBean.setHeterogeneous(true);
-          needUpdate=true;
-        }
+      catalogConfigurationBean.setHeterogeneous(true);
+      if (isHigherResolution(resolutionLevels,mosaicConfiguration.getLevels())) {
+        needUpdate=true;
       }
-      if (needUpdate) {
-        getConfigurations().put(mosaicConfiguration.getName(),mosaicConfiguration);
-      }
+    }
+    if (needUpdate) {
+      mosaicConfiguration.setLevels(resolutionLevels);
+      mosaicConfiguration.setLevelsNum(numberOfLevels);
+      getConfigurations().put(mosaicConfiguration.getName(),mosaicConfiguration);
     }
     ImageLayout layout=coverageReader.getImageLayout(inputCoverageName);
     cm=layout.getColorModel(null);
