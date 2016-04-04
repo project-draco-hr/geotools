@@ -1,0 +1,22 @@
+{
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  FilterFactory filterFactory=CommonFactoryFinder.getFilterFactory();
+  StyledLayerDescriptor sld=styleFactory.createStyledLayerDescriptor();
+  UserLayer layer=styleFactory.createUserLayer();
+  sld.layers().add(layer);
+  Style style=styleFactory.createStyle();
+  layer.userStyles().add(style);
+  FeatureTypeStyle featureStyle=styleFactory.createFeatureTypeStyle();
+  style.featureTypeStyles().add(featureStyle);
+  Function p1=filterFactory.function("parameter",filterFactory.literal("alternateInput"));
+  Function p2=filterFactory.function("parameter",filterFactory.literal("levels"),filterFactory.literal(1000),filterFactory.literal(1100),filterFactory.literal(1200));
+  Function rt=filterFactory.function("ras:Contour",p1,p2);
+  featureStyle.setTransformation(rt);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld,out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  YamlMap tx=obj.seq("feature-styles").map(0).map("transform");
+  assertThat(tx,yHasEntry("name",lexEqualTo("ras:Contour")));
+  assertThat(tx,yHasEntry("input",lexEqualTo("alternateInput")));
+  assertThat(tx,yHasEntry("params",allOf(not(yHasEntry("data")),not(yHasEntry("alternateInput")),yHasEntry("levels",allOf(yHasItem(0,lexEqualTo(1000)),yHasItem(1,lexEqualTo(1100)),yHasItem(2,lexEqualTo(1200)))))));
+}

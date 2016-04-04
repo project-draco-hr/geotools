@@ -1,0 +1,9 @@
+{
+  String yaml="feature-styles: \n" + "- transform:\n" + "    name: vec:Heatmap\n"+ "    params:\n"+ "      weightAttr: pop2000\n"+ "      radius: 100\n"+ "      pixelsPerCell: 10\n"+ "      outputBBOX: ${env('test')}\n";
+  StyledLayerDescriptor sld=Ysld.parse(yaml);
+  FeatureTypeStyle fs=SLD.defaultStyle(sld).featureTypeStyles().get(0);
+  Expression tx=fs.getTransformation();
+  assertNotNull(tx);
+  ProcessFunction pf=(ProcessFunction)tx;
+  assertThat(pf,hasProperty("parameters",containsInAnyOrder(rtParam("data"),rtParam("weightAttr",literal("pop2000")),rtParam("radius",literal(100)),rtParam("pixelsPerCell",literal(10)),rtParam("outputBBOX",function("env",literal("test"))),rtParam("outputWidth",function("env",literal("wms_width"))),rtParam("outputHeight",function("env",literal("wms_height"))))));
+}
