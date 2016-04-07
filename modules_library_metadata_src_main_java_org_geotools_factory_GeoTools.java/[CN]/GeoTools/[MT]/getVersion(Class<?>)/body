@@ -1,0 +1,33 @@
+{
+  final URL classLocation=type.getResource(type.getSimpleName() + ".class");
+  String path=classLocation.toString();
+  if (classLocation.getProtocol().equalsIgnoreCase("jar")) {
+    String location=path.substring(0,path.lastIndexOf("!") + 1);
+    int dash=location.lastIndexOf("-");
+    int dot=location.lastIndexOf(".jar");
+    if (dash != -1 && dot != -1) {
+      String version=location.substring(dash + 1,dot);
+      return new Version(version);
+    }
+    try {
+      URL manifestLocation=new URL(location.substring(0,location.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF");
+      Manifest manifest=new Manifest();
+      try (InputStream content=manifestLocation.openStream()){
+        manifest.read(content);
+      }
+       for (      String attribute : new String[]{"Implementation-Version","Project-Version","Specification-Version"}) {
+        String value=manifest.getMainAttributes().getValue(attribute);
+        if (value != null) {
+          return new Version(value);
+        }
+      }
+    }
+ catch (    IOException e) {
+    }
+  }
+  String name=type.getName();
+  if (name.startsWith("org.geotools") || name.startsWith("org.opengis")) {
+    return GeoTools.getVersion();
+  }
+  return null;
+}
