@@ -1,16 +1,13 @@
 {
-  final URL classLocation=type.getResource(type.getSimpleName() + ".class");
+  final URL classLocation=classLocation(type);
   String path=classLocation.toString();
   if (classLocation.getProtocol().equalsIgnoreCase("jar")) {
-    String location=path.substring(0,path.lastIndexOf("!") + 1);
-    int dash=location.lastIndexOf("-");
-    int dot=location.lastIndexOf(".jar");
-    if (dash != -1 && dot != -1) {
-      String version=location.substring(dash + 1,dot);
-      return new Version(version);
+    String jarVersion=jarVersion(path);
+    if (jarVersion != null) {
+      return new Version(jarVersion);
     }
     try {
-      URL manifestLocation=new URL(location.substring(0,location.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF");
+      URL manifestLocation=manifestLocation(path);
       Manifest manifest=new Manifest();
       try (InputStream content=manifestLocation.openStream()){
         manifest.read(content);

@@ -1,20 +1,14 @@
 {
-  final URL classLocation=type.getResource(type.getSimpleName() + ".class");
+  final URL classLocation=classLocation(type);
   Manifest manifest=new Manifest();
-  if (classLocation.getProtocol().equalsIgnoreCase("jar")) {
-    String path=classLocation.toString();
-    URL manifestLocation;
+  URL manifestLocation=manifestLocation(classLocation.toString());
+  if (manifestLocation != null) {
     try {
-      manifestLocation=new URL(path.substring(0,path.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF");
       try (InputStream content=manifestLocation.openStream()){
         manifest.read(content);
       }
      }
- catch (    FileNotFoundException ignore) {
-      ignore.printStackTrace();
-    }
-catch (    IOException invalid) {
-      invalid.printStackTrace();
+ catch (    IOException ignore) {
     }
   }
   if (manifest.getMainAttributes().isEmpty()) {
