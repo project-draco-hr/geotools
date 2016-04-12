@@ -1,0 +1,26 @@
+{
+  final URL classLocation=classLocation(type);
+  Manifest manifest=new Manifest();
+  URL manifestLocation=manifestLocation(classLocation.toString());
+  if (manifestLocation != null) {
+    try {
+      try (InputStream content=manifestLocation.openStream()){
+        manifest.read(content);
+      }
+     }
+ catch (    IOException ignore) {
+    }
+  }
+  if (manifest.getMainAttributes().isEmpty()) {
+    String name=type.getName();
+    if (name.startsWith("org.geotools") || name.startsWith("org.opengis") || name.startsWith("net.opengis")) {
+      String generated="Manifest-Version: 1.0\n" + "Project-Version: " + getVersion() + "\n";
+      try {
+        manifest.read(new ByteArrayInputStream(generated.getBytes()));
+      }
+ catch (      IOException e) {
+      }
+    }
+  }
+  return manifest;
+}
