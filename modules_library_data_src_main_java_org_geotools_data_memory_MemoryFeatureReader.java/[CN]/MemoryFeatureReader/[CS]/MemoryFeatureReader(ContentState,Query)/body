@@ -1,7 +1,13 @@
 {
-  this.state=state;
   featureType=state.getFeatureType();
-  String typeName=getFeatureType().getTypeName();
-  MemoryDataStore store=(MemoryDataStore)state.getEntry().getDataStore();
-  iterator=store.features(typeName).values().iterator();
+  final MemoryDataStore store=(MemoryDataStore)state.getEntry().getDataStore();
+  final Map<String,SimpleFeature> features=store.features(featureType.getTypeName());
+synchronized (features) {
+    final Collection<SimpleFeature> featureCollection=features.values();
+    final List<SimpleFeature> internalCollection=new ArrayList<SimpleFeature>();
+    if (features != null) {
+      internalCollection.addAll(featureCollection);
+    }
+    iterator=internalCollection.iterator();
+  }
 }
