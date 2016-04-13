@@ -1,0 +1,28 @@
+{
+  File configFile=new File(mosaicFolder,"footprints.properties");
+  final Properties properties=initProperties(configFile);
+  String source=(String)properties.get(MultiLevelROIProviderFactory.SOURCE_PROPERTY);
+  FootprintGeometryProvider provider=null;
+  if (source == null) {
+    File defaultShapefileFootprint=new File(mosaicFolder,"footprints.shp");
+    if (defaultShapefileFootprint.exists()) {
+      provider=buildShapefileSource(mosaicFolder,defaultShapefileFootprint.getName(),properties);
+    }
+ else {
+      provider=new SidecarFootprintProvider(mosaicFolder);
+    }
+  }
+ else   if (MultiLevelROIProviderFactory.TYPE_SIDECAR.equals(source)) {
+    provider=new SidecarFootprintProvider(mosaicFolder);
+  }
+ else   if (source.toLowerCase().endsWith(".shp")) {
+    provider=buildShapefileSource(mosaicFolder,source,properties);
+  }
+ else   if (MultiLevelROIProviderFactory.TYPE_RASTER.equals(source)) {
+    return new MultiLevelROIRasterProvider(mosaicFolder);
+  }
+ else {
+    throw new IllegalArgumentException("Invalid source type, it should be a reference " + "to a shapefile or 'sidecar', but was '" + source + "' instead");
+  }
+  return createProvider(provider,properties,null);
+}
