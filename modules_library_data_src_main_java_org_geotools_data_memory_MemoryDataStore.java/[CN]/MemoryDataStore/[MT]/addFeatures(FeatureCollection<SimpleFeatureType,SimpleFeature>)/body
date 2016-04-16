@@ -1,18 +1,10 @@
 {
   if ((collection == null)) {
-    throw new IllegalArgumentException("Provided SimpleFeatureCollection is empty");
+    throw new IllegalArgumentException("Provided FeatureCollection is empty");
   }
-synchronized (memory) {
-    try {
-      collection.accepts(new FeatureVisitor(){
-        public void visit(        Feature feature){
-          addFeatureInternal((SimpleFeature)feature);
-        }
-      }
-,null);
+synchronized (entries) {
+    try (FeatureIterator<SimpleFeature> iterator=collection.features()){
+      addFeatureInternal(iterator.next());
     }
- catch (    IOException ignore) {
-      LOGGER.log(Level.FINE,"Unable to add all features",ignore);
-    }
-  }
+   }
 }
