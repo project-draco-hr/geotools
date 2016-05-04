@@ -1,0 +1,63 @@
+{
+  JoinInfo join=!query.getJoins().isEmpty() ? JoinInfo.create(query,featureType,this) : null;
+  boolean queryLimitOffset=checkLimitOffset(query.getStartIndex(),query.getMaxFeatures());
+  boolean visitorLimitOffset=visitor == null ? false : visitor.hasLimits() && dialect.isLimitOffsetSupported();
+  if (queryLimitOffset && !visitorLimitOffset) {
+    if (join != null) {
+      sql.append("SELECT ");
+      dialect.encodeColumnName(null,join.getPrimaryAlias(),sql);
+      sql.append(".* FROM ");
+    }
+ else {
+      sql.append("SELECT * FROM ");
+    }
+  }
+ else {
+    sql.append("SELECT ");
+    if (groupByAttributes != null && !groupByAttributes.isEmpty()) {
+      encodeGroupByAttributes(groupByAttributes,query,sql);
+      sql.append(",");
+    }
+    encodeFunction(function,att,query,sql);
+    sql.append(" FROM ");
+  }
+  if (join != null) {
+    encodeTableJoin(featureType,join,query,sql);
+  }
+ else {
+    encodeTableName(featureType.getTypeName(),sql,query.getHints());
+  }
+  List<FilterToSQL> toSQL=new ArrayList();
+  if (join != null) {
+    toSQL.addAll(encodeWhereJoin(featureType,join,sql));
+  }
+ else {
+    Filter filter=query.getFilter();
+    if (filter != null && !Filter.INCLUDE.equals(filter)) {
+      sql.append(" WHERE ");
+      toSQL.add(filter(featureType,filter,sql));
+    }
+  }
+  if (dialect.isAggregatedSortSupported(function)) {
+    sort(featureType,query.getSortBy(),null,sql);
+  }
+  if (visitorLimitOffset) {
+    applyLimitOffset(sql,visitor.getStartIndex(),visitor.getMaxFeatures());
+  }
+ else   if (queryLimitOffset) {
+    applyLimitOffset(sql,query.getStartIndex(),query.getMaxFeatures());
+    StringBuffer sql2=new StringBuffer("SELECT ");
+    if (groupByAttributes != null && !groupByAttributes.isEmpty()) {
+      encodeGroupByAttributes(groupByAttributes,query,sql2);
+      sql2.append(",");
+    }
+    encodeFunction(function,att,query,sql2);
+    sql2.append(" AS gt_result_");
+    sql2.append(" FROM (");
+    sql.insert(0,sql2.toString());
+    sql.append(") gt_limited_");
+  }
+  encodeGroupByStatement(groupByAttributes,query,sql);
+  applySearchHints(featureType,query,sql);
+  return toSQL;
+}

@@ -1,0 +1,40 @@
+{
+  YsldValidateContext context=new YsldValidateContext();
+  context.zCtxtFinders=this.zCtxtFinders;
+  context.push(new RootValidator());
+  try {
+    Yaml yaml=new Yaml();
+    for (    Event evt : yaml.parse(input)) {
+      YsldValidateHandler h=context.peek();
+      if (evt instanceof MappingStartEvent) {
+        h.mapping((MappingStartEvent)evt,context);
+      }
+ else       if (evt instanceof MappingEndEvent) {
+        h.endMapping((MappingEndEvent)evt,context);
+      }
+ else       if (evt instanceof SequenceStartEvent) {
+        h.sequence((SequenceStartEvent)evt,context);
+      }
+ else       if (evt instanceof SequenceEndEvent) {
+        h.endSequence((SequenceEndEvent)evt,context);
+      }
+ else       if (evt instanceof ScalarEvent) {
+        h.scalar((ScalarEvent)evt,context);
+      }
+ else       if (evt instanceof AliasEvent) {
+        h.alias((AliasEvent)evt,context);
+      }
+    }
+    ;
+  }
+ catch (  MarkedYAMLException e) {
+    context.error(e);
+  }
+catch (  EmptyStackException e) {
+    throw new RuntimeException("Error parsing CQL expression",e);
+  }
+catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+  return context.errors();
+}

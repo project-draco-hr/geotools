@@ -1,0 +1,22 @@
+{
+  ImageMosaicFormat format=new ImageMosaicFormat();
+  ImageMosaicReader reader=format.getReader(TestData.file(this,"multiresolution"));
+  final GridCoverage2D gc;
+  GridEnvelope originalRange=reader.getOriginalGridRange();
+  GeneralEnvelope envelope=reader.getOriginalEnvelope();
+  CoordinateReferenceSystem nativeCRS=envelope.getCoordinateReferenceSystem();
+  final int minX=originalRange.getLow(0);
+  final int minY=originalRange.getLow(1);
+  final int width=originalRange.getSpan(0);
+  final int height=originalRange.getSpan(1);
+  final int maxX=minX + (width <= 5 ? width : 5);
+  final int maxY=minY + (height <= 5 ? height : 5);
+  final GridEnvelope2D testRange=new GridEnvelope2D(minX,minY,maxX,maxY);
+  final MathTransform gridToWorldCorner=reader.getOriginalGridToWorld(PixelInCell.CELL_CORNER);
+  final GeneralEnvelope testEnvelope=CRS.transform(gridToWorldCorner,new GeneralEnvelope(testRange.getBounds()));
+  testEnvelope.setCoordinateReferenceSystem(nativeCRS);
+  ParameterValue<GridGeometry2D> pam=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  pam.setValue(new GridGeometry2D(testRange,testEnvelope));
+  gc=reader.read(new ParameterValue<?>[]{pam});
+  Assert.assertNotNull(gc);
+}

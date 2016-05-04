@@ -1,0 +1,14 @@
+{
+  ParameterValueGroup param=processor.getOperation("Mosaic").getParameters();
+  List<GridCoverage2D> sources=new ArrayList<GridCoverage2D>(2);
+  GridCoverage2D world=readWorldPaletted();
+  sources.add(world);
+  ReferencedEnvelope reShifted=new ReferencedEnvelope(-360,-180,-90,90,DefaultGeographicCRS.WGS84);
+  GridCoverage2D shifted=new GridCoverageFactory().create(world.getName(),world.getRenderedImage(),reShifted);
+  sources.add(shifted);
+  param.parameter("Sources").setValue(sources);
+  Hints hints=new Hints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL,Boolean.TRUE);
+  GridCoverage2D mosaic=(GridCoverage2D)processor.doOperation(param,hints);
+  assertNotNull(mosaic);
+  assertEquals(3,mosaic.getRenderedImage().getSampleModel().getNumBands());
+}

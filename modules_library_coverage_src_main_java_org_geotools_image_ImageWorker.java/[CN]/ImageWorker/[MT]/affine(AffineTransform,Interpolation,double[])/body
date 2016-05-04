@@ -51,9 +51,6 @@
         pb.set(roi,3);
         pb.set(true,5);
         pb.set(nodata,6);
-        if (isNoDataNeeded() && bgValues != null && bgValues.length > 0) {
-          setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
-        }
         RenderedOp at=JAI.create("Affine",pb,commonHints);
         Rectangle targetBB=at.getBounds();
         at.dispose();
@@ -73,8 +70,7 @@
           Object property=sourceImage.getProperty("ROI");
           boolean canProcessROI=true;
           Range oldNoData=(Range)(op.getParameterBlock().getNumParameters() > 3 ? op.getParameterBlock().getObjectParameter(4) : null);
-          double[] oldBkg=(double[])(op.getParameterBlock().getObjectParameter(2) != null ? op.getParameterBlock().getObjectParameter(2) : null);
-          boolean hasSameNodata=oldNoData == null || (oldBkg != null && nodata != null && oldBkg.length > 0 && oldBkg[0] == nodata.getMin().doubleValue());
+          boolean hasSameNodata=(oldNoData == null && nodata == null) || (oldNoData != null && nodata != null && oldNoData.equals(nodata));
           if (((property == null) || property.equals(java.awt.Image.UndefinedProperty) || !(property instanceof ROI))) {
             paramBlk.add(warp).add(interpolation).add(bgValues);
             if (oldNoData != null) {
@@ -100,9 +96,6 @@
             if (newROI != null) {
               setROI(newROI);
               paramBlk.set(newROI,3);
-            }
-            if (((isNoDataNeeded() || newROI != null || oldNoData != null) && bgValues != null && bgValues.length > 0) && hasSameNodata) {
-              setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
             }
           }
  else {
@@ -131,9 +124,6 @@
             paramBlk.add(warp).add(interpolation).add(bgValues).add(newROI);
             if (oldNoData != null) {
               paramBlk.set(oldNoData,4);
-            }
-            if (((isNoDataNeeded() || newROI != null || oldNoData != null) && bgValues != null && bgValues.length > 0) && hasSameNodata) {
-              setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
             }
           }
           if (canProcessROI && hasSameNodata) {
@@ -224,10 +214,11 @@
       ROI r=null;
       boolean similarROI=true;
       boolean hasSameNodata=true;
-      if (paramBlock.getNumParameters() > 5) {
-        nodata=(Range)paramBlock.getObjectParameter(7);
+      final int numParameters=paramBlock.getNumParameters();
+      if (numParameters > 5) {
         r=(ROI)paramBlock.getObjectParameter(5);
-        double[] sBgValues=(double[])paramBlock.getObjectParameter(8);
+        nodata=numParameters > 7 ? (Range)paramBlock.getObjectParameter(7) : null;
+        double[] sBgValues=numParameters > 8 ? (double[])paramBlock.getObjectParameter(8) : null;
         if (r != null) {
           try {
             AffineTransform sTx=AffineTransform.getScaleInstance(xScale,yScale);
@@ -295,7 +286,6 @@
       if (isNoDataNeeded()) {
         if (background != null && background.length > 0) {
           pb.set(background,8);
-          setNoData(RangeFactory.create(background[0],background[0]));
         }
       }
       image=JAI.create("Scale",pb,localHints);
@@ -321,7 +311,6 @@
       if (isNoDataNeeded()) {
         if (background != null && background.length > 0) {
           pb.set(background,8);
-          setNoData(RangeFactory.create(background[0],background[0]));
         }
       }
       image=JAI.create("Scale",pb,commonHints);
@@ -344,11 +333,6 @@
     pb.set(roi,3);
     pb.set(true,5);
     pb.set(nodata,6);
-    if (isNoDataNeeded()) {
-      if (bgValues != null && bgValues.length > 0) {
-        setNoData(RangeFactory.create(bgValues[0],bgValues[0]));
-      }
-    }
     image=JAI.create("Affine",pb,commonHints);
     if (roi != null) {
       PropertyGenerator gen=getOperationDescriptor("Affine").getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];

@@ -1,0 +1,22 @@
+{
+  if (readCoverage == null) {
+    return null;
+  }
+  try {
+    ReferencedEnvelope requested=ReferencedEnvelope.reference(requestedGridGeometry.getEnvelope());
+    ReferencedEnvelope requestedNativeCRS=requested.transform(readCoverage.getCoordinateReferenceSystem(),true);
+    ReferencedEnvelope coverageEnvelope=ReferencedEnvelope.reference(readCoverage.getEnvelope());
+    ReferencedEnvelope cropEnvelope=new ReferencedEnvelope(requestedNativeCRS.intersection(coverageEnvelope),readCoverage.getCoordinateReferenceSystem());
+    if (isNotEmpty(cropEnvelope)) {
+      GridCoverage2D cropCoverage=cropCoverage(readCoverage,requestedNativeCRS);
+      return cropCoverage;
+    }
+ else {
+      return null;
+    }
+  }
+ catch (  Exception e) {
+    LOGGER.log(Level.FINE,"Failed to crop coverage on the requested area, using the original one",e);
+    return readCoverage;
+  }
+}

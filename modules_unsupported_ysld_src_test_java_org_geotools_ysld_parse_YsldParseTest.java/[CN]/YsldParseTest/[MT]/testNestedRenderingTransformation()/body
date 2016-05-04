@@ -1,0 +1,14 @@
+{
+  String yaml="feature-styles:\n" + "- transform:\n" + "    name: ras:Contour\n"+ "    params:\n"+ "      data: \n"+ "        name: vec:BarnesSurface\n"+ "        input: data\n"+ "        params:\n"+ "          valuAttr: MxTmp\n"+ "      levels:\n"+ "      - -5\n"+ "      - 0\n"+ "      - 5\n"+ "";
+  StyledLayerDescriptor sld=Ysld.parse(yaml);
+  FeatureTypeStyle fs=SLD.defaultStyle(sld).featureTypeStyles().get(0);
+  Expression tx=fs.getTransformation();
+  assertNotNull(tx);
+  ProcessFunction pf=(ProcessFunction)tx;
+  assertThat(pf,hasProperty("name",equalTo("ras:Contour")));
+  Function param1=(Function)pf.getParameters().get(1);
+  Function param0=(Function)pf.getParameters().get(0);
+  assertThat(param1,rtParam("levels",literal(-5),literal(0),literal(5)));
+  assertThat(param0,rtParam("data",allOf(hasProperty("name",equalTo("vec:BarnesSurface")))));
+  assertThat(pf,hasProperty("parameters",containsInAnyOrder(rtParam("data",allOf(instanceOf(ProcessFunction.class),hasProperty("name",equalTo("vec:BarnesSurface")))),rtParam("levels",literal(-5),literal(0),literal(5)))));
+}

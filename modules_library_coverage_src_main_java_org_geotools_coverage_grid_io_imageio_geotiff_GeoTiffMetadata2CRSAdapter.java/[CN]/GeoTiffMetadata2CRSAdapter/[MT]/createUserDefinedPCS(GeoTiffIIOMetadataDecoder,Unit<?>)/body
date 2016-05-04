@@ -1,6 +1,7 @@
 {
   final GeographicCRS baseCRS=createGeographicCoordinateReferenceSystem(metadata);
-  String projectedCrsName=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+  String pcsCitationGeoKey=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+  String projectedCrsName=pcsCitationGeoKey;
   if (projectedCrsName == null) {
     projectedCrsName="unnamed".intern();
   }
@@ -17,9 +18,13 @@
   final ParameterValueGroup parameters;
   final MathTransform transform;
   if (projUserDefined) {
-    projectionName=metadata.getGeoKey(GeoTiffPCSCodes.PCSCitationGeoKey);
+    String citationName=metadata.getGeoKey(GeoTiffGCSCodes.GTCitationGeoKey);
+    if ((projectedCrsName == null || "unnamed".equalsIgnoreCase(projectedCrsName)) && citationName != null) {
+      projectedCrsName=citationName;
+    }
+    projectionName=pcsCitationGeoKey;
     if (projectionName == null) {
-      projectionName="unnamed";
+      projectionName=citationName != null ? citationName : "unnamed";
     }
     parameters=createUserDefinedProjectionParameter(projectionName,metadata);
     if (parameters == null) {

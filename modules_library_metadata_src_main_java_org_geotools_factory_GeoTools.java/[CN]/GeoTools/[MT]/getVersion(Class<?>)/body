@@ -1,0 +1,30 @@
+{
+  final URL classLocation=classLocation(type);
+  String path=classLocation.toString();
+  if (classLocation.getProtocol().equalsIgnoreCase("jar")) {
+    String jarVersion=jarVersion(path);
+    if (jarVersion != null) {
+      return new Version(jarVersion);
+    }
+    try {
+      URL manifestLocation=manifestLocation(path);
+      Manifest manifest=new Manifest();
+      try (InputStream content=manifestLocation.openStream()){
+        manifest.read(content);
+      }
+       for (      String attribute : new String[]{"Implementation-Version","Project-Version","Specification-Version"}) {
+        String value=manifest.getMainAttributes().getValue(attribute);
+        if (value != null) {
+          return new Version(value);
+        }
+      }
+    }
+ catch (    IOException e) {
+    }
+  }
+  String name=type.getName();
+  if (name.startsWith("org.geotools") || name.startsWith("org.opengis")) {
+    return GeoTools.getVersion();
+  }
+  return null;
+}

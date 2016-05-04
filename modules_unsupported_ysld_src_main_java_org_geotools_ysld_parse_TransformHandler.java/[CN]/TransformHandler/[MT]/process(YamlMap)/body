@@ -1,0 +1,80 @@
+{
+  processes++;
+  String name=map.str("name");
+  if (name == null) {
+    throw new IllegalArgumentException("transform must specify a name");
+  }
+  String input=map.str("input");
+  Name qName=processName(name);
+  Map<String,Parameter<?>> processInfo=loadProcessInfo(qName);
+  if (processInfo == null) {
+    throw new IllegalArgumentException("No such process: " + name);
+  }
+  boolean wmsParams=ProcessUtil.hasWMSParams(processInfo);
+  FilterFactory filterFactory=factory.filter;
+  List<Expression> processArgs=new ArrayList<>();
+  Expression outputBBOX=null;
+  Expression outputWidth=null;
+  Expression outputHeight=null;
+  if (wmsParams) {
+    outputBBOX=paramExpression("outputBBOX",Collections.singletonList(envVar("wms_bbox")));
+    outputWidth=paramExpression("outputWidth",Collections.singletonList(envVar("wms_width")));
+    outputHeight=paramExpression("outputHeight",Collections.singletonList(envVar("wms_height")));
+  }
+  YamlMap params=map.map("params");
+  if (params != null) {
+    for (    Map.Entry<String,Object> e : params.raw().entrySet()) {
+      String key=e.getKey();
+      Object val=e.getValue();
+      List<Expression> valueArgs=new ArrayList<>();
+      Parameter<?> p=processInfo.get(key);
+      if (p != null) {
+        if (val instanceof String) {
+          Expression expr=Util.expression((String)val,true,factory);
+          if (expr != null) {
+            valueArgs.add(expr);
+          }
+        }
+        if (valueArgs.isEmpty()) {
+          convertAndAdd(val,p,valueArgs);
+        }
+      }
+ else {
+        LOG.warning(String.format("unknown transform parameter: %s",key));
+      }
+      if (valueArgs.isEmpty()) {
+        valueArgs.add(factory.filter.literal(val));
+      }
+switch (key) {
+case "outputBBOX":
+        outputBBOX=paramExpression(key,valueArgs);
+      break;
+case "outputWidth":
+    outputWidth=paramExpression(key,valueArgs);
+  break;
+case "outputHeight":
+outputHeight=paramExpression(key,valueArgs);
+break;
+default :
+processArgs.add(paramExpression(key,valueArgs));
+}
+}
+}
+if (input == null && processes == 1) {
+input="data";
+}
+if (input != null) {
+processArgs.add(paramExpression(input,Collections.<Expression>emptyList()));
+}
+if (outputBBOX != null) {
+processArgs.add(outputBBOX);
+}
+if (outputWidth != null) {
+processArgs.add(outputWidth);
+}
+if (outputHeight != null) {
+processArgs.add(outputHeight);
+}
+Function function=functionFactory.function(processName(name),processArgs,null);
+return function;
+}

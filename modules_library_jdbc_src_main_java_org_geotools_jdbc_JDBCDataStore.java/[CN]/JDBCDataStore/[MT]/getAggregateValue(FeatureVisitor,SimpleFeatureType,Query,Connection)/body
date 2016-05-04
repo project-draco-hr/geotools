@@ -1,28 +1,20 @@
 {
-  String function=getAggregateFunctions().get(visitor.getClass());
+  if (isGroupByVisitor(visitor) && !dialect.isGroupBySupported()) {
+    return null;
+  }
+  String function=matchAggregateFunction(visitor);
   if (function == null) {
-    Class clazz=visitor.getClass();
-    while (clazz != null && function == null) {
-      clazz=clazz.getSuperclass();
-      function=getAggregateFunctions().get(clazz);
-    }
-    if (function == null) {
-      LOGGER.info("Unable to find aggregate function matching visitor: " + visitor.getClass());
-      return null;
-    }
+    return null;
   }
-  AttributeDescriptor att=null;
-  Expression expression=getExpression(visitor);
-  if (expression != null) {
-    att=(AttributeDescriptor)expression.evaluate(featureType);
-  }
-  if (att == null && !(visitor instanceof CountVisitor)) {
+  AttributeDescriptor att=extractAggregateAttribute(visitor,featureType);
+  if (att == null && !isCountVisitor(visitor)) {
     return null;
   }
   LimitingVisitor limitingVisitor=null;
   if (visitor instanceof LimitingVisitor) {
     limitingVisitor=(LimitingVisitor)visitor;
   }
+  List<AttributeDescriptor> groupByAttributes=extractGroupByAttributes(visitor,featureType);
   try {
     Object result=null;
     List results=new ArrayList();
@@ -30,20 +22,25 @@
     ResultSet rs=null;
     try {
       if (dialect instanceof PreparedStatementSQLDialect) {
-        st=selectAggregateSQLPS(function,att,featureType,query,limitingVisitor,cx);
+        st=selectAggregateSQLPS(function,att,groupByAttributes,featureType,query,limitingVisitor,cx);
         rs=((PreparedStatement)st).executeQuery();
       }
  else {
-        String sql=selectAggregateSQL(function,att,featureType,query,limitingVisitor);
+        String sql=selectAggregateSQL(function,att,groupByAttributes,featureType,query,limitingVisitor);
         LOGGER.fine(sql);
         st=cx.createStatement();
         st.setFetchSize(fetchSize);
         rs=st.executeQuery(sql);
       }
       while (rs.next()) {
-        Object value=rs.getObject(1);
-        result=value;
-        results.add(value);
+        if (groupByAttributes == null || groupByAttributes.isEmpty()) {
+          Object value=rs.getObject(1);
+          result=value;
+          results.add(value);
+        }
+ else {
+          results.add(extractValuesFromResultSet(rs,groupByAttributes.size()));
+        }
       }
     }
   finally {
@@ -51,7 +48,7 @@
       closeSafe(st);
     }
     if (setResult(visitor,results.size() > 1 ? results : result)) {
-      return result;
+      return result == null ? results : result;
     }
     return null;
   }

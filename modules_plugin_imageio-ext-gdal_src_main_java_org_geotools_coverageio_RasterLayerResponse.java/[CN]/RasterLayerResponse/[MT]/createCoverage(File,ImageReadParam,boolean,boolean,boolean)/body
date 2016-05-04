@@ -1,8 +1,61 @@
 {
-  final PlanarImage image=readRaster(input,useJAI,imageReadParam,useMultithreading);
+  PlanarImage raster=readRaster(input,useJAI,imageReadParam,useMultithreading);
+  final boolean useFootprint=multiLevelRoi != null && footprintBehavior != null && footprintBehavior.handleFootprints();
+  Geometry inclusionGeometry=useFootprint ? multiLevelRoi.getFootprint() : null;
+  ReferencedEnvelope granuleBBOX=originatingCoverageRequest.getCoverageBBOX();
+  ReferencedEnvelope cropBBox=new ReferencedEnvelope(originatingCoverageRequest.getRequestedBBox());
+  final ReferencedEnvelope bbox=useFootprint ? new ReferencedEnvelope(granuleBBOX.intersection(inclusionGeometry.getEnvelopeInternal()),granuleBBOX.getCoordinateReferenceSystem()) : granuleBBOX;
+  final ReferencedEnvelope intersection=new ReferencedEnvelope(bbox.intersection(cropBBox),cropBBox.getCoordinateReferenceSystem());
+  if (intersection.isEmpty() || (useFootprint && inclusionGeometry != null && !JTS.toGeometry(cropBBox).intersects(inclusionGeometry))) {
+    if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+      LOGGER.fine("Got empty intersection for granule " + this.toString() + " with request "+ originatingCoverageRequest.toString()+ " Resulting in no data loaded: Empty result");
+    }
+    return null;
+  }
+  if (useFootprint) {
+    ROI transformed;
+    try {
+      final int width=raster.getWidth();
+      final int height=raster.getHeight();
+      Rectangle imgBounds=new Rectangle(raster.getMinX(),raster.getMinY(),width,height);
+      Rectangle sourceArea=imageReadParam.getSourceRegion();
+      final AffineTransform finalRaster2Model=new AffineTransform((AffineTransform)originatingCoverageRequest.getRaster2Model());
+      finalRaster2Model.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+      double decimationScaleX=((1.0 * sourceArea.width) / width);
+      double decimationScaleY=((1.0 * sourceArea.height) / height);
+      final AffineTransform decimationScaleTranform=XAffineTransform.getScaleInstance(decimationScaleX,decimationScaleY);
+      final AffineTransform afterDecimationTranslateTranform=XAffineTransform.getTranslateInstance(sourceArea.x,sourceArea.y);
+      if (!XAffineTransform.isIdentity(afterDecimationTranslateTranform,CoverageUtilities.AFFINE_IDENTITY_EPS)) {
+        finalRaster2Model.concatenate(afterDecimationTranslateTranform);
+      }
+      if (!XAffineTransform.isIdentity(decimationScaleTranform,CoverageUtilities.AFFINE_IDENTITY_EPS)) {
+        finalRaster2Model.concatenate(decimationScaleTranform);
+      }
+      transformed=multiLevelRoi.getTransformedROI(finalRaster2Model.createInverse(),0,imgBounds,imageReadParam,originatingCoverageRequest.getReadType());
+      if (transformed instanceof ROIGeometry && ((ROIGeometry)transformed).getAsGeometry().isEmpty()) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("The transformed geometry became empty, maybe due to inset having " + "wiped out the geometry. Returning null");
+        }
+        return null;
+      }
+      PlanarImage pi=PlanarImage.wrapRenderedImage(raster);
+      if (!transformed.intersects(pi.getBounds())) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("The transformed geometry doesn't intersect the image bounds. Returning null");
+        }
+        return null;
+      }
+      pi.setProperty("ROI",transformed);
+      raster=PlanarImage.wrapRenderedImage(footprintBehavior.postProcessMosaic(raster,transformed,hints));
+    }
+ catch (    NoninvertibleTransformException e) {
+      if (LOGGER.isLoggable(java.util.logging.Level.INFO))       LOGGER.info("Unable to create inverse transformation from GridToWorld when managing the ROI");
+      return null;
+    }
+  }
   if (adjustGridToWorld) {
-    final int ssWidth=image.getWidth();
-    final int ssHeight=image.getHeight();
+    final int ssWidth=raster.getWidth();
+    final int ssHeight=raster.getHeight();
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.log(Level.FINE,"Coverage read: width = " + ssWidth + " height = "+ ssHeight);
     }
@@ -11,9 +64,9 @@
     final double scaleY=sourceRegion.height / (1.0 * ssHeight);
     final double translateX=sourceRegion.x;
     final double translateY=sourceRegion.y;
-    return createCoverageFromImage(image,ConcatenatedTransform.create(ProjectiveTransform.create(new AffineTransform(scaleX,0,0,scaleY,translateX,translateY)),raster2Model));
+    return createCoverageFromImage(raster,ConcatenatedTransform.create(ProjectiveTransform.create(new AffineTransform(scaleX,0,0,scaleY,translateX,translateY)),raster2Model));
   }
  else {
-    return createCoverageFromImage(image);
+    return createCoverageFromImage(raster);
   }
 }

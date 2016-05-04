@@ -1,0 +1,36 @@
+{
+  Map<String,Object> metadataMap=null;
+  List<DimensionDescriptor> dimensionDescriptors=rasterManager.getDimensionDescriptors();
+  if (dimensionDescriptors != null && !dimensionDescriptors.isEmpty()) {
+    Filter filter=FF.equals(FF.property("location"),FF.literal(filePath));
+    metadataMap=new HashMap<String,Object>();
+    try {
+      for (      DimensionDescriptor descriptor : dimensionDescriptors) {
+        String attribute=descriptor.getStartAttribute();
+        String name=descriptor.getName();
+        Comparable max=null;
+        Comparable min=null;
+        if (aggregate) {
+          Query query=new Query(typeName);
+          query.setFilter(filter);
+          query.setPropertyNames(Arrays.asList(attribute));
+          final MaxVisitor maxVisitor=new MaxVisitor(attribute);
+          granuleCatalog.computeAggregateFunction(query,maxVisitor);
+          max=maxVisitor.getMax();
+          MinVisitor minVisitor=new MinVisitor(attribute);
+          granuleCatalog.computeAggregateFunction(query,minVisitor);
+          min=minVisitor.getMin();
+        }
+ else {
+          max=min=(Comparable)firstFeature.getAttribute(attribute);
+        }
+        addMetadaElement(name,min,max,metadataMap);
+      }
+      addBBOX(aggregate,filter,firstFeature,metadataMap);
+    }
+ catch (    IOException e) {
+      throw new RuntimeException("Exception occurred while parsing the feature domains",e);
+    }
+  }
+  return metadataMap;
+}

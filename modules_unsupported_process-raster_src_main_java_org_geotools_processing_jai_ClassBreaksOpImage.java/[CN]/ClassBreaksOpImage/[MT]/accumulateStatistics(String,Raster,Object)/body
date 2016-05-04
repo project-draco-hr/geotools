@@ -1,0 +1,45 @@
+{
+  if (!ClassBreaksDescriptor.CLASSIFICATION_PROPERTY.equals(name)) {
+    return;
+  }
+  Classification c=(Classification)obj;
+  SampleModel sampleModel=raster.getSampleModel();
+  Rectangle bounds=raster.getBounds();
+  LinkedList rectList;
+  if (roi == null) {
+    rectList=new LinkedList();
+    rectList.addLast(bounds);
+  }
+ else {
+    rectList=roi.getAsRectangleList(bounds.x,bounds.y,bounds.width,bounds.height);
+    if (rectList == null) {
+      return;
+    }
+  }
+  PixelAccessor accessor=new PixelAccessor(sampleModel,null);
+  ListIterator iterator=rectList.listIterator(0);
+  while (iterator.hasNext()) {
+    Rectangle r=(Rectangle)iterator.next();
+    int tx=r.x;
+    int ty=r.y;
+    r.x=startPosition(tx,xStart,xPeriod);
+    r.y=startPosition(ty,yStart,yPeriod);
+    r.width=tx + r.width - r.x;
+    r.height=ty + r.height - r.y;
+    if (r.width <= 0 || r.height <= 0) {
+      continue;
+    }
+switch (accessor.sampleType) {
+case PixelAccessor.TYPE_BIT:
+case DataBuffer.TYPE_BYTE:
+case DataBuffer.TYPE_USHORT:
+case DataBuffer.TYPE_SHORT:
+case DataBuffer.TYPE_INT:
+case DataBuffer.TYPE_FLOAT:
+case DataBuffer.TYPE_DOUBLE:
+default :
+      calculate(accessor,raster,r,xPeriod,yPeriod,c);
+    break;
+}
+}
+}

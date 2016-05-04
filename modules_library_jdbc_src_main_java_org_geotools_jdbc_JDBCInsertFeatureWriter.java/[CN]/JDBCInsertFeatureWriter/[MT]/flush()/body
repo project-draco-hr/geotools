@@ -1,0 +1,28 @@
+{
+  if (curBufferPos == 0) {
+    return;
+  }
+  try {
+    Collection<ResultSetFeature> features=Arrays.asList(Arrays.copyOfRange(buffer,0,curBufferPos));
+    dataStore.insert(features,featureType,st.getConnection());
+    for (    ResultSetFeature cur : features) {
+      final String fid=(String)cur.getUserData().get("fid");
+      cur.setID(fid);
+      final SimpleFeature orig=(SimpleFeature)cur.getUserData().get(ContentFeatureStore.ORIGINAL_FEATURE_KEY);
+      if (orig != null) {
+        ((FeatureIdImpl)orig.getIdentifier()).setID(fid);
+        orig.getUserData().putAll(cur.getUserData());
+        orig.getUserData().remove(ContentFeatureStore.ORIGINAL_FEATURE_KEY);
+      }
+      final ContentEntry entry=featureSource.getEntry();
+      final ContentState state=entry.getState(this.tx);
+      state.fireFeatureAdded(featureSource,cur);
+    }
+  }
+ catch (  SQLException e) {
+    throw new IOException(e);
+  }
+ finally {
+    curBufferPos=0;
+  }
+}

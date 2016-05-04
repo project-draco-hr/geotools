@@ -1,5 +1,5 @@
 {
-  if (contents == null) {
+  if (iterator == null) {
     throw new IOException("FeatureWriter has been closed");
   }
   if (current == null) {
@@ -15,7 +15,7 @@
         live.setAttributes(current.getAttributes());
       }
  catch (      Exception e) {
-        throw new DataSourceException("Unable to accept modifications to " + live.getID() + " on "+ featureType.getTypeName());
+        throw new DataSourceException("Unable to accept modifications to " + live.getID() + " on "+ typeName);
       }
       ReferencedEnvelope bounds=new ReferencedEnvelope();
       bounds.expandToInclude(new ReferencedEnvelope(live.getBounds()));
@@ -25,7 +25,10 @@
     }
   }
  else {
-    contents.put(current.getID(),current);
+    MemoryEntry entry=state.getEntry();
+synchronized (entry) {
+      entry.memory.put(current.getID(),current);
+    }
     current=null;
   }
 }

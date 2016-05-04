@@ -1,0 +1,32 @@
+{
+  Geometry geom;
+  parser.nextTag();
+  parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.segments.getLocalPart());
+  final QName segmentsTag=new QName(parser.getNamespace(),parser.getName());
+  List<LineString> lineStrings=new ArrayList<LineString>(2);
+  if (GML.segments.equals(segmentsTag)) {
+    parser.nextTag();
+    while (true) {
+      parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.LineStringSegment.getLocalPart());
+      parser.nextTag();
+      parser.require(XmlPullParser.START_TAG,GML.NAMESPACE,GML.posList.getLocalPart());
+      crs=crs(crs);
+      Coordinate[] coords=parseCoordList(dimension,crs);
+      LineString lineString=geomFac.createLineString(coords);
+      lineString.setUserData(crs);
+      lineStrings.add(lineString);
+      parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.posList.getLocalPart());
+      parser.nextTag();
+      parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.LineStringSegment.getLocalPart());
+      parser.nextTag();
+      if (XmlPullParser.END_TAG == parser.getEventType() && GML.segments.getLocalPart().equals(parser.getName())) {
+        break;
+      }
+    }
+    parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.segments.getLocalPart());
+  }
+  parser.nextTag();
+  parser.require(XmlPullParser.END_TAG,GML.NAMESPACE,GML.Curve.getLocalPart());
+  geom=geomFac.createMultiLineString(lineStrings.toArray(new LineString[lineStrings.size()]));
+  return geom;
+}

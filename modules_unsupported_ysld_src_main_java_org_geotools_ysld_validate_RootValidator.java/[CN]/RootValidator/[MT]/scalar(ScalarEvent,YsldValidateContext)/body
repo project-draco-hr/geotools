@@ -1,0 +1,39 @@
+{
+  String key=evt.getValue();
+  Matcher m=COLOR.matcher(key);
+  if (m.matches()) {
+    context.push(new ColorValidator());
+  }
+ else   if ("filter".equals(key)) {
+    context.push(new FilterValidator());
+  }
+ else   if (NAME.matcher(key).matches()) {
+    context.push(new ExpressionValidator());
+  }
+ else   if (EXPRESSION.matcher(key).matches()) {
+    context.push(new ExpressionValidator());
+  }
+ else   if ("grid".equals(key)) {
+    context.push(new GridValidator());
+  }
+ else   if ("zoom".equals(key)) {
+    context.push(new ZoomValidator());
+  }
+ else   if ("scale".equals(key)) {
+    context.push(new ScaleValidator());
+  }
+ else   if ("anchor".equals(key) || "displacement".equals(key)) {
+    context.push(new TupleValidator(Arrays.asList(new ExpressionValidator(),new ExpressionValidator())));
+  }
+ else   if ("entries".equals(key)) {
+    context.push(new SequenceValidator(new TupleValidator(Arrays.asList(new ColorValidator(),new ExpressionValidator(),new ExpressionValidator(),new ScalarValidator(){
+      @Override protected String validate(      String value,      ScalarEvent evt,      YsldValidateContext context){
+        return null;
+      }
+    }
+))));
+  }
+ else   if ("params".equals(key)) {
+    context.push(new PermissiveValidator());
+  }
+}

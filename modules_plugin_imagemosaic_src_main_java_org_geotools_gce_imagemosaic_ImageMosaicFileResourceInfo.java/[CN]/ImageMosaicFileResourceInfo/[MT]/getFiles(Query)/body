@@ -1,0 +1,30 @@
+{
+  SimpleFeatureCollection fc=null;
+  try {
+    Query updatedQuery=query != null ? query : new Query();
+    Filter filter=updatedQuery.getFilter();
+    if (!"location".equalsIgnoreCase(locationAttributeName) && filter instanceof LikeFilterImpl) {
+      LikeFilterImpl likeFilter=(LikeFilterImpl)filter;
+      AttributeExpressionImpl impl=(AttributeExpressionImpl)likeFilter.getExpression();
+      String attribute=impl.getPropertyName();
+      String value=likeFilter.getLiteral();
+      if ("location".equalsIgnoreCase(attribute)) {
+        attribute=locationAttributeName;
+        updatedQuery.setFilter(FF.like(FF.property(attribute),value));
+      }
+    }
+    final List<SortBy> clauses=new ArrayList<SortBy>(1);
+    clauses.add(new SortByImpl(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(locationAttributeName),SortOrder.ASCENDING));
+    final SortBy[] sb=clauses.toArray(new SortBy[]{});
+    final boolean isSortBySupported=granuleCatalog.getQueryCapabilities(typeName).supportsSorting(sb);
+    if (isSortBySupported) {
+      updatedQuery.setSortBy(sb);
+    }
+    updatedQuery.setTypeName(typeName);
+    fc=granuleCatalog.getGranules(updatedQuery);
+    return new CloseableFileGroupIterator(fc.features());
+  }
+ catch (  IOException ioe) {
+    throw new RuntimeException(ioe);
+  }
+}

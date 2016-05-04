@@ -1,0 +1,55 @@
+{
+  NaturalClassification nc=(NaturalClassification)c;
+  List<Double> data=nc.getValues(band);
+  Collections.sort(data);
+  final int k=numClasses;
+  final int m=data.size();
+  if (k >= m) {
+    c.setBreaks(band,data.toArray(new Double[data.size()]));
+    return;
+  }
+  int[][] iwork=new int[m + 1][k + 1];
+  double[][] work=new double[m + 1][k + 1];
+  for (int j=1; j <= k; j++) {
+    iwork[0][j]=1;
+    iwork[1][j]=1;
+    work[1][j]=0;
+    for (int i=2; i <= m; i++) {
+      work[i][j]=Double.MAX_VALUE;
+    }
+  }
+  for (int i=1; i <= m; i++) {
+    double s1=0;
+    double s2=0;
+    double var=0.0;
+    for (int ii=1; ii <= i; ii++) {
+      int i3=i - ii + 1;
+      double val=data.get(i3 - 1);
+      s2=s2 + (val * val);
+      s1+=val;
+      double s0=(double)ii;
+      var=s2 - ((s1 * s1) / s0);
+      int ik=i3 - 1;
+      if (ik != 0) {
+        for (int j=2; j <= k; j++) {
+          if (work[i][j] >= (var + work[ik][j - 1])) {
+            iwork[i][j]=i3 - 1;
+            work[i][j]=var + work[ik][j - 1];
+          }
+        }
+      }
+    }
+    iwork[i][1]=1;
+    work[i][1]=var;
+  }
+  Double[] breaks=new Double[k + 1];
+  int ik=m - 1;
+  breaks[k]=data.get(ik);
+  for (int j=k; j >= 2; j--) {
+    int id=(int)iwork[ik][j] - 1;
+    breaks[j - 1]=data.get(id);
+    ik=(int)iwork[ik][j] - 1;
+  }
+  breaks[0]=data.get(0);
+  nc.setBreaks(band,breaks);
+}

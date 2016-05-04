@@ -11,6 +11,10 @@
     Icon icon=((IconStyle2D)graphicFill).getIcon();
     stippleSize=new Rectangle2D.Double(0,0,icon.getIconWidth(),icon.getIconHeight());
   }
+ else   if (graphicFill instanceof GraphicStyle2D) {
+    BufferedImage image=((GraphicStyle2D)graphicFill).getImage();
+    stippleSize=new Rectangle2D.Double(0,0,image.getWidth(),image.getHeight());
+  }
  else {
     return;
   }
@@ -34,12 +38,25 @@
   if (boundsClip.getMaxY() < boundsShape.getMaxY()) {
     toY-=(int)Math.floor((boundsShape.getMaxY() - boundsClip.getMaxY()) / stippleSize.getHeight());
   }
+  GeometryFactory geomFactory=new GeometryFactory();
+  Coordinate stippleCoord=new Coordinate(stippleSize.getCenterX(),stippleSize.getCenterY());
+  Geometry stipplePoint=geomFactory.createPoint(stippleCoord);
+  AffineTransform2D identityTransf=new AffineTransform2D(new AffineTransform());
+  Decimator nullDecimator=new Decimator(-1,-1);
   for (int i=fromX; i < toX; i++) {
     for (int j=fromY; j < toY; j++) {
       double translateX=boundsShape.getMinX() + i * stippleSize.getWidth();
       double translateY=boundsShape.getMinY() + j * stippleSize.getHeight();
-      if (!clipShape.intersects(translateX,translateY,stippleSize.getWidth(),stippleSize.getHeight()))       continue;
-      LiteShape2 stippleShape=createStippleShape(stippleSize,translateX,translateY);
+      stippleCoord.x=stippleSize.getCenterX() + translateX;
+      stippleCoord.y=stippleSize.getCenterY() + translateY;
+      stipplePoint.geometryChanged();
+      LiteShape2 stippleShape;
+      try {
+        stippleShape=new LiteShape2(stipplePoint,identityTransf,nullDecimator,false);
+      }
+ catch (      Exception e) {
+        throw new RuntimeException("Unxpected exception building lite shape",e);
+      }
       paint(g,stippleShape,graphicFill,scale);
     }
   }

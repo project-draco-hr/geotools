@@ -1,0 +1,27 @@
+{
+  final QName featureName=GEOS_SIMPLECURVE_ROADS.TYPENAME;
+  final int expectedCount=1;
+  final String schemaLocation=GEOS_SIMPLECURVE_ROADS.SCHEMA;
+  final String[] properties={"geom","label"};
+  final SimpleFeatureType featureType;
+  featureType=getTypeView(featureName,schemaLocation,GEOS_SIMPLECURVE_ROADS.CRS,properties);
+  final FeatureVisitor assertor=new FeatureAssertor(featureType){
+    @Override public void visit(    final Feature feature){
+      super.visit(feature);
+      int numLines=1;
+      GeometryAttribute defaultGeometryProperty=feature.getDefaultGeometryProperty();
+      assertNotNull(defaultGeometryProperty);
+      final Object value=defaultGeometryProperty.getValue();
+      assertNotNull(value);
+      assertTrue("value: " + value,value instanceof LineString);
+      LineString mp=(LineString)value;
+      assertEquals(numLines,mp.getNumGeometries());
+    }
+  }
+;
+  URL url=TestData.getResource(this,GEOS_SIMPLECURVE_ROADS.DATA);
+  GetFeatureParser parser=getParser(featureName,schemaLocation,featureType,url);
+  int nof=parser.getNumberOfFeatures();
+  assertEquals(expectedCount,nof);
+  testParseGetFeatures(featureName,featureType,parser,assertor,expectedCount);
+}

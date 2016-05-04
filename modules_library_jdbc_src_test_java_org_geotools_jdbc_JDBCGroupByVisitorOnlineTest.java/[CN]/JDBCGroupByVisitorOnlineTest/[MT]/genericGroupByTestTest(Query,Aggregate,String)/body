@@ -1,0 +1,15 @@
+{
+  ContentFeatureSource featureSource=dataStore.getFeatureSource(tname("buildings_group_by_tests"));
+  SimpleFeatureType featureType=featureSource.getSchema();
+  GroupByVisitorBuilder visitorBuilder=new GroupByVisitorBuilder().withAggregateAttribute("energy_consumption",featureType).withAggregateVisitor(aggregateVisitor);
+  for (  String groupByAttribute : groupByAttributes) {
+    visitorBuilder.withGroupByAttribute(groupByAttribute,featureType);
+  }
+  GroupByVisitor visitor=visitorBuilder.build();
+  featureSource.accepts(query,visitor,null);
+  assertTrue(visitor.wasOptimized());
+  assertFalse(visitor.wasVisited());
+  List<Object[]> value=visitor.getResult().toList();
+  assertNotNull(value);
+  return value;
+}

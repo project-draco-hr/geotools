@@ -40,32 +40,33 @@
         }
       }
       final Object roi=inputImage.getProperty("ROI");
-      if ((roi != null) && ((roi instanceof ROI) || (roi instanceof RenderedImage))) {
+      if ((roi != null) && ((ROI.class.equals(roi) || (roi instanceof RenderedImage)))) {
         if (roi instanceof ROI) {
           ROI roiImage=(ROI)roi;
           Rectangle bounds=roiImage.getBounds();
           if (!(bounds.isEmpty())) {
             PlanarImage image=roiImage.getAsImage();
             if (image != null) {
-              image.dispose();
-              image=null;
-              roiImage=null;
+              disposeImage(image);
             }
           }
         }
  else {
-          PlanarImage roiImage=PlanarImage.wrapRenderedImage((RenderedImage)roi);
-          roiImage.dispose();
-          roiImage=null;
+          disposeImage((RenderedImage)roi);
         }
       }
-      if (inputImage instanceof PlanarImage) {
-        ((PlanarImage)inputImage).dispose();
+      try {
+        if (planarImage instanceof RenderedImageAdapter) {
+          cleanField(planarImage,"theImage");
+        }
+        if (planarImage instanceof WritableRenderedImageAdapter) {
+          cleanField(planarImage,"theWritableImage");
+        }
       }
- else       if (inputImage instanceof BufferedImage) {
-        ((BufferedImage)inputImage).flush();
-        inputImage=null;
+ catch (      NoSuchFieldException|IllegalAccessException e) {
+        LOGGER.log(Level.FINE,"Failed to clear rendered image adapters field to null. " + "Not a problem per se, but if the finalizer thread is not fast enough, this might result in a OOM",e);
       }
+      planarImage.dispose();
     }
  else     if (inputImage instanceof BufferedImage) {
       ((BufferedImage)inputImage).flush();

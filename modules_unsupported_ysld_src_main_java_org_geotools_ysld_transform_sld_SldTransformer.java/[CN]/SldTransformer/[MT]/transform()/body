@@ -1,0 +1,42 @@
+{
+  context.stream().document().push(new RootHandler());
+  boolean root=true;
+  Integer next=xml.hasNext() ? xml.next() : null;
+  while (next != null) {
+    context.reset();
+    SldTransformHandler h=context.handlers.peek();
+switch (next) {
+case PROCESSING_INSTRUCTION:
+case COMMENT:
+case SPACE:
+      break;
+case START_DOCUMENT:
+    break;
+case START_ELEMENT:
+  if (root) {
+    String ver=xml.getAttributeValue(null,"version");
+    if (ver != null) {
+      context.version(ver);
+    }
+  }
+root=false;
+h.element(xml,context);
+break;
+case ATTRIBUTE:
+h.attribute(xml,context);
+break;
+case CHARACTERS:
+h.characters(xml,context);
+break;
+case END_ELEMENT:
+h.endElement(xml,context);
+break;
+case END_DOCUMENT:
+break;
+}
+if (context.moveToNext) {
+next=xml.hasNext() ? xml.next() : null;
+}
+}
+context.endDocument().endStream();
+}

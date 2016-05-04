@@ -1,0 +1,13 @@
+{
+  String yaml="text: \n" + "  geometry: literal0${attribute1}literal2\n" + "";
+  StyledLayerDescriptor sld=Ysld.parse(yaml);
+  FeatureTypeStyle fs=SLD.defaultStyle(sld).featureTypeStyles().get(0);
+  TextSymbolizer symb=(TextSymbolizer)fs.rules().get(0).symbolizers().get(0);
+  Expression expr=symb.getGeometry();
+  assertThat(expr,instanceOf(ConcatenateFunction.class));
+  List<Expression> params=((ConcatenateFunction)expr).getParameters();
+  assertThat(params.size(),is(3));
+  assertThat(params.get(0),literal(equalTo("literal0")));
+  assertThat(params.get(1),attribute("attribute1"));
+  assertThat(params.get(2),literal(equalTo("literal2")));
+}

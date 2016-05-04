@@ -1,0 +1,41 @@
+{
+  final File testURL=TestData.file(this,"dualbboxAuxiliaryCoordinates.nc");
+  final NetCDFReader reader=new NetCDFReader(testURL,null);
+  assertNotNull(reader);
+  try {
+    String[] names=reader.getGridCoverageNames();
+    assertNotNull(names);
+    assertEquals(2,names.length);
+    assertEquals(names[0],"sample1");
+    assertEquals(names[1],"sample2");
+    GeneralEnvelope envelope1=reader.getOriginalEnvelope("sample1");
+    GeneralEnvelope envelope2=reader.getOriginalEnvelope("sample2");
+    assertEquals(52000,envelope1.getMinimum(0),DELTA);
+    assertEquals(-78000,envelope1.getMinimum(1),DELTA);
+    assertEquals(68000,envelope1.getMaximum(0),DELTA);
+    assertEquals(-62000,envelope1.getMaximum(1),DELTA);
+    assertEquals(-58000,envelope2.getMinimum(0),DELTA);
+    assertEquals(0,envelope2.getMinimum(1),DELTA);
+    assertEquals(-46000,envelope2.getMaximum(0),DELTA);
+    assertEquals(12000,envelope2.getMaximum(1),DELTA);
+    assertEquals(16000,envelope1.getSpan(0),DELTA);
+    assertEquals(16000,envelope1.getSpan(1),DELTA);
+    assertEquals(12000,envelope2.getSpan(0),DELTA);
+    assertEquals(12000,envelope2.getSpan(1),DELTA);
+    GridEnvelope gridRange1=reader.getOriginalGridRange("sample1");
+    GridEnvelope gridRange2=reader.getOriginalGridRange("sample2");
+    assertEquals(4,gridRange1.getSpan(0));
+    assertEquals(4,gridRange1.getSpan(1));
+    assertEquals(3,gridRange2.getSpan(0));
+    assertEquals(3,gridRange2.getSpan(1));
+  }
+  finally {
+    if (reader != null) {
+      try {
+        reader.dispose();
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+}

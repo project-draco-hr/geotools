@@ -1,0 +1,22 @@
+{
+  Hints hints=new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM,DefaultEngineeringCRS.GENERIC_2D);
+  GridCoverage2DReader reader=null;
+  try {
+    reader=new GeoTiffReader(coverageFile,hints);
+    ReferencedEnvelope mapExtent=new ReferencedEnvelope(-90,0,-45,45,DefaultEngineeringCRS.GENERIC_2D);
+    GridCoverageReaderHelper helper=new GridCoverageReaderHelper(reader,new Rectangle(200,200),mapExtent,Interpolation.getInstance(Interpolation.INTERP_NEAREST));
+    List<GridCoverage2D> coverages=helper.readCoverages(null,null);
+    assertEquals(1,coverages.size());
+    GridCoverage2D gc=coverages.get(0);
+    Envelope envelope=gc.getEnvelope();
+    assertEquals(-90,envelope.getMinimum(0),EPS);
+    assertEquals(0,envelope.getMaximum(0),EPS);
+    assertEquals(-45,envelope.getMinimum(1),EPS);
+    assertEquals(45,envelope.getMaximum(1),EPS);
+  }
+  finally {
+    if (reader != null) {
+      reader.dispose();
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  System.setProperty("org.geotools.referencing.forceXY","true");
+  tmp=File.createTempFile("example","");
+  boolean exists=tmp.exists();
+  if (exists) {
+    System.err.println("Removing tempfile " + tmp);
+    tmp.delete();
+  }
+  boolean created=tmp.mkdirs();
+  if (!created) {
+    System.err.println("Could not create " + tmp);
+    System.exit(1);
+  }
+  file=new File(tmp,"locations.json");
+  URL resource=TestData.getResource(GeoJSONWriteTest.class,"locations.json");
+  url=resource;
+  if (url == null)   throw new RuntimeException("Input datafile not found");
+  System.out.println("copying " + resource.toExternalForm() + " to "+ file);
+  Files.copy(resource.openStream(),file.toPath(),StandardCopyOption.REPLACE_EXISTING);
+  url=DataUtilities.fileToURL(file);
+}

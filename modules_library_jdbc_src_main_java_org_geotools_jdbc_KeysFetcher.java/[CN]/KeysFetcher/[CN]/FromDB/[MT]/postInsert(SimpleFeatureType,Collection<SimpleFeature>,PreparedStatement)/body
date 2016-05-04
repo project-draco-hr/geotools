@@ -1,0 +1,22 @@
+{
+  if (!isPostInsert()) {
+    return;
+  }
+  final ResultSet rs=ps.getGeneratedKeys();
+  try {
+    final Iterator<SimpleFeature> it=features.iterator();
+    final List<Object> keyValues=new ArrayList<>(key.getColumns().size());
+    while (rs.next()) {
+      final SimpleFeature feature=it.next();
+      for (int index=1; index <= key.getColumns().size(); ++index) {
+        keyValues.add(rs.getObject(index));
+      }
+      String fid=featureType.getTypeName() + "." + JDBCDataStore.encodeFID(keyValues);
+      feature.getUserData().put("fid",fid);
+      keyValues.clear();
+    }
+  }
+  finally {
+    rs.close();
+  }
+}

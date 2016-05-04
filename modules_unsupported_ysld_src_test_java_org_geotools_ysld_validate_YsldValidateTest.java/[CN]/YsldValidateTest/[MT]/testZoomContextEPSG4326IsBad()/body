@@ -1,0 +1,12 @@
+{
+  StringBuilder builder=new StringBuilder();
+  builder.append("grid:\n" + "  name: EPSG:4326\n");
+  ZoomContextFinder finder=createMock("finder",ZoomContextFinder.class);
+  ZoomContext zctxt=createMock("zctxt",ZoomContext.class);
+  expect(finder.get("EPSG:4326")).andStubReturn(zctxt);
+  replay(finder,zctxt);
+  List<MarkedYAMLException> errors=validate(builder.toString(),Collections.singletonList(finder));
+  assertThat(errors.size(),is(1));
+  assertThat(errors.get(0).getProblemMark(),problemOn(2));
+  verify(finder,zctxt);
+}

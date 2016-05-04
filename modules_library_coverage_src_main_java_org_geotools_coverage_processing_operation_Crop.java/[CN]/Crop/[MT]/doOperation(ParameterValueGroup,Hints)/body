@@ -55,7 +55,9 @@
   final GeneralEnvelope intersectionEnvelope=new GeneralEnvelope((Envelope)destinationEnvelope);
   intersectionEnvelope.setCoordinateReferenceSystem(source.getCoordinateReferenceSystem());
   intersectionEnvelope.intersect(sourceEnvelope);
-  if (intersectionEnvelope.isEmpty())   throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
+  if (intersectionEnvelope.isEmpty()) {
+    throw new EmptyIntersectionException("Crop envelope does not intersect in model space");
+  }
   if (cropRoi != null) {
     final Geometry jis=JTS.toGeometry((com.vividsolutions.jts.geom.Envelope)new ReferencedEnvelope(intersectionEnvelope));
     if (!IntersectUtils.intersects(cropRoi,jis))     throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));

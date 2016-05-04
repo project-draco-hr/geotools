@@ -1,0 +1,18 @@
+{
+  Utilities.ensureNonNull("referenceFile",referenceFile);
+  File configDirectory=referenceFile.isDirectory() ? referenceFile : referenceFile.getParentFile();
+  File configFile=new File(configDirectory,"footprints.properties");
+  if (!configFile.exists()) {
+    configFile=SidecarFootprintProvider.getAlternativeFile(configFile);
+  }
+  final Properties properties=initProperties(configFile);
+  String source=(String)properties.get(SOURCE_PROPERTY);
+  FootprintGeometryProvider provider=null;
+  if (source == null || TYPE_SIDECAR.equals(source)) {
+    provider=new SidecarFootprintProvider(referenceFile);
+  }
+ else {
+    throw new IllegalArgumentException("Invalid source type, it should be a reference " + "to a 'sidecar', but was '" + source + "' instead");
+  }
+  return createProvider(provider,properties,granuleBounds);
+}

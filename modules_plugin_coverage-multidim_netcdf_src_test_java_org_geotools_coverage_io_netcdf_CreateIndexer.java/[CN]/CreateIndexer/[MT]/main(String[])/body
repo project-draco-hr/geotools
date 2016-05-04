@@ -1,0 +1,54 @@
+{
+  if (args.length < 1) {
+    System.out.println("Usage: java -jar CreateIndexer" + " /path/to/sampleFile.nc " + "/path/to/netcdfprojectionsfile "+ "[/path/to/optional/outputFolder]\n");
+    System.exit(1);
+  }
+  if (!args[1].equalsIgnoreCase("-P")) {
+    System.out.println(" The second parameter needs to be " + "-p /path/to/netcdfprojectionsfile\n");
+    System.exit(1);
+  }
+  String sampleFilePath=args[0];
+  String projectionFilePath=args[2];
+  System.out.println("Setting netcdf.projections.file = " + projectionFilePath);
+  System.setProperty("netcdf.projections.file",projectionFilePath);
+  System.setProperty("org.geotools.netcdf.quickscan","TRUE");
+  File sampleFile=new File(sampleFilePath);
+  File temp=File.createTempFile("XML","NC");
+  if (!(temp.delete())) {
+    throw new IOException("Could not delete temp file: " + temp.getAbsolutePath());
+  }
+  if (!(temp.mkdir())) {
+    throw new IOException("Could not create temp directory: " + temp.getAbsolutePath());
+  }
+  System.setProperty("NETCDF_DATA_DIR",temp.getAbsolutePath());
+  System.out.println("Reading sample file: " + sampleFilePath);
+  ImageReader reader=new NetCDFImageReaderSpi().createReaderInstance();
+  reader.setInput(sampleFile);
+  reader.dispose();
+  File[] files=temp.listFiles((FileFilter)FileFilterUtils.directoryFileFilter());
+  files=files[0].listFiles((FileFilter)FileFilterUtils.suffixFileFilter("xml"));
+  final File auxiliaryFile=files[0];
+  String parentFolder=setOuputFolder(args,sampleFile);
+  String indexerFilePath=parentFolder + File.separatorChar + "indexer.xml";
+  String auxiliaryFilePath=parentFolder + File.separatorChar + "_auxiliary.xml";
+  final File finalAuxFile=new File(auxiliaryFilePath);
+  formatAuxiliaryXml(auxiliaryFile,finalAuxFile);
+  System.out.println("Grabbing the generated xml: " + finalAuxFile);
+  SAXBuilder saxBuilder=new SAXBuilder();
+  Document doc=saxBuilder.build(finalAuxFile);
+  Element root=doc.getRootElement();
+  Set<String> timeAttributes=new HashSet<String>();
+  Set<String> elevationAttributes=new HashSet<String>();
+  getAttributes(timeAttributes,elevationAttributes,root);
+  final StringBuilder builder=new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+  builder.append("<Indexer>\n");
+  setDomains(timeAttributes,elevationAttributes,builder);
+  boolean longNameFound=setCoverages(root,builder);
+  setParameters(auxiliaryFilePath,builder,longNameFound);
+  writeIndexer(builder.toString(),indexerFilePath);
+  System.out.println("Deleting temporary folder");
+  if (!(FileUtils.deleteQuietly(temp))) {
+    System.out.println("Unable to delete folder: " + temp);
+  }
+  System.out.println("DONE!!");
+}

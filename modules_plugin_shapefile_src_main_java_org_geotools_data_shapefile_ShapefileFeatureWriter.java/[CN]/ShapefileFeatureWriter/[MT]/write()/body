@@ -30,8 +30,20 @@
       bounds.expandToInclude(b);
     }
   }
-  if (g != null)   shapefileLength+=(handler.getLength(g) + 8);
- else   shapefileLength+=(4 + 8);
+  if (g != null) {
+    shapefileLength+=(handler.getLength(g) + 8);
+  }
+ else {
+    shapefileLength+=(4 + 8);
+  }
+  if (shapefileLength > maxShpSize) {
+    currentFeature=null;
+    throw new ShapefileSizeException("Writing this feature will make the shapefile exceed the maximum size of " + maxShpSize + " bytes");
+  }
+ else   if (dbfWriter.getHeader().getLengthForRecords(records + 1) > maxDbfSize) {
+    currentFeature=null;
+    throw new ShapefileSizeException("Writing this feature will make the DBF exceed the maximum size of " + maxDbfSize + " bytes");
+  }
   shpWriter.writeGeometry(g);
   int idx=0;
   for (int i=0, ii=featureType.getAttributeCount(); i < ii; i++) {

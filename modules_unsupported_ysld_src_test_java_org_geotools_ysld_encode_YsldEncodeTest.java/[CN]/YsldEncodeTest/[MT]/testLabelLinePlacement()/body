@@ -1,0 +1,21 @@
+{
+  StyleFactory sf=CommonFactoryFinder.getStyleFactory();
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+  StyledLayerDescriptor sld=sf.createStyledLayerDescriptor();
+  UserLayer layer=sf.createUserLayer();
+  sld.layers().add(layer);
+  Style style=sf.createStyle();
+  layer.userStyles().add(style);
+  FeatureTypeStyle featureStyle=sf.createFeatureTypeStyle();
+  style.featureTypeStyles().add(featureStyle);
+  Rule rule=sf.createRule();
+  featureStyle.rules().add(rule);
+  LabelPlacement place=sf.createLinePlacement(ff.literal(10));
+  TextSymbolizer2 text=(TextSymbolizer2)sf.textSymbolizer(null,ff.property("geom"),null,null,ff.property("name"),null,place,null,null);
+  rule.symbolizers().add(text);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld,out);
+  YamlMap yaml=new YamlMap(new Yaml().load(out.toString()));
+  assertThat(yaml.lookupY("feature-styles/0/rules/0/symbolizers/0/text"),yHasEntry("placement",equalTo("line")));
+  assertThat(yaml.lookupY("feature-styles/0/rules/0/symbolizers/0/text"),yHasEntry("offset",equalTo(10)));
+}

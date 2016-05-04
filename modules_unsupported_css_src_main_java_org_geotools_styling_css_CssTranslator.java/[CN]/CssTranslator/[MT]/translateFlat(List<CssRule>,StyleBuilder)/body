@@ -1,0 +1,101 @@
+{
+  List<CssRule> finalRules=new ArrayList<>();
+  CssRule actualRule=null;
+  Map<PseudoClass,List<Property>> properties=null;
+  Set<PseudoClass> mixablePseudoClasses=null;
+  int translatedRuleCount=0;
+  for (  CssRule rule : allRules) {
+    if (rule.getProperties().get(PseudoClass.ROOT) == null) {
+      Selector simplified=(Selector)rule.selector.accept(new PseudoClassRemover());
+      if (actualRule != null && actualRule.getSelector().equals(simplified)) {
+        boolean changed=false;
+        for (        Map.Entry<PseudoClass,List<Property>> item : rule.properties.entrySet()) {
+          if (mixablePseudoClasses.contains(item.getKey())) {
+            properties.put(item.getKey(),item.getValue());
+            changed=true;
+          }
+        }
+        if (changed) {
+          actualRule=new CssRule(actualRule.selector,properties,actualRule.comment);
+        }
+      }
+    }
+ else {
+      if (actualRule != null) {
+        finalRules.add(actualRule);
+      }
+      actualRule=rule;
+      mixablePseudoClasses=actualRule.getMixablePseudoClasses();
+      properties=new LinkedHashMap<>(actualRule.properties);
+    }
+  }
+  if (actualRule != null) {
+    finalRules.add(actualRule);
+  }
+  if (finalRules.isEmpty()) {
+    return 0;
+  }
+  Map<Integer,List<CssRule>> zIndexRules=organizeByZIndex(finalRules);
+  for (  Map.Entry<Integer,List<CssRule>> zEntry : zIndexRules.entrySet()) {
+    List<CssRule> rules=zEntry.getValue();
+    Map<String,List<CssRule>> typenameRules=organizeByTypeName(rules);
+    for (    Map.Entry<String,List<CssRule>> entry : typenameRules.entrySet()) {
+      String featureTypeName=entry.getKey();
+      List<CssRule> localRules=entry.getValue();
+      final FeatureType targetFeatureType=getTargetFeatureType(featureTypeName,localRules);
+      List<CssRule> flattenedRules=flattenScaleRanges(localRules);
+      FeatureTypeStyleBuilder ftsBuilder=styleBuilder.featureTypeStyle();
+      if (featureTypeName != null) {
+        ftsBuilder.setFeatureTypeNames(Arrays.asList((Name)new NameImpl(featureTypeName)));
+      }
+      String composite=null;
+      Boolean compositeBase=null;
+      String sortBy=null;
+      String sortByGroup=null;
+      for (      CssRule cssRule : flattenedRules) {
+        if (!cssRule.hasSymbolizerProperty()) {
+          continue;
+        }
+        buildSldRule(cssRule,ftsBuilder,targetFeatureType);
+        translatedRuleCount++;
+        if (composite == null) {
+          List<Value> values=cssRule.getPropertyValues(PseudoClass.ROOT,COMPOSITE).get(COMPOSITE);
+          if (values != null && !values.isEmpty()) {
+            composite=values.get(0).toLiteral();
+          }
+        }
+        if (compositeBase == null) {
+          List<Value> values=cssRule.getPropertyValues(PseudoClass.ROOT,COMPOSITE_BASE).get(COMPOSITE_BASE);
+          if (values != null && !values.isEmpty()) {
+            compositeBase=Boolean.valueOf(values.get(0).toLiteral());
+          }
+        }
+        if (sortBy == null) {
+          List<Value> values=cssRule.getPropertyValues(PseudoClass.ROOT,SORT_BY).get(SORT_BY);
+          if (values != null && !values.isEmpty()) {
+            sortBy=values.get(0).toLiteral();
+          }
+        }
+        if (sortByGroup == null) {
+          List<Value> values=cssRule.getPropertyValues(PseudoClass.ROOT,SORT_BY_GROUP).get(SORT_BY_GROUP);
+          if (values != null && !values.isEmpty()) {
+            sortByGroup=values.get(0).toLiteral();
+          }
+        }
+      }
+      if (composite != null) {
+        ftsBuilder.option(COMPOSITE,composite);
+      }
+      if (Boolean.TRUE.equals(compositeBase)) {
+        ftsBuilder.option(COMPOSITE_BASE,"true");
+      }
+      if (sortBy != null) {
+        ftsBuilder.option(FeatureTypeStyle.SORT_BY,sortBy);
+      }
+      if (sortByGroup != null) {
+        ftsBuilder.option(FeatureTypeStyle.SORT_BY_GROUP,sortByGroup);
+      }
+    }
+  }
+  return translatedRuleCount;
+}

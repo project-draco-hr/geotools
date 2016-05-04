@@ -1,0 +1,69 @@
+{
+  if (groupByAttributes != null && !groupByAttributes.isEmpty()) {
+    return handleGroupByVisitor(features,aggAttribute,functions,groupByAttributes,progressListener);
+  }
+  int attIndex=-1;
+  List<AttributeDescriptor> atts=features.getSchema().getAttributeDescriptors();
+  for (int i=0; i < atts.size(); i++) {
+    if (atts.get(i).getLocalName().equals(aggAttribute)) {
+      attIndex=i;
+      break;
+    }
+  }
+  if (attIndex == -1) {
+    throw new ProcessException("Could not find attribute " + "[" + aggAttribute + "] "+ " the valid values are "+ attNames(atts));
+  }
+  if (functions == null) {
+    throw new NullPointerException("Aggregate function to call is required");
+  }
+  List<AggregationFunction> functionList=new ArrayList<AggregationFunction>(functions);
+  List<FeatureCalc> visitors=new ArrayList<FeatureCalc>();
+  for (  AggregationFunction function : functionList) {
+    FeatureCalc calc;
+    if (function == AggregationFunction.Average) {
+      calc=new AverageVisitor(attIndex,features.getSchema());
+    }
+ else     if (function == AggregationFunction.Count) {
+      calc=new CountVisitor();
+    }
+ else     if (function == AggregationFunction.Max) {
+      calc=new MaxVisitor(attIndex,features.getSchema());
+    }
+ else     if (function == AggregationFunction.Median) {
+      calc=new MedianVisitor(attIndex,features.getSchema());
+    }
+ else     if (function == AggregationFunction.Min) {
+      calc=new MinVisitor(attIndex,features.getSchema());
+    }
+ else     if (function == AggregationFunction.StdDev) {
+      calc=new StandardDeviationVisitor(CommonFactoryFinder.getFilterFactory(null).property(aggAttribute));
+    }
+ else     if (function == AggregationFunction.Sum) {
+      calc=new SumVisitor(attIndex,features.getSchema());
+    }
+ else {
+      throw new ProcessException("Uknown method " + function);
+    }
+    visitors.add(calc);
+  }
+  EnumMap<AggregationFunction,Number> results=new EnumMap<AggregationFunction,Number>(AggregationFunction.class);
+  if (singlePass) {
+    AggregateFeatureCalc calc=new AggregateFeatureCalc(visitors);
+    features.accepts(calc,new NullProgressListener());
+    List<CalcResult> resultList=(List<CalcResult>)calc.getResult().getValue();
+    for (int i=0; i < functionList.size(); i++) {
+      CalcResult result=resultList.get(i);
+      if (result != null) {
+        results.put(functionList.get(i),(Number)result.getValue());
+      }
+    }
+  }
+ else {
+    for (int i=0; i < functionList.size(); i++) {
+      final FeatureCalc calc=visitors.get(i);
+      features.accepts(calc,new NullProgressListener());
+      results.put(functionList.get(i),(Number)calc.getResult().getValue());
+    }
+  }
+  return new Results(aggAttribute,functions,results);
+}

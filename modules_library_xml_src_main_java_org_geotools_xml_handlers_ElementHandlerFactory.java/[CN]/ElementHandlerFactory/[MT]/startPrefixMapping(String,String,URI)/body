@@ -1,8 +1,15 @@
 {
   logger.finest("Target == '" + targ + "'");
   logger.finest("URI == '" + uri + "'");
+  URI tns=null;
   try {
-    URI tns=new URI(targ);
+    tns=new URI(targ);
+  }
+ catch (  URISyntaxException e) {
+    logger.warning(e.toString());
+    throw new SAXException(e);
+  }
+  try {
     Schema s=SchemaFactory.getInstance(tns,uri,logger.getLevel());
     if (s != null) {
       if ((prefix == null) || "".equalsIgnoreCase(prefix)) {
@@ -15,8 +22,8 @@
       prefixURIs.put(prefix,tns);
     }
   }
- catch (  URISyntaxException e) {
-    logger.warning(e.toString());
-    throw new SAXException(e);
+ catch (  Exception e) {
+    logger.log(Level.FINE,"Failed to parse schema from location " + uri + ", ignoring and moving on, this might result in some elements not being parsed properly");
+    prefixURIs.put(prefix,tns);
   }
 }

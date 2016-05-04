@@ -1,18 +1,17 @@
 {
-  SimpleFeature toWrite=writer.next();
+  final SimpleFeature toWrite=writer.next();
   for (int i=0; i < toWrite.getType().getAttributeCount(); i++) {
     String name=toWrite.getType().getDescriptor(i).getLocalName();
     toWrite.setAttribute(name,feature.getAttribute(name));
   }
-  if (feature.getUserData().size() > 0) {
-    toWrite.getUserData().putAll(feature.getUserData());
-  }
+  toWrite.getUserData().putAll(feature.getUserData());
   boolean useExisting=Boolean.TRUE.equals(feature.getUserData().get(Hints.USE_PROVIDED_FID));
   if (getQueryCapabilities().isUseProvidedFIDSupported() && useExisting) {
     ((FeatureIdImpl)toWrite.getIdentifier()).setID(feature.getID());
   }
+  toWrite.getUserData().put(ORIGINAL_FEATURE_KEY,feature);
   writer.write();
   feature.getUserData().putAll(toWrite.getUserData());
-  FeatureId id=toWrite.getIdentifier();
-  return id;
+  feature.getUserData().remove(ORIGINAL_FEATURE_KEY);
+  return toWrite.getIdentifier();
 }

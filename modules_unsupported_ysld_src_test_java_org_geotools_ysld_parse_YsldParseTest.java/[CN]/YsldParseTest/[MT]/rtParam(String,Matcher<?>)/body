@@ -1,0 +1,36 @@
+{
+  return new BaseMatcher(){
+    @Override public boolean matches(    Object item){
+      Function f=(Function)item;
+      List<Expression> parameters=f.getParameters();
+      Literal nameExpr=(Literal)parameters.get(0);
+      if (!nameExpr.getValue().equals(name)) {
+        return false;
+      }
+      if (values.length != parameters.size() - 1) {
+        return false;
+      }
+      for (int i=0; i < values.length; i++) {
+        if (!values[i].matches(parameters.get(i + 1))) {
+          return false;
+        }
+      }
+      return true;
+    }
+    @Override public void describeTo(    Description description){
+      description.appendText("Parameter named ");
+      description.appendValue(name);
+      if (values.length == 0) {
+        description.appendText(" with no values");
+      }
+ else       if (values.length == 1) {
+        description.appendText(" with value ");
+        description.appendDescriptionOf(values[0]);
+      }
+ else {
+        description.appendText(" with values ").appendList("[",", ","]",Arrays.asList(values));
+      }
+    }
+  }
+;
+}

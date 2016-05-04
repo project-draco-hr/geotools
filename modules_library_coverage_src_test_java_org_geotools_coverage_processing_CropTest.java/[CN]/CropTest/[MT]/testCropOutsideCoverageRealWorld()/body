@@ -1,0 +1,15 @@
+{
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  ReferencedEnvelope re=ReferencedEnvelope.reference(coverage.getEnvelope2D());
+  re.translate(re.getWidth() + 10,0);
+  ParameterValueGroup param=processor.getOperation("CoverageCrop").getParameters();
+  param.parameter("Source").setValue(coverage);
+  param.parameter("Envelope").setValue(re);
+  try {
+    processor.doOperation(param);
+    fail("Should have thrown an exception here, there is no overlap");
+  }
+ catch (  EmptyIntersectionException e) {
+    assertEquals("Crop envelope does not intersect in model space",e.getMessage());
+  }
+}

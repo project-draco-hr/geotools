@@ -1,6 +1,9 @@
 {
-  Map<String,String> dimensionsMapping=reader.georeferencing.getDimensions();
-  Set<String> keys=dimensionsMapping.keySet();
+  DimensionMapper mapper=reader.georeferencing.getDimensionMapper();
+  Set<String> dimensionNames=mapper.getDimensionNames();
+  if (dimensionNames == null || dimensionNames.isEmpty() || descriptors == null || descriptors.isEmpty() || indexSchema.getAttributeCount() <= FIRST_ATTRIBUTE_INDEX) {
+    return;
+  }
   int indexAttribute=FIRST_ATTRIBUTE_INDEX;
   final AttributeDescriptor attributeDescriptor=indexSchema.getDescriptor(indexAttribute);
   final String updatedAttribute=attributeDescriptor.getLocalName();
@@ -8,14 +11,14 @@
     indexAttribute++;
   }
   String currentDimName=NetCDFUtilities.TIME_DIM;
-  if (keys.contains(currentDimName)) {
-    if (remapAttribute(indexSchema,currentDimName,indexAttribute,descriptors,dimensionsMapping)) {
+  if (dimensionNames.contains(currentDimName)) {
+    if (remapAttribute(indexSchema,currentDimName,indexAttribute,descriptors,mapper)) {
       indexAttribute++;
     }
   }
   currentDimName=NetCDFUtilities.ELEVATION_DIM;
-  if (keys.contains(currentDimName)) {
-    if (remapAttribute(indexSchema,currentDimName,indexAttribute,descriptors,dimensionsMapping)) {
+  if (dimensionNames.contains(currentDimName)) {
+    if (remapAttribute(indexSchema,currentDimName,indexAttribute,descriptors,mapper)) {
       indexAttribute++;
     }
   }

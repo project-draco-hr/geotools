@@ -1,12 +1,14 @@
 {
   final File inputFile=TestData.file(this,"sampleGrib.grb2");
   final AbstractGridFormat format=(AbstractGridFormat)GridFormatFinder.findFormat(inputFile.toURI().toURL(),null);
-  final NetCDFReader reader=new NetCDFReader(inputFile,null);
-  Assert.assertNotNull(format);
-  Assert.assertNotNull(reader);
+  assertTrue(format.accepts(inputFile));
+  AbstractGridCoverage2DReader reader=null;
+  assertNotNull(format);
   try {
+    reader=format.getReader(inputFile,null);
+    assertNotNull(reader);
     String[] names=reader.getGridCoverageNames();
-    Assert.assertNotNull(names);
+    assertNotNull(names);
     String coverageName=names[0];
     assertEquals("true",reader.getMetadataValue(coverageName,"HAS_TIME_DOMAIN"));
     final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();

@@ -1,0 +1,40 @@
+{
+  if (collection.isEmpty()) {
+    return collection.getSchema();
+  }
+  PartiallyOrderedSet<AttributeDescriptor> attributes=new PartiallyOrderedSet<AttributeDescriptor>();
+  Set<String> attributeNames=new HashSet<>();
+  String typeName=null;
+  try (SimpleFeatureIterator fi=collection.features()){
+    while (fi.hasNext()) {
+      SimpleFeature f=fi.next();
+      SimpleFeatureType type=f.getFeatureType();
+      if (typeName == null) {
+        typeName=type.getTypeName();
+      }
+      List<AttributeDescriptor> descriptorList=f.getFeatureType().getAttributeDescriptors();
+      for (int i=0; i < descriptorList.size(); i++) {
+        AttributeDescriptor curr=descriptorList.get(i);
+        String name=curr.getLocalName();
+        if (!attributeNames.contains(name)) {
+          attributes.add(curr);
+          if (i > 0) {
+            AttributeDescriptor prev=descriptorList.get(i - 1);
+            attributes.setOrder(prev,curr);
+          }
+          if (i < descriptorList.size() - 1) {
+            AttributeDescriptor next=descriptorList.get(i + 1);
+            attributes.add(next);
+            attributes.setOrder(curr,next);
+          }
+        }
+      }
+    }
+  }
+   SimpleFeatureTypeBuilder tb=new SimpleFeatureTypeBuilder();
+  tb.setName(typeName);
+  for (  AttributeDescriptor ad : attributes) {
+    tb.add(ad);
+  }
+  return tb.buildFeatureType();
+}

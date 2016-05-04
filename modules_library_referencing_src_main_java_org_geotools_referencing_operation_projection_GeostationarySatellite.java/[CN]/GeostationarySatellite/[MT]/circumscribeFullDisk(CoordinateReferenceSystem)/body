@@ -1,0 +1,27 @@
+{
+  if (!isGeostationaryCRS(geosCRS)) {
+    return null;
+  }
+  MathTransform mt=CRS.findMathTransform(geosCRS,CRS.getProjectedCRS(geosCRS).getBaseCRS(),true);
+  MathTransform imt=mt.inverse();
+  ParameterValueGroup parameters=CRS.getMapProjection(geosCRS).getParameterValues();
+  double semiMajorAxis=parameters.parameter("semi_major").doubleValue();
+  double satelliteHeight=parameters.parameter("satellite_height").doubleValue();
+  double centralMeridian=parameters.parameter("central_meridian").doubleValue();
+  DirectPosition2D dp2d=new DirectPosition2D();
+  double halfFoVRadians=Math.acos(semiMajorAxis / (satelliteHeight + semiMajorAxis));
+  double halfFoVDegrees=Math.toDegrees(halfFoVRadians);
+  dp2d.setLocation(centralMeridian - halfFoVDegrees,0.);
+  imt.transform(dp2d,dp2d);
+  double xMin=dp2d.getX();
+  dp2d.setLocation(centralMeridian + halfFoVDegrees,0.);
+  imt.transform(dp2d,dp2d);
+  double xMax=dp2d.getX();
+  dp2d.setLocation(centralMeridian,-halfFoVDegrees);
+  imt.transform(dp2d,dp2d);
+  double yMin=dp2d.getY();
+  dp2d.setLocation(centralMeridian,halfFoVDegrees);
+  imt.transform(dp2d,dp2d);
+  double yMax=dp2d.getY();
+  return new Envelope2D(geosCRS,xMin,yMin,xMax - xMin,yMax - yMin);
+}

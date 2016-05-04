@@ -1,0 +1,55 @@
+{
+  if (coverage == null) {
+    throw new ProcessException(Errors.format(ErrorKeys.NULL_ARGUMENT_$1,"coverage"));
+  }
+  if (classes == null) {
+    classes=10;
+  }
+  if (classes < 1) {
+    throw new ProcessException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"classes",classes));
+  }
+  RenderedImage sourceImage=coverage.getRenderedImage();
+  if (band == null) {
+    band=0;
+  }
+  final int numBands=sourceImage.getSampleModel().getNumBands();
+  if (band < 0 || band >= numBands) {
+    throw new ProcessException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$2,"band",band));
+  }
+  if (numBands > 1) {
+    sourceImage=BandSelectDescriptor.create(sourceImage,new int[]{band},null);
+  }
+  if (method == null) {
+    method=ClassificationMethod.EQUAL_INTERVAL;
+  }
+  if (stats == null || stats.isEmpty()) {
+    stats=Collections.singleton(Statistic.MEAN);
+  }
+  ParameterBlock pb=new ParameterBlock();
+  pb.addSource(sourceImage);
+  pb.set(classes,0);
+  pb.set(method,1);
+  pb.set(null,2);
+  pb.set(null,3);
+  pb.set(new Integer[]{0},4);
+  pb.set(1,5);
+  pb.set(1,6);
+  pb.set(noData,7);
+  RenderedImage op=new ClassBreaksRIF().create(pb,null);
+  Classification c=(Classification)op.getProperty(ClassBreaksDescriptor.CLASSIFICATION_PROPERTY);
+  Double[] breaks=(Double[])c.getBreaks()[0];
+  List<Range<Double>> ranges=new ArrayList<Range<Double>>();
+  for (int i=0; i < breaks.length - 1; i++) {
+    ranges.add(Range.create(breaks[i],true,breaks[i + 1],i == breaks.length - 2));
+  }
+  ParameterBlockJAI pbj=new ParameterBlockJAI("ZonalStats");
+  pbj.addSource(sourceImage);
+  pbj.setParameter("stats",stats.toArray(new Statistic[stats.size()]));
+  pbj.setParameter("bands",new Integer[]{band});
+  pbj.setParameter("ranges",ranges);
+  pbj.setParameter("rangesType",Range.Type.INCLUDE);
+  pbj.setParameter("rangeLocalStats",true);
+  op=JAI.create("ZonalStats",pbj);
+  ZonalStats zonalStats=(ZonalStats)op.getProperty(ZonalStatsDescriptor.ZONAL_STATS_PROPERTY);
+  return new Results(stats,zonalStats);
+}

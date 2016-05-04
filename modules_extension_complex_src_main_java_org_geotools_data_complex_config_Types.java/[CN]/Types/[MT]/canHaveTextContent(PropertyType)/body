@@ -1,0 +1,26 @@
+{
+  if (type == XSSchema.ANYTYPE_TYPE) {
+    return true;
+  }
+  PropertyType superType=type.getSuper();
+  if (superType == XSSchema.ANYTYPE_TYPE) {
+    Map<Object,Object> userData=type.getUserData();
+    if (userData != null && userData.get(XSDTypeDefinition.class) != null) {
+      XSDTypeDefinition typeDef=(XSDTypeDefinition)userData.get(XSDTypeDefinition.class);
+      if (typeDef instanceof XSDComplexTypeDefinition) {
+        XSDComplexTypeDefinition complexTypeDef=(XSDComplexTypeDefinition)typeDef;
+        XSDContentTypeCategory category=complexTypeDef.getContentTypeCategory();
+        XSDDerivationMethod derivMethod=complexTypeDef.getDerivationMethod();
+        boolean hasMixedContent=XSDContentTypeCategory.MIXED_LITERAL.equals(category);
+        boolean isExtension=XSDDerivationMethod.EXTENSION_LITERAL.equals(derivMethod);
+        return isExtension && hasMixedContent;
+      }
+    }
+ else {
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("No XSDTypeDefinition found for type " + type.getName());
+      }
+    }
+  }
+  return false;
+}

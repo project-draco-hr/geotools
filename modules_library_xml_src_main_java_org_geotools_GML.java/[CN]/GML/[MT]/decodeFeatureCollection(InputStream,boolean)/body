@@ -1,0 +1,19 @@
+{
+  if (Version.GML2 == version || Version.WFS1_0 == version || Version.GML2 == version || Version.GML3 == version || Version.WFS1_0 == version || Version.WFS1_1 == version) {
+    Configuration cfg=gmlConfiguration;
+    Parser parser=new Parser(cfg);
+    DynamicFeatureTypeCacheCustomizer customizer=null;
+    if (computeFullFeatureType) {
+      customizer=new DynamicFeatureTypeCacheCustomizer();
+      parser.setContextCustomizer(customizer);
+    }
+    Object obj=parser.parse(in);
+    SimpleFeatureCollection collection=toFeatureCollection(obj);
+    if (computeFullFeatureType && customizer.isDynamicTypeFound()) {
+      SimpleFeatureType harmonizedType=getCompleteFeatureType(collection);
+      collection=new ReTypingFeatureCollection(collection,harmonizedType);
+    }
+    return collection;
+  }
+  return null;
+}

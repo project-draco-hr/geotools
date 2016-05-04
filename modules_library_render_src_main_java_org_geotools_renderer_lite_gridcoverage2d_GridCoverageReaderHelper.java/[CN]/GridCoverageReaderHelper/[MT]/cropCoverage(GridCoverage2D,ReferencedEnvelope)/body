@@ -1,7 +1,17 @@
 {
-  final ParameterValueGroup param=PROCESSOR.getOperation("CoverageCrop").getParameters();
-  param.parameter("Source").setValue(coverage);
-  param.parameter("Envelope").setValue(cropEnvelope);
-  GridCoverage2D cropped=(GridCoverage2D)PROCESSOR.doOperation(param);
-  return cropped;
+  if (isNotEmpty(cropEnvelope)) {
+    final ParameterValueGroup param=PROCESSOR.getOperation("CoverageCrop").getParameters();
+    param.parameter("Source").setValue(coverage);
+    param.parameter("Envelope").setValue(cropEnvelope);
+    try {
+      GridCoverage2D cropped=(GridCoverage2D)PROCESSOR.doOperation(param);
+      return cropped;
+    }
+ catch (    EmptyIntersectionException e) {
+      return null;
+    }
+  }
+ else {
+    return null;
+  }
 }

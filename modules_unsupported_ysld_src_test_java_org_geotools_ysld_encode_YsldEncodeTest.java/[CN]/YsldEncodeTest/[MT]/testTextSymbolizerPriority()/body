@@ -1,0 +1,11 @@
+{
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  FilterFactory filterFactory=CommonFactoryFinder.getFilterFactory();
+  TextSymbolizer symb=styleFactory.createTextSymbolizer();
+  symb.setPriority(filterFactory.property("foo"));
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld(symb),out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  YamlMap text=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("text");
+  assertEquals("${foo}",text.str("priority"));
+}

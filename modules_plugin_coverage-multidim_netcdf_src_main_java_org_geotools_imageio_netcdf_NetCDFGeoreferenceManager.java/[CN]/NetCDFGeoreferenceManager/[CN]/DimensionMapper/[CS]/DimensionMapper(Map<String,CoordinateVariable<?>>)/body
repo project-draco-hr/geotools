@@ -1,0 +1,59 @@
+{
+  int coordinates2Dx=0;
+  int coordinates2Dy=0;
+  dimensions=new HashMap<String,String>();
+  Set<String> coordinateKeys=new TreeSet<String>(coordinates.keySet());
+  for (  String key : coordinateKeys) {
+    final CoordinateVariable<?> cv=getCoordinateVariable(key);
+    if (cv != null) {
+      final String name=cv.getName();
+      AxisType axisType=cv.getAxisType();
+switch (axisType) {
+case GeoX:
+case Lon:
+        coordinates2Dx++;
+      continue;
+case GeoY:
+case Lat:
+    coordinates2Dy++;
+  continue;
+case Height:
+case Pressure:
+case RadialElevation:
+case RadialDistance:
+case GeoZ:
+if (NetCDFCRSUtilities.VERTICAL_AXIS_NAMES.contains(name) && !dimensions.containsKey(NetCDFUtilities.ELEVATION_DIM)) {
+  dimensions.put(NetCDFUtilities.ELEVATION_DIM,name);
+}
+ else {
+  dimensions.put(name.toUpperCase(),name);
+}
+break;
+case Time:
+if (!dimensions.containsKey(NetCDFUtilities.TIME_DIM)) {
+dimensions.put(NetCDFUtilities.TIME_DIM,name);
+}
+ else {
+dimensions.put(name.toUpperCase(),name);
+}
+break;
+default :
+if (LOGGER.isLoggable(Level.FINE)) {
+LOGGER.fine("The specified axis type isn't currently supported: " + axisType + "\nskipping it");
+}
+break;
+}
+}
+ else {
+if (LOGGER.isLoggable(Level.FINE)) {
+LOGGER.fine("Null coordinate variable: '" + key + "' while processing input: "+ dataset.getLocation());
+}
+}
+}
+if (coordinates2Dx + coordinates2Dy > 2) {
+if (coordinates2Dx != coordinates2Dy) {
+throw new IllegalArgumentException("number of x/lon coordinates must match number of y/lat coordinates");
+}
+setHasSingleBBox(false);
+}
+}

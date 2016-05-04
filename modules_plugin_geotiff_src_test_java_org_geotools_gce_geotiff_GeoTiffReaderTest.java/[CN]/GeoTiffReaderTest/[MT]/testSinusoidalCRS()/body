@@ -1,0 +1,25 @@
+{
+  final File file=TestData.file(GeoTiffReaderTest.class,"worldsinus.tif");
+  final AbstractGridFormat format=new GeoTiffFormat();
+  assertTrue(format.accepts(file));
+  AbstractGridCoverage2DReader reader=null;
+  try {
+    reader=format.getReader(file,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.TRUE));
+    GridCoverage2D coverage=reader.read(null);
+    CoordinateReferenceSystem crs=reader.getCoordinateReferenceSystem();
+    assertTrue(crs instanceof ProjectedCRS);
+    Projection conversion=((ProjectedCRS)crs).getConversionFromBase();
+    assertNotNull(conversion);
+    MathTransform transform=conversion.getMathTransform();
+    assertNotNull(transform);
+    assertTrue(transform instanceof Sinusoidal);
+    final File writeDirectory=new File(TestData.file(GeoTiffReaderTest.class,"."),Long.toString(System.currentTimeMillis()));
+    writeDirectory.mkdir();
+    writeAndReadBackCheck(coverage,format,writeDirectory,file);
+  }
+  finally {
+    if (reader != null) {
+      reader.dispose();
+    }
+  }
+}

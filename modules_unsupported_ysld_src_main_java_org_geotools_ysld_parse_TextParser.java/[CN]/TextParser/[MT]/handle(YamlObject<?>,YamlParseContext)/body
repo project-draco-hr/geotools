@@ -1,0 +1,27 @@
+{
+  super.handle(obj,context);
+  YamlMap map=obj.map();
+  if (map.has("label")) {
+    sym.setLabel(Util.expression(map.str("label"),factory));
+  }
+  if (map.has("priority")) {
+    sym.setPriority(Util.expression(map.str("priority"),factory));
+  }
+  context.push(new FontHandler());
+  context.push("halo",new HaloParser());
+  context.push(new PlacementParser());
+  context.push(new FillParser(factory){
+    @Override protected void fill(    Fill fill){
+      sym.setFill(fill);
+    }
+  }
+);
+  context.push("graphic",new GraphicParser(factory){
+    @Override protected void graphic(    Graphic g){
+      if (sym instanceof TextSymbolizer2) {
+        ((TextSymbolizer2)sym).setGraphic(g);
+      }
+    }
+  }
+);
+}

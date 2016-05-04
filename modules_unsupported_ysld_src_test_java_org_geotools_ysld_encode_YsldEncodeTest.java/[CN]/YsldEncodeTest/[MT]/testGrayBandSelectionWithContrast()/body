@@ -1,0 +1,17 @@
+{
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  FilterFactory2 filterFactory=CommonFactoryFinder.getFilterFactory2();
+  RasterSymbolizer r=styleFactory.createRasterSymbolizer();
+  ChannelSelection sel=styleFactory.channelSelection(styleFactory.createSelectedChannelType("foo",styleFactory.createContrastEnhancement(filterFactory.literal(1.2))));
+  r.setChannelSelection(sel);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld(r),out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  YamlMap channelMap=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("raster").map("channels");
+  assertThat(channelMap,yHasEntry("gray"));
+  assertThat(channelMap,not(yHasEntry("red")));
+  assertThat(channelMap,not(yHasEntry("green")));
+  assertThat(channelMap,not(yHasEntry("blue")));
+  assertThat(channelMap.map("gray"),yHasEntry("name",equalTo("foo")));
+  assertThat(channelMap.map("gray"),yHasEntry("contrast-enhancement",yHasEntry("gamma",equalTo(1.2d))));
+}

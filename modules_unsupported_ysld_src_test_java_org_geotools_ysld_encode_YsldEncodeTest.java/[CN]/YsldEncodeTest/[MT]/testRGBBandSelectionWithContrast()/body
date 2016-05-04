@@ -1,0 +1,22 @@
+{
+  StyleFactory styleFactory=CommonFactoryFinder.getStyleFactory();
+  FilterFactory2 filterFactory=CommonFactoryFinder.getFilterFactory2();
+  RasterSymbolizer r=styleFactory.createRasterSymbolizer();
+  ChannelSelection sel=styleFactory.channelSelection(styleFactory.createSelectedChannelType("foo",styleFactory.createContrastEnhancement()),styleFactory.createSelectedChannelType("bar",styleFactory.createContrastEnhancement(filterFactory.literal(1.2))),styleFactory.createSelectedChannelType("baz",styleFactory.createContrastEnhancement()));
+  ((org.geotools.styling.ContrastEnhancement)sel.getRGBChannels()[2].getContrastEnhancement()).setMethod(ContrastMethod.HISTOGRAM);
+  r.setChannelSelection(sel);
+  StringWriter out=new StringWriter();
+  Ysld.encode(sld(r),out);
+  YamlMap obj=new YamlMap(new Yaml().load(out.toString()));
+  YamlMap channelMap=obj.seq("feature-styles").map(0).seq("rules").map(0).seq("symbolizers").map(0).map("raster").map("channels");
+  assertThat(channelMap,not(yHasEntry("gray")));
+  assertThat(channelMap,yHasEntry("red"));
+  assertThat(channelMap,yHasEntry("green"));
+  assertThat(channelMap,yHasEntry("blue"));
+  assertThat(channelMap.map("red"),yHasEntry("name",equalTo("foo")));
+  assertThat(channelMap.map("red"),not(yHasEntry("contrast-enhancement")));
+  assertThat(channelMap.map("green"),yHasEntry("name",equalTo("bar")));
+  assertThat(channelMap.map("green"),yHasEntry("contrast-enhancement",yHasEntry("gamma",equalTo(1.2d))));
+  assertThat(channelMap.map("blue"),yHasEntry("name",equalTo("baz")));
+  assertThat(channelMap.map("blue"),yHasEntry("contrast-enhancement",yHasEntry("mode",equalTo("histogram"))));
+}
