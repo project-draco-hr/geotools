@@ -1,0 +1,34 @@
+{
+  final int degree=intValue(DEGREE,values);
+  final float[] xCoeffs=(float[])value(X_COEFFS,values);
+  final float[] yCoeffs=(float[])value(Y_COEFFS,values);
+  final float preScaleX=scale(PRE_SCALE_X,values);
+  final float preScaleY=scale(PRE_SCALE_Y,values);
+  final float postScaleX=scale(POST_SCALE_X,values);
+  final float postScaleY=scale(POST_SCALE_Y,values);
+  try {
+    final Object warp;
+switch (degree) {
+case 1:
+      warp=createWarp("javax.media.jai.WarpAffine",xCoeffs,yCoeffs,preScaleX,preScaleY,postScaleX,postScaleY);
+    break;
+case 2:
+  warp=createWarp("javax.media.jai.WarpQuadratic",xCoeffs,yCoeffs,preScaleX,preScaleY,postScaleX,postScaleY);
+break;
+case 3:
+warp=createWarp("javax.media.jai.WarpCubic",xCoeffs,yCoeffs,preScaleX,preScaleY,postScaleX,postScaleY);
+break;
+default :
+warp=createWarp("javax.media.jai.WarpGeneralPolynomial",xCoeffs,yCoeffs,preScaleX,preScaleY,postScaleX,postScaleY);
+break;
+}
+Class<? extends MathTransform> transformClass;
+transformClass=(Class<? extends MathTransform>)Class.forName("org.geotools.referencing.operation.transform.WarpTransform2D");
+Class warpClass=Class.forName("javax.media.jai.Warp");
+Constructor<? extends MathTransform> createTransform=transformClass.getConstructor(new Class[]{warpClass,warpClass});
+return createTransform.newInstance(warp,null);
+}
+ catch (Exception jaiUnavailable) {
+throw new UnsupportedOperationException("WarpTransform2D requires Java Advanced Imaging extension");
+}
+}
