@@ -1,0 +1,30 @@
+{
+  SimpleFeatureTypeBuilder builder=buildPartialBuilder();
+  builder.add("location",Point.class,(CoordinateReferenceSystem)null);
+  for (int i=0; i < 100; i++) {
+    builder.add("" + i,String.class);
+  }
+  SimpleFeatureType schema=builder.buildFeatureType();
+  assertNotNull(schema);
+  assertEquals(SimpleFeatureTypeImpl.class,schema.getClass());
+  final CountDownLatch latch=new CountDownLatch(8);
+class Task implements Runnable {
+    @Override public void run(){
+      schema.getType(99);
+      latch.countDown();
+    }
+  }
+  final ExecutorService exec=Executors.newFixedThreadPool(8);
+  for (int i=0; i < 8; i++) {
+    final Task task=new Task();
+    exec.submit(task);
+  }
+  exec.shutdown();
+  try {
+    exec.awaitTermination(5,TimeUnit.SECONDS);
+  }
+ catch (  InterruptedException e) {
+    fail("Interrupted");
+  }
+  assertEquals(0,latch.getCount());
+}
