@@ -1,8 +1,12 @@
 {
-  final StreamSource streamSource=new StreamSource(input);
+  FileInputStream input=null;
+  StreamSource streamSource=null;
   XMLStreamReader reader=null;
   try {
-    reader=XMLInputFactory.newInstance().createXMLStreamReader(streamSource);
+    input=new FileInputStream(file);
+    streamSource=new StreamSource(input);
+    XMLInputFactory inputFactory=XMLInputFactory.newInstance();
+    reader=inputFactory.createXMLStreamReader(streamSource);
     reader.nextTag();
     if ("netcdf".equals(reader.getName().getLocalPart())) {
       return true;
@@ -13,6 +17,9 @@
 catch (  FactoryConfigurationError e) {
   }
  finally {
+    if (input != null) {
+      input.close();
+    }
     if (reader != null) {
       if (streamSource.getInputStream() != null) {
         streamSource.getInputStream().close();
