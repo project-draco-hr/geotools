@@ -6,8 +6,13 @@
     final GranuleCatalog catalog=configHandler.getCatalog();
     String locationAttrName=configHandler.getRunConfiguration().getParameter(Prop.LOCATION_ATTRIBUTE);
     String requestedTypeName=configHandler.getRunConfiguration().getParameter(Prop.TYPENAME);
+    String location=configHandler.getRunConfiguration().getParameter(Prop.LOCATION_ATTRIBUTE);
     for (    String typeName : catalog.getTypeNames()) {
       if (requestedTypeName != null && !requestedTypeName.equals(typeName)) {
+        continue;
+      }
+      if (!Utils.isValidMosaicSchema(catalog.getType(typeName),location)) {
+        LOGGER.log(Level.FINE,"Skipping invalid mosaic index table " + typeName);
         continue;
       }
       final Query query=new Query(typeName);
