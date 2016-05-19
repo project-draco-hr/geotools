@@ -1,0 +1,72 @@
+{
+  AffineTransform2D identityTransf=new AffineTransform2D(new AffineTransform());
+  Decimator nullDecimator=new Decimator(-1,-1);
+  GeometryFactory geomFactory=new GeometryFactory();
+  Coordinate stippleCoord1=new Coordinate(0,0);
+  Coordinate stippleCoord2=new Coordinate(0,0);
+  LineString stippleLine=geomFactory.createLineString(new Coordinate[]{stippleCoord1,stippleCoord2});
+  for (  Line line : lines) {
+    if (line.type == LineType.HORIZONTAL) {
+      stippleCoord1.x=bounds.getMinX();
+      stippleCoord2.x=bounds.getMaxX();
+      for (double y=bounds.getMinY() + line.initialOffset; y < bounds.getMaxY(); y+=yStep) {
+        stippleCoord1.y=stippleCoord2.y=y;
+        paintLine(painter,graphics,ls2d,identityTransf,nullDecimator,stippleLine);
+      }
+    }
+ else     if (line.type == LineType.VERTICAL) {
+      stippleCoord1.y=bounds.getMinY();
+      stippleCoord2.y=bounds.getMaxY();
+      for (double x=bounds.getMinX() + line.initialOffset; x < bounds.getMaxX(); x+=xStep) {
+        stippleCoord1.x=stippleCoord2.x=x;
+        paintLine(painter,graphics,ls2d,identityTransf,nullDecimator,stippleLine);
+      }
+    }
+ else     if (line.type == LineType.BACKSLASH) {
+      stippleCoord1.x=bounds.getMinX();
+      stippleCoord1.y=bounds.getMinY();
+      for (double x=bounds.getMinX(); x <= bounds.getMaxX(); x+=xStep) {
+        int xSteps=(int)Math.ceil((bounds.getMaxX() - x) / xStep);
+        int ySteps=(int)Math.ceil((bounds.getMaxY() - bounds.getMinY()) / yStep);
+        int steps=Math.min(xSteps,ySteps);
+        stippleCoord1.x=x;
+        stippleCoord2.x=stippleCoord1.x + steps * xStep;
+        stippleCoord2.y=stippleCoord1.y + steps * yStep;
+        paintLine(painter,graphics,ls2d,identityTransf,nullDecimator,stippleLine);
+      }
+      stippleCoord1.x=bounds.getMinX();
+      for (double y=bounds.getMinY() + yStep; y <= bounds.getMaxY(); y+=yStep) {
+        int xSteps=(int)Math.ceil((bounds.getMaxX() - bounds.getMinX()) / xStep);
+        int ySteps=(int)Math.ceil((bounds.getMaxY() - y) / yStep);
+        int steps=Math.min(xSteps,ySteps);
+        stippleCoord1.y=y;
+        stippleCoord2.x=stippleCoord1.x + steps * xStep;
+        stippleCoord2.y=stippleCoord1.y + steps * yStep;
+        paintLine(painter,graphics,ls2d,identityTransf,nullDecimator,stippleLine);
+      }
+    }
+ else     if (line.type == LineType.SLASH) {
+      stippleCoord1.x=bounds.getMinX();
+      stippleCoord1.y=bounds.getMinY();
+      for (double x=bounds.getMinX() + xStep; x <= bounds.getMaxX(); x+=xStep) {
+        int xSteps=(int)Math.ceil((x - bounds.getMinX()) / xStep);
+        int ySteps=(int)Math.ceil((bounds.getMaxY() - bounds.getMinY()) / yStep);
+        int steps=Math.min(xSteps,ySteps);
+        stippleCoord1.x=x;
+        stippleCoord2.x=stippleCoord1.x - steps * xStep;
+        stippleCoord2.y=stippleCoord1.y + steps * yStep;
+        paintLine(painter,graphics,ls2d,identityTransf,nullDecimator,stippleLine);
+      }
+      stippleCoord1.x+=xStep;
+      for (double y=bounds.getMinY(); y <= bounds.getMaxY(); y+=yStep) {
+        int xSteps=(int)Math.ceil((stippleCoord1.x - bounds.getMinX()) / xStep);
+        int ySteps=(int)Math.ceil((bounds.getMaxY() - y) / yStep);
+        int steps=Math.min(xSteps,ySteps);
+        stippleCoord1.y=y;
+        stippleCoord2.x=stippleCoord1.x - steps * xStep;
+        stippleCoord2.y=stippleCoord1.y + steps * yStep;
+        paintLine(painter,graphics,ls2d,identityTransf,nullDecimator,stippleLine);
+      }
+    }
+  }
+}

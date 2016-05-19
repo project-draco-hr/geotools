@@ -1,0 +1,66 @@
+{
+  Rectangle2D bounds=shape.getBounds2D();
+  Geometry geometry=JTS.toGeometry(shape);
+  LinesExtractor extractor=new LinesExtractor();
+  geometry.apply(extractor);
+  List<Line2D> segments=extractor.getLines();
+  if (!extractor.isSimple() || segments.isEmpty()) {
+    return null;
+  }
+  double by1=bounds.getMinY();
+  double by2=bounds.getMaxY();
+  double bx1=bounds.getMinX();
+  double bx2=bounds.getMaxX();
+  if (equals(by1,by2)) {
+    double w=bx2 - bx1;
+    by1-=w / 2;
+    by2+=w / 2;
+  }
+ else   if (equals(bx1,bx2)) {
+    double h=by2 - by1;
+    bx1-=h / 2;
+    bx2+=h / 2;
+  }
+  List<Line> lines=new ArrayList<>();
+  for (  Line2D segment : segments) {
+    final double x1=segment.getX1();
+    final double x2=segment.getX2();
+    final double y1=segment.getY1();
+    final double y2=segment.getY2();
+    if (equals(x1,x2)) {
+      if (equals(y1,by1) && equals(y2,by2)) {
+        lines.add(new Line(LineType.VERTICAL,x1 - bx1));
+      }
+ else {
+        return null;
+      }
+    }
+ else {
+      if (equals(y1,y2)) {
+        if (equals(x1,bx1) && equals(x2,bx2)) {
+          lines.add(new Line(LineType.HORIZONTAL,y1 - by1));
+        }
+ else {
+          return null;
+        }
+      }
+ else       if ((equals(x1,bx1) && equals(y1,by1) && equals(x2,bx2)&& equals(y2,by2)) || (equals(x1,bx2) && equals(y1,by2)) && equals(x2,bx1) && equals(y2,by1)) {
+        lines.add(new Line(LineType.SLASH,0));
+      }
+ else       if ((equals(x1,bx1) && equals(y1,by2) && equals(x2,bx2)&& equals(y2,by1)) || (equals(x1,bx2) && equals(y1,by1)) && equals(x2,bx1) && equals(y2,by2)) {
+        lines.add(new Line(LineType.BACKSLASH,0));
+      }
+ else {
+        return null;
+      }
+    }
+  }
+  double stepX=bx2 - bx1;
+  double stepY=by2 - by1;
+  if (stepX > 0 && stepY > 0) {
+    return new ParallelLinesFiller(lines,stepX,stepY);
+  }
+ else {
+    return null;
+  }
+}
