@@ -1,0 +1,22 @@
+{
+  StreamingRenderer renderer=new StreamingRenderer();
+  MapContent map=new MapContent();
+  URL raster=getClass().getResource(rasterBase + ".png");
+  GridCoverage2D gc=readGeoReferencedImageFile(new File(raster.toURI()));
+  map.addLayer(loadGeoReferencedImageFile(gc,"test"));
+  renderer.setMapContent(map);
+  BufferedImage image=new BufferedImage(400,300,BufferedImage.TYPE_INT_ARGB);
+  Envelope env=new Envelope(1880352,5825436,1884352,5828436);
+  ReferencedEnvelope refenv=new ReferencedEnvelope(env,gc.getCoordinateReferenceSystem());
+  AtomicReference<Exception> error=new AtomicReference<>();
+  renderer.addRenderListener(new RenderListener(){
+    @Override public void featureRenderer(    SimpleFeature feature){
+    }
+    @Override public void errorOccurred(    Exception e){
+      error.set(e);
+    }
+  }
+);
+  renderer.paint(image.createGraphics(),new Rectangle(400,300),refenv);
+  assertNull(error.get());
+}
