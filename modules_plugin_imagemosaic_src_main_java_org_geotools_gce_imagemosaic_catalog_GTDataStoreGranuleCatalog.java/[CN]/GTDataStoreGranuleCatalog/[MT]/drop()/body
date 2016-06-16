@@ -1,0 +1,22 @@
+{
+  final Map<?,?> params=Utils.filterDataStoreParams(this.params,spi);
+  final Method[] methods=spi.getClass().getMethods();
+  boolean dropped=false;
+  for (  Method method : methods) {
+    if (method.getName().equalsIgnoreCase("dropDatabase")) {
+      try {
+        method.invoke(spi,params);
+      }
+ catch (      Exception e) {
+        throw new IOException("Unable to drop the database: ",e);
+      }
+      dropped=true;
+      break;
+    }
+  }
+  if (!dropped) {
+    if (LOGGER.isLoggable(Level.WARNING)) {
+      LOGGER.log(Level.WARNING,"Unable to drop catalog for SPI " + spi.getDisplayName());
+    }
+  }
+}
