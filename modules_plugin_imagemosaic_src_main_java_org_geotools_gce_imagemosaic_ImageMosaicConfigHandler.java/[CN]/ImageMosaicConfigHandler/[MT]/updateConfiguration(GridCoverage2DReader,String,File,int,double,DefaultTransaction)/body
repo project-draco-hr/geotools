@@ -70,7 +70,7 @@
     configBuilder.setCatalogConfigurationBean(catalogConfigurationBean);
     configBuilder.setCheckAuxiliaryMetadata(IndexerUtils.getParameterAsBoolean(Prop.CHECK_AUXILIARY_METADATA,indexer));
     currentConfigurationBean=configBuilder.getMosaicConfigurationBean();
-    rasterManager=getParentReader().addRasterManager(currentConfigurationBean,false);
+    getParentReader().addRasterManager(currentConfigurationBean,false);
     if (!useExistingSchema) {
       SimpleFeatureType indexSchema=createSchema(getRunConfiguration(),currentConfigurationBean.getName(),actualCRS);
       getParentReader().createCoverage(coverageName,indexSchema);
@@ -111,13 +111,7 @@
     cm=layout.getColorModel(null);
     sm=layout.getSampleModel(null);
     ColorModel actualCM=cm;
-    CoordinateReferenceSystem expectedCRS;
-    if (mosaicConfiguration.getCrs() != null) {
-      expectedCRS=mosaicConfiguration.getCrs();
-    }
- else {
-      expectedCRS=rasterManager.spatialDomainManager.coverageCRS;
-    }
+    CoordinateReferenceSystem expectedCRS=this.getDefaultCRS(coverageName);
     if (!(CRS.equalsIgnoreMetadata(expectedCRS,actualCRS))) {
       eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipping image " + fileBeingProcessed + " because CRSs do not match.",(((fileIndex + 1) * 99.0) / numFiles));
       return;
