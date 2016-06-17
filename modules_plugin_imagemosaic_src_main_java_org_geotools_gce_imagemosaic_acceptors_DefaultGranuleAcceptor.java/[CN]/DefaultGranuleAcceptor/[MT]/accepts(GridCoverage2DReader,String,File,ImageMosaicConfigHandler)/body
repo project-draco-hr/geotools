@@ -1,8 +1,11 @@
 {
-  CoordinateReferenceSystem expectedCRS=mosaicConfig.getDefaultCRS(coverageName);
-  CoordinateReferenceSystem actualCRS=coverage.getCoordinateReferenceSystem();
-  if (!(CRS.equalsIgnoreMetadata(expectedCRS,actualCRS))) {
-    return false;
+  String targetCoverageName=mosaicConfigHandler.getTargetCoverageName(coverage,coverageName);
+  MosaicConfigurationBean config=mosaicConfigHandler.getConfigurations().get(targetCoverageName);
+  if (config != null) {
+    RasterManager rasterManager=mosaicConfigHandler.getRasterManagerForTargetCoverage(targetCoverageName);
+    return checkCRS(coverage,config) && checkColorModel(coverage,config,rasterManager);
   }
-  return true;
+ else {
+    return true;
+  }
 }

@@ -1,6 +1,5 @@
 {
-  final String indexName=getRunConfiguration().getParameter(Prop.INDEX_NAME);
-  final String coverageName=coverageReader instanceof StructuredGridCoverage2DReader ? inputCoverageName : indexName;
+  final String coverageName=getTargetCoverageName(coverageReader,inputCoverageName);
   final Indexer indexer=getRunConfiguration().getIndexer();
   final boolean coverageExists=coverageExists(coverageName);
   MosaicConfigurationBean mosaicConfiguration=null;
@@ -106,27 +105,6 @@
       mosaicConfiguration.setLevels(resolutionLevels);
       mosaicConfiguration.setLevelsNum(numberOfLevels);
       getConfigurations().put(mosaicConfiguration.getName(),mosaicConfiguration);
-    }
-    ImageLayout layout=coverageReader.getImageLayout(inputCoverageName);
-    cm=layout.getColorModel(null);
-    sm=layout.getSampleModel(null);
-    ColorModel actualCM=cm;
-    CoordinateReferenceSystem expectedCRS=this.getDefaultCRS(coverageName);
-    if (!(CRS.equalsIgnoreMetadata(expectedCRS,actualCRS))) {
-      eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipping image " + fileBeingProcessed + " because CRSs do not match.",(((fileIndex + 1) * 99.0) / numFiles));
-      return;
-    }
-    byte[][] palette=mosaicConfiguration.getPalette();
-    ColorModel colorModel=mosaicConfiguration.getColorModel();
-    if (colorModel == null) {
-      colorModel=rasterManager.defaultCM;
-    }
-    if (palette == null) {
-      palette=rasterManager.defaultPalette;
-    }
-    if (Utils.checkColorModels(colorModel,palette,actualCM)) {
-      eventHandler.fireFileEvent(Level.INFO,fileBeingProcessed,false,"Skipping image " + fileBeingProcessed + " because color models do not match.",(((fileIndex + 1) * 99.0) / numFiles));
-      return;
     }
   }
   if (!useExistingSchema) {
