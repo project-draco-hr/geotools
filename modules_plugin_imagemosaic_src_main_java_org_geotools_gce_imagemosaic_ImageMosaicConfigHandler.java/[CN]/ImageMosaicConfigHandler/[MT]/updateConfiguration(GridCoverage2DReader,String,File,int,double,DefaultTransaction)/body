@@ -1,12 +1,12 @@
 {
-  final String coverageName=getTargetCoverageName(coverageReader,inputCoverageName);
+  final String targetCoverageName=getTargetCoverageName(coverageReader,inputCoverageName);
   final Indexer indexer=getRunConfiguration().getIndexer();
-  final boolean coverageExists=coverageExists(coverageName);
+  final boolean coverageExists=coverageExists(targetCoverageName);
   MosaicConfigurationBean mosaicConfiguration=null;
   MosaicConfigurationBean currentConfigurationBean=null;
   RasterManager rasterManager=null;
   if (coverageExists) {
-    rasterManager=getParentReader().getRasterManager(coverageName);
+    rasterManager=getParentReader().getRasterManager(targetCoverageName);
     mosaicConfiguration=rasterManager.getConfiguration();
   }
   final MosaicBeanBuilder configBuilder=new MosaicBeanBuilder();
@@ -35,10 +35,10 @@
     configBuilder.setCrs(actualCRS);
     configBuilder.setLevels(resolutionLevels);
     configBuilder.setLevelsNum(numberOfLevels);
-    configBuilder.setName(coverageName);
-    configBuilder.setTimeAttribute(IndexerUtils.getAttribute(coverageName,Utils.TIME_DOMAIN,indexer));
-    configBuilder.setElevationAttribute(IndexerUtils.getAttribute(coverageName,Utils.ELEVATION_DOMAIN,indexer));
-    configBuilder.setAdditionalDomainAttributes(IndexerUtils.getAttribute(coverageName,Utils.ADDITIONAL_DOMAIN,indexer));
+    configBuilder.setName(targetCoverageName);
+    configBuilder.setTimeAttribute(IndexerUtils.getAttribute(targetCoverageName,Utils.TIME_DOMAIN,indexer));
+    configBuilder.setElevationAttribute(IndexerUtils.getAttribute(targetCoverageName,Utils.ELEVATION_DOMAIN,indexer));
+    configBuilder.setAdditionalDomainAttributes(IndexerUtils.getAttribute(targetCoverageName,Utils.ADDITIONAL_DOMAIN,indexer));
     final Hints runHints=getRunConfiguration().getHints();
     if (runHints != null) {
       if (runHints.containsKey(Utils.AUXILIARY_FILES_PATH)) {
@@ -64,7 +64,7 @@
       catalogConfigurationBean.setTypeName(configuredTypeName);
     }
  else {
-      catalogConfigurationBean.setTypeName(coverageName);
+      catalogConfigurationBean.setTypeName(targetCoverageName);
     }
     configBuilder.setCatalogConfigurationBean(catalogConfigurationBean);
     configBuilder.setCheckAuxiliaryMetadata(IndexerUtils.getParameterAsBoolean(Prop.CHECK_AUXILIARY_METADATA,indexer));
@@ -72,7 +72,7 @@
     getParentReader().addRasterManager(currentConfigurationBean,false);
     if (!useExistingSchema) {
       SimpleFeatureType indexSchema=createSchema(getRunConfiguration(),currentConfigurationBean.getName(),actualCRS);
-      getParentReader().createCoverage(coverageName,indexSchema);
+      getParentReader().createCoverage(targetCoverageName,indexSchema);
     }
     getConfigurations().put(currentConfigurationBean.getName(),currentConfigurationBean);
   }
@@ -108,6 +108,6 @@
     }
   }
   if (!useExistingSchema) {
-    updateCatalog(coverageName,fileBeingProcessed,coverageReader,getParentReader(),catalogConfig,envelope,transaction,getPropertiesCollectors());
+    updateCatalog(targetCoverageName,fileBeingProcessed,coverageReader,getParentReader(),catalogConfig,envelope,transaction,getPropertiesCollectors());
   }
 }

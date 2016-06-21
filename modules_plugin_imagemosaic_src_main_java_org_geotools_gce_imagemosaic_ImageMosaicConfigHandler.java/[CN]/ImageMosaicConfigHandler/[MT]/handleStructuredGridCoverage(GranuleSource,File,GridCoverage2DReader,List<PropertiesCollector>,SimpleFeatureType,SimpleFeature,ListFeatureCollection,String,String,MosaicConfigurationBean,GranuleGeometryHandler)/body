@@ -1,0 +1,42 @@
+{
+  final GranuleSource source=granules;
+  final SimpleFeatureCollection originCollection=source.getGranules(null);
+  final DefaultProgressListener listener=new DefaultProgressListener();
+  final Collection<Property> destProps=feature.getProperties();
+  final Set<Name> destAttributes=new HashSet<>();
+  for (  Property prop : destProps) {
+    destAttributes.add(prop.getName());
+  }
+  originCollection.accepts(new AbstractFeatureVisitor(){
+    public void visit(    Feature feature){
+      if (feature instanceof SimpleFeature) {
+        final SimpleFeature sourceFeature=(SimpleFeature)feature;
+        final SimpleFeature destFeature=DataUtilities.template(indexSchema);
+        Collection<Property> props=sourceFeature.getProperties();
+        Name propName=null;
+        Object propValue=null;
+        for (        Property prop : props) {
+          Name geometryName=sourceFeature.getFeatureType().getGeometryDescriptor().getName();
+          if (prop.getName().equals(geometryName)) {
+            geometryHandler.handleGeometry((StructuredGridCoverage2DReader)inputReader,destFeature,destFeature.getFeatureType(),sourceFeature,sourceFeature.getFeatureType(),mosaicConfiguration);
+          }
+ else {
+            propName=prop.getName();
+            propValue=prop.getValue();
+            if (destAttributes.contains(propName)) {
+              destFeature.setAttribute(propName,propValue);
+            }
+          }
+        }
+        destFeature.setAttribute(locationAttribute,fileLocation);
+        updateAttributesFromCollectors(destFeature,fileBeingProcessed,inputReader,propertiesCollectors);
+        collection.add(destFeature);
+        if (listener.isCanceled() || listener.hasExceptions()) {
+          if (listener.hasExceptions())           throw new RuntimeException(listener.getExceptions().peek());
+ else           throw new IllegalStateException("Feature visitor has been canceled");
+        }
+      }
+    }
+  }
+,listener);
+}
