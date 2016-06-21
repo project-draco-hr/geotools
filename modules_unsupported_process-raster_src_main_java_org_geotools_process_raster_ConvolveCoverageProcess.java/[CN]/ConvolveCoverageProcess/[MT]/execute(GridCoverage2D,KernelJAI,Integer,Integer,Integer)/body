@@ -1,0 +1,20 @@
+{
+  final ParameterValueGroup param=PROCESSOR.getOperation("Convolve").getParameters();
+  param.parameter("Source").setValue(coverage);
+  if (kernel == null) {
+    if (kernelRadius != null && kernelRadius > 0) {
+      kernel=KernelFactory.createCircle(kernelRadius);
+    }
+ else     if (kernelWidth != null) {
+      if (kernelHeight == null) {
+        kernelHeight=kernelWidth;
+      }
+      kernel=KernelFactory.createRectangle(kernelWidth,kernelHeight);
+    }
+  }
+  if (kernel == null) {
+    throw new ProcessException("No kernel argument specified");
+  }
+  param.parameter("kernel").setValue(kernel);
+  return (GridCoverage2D)PROCESSOR.doOperation(param);
+}
