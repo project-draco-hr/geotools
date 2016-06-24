@@ -1,0 +1,17 @@
+{
+  CoordinateReferenceSystem targetCRS=mosaicConfiguration.getCrs();
+  if (inputFeature instanceof StructuredGridCoverage2DReader) {
+  }
+ else {
+    GeneralEnvelope coverageEnvelope=inputReader.getOriginalEnvelope();
+    CoordinateReferenceSystem coverageCRS=inputReader.getCoordinateReferenceSystem();
+    if (!CRS.equalsIgnoreMetadata(targetCRS,coverageCRS)) {
+      try {
+        ReferencedEnvelope targetReprojectedEnvelope=new ReferencedEnvelope(CRS.transform(coverageEnvelope,targetCRS));
+      }
+ catch (      TransformException e) {
+        throw new GranuleHandlingException("Unable to reproject incoming granule, but target and granule CRS differ.",e);
+      }
+    }
+  }
+}
