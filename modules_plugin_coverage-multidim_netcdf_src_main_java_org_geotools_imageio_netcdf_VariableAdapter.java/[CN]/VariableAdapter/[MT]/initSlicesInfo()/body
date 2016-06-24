@@ -1,6 +1,7 @@
 {
   shape=variableDS.getShape();
-switch (shape.length) {
+  int rank=shape.length;
+switch (rank) {
 case 2:
     numberOfSlices=1;
   break;
@@ -11,6 +12,15 @@ case 4:
 numberOfSlices=0 + shape[0] * shape[1];
 break;
 default :
+if (!ignoredDimensions.isEmpty()) {
+numberOfSlices=1;
+for (int i=0; i < rank - 2; i++) {
+if (!ignoredDimensions.contains(variableDS.getDimension(i).getFullName())) {
+numberOfSlices*=shape[i];
+}
+}
+break;
+}
 if (LOGGER.isLoggable(Level.WARNING)) LOGGER.warning("Ignoring variable: " + getName() + " with shape length: "+ shape.length);
 }
 }
