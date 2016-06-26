@@ -1,0 +1,12 @@
+{
+  Version version=getVersion();
+  boolean atLeastV2=version.compareTo(V_2_0_0) >= 0;
+  String geometryType=atLeastV2 ? "geometry(POINTZ, 7415)" : "geometry";
+  run("CREATE TABLE \"pointCompound3d\"(\"fid\" serial PRIMARY KEY, \"id\" int, " + "\"geom\" " + geometryType + ", \"name\" varchar )");
+  if (atLeastV2) {
+    run("INSERT INTO GEOMETRY_COLUMNS VALUES('', 'public', 'pointCompound3d', 'geom', 3, '7415', 'POINT')");
+  }
+  run("CREATE INDEX POINTCompound3d_GEOM_IDX ON \"pointCompound3d\" USING GIST (\"geom\") ");
+  run("INSERT INTO \"pointCompound3d\" (\"id\",\"geom\",\"name\") VALUES (0," + "ST_GeomFromText('POINT(1 1 1)', 7415)," + "'p1')");
+  run("INSERT INTO \"pointCompound3d\" (\"id\",\"geom\",\"name\") VALUES (1," + "ST_GeomFromText('POINT(3 0 1)', 7415)," + "'p2')");
+}
