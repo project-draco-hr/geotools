@@ -1,0 +1,32 @@
+{
+  FeatureTypeMapping lastTypeMapping=lastMappingStep.getFeatureTypeMapping();
+  JDBCDataStore store=(JDBCDataStore)lastTypeMapping.getSource().getDataStore();
+  SimpleFeatureType lastType=(SimpleFeatureType)lastTypeMapping.getSource().getSchema();
+  PrimaryKey key=null;
+  try {
+    key=store.getPrimaryKey(lastType);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+  StringBuffer sql=new StringBuffer();
+  sql.append("SELECT ");
+  StringBuffer sqlKeys=new StringBuffer();
+  String colName;
+  for (  PrimaryKeyColumn col : key.getColumns()) {
+    colName=col.getName();
+    sqlKeys.append(",");
+    encodeAliasedColumnName(store,colName,lastMappingStep.getAlias(),sqlKeys,null);
+  }
+  if (sqlKeys.length() <= 0) {
+    sql.append("*");
+  }
+ else {
+    sql.append(sqlKeys.substring(1));
+  }
+  sql.append(" FROM ");
+  store.encodeTableName(lastType.getTypeName(),sql,null);
+  sql.append(" ");
+  store.dialect.encodeTableName(lastMappingStep.getAlias(),sql);
+  return sql;
+}

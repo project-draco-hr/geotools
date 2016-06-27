@@ -1,0 +1,76 @@
+{
+  List<NestedAttributeMapping> currentAttributes=currentType.getNestedMappings();
+  boolean searchIsOver=true;
+  for (  NestedAttributeMapping nestedAttr : currentAttributes) {
+    StepList targetXPath=nestedAttr.getTargetXPath();
+    if (currentXPath.startsWith(targetXPath)) {
+      if (nestedAttr.isConditional() && feature == null) {
+        LOGGER.fine("Conditional nested mapping found, but no feature to evaluate " + "against was provided: nested feature type cannot be determined");
+        return;
+      }
+ else {
+        FeatureTypeMapping nestedType=nestedAttr.getFeatureTypeMapping(feature);
+        if (nestedType != null) {
+          AttributeType nestedPropertyType=nestedType.getTargetFeature().getType();
+          QName nestedTypeQName=getFeatureTypeQName(nestedType);
+          Step nestedTypeStep=new Step(nestedTypeQName,1);
+          StepList nestedTypeXPath=targetXPath.clone();
+          nestedTypeXPath.add(nestedTypeStep);
+          boolean xpathContainsNestedType=currentXPath.startsWith(nestedTypeXPath);
+          boolean hasSimpleContent=Types.isSimpleContentType(nestedPropertyType);
+          if (xpathContainsNestedType || hasSimpleContent) {
+            LOGGER.finer("Nested feature type found: " + nestedTypeQName);
+            FeatureChainedAttributeDescriptor copy=attrDescr.shallowCopy();
+            copy.addLink(new FeatureChainLink(currentType,nestedAttr));
+            FeatureTypeMapping newType=nestedType;
+            StepList newXPath=currentXPath.clone();
+            int startIdx=(xpathContainsNestedType) ? nestedTypeXPath.size() : currentXPath.size();
+            newXPath=newXPath.subList(startIdx,currentXPath.size());
+            if (newXPath.isEmpty() && hasSimpleContent) {
+              newXPath.add(nestedTypeStep);
+            }
+            walkXPathRecursive(newXPath,newType,copy,feature);
+            searchIsOver=false;
+          }
+        }
+ else {
+          LOGGER.fine("Nested feature type could not be determined");
+        }
+      }
+    }
+  }
+  if (searchIsOver && currentXPath != null && !currentXPath.isEmpty()) {
+    StepList lastAttrPath=currentXPath;
+    List<Expression> lastAttrExpressions=currentType.findMappingsFor(lastAttrPath,false);
+    if (lastAttrExpressions != null && lastAttrExpressions.size() > 0) {
+      attrDescr.setAttributePath(lastAttrPath);
+      if (isClientProperty(lastAttrPath) && isXlinkHref(lastAttrPath)) {
+        StepList parentAttrPath=lastAttrPath.subList(0,lastAttrPath.size() - 1);
+        AttributeMapping parentAttr=currentType.getAttributeMapping(parentAttrPath);
+        if (parentAttr != null && parentAttr instanceof NestedAttributeMapping) {
+          NestedAttributeMapping nestedAttr=(NestedAttributeMapping)parentAttr;
+          attrDescr.addLink(new FeatureChainLink(currentType,nestedAttr));
+          if (nestedAttr.isConditional() && feature == null) {
+            LOGGER.fine("Conditional nested mapping found, but no feature to evaluate " + "against was provided: nested feature type cannot be determined");
+            return;
+          }
+ else {
+            FeatureTypeMapping nestedType=nestedAttr.getFeatureTypeMapping(feature);
+            if (nestedType != null) {
+              FeatureChainLink lastLink=new FeatureChainLink(nestedType,true);
+              attrDescr.addLink(lastLink);
+              attributes.add(attrDescr);
+            }
+ else {
+              LOGGER.fine("Nested feature type could not be determined");
+            }
+          }
+        }
+      }
+ else {
+        attrDescr.addLink(new FeatureChainLink(currentType));
+        attributes.add(attrDescr);
+      }
+    }
+  }
+}
