@@ -1,0 +1,20 @@
+{
+  CoordinateReferenceSystem targetCRS=mosaicConfiguration.getCrs();
+  if (inputFeature instanceof StructuredGridCoverage2DReader) {
+    handleStructuredGranule(source,inputReader,targetFeature,targetFeatureType,inputFeature,inputFeatureType,mosaicConfiguration);
+  }
+ else {
+    GeneralEnvelope coverageEnvelope=inputReader.getOriginalEnvelope();
+    CoordinateReferenceSystem coverageCRS=inputReader.getCoordinateReferenceSystem();
+    ReferencedEnvelope finalEnvelope=new ReferencedEnvelope(coverageEnvelope);
+    if (!CRS.equalsIgnoreMetadata(targetCRS,coverageCRS)) {
+      try {
+        finalEnvelope=new ReferencedEnvelope(CRS.transform(finalEnvelope,targetCRS));
+      }
+ catch (      TransformException e) {
+        throw new GranuleHandlingException("Unable to reproject incoming granule, but target and granule CRS " + "differ so we can't continue",e);
+      }
+    }
+    targetFeature.setAttribute(targetFeatureType.getGeometryDescriptor().getName(),GEOM_FACTORY.toGeometry(finalEnvelope));
+  }
+}

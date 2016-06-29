@@ -1,0 +1,28 @@
+{
+  final File parent=new File(runConfiguration.getParameter(Prop.ROOT_MOSAIC_DIR));
+  GranuleCatalog catalog;
+  final File datastoreProperties=new File(parent,"datastore.properties");
+  if (Utils.checkFileReadable(datastoreProperties)) {
+    Properties properties=createGranuleCatalogProperties(datastoreProperties);
+    String indexerTypeName=runConfiguration.getParameter(Prop.TYPENAME);
+    if (indexerTypeName != null && properties.getProperty(Prop.TYPENAME) == null) {
+      properties.put(Prop.TYPENAME,indexerTypeName);
+    }
+    catalog=createGranuleCatalogFromDatastore(parent,properties,create,Boolean.parseBoolean(runConfiguration.getParameter(Prop.WRAP_STORE)),runConfiguration.getHints());
+  }
+ else {
+    final URL file=new File(parent,runConfiguration.getParameter(Prop.INDEX_NAME) + ".shp").toURI().toURL();
+    final Properties params=new Properties();
+    params.put(ShapefileDataStoreFactory.URLP.key,file);
+    if (file.getProtocol().equalsIgnoreCase("file")) {
+      params.put(ShapefileDataStoreFactory.CREATE_SPATIAL_INDEX.key,Boolean.TRUE);
+    }
+    params.put(ShapefileDataStoreFactory.MEMORY_MAPPED.key,USE_MEMORY_MAPPED_BUFFERS);
+    params.put(ShapefileDataStoreFactory.DBFTIMEZONE.key,TimeZone.getTimeZone("UTC"));
+    params.put(Prop.LOCATION_ATTRIBUTE,runConfiguration.getParameter(Prop.LOCATION_ATTRIBUTE));
+    catalog=GranuleCatalogFactory.createGranuleCatalog(params,false,create,Utils.SHAPE_SPI,runConfiguration.getHints());
+    MultiLevelROIProvider roi=MultiLevelROIProviderMosaicFactory.createFootprintProvider(parent);
+    catalog.setMultiScaleROIProvider(roi);
+  }
+  return catalog;
+}
