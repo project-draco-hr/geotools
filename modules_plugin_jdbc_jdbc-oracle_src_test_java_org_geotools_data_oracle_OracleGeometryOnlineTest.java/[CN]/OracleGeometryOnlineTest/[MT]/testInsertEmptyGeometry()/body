@@ -1,0 +1,32 @@
+{
+  ContentFeatureSource source=dataStore.getFeatureSource("COLA_MARKETS_CS");
+  if (!(source instanceof SimpleFeatureStore)) {
+    fail("store not writable");
+  }
+  GeometryFactory gf=new GeometryFactory();
+  ArrayList<SimpleFeature> list=new ArrayList<>();
+  SimpleFeatureBuilder builder=new SimpleFeatureBuilder(source.getSchema());
+  builder.add("empty point");
+  builder.add(gf.createPoint((Coordinate)null));
+  SimpleFeature f=builder.buildFeature(null);
+  list.add(f);
+  builder.add("empty line");
+  builder.add(gf.createLineString((CoordinateSequence)null));
+  f=builder.buildFeature(null);
+  list.add(f);
+  builder.add("empty polygon");
+  builder.add(gf.createPolygon(null,null));
+  f=builder.buildFeature(null);
+  list.add(f);
+  FeatureCollection<SimpleFeatureType,SimpleFeature> collection=DataUtilities.collection(list);
+  SimpleFeatureStore store=(SimpleFeatureStore)source;
+  Transaction transaction=new DefaultTransaction("create");
+  store.setTransaction(transaction);
+  try {
+    List<FeatureId> ids=store.addFeatures(collection);
+    transaction.commit();
+  }
+  finally {
+    transaction.close();
+  }
+}
