@@ -1,5 +1,6 @@
 {
   Utilities.ensureNonNull("ImageMosaicReader",parentReader);
+  Utilities.ensureNonNull("MosaicConfigurationBean",configuration);
   this.parentReader=parentReader;
   this.expandMe=configuration.isExpandToRGB();
   boolean checkAuxiliaryMetadata=configuration.isCheckAuxiliaryMetadata();
@@ -17,34 +18,45 @@
   extractOverviewPolicy();
   extractDecimationPolicy();
   loadSampleImage(configuration);
-  if (configuration != null) {
-    CatalogConfigurationBean catalogBean=configuration.getCatalogConfigurationBean();
-    typeName=catalogBean != null ? catalogBean.getTypeName() : null;
-    initDomains(configuration);
-    if (defaultSM == null) {
-      defaultSM=configuration.getSampleModel();
+  CatalogConfigurationBean catalogBean=configuration.getCatalogConfigurationBean();
+  typeName=catalogBean != null ? catalogBean.getTypeName() : null;
+  initDomains(configuration);
+  if (defaultSM == null) {
+    defaultSM=configuration.getSampleModel();
+  }
+  if (defaultCM == null) {
+    defaultCM=configuration.getColorModel();
+  }
+  if (defaultPalette == null) {
+    defaultPalette=configuration.getPalette();
+  }
+  if (defaultSM != null && defaultCM != null && defaultImageLayout == null) {
+    defaultImageLayout=new ImageLayout().setColorModel(defaultCM).setSampleModel(defaultSM);
+  }
+  levels=configuration.getLevels();
+  final double[] highRes=levels[0];
+  final int numOverviews=configuration.getLevelsNum() - 1;
+  double[][] overviews=null;
+  if (numOverviews > 0) {
+    overviews=new double[numOverviews][2];
+    for (int i=0; i < numOverviews; i++) {
+      overviews[i][0]=levels[i + 1][0];
+      overviews[i][1]=levels[i + 1][1];
     }
-    if (defaultCM == null) {
-      defaultCM=configuration.getColorModel();
-    }
-    if (defaultPalette == null) {
-      defaultPalette=configuration.getPalette();
-    }
-    if (defaultSM != null && defaultCM != null && defaultImageLayout == null) {
-      defaultImageLayout=new ImageLayout().setColorModel(defaultCM).setSampleModel(defaultSM);
-    }
-    levels=configuration.getLevels();
-    final double[] highRes=levels[0];
-    final int numOverviews=configuration.getLevelsNum() - 1;
-    double[][] overviews=null;
-    if (numOverviews > 0) {
-      overviews=new double[numOverviews][2];
-      for (int i=0; i < numOverviews; i++) {
-        overviews[i][0]=levels[i + 1][0];
-        overviews[i][1]=levels[i + 1][1];
+  }
+  overviewsController=new OverviewsController(highRes,numOverviews,overviews);
+  imposedEnvelope=configuration.getEnvelope();
+  if (configuration.getIndexer() != null) {
+    Indexer indexer=configuration.getIndexer();
+    String submosaickerFactory=IndexerUtils.getParameter(Utils.Prop.GRANULE_COLLECTOR_FACTORY,indexer);
+    if (submosaickerFactory != null) {
+      SubmosaicProducerFactory submosaicProducerFactory=SubmosaicProducerFactoryFinder.getGranuleHandlersSPI().get(submosaickerFactory);
+      if (submosaicProducerFactory != null) {
+        this.submosaicProducerFactory=submosaicProducerFactory;
+      }
+ else {
+        LOGGER.warning("Found SubmosaicProducerFactory config in the Image Mosaic " + "indexer, however the specified factory (" + submosaickerFactory + ") could not be found. This may mean the indexer.properties or indexer.xml"+ "is misconfigured");
       }
     }
-    overviewsController=new OverviewsController(highRes,numOverviews,overviews);
-    imposedEnvelope=configuration.getEnvelope();
   }
 }

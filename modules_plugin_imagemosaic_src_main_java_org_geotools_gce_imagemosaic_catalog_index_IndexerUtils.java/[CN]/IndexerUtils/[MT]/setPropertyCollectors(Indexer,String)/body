@@ -12,24 +12,6 @@
       final int roundLPos=pcDef.indexOf("(");
       final int roundRPos=pcDef.indexOf(")");
       final int roundRPosLast=pcDef.lastIndexOf(")");
-      if (squareRPos != squareRPosLast) {
-        if (LOGGER.isLoggable(Level.INFO)) {
-          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
-        }
-        continue;
-      }
-      if (squareLPos == -1 || squareRPos == -1) {
-        if (LOGGER.isLoggable(Level.INFO)) {
-          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
-        }
-        continue;
-      }
-      if (squareLPos == 0) {
-        if (LOGGER.isLoggable(Level.INFO)) {
-          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
-        }
-        continue;
-      }
       if (roundRPos != roundRPosLast) {
         if (LOGGER.isLoggable(Level.INFO)) {
           LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
@@ -48,32 +30,33 @@
         }
         continue;
       }
-      if (roundLPos != squareRPos + 1) {
-        if (LOGGER.isLoggable(Level.INFO)) {
-          LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
-        }
-        continue;
-      }
       if (roundRPos != (pcDef.length() - 1)) {
         if (LOGGER.isLoggable(Level.INFO)) {
           LOGGER.info("Skipping unparseable PropertyCollector definition: " + pcDef);
         }
         continue;
       }
-      final String spi=pcDef.substring(0,squareLPos);
-      final String config=squareLPos < squareRPos ? pcDef.substring(squareLPos + 1,squareRPos) : "";
-      String value=null;
-      final File configFile=new File(getParameter(Utils.Prop.ROOT_MOSAIC_DIR,indexer),config + ".properties");
-      if (!Utils.checkFileReadable(configFile)) {
-        if (LOGGER.isLoggable(Level.INFO)) {
-          LOGGER.info("Unable to access the file for this PropertyCollector: " + configFile.getAbsolutePath());
-        }
-        continue;
+      String spi=null;
+      if (squareLPos != -1) {
+        spi=pcDef.substring(0,squareLPos);
       }
  else {
-        final Properties properties=CoverageUtilities.loadPropertiesFromURL(DataUtilities.fileToURL(configFile));
-        if (properties.containsKey("regex")) {
-          value=properties.getProperty("regex");
+        spi=pcDef.substring(0,roundLPos);
+      }
+      final String config=squareLPos < squareRPos ? pcDef.substring(squareLPos + 1,squareRPos) : "";
+      String value=null;
+      if (config.length() > 0) {
+        final File configFile=new File(getParameter(Utils.Prop.ROOT_MOSAIC_DIR,indexer),config + ".properties");
+        if (!Utils.checkFileReadable(configFile)) {
+          if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.info("Unable to access the file for this PropertyCollector: " + configFile.getAbsolutePath());
+          }
+        }
+ else {
+          final Properties properties=CoverageUtilities.loadPropertiesFromURL(DataUtilities.fileToURL(configFile));
+          if (properties.containsKey("regex")) {
+            value=properties.getProperty("regex");
+          }
         }
       }
       final String propertyNames[]=pcDef.substring(roundLPos + 1,roundRPos).split(",");

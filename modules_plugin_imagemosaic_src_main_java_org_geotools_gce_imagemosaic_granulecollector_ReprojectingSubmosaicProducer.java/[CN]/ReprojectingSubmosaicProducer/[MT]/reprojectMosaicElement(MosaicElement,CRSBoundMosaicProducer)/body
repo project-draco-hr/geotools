@@ -1,0 +1,15 @@
+{
+  if (!CRS.equalsIgnoreMetadata(targetCRS,mosaicProducer.getCrs())) {
+    GridCoverageFactory factory=new GridCoverageFactory(null);
+    GridCoverage2D submosaicCoverage=factory.create("resampled",mosaicElement.getSource(),mosaicProducer.submosaicBBOX);
+    GridCoverage2D resampledCoverage=(GridCoverage2D)operations.resample(submosaicCoverage,targetCRS);
+    RenderedImage resampledImage=resampledCoverage.getRenderedImage();
+    PlanarImage alphaBand=resampledImage.getColorModel().hasAlpha() ? new ImageWorker(resampledImage).retainLastBand().getPlanarImage() : null;
+    Object property=resampledCoverage.getProperty("ROI");
+    ROI overallROI=(property instanceof ROI) ? (ROI)property : null;
+    return new MosaicElement(alphaBand,overallROI,resampledCoverage.getRenderedImage(),mosaicElement.getPamDataset());
+  }
+ else {
+    return mosaicElement;
+  }
+}

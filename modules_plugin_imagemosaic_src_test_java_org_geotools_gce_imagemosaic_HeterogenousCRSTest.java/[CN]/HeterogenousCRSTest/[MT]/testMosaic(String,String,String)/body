@@ -1,0 +1,15 @@
+{
+  URL storeUrl=org.geotools.TestData.url(this,testLocation);
+  File testDataFolder=new File(storeUrl.toURI());
+  File testDirectory=crsMosaicFolder.newFolder(testLocation);
+  FileUtils.copyDirectory(testDataFolder,testDirectory);
+  Hints creationHints=new Hints();
+  ImageMosaicReader imReader=new ImageMosaicReader(testDirectory,creationHints);
+  Assert.assertNotNull(imReader);
+  ParameterValue<String> sortByParam=ImageMosaicFormat.SORT_BY.createValue();
+  sortByParam.setValue(sortOrder);
+  GridCoverage2D gc2d=imReader.read(new GeneralParameterValue[]{sortByParam});
+  RenderedImage renderImage=gc2d.getRenderedImage();
+  File resultsFile=org.geotools.TestData.file(this,resultLocation);
+  ImageAssert.assertEquals(resultsFile,renderImage,1000);
+}

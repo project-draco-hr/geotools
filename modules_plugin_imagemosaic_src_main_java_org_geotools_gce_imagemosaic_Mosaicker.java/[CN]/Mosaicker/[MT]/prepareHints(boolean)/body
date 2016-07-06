@@ -1,0 +1,29 @@
+{
+  final RenderingHints localHints=new RenderingHints(null);
+  if (useFinalImageLayout) {
+    final ImageLayout layout=new ImageLayout(rasterLayerResponse.getRasterBounds().x,rasterLayerResponse.getRasterBounds().y,rasterLayerResponse.getRasterBounds().width,rasterLayerResponse.getRasterBounds().height);
+    Dimension tileDimensions=rasterLayerResponse.getRequest().getTileDimensions();
+    if (tileDimensions == null) {
+      tileDimensions=(Dimension)JAI.getDefaultTileSize().clone();
+    }
+    layout.setTileGridXOffset(0).setTileGridYOffset(0);
+    layout.setTileHeight(tileDimensions.height).setTileWidth(tileDimensions.width);
+    localHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
+  }
+  if (rasterLayerResponse.getHints() != null && !rasterLayerResponse.getHints().isEmpty()) {
+    TileCache tc=Utils.getTileCacheHint(rasterLayerResponse.getHints());
+    if (tc != null) {
+      localHints.add(new RenderingHints(JAI.KEY_TILE_CACHE,tc));
+    }
+    localHints.add(ImageUtilities.BORDER_EXTENDER_HINTS);
+    BorderExtender be=Utils.getBorderExtenderHint(rasterLayerResponse.getHints());
+    if (be != null) {
+      localHints.add(new RenderingHints(JAI.KEY_BORDER_EXTENDER,be));
+    }
+    TileScheduler tileScheduler=Utils.getTileSchedulerHint(rasterLayerResponse.getHints());
+    if (tileScheduler != null) {
+      localHints.add(new RenderingHints(JAI.KEY_TILE_SCHEDULER,tileScheduler));
+    }
+  }
+  return localHints;
+}

@@ -7,7 +7,7 @@
     final Query query=initQuery();
     handleAdditionalFilters(query);
     handleSortByClause(query);
-    final MosaicProducer visitor=new MosaicProducer();
+    final MosaicProducer visitor=new MosaicProducer(submosaicProducerFactory.createProducers(this.getRequest(),this.getRasterManager(),this,false));
     rasterManager.getGranuleDescriptors(query,visitor);
     MosaicOutput returnValue=visitor.produce();
     if (returnValue != null) {
@@ -18,7 +18,8 @@
     }
     if (visitor.granulesNumber == 0) {
       LOGGER.fine("We got no granules, let's do a dry run with no filters");
-      final MosaicProducer dryRunVisitor=new MosaicProducer(true);
+      List<SubmosaicProducer> collectors=submosaicProducerFactory.createProducers(this.getRequest(),this.getRasterManager(),this,true);
+      final MosaicProducer dryRunVisitor=new MosaicProducer(true,collectors);
       final Utils.BBOXFilterExtractor bboxExtractor=new Utils.BBOXFilterExtractor();
       query.getFilter().accept(bboxExtractor,null);
       query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.bbox(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(rasterManager.getGranuleCatalog().getType(rasterManager.getTypeName()).getGeometryDescriptor().getName()),bboxExtractor.getBBox()));

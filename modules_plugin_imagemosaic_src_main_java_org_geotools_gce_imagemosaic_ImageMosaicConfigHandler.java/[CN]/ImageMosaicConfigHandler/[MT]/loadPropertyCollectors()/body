@@ -1,9 +1,13 @@
 {
   Indexer indexer=runConfiguration.getIndexer();
   Collectors collectors=indexer.getCollectors();
+  Boolean heterogeneousCRS=Boolean.valueOf(IndexerUtils.getParameter(Prop.HETEROGENEOUS_CRS,indexer));
   if (collectors == null) {
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.fine("No properties collector have been found");
+    }
+    if (heterogeneousCRS) {
+      this.propertiesCollectors=Collections.singletonList(new CRSExtractor());
     }
     return;
   }
@@ -26,12 +30,14 @@
       continue;
     }
     String collectorValue=collector.getValue();
-    final String config;
-    if (!collectorValue.startsWith(DefaultPropertiesCollectorSPI.REGEX_PREFIX)) {
-      config=DefaultPropertiesCollectorSPI.REGEX_PREFIX + collector.getValue();
-    }
+    String config=null;
+    if (collectorValue != null) {
+      if (!collectorValue.startsWith(DefaultPropertiesCollectorSPI.REGEX_PREFIX)) {
+        config=DefaultPropertiesCollectorSPI.REGEX_PREFIX + collector.getValue();
+      }
  else {
-      config=collector.getValue();
+        config=collector.getValue();
+      }
     }
     final PropertiesCollector pc=selectedSPI.create(config,Arrays.asList(collector.getMapped()));
     if (pc != null) {

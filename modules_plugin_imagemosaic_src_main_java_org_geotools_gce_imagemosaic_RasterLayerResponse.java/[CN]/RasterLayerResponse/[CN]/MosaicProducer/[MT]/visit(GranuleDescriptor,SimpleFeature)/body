@@ -1,0 +1,26 @@
+{
+  final Geometry bb=JTS.toGeometry((BoundingBox)mosaicBBox);
+  final Geometry inclusionGeometry=granuleDescriptor.getFootprint();
+  boolean intersects=false;
+  if (inclusionGeometry != null) {
+    intersects=inclusionGeometry.intersects(bb);
+  }
+  if (!footprintBehavior.handleFootprints() || inclusionGeometry == null || (footprintBehavior.handleFootprints() && intersects)) {
+    boolean found=false;
+    for (    SubmosaicProducer submosaicProducer : granuleCollectors) {
+      if (submosaicProducer.accept(granuleDescriptor)) {
+        granulesNumber++;
+        found=true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new IllegalStateException("Unable to locate a filter for this granule:\n" + granuleDescriptor.toString());
+    }
+  }
+ else {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("We rejected for non ROI inclusion the granule " + granuleDescriptor.toString());
+    }
+  }
+}

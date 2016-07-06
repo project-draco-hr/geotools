@@ -1,0 +1,22 @@
+{
+  Object imageIndex=granuleDescriptor.getOriginator().getAttribute("imageindex");
+  if (imageIndex != null && imageIndex instanceof Integer) {
+    rasterLayerResponse.setImageChoice((Integer)imageIndex);
+  }
+  final GranuleLoader loader=new GranuleLoader(rasterLayerResponse.getBaseReadParameters(),rasterLayerResponse.getImageChoice(),rasterLayerResponse.getMosaicBBox(),rasterLayerResponse.getFinalWorldToGridCorner(),granuleDescriptor,rasterLayerResponse.getRequest(),rasterLayerResponse.getHints());
+  if (!dryRun) {
+    if (rasterLayerResponse.isMultithreadingAllowed() && rasterLayerResponse.getRasterManager().getParentReader().getMultiThreadedLoader() != null) {
+      granulesFutures.add(rasterLayerResponse.getRasterManager().getParentReader().getMultiThreadedLoader().submit(loader));
+    }
+ else {
+      final FutureTask<GranuleDescriptor.GranuleLoadingResult> task=new FutureTask<>(loader);
+      granulesFutures.add(task);
+      task.run();
+    }
+  }
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("We added the granule " + granuleDescriptor.toString());
+  }
+  granulesNumber++;
+  return true;
+}
