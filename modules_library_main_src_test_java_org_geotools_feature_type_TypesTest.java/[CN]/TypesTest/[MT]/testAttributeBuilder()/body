@@ -1,0 +1,19 @@
+{
+  FilterFactory ff=CommonFactoryFinder.getFilterFactory();
+  AttributeTypeBuilder builder=new AttributeTypeBuilder();
+  builder.binding(Integer.class);
+  builder.minOccurs(1).maxOccurs(1);
+  builder.defaultValue(0);
+  builder.name("percent").description("Percent between 0 and 100");
+  builder.restriction(ff.greaterOrEqual(ff.property("."),ff.literal(0))).restriction(ff.lessOrEqual(ff.property("."),ff.literal(100)));
+  final AttributeType PERCENT=builder.buildType();
+  builder.minOccurs(1).maxOccurs(1);
+  builder.defaultValue(0);
+  builder.name("percent").description("Percent between 0 and 100");
+  AttributeDescriptor a=builder.buildDescriptor("a",PERCENT);
+  assertSame(a.getType(),PERCENT);
+  assertEquals(a.getDefaultValue(),0);
+  Filter restrictions=ff.and(PERCENT.getRestrictions());
+  assertTrue(restrictions.evaluate(50));
+  assertFalse(restrictions.evaluate(150));
+}
