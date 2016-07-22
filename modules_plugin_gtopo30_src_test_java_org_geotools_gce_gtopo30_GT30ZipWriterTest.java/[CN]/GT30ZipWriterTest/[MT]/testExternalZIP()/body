@@ -1,0 +1,28 @@
+{
+  final URL sourceURL=TestData.getResource(this,this.fileName + ".DEM");
+  final AbstractGridFormat format=(AbstractGridFormat)new GTopo30FormatFactory().createFormat();
+  assertTrue("Unable to parse source data for this GTOPO30 write test",format.accepts(sourceURL));
+  final GridCoverageReader reader=format.getReader(sourceURL);
+  final GridCoverage2D gc=((GridCoverage2D)reader.read(null));
+  File testDir=TestData.file(this,".");
+  File outputFile=new File(testDir.getAbsolutePath(),"test.zip");
+  final OutputStream outputStream=new ZipOutputStream(new FileOutputStream(outputFile));
+  GridCoverageWriter writer=null;
+  try {
+    writer=format.getWriter(outputStream);
+    writer.write(gc,null);
+  }
+ catch (  Exception e) {
+    assertTrue(e.getLocalizedMessage(),false);
+  }
+ finally {
+    gc.dispose(false);
+    if (writer != null) {
+      writer.dispose();
+    }
+    if (outputStream != null) {
+      outputStream.close();
+    }
+    outputFile.delete();
+  }
+}
