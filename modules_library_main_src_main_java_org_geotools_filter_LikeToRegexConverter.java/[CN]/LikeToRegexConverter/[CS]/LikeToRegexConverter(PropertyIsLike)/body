@@ -3,7 +3,7 @@
   String wildcardMulti=like.getWildCard();
   String wildcardSingle=like.getSingleChar();
   String escape=like.getEscape();
-  char esc=escape.charAt(0);
+  char esc=escape.isEmpty() ? Character.MIN_VALUE : escape.charAt(0);
   if (LOGGER.isLoggable(Level.FINER)) {
     LOGGER.finer("wildcard " + wildcardMulti + " single "+ wildcardSingle);
     LOGGER.finer("escape " + escape + " esc "+ esc+ " esc == \\ "+ (esc == '\\'));
@@ -17,7 +17,7 @@
     if (LOGGER.isLoggable(Level.FINER)) {
       LOGGER.finer("tmp = " + tmp + " looking at "+ chr);
     }
-    if (pattern.regionMatches(false,i,escape,0,escape.length())) {
+    if (!escape.isEmpty() && pattern.regionMatches(false,i,escape,0,escape.length())) {
       LOGGER.finer("escape ");
       escapedMode=true;
       i+=escape.length();
@@ -49,7 +49,7 @@
       escapedMode=false;
       continue;
     }
-    if (isSpecial(chr)) {
+    if (isSpecial(chr) && !escape.isEmpty()) {
       LOGGER.finer("special");
       tmp.append(escape + chr);
       escapedMode=false;
