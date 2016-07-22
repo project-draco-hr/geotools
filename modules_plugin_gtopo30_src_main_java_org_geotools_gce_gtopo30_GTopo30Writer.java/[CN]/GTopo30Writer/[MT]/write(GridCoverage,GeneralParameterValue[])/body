@@ -14,7 +14,9 @@
       }
     }
   }
-  if (gtParams == null)   gtParams=new GTopo30WriteParams();
+  if (gtParams == null) {
+    gtParams=new GTopo30WriteParams();
+  }
   final boolean compressed=gtParams.getCompressionMode() == ImageWriteParam.MODE_EXPLICIT;
   int[] writeBands=gtParams.getSourceBands();
   int writeBand=CoverageUtilities.getVisibleBand(gc2D.getRenderedImage());
@@ -22,7 +24,22 @@
   if (!((writeBands == null || writeBands.length == 0 || writeBands.length > 1)))   writeBand=writeBands[0];
   String fileName=gc2D.getName().toString();
   if (compressed) {
-    destination=new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(new File((File)destination,new StringBuffer(fileName).append(".zip").toString()))));
+    if (destination instanceof File) {
+      destination=new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(new File((File)destination,new StringBuffer(fileName).append(".zip").toString()))));
+    }
+ else {
+      if (!(destination instanceof ZipOutputStream)) {
+        throw new IllegalArgumentException("Asking compression on a source that does not support it: " + destination.getClass().getSimpleName());
+      }
+    }
+  }
+  if (!compressed && !(destination instanceof File && ((File)destination).isDirectory()) && !(destination instanceof ZipOutputStream)) {
+    throw new IllegalArgumentException("Asking to write, without compression, on a source that does not support it: " + destination.getClass().getSimpleName());
+  }
+ else {
+    if (compressed && !(destination instanceof ZipOutputStream)) {
+      throw new IllegalArgumentException("Asking to write, with compression, on a source that does not support it: " + destination.getClass().getSimpleName());
+    }
   }
   final ParameterValueGroup pvg=PROCESSOR.getOperation("SelectSampleDimension").getParameters();
   pvg.parameter("Source").setValue(gc2D);
@@ -37,7 +54,7 @@
   this.writeHDR(gc2D,fileName,destination);
   this.writeGIF(gc2D,fileName,destination);
   this.writeSRC(gc2D,fileName,destination);
-  if (compressed) {
+  if (destination instanceof ZipOutputStream) {
     ((ZipOutputStream)destination).close();
   }
 }
