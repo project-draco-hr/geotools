@@ -6,18 +6,21 @@
       boolean disposeCoverage=false;
       try {
         final Object grid=gridPropertyName.evaluate(drawMe.feature);
+        ColorMapEntryResolver simplifier=new ColorMapEntryResolver();
+        symbolizer.accept(simplifier);
+        final RasterSymbolizer rs=(RasterSymbolizer)simplifier.getCopy();
         if (grid instanceof GridCoverage2D) {
           coverage=(GridCoverage2D)grid;
           if (coverage != null) {
             disposeCoverage=grid instanceof DisposableGridCoverage;
-            requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,(RasterSymbolizer)symbolizer,destinationCrs,worldToScreenTransform));
+            requests.put(new RenderRasterRequest(graphics,coverage,disposeCoverage,rs,destinationCrs,worldToScreenTransform));
             paintCommands++;
           }
         }
  else         if (grid instanceof GridCoverage2DReader) {
           final GeneralParameterValue[] params=(GeneralParameterValue[])paramsPropertyName.evaluate(drawMe.feature);
           GridCoverage2DReader reader=(GridCoverage2DReader)grid;
-          requests.put(new RenderCoverageReaderRequest(graphics,reader,params,(RasterSymbolizer)symbolizer,destinationCrs,worldToScreenTransform,getRenderingInterpolation(drawMe.layer)));
+          requests.put(new RenderCoverageReaderRequest(graphics,reader,params,rs,destinationCrs,worldToScreenTransform,getRenderingInterpolation(drawMe.layer)));
         }
       }
  catch (      IllegalArgumentException e) {

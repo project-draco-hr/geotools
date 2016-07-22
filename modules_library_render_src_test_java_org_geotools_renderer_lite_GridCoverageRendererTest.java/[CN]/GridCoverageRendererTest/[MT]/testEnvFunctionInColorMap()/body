@@ -1,0 +1,15 @@
+{
+  EnvFunction.setLocalValue("low","-0.001");
+  EnvFunction.setLocalValue("lowColor","#000000");
+  File coverageFile=TestData.copy(this,"geotiff/float64.tif");
+  assertTrue(coverageFile.exists());
+  GridCoverage2DReader reader=new GeoTiffReader(coverageFile);
+  Style style=RendererBaseTest.loadStyle(this,"float64.sld");
+  final MapContent mc=new MapContent();
+  mc.addLayer(new GridReaderLayer(reader,style));
+  StreamingRenderer renderer=new StreamingRenderer();
+  renderer.setMapContent(mc);
+  BufferedImage image=RendererBaseTest.renderImage(renderer,mc.getViewport().getBounds(),null,50,50);
+  File reference=new File("src/test/resources/org/geotools/renderer/lite/gridcoverage2d/flippedAffineParametric.png");
+  ImageAssert.assertEquals(reference,image,2);
+}
