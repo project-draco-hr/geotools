@@ -10,7 +10,18 @@
       throw new IOException("Can't open datastore config file " + dataStoreConfigUrl);
     }
  else {
-      configString=properties.interpolate(InterpolationProperties.readAll(configStream));
+      InterpolationProperties props=new InterpolationProperties();
+      props.putAll(properties);
+      File dataStoreConfigFile=DataUtilities.urlToFile(dataStoreConfigUrl);
+      if (dataStoreConfigFile != null) {
+        if (props.getProperty(CONFIG_FILE_PROPERTY) == null) {
+          props.setProperty(CONFIG_FILE_PROPERTY,dataStoreConfigFile.getPath());
+        }
+        if (props.getProperty(CONFIG_PARENT_PROPERTY) == null) {
+          props.setProperty(CONFIG_PARENT_PROPERTY,dataStoreConfigFile.getParent());
+        }
+      }
+      configString=props.interpolate(InterpolationProperties.readAll(configStream));
     }
   }
   finally {
