@@ -1,0 +1,19 @@
+{
+  Map<String,Parameter<?>> paramInfo=loadProcessInfo(processName(name));
+  if (paramInfo == null) {
+    throw new RuntimeException("Could not locate rendering transformation named " + name);
+  }
+  List<org.opengis.filter.expression.Expression> arguments=new ArrayList<>();
+  String inputLayerParameter=getInputLayerParameter(paramInfo);
+  if (inputLayerParameter != null && !parameters.containsKey(inputLayerParameter)) {
+    arguments.add(toParamFunction(inputLayerParameter,null));
+  }
+  for (  Map.Entry<String,Value> p : parameters.entrySet()) {
+    String key=p.getKey();
+    Value v=p.getValue();
+    org.opengis.filter.expression.Expression ex=toParamFunction(key,v);
+    arguments.add(ex);
+  }
+  org.opengis.filter.expression.Expression[] argsArray=toExpressionArray(arguments);
+  return FF.function(name,argsArray);
+}
