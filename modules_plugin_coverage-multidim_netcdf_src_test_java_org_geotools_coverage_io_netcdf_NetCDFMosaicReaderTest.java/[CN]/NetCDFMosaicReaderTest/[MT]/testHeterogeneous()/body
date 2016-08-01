@@ -1,0 +1,46 @@
+{
+  File nc1=TestData.file(this,"polyphemus_20130301_test.nc");
+  File mosaic=new File(TestData.file(this,"."),"nc_poly_hetero");
+  if (mosaic.exists()) {
+    FileUtils.deleteDirectory(mosaic);
+  }
+  assertTrue(mosaic.mkdirs());
+  FileUtils.copyFileToDirectory(nc1,mosaic);
+  String indexer="TimeAttribute=time\n" + "Schema=the_geom:Polygon,location:String,imageindex:Integer,time:java.util.Date\n";
+  FileUtils.writeStringToFile(new File(mosaic,"indexer.properties"),indexer);
+  File dsp=TestData.file(this,"datastore.properties");
+  FileUtils.copyFileToDirectory(dsp,mosaic);
+  ImageMosaicFormat format=new ImageMosaicFormat();
+  ImageMosaicReader reader=format.getReader(mosaic);
+  assertNotNull(reader);
+  reader.dispose();
+  Properties mosaicProps=new Properties();
+  File mosaicPropsFile=new File(mosaic,"O3.properties");
+  try (FileInputStream fis=new FileInputStream(mosaicPropsFile)){
+    mosaicProps.load(fis);
+  }
+   mosaicProps.put("Heterogeneous","true");
+  try (FileOutputStream fos=new FileOutputStream(mosaicPropsFile)){
+    mosaicProps.store(fos,"Now with hetero flag up");
+  }
+   String t1="2013-03-01T00:00:00.000Z";
+  String t2="2013-03-01T01:00:00.000Z";
+  reader=format.getReader(mosaic);
+  try {
+    final ParameterValue<Boolean> useJai=AbstractGridFormat.USE_JAI_IMAGEREAD.createValue();
+    useJai.setValue(false);
+    ParameterValue<List> time=ImageMosaicFormat.TIME.createValue();
+    time.setValue(Arrays.asList(parseTimeStamp(t1)));
+    GeneralParameterValue[] params=new GeneralParameterValue[]{useJai,time};
+    GridCoverage2D coverage1=reader.read(params);
+    time.setValue(Arrays.asList(parseTimeStamp(t2)));
+    GridCoverage2D coverage2=reader.read(params);
+    DirectPosition center=reader.getOriginalEnvelope().getMedian();
+    float[] v1=(float[])coverage1.evaluate(center);
+    float[] v2=(float[])coverage2.evaluate(center);
+    assertNotEquals(v1[0],v2[0],0f);
+  }
+  finally {
+    reader.dispose();
+  }
+}
