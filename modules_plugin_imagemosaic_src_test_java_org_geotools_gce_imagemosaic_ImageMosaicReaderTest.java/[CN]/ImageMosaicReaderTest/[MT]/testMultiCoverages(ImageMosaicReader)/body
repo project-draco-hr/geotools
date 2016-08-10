@@ -1,0 +1,20 @@
+{
+  String[] coverageNames=reader.getGridCoverageNames();
+  Arrays.sort(coverageNames);
+  assertNotNull(coverageNames);
+  int coverageCount=coverageNames.length;
+  assertEquals(2,coverageCount);
+  String[] expectedNames=new String[]{"gray","rgb"};
+  int[] expectedTypes=new int[]{ColorSpace.TYPE_GRAY,ColorSpace.TYPE_RGB};
+  for (int i=0; i < coverageCount; i++) {
+    String coverageName=coverageNames[i];
+    assertEquals(expectedNames[i],coverageName);
+    GridCoverage2D coverage=reader.read(coverageNames[i],null);
+    assertNotNull(coverage);
+    RenderedImage ri=coverage.getRenderedImage();
+    assertThat(ri.getSampleModel(),instanceOf(ComponentSampleModel.class));
+    ColorModel cm=ri.getColorModel();
+    assertThat(cm,instanceOf(ComponentColorModel.class));
+    assertEquals(expectedTypes[i],cm.getColorSpace().getType());
+  }
+}
