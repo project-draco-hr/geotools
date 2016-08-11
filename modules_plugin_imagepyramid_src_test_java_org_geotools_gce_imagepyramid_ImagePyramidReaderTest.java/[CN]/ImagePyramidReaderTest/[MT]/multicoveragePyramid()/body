@@ -1,0 +1,30 @@
+{
+  final URL testFile=TestData.getResource(this,"multipyramid");
+  File mosaicFolder=DataUtilities.urlToFile(testFile);
+  assertNotNull(testFile);
+  File[] pyramidLevels=mosaicFolder.listFiles((FileFilter)FileFilterUtils.directoryFileFilter());
+  for (  File pyramidLevel : pyramidLevels) {
+    cleanFiles(pyramidLevel);
+  }
+  cleanFiles(mosaicFolder);
+  final ImagePyramidReader reader=new ImagePyramidReader(testFile,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.FALSE));
+  assertNotNull(reader);
+  assertEquals(2,reader.getGridCoverageCount());
+  String coverageNames[]=reader.getGridCoverageNames();
+  Arrays.sort(coverageNames);
+  assertEquals("gray",coverageNames[0]);
+  assertEquals("rgb",coverageNames[1]);
+  GridCoverage2D coverage=(GridCoverage2D)reader.read(coverageNames[0],null);
+  assertNotNull(coverage);
+  RenderedImage renderedImage=coverage.getRenderedImage();
+  int colorSpaceType=renderedImage.getColorModel().getColorSpace().getType();
+  assertEquals(ColorSpace.TYPE_GRAY,colorSpaceType);
+  GridEnvelope gridEnvelope=coverage.getGridGeometry().getGridRange();
+  assertEquals(20,gridEnvelope.getSpan(0),DELTA);
+  assertEquals(20,gridEnvelope.getSpan(1),DELTA);
+  coverage=(GridCoverage2D)reader.read(coverageNames[1],null);
+  assertNotNull(coverage);
+  renderedImage=coverage.getRenderedImage();
+  colorSpaceType=renderedImage.getColorModel().getColorSpace().getType();
+  assertEquals(ColorSpace.TYPE_RGB,colorSpaceType);
+}

@@ -1,0 +1,25 @@
+{
+  final int count=reader.getGridCoverageCount();
+  double[][] resolutionLevels=null;
+  String referenceName=ImageMosaicReader.UNSPECIFIED;
+  try {
+    if (count > 1) {
+      for (      String coverageName : reader.getGridCoverageNames()) {
+        if (ImageMosaicReader.UNSPECIFIED.equalsIgnoreCase(referenceName)) {
+          referenceName=coverageName;
+          resolutionLevels=reader.getResolutionLevels(coverageName);
+          continue;
+        }
+        double compareLevels[][]=reader.getResolutionLevels(coverageName);
+        boolean homogeneous=org.geotools.gce.imagemosaic.Utils.homogeneousCheck(resolutionLevels.length,resolutionLevels,compareLevels);
+        if (!homogeneous) {
+          throw new IllegalArgumentException("Coverages need to have same levels structure");
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new IllegalArgumentException(e);
+  }
+  return referenceName;
+}
