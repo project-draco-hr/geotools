@@ -1,0 +1,13 @@
+{
+  run("CREATE TABLE multi( key1 INTEGER NOT NULL, key2 VARCHAR NOT NULL, name VARCHAR, PRIMARY KEY(key1,key2))");
+  run("ALTER TABLE multi add geom BLOB");
+  String sql="INSERT INTO gpkg_geometry_columns VALUES ('multi', 'geom', 'POINT', 4326, 0, 0)";
+  run(sql);
+  sql="INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES " + "('multi', 'features', 'multi', 4326)";
+  run(sql);
+  GeometryBuilder gb=new GeometryBuilder();
+  GeoPkgTestSetup setup=(GeoPkgTestSetup)delegate;
+  run("INSERT INTO multi VALUES (1, 'x', 'one', X'" + setup.toString(gb.point(1,1)) + "')");
+  run("INSERT INTO multi VALUES (2, 'y', 'two', X'" + setup.toString(gb.point(2,2)) + "')");
+  run("INSERT INTO multi VALUES (3, 'z', 'three', X'" + setup.toString(gb.point(4,4)) + "')");
+}
