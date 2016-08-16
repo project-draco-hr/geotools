@@ -1,3 +1,16 @@
 {
-  return FESParseEncodeUtil.getProperty((BinarySpatialOperator)object,name);
+  Expression e=FESParseEncodeUtil.getProperty((BinarySpatialOperator)object,name);
+  if (e instanceof Literal && ((Literal)e).getValue() instanceof Geometry) {
+    return new EncoderDelegate(){
+      @Override public void encode(      ContentHandler output) throws Exception {
+        Encoder encoder=new Encoder(new org.geotools.gml3.v3_2.GMLConfiguration());
+        encoder.setInline(true);
+        encoder.encode(((Literal)e).getValue(),org.geotools.gml3.v3_2.GML.AbstractGeometry,output);
+      }
+    }
+;
+  }
+ else {
+    return e;
+  }
 }
