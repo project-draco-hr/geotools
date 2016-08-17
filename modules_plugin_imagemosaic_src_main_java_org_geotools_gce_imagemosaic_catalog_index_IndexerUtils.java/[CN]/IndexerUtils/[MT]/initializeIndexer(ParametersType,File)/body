@@ -1,0 +1,26 @@
+{
+  File indexerFile=new File(parent,INDEXER_XML);
+  Indexer indexer=null;
+  if (Utils.checkFileReadable(indexerFile)) {
+    try {
+      indexer=Utils.unmarshal(indexerFile);
+      if (indexer != null) {
+        copyDefaultParams(params,indexer);
+      }
+    }
+ catch (    JAXBException e) {
+      LOGGER.log(Level.WARNING,e.getMessage(),e);
+    }
+  }
+ else {
+    indexerFile=new File(parent,INDEXER_PROPERTIES);
+    if (Utils.checkFileReadable(indexerFile)) {
+      final Properties props=CoverageUtilities.loadPropertiesFromURL(DataUtilities.fileToURL(indexerFile));
+      indexer=createIndexer(props,params);
+    }
+  }
+  if (indexer != null) {
+    indexer.setIndexerFile(indexerFile);
+  }
+  return indexer;
+}

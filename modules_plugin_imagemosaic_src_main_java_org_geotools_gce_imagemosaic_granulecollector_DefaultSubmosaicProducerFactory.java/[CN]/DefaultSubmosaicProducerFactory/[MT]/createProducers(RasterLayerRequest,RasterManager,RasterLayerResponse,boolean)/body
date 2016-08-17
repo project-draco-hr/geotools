@@ -1,0 +1,39 @@
+{
+  List<SubmosaicProducer> defaultSubmosaicProducers=new ArrayList<>();
+  MergeBehavior mergeBehavior=request.getMergeBehavior();
+  if (mergeBehavior.equals(MergeBehavior.STACK)) {
+    final Map<String,List> requestedAdditionalDomains=request.getRequestedAdditionalDomains();
+    if (!requestedAdditionalDomains.isEmpty()) {
+      Set<Map.Entry<String,List>> entries=requestedAdditionalDomains.entrySet();
+      checkMultipleSelection(entries);
+      Map.Entry<String,List> multipleSelectionEntry=null;
+      final List<Filter> filters=new ArrayList<Filter>(entries.size());
+      for (      Map.Entry<String,List> entry : entries) {
+        if (entry.getValue().size() > 1) {
+          multipleSelectionEntry=entry;
+        }
+ else {
+          String domainName=entry.getKey() + RasterManager.DomainDescriptor.DOMAIN_SUFFIX;
+          filters.add(rasterManager.getDomainsManager().createFilter(domainName,Arrays.asList(entry.getValue())));
+        }
+      }
+      Filter andFilter=filters.size() > 0 ? FeatureUtilities.DEFAULT_FILTER_FACTORY.and(filters) : null;
+      if (multipleSelectionEntry == null) {
+        defaultSubmosaicProducers.add(new DefaultSubmosaicProducer(response,andFilter,dryRun));
+      }
+ else {
+        final String domainName=multipleSelectionEntry.getKey() + RasterManager.DomainDescriptor.DOMAIN_SUFFIX;
+        final List values=multipleSelectionEntry.getValue();
+        for (        Object o : values) {
+          Filter valueFilter=rasterManager.getDomainsManager().createFilter(domainName,Arrays.asList(o));
+          Filter combinedFilter=andFilter == null ? valueFilter : FeatureUtilities.DEFAULT_FILTER_FACTORY.and(andFilter,valueFilter);
+          defaultSubmosaicProducers.add(new DefaultSubmosaicProducer(response,combinedFilter,dryRun));
+        }
+      }
+    }
+  }
+  if (defaultSubmosaicProducers.isEmpty()) {
+    defaultSubmosaicProducers.add(new DefaultSubmosaicProducer(response,Filter.INCLUDE,dryRun));
+  }
+  return defaultSubmosaicProducers;
+}
