@@ -1,0 +1,22 @@
+{
+  Font font=FontCache.getDefaultInstance().getFont(fontFamilyName);
+  if (font == null) {
+    throw new IllegalArgumentException("Unknown font " + fontFamilyName);
+  }
+  if (!font.canDisplay(character)) {
+    char alternative=(char)(0xF000 | character);
+    if (font.canDisplay(alternative)) {
+      character=alternative;
+    }
+  }
+  GlyphVector textGlyphVector=font.createGlyphVector(FONT_RENDER_CONTEXT,new char[]{(char)character});
+  Shape s=textGlyphVector.getOutline();
+  Rectangle2D bounds=s.getBounds2D();
+  AffineTransform tx=new AffineTransform();
+  double max=Math.max(bounds.getWidth(),bounds.getHeight());
+  tx.scale(1 / max,-1 / max);
+  tx.translate(-bounds.getCenterX(),-bounds.getCenterY());
+  ExplicitBoundsShape shape=new ExplicitBoundsShape(tx.createTransformedShape(s));
+  shape.setBounds(new Rectangle2D.Double(-0.5,0.5,1.0,1.0));
+  return shape;
+}
