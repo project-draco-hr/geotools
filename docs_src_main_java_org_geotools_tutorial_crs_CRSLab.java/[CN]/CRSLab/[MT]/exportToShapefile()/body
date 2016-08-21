@@ -26,9 +26,7 @@
   dataStore.createSchema(featureType);
   String createdName=dataStore.getTypeNames()[0];
   Transaction transaction=new DefaultTransaction("Reproject");
-  FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriterAppend(createdName,transaction);
-  SimpleFeatureIterator iterator=featureCollection.features();
-  try {
+  try (FeatureWriter<SimpleFeatureType,SimpleFeature> writer=dataStore.getFeatureWriterAppend(createdName,transaction);SimpleFeatureIterator iterator=featureCollection.features()){
     while (iterator.hasNext()) {
       SimpleFeature feature=iterator.next();
       SimpleFeature copy=writer.next();
@@ -47,8 +45,6 @@
     JOptionPane.showMessageDialog(null,"Export to shapefile failed");
   }
  finally {
-    writer.close();
-    iterator.close();
     transaction.close();
   }
 }
