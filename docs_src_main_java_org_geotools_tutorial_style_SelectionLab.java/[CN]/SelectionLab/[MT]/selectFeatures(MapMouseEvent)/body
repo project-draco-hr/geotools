@@ -8,25 +8,20 @@
   Filter filter=ff.intersects(ff.property(geometryAttributeName),ff.literal(bbox));
   try {
     SimpleFeatureCollection selectedFeatures=featureSource.getFeatures(filter);
-    SimpleFeatureIterator iter=selectedFeatures.features();
-    Set<FeatureId> IDs=new HashSet<FeatureId>();
-    try {
+    Set<FeatureId> IDs=new HashSet<>();
+    try (SimpleFeatureIterator iter=selectedFeatures.features()){
       while (iter.hasNext()) {
         SimpleFeature feature=iter.next();
         IDs.add(feature.getIdentifier());
         System.out.println("   " + feature.getIdentifier());
       }
     }
-  finally {
-      iter.close();
-    }
-    if (IDs.isEmpty()) {
+     if (IDs.isEmpty()) {
       System.out.println("   no feature selected");
     }
     displaySelectedFeatures(IDs);
   }
  catch (  Exception ex) {
     ex.printStackTrace();
-    return;
   }
 }
