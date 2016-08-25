@@ -1,0 +1,18 @@
+{
+  File testFolder=redFootprintFolder.newFolder();
+  File mosaic=TestData.file(this,"red_footprint_test");
+  FileUtils.copyDirectory(mosaic,testFolder);
+  ImageMosaicReader reader=(ImageMosaicReader)new ImageMosaicFormatFactory().createFormat().getReader(testFolder);
+  ParameterValue<String> footprintBehaviorParam=AbstractGridFormat.FOOTPRINT_BEHAVIOR.createValue();
+  footprintBehaviorParam.setValue(FootprintBehavior.Transparent.name());
+  ParameterValue<GridGeometry2D> readGeom=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+  CoordinateReferenceSystem coordinateReferenceSystem=reader.getOriginalEnvelope().getCoordinateReferenceSystem();
+  GridEnvelope2D gridRange=new GridEnvelope2D(0,0,100,100);
+  Envelope requestEnvelope=new ReferencedEnvelope(989964.5828856088,990881.0173239836,218260.08651691137,219176.52095528613,coordinateReferenceSystem);
+  GridGeometry2D readGeometry=new GridGeometry2D(gridRange,requestEnvelope);
+  readGeom.setValue(readGeometry);
+  GeneralParameterValue[] readParams=new GeneralParameterValue[]{footprintBehaviorParam,readGeom};
+  GridCoverage2D coverage=reader.read(readParams);
+  int numComponents=coverage.getRenderedImage().getColorModel().getNumComponents();
+  assertEquals(numComponents,4);
+}
