@@ -6,10 +6,14 @@
   Hints creationHints=new Hints();
   ImageMosaicReader imReader=new ImageMosaicReader(testDirectory,creationHints);
   Assert.assertNotNull(imReader);
+  Collection<GeneralParameterValue> finalParamsCollection=new ArrayList<>(Arrays.asList(params));
   ParameterValue<String> sortByParam=ImageMosaicFormat.SORT_BY.createValue();
   sortByParam.setValue(sortOrder);
-  GridCoverage2D gc2d=imReader.read(new GeneralParameterValue[]{sortByParam});
-  RenderedImage renderImage=gc2d.getRenderedImage();
-  File resultsFile=org.geotools.TestData.file(this,resultLocation);
-  ImageAssert.assertEquals(resultsFile,renderImage,1000);
+  finalParamsCollection.add(sortByParam);
+  GridCoverage2D gc2d=imReader.read(finalParamsCollection.toArray(new GeneralParameterValue[]{}));
+  if (resultLocation != null) {
+    RenderedImage renderImage=gc2d.getRenderedImage();
+    File resultsFile=org.geotools.TestData.file(this,resultLocation);
+    ImageAssert.assertEquals(resultsFile,renderImage,1000);
+  }
 }
