@@ -1,0 +1,57 @@
+{
+  MultiPolygon multiPolygon;
+  if (polygon instanceof Polygon) {
+    multiPolygon=GB.multiPolygon((Polygon)polygon);
+  }
+ else   if (polygon instanceof MultiPolygon) {
+    multiPolygon=(MultiPolygon)polygon;
+  }
+ else {
+    throw new IllegalStateException("Input polygon must be a Polygon or MultiPolygon");
+  }
+  if (polygon.isEmpty() || polygon.getArea() <= 0.0) {
+    throw new IllegalStateException("Can not label empty geometries");
+  }
+  if (!polygon.isValid()) {
+    throw new IllegalStateException("Can not label invalid geometries");
+  }
+  double minX, minY, maxX, maxY;
+  Envelope env=multiPolygon.getEnvelopeInternal();
+  minX=env.getMinX();
+  maxX=env.getMaxX();
+  minY=env.getMinY();
+  maxY=env.getMaxY();
+  double width=env.getWidth();
+  double height=env.getHeight();
+  double cellSize=Math.min(width,height);
+  double h=cellSize / 2.0;
+  PriorityQueue<Cell> cellQueue=new PriorityQueue<>();
+  for (double x=minX; x < maxX; x+=cellSize) {
+    for (double y=minY; y < maxY; y+=cellSize) {
+      cellQueue.add(new Cell(x + h,y + h,h,multiPolygon));
+    }
+  }
+  Cell bestCell=getCentroidCell(multiPolygon);
+  int numProbes=cellQueue.size();
+  while (!cellQueue.isEmpty()) {
+    Cell cell=cellQueue.remove();
+    if (cell.getD() > bestCell.getD()) {
+      bestCell=cell;
+      if (LOGGER.isLoggable(Level.FINER)) {
+        LOGGER.finer("found best " + (Math.round(1e4 * cell.getD()) / 1e4) + " after "+ numProbes+ " probes");
+      }
+    }
+    if (cell.getMax() - bestCell.getD() <= precision)     continue;
+    h=cell.getH() / 2;
+    cellQueue.add(new Cell(cell.getX() - h,cell.getY() - h,h,multiPolygon));
+    cellQueue.add(new Cell(cell.getX() + h,cell.getY() - h,h,multiPolygon));
+    cellQueue.add(new Cell(cell.getX() - h,cell.getY() + h,h,multiPolygon));
+    cellQueue.add(new Cell(cell.getX() + h,cell.getY() + h,h,multiPolygon));
+    numProbes+=4;
+  }
+  if (LOGGER.isLoggable(Level.FINER)) {
+    LOGGER.finer("num probes: " + numProbes);
+    LOGGER.finer("best distance: " + bestCell.getD());
+  }
+  return bestCell.getPoint();
+}
