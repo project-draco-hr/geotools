@@ -1,0 +1,31 @@
+{
+  GeometryBuilder geomBuilder=new GeometryBuilder();
+  MultiPolygon multiPolygon=geomBuilder.multiPolygon(geomBuilder.polygon(0,0,0,1,1,1,0,0));
+  GMLComplexType instance=GMLComplexTypes.AbstractFeatureType.getInstance();
+  SimpleFeatureTypeBuilder typeBuilder=new SimpleFeatureTypeBuilder();
+  typeBuilder.setName("person");
+  typeBuilder.add("mpolygon",MultiPolygon.class);
+  typeBuilder.add("name",MultiPolygon.class);
+  SimpleFeatureType type=typeBuilder.buildFeatureType();
+  SimpleFeatureBuilder featureBuilder=new SimpleFeatureBuilder(type);
+  SimpleFeature lFeature=featureBuilder.buildFeature(null);
+  Element element=mock(Element.class);
+  Element element_mpolygon=mock(Element.class);
+  Element element_name=mock(Element.class);
+  when(element.getType()).thenReturn(GMLComplexTypes.AbstractFeatureType.getInstance());
+  when(element.findChildElement(eq("mpolygon"))).thenReturn(element_mpolygon);
+  when(element.findChildElement(eq("name"))).thenReturn(element_name);
+  when(element_mpolygon.getType()).thenReturn(GMLComplexTypes.MultiPolygonPropertyType.getInstance());
+  when(element_name.getType()).thenReturn(XSISimpleTypes.String.getInstance());
+  Map<?,?> hints=new HashedMap();
+  PrintHandler printHandler=mock(PrintHandler.class);
+  instance.encode(element,lFeature,printHandler,hints);
+  verify(printHandler,Mockito.times(2)).startElement(any(),any(),any());
+  verify(printHandler,Mockito.times(2)).endElement(any(),any());
+  lFeature.setAttribute("name","Pink Panther");
+  lFeature.setAttribute("mpolygon",multiPolygon);
+  printHandler=mock(PrintHandler.class);
+  instance.encode(element,lFeature,printHandler,hints);
+  verify(printHandler,Mockito.times(9)).startElement(any(),any(),any());
+  verify(printHandler,Mockito.times(9)).endElement(any(),any());
+}
