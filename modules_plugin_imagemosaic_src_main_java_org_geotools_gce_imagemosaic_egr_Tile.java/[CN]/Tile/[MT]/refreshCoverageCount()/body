@@ -1,0 +1,39 @@
+{
+  if (raster == null) {
+    throw new IllegalStateException("Raster not initialized");
+  }
+  long cnt=0;
+  raster.getSampleModel();
+  int scanlineStride=((MultiPixelPackedSampleModel)raster.getSampleModel()).getScanlineStride();
+  DataBufferByte data=(DataBufferByte)raster.getDataBuffer();
+  byte[] bytes=data.getData();
+  int pos=0;
+  for (int row=0; row < tileHeight; row++) {
+    if (rowFull.get(row)) {
+      cnt+=tileWidth;
+      pos+=scanlineStride;
+    }
+ else {
+      int rowCnt=0;
+      for (int col=0; col < scanlineStride; col++) {
+        byte b=bytes[pos++];
+        int count=Integer.bitCount(0xFF & b);
+        rowCnt+=count;
+      }
+      cnt+=rowCnt;
+      if (rowCnt >= tileWidth) {
+        rowFull.set(row);
+      }
+    }
+  }
+  if (coverageCount == cnt) {
+    return false;
+  }
+ else {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.fine("Updating count for " + this + " to "+ cnt);
+    }
+    coverageCount=cnt;
+    return true;
+  }
+}

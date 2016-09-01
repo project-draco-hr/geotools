@@ -1,0 +1,26 @@
+{
+  CoordinateReferenceSystem granuleCRS=result.getGranuleDescriptor().getGranuleEnvelope().getCoordinateReferenceSystem();
+  if (granuleCRS != null && targetCRS != null && !CRS.equalsIgnoreMetadata(granuleCRS,targetCRS)) {
+    throw new UnsupportedOperationException("Excess granule removal not yet supported with heterogeneous CRS");
+  }
+  if (binarizator != null && binarizator.isComplete()) {
+    return false;
+  }
+  ROI roi=result.getFootprint();
+  if (roi == null) {
+    final RenderedImage raster=result.getRaster();
+    Rectangle bounds=new Rectangle(raster.getMinX(),raster.getMinY(),raster.getWidth(),raster.getHeight());
+    roi=new ROIShape(bounds);
+  }
+  boolean essential;
+  if (!roi.getBounds().intersects(rasterBounds)) {
+    essential=false;
+  }
+ else {
+    if (binarizator == null) {
+      binarizator=new Binarizator(JTS.toPolygon(rasterBounds),rasterBounds.width,rasterBounds.height,tileWidth,tileHeight);
+    }
+    essential=binarizator.add(roi);
+  }
+  return essential;
+}

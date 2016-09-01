@@ -23,6 +23,17 @@
         }
         continue;
       }
+      if (isMultithreadedLoadingEnabled()) {
+        ROIExcessGranuleRemover remover=rasterLayerResponse.getExcessGranuleRemover();
+        if (remover != null) {
+          if (remover.isRenderingAreaComplete()) {
+            break;
+          }
+          if (!remover.addGranule(result)) {
+            continue;
+          }
+        }
+      }
       if (sourceThreshold == null) {
         final ColorModel cm=loadedImage.getColorModel();
         hasAlpha=cm.hasAlpha();
@@ -50,8 +61,8 @@
       }
       throw new IOException(e);
     }
-    rasterLayerResponse.setGranulesPaths(paths.length() > 1 ? paths.substring(0,paths.length() - 1) : "");
   }
+  rasterLayerResponse.setGranulesPaths(paths.length() > 1 ? paths.substring(0,paths.length() - 1) : "");
   if (returnValues == null || returnValues.isEmpty()) {
     if (LOGGER.isLoggable(Level.INFO)) {
       LOGGER.info("The MosaicElement list is null or empty");

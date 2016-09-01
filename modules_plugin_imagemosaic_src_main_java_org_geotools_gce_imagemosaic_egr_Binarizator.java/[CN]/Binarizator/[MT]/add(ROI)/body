@@ -1,0 +1,36 @@
+{
+  if (roi instanceof ROIGeometry) {
+    Geometry geometry=((ROIGeometry)roi).getAsGeometry();
+    return add(geometry);
+  }
+ else   if (roi instanceof ROIShape) {
+    Shape shape=((ROIShape)roi).getAsShape();
+    Geometry geometry=JTS.toGeometry(shape);
+    return add(geometry);
+  }
+  final PlanarImage roiImage=roi.getAsImage();
+  final Rectangle roiBounds=roiImage.getBounds();
+  boolean added=false;
+  for (Iterator<Tile> it=activeTiles.iterator(); it.hasNext(); ) {
+    Tile tile=it.next();
+    Rectangle tileBounds=tile.getTileArea();
+    if (tileBounds.intersects(roiBounds)) {
+      if (tile.draw(roiImage)) {
+        added=true;
+        if (tile.isFullyCovered()) {
+          if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("Removing covered tile " + tile + " ("+ activeTiles.size()+ " left)");
+          }
+          it.remove();
+          tile.dispose();
+        }
+      }
+    }
+ else {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Skipping tile " + tile);
+      }
+    }
+  }
+  return added;
+}
