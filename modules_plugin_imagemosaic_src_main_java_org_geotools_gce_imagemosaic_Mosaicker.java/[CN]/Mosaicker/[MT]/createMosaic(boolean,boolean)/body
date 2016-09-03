@@ -1,0 +1,87 @@
+{
+  final int size=inputs.size();
+  if (size <= 0) {
+    if (LOGGER.isLoggable(Level.FINE)) {
+      LOGGER.log(Level.FINE,"Unable to load any granuleDescriptor ");
+    }
+    return null;
+  }
+  final RenderingHints localHints=prepareHints(useFinalImageLayout);
+  if (!skipSingleElementOptimization && size == 1 && Utils.OPTIMIZE_CROP) {
+    MosaicElement in=inputs.get(0);
+    if (in == null) {
+      throw new NullPointerException("The list of MosaicElements contains one element but it's null");
+    }
+    PAMDataset pamDataset=in.pamDataset;
+    ROI roi=in.roi;
+    if (roi != null) {
+      Rectangle bounds=Utils.toRectangle(roi.getAsShape());
+      if (bounds != null) {
+        RenderedImage mosaic=in.source;
+        Rectangle imageBounds=PlanarImage.wrapRenderedImage(mosaic).getBounds();
+        if (imageBounds.equals(bounds)) {
+          if (!rasterLayerResponse.getRasterBounds().contains(imageBounds)) {
+            XRectangle2D.intersect(imageBounds,rasterLayerResponse.getRasterBounds(),imageBounds);
+            if (imageBounds.isEmpty()) {
+              return null;
+            }
+            ImageWorker iw=new ImageWorker(mosaic);
+            iw.setRenderingHints(localHints);
+            iw.crop(imageBounds.x,imageBounds.y,imageBounds.width,imageBounds.height);
+            mosaic=iw.getRenderedImage();
+            PlanarImage t=PlanarImage.wrapRenderedImage(mosaic);
+            if (iw.getNoData() != null) {
+              t.setProperty(NoDataContainer.GC_NODATA,new NoDataContainer(iw.getNoData()));
+              mosaic=t;
+            }
+            imageBounds=t.getBounds();
+          }
+          if (!imageBounds.contains(rasterLayerResponse.getRasterBounds())) {
+            mosaic=MergeBehavior.FLAT.process(new RenderedImage[]{mosaic},rasterLayerResponse.getBackgroundValues(),sourceThreshold,(hasAlpha || doInputTransparency) ? new PlanarImage[]{in.alphaChannel} : new PlanarImage[]{null},new ROI[]{in.roi},rasterLayerResponse.getRequest().isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,localHints);
+            roi=roi.add(new ROIGeometry(JTS.toGeometry(new ReferencedEnvelope(rasterLayerResponse.getRasterBounds(),null))));
+            if (rasterLayerResponse.getFootprintBehavior() != FootprintBehavior.None) {
+              RenderedOp rop=(RenderedOp)mosaic;
+              rop.setProperty("ROI",in.roi);
+            }
+          }
+          return new MosaicElement(in.alphaChannel,roi,mosaic,pamDataset);
+        }
+      }
+    }
+  }
+  final RenderedImage[] sources=new RenderedImage[size];
+  final PlanarImage[] alphas=new PlanarImage[size];
+  ROI[] rois=new ROI[size];
+  final PAMDataset[] pams=new PAMDataset[size];
+  int realROIs=0;
+  for (int i=0; i < size; i++) {
+    final MosaicElement mosaicElement=inputs.get(i);
+    sources[i]=mosaicElement.source;
+    alphas[i]=mosaicElement.alphaChannel;
+    rois[i]=mosaicElement.roi;
+    pams[i]=mosaicElement.pamDataset;
+    if (alphas[i] != null && rois[i] != null) {
+      ImageWorker roi=new ImageWorker(rois[i].getAsImage());
+      roi.forceComponentColorModel();
+      ImageWorker alpha=new ImageWorker(alphas[i]);
+      alpha.multiply(roi.getRenderedImage());
+      alphas[i]=alpha.getPlanarImage();
+    }
+    if (mosaicElement.roi != null) {
+      realROIs++;
+    }
+  }
+  if (realROIs == 0) {
+    rois=null;
+  }
+  final RenderedImage mosaic=mergeBehavior.process(sources,rasterLayerResponse.getBackgroundValues(),sourceThreshold,(hasAlpha || doInputTransparency) ? alphas : null,rois,rasterLayerResponse.getRequest().isBlend() ? MosaicDescriptor.MOSAIC_TYPE_BLEND : MosaicDescriptor.MOSAIC_TYPE_OVERLAY,localHints);
+  Object property=mosaic.getProperty("ROI");
+  ROI overallROI=(property instanceof ROI) ? (ROI)property : null;
+  final RenderedImage postProcessed=rasterLayerResponse.getFootprintBehavior().postProcessMosaic(mosaic,overallROI,localHints);
+  if (hasAlpha || doInputTransparency) {
+    return new MosaicElement(new ImageWorker(postProcessed).retainLastBand().getPlanarImage(),overallROI,postProcessed,Utils.mergePamDatasets(pams));
+  }
+ else {
+    return new MosaicElement(null,overallROI,postProcessed,Utils.mergePamDatasets(pams));
+  }
+}

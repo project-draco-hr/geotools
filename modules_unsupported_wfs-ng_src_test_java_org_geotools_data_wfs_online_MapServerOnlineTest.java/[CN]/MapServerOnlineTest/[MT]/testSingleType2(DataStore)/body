@@ -1,0 +1,35 @@
+{
+  if (url_100 == null)   return;
+  String typeName="ms_rt_cartoteca.ctr10k.dxf";
+  SimpleFeatureType type=wfs.getSchema(typeName);
+  type.getTypeName();
+  type.getName().getNamespaceURI();
+  assertEquals(typeName,type.getName().getLocalPart());
+  SimpleFeatureSource source=wfs.getFeatureSource(typeName);
+  source.getBounds();
+  SimpleFeatureCollection features=source.getFeatures();
+  features.getBounds();
+  features.getSchema();
+  GeometryDescriptor geometryDesc=wfs.getSchema(typeName).getGeometryDescriptor();
+  CoordinateReferenceSystem crs=geometryDesc.getCoordinateReferenceSystem();
+  ReferencedEnvelope env=new ReferencedEnvelope(4773438.659659,648995.437355,4773439.659659001,648996.437355001,crs);
+  FilterFactory2 ff=CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+  Filter filter=ff.bbox(ff.property("Geometry"),env);
+  Query query=new Query();
+  query.setTypeName(typeName);
+  query.setFilter(filter);
+  query.setPropertyNames(new String[]{"codice","nome"});
+  features=source.getFeatures(query);
+  int size=features.size();
+  assertEquals(308,size);
+  SimpleFeatureIterator iterator=features.features();
+  try {
+    while (iterator.hasNext()) {
+      SimpleFeature feature=iterator.next();
+      System.out.println(feature.getID());
+    }
+  }
+  finally {
+    iterator.close();
+  }
+}

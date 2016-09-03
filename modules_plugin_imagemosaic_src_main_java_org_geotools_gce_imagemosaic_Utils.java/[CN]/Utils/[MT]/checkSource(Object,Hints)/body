@@ -1,34 +1,7 @@
 {
-  URL sourceURL=null;
-  File sourceFile=null;
-  if (source instanceof File) {
-    sourceFile=(File)source;
-    sourceURL=DataUtilities.fileToURL(sourceFile);
-  }
- else   if (source instanceof URL) {
-    sourceURL=(URL)source;
-    if (sourceURL.getProtocol().equals("file")) {
-      sourceFile=DataUtilities.urlToFile(sourceURL);
-    }
-  }
- else   if (source instanceof String) {
-    final String tempSource=(String)source;
-    File tempFile=new File(tempSource);
-    if (!tempFile.exists()) {
-      try {
-        sourceURL=new URL(tempSource);
-        source=DataUtilities.urlToFile(sourceURL);
-      }
- catch (      MalformedURLException e) {
-        sourceURL=null;
-        source=null;
-      }
-    }
- else {
-      sourceURL=DataUtilities.fileToURL(tempFile);
-      sourceFile=tempFile;
-    }
-  }
+  SourceGetter sourceGetter=new SourceGetter(source);
+  URL sourceURL=sourceGetter.getUrl();
+  File sourceFile=sourceGetter.getFile();
   if (sourceFile != null) {
     if (!sourceFile.isDirectory())     sourceURL=DataUtilities.fileToURL(sourceFile);
  else {
@@ -42,7 +15,7 @@
         datastoreFound=true;
         boolean found=false;
         for (        File propFile : properties)         if (Utils.checkFileReadable(propFile)) {
-          if (null != Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),Utils.DEFAULT_LOCATION_ATTRIBUTE)) {
+          if (null != Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile))) {
             found=true;
             break;
           }
@@ -56,7 +29,7 @@
       File shapeFile=null;
       if (!datastoreFound) {
         for (        File propFile : properties) {
-          if (null == Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile),Utils.DEFAULT_LOCATION_ATTRIBUTE))           continue;
+          if (null == Utils.loadMosaicProperties(DataUtilities.fileToURL(propFile)))           continue;
           shapeFile=new File(locationPath,FilenameUtils.getBaseName(propFile.getName()) + ".shp");
           if (!Utils.checkFileReadable(shapeFile) && Utils.checkFileReadable(propFile))           buildMosaic=true;
  else {

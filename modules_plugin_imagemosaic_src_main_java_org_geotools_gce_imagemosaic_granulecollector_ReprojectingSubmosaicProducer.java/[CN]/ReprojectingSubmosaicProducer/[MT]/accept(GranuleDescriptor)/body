@@ -1,0 +1,17 @@
+{
+  if (this.currentCRS == null) {
+    this.currentCRS=granuleDescriptor.getGranuleEnvelope().getCoordinateReferenceSystem();
+    this.currentSubmosaicProducer=new CRSBoundMosaicProducer(rasterLayerResponse,dryRun,currentCRS,granuleDescriptor);
+    perMosaicProducers.add(currentSubmosaicProducer);
+    return true;
+  }
+ else {
+    boolean accepted=currentSubmosaicProducer.accept(granuleDescriptor);
+    if (!accepted) {
+      this.currentSubmosaicProducer=new CRSBoundMosaicProducer(rasterLayerResponse,dryRun,currentCRS,granuleDescriptor);
+      perMosaicProducers.add(currentSubmosaicProducer);
+      accepted=currentSubmosaicProducer.acceptGranule(granuleDescriptor);
+    }
+    return accepted;
+  }
+}
