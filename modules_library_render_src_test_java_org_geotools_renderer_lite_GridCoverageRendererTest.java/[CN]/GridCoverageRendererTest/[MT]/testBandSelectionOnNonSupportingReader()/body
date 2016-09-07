@@ -1,0 +1,31 @@
+{
+  BufferedImage bi=new BufferedImage(100,100,BufferedImage.TYPE_INT_RGB);
+  Graphics2D graphics=bi.createGraphics();
+  graphics.setColor(Color.BLUE);
+  graphics.fillRect(0,0,bi.getWidth(),bi.getHeight());
+  graphics.dispose();
+  CoordinateReferenceSystem nativeCrs=CRS.decode("EPSG:4326",true);
+  ReferencedEnvelope mapExtent=new ReferencedEnvelope(0,90,0,90,nativeCrs);
+  GridCoverage2D coverage=CoverageFactoryFinder.getGridCoverageFactory(null).create("test",bi,new ReferencedEnvelope(0,90,0,90,nativeCrs));
+  assertEquals(coverage.getNumSampleDimensions(),3);
+  File coverageFile=new File("./target/blue.tiff");
+  GeoTiffWriter writer=new GeoTiffWriter(coverageFile);
+  final GeoTiffFormat format=new GeoTiffFormat();
+  final GeoTiffWriteParams wp=new GeoTiffWriteParams();
+  wp.setCompressionMode(GeoTiffWriteParams.MODE_EXPLICIT);
+  wp.setCompressionType("LZW");
+  wp.setCompressionQuality(0.75F);
+  final ParameterValueGroup params=format.getWriteParameters();
+  List<GeneralParameterValue> paramsValues=params.values();
+  writer.write(coverage,params.values().toArray(new GeneralParameterValue[paramsValues.size()]));
+  assertTrue(coverageFile.exists());
+  GridCoverage2DReader reader=new GeoTiffReader(coverageFile);
+  ParameterValue<int[]> bandSelectionParam=AbstractGridFormat.BANDS.createValue();
+  bandSelectionParam.setValue(new int[]{3,2,1});
+  GridCoverage nCoverage=reader.read(new GeneralParameterValue[]{bandSelectionParam});
+  StyleBuilder sb=new StyleBuilder();
+  RasterSymbolizer symbolizer=sb.createRasterSymbolizer();
+  GridCoverageRenderer renderer=new GridCoverageRenderer(nativeCrs,mapExtent,new Rectangle(0,0,100,100),null);
+  RenderedImage image=renderer.renderImage(coverage,symbolizer,null);
+  ImageAssert.assertEquals(coverageFile,image,0);
+}

@@ -7,7 +7,12 @@
   }
   if (LOGGER.isLoggable(Level.FINE))   LOGGER.fine(new StringBuilder("Drawing reader ").append(gridCoverageReader.toString()).toString());
   setupInterpolationHints(interpolation);
-  RenderedImage finalImage=renderImage(gridCoverageReader,readParams,symbolizer,interpolation,background);
+  RasterSymbolizer finalSymbolizer=symbolizer;
+  if (isBandsSelectionApplicable(gridCoverageReader,symbolizer)) {
+    applyBandsSelectionParameter(gridCoverageReader,readParams,symbolizer);
+    finalSymbolizer=setupSymbolizerForBandsSelection(symbolizer);
+  }
+  RenderedImage finalImage=renderImage(gridCoverageReader,readParams,finalSymbolizer,interpolation,background);
   if (finalImage != null) {
     try {
       paintImage(graphics,finalImage);
