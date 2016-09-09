@@ -1,0 +1,18 @@
+{
+  uri=new URI("http://geotools.org");
+  hints=new HashMap<String,String>();
+  MockitoAnnotations.initMocks(this);
+  PowerMockito.mockStatic(SAXParserFactory.class);
+  PowerMockito.when(SAXParserFactory.newInstance()).thenReturn(mockSaxParserFactory);
+  when(mockSaxParserFactory.newSAXParser()).thenReturn(mockSaxParser);
+  Answer<Void> startDocumentAnswer=new Answer<Void>(){
+    @Override public Void answer(    InvocationOnMock invocationOnMock) throws Throwable {
+      XMLSAXHandler xmlSaxHandler=(XMLSAXHandler)invocationOnMock.getArguments()[1];
+      xmlSaxHandler.startDocument();
+      return null;
+    }
+  }
+;
+  doAnswer(startDocumentAnswer).when(mockSaxParser).parse(anyString(),any(XMLSAXHandler.class));
+  doAnswer(startDocumentAnswer).when(mockSaxParser).parse(any(InputStream.class),any(XMLSAXHandler.class));
+}
