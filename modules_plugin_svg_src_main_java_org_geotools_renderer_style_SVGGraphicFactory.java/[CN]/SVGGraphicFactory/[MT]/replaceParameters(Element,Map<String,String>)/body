@@ -1,0 +1,33 @@
+{
+  if (root.hasChildNodes()) {
+    NodeList childNodes=root.getChildNodes();
+    for (int i=0; i < childNodes.getLength(); i++) {
+      Node n=childNodes.item(i);
+      if (n != null && n instanceof Element) {
+        replaceParameters((Element)n,parameters);
+      }
+    }
+  }
+  NamedNodeMap attributes=root.getAttributes();
+  for (int i=0; i < attributes.getLength(); i++) {
+    Node attribute=attributes.item(i);
+    if ("style".equalsIgnoreCase(attribute.getNodeName())) {
+      String[] keyValues=attribute.getNodeValue().split("\\s*;\\s*");
+      StringBuilder newAttribute=new StringBuilder();
+      for (      String keyValue : keyValues) {
+        String[] kv=keyValue.split("\\s*:\\s*");
+        if (kv.length < 2) {
+          continue;
+        }
+        String key=kv[0];
+        String value=replaceValue(kv[1],parameters);
+        newAttribute.append(key).append(":").append(value).append(";");
+      }
+      attribute.setNodeValue(newAttribute.toString());
+    }
+ else {
+      String value=replaceValue(attribute.getNodeValue(),parameters);
+      attribute.setNodeValue(value);
+    }
+  }
+}
