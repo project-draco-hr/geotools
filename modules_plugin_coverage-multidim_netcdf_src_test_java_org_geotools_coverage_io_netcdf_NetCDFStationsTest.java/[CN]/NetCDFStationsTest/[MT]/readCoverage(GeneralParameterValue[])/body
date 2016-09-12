@@ -1,0 +1,28 @@
+{
+  File testDirectory=new File(TestData.file(this,"."),"MultipleBandsDimensionTest");
+  FileUtils.deleteQuietly(testDirectory);
+  assertThat(testDirectory.mkdirs(),is(true));
+  NetCDFReader reader=null;
+  try {
+    FileUtils.copyFileToDirectory(TestData.file(this,"stations.nc"),testDirectory);
+    FileUtils.copyFileToDirectory(TestData.file(this,"stations.xml"),testDirectory);
+    File netCdfFile=new File(testDirectory,"stations.nc");
+    File auxiliaryFile=new File(testDirectory,"stations.xml");
+    final Hints hints=new Hints(Utils.AUXILIARY_FILES_PATH,auxiliaryFile.getPath());
+    reader=new NetCDFReader(netCdfFile,hints);
+    List<String> names=Arrays.asList(reader.getGridCoverageNames());
+    assertThat(names.contains("stationA"),is(true));
+    assertThat(names.contains("stationB"),is(true));
+    assertThat(names.contains("stationC"),is(true));
+    assertThat(names.contains("stationD"),is(true));
+    GridCoverage2D coverage=reader.read("stationA",readParameters);
+    assertThat(coverage,notNullValue());
+    return PlanarImage.wrapRenderedImage(coverage.getRenderedImage()).getData();
+  }
+  finally {
+    FileUtils.deleteQuietly(testDirectory);
+    if (reader != null) {
+      reader.dispose();
+    }
+  }
+}
