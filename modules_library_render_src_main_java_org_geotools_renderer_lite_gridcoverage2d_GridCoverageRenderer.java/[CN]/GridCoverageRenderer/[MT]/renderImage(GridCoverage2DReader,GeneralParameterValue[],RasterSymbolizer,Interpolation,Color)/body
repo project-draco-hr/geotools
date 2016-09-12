@@ -1,6 +1,11 @@
 {
   CoordinateReferenceSystem sourceCRS=reader.getCoordinateReferenceSystem();
   CoordinateReferenceSystem targetCRS=destinationEnvelope.getCoordinateReferenceSystem();
+  RasterSymbolizer finalSymbolizer=symbolizer;
+  if (isBandsSelectionApplicable(reader,symbolizer)) {
+    readParams=applyBandsSelectionParameter(reader,readParams,symbolizer);
+    finalSymbolizer=setupSymbolizerForBandsSelection(symbolizer);
+  }
   ProjectionHandler handler=null;
   List<GridCoverage2D> coverages;
   GridCoverageReaderHelper rh=new GridCoverageReaderHelper(reader,destinationSize,ReferencedEnvelope.reference(destinationEnvelope),interpolation);
@@ -147,11 +152,6 @@
     if (!destinationEnvelope.intersects(re,false)) {
       it.remove();
     }
-  }
-  RasterSymbolizer finalSymbolizer=symbolizer;
-  if (isBandsSelectionApplicable(reader,symbolizer)) {
-    applyBandsSelectionParameter(reader,readParams,symbolizer);
-    finalSymbolizer=setupSymbolizerForBandsSelection(symbolizer);
   }
   List<GridCoverage2D> symbolizedCoverages=new ArrayList<>();
   int ii=0;

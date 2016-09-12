@@ -20,12 +20,13 @@
   writer.write(coverage,params.values().toArray(new GeneralParameterValue[paramsValues.size()]));
   assertTrue(coverageFile.exists());
   GridCoverage2DReader reader=new GeoTiffReader(coverageFile);
-  ParameterValue<int[]> bandSelectionParam=AbstractGridFormat.BANDS.createValue();
-  bandSelectionParam.setValue(new int[]{3,2,1});
-  GridCoverage nCoverage=reader.read(new GeneralParameterValue[]{bandSelectionParam});
-  StyleBuilder sb=new StyleBuilder();
-  RasterSymbolizer symbolizer=sb.createRasterSymbolizer();
   GridCoverageRenderer renderer=new GridCoverageRenderer(nativeCrs,mapExtent,new Rectangle(0,0,100,100),null);
-  RenderedImage image=renderer.renderImage(coverage,symbolizer,null);
-  ImageAssert.assertEquals(coverageFile,image,0);
+  RenderedImage image=renderer.renderImage(reader,null,buildChannelSelectingSymbolizer(3),Interpolation.getInstance(Interpolation.INTERP_NEAREST),Color.BLACK,256,256);
+  assertEquals(1,image.getSampleModel().getNumBands());
+  assertEquals(255,new ImageWorker(image).getMinimums()[0],0d);
+  ImageUtilities.disposeImage(image);
+  image=renderer.renderImage(reader,null,buildChannelSelectingSymbolizer(1),Interpolation.getInstance(Interpolation.INTERP_NEAREST),Color.BLACK,256,256);
+  assertEquals(1,image.getSampleModel().getNumBands());
+  assertEquals(0,new ImageWorker(image).getMaximums()[0],0d);
+  ImageUtilities.disposeImage(image);
 }
