@@ -1,0 +1,18 @@
+{
+  int sizeNum=10;
+  double scaleDpi=2;
+  double scaleUom=3;
+  PointSymbolizer symbolizer=sb.createPointSymbolizer();
+  Graphic graphic=sb.createGraphic();
+  graphic.setSize(ff.function("strConcat",ff.property("size"),ff.literal("m")));
+  symbolizer.setGraphic(graphic);
+  RescaleStyleVisitor dpiVisitor=new GraphicsAwareDpiRescaleStyleVisitor(scaleDpi);
+  symbolizer.accept(dpiVisitor);
+  symbolizer=(PointSymbolizer)dpiVisitor.getCopy();
+  UomRescaleStyleVisitor uomVisitor=new UomRescaleStyleVisitor(scaleUom);
+  uomVisitor.visit(symbolizer);
+  symbolizer=(PointSymbolizer)uomVisitor.getCopy();
+  SimpleFeature feature=createFeatureSized(sizeNum);
+  Double size=symbolizer.getGraphic().getSize().evaluate(feature,Double.class);
+  assertEquals(sizeNum * scaleUom,size.doubleValue(),0d);
+}
