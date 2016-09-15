@@ -1,0 +1,51 @@
+{
+  double x=0;
+  double y=0;
+  double sinphi=sin(phi);
+  double cosphi=cos(phi);
+  double coslam=cos(lambda);
+switch (mode) {
+case EQUATORIAL:
+case OBLIQUE:
+    if (mode == Mode.EQUATORIAL) {
+      y=cosphi * coslam;
+    }
+ else {
+      y=sinph0 * sinphi + cosph0 * cosphi * coslam;
+    }
+  if (abs(abs(y) - 1) < TOL) {
+    if (y < 0) {
+      throw new ProjectionException(ErrorKeys.TOLERANCE_ERROR);
+    }
+ else {
+      x=0;
+      y=0;
+    }
+  }
+ else {
+    y=acos(y);
+    y/=sin(y);
+    x=y * cosphi * sin(lambda);
+    y*=(mode == Mode.EQUATORIAL) ? sinphi : (cosph0 * sinphi - sinph0 * cosphi * coslam);
+  }
+break;
+case NORTH_POLAR:
+phi=-phi;
+coslam=-coslam;
+case SOUTH_POLAR:
+if (Math.abs(phi - HALF_PI) < EPS10) {
+throw new ProjectionException(ErrorKeys.TOLERANCE_ERROR);
+}
+y=HALF_PI + phi;
+x=y * sin(lambda);
+y*=coslam;
+break;
+}
+if (ptDst == null) {
+return new Point2D.Double(x,y);
+}
+ else {
+ptDst.setLocation(x,y);
+return ptDst;
+}
+}
