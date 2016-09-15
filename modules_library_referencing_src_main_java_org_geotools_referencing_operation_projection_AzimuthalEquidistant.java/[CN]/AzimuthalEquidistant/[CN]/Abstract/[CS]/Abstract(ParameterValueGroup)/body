@@ -1,0 +1,28 @@
+{
+  super(parameters);
+  List<GeneralParameterDescriptor> parameterDescriptors=getParameterDescriptors().descriptors();
+  centralMeridian=doubleValue(parameterDescriptors,Provider.LONGITUDE_OF_CENTRE,parameters);
+  latitudeOfOrigin=doubleValue(parameterDescriptors,Provider.LATITUDE_OF_CENTRE,parameters);
+  ensureLongitudeInRange(Provider.LONGITUDE_OF_CENTRE,centralMeridian,true);
+  ensureLatitudeInRange(Provider.LATITUDE_OF_CENTRE,latitudeOfOrigin,true);
+  if (abs(latitudeOfOrigin - HALF_PI) < EPS10) {
+    mode=Mode.NORTH_POLAR;
+    sinph0=1;
+    cosph0=0;
+  }
+ else   if (abs(latitudeOfOrigin + HALF_PI) < EPS10) {
+    mode=Mode.SOUTH_POLAR;
+    sinph0=-1;
+    cosph0=0;
+  }
+ else   if (abs(latitudeOfOrigin) < EPS10) {
+    mode=Mode.EQUATORIAL;
+    sinph0=0;
+    cosph0=1;
+  }
+ else {
+    mode=Mode.OBLIQUE;
+    sinph0=sin(latitudeOfOrigin);
+    cosph0=cos(latitudeOfOrigin);
+  }
+}

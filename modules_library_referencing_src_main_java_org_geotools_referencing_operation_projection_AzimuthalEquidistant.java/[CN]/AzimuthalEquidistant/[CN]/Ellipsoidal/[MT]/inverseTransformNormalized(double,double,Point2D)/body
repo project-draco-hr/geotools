@@ -1,0 +1,32 @@
+{
+  double lambda=0;
+  double phi=0;
+  double c=hypot(x,y);
+  if (c < EPS10) {
+    phi=latitudeOfOrigin;
+    lambda=0;
+  }
+ else {
+    if (mode == Mode.OBLIQUE || mode == Mode.EQUATORIAL) {
+      double x2=x * semiMajor;
+      double y2=y * semiMajor;
+      double azi1=atan2(x2,y2);
+      double s12=sqrt(x2 * x2 + y2 * y2);
+      GeodesicData g=geodesic.Direct(toDegrees(latitudeOfOrigin),toDegrees(centralMeridian),toDegrees(azi1),s12);
+      phi=toRadians(g.lat2);
+      lambda=toRadians(g.lon2);
+      lambda-=centralMeridian;
+    }
+ else {
+      phi=inv_mlfn((mode == Mode.NORTH_POLAR) ? (Mp - c) : (Mp + c));
+      lambda=atan2(x,(mode == Mode.NORTH_POLAR) ? -y : y);
+    }
+  }
+  if (ptDst == null) {
+    return new Point2D.Double(lambda,phi);
+  }
+ else {
+    ptDst.setLocation(lambda,phi);
+    return ptDst;
+  }
+}

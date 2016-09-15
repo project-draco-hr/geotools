@@ -1,0 +1,47 @@
+{
+  double lambda=0;
+  double phi=0;
+  double c_rh=hypot(x,y);
+  if (c_rh > PI) {
+    if (c_rh - EPS10 > PI) {
+      throw new ProjectionException(ErrorKeys.TOLERANCE_ERROR);
+    }
+    c_rh=PI;
+  }
+ else   if (c_rh < EPS10) {
+    phi=latitudeOfOrigin;
+    lambda=0.;
+  }
+ else {
+    if (mode == Mode.OBLIQUE || mode == Mode.EQUATORIAL) {
+      double sinc=sin(c_rh);
+      double cosc=cos(c_rh);
+      if (mode == Mode.EQUATORIAL) {
+        phi=aasin(y * sinc / c_rh);
+        x*=sinc;
+        y=cosc * c_rh;
+      }
+ else {
+        phi=aasin(cosc * sinph0 + y * sinc * cosph0 / c_rh);
+        y=(cosc - sinph0 * sin(phi)) * c_rh;
+        x*=sinc * cosph0;
+      }
+      lambda=(y == 0) ? 0 : atan2(x,y);
+    }
+ else     if (mode == Mode.NORTH_POLAR) {
+      phi=HALF_PI - c_rh;
+      lambda=atan2(x,-y);
+    }
+ else {
+      phi=c_rh - HALF_PI;
+      lambda=atan2(x,y);
+    }
+  }
+  if (ptDst == null) {
+    return new Point2D.Double(lambda,phi);
+  }
+ else {
+    ptDst.setLocation(lambda,phi);
+    return ptDst;
+  }
+}
