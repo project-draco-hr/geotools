@@ -1,0 +1,13 @@
+{
+  run("CREATE TABLE uniq ( key int, name VARCHAR, geom BLOB)");
+  String sql="INSERT INTO gpkg_geometry_columns VALUES ('uniq', 'geom', 'POINT', 4326, 0, 0)";
+  run(sql);
+  run("CREATE UNIQUE INDEX uniq_key_index ON uniq ( key )");
+  sql="INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES " + "('uniq', 'features', 'uniq', 4326)";
+  run(sql);
+  GeometryBuilder gb=new GeometryBuilder();
+  GeoPkgTestSetup setup=(GeoPkgTestSetup)delegate;
+  run("INSERT INTO uniq VALUES (1, 'one', X'" + setup.toString(gb.point(1,1)) + "')");
+  run("INSERT INTO uniq VALUES (2, 'two', X'" + setup.toString(gb.point(2,2)) + "')");
+  run("INSERT INTO uniq VALUES (3, 'three', X'" + setup.toString(gb.point(4,4)) + "')");
+}

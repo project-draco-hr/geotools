@@ -1,29 +1,40 @@
 {
-  List<Entry> contents=new ArrayList();
+  List<Entry> contents=new ArrayList<Entry>();
   try {
-    Connection cx=connPool.getConnection();
-    try {
-      Statement st=cx.createStatement();
-      try {
-        ResultSet rs=st.executeQuery("SELECT * FROM " + GEOPACKAGE_CONTENTS);
-        try {
+    try (Connection cx=connPool.getConnection()){
+      try (Statement st=cx.createStatement()){
+        try (ResultSet rs=st.executeQuery("SELECT * FROM " + GEOPACKAGE_CONTENTS)){
           while (rs.next()) {
-          }
-        }
-  finally {
-          close(rs);
-        }
-      }
-  finally {
-        close(st);
-      }
-    }
-  finally {
-      close(cx);
-    }
-  }
- catch (  SQLException e) {
-    throw new RuntimeException(e);
-  }
-  return contents;
+            String dt=rs.getString("data_type");
+            org.geotools.geopkg.Entry.DataType type=Entry.DataType.valueOf(dt);
+            Entry e=null;
+switch (type) {
+case Feature:
+              e=createFeatureEntry(rs);
+            break;
+case Tile:
+          e=createTileEntry(rs,cx);
+        break;
+case Raster:
+      e=createRasterEntry(rs);
+    break;
+case FeatureWithRaster:
+default :
+  throw new IllegalStateException("unexpected type in GeoPackage");
+}
+if (e != null) {
+contents.add(e);
+}
+}
+}
+ catch (IOException e) {
+LOGGER.log(Level.FINER,e.getMessage(),e);
+}
+}
+ }
+ }
+ catch (SQLException e) {
+throw new RuntimeException(e);
+}
+return contents;
 }

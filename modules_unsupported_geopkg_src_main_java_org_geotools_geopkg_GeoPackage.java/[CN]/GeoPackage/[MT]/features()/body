@@ -1,31 +1,19 @@
 {
   try {
-    Connection cx=connPool.getConnection();
-    try {
+    try (Connection cx=connPool.getConnection()){
       List<FeatureEntry> entries=new ArrayList();
       String sql=format("SELECT a.*, b.column_name, b.geometry_type_name, b.z, b.m, c.organization_coordsys_id, c.definition" + " FROM %s a, %s b, %s c" + " WHERE a.table_name = b.table_name"+ " AND a.srs_id = c.srs_id"+ " AND a.data_type = ?",GEOPACKAGE_CONTENTS,GEOMETRY_COLUMNS,SPATIAL_REF_SYS);
-      PreparedStatement ps=cx.prepareStatement(sql);
-      try {
+      try (PreparedStatement ps=cx.prepareStatement(sql)){
         ps.setString(1,DataType.Feature.value());
-        ResultSet rs=ps.executeQuery();
-        try {
+        try (ResultSet rs=ps.executeQuery()){
           while (rs.next()) {
             entries.add(createFeatureEntry(rs));
           }
         }
-  finally {
-          close(rs);
-        }
-      }
-  finally {
-        close(ps);
-      }
-      return entries;
+       }
+       return entries;
     }
-  finally {
-      close(cx);
-    }
-  }
+   }
  catch (  SQLException e) {
     throw new IOException(e);
   }

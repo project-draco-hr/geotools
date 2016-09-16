@@ -1,0 +1,12 @@
+{
+  run("CREATE TABLE lakes(fid int primary key, id int, geom BLOB)");
+  String sql="INSERT INTO gpkg_geometry_columns VALUES ('lakes', 'geom', 'POLYGON', 4326, 0, 0)";
+  run(sql);
+  sql="INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES " + "('lakes', 'features', 'lakes', 4326)";
+  run(sql);
+  run("ALTER TABLE lakes add name VARCHAR");
+  GeometryBuilder gb=new GeometryBuilder();
+  Polygon poly=gb.polygon(12,6,14,8,16,6,16,4,14,4,12,6);
+  sql="INSERT INTO lakes VALUES (" + "0,0,X'" + ((GeoPkgTestSetup)delegate).toString(poly) + "', 'muddy');";
+  run(sql);
+}
