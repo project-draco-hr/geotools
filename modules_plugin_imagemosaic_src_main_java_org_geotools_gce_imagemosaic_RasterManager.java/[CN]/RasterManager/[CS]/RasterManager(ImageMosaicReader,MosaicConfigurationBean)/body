@@ -48,6 +48,13 @@
   imposedEnvelope=configuration.getEnvelope();
   if (configuration.getIndexer() != null) {
     Indexer indexer=configuration.getIndexer();
+    if (indexer.getMultipleBandsDimensions() != null && indexer.getMultipleBandsDimensions().getMultipleBandsDimension() != null && !indexer.getMultipleBandsDimensions().getMultipleBandsDimension().isEmpty()) {
+      List<MultipleBandsDimension> multipleBandsDimensions=indexer.getMultipleBandsDimensions().getMultipleBandsDimension();
+      if (multipleBandsDimensions.size() != 1) {
+        throw new IllegalStateException("Only a single dimension with multiple bands is supported.");
+      }
+      providedBandsNames=multipleBandsDimensions.get(0).getBandsNames().split("\\s*,\\s*");
+    }
     String submosaickerFactory=IndexerUtils.getParameter(Utils.Prop.GRANULE_COLLECTOR_FACTORY,indexer);
     if (submosaickerFactory != null) {
       SubmosaicProducerFactory submosaicProducerFactory=SubmosaicProducerFactoryFinder.getGranuleHandlersSPI().get(submosaickerFactory);

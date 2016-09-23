@@ -19,6 +19,7 @@
       timeFilterAttribute=dimensionDescriptor.getStartAttribute();
     }
   }
+  baseReadParameters.setBands(readRequest.getBands());
   Set<DateRange> temporalSubset=readRequest.getTemporalSubset();
   Set<NumberRange<Double>> verticalSubset=readRequest.getVerticalSubset();
   RangeType requestedRange=readRequest.getRangeSubset();
@@ -32,7 +33,20 @@
       if (ft != null)       sampleDims=ft.getSampleDimensions();
     }
   }
-  final GridSampleDimension[] sampleDimensions=sampleDims.toArray(new GridSampleDimension[sampleDims.size()]);
+  GridSampleDimension[] sampleDimensions=sampleDimensions=sampleDims != null ? sampleDims.toArray(new GridSampleDimension[sampleDims.size()]) : new GridSampleDimension[0];
+  ;
+  int[] bands=readRequest.getBands();
+  if (bands != null) {
+    int maxBandIndex=Arrays.stream(bands).max().getAsInt();
+    if (bands.length > 0 && (sampleDims == null || maxBandIndex > sampleDims.size())) {
+      throw new IllegalArgumentException("Invalid bands parameter provided.");
+    }
+    GridSampleDimension[] updatedSampleDimensions=new GridSampleDimension[bands.length];
+    for (int i=0; i < bands.length; i++) {
+      updatedSampleDimensions[i]=sampleDimensions[bands[i]];
+    }
+    sampleDimensions=updatedSampleDimensions;
+  }
   Set<DateRange> tempSubset=null;
   if (!temporalSubset.isEmpty()) {
     tempSubset=temporalSubset;
