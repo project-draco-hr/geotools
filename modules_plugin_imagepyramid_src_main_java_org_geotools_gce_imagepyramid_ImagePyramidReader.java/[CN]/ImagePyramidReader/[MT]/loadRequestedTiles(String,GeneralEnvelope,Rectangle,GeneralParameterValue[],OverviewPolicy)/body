@@ -1,13 +1,19 @@
 {
   final ImageReadParam readP=new ImageReadParam();
   Integer imageChoice=0;
-  if (dim != null)   imageChoice=setReadParams(overviewPolicy,readP,requestedEnvelope,dim);
+  if (dim != null) {
+    try {
+      imageChoice=setReadParams(overviewPolicy,readP,requestedEnvelope,dim);
+    }
+ catch (    TransformException e) {
+      throw new DataSourceException(e);
+    }
+  }
   if (!imageLevelsMapper.hasReaders()) {
     throw new IllegalStateException("This ImagePyramidReader has already been disposed");
   }
   ImageMosaicReader reader=getImageMosaicReaderForLevel(coverageName,imageChoice);
-  GeneralParameterValue[] readingParams=getReadingParams(params,overviewPolicy);
-  GridCoverage2D mosaicCoverage=reader.read(getReaderCoverageName(coverageName),readingParams);
+  GridCoverage2D mosaicCoverage=reader.read(getReaderCoverageName(coverageName),params);
   if (mosaicCoverage != null) {
     return new GridCoverage2D(coverageName,mosaicCoverage);
   }
