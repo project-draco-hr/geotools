@@ -3,10 +3,6 @@
   final Slice2DIndex slice2DIndex=getSlice2DIndex(imageIndex);
   final String variableName=slice2DIndex.getVariableName();
   final VariableAdapter wrapper=getCoverageDescriptor(new NameImpl(variableName));
-  int[] bands=null;
-  if (param instanceof ExtendedImageParam) {
-    bands=((ExtendedImageParam)param).getBands();
-  }
   final int strideX, strideY;
   final int[] dstBands;
   if (param != null) {
@@ -57,20 +53,7 @@
     throw netcdfFailure(e);
   }
   final Section section=new Section(ranges);
-  int numDstBands=1;
-  String candidateDimension=wrapper.variableDS.getDimensions().get(0).getFullName();
-  MultipleBandsDimensionInfo multipleBands=ancillaryFileManager.getMultipleBandsDimensionInfo(candidateDimension);
-  if (multipleBands != null) {
-    numDstBands=multipleBands.getNumberOfBands();
-    if (bands != null) {
-      int maxSourceBand=Arrays.stream(bands).max().getAsInt();
-      if (maxSourceBand > numDstBands) {
-        throw new IllegalArgumentException("The provided source bands parameter is invalid.");
-      }
-      numDstBands=bands.length;
-    }
-  }
-  SampleModel sampleModel=new BandedSampleModel(wrapper.getSampleModel().getDataType(),destWidth,destHeight,numDstBands);
+  final SampleModel sampleModel=wrapper.getSampleModel().createCompatibleSampleModel(destWidth,destHeight);
   final ColorModel colorModel=ImageIOUtilities.createColorModel(sampleModel);
   final WritableRaster raster=Raster.createWritableRaster(sampleModel,new Point(0,0));
   Hashtable<String,Object> properties=getNoDataProperties(wrapper);
@@ -79,6 +62,7 @@
   CoordinateAxis axis=georeferencing.isLonLat() ? cs.getLatAxis() : cs.getYaxis();
   boolean flipYAxis=needFlipYAxis(axis);
   processImageStarted(imageIndex);
+  final int numDstBands=1;
   final float toPercent=100f / numDstBands;
   final int type=raster.getSampleModel().getDataType();
   final int xmin=destRegion.x;
@@ -87,16 +71,6 @@
   final int ymax=destRegion.height + ymin;
   for (int zi=0; zi < numDstBands; zi++) {
     final int dstBand=(dstBands == null) ? zi : dstBands[zi];
-    if (multipleBands != null) {
-      try {
-        int sourceBand=bands == null ? zi : bands[zi];
-        Range range=new Range(sourceBand,sourceBand,1);
-        section.setRange(0,range);
-      }
- catch (      InvalidRangeException exception) {
-        throw netcdfFailure(exception);
-      }
-    }
     final Array array=readSection(wrapper,section);
     if (flipYAxis) {
       final IndexIterator it=array.getIndexIterator();
