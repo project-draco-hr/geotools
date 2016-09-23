@@ -2,41 +2,24 @@
   final RenderedImage image=mosaicOutput.image;
   final SampleModel sm=image.getSampleModel();
   final ColorModel cm=image.getColorModel();
-  final int numBands=request.getBands() == null ? sm.getNumBands() : request.getBands().length;
-  if (rasterManager.providedBandsNames != null && rasterManager.providedBandsNames.length != numBands) {
-    if (request.getBands() == null) {
-      throw new IllegalArgumentException("The number of provided bands names is different from the number of bands.");
-    }
-  }
+  final int numBands=sm.getNumBands();
   final GridSampleDimension[] bands=new GridSampleDimension[numBands];
   Set<String> bandNames=new HashSet<String>();
   for (int i=0; i < numBands; i++) {
     ColorInterpretation colorInterpretation=null;
     String bandName=null;
-    if (rasterManager.providedBandsNames != null) {
-      if (request.getBands() == null) {
-        bandName=rasterManager.providedBandsNames[i];
-      }
- else {
-        bandName=rasterManager.providedBandsNames[request.getBands()[i]];
-      }
-    }
     if (cm != null) {
       colorInterpretation=TypeMap.getColorInterpretation(cm,i);
       if (colorInterpretation == null) {
         throw new IOException("Unrecognized sample dimension type");
       }
-      if (bandName == null) {
-        bandName=colorInterpretation.name();
-        if (colorInterpretation == ColorInterpretation.UNDEFINED || bandNames.contains(bandName)) {
-          bandName="Band" + (i + 1);
-        }
+      bandName=colorInterpretation.name();
+      if (colorInterpretation == ColorInterpretation.UNDEFINED || bandNames.contains(bandName)) {
+        bandName="Band" + (i + 1);
       }
     }
  else {
-      if (bandName == null) {
-        bandName="Band" + (i + 1);
-      }
+      bandName="Band" + (i + 1);
       colorInterpretation=ColorInterpretation.UNDEFINED;
     }
     final SampleDimensionType st=TypeMap.getSampleDimensionType(sm,i);
