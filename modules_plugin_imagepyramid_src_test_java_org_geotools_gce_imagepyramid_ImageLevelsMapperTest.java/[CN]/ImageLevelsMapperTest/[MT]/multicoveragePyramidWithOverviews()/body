@@ -7,7 +7,7 @@
     cleanFiles(pyramidLevel);
   }
   cleanFiles(mosaicFolder);
-  final ImagePyramidReader reader=new ImagePyramidReader(testFile,new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER,Boolean.FALSE));
+  final ImagePyramidReader reader=new ImagePyramidReader(testFile);
   assertNotNull(reader);
   assertEquals(2,reader.getGridCoverageCount());
   String coverageNames[]=reader.getGridCoverageNames();
@@ -24,12 +24,12 @@
   assertEquals(64,gridEnvelope.getSpan(1),DELTA);
   final ParameterValue<GridGeometry2D> gg=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
   final GeneralEnvelope envelope=reader.getOriginalEnvelope();
-  GridEnvelope gridRange=reader.getOriginalGridRange();
+  GridEnvelope2D gridRange=new GridEnvelope2D(((GridEnvelope2D)reader.getOriginalGridRange()).getBounds());
   final Dimension dim=new Dimension();
   dim.setSize(gridRange.getSpan(0) / 16.0,gridRange.getSpan(1) / 16.0);
-  final Rectangle rasterArea=((GridEnvelope2D)gridRange);
+  Rectangle rasterArea=((GridEnvelope2D)gridRange);
   rasterArea.setSize(dim);
-  final GridEnvelope2D range=new GridEnvelope2D(rasterArea);
+  GridEnvelope2D range=new GridEnvelope2D(rasterArea);
   gg.setValue(new GridGeometry2D(range,envelope));
   coverage=(GridCoverage2D)reader.read(coverageNames[1],new GeneralParameterValue[]{gg});
   assertNotNull(coverage);
@@ -39,6 +39,20 @@
   gridEnvelope=coverage.getGridGeometry().getGridRange();
   assertEquals(4,gridEnvelope.getSpan(0),DELTA);
   assertEquals(4,gridEnvelope.getSpan(1),DELTA);
+  final GeneralEnvelope doubleEnvelope=new GeneralEnvelope(new double[]{envelope.getLowerCorner().getOrdinate(0),envelope.getLowerCorner().getOrdinate(1)},new double[]{envelope.getLowerCorner().getOrdinate(0) + envelope.getSpan(0) * 2,envelope.getLowerCorner().getOrdinate(1) + envelope.getSpan(1) * 2});
+  doubleEnvelope.setCoordinateReferenceSystem(envelope.getCoordinateReferenceSystem());
+  GridEnvelope doubleRange=reader.getOriginalGridRange();
+  dim.setSize(doubleRange.getSpan(0) * 2,doubleRange.getSpan(1) * 2);
+  rasterArea=((GridEnvelope2D)doubleRange);
+  rasterArea.setSize(dim);
+  range=new GridEnvelope2D(rasterArea);
+  gg.setValue(new GridGeometry2D(doubleRange,doubleEnvelope));
+  coverage=((GridCoverage2D)reader.read(coverageNames[1],new GeneralParameterValue[]{gg}));
+  assertNotNull(coverage);
+  renderedImage=coverage.getRenderedImage();
+  gridEnvelope=coverage.getGridGeometry().getGridRange();
+  assertEquals(64,gridEnvelope.getSpan(0),DELTA);
+  assertEquals(64,gridEnvelope.getSpan(1),DELTA);
   Properties properties=new Properties();
   File propertyFile=new File(mosaicFolder,"multipyramidwithoverviews.properties");
   FileInputStream fis=null;
