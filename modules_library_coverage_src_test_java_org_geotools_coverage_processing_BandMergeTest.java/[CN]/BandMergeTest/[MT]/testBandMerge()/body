@@ -1,0 +1,30 @@
+{
+  final CoverageProcessor processor=CoverageProcessor.getInstance();
+  GridCoverage2D source=EXAMPLES.get(4);
+  Envelope originalEnvelope=source.getEnvelope();
+  final List<GridCoverage2D> coverages=new ArrayList<GridCoverage2D>();
+  final RenderedImage byteImage=new ImageWorker(source.getRenderedImage()).rescaleToBytes().getRenderedImage();
+  source=CoverageFactoryFinder.getGridCoverageFactory(null).create("sample",byteImage,source.getEnvelope());
+  coverages.add(source);
+  coverages.add(source);
+  coverages.add(source);
+  ParameterValueGroup param=processor.getOperation("BandMerge").getParameters();
+  param.parameter("sources").setValue(coverages);
+  GridCoverage2D merged=(GridCoverage2D)processor.doOperation(param);
+  NoDataContainer noData=CoverageUtilities.getNoDataProperty(merged);
+  if (SHOW) {
+    Viewer.show(source);
+    Viewer.show(merged);
+  }
+ else {
+    assertNotNull(PlanarImage.wrapRenderedImage(merged.getRenderedImage()).getTiles());
+  }
+  RenderedImage raster=merged.getRenderedImage();
+  assertEquals(3,raster.getSampleModel().getNumBands());
+  assertNotNull(raster.getColorModel());
+  assertEquals(originalEnvelope,merged.getEnvelope());
+  assertEquals(byteImage.getWidth(),raster.getWidth());
+  assertEquals(byteImage.getHeight(),raster.getHeight());
+  assertEquals(byteImage.getMinX(),raster.getMinX());
+  assertEquals(byteImage.getMinY(),raster.getMinY());
+}
