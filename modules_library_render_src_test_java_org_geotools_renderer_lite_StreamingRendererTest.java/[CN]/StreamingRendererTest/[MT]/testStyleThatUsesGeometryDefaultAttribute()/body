@@ -1,0 +1,32 @@
+{
+  StyleImpl style=(StyleImpl)RendererBaseTest.loadStyle(this,"genericLines.sld");
+  File vectorDataFile=new File(TestData.getResource(this,"genericLines.properties").toURI());
+  PropertyDataStore dataStore=new PropertyDataStore(vectorDataFile.getParentFile());
+  Layer layer=new FeatureLayer(dataStore.getFeatureSource("genericLines"),style);
+  MapContent mapContent=new MapContent();
+  mapContent.addLayer(layer);
+  StreamingRenderer gRender=new StreamingRenderer();
+  gRender.setMapContent(mapContent);
+  gRender.addRenderListener(new RenderListener(){
+    @Override public void featureRenderer(    SimpleFeature feature){
+      features++;
+    }
+    @Override public void errorOccurred(    Exception e){
+      errors++;
+    }
+  }
+);
+  features=0;
+  errors=0;
+  BufferedImage image=new BufferedImage(40,40,BufferedImage.TYPE_INT_ARGB);
+  Graphics2D graphics=image.createGraphics();
+  Rectangle paintArea=new Rectangle(40,40);
+  double minx=-2;
+  double maxx=2;
+  double miny=-2;
+  double maxy=2;
+  ReferencedEnvelope referencedEnvelope=new ReferencedEnvelope(new Rectangle2D.Double(minx,miny,maxx - minx,maxy - miny),CRS.decode("EPSG:4326"));
+  gRender.paint(graphics,paintArea,referencedEnvelope);
+  Assert.assertEquals(features,4);
+  Assert.assertEquals(errors,0);
+}
