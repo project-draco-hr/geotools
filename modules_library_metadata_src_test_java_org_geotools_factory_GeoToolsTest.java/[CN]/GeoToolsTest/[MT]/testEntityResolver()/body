@@ -1,0 +1,30 @@
+{
+  EntityResolver resolver;
+  resolver=GeoTools.instantiate("org.geotools.factory.PlaceholderEntityResolver",EntityResolver.class,PreventLocalEntityResolver.INSTANCE);
+  assertTrue(resolver instanceof PlaceholderEntityResolver);
+  resolver=GeoTools.instantiate("org.geotools.xml.NullEntityResolver",EntityResolver.class,PreventLocalEntityResolver.INSTANCE);
+  assertTrue(resolver instanceof NullEntityResolver);
+  resolver=GeoTools.instantiate("invalid.class.reference",EntityResolver.class,PreventLocalEntityResolver.INSTANCE);
+  assertTrue(resolver instanceof PreventLocalEntityResolver);
+  resolver=GeoTools.instantiate(null,EntityResolver.class,PreventLocalEntityResolver.INSTANCE);
+  assertTrue(resolver instanceof PreventLocalEntityResolver);
+  try {
+    Hints.putSystemDefault(Hints.ENTITY_RESOLVER,NullEntityResolver.INSTANCE);
+    assertSame(NullEntityResolver.INSTANCE,GeoTools.getEntityResolver(null));
+    Hints.removeSystemDefault(Hints.ENTITY_RESOLVER);
+    assertSame(PreventLocalEntityResolver.INSTANCE,GeoTools.getEntityResolver(null));
+    System.getProperties().put(GeoTools.ENTITY_RESOLVER,"org.geotools.factory.PlaceholderEntityResolver");
+    Hints.scanSystemProperties();
+    EntityResolver entityResolver=GeoTools.getEntityResolver(null);
+    assertTrue(entityResolver instanceof PlaceholderEntityResolver);
+    System.getProperties().put(GeoTools.ENTITY_RESOLVER,"org.geotools.xml.NullEntityResolver");
+    Hints.scanSystemProperties();
+    entityResolver=GeoTools.getEntityResolver(null);
+    assertTrue(entityResolver instanceof NullEntityResolver);
+  }
+  finally {
+    System.clearProperty(GeoTools.ENTITY_RESOLVER);
+    Hints.removeSystemDefault(Hints.ENTITY_RESOLVER);
+    Hints.scanSystemProperties();
+  }
+}

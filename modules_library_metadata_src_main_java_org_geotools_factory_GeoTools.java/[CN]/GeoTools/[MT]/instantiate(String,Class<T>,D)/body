@@ -1,0 +1,40 @@
+{
+  if (className == null) {
+    return defaultValue;
+  }
+  final Logger LOGGER=Logging.getLogger("org.geotools.xml");
+  try {
+    Class<?> kind=Class.forName(className);
+    for (    Field field : kind.getDeclaredFields()) {
+      int modifier=field.getModifiers();
+      if ("INSTANCE".equals(field.getName()) && Modifier.isStatic(modifier) && Modifier.isPublic(modifier)) {
+        try {
+          Object value=field.get(null);
+          if (value != null && value instanceof EntityResolver) {
+            return type.cast(value);
+          }
+ else {
+            LOGGER.log(Level.FINER,"Unable to use ENTITY_RESOLVER: " + className + ".INSTANCE");
+          }
+        }
+ catch (        Throwable t) {
+          LOGGER.log(Level.FINER,"Unable to instantiate ENTITY_RESOLVER: " + className + ".INSTANCE",t);
+        }
+        return defaultValue;
+      }
+    }
+    try {
+      Object value=kind.newInstance();
+      if (type.isInstance(value)) {
+        return type.cast(value);
+      }
+    }
+ catch (    InstantiationException|IllegalAccessException e) {
+      LOGGER.log(Level.FINER,"Unable to instantiate ENTITY_RESOLVER: " + e.getMessage(),e);
+    }
+  }
+ catch (  ClassNotFoundException notFound) {
+    LOGGER.log(Level.FINER,"Unable to instantiate ENTITY_RESOLVER: " + notFound.getMessage(),notFound);
+  }
+  return defaultValue;
+}
