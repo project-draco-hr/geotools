@@ -34,8 +34,13 @@
         topIds.append(" FROM ");
         getDataStore().encodeTableName(typeName,topIds,query.getHints());
         if (filter != null) {
-          filterToSQL.setFieldEncoder(new JoiningFieldEncoder(typeName));
-          topIds.append(" ").append(filterToSQL.encodeToString(filter));
+          filterToSQL.setFieldEncoder(new JoiningFieldEncoder(typeName,getDataStore()));
+          if (NestedFilterToSQL.isNestedFilter(filter)) {
+            topIds.append(" WHERE ").append(createNestedFilter(filter,query,filterToSQL));
+          }
+ else {
+            topIds.append(" ").append(filterToSQL.encodeToString(filter));
+          }
         }
         topIds.append(" ORDER BY ");
         topIds.append(sortSQL);

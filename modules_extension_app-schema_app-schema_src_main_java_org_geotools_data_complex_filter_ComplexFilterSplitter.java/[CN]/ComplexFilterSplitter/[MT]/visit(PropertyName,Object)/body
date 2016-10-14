@@ -5,6 +5,44 @@
     return null;
   }
   List<Expression> matchingMappings=mappings.findMappingsFor(exprSteps,false);
+  if (AppSchemaDataAccessConfigurator.shouldEncodeNestedFilters()) {
+    FeatureChainedAttributeVisitor nestedAttrExtractor=new FeatureChainedAttributeVisitor(mappings);
+    nestedAttrExtractor.visit(expression,null);
+    List<FeatureChainedAttributeDescriptor> attributes=nestedAttrExtractor.getFeatureChainedAttributes();
+    if (attributes.size() == 1) {
+      FeatureChainedAttributeDescriptor nestedAttrDescr=attributes.get(0);
+      if (nestedAttrDescr.chainSize() > 1 && nestedAttrDescr.isJoiningEnabled()) {
+        nestedAttributes++;
+        FeatureTypeMapping featureMapping=nestedAttrDescr.getFeatureTypeOwningAttribute();
+        List<Expression> nestedMappings=featureMapping.findMappingsFor(nestedAttrDescr.getAttributePath(),false);
+        Iterator<Expression> it=matchingMappings.iterator();
+        while (it.hasNext()) {
+          if (it.next() == null) {
+            it.remove();
+          }
+        }
+        matchingMappings.addAll(nestedMappings);
+        for (int i=nestedAttrDescr.chainSize() - 2; i > 0; i--) {
+          FeatureChainLink mappingStep=nestedAttrDescr.getLink(i);
+          if (mappingStep.hasNestedFeature()) {
+            FeatureChainLink parentStep=nestedAttrDescr.getLink(i);
+            NestedAttributeMapping nestedAttr=parentStep.getNestedFeatureAttribute();
+            FeatureTypeMapping nestedFeature=null;
+            try {
+              nestedFeature=nestedAttr.getFeatureTypeMapping(null);
+            }
+ catch (            IOException e) {
+              LOGGER.warning("Exception occurred processing nested filter, encoding" + "will be disabled: " + e.getMessage());
+              postStack.push(expression);
+              return null;
+            }
+            Expression nestedExpr=nestedAttr.getMapping(nestedFeature).getSourceExpression();
+            matchingMappings.add(nestedExpr);
+          }
+        }
+      }
+    }
+  }
   if (matchingMappings.isEmpty()) {
     postStack.push(expression);
     return null;

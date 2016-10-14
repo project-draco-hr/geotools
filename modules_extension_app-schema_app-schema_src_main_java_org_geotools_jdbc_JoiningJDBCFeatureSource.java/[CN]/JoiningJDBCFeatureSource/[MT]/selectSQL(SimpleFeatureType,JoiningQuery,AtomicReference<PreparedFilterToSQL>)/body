@@ -20,19 +20,19 @@
         joinClause.append(" ");
         getDataStore().dialect.encodeTableName(alias,joinClause);
         joinClause.append(" ON ( ");
-        toSQL2.setFieldEncoder(new JoiningFieldEncoder(alias));
+        toSQL2.setFieldEncoder(new JoiningFieldEncoder(alias,getDataStore()));
         joinClause.append(toSQL2.encodeToString(join.getForeignKeyName()));
       }
  else {
         aliases[i]=null;
         getDataStore().encodeTableName(join.getJoiningTypeName(),joinClause,query.getHints());
         joinClause.append(" ON ( ");
-        toSQL2.setFieldEncoder(new JoiningFieldEncoder(join.getJoiningTypeName()));
+        toSQL2.setFieldEncoder(new JoiningFieldEncoder(join.getJoiningTypeName(),getDataStore()));
         joinClause.append(toSQL2.encodeToString(join.getForeignKeyName()));
       }
       joinClause.append(" = ");
       String fromTypeName=curTypeName;
-      toSQL1.setFieldEncoder(new JoiningFieldEncoder(fromTypeName));
+      toSQL1.setFieldEncoder(new JoiningFieldEncoder(fromTypeName,getDataStore()));
       joinClause.append(toSQL1.encodeToString(join.getJoiningKeyName()));
       joinClause.append(") ");
       lastTypeName=join.getJoiningTypeName();
@@ -131,7 +131,7 @@
     try {
       SortBy[] lastSortBy=null;
       if (!query.isSubset()) {
-        lastSortBy=query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getSortBy() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getSortBy();
+        lastSortBy=isRootFeature ? query.getSortBy() : (query.getQueryJoins() == null || query.getQueryJoins().size() == 0 ? query.getSortBy() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getSortBy());
       }
       String lastTableName=isRootFeature ? query.getTypeName() : query.getQueryJoins().get(query.getQueryJoins().size() - 1).getJoiningTypeName();
       String lastTableAlias=isRootFeature ? query.getTypeName() : aliases[query.getQueryJoins().size() - 1] == null ? lastTableName : aliases[query.getQueryJoins().size() - 1];
@@ -151,10 +151,14 @@
         for (int i=0; i < lastSortBy.length; i++) {
           if (!ids.contains(lastSortBy[i].getPropertyName().toString())) {
             getDataStore().dialect.encodeColumnName(null,lastSortBy[i].getPropertyName().getPropertyName(),sortBySQL);
-            if (i < lastSortBy.length - 1)             sortBySQL.append(",");
             sortBySQL.append(" FROM ");
             getDataStore().encodeTableName(lastTableName,sortBySQL,query.getHints());
-            sortBySQL.append(" ").append(toSQL.encodeToString(filter));
+            if (NestedFilterToSQL.isNestedFilter(filter)) {
+              sortBySQL.append(" WHERE ").append(createNestedFilter(filter,query,toSQL));
+            }
+ else {
+              sortBySQL.append(" ").append(toSQL.encodeToString(filter));
+            }
             sortBySQL.append(" ) ");
             getDataStore().dialect.encodeTableName(TEMP_FILTER_ALIAS,sortBySQL);
             sortBySQL.append(" ON ( ");
@@ -172,7 +176,6 @@
           for (          String pk : lastPkColumnNames) {
             if (!ids.contains(pk)) {
               getDataStore().dialect.encodeColumnName(null,pk,sortBySQL);
-              if (i < lastPkColumnNames.size() - 1)               sortBySQL.append(",");
               sortBySQL.append(" FROM ");
               getDataStore().encodeTableName(lastTableName,sortBySQL,query.getHints());
               sortBySQL.append(" ").append(toSQL.encodeToString(filter));
@@ -191,12 +194,22 @@
           }
         }
         if (hasSortBy) {
-          sql.append(sortBySQL).append(" ) ");
+          if (sortBySQL.toString().endsWith(" AND ")) {
+            sql.append(sortBySQL.substring(0,sortBySQL.length() - 5)).append(" ) ");
+          }
+ else {
+            sql.append(sortBySQL).append(" ) ");
+          }
         }
       }
  else       if (!pagingApplied) {
-        toSQL.setFieldEncoder(new JoiningFieldEncoder(curTypeName));
-        sql.append(" ").append(toSQL.encodeToString(filter));
+        toSQL.setFieldEncoder(new JoiningFieldEncoder(curTypeName,getDataStore()));
+        if (NestedFilterToSQL.isNestedFilter(filter)) {
+          sql.append(" WHERE ").append(createNestedFilter(filter,query,toSQL));
+        }
+ else {
+          sql.append(" ").append(toSQL.encodeToString(filter));
+        }
       }
     }
  catch (    FilterToSQLException e) {

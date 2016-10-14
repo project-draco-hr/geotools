@@ -1,0 +1,29 @@
+{
+  FeatureChainLink parentStep=nestedAttrDescr.getLink(stepIdx);
+  FeatureChainLink nestedStep=nestedAttrDescr.getLink(stepIdx + 1);
+  FeatureTypeMapping parentFeature=parentStep.getFeatureTypeMapping();
+  JDBCDataStore store=(JDBCDataStore)parentFeature.getSource().getDataStore();
+  NestedAttributeMapping nestedFeatureAttr=parentStep.getNestedFeatureAttribute();
+  FeatureTypeMapping nestedFeature=nestedFeatureAttr.getFeatureTypeMapping(null);
+  SimpleFeatureType parentSource=(SimpleFeatureType)parentFeature.getSource().getSchema();
+  String parentTableName=parentFeature.getSource().getSchema().getName().getLocalPart();
+  String parentTableAlias=parentStep.getAlias();
+  FilterToSQL parentToSQL=createFilterToSQL(store,parentSource);
+  parentToSQL.setSqlNameEscape("");
+  Expression parentExpression=nestedFeatureAttr.getSourceExpression();
+  String parentTableColumn=parentToSQL.encodeToString(parentExpression);
+  SimpleFeatureType nestedSource=(SimpleFeatureType)parentFeature.getSource().getSchema();
+  String nestedTableAlias=nestedStep.getAlias();
+  FilterToSQL nestedFilterToSQL=createFilterToSQL(store,nestedSource);
+  nestedFilterToSQL.setSqlNameEscape("");
+  Expression nestedExpr=nestedFeatureAttr.getMapping(nestedFeature).getSourceExpression();
+  String nestedTableColumn=nestedFilterToSQL.encodeToString(nestedExpr);
+  if (stepIdx == 0) {
+    encodeColumnName(store,parentTableColumn,parentTableName,sql,null);
+  }
+ else {
+    encodeAliasedColumnName(store,parentTableColumn,parentTableAlias,sql,null);
+  }
+  sql.append(" = ");
+  encodeAliasedColumnName(store,nestedTableColumn,nestedTableAlias,sql,null);
+}

@@ -24,6 +24,7 @@
           ((JoiningQuery)query).addId(pn);
         }
       }
+      ((JoiningQuery)query).setRootMapping(mapping);
     }
   }
   IMappingFeatureIterator iterator;
@@ -31,6 +32,9 @@
     query.setFilter(Filter.INCLUDE);
     Query unrolledQuery=store.unrollQuery(query,mapping);
     unrolledQuery.setFilter(unrolledFilter);
+    if (query instanceof JoiningQuery && unrolledQuery instanceof JoiningQuery) {
+      ((JoiningQuery)unrolledQuery).setRootMapping(((JoiningQuery)query).getRootMapping());
+    }
     if (isSimpleType(mapping)) {
       iterator=new MappingAttributeIterator(store,mapping,query,unrolledQuery);
     }
