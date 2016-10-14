@@ -1,0 +1,23 @@
+{
+  super.setUp();
+  ArrayList<PropertyDescriptor> childSchema=new ArrayList<PropertyDescriptor>();
+  Name attOne=new NameImpl("ns","att1");
+  AttributeDescriptor attOneDescriptor=new AttributeDescriptorImpl(FakeTypes.STRING_TYPE,attOne,0,-1,false,null);
+  childSchema.add(attOneDescriptor);
+  FeatureType childType=new FeatureTypeImpl(new NameImpl("ns","childType"),childSchema,null,false,null,null,null);
+  ArrayList<PropertyDescriptor> parentSchema=new ArrayList<PropertyDescriptor>();
+  parentSchema.add(attOneDescriptor);
+  Name attTwo=new NameImpl("ns","att2");
+  AttributeDescriptor attTwoDescriptor=new AttributeDescriptorImpl(childType,attTwo,1,-1,false,null);
+  parentSchema.add(attTwoDescriptor);
+  FeatureType parentType=new FeatureTypeImpl(new NameImpl("ns","parentType"),parentSchema,null,false,null,null,null);
+  ComplexFeatureBuilder builder=new ComplexFeatureBuilder(childType);
+  builder.append(attOne,new AttributeImpl("test1",attOneDescriptor,null));
+  builder.append(attOne,new AttributeImpl("test2",attOneDescriptor,null));
+  Feature childFeature=builder.buildFeature("childFeature");
+  builder=new ComplexFeatureBuilder(parentType);
+  ArrayList<Property> childFeatures=new ArrayList<Property>();
+  childFeatures.add(childFeature);
+  builder.append(attTwo,new ComplexAttributeImpl(childFeatures,attTwoDescriptor,null));
+  complexFeature=builder.buildFeature("parentFeature");
+}
