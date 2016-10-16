@@ -5,13 +5,28 @@
   }
   final GranuleLoader loader=new GranuleLoader(rasterLayerResponse.getBaseReadParameters(),rasterLayerResponse.getImageChoice(),rasterLayerResponse.getMosaicBBox(),rasterLayerResponse.getFinalWorldToGridCorner(),granuleDescriptor,rasterLayerResponse.getRequest(),rasterLayerResponse.getHints());
   if (!dryRun) {
-    if (rasterLayerResponse.isMultithreadingAllowed() && rasterLayerResponse.getRasterManager().getParentReader().getMultiThreadedLoader() != null) {
-      granulesFutures.add(rasterLayerResponse.getRasterManager().getParentReader().getMultiThreadedLoader().submit(loader));
+    final boolean multiThreadedLoading=isMultithreadedLoadingEnabled();
+    if (multiThreadedLoading) {
+      final ExecutorService mtLoader=rasterLayerResponse.getRasterManager().getParentReader().getMultiThreadedLoader();
+      granulesFutures.add(mtLoader.submit(loader));
     }
  else {
       final FutureTask<GranuleDescriptor.GranuleLoadingResult> task=new FutureTask<>(loader);
-      granulesFutures.add(task);
       task.run();
+      ROIExcessGranuleRemover remover=rasterLayerResponse.getExcessGranuleRemover();
+      GranuleLoadingResult result;
+      if (remover != null) {
+        try {
+          result=task.get();
+          if (!remover.addGranule(result)) {
+            return false;
+          }
+        }
+ catch (        InterruptedException|ExecutionException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      granulesFutures.add(task);
     }
   }
   if (LOGGER.isLoggable(Level.FINE)) {

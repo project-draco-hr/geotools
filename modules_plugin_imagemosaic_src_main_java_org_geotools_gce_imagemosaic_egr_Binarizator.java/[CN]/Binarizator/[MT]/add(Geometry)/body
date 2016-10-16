@@ -1,0 +1,46 @@
+{
+  if (LOGGER.isLoggable(Level.FINE)) {
+    LOGGER.fine("Adding geometry " + geometry);
+  }
+  PreparedGeometry pg=PreparedGeometryFactory.prepare(geometry);
+  LiteShape shape=new LiteShape(geometry,null,false);
+  Shape projectedShape=w2gTransform.createTransformedShape(shape);
+  boolean added=false;
+  for (Iterator<Tile> it=activeTiles.iterator(); it.hasNext(); ) {
+    Tile tile=it.next();
+    Polygon tileBBox=tile.getTileBBox();
+    Envelope geometryEnvelope=geometry.getEnvelopeInternal();
+    if (geometryEnvelope.intersects(tileBBox.getEnvelopeInternal()) && pg.intersects(tileBBox)) {
+      if (pg.contains(tileBBox)) {
+        added=true;
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("Removing fully covered tile " + tile + " ("+ activeTiles.size()+ " left)");
+        }
+        it.remove();
+        tile.dispose();
+      }
+ else {
+        if (LOGGER.isLoggable(Level.FINE)) {
+          LOGGER.fine("drawing " + pg + " on "+ tile+ ' '+ tileBBox);
+        }
+        tile.draw(projectedShape);
+        if (tile.refreshCoverageCount()) {
+          added=true;
+          if (tile.isFullyCovered()) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+              LOGGER.fine("Removing covered tile " + tile + " ("+ activeTiles.size()+ " left)");
+            }
+            it.remove();
+            tile.dispose();
+          }
+        }
+      }
+    }
+ else {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.fine("Skipping tile " + tile);
+      }
+    }
+  }
+  return added;
+}

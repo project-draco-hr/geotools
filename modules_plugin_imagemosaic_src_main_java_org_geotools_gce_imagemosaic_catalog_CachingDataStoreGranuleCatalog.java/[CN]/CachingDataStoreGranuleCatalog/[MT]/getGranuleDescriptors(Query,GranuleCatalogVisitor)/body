@@ -10,53 +10,37 @@
   q.getFilter().accept(bboxExtractor,null);
   ReferencedEnvelope requestedBBox=bboxExtractor.getBBox();
   final Geometry intersectionGeometry=requestedBBox != null ? JTS.toGeometry(requestedBBox) : null;
-  final DefaultProgressListener listener=new DefaultProgressListener();
-  features.accepts(new AbstractFeatureVisitor(){
-    public void visit(    Feature feature){
-      if (feature instanceof SimpleFeature) {
-        final SimpleFeature sf=(SimpleFeature)feature;
-        GranuleDescriptor granule=null;
-        String featureId=sf.getID();
-        if (descriptorsCache.containsKey(featureId)) {
-          granule=descriptorsCache.get(featureId);
-        }
+  try (SimpleFeatureIterator fi=features.features()){
+    while (fi.hasNext() && !visitor.isVisitComplete()) {
+      final SimpleFeature sf=fi.next();
+      GranuleDescriptor granule=null;
+      String featureId=sf.getID();
+      if (descriptorsCache.containsKey(featureId)) {
+        granule=descriptorsCache.get(featureId);
+      }
  else {
-          try {
-            MultiLevelROI footprint=getGranuleFootprint(sf);
-            if (footprint == null || !footprint.isEmpty()) {
-              granule=new GranuleDescriptor(sf,adaptee.suggestedRasterSPI,adaptee.pathType,adaptee.locationAttribute,adaptee.parentLocation,footprint,adaptee.heterogeneous,adaptee.hints);
-              descriptorsCache.put(featureId,granule);
-            }
-          }
- catch (          Exception e) {
-            LOGGER.log(Level.FINE,"Skipping invalid granule",e);
+        try {
+          MultiLevelROI footprint=getGranuleFootprint(sf);
+          if (footprint == null || !footprint.isEmpty()) {
+            granule=new GranuleDescriptor(sf,adaptee.suggestedRasterSPI,adaptee.pathType,adaptee.locationAttribute,adaptee.parentLocation,footprint,adaptee.heterogeneous,adaptee.hints);
+            descriptorsCache.put(featureId,granule);
           }
         }
-        if (granule != null) {
-          final Geometry footprint=granule.getFootprint();
-          if (intersectionGeometry == null || footprint == null || polygonOverlap(footprint,intersectionGeometry)) {
-            visitor.visit(granule,sf);
-          }
- else {
-            if (LOGGER.isLoggable(Level.FINE)) {
-              LOGGER.fine("Skipping granule " + granule + "\n since its ROI does not intersect the requested area");
-            }
-          }
+ catch (        Exception e) {
+          LOGGER.log(Level.FINE,"Skipping invalid granule",e);
         }
-        if (listener.isCanceled() || listener.hasExceptions()) {
-          if (listener.hasExceptions()) {
-            throw new RuntimeException(listener.getExceptions().peek());
-          }
+      }
+      if (granule != null) {
+        final Geometry footprint=granule.getFootprint();
+        if (intersectionGeometry == null || footprint == null || polygonOverlap(footprint,intersectionGeometry)) {
+          visitor.visit(granule,sf);
+        }
  else {
-            throw new IllegalStateException("Feature visitor for query " + q + " has been canceled");
+          if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("Skipping granule " + granule + "\n since its ROI does not intersect the requested area");
           }
         }
       }
     }
-    private boolean polygonOverlap(    Geometry g1,    Geometry g2){
-      Geometry intersection=g1.intersection(g2);
-      return intersection != null && intersection.getDimension() == 2;
-    }
   }
-,listener);
-}
+ }

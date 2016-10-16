@@ -1,0 +1,36 @@
+{
+  SampleModel sampleModel=new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE,origW,origH,1);
+  WritableRaster mainRaster=RasterFactory.createWritableRaster(sampleModel,new java.awt.Point(0,0));
+  int[] data=new int[origW * origH];
+  Arrays.fill(data,0);
+  mainRaster.setSamples(0,0,origW,origH,0,data);
+  int colnum=origW / tileWidth;
+  int rownum=origH / tileHeight;
+  final byte[] x00FF={0,(byte)0xff};
+  final ColorModel binaryCM=new IndexColorModel(1,2,x00FF,x00FF,x00FF);
+  BufferedImage mainBI=new BufferedImage(binaryCM,mainRaster,false,null);
+  Graphics2D graphics=mainBI.createGraphics();
+  for (int col=0; col <= colnum; col++) {
+    for (int row=0; row <= rownum; row++) {
+      graphics.setColor(Color.WHITE);
+      graphics.drawRect(col * tileWidth,row * tileHeight,tileWidth - 1,tileHeight - 1);
+      drawChecks(graphics,col,row);
+      graphics.setColor(Color.BLACK);
+    }
+  }
+  for (  Tile tile : activeTiles) {
+    Raster tileRaster=tile.getRaster();
+    int col=tile.getCol();
+    int row=tile.getRow();
+    if (tileRaster != null) {
+      mainRaster.setDataElements(col * tileWidth,row * tileHeight,tileRaster);
+    }
+ else {
+      graphics.setColor(Color.BLACK);
+      graphics.fillRect(col * tileWidth,row * tileHeight,tileWidth - 1,tileHeight - 1);
+      graphics.setColor(Color.WHITE);
+      drawCross(graphics,col,row);
+    }
+  }
+  return mainBI;
+}

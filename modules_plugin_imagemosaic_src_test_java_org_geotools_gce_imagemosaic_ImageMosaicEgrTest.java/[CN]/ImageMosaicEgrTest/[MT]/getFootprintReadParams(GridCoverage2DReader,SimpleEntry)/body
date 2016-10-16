@@ -1,0 +1,25 @@
+{
+  List<GeneralParameterValue> params=new ArrayList<>();
+  ParameterValue<String> footprintManagement=AbstractGridFormat.FOOTPRINT_BEHAVIOR.createValue();
+  footprintManagement.setValue(FootprintBehavior.Transparent.name());
+  params.add(footprintManagement);
+  ParameterValue<Boolean> jaiImageRead=ImageMosaicFormat.USE_JAI_IMAGEREAD.createValue();
+  jaiImageRead.setValue(false);
+  params.add(jaiImageRead);
+  boolean foundGridGeometry=false;
+  if (entries != null) {
+    for (    SimpleEntry<DefaultParameterDescriptor,Object> entry : entries) {
+      ParameterValue<?> pv=entry.getKey().createValue();
+      pv.setValue(entry.getValue());
+      params.add(pv);
+      foundGridGeometry|=entry.getKey().equals(AbstractGridFormat.READ_GRIDGEOMETRY2D);
+    }
+  }
+  if (!foundGridGeometry) {
+    ParameterValue<GridGeometry2D> geom=AbstractGridFormat.READ_GRIDGEOMETRY2D.createValue();
+    geom.setValue(new GridGeometry2D(new GridEnvelope2D(0,0,300,300),reader.getOriginalEnvelope()));
+    params.add(geom);
+  }
+  GeneralParameterValue[] result=(GeneralParameterValue[])params.toArray(new GeneralParameterValue[params.size()]);
+  return result;
+}
