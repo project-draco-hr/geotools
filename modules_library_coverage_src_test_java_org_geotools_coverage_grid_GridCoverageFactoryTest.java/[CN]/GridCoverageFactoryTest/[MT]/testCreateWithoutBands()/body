@@ -1,0 +1,35 @@
+{
+  String name="Test Grid Coverage";
+  BufferedImage image=new BufferedImage(10,10,BufferedImage.TYPE_BYTE_GRAY);
+  WritableRaster raster=image.getRaster();
+  int[] pixel={0};
+  for (int x=0; x < 10; x++) {
+    for (int y=0; y < 10; y++) {
+      pixel[0]=x * y;
+      raster.setPixel(x,y,pixel);
+    }
+  }
+  GeneralEnvelope env=new GeneralEnvelope(new Rectangle2D.Double(10,10,10,10));
+  CoordinateReferenceSystem crs=CRS.decode("EPSG:4326");
+  env.setCoordinateReferenceSystem(crs);
+  GridCoverage2D coverage=null;
+  try {
+    coverage=new GridCoverageFactory().create(name,raster,env,null);
+  }
+ catch (  NullPointerException e) {
+    fail("NullPointerException was thrown despite the javadocs indicating that 'bands' is nullable");
+  }
+  int[] dest=new int[1];
+  coverage.evaluate(new Point2D.Double(15,14),dest);
+  assertEquals(20,dest[0]);
+  AffineTransform tx=AffineTransform.getTranslateInstance(10,10);
+  MathTransform mathTx=ProjectiveTransform.create(new GeneralMatrix(tx));
+  try {
+    coverage=new GridCoverageFactory().create(name,raster,crs,mathTx,null);
+  }
+ catch (  NullPointerException e) {
+    fail("NullPointerException was thrown despite the javadocs indicating that 'bands' is nullable");
+  }
+  coverage.evaluate(new Point2D.Double(15,14),dest);
+  assertEquals(20,dest[0]);
+}
