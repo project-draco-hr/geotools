@@ -2,30 +2,22 @@
   SimpleFeatureSource fs=dataStore.getFeatureSource(tname("lake"));
   if (fs.getSupportedHints().contains(Hints.GEOMETRY_GENERALIZATION) == false)   return;
   SimpleFeatureCollection fColl=fs.getFeatures();
-  SimpleFeatureIterator iterator=fColl.features();
   Geometry original=null;
-  try {
+  try (SimpleFeatureIterator iterator=fColl.features()){
     if (iterator.hasNext()) {
       original=(Geometry)iterator.next().getDefaultGeometry();
     }
   }
-  finally {
-    iterator.close();
-  }
-  double width=original.getEnvelope().getEnvelopeInternal().getWidth();
+   double width=original.getEnvelope().getEnvelopeInternal().getWidth();
   Query query=new Query();
   Hints hints=new Hints(Hints.GEOMETRY_GENERALIZATION,width / 2);
   query.setHints(hints);
   Geometry generalized=null;
   fColl=fs.getFeatures(query);
-  iterator=fColl.features();
-  try {
+  try (SimpleFeatureIterator iterator=fColl.features()){
     if (iterator.hasNext()) {
       generalized=(Geometry)iterator.next().getDefaultGeometry();
     }
   }
-  finally {
-    iterator.close();
-  }
-  assertTrue(original.getNumPoints() >= generalized.getNumPoints());
+   assertTrue(original.getNumPoints() >= generalized.getNumPoints());
 }

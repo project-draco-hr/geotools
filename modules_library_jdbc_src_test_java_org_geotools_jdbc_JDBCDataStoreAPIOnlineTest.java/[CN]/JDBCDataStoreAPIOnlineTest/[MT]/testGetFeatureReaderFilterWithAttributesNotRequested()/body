@@ -1,17 +1,14 @@
 {
-  Transaction t=new DefaultTransaction();
   SimpleFeatureType type=dataStore.getSchema(tname("river"));
-  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
   FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
   PropertyIsEqualTo f=ff.equals(ff.property(aname("flow")),ff.literal(4.5));
   Query q=new Query(tname("river"));
   q.setPropertyNames(new String[]{aname("geom")});
   q.setFilter(f);
-  reader=dataStore.getFeatureReader(q,t);
-  assertTrue(reader.hasNext());
-  assertEquals(1,reader.getFeatureType().getAttributeCount());
-  reader.next();
-  assertFalse(reader.hasNext());
-  reader.close();
-  t.close();
-}
+  try (Transaction t=new DefaultTransaction();FeatureReader<SimpleFeatureType,SimpleFeature> reader=dataStore.getFeatureReader(q,t)){
+    assertTrue(reader.hasNext());
+    assertEquals(1,reader.getFeatureType().getAttributeCount());
+    reader.next();
+    assertFalse(reader.hasNext());
+  }
+ }

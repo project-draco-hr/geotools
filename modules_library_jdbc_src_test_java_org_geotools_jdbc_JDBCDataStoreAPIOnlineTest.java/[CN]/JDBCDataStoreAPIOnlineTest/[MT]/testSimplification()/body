@@ -2,28 +2,20 @@
   SimpleFeatureSource fs=dataStore.getFeatureSource(tname("road"));
   if (fs.getSupportedHints().contains(Hints.GEOMETRY_SIMPLIFICATION) == false)   return;
   SimpleFeatureCollection fColl=fs.getFeatures();
-  SimpleFeatureIterator iterator=fColl.features();
   Geometry original=null;
-  try {
+  try (SimpleFeatureIterator iterator=fColl.features()){
     if (iterator.hasNext()) {
       original=(Geometry)iterator.next().getDefaultGeometry();
     }
   }
-  finally {
-    iterator.close();
-  }
-  double width=original.getEnvelope().getEnvelopeInternal().getWidth();
+   double width=original.getEnvelope().getEnvelopeInternal().getWidth();
   Query query=new Query();
   Hints hints=new Hints(Hints.GEOMETRY_SIMPLIFICATION,width / 2);
   query.setHints(hints);
   Geometry simplified=null;
   fColl=fs.getFeatures(query);
-  iterator=fColl.features();
-  try {
+  try (SimpleFeatureIterator iterator=fColl.features()){
     if (iterator.hasNext())     simplified=(Geometry)iterator.next().getDefaultGeometry();
   }
-  finally {
-    iterator.close();
-  }
-  assertTrue(original.getNumPoints() >= simplified.getNumPoints());
+   assertTrue(original.getNumPoints() >= simplified.getNumPoints());
 }

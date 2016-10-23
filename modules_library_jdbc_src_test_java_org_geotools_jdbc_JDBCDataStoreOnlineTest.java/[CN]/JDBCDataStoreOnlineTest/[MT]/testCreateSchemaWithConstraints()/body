@@ -9,28 +9,28 @@
   SimpleFeatureType featureType=builder.buildFeatureType();
   dataStore.createSchema(featureType);
   SimpleFeatureType ft2=dataStore.getSchema(tname("ft2"));
-  FeatureWriter<SimpleFeatureType,SimpleFeature> w=dataStore.getFeatureWriter(tname("ft2"),Transaction.AUTO_COMMIT);
-  w.hasNext();
-  SimpleFeature f=w.next();
-  f.setAttribute(1,new Integer(0));
-  f.setAttribute(2,"hello");
-  w.write();
-  w.hasNext();
-  f=w.next();
-  f.setAttribute(1,null);
-  try {
+  try (FeatureWriter<SimpleFeatureType,SimpleFeature> w=dataStore.getFeatureWriter(tname("ft2"),Transaction.AUTO_COMMIT)){
+    w.hasNext();
+    SimpleFeature f=w.next();
+    f.setAttribute(1,new Integer(0));
+    f.setAttribute(2,"hello");
     w.write();
-    fail("null value for intProperty should have failed");
+    w.hasNext();
+    f=w.next();
+    f.setAttribute(1,null);
+    try {
+      w.write();
+      fail("null value for intProperty should have failed");
+    }
+ catch (    Exception e) {
+    }
+    f.setAttribute(1,new Integer(1));
+    f.setAttribute(2,"hello!");
+    try {
+      w.write();
+      fail("string greather than 5 chars should have failed");
+    }
+ catch (    Exception e) {
+    }
   }
- catch (  Exception e) {
-  }
-  f.setAttribute(1,new Integer(1));
-  f.setAttribute(2,"hello!");
-  try {
-    w.write();
-    fail("string greather than 5 chars should have failed");
-  }
- catch (  Exception e) {
-  }
-  w.close();
-}
+ }

@@ -3,8 +3,7 @@
   q.setMaxFeatures(2);
   SimpleFeatureCollection features=featureSource.getFeatures(q);
   assertEquals(2,features.size());
-  SimpleFeatureIterator it=features.features();
-  try {
+  try (SimpleFeatureIterator it=features.features()){
     int count=0;
     ReferencedEnvelope env=new ReferencedEnvelope(features.getSchema().getCoordinateReferenceSystem());
     while (it.hasNext()) {
@@ -13,11 +12,6 @@
       count++;
     }
     assertEquals(2,count);
-    it.close();
-    it=null;
     assertTrue(areReferencedEnvelopesEqual(env,features.getBounds()));
   }
-  finally {
-    if (it != null)     it.close();
-  }
-}
+ }

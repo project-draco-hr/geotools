@@ -5,9 +5,8 @@
   query.setSortBy(new SortBy[]{sort});
   SimpleFeatureCollection features=featureSource.getFeatures(query);
   assertEquals(3,features.size());
-  SimpleFeatureIterator iterator=features.features();
   SimpleFeature f;
-  try {
+  try (SimpleFeatureIterator iterator=features.features()){
     assertTrue(iterator.hasNext());
     f=(SimpleFeature)iterator.next();
     assertEquals("one",f.getAttribute(aname("stringProperty")));
@@ -18,14 +17,10 @@
     f=(SimpleFeature)iterator.next();
     assertEquals("zero",f.getAttribute(aname("stringProperty")));
   }
-  finally {
-    iterator.close();
-  }
-  sort=ff.sort(aname("stringProperty"),SortOrder.DESCENDING);
+   sort=ff.sort(aname("stringProperty"),SortOrder.DESCENDING);
   query.setSortBy(new SortBy[]{sort});
   features=featureSource.getFeatures(query);
-  iterator=features.features();
-  try {
+  try (SimpleFeatureIterator iterator=features.features()){
     assertTrue(iterator.hasNext());
     f=(SimpleFeature)iterator.next();
     assertEquals("zero",f.getAttribute(aname("stringProperty")));
@@ -36,7 +31,4 @@
     f=(SimpleFeature)iterator.next();
     assertEquals("one",f.getAttribute(aname("stringProperty")));
   }
-  finally {
-    iterator.close();
-  }
-}
+ }

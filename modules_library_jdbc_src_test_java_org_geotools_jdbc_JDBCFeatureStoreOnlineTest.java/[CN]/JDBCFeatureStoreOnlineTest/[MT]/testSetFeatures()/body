@@ -6,12 +6,12 @@
     b.set(aname("geometry"),new GeometryFactory().createPoint(new Coordinate(i,i)));
     collection.add(b.buildFeature(null));
   }
-  FeatureReader<SimpleFeatureType,SimpleFeature> reader=new CollectionFeatureReader((SimpleFeatureCollection)collection,collection.getSchema());
-  featureStore.setFeatures(reader);
-  SimpleFeatureCollection features=featureStore.getFeatures();
+  try (FeatureReader<SimpleFeatureType,SimpleFeature> reader=new CollectionFeatureReader((SimpleFeatureCollection)collection,collection.getSchema())){
+    featureStore.setFeatures(reader);
+  }
+   SimpleFeatureCollection features=featureStore.getFeatures();
   assertEquals(3,features.size());
-  SimpleFeatureIterator iterator=features.features();
-  try {
+  try (SimpleFeatureIterator iterator=features.features()){
     HashSet<Integer> numbers=new HashSet<Integer>();
     numbers.add(new Integer(3));
     numbers.add(new Integer(4));
@@ -22,7 +22,4 @@
       numbers.remove(feature.getAttribute(aname("intProperty")));
     }
   }
-  finally {
-    iterator.close();
-  }
-}
+ }

@@ -10,17 +10,17 @@
   dataStore.createSchema(featureType);
   SimpleFeatureType ft2=dataStore.getSchema(tname("ft2"));
   assertNotNull(ft2);
-  FeatureWriter w=dataStore.getFeatureWriter(tname("ft2"),Transaction.AUTO_COMMIT);
-  w.hasNext();
-  SimpleFeature f=(SimpleFeature)w.next();
-  Geometry g=new WKTReader().read("POINT(593493 4914730)");
-  g.setSRID(26713);
-  f.setAttribute(0,g);
-  f.setAttribute(1,new Integer(0));
-  f.setAttribute(2,"hello");
-  w.write();
-  w.close();
-  dataStore.getEntry(new NameImpl(dataStore.getNamespaceURI(),tname("ft2"))).dispose();
+  try (FeatureWriter w=dataStore.getFeatureWriter(tname("ft2"),Transaction.AUTO_COMMIT)){
+    w.hasNext();
+    SimpleFeature f=(SimpleFeature)w.next();
+    Geometry g=new WKTReader().read("POINT(593493 4914730)");
+    g.setSRID(26713);
+    f.setAttribute(0,g);
+    f.setAttribute(1,new Integer(0));
+    f.setAttribute(2,"hello");
+    w.write();
+  }
+   dataStore.getEntry(new NameImpl(dataStore.getNamespaceURI(),tname("ft2"))).dispose();
   ft2=dataStore.getSchema(tname("ft2"));
   assertTrue(CRS.equalsIgnoreMetadata(CRS.decode("EPSG:26713"),ft2.getCoordinateReferenceSystem()));
 }

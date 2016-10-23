@@ -9,11 +9,11 @@
   assertEquals(crs,fcSchema.getCoordinateReferenceSystem());
   assertEquals(crs,fcSchema.getGeometryDescriptor().getCoordinateReferenceSystem());
   LineString expected=new GeometryFactory().createLineString(new Coordinate[]{new Coordinate(1,1),new Coordinate(2,2),new Coordinate(4,2),new Coordinate(5,1)});
-  FeatureReader<SimpleFeatureType,SimpleFeature> fr=dataStore.getFeatureReader(q,Transaction.AUTO_COMMIT);
-  assertEquals(crs,fr.getFeatureType().getCoordinateReferenceSystem());
-  assertEquals(crs,fr.getFeatureType().getGeometryDescriptor().getCoordinateReferenceSystem());
-  assertTrue(fr.hasNext());
-  SimpleFeature f=fr.next();
-  assertTrue(expected.equalsExact((Geometry)f.getDefaultGeometry()));
-  fr.close();
-}
+  try (FeatureReader<SimpleFeatureType,SimpleFeature> fr=dataStore.getFeatureReader(q,Transaction.AUTO_COMMIT)){
+    assertEquals(crs,fr.getFeatureType().getCoordinateReferenceSystem());
+    assertEquals(crs,fr.getFeatureType().getGeometryDescriptor().getCoordinateReferenceSystem());
+    assertTrue(fr.hasNext());
+    SimpleFeature f=fr.next();
+    assertTrue(expected.equalsExact((Geometry)f.getDefaultGeometry()));
+  }
+ }

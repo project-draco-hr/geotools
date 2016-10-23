@@ -1,13 +1,10 @@
 {
-  FeatureReader<SimpleFeatureType,SimpleFeature> reader;
   FilterFactory ff=CommonFactoryFinder.getFilterFactory(null);
   PropertyIsEqualTo f=ff.equals(ff.property("invalidAttribute"),ff.literal(5));
   Query q=new Query(tname("river"));
   q.setPropertyNames(new String[]{aname("geom")});
   q.setFilter(f);
-  try {
-    reader=dataStore.getFeatureReader(q,Transaction.AUTO_COMMIT);
-    reader.close();
+  try (FeatureReader<SimpleFeatureType,SimpleFeature> reader=dataStore.getFeatureReader(q,Transaction.AUTO_COMMIT)){
     fail("This query should have failed, it contains an invalid filter");
   }
  catch (  Exception e) {
