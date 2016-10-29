@@ -1,0 +1,22 @@
+{
+  LineComponent component=line.getComponents().get(0);
+  LineMetrics metrics=computeLineMetricsIfNeeded(component);
+  double endOrdinate=cursor.getCurrentOrdinate();
+  GlyphVector glyphVector=line.getComponents().get(0).getGlyphVector();
+  double advance=glyphVector.getGlyphMetrics(0).getAdvance() * 0.5f;
+  LineString labelLineString=cursor.getSubLineString(startOrdinate - advance,endOrdinate - advance);
+  LiteShape underlineLineString=computeCurvedUnderline(labelLineString,metrics);
+  if (drawingHalo) {
+    graphics.draw(underlineLineString);
+  }
+ else {
+    Stroke oldStroke=graphics.getStroke();
+    try {
+      graphics.setStroke(new BasicStroke(metrics.getUnderlineThickness()));
+      graphics.draw(underlineLineString);
+    }
+  finally {
+      graphics.setStroke(oldStroke);
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  Coordinate[] coordinates=labelLineString.getCoordinates();
+  Coordinate[] parallelCoordinates=new Coordinate[coordinates.length];
+  double anchorOffset=getLinePlacementYAnchor() * getLineHeight();
+  for (int i=0; i < coordinates.length - 1; i++) {
+    Coordinate coordinateA=coordinates[i];
+    Coordinate coordinateB=coordinates[i + 1];
+    double dx=coordinateB.x - coordinateA.x;
+    double dy=coordinateB.y - coordinateA.y;
+    double length=Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2));
+    double offset=-(anchorOffset + metrics.getUnderlineOffset() * 2);
+    double x1=coordinateA.x + offset * (coordinateB.y - coordinateA.y) / length;
+    double x2=coordinateB.x + offset * (coordinateB.y - coordinateA.y) / length;
+    double y1=coordinateA.y + offset * (coordinateA.x - coordinateB.x) / length;
+    double y2=coordinateB.y + offset * (coordinateA.x - coordinateB.x) / length;
+    parallelCoordinates[i]=new Coordinate(x1,y1);
+    parallelCoordinates[i + 1]=new Coordinate(x2,y2);
+  }
+  LineString lineString=labelLineString.getFactory().createLineString(parallelCoordinates);
+  return new LiteShape(lineString,null,true);
+}

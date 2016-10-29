@@ -15,9 +15,11 @@
   double startOrdinate=mid - getStraightLabelWidth() / 2;
   if (startOrdinate < 0)   startOrdinate=0;
   cursor.moveTo(startOrdinate);
-  for (  LineComponent component : line.getComponents()) {
-    GlyphVector glyphVector=component.getGlyphVector();
-    try {
+  List<Shape[]> allOutlines=new ArrayList<>();
+  List<AffineTransform[]> allTransforms=new ArrayList<>();
+  try {
+    for (    LineComponent component : line.getComponents()) {
+      GlyphVector glyphVector=component.getGlyphVector();
       final int numGlyphs=glyphVector.getNumGlyphs();
       float nextAdvance=glyphVector.getGlyphMetrics(0).getAdvance() * 0.5f;
       double start=cursor.getCurrentOrdinate();
@@ -36,22 +38,25 @@
         transforms[i]=t;
         cursor.moveTo(cursor.getCurrentOrdinate() + advance + nextAdvance);
       }
-      if (labelItem.getTextStyle().getHaloFill() != null) {
-        configureHalo();
-        for (int i=0; i < numGlyphs; i++) {
-          graphics.setTransform(transforms[i]);
-          graphics.draw(outlines[i]);
-        }
-      }
-      configureLabelStyle();
-      for (int i=0; i < numGlyphs; i++) {
-        graphics.setTransform(transforms[i]);
-        graphics.fill(outlines[i]);
-      }
+      allOutlines.add(outlines);
+      allTransforms.add(transforms);
       cursor.moveTo(start + glyphVector.getGlyphPosition(numGlyphs).getX());
     }
-  finally {
-      graphics.setTransform(oldTransform);
+    if (labelItem.getTextStyle().getHaloFill() != null) {
+      configureHalo();
+      if (labelItem.isTextUnderlined()) {
+        drawCurvedUnderline(line,cursor,startOrdinate,true);
+      }
+      drawOrFillOutlines(allOutlines,allTransforms,false);
     }
+    graphics.setTransform(oldTransform);
+    configureLabelStyle();
+    if (labelItem.isTextUnderlined()) {
+      drawCurvedUnderline(line,cursor,startOrdinate,false);
+    }
+    drawOrFillOutlines(allOutlines,allTransforms,true);
+  }
+  finally {
+    graphics.setTransform(oldTransform);
   }
 }
